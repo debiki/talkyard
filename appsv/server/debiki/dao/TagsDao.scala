@@ -80,6 +80,14 @@ object TagsDao {
 }
 
 
+case class TagTypesByX(types: ImmSeq[TagType]) {
+  val byName: Map[St, TagType] = Map(types.map(t => t.dispName -> t): _*)
+  val bySlug: Map[St, TagType] = Map(types.flatMap(t => t.urlSlug.map(_ -> t)): _*)
+  val byId: Map[TagTypeId, TagType] = Map(types.map(t => t.id -> t): _*)
+  val byRefId: Map[RefId, TagType] = Map(types.flatMap(t => t.refId.map(_ -> t)): _*)
+}
+
+
 trait TagsDao {
   this: SiteDao =>
 
@@ -89,16 +97,73 @@ trait TagsDao {
   }
 
 
+  def getTagTypesByNamesOrSlugs(namesOrSlugs: Iterable[St]): ImmSeq[Opt[TagType]] = {
+    val byX = getAllTagTypesByX()
+    namesOrSlugs.to[Vec] map { nameOrSlug =>
+      // Maybe allow prefixes 'slug:' or 'name:'?  But what if a tag is named 'slug'?
+      // And ':' is also used for ':desc' and ':asc', but that's maybe ok, that's
+      // *after* the tag slug or name.  But what if one tag is named 'slug', another 'desc'
+      // and someone writes:  tag:slug:desc — then, which tag does hen mean?
+      val anyType = byX.bySlug.get(nameOrSlug) orElse byX.byName.get(nameOrSlug) orElse {
+        // Try id too? As of Aug 2023, not all tag types have url slugs, and there might
+        // be spaces in their names, which the search query parser currently
+        // can't handle  [search_q_param_space].  So, w/o this, couldn't search
+        // for such tags.
+        nameOrSlug.toIntOption flatMap { maybeId =>
+          byX.byId.get(maybeId)
+        }
+      }
+      anyType
+    }
+  }
+
+
+  def resolveTypeRefs(refs: Iterable[TypeRef]): ImmSeq[Opt[TagType]] = {
+    val byX = getAllTagTypesByX()
+    refs.to[Vec] map {
+      case ParsedRef.ExternalId(refId) =>
+        byX.byRefId.get(refId)
+      case ParsedRef.Slug(slug) =>
+        byX.bySlug.get(slug)
+    }
+  }
+
+
+  def getTagTypesBySlug(): Map[St, TagType] = {
+    getAllTagTypesByX().bySlug
+  }
+
+
+  def getTagTypesById(): Map[TagTypeId, TagType] = {
+    getAllTagTypesByX().byId
+  }
+
+
+  def getTagTypesByRefId(): Map[RefId, TagType] = {
+    getAllTagTypesByX().byRefId
+  }
+
+
   def getTagTypesSeq(forWhat: Opt[i32], tagNamePrefix: Opt[St]): ImmSeq[TagType] = {
     getAllTagTypesSeq()  // for now
   }
 
 
   def getAllTagTypesSeq(): ImmSeq[TagType] = {
-    val tagTypes = memCache.lookup[ImmSeq[TagType]](
+    getAllTagTypesByX().types
+  }
+
+
+  /** Types are added and modified infrequently, accessed much more often — so,
+    * makes sense to cache in different ways.  Also, there aren't that many types
+    * per site (see MaxLimits.maxTagTypes), so might as well cache all?
+    */
+  private def getAllTagTypesByX(): TagTypesByX = {
+    val tagTypes = memCache.lookup[TagTypesByX](
           mkAllTagTypesKey,
           orCacheAndReturn = Some {
-            readTx(_.loadAllTagTypes())
+            val types = readTx(_.loadAllTagTypes())
+            TagTypesByX(types)
           })
     tagTypes getOrDie "TyE752WG36Y"
   }
@@ -117,12 +182,19 @@ trait TagsDao {
   }
 
 
-  def createTagType(tagTypeNoId: TagType)(mab: MessAborter): TagType = {
-    import mab.{abort, abortIf}
-    abortIf(tagTypeNoId.id != NoTagTypeId, "TyE603MWEJ5",
-          "Specify tag type id 0")
+  def upsertTypeIfAuZ(tagTypeMaybeId: TagType, reqrInf: ReqrInf)(mab: MessAborter): TagType = {
+    import mab.{abort, abortIf, denyIf}
+
+    // But can mods see / change refids?  Probably should be for admins only.  [who_sees_refid]
+    denyIf(!reqrInf.isStaff, "TyEDENYREQR05733", "Only mods may edit types")
+    if (tagTypeMaybeId.createdById != reqrInf.id) {
+      denyIf(!reqrInf.isAdmin, "TyE0ADM0386", "Only admins can upsert types on behalf of others")
+      val by = getTheParticipant(tagTypeMaybeId.createdById)
+      denyIf(!by.isStaff, "TyEDENYDOAS05363", "Bad createdById: Only mods may edit types")
+    }
+
     // Or call a TagType.validate() fn?  (Or validate(Thoroughly) ?) [mess_aborter]
-    debiki.dao.TagsDao.findTagLabelProblem(tagTypeNoId.dispName) foreach { errMsg =>
+    debiki.dao.TagsDao.findTagLabelProblem(tagTypeMaybeId.dispName) foreach { errMsg =>
       abort(errMsg.code, errMsg.message)
     }
     val numTagTypesBef = getAllTagTypesSeq()
@@ -130,17 +202,43 @@ trait TagsDao {
     abortIf(numTagTypesBef.length + 1 > maxTypes, "TyE4MF72WP3", s"Cannot create more than ${
           maxTypes} tag types")
     val tagType = writeTx { (tx, _) => {
-      val nextId = tx.nextTagTypeId()
-      val tagType = tagTypeNoId.copy(id = nextId)(IfBadDie)
+      // If we're updating, the type already has an id.
+      val typeId: TagTypeId =
+            if (tagTypeMaybeId.id != NoTagTypeId) {  // [type_id_or_ref_id]
+              // If both Ty's internal id and a reference id has been specified, then update
+              // the reference id, if it's changed. (Can't update Ty's internal ids though;
+              // they're part of the primary key.)  So, ignore tagTypeMaybeId.refId.
+              tagTypeMaybeId.id
+            }
+            else {
+              // Either we're looking up by ref id to update something, ...
+              val anyTypeByRefId = tagTypeMaybeId.refId flatMap { refId =>
+                // The mem cache is unlikely to be stale — on any change, we _uncache_the_types.
+                RACE // But theoretically it can be stale. Then, what can happen is that we'll
+                // try to insert the same type again, with a new internal id? However,
+                // since the ref id must also be unique, there'll be a unique key error.
+                // That's ok, just not so user friendly, but in practice will never happen.
+                getTagTypesByRefId().get(refId)
+              }
+              anyTypeByRefId.map(_.id) getOrElse {
+                // ... or if there's no matching row, we're inserting a new type.
+                tx.nextTagTypeId()
+              }
+            }
+      val tagType = tagTypeMaybeId.copy(id = typeId)(IfBadDie)
       tx.upsertTagType(tagType)(mab)
-      // Skip StaleStuff, just:
+      // Skip StaleStuff, just: _uncache_the_types
       memCache.remove(mkAllTagTypesKey)
+      SHOULD_LOG
       tagType
     }}
     tagType
   }
 
 
+  /** The tags might have values of the nowadays wrong types, if their tag types were
+    * altered after the tags were added.
+    */
   def getTags(forPat: Opt[PatId] = None): ImmSeq[Tag] = {
     val key = mkTagsKey(forPat)
     val tags = memCache.lookup[ImmSeq[Tag]](
@@ -185,30 +283,67 @@ trait TagsDao {
     loadTagsByPostId(Seq(postId)).getOrElse(postId, Set.empty)
 
 
-  def addRemoveTagsIfAuth(toAdd: Seq[Tag], toRemove: Seq[Tag], who: Who)(mab: MessAborter)
-          : Set[PostId] = {
-    import mab._
+  RENAME // to ... IfAuZ,  change  who  to  reqrInf?
+  def updateTagsIfAuth(toAdd: Seq[Tag], toRemove: Seq[Tag], toEdit: Seq[Tag], who: Who)(
+          mab: MessAborter): Set[PostId] = {
+    import mab.{abort, abortIf}
+
+    SECURITY; SHOULD // [check_see_page]
+    SECURITY; SHOULD // require is-core-member, or `who` is the post author? [ok_tag_own]
+
+    // Check that any tag values are of the correct type.
+    // (Ok to do outside the tx below.  And, if there are already tags with values
+    // of the wrong types, we just ignore that.)
+    val tagTypesById = getTagTypesById()
+    val toAddAndEdit = toAdd ++ toEdit
+    for (t <- toAddAndEdit) {
+      val tagType: TagType = tagTypesById.getOrElse(t.tagTypeId, {
+        abort("TyE0TAGTYPE", s"Cannot create tag of tag-type-id ${t.tagTypeId
+                }, there is no such tag type")
+      })
+      TESTS_MISSING // Open the add tag dialog, edit the type in another dialog,
+      // then submit the first dialog?  TyTTAGVALBADTYPE
+      abortIf(t.valType.isDefined && t.valType != tagType.valueType,
+            "TyETAGTYPE", s"Tag value is of type ${t.valType
+              } but should be of type ${tagType.valueType}")
+    }
+
     writeTx { (tx, staleStuff) =>
       // (Remove first, maybe frees some ids.)
-      tx.removeTags(toRemove)
+      tx.deleteTags(toRemove)
+
+      // (Update before inserting — trying to update one of the tags being inserted,
+      // would likely be a bug? Or at least inefficient.)
+      toEdit foreach { tag =>
+        tx.updateTag(tag)
+      }
+
       var nextTagId = tx.nextTagId()
       toAdd.foreach(tag => {
         // [mess_aborter] call validate(Thoroughly)?
         abortIf(tag.id != NoTagId, "TyETAGWID502", "Tags to add must not have id 0")
         val tagWithId = tag.copy(id = nextTagId)(IfBadDie)
-        tx.addTag(tagWithId)
+        tx.insertTag(tagWithId)
         nextTagId += 1
       })
 
       val postIdsDirectlyAffected: Set[PostId] =
             toAdd.flatMap(_.onPostId).toSet ++
-            toRemove.flatMap(_.onPostId).toSet
+            toRemove.flatMap(_.onPostId).toSet ++
+            toEdit.flatMap(_.onPostId).toSet
 
       staleStuff.addPagesWithPostIds(postIdsDirectlyAffected, tx)
+
+      // Reindex the posts, since can search by tags.
+      WOULD_OPTIMIZE // Use indexPostIdsSoon_unimpl instead, so won't need to
+      // look up the posts.
+      val postsAffected = tx.loadPostsByIdKeepOrder(postIdsDirectlyAffected)
+      tx.indexPostsSoon(postsAffected: _*)
 
       val patIdsAffected: Set[PatId] =
             toAdd.flatMap(_.onPatId).toSet ++
             toRemove.flatMap(_.onPatId).toSet
+            toEdit.flatMap(_.onPatId).toSet
 
       // For now, skip staleStuff, instead just:
       patIdsAffected.foreach(patId => {
@@ -223,6 +358,9 @@ trait TagsDao {
       staleStuff.addPagesWithVisiblePostsBy(patIdsAffected, tx)
 
       // Posts currently not cached. Don't forget to uncache here, [if_caching_posts].
+
+      // Later, when re-implementing notifcations about tagged pages, see:  [tag_notfs]
+      // and maybe PubSub too?  [tag_notfs]
 
       // These are the only posts we'd need to rerender directly, if
       // the requester edited the current page/post tags.
@@ -255,7 +393,7 @@ trait TagsDao {
       throwForbiddenIf(post.nr == PageParts.TitleNr, "EsE5JK8S4", "Cannot tag page titles")
 
       // [pseudonyms_later] Better err msg if one's true user may do this.
-      throwForbiddenIf(post.createdById != me.id && !me.isStaff,
+      throwForbiddenIf(post.createdById != me.id && !me.isStaff,  // [ok_tag_own]
         "EsE2GKY5", "Not your post and you're not staff, so you may not edit tags")
 
       throwForbiddenIf(post.pageId != pageId,
@@ -273,9 +411,12 @@ trait TagsDao {
       tx.addTagsToPost(tagsToAdd, postId, isPage = post.isOrigPost)
       tx.removeTagsFromPost(tagsToRemove, postId)
       tx.indexPostsSoon(post)
+      // Hmm should do this? No, not needed — staleStuff.addPagesWithPostIds()
+      // is enough, uncaches the page from both the db & mem caches.
       tx.updatePageMeta(pageMeta.copyWithNewVersion, oldMeta = pageMeta,
           markSectionPageStale = false)
 
+      // Later, when re-enabling notifcations about tagged pages: [tag_notfs]
       // [notfs_bug] Delete for removed tags — also if notf email already sent?
       // But don't re-send notf emails if toggling tag on-off-on-off.... [toggle_like_email]
       val notifications = notfGenerator(tx).generateForTags(post, tagsToAdd)
@@ -287,6 +428,7 @@ trait TagsDao {
     refreshPageInMemCache(post.pageId)
 
     val storePatch = jsonMaker.makeStorePatchForPost(post, showHidden = true, reqerId = who.id)
+    // [tag_notfs]
     pubSub.publish(
       StorePatchMessage(siteId, pageId, storePatch, notifications), byId = postAuthor.id)
     storePatch

@@ -1276,11 +1276,17 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     CHECK_AUTHN_STRENGTH
 
+    SECURITY; SLEEPING // Reply Not Found if may not see page, or it doesn't exist?
+    // Look at  PostsDao.addVoteIfAuZ(), calls throwIfMayNotSeePage()  [check_see_page]
+    // Not urgent, one won't get notified anyway about pages one can't see,
+    // this test:
+    //   - notf-prefs-private-groups.2browsers.test.ts  TyT406WMDKG26
+
     if (newNotfLevel.isDefined) {
-      dao.savePageNotfPrefIfAuZ(newPref, request.who)
+      dao.savePageNotfPrefIfAuZ(newPref, request.reqrInf)
     }
     else {
-      dao.deletePageNotfPrefIfAuZ(newPref, request.who)
+      dao.deletePageNotfPrefIfAuZ(newPref, request.reqrInf)
     }
 
     OkSafeJson(

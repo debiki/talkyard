@@ -1199,8 +1199,9 @@ case class SitePatchParser(context: TyContext) {
 
     // Try to not reject the request. [0REJREQ]
     // E.g. truncate the title to MaxTitleLength instead of replying Error.
-    // Because the software (and people) that calls this API, generally expects it
-    // to do "as best it can", and wouldn't understand any server response error codes.
+    // Because the *software* (and people) that calls this API, generally expects it
+    // to do "as best it can", and hasn't been written to understand any rare Talkyard
+    // error response codes.
     //
     // ... Unless an upsertOptions is { strict: true }  (unimplemented).
 
@@ -1220,7 +1221,7 @@ case class SitePatchParser(context: TyContext) {
 
       // Dupl code [02956KTU]
       val bodyMarkupLang = readOptString(jsObj, "bodyMarkupLang") map { langName =>
-        MarkupLang.fromString(langName) getOrElse {
+        MarkupLang.fromString_apiV0(langName) getOrElse {
           return Bad(s"Unknown markup language: $langName  [TyE205AUTD3]")
         }
       }
@@ -1553,7 +1554,7 @@ case class SitePatchParser(context: TyContext) {
       val postType: PostType = anyPostTypeInt.flatMap(PostType.fromInt) getOrElse PostType.Normal
       // Dupl code [02956KTU]
       val markupLang = readOptString(jsObj, "bodyMarkupLang") map { langName =>
-        MarkupLang.fromString(langName) getOrElse {
+        MarkupLang.fromString_apiV0(langName) getOrElse {
           return Bad(s"Unknown markup language: $langName  [TyE502RKDHL6]")
         }
       }

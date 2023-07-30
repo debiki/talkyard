@@ -21,6 +21,7 @@ import com.debiki.core.Prelude._
 import java.{util => ju}
 import org.apache.commons.validator.routines.EmailValidator
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
+import scala.collection.{immutable => imm, mutable => mut}
 import scala.collection.immutable
 import scala.collection.mutable
 import play.api.libs.json.JsObject
@@ -255,12 +256,16 @@ package object core {
 
   type NoticeId = i32
 
+  trait HasInt32Id {
+    def id: i32
+  }
+
   sealed abstract class MarkupLang
   object MarkupLang {
     case object Html extends MarkupLang
     case object CommonMark extends MarkupLang
 
-    def fromString(value: String): Option[MarkupLang] = Some(value match {
+    def fromString_apiV0(value: St): Opt[MarkupLang] = Some(value match {
       case "HTML" => Html
       case "CommonMark" => CommonMark
       case _ => return None
@@ -274,6 +279,8 @@ package object core {
   // own users, and use as ext ids in Talkyard — and a stranger who can see any such
   // ext ids, could estimate the number of people in the organization.)
   type ExtId = String
+  RENAME // to RefId? [refid_0_extid]
+  type RefId = ExtId
 
   type Ref = String  ; RENAME // to RawRef, and ... or not: rename ParsedRef to just Ref
   type RawRef = Ref  //  ... started
@@ -308,6 +315,8 @@ package object core {
   // Hmm, PostIdRef and PostNrRef extends PostRef?  [post_id_nr_ref]
   sealed trait PostRef
 
+  sealed trait TypeRef
+
   sealed abstract class ParsedRef(
     val canBeToPat: Bo = true,
     val canOnlyBeToPat: Bo = false,
@@ -315,8 +324,10 @@ package object core {
     val isSsoOrExtId: Bo = false)
 
   object ParsedRef {
+    RENAME // to RefId [refid_0_extid]
     case class ExternalId(value: ExtId)
-      extends ParsedRef(isSsoOrExtId = true) with PatRef with PageRef with PostRef
+      extends ParsedRef(isSsoOrExtId = true)
+      with PatRef with PageRef with PostRef with TypeRef
 
     case class SingleSignOnId(value: St)
       extends ParsedRef(canOnlyBeToPat = true, canBeToPage = false, isSsoOrExtId = true)
@@ -330,6 +341,9 @@ package object core {
 
     case class PagePath(value: St)
       extends ParsedRef(canBeToPat = false) with PageRef
+
+    case class Slug(value: St) extends TypeRef
+        // Not needed: extends ParsedRef(..)
 
     // case class PatId(value: core.PatId)  — also for guests and anons, pat id <= -10.
 
@@ -400,6 +414,20 @@ package object core {
     }
   }
 
+  def parseTypeRef(ref: Ref): TypeRef Or ErrMsg = Good {
+    if (ref startsWith "rid:") {
+      val refId = ref drop "rid:".length
+      ParsedRef.ExternalId(refId)
+    }
+    else if (ref startsWith "slug:") {
+      val slug = ref drop "slug:".length
+      ParsedRef.Slug(slug)
+    }
+    else {
+      return _badRef(ref, "rid:.... or slug:...")
+    }
+  }
+
   def parseRef(ref: Ref, allowPatRef: Bo, allowTyId: Bo = true): ParsedRef Or ErrMsg = {
     if (ref.isEmpty)
       return Bad("Empty ref: Neither prefix, nor value [TyEEMPTREF]")
@@ -420,6 +448,11 @@ package object core {
       if (value contains '@')
         return Bad("Ref contains '@': " + ref)
 
+    if (ref startsWith "rid:") {
+      val refId = ref drop "rid:".length
+      Good(ParsedRef.ExternalId(refId))
+    }
+    else // "extid" is an old name, renaming to "rid" for "reference id" [refid_0_extid]
     if (ref startsWith "extid:") {
       val extId = ref drop "extid:".length
       Good(ParsedRef.ExternalId(extId))
@@ -489,10 +522,14 @@ package object core {
       Good(ParsedRef.EmbeddingUrl(url, lax = false))
     } */
     else {
+      _badRef(ref, "rid:...")
+    }
+  }
+
+  private def _badRef(ref: St, wantsWhat: St): Bad[ErrMsg] = {
       var refDots = ref.takeWhile(_ != ':') take 14
       if (refDots.length >= 14) refDots = refDots.dropRight(1) + "..."
-      Bad(s"Unknown ref type: '$refDots', should be e.g. 'extid:...' [TyEREFTYPE]")
-    }
+      Bad(s"Unknown ref type: '$refDots', should be e.g. '$wantsWhat' [TyEREFTYPE]")
   }
 
 
@@ -548,7 +585,12 @@ package object core {
   /** Sync w Typescript [NeverAlways].
     * Sync w db, the  never_always_d  PostgreSQL custom domain.
     */
-  sealed abstract class NeverAlways(val IntVal: i32) { def toInt: i32 = IntVal }
+  sealed abstract class NeverAlways(val IntVal: i32) {
+    def toInt: i32 = IntVal
+    def isNeverMaybeCanContinue: Bo =
+      IntVal <= 2 // that's <= NeverButCanContinue
+  }
+
   object NeverAlways {
     //se object Never extends NeverAlways(1)
     case object NeverButCanContinue extends NeverAlways(2)
@@ -624,7 +666,13 @@ package object core {
   }
 
   RENAME // to ErrMsgCode
-  case class ErrorMessageCode(message: ErrorMessage, code: String)
+  case class ErrorMessageCode(message: ErrorMessage, code: String) {
+    def toMsgCodeStr: St = s"$message [$code]"
+  }
+  type ErrMsgCode = ErrorMessageCode
+  object ErrMsgCode {
+    def apply(message: ErrMsg, code: St): ErrMsgCode = ErrorMessageCode(message, code = code)
+  }
 
 
   // Renaming to Check.
@@ -812,6 +860,9 @@ package object core {
     reqr: Pat,
     browserIdData: BrowserIdData,
   ) {
+    def id: PatId = reqr.id
+    def isAdmin: Bo = reqr.isAdmin
+    def isStaff: Bo = reqr.isStaff
     def toWho: Who = Who(reqr.trueId2, browserIdData, reqr.isAnon)
   }
 
@@ -1011,6 +1062,15 @@ package object core {
     object MostRecentFirst extends OrderBy { override def isDescending = true }
   }
 
+  /* Maybe later?:  [sort_tag_vals_in_pg]
+  sealed trait PostsWithTagOrder { def desc: Bo }
+  object PostsWithTagOrder {
+    case class ByPublishedAt(desc: Bo = false) extends PostsWithTagOrder
+    case class ByTagValue(desc: Bo = false, valType: St) extends PostsWithTagOrder {
+      require(valType == "i32" || valType == "f64" || valType == "str",
+            s"Bad val type: $valType [TyE703MRADLU5]")
+    }
+  } */
 
   // Feature flags
 
@@ -1203,13 +1263,17 @@ package object core {
   case class StuffToIndex(
     postsBySite: Map[SiteId, immutable.Seq[Post]],
     pagesBySitePageId: Map[SitePageId, PageMeta],
-    tagsBySitePostId: Map[SitePostId, immutable.Set[TagLabel]]) {
+    tagsBySitePostId: Map[SitePostId, imm.Seq[Tag]],
+    tagsBySitePostId_old: Map[SitePostId, immutable.Set[TagLabel]]) {
 
     def page(siteId: SiteId, pageId: PageId): Option[PageMeta] =
       pagesBySitePageId.get(SitePageId(siteId, pageId))
 
-    def tags(siteId: SiteId, postId: PostId): Set[TagLabel] =
-      tagsBySitePostId.getOrElse(SitePostId(siteId, postId), Set.empty)
+    def tags(siteId: SiteId, postId: PostId): imm.Seq[Tag] =
+      tagsBySitePostId.getOrElse(SitePostId(siteId, postId), Nil)
+
+    def tags_old(siteId: SiteId, postId: PostId): Set[TagLabel] =
+      tagsBySitePostId_old.getOrElse(SitePostId(siteId, postId), Set.empty)
 
     def isPageDeleted(siteId: SiteId, pageId: PageId): Boolean = {
       val p = page(siteId, pageId)
@@ -1987,6 +2051,9 @@ package object core {
   // that an attacker / 'threat actor' can 'exploit'.
   def SECURITY = ()       // Some security issue, not necessarily so very important
   def CSP_MISSING = ()    // Content-Security-Policy missing on this page / route
+  def SLEEPING = ()       // Not urgent, doesn't matter currently (or barely matters).
+                          // But if there're changes, so this start mattering, then
+                          // it might be minor, might be major.
 
   def SELF_DOS = ()
   def ASTROTURFING = ()   // Someone creates many accounts and pretends to be many people

@@ -1062,6 +1062,11 @@ trait UserDao {
   }
 
 
+  def getMembersByUsernames(usernames: Iterable[Username]): ImmSeq[Opt[Member]] = {
+    usernames.to[Vec].map(getMemberByUsername)
+  }
+
+
   def getMemberByUsername(username: String): Option[Member] = {
     // The username shouldn't include '@'. Also, if there's a '@', might be
     // an email addr not a username.
@@ -1983,19 +1988,38 @@ trait UserDao {
   }
 
 
-  def savePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, byWho: Who): U = {
+  def savePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, reqrInf: ReqrInf): U = {
     _editMemberThrowUnlessSelfStaff(
-          pageNotfPref.peopleId, byWho, "TyE2AS0574", "change notf prefs") {
-            case EditMemberCtx(tx, _, _, _) =>
+          pageNotfPref.peopleId, reqrInf.toWho, "TyE2AS0574", "change notf prefs") {
+            case c @ EditMemberCtx(tx, _, _, _) =>
+      SECURITY; SLEEPING
+      /* [check_see_page]  Check if byWho  *and*  PageNotfPref.peopleId  may see the page.
+      Sth like:
+      pageNotfPref.pageId foreach { id =>
+        val page = tx.loadPageMeta(id) getOrElse {
+          security.throwIndistinguishableNotFound("SAVENOTFPREF_0SEEPG")
+        }
+        throwIfMayNotSeePage(page, Some(c.member))(tx)
+        throwIfMayNotSeePage(page, Some(byWho))(tx)
+      }
+      pageNotfPref.pagesInCategoryId foreach { catId =>
+        No!:  val authzCtx = getForumAuthzContext(Some(c.member))
+        throwIfMayNotSeeCategory(catId, Some(c.member))(tx)
+        throwIfMayNotSeeCategory(catId, Some(byWho))(tx)
+      } */
       tx.upsertPageNotfPref(pageNotfPref)
     }
   }
 
 
-  def deletePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, byWho: Who): Unit = {
+  def deletePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, reqrInf: ReqrInf): Unit = {
     _editMemberThrowUnlessSelfStaff(
-          pageNotfPref.peopleId, byWho, "TyE5KP0GJL", "delete notf prefs") {
+          pageNotfPref.peopleId, reqrInf.toWho, "TyE5KP0GJL", "delete notf prefs") {
             case EditMemberCtx(tx, _, _, _) =>
+      SECURITY; SLEEPING
+      // [check_see_page]  Can be enough to check if byWho may see the page
+      // — because *removing* notfs prefs for pageNotfPref.peopleId if they may not
+      // see that content anyway, is ok?
       tx.deletePageNotfPref(pageNotfPref)
     }
   }

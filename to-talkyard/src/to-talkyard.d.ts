@@ -28,7 +28,8 @@ interface CategoryDumpV0 {
 interface PageToAdd {
   dbgSrc?: string;
   id: string;
-  extId?: ExtId;
+  extId?: ExtId;  // deprecated
+  refId?: ExtId;  // use instead
   altIds?: string[];
   extImpId?: ExtImpId;
   folder?: string;

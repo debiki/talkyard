@@ -60,6 +60,23 @@ trait SearchSiteDaoMixin extends SiteTransaction {
     runUpdateSingleRow(statement, values)
   }
 
+  def indexPostIdsSoon_unimpl(postIds: Set[PostId]) {
+    unimpl("Not implemented:  indexPostIdsSoon_unimpl")
+    /* Sth like this:
+    val statement = s"""
+        insert into index_queue3 (action_at, site_id, site_version, post_id, post_rev_nr)
+        select ?, ?, ($selectSiteVersion), post_id, post_rev_nr
+        from posts3 where site_id = ? and unique_post_id in (${makeInListFor(postIds)})
+        $OnPostConflictAction """
+
+    val values = List(
+        tx.now(), siteId.asAnyRef, siteId.asAnyRef,
+        ...postIds.asAnyRef,
+        // For looking up the post rev nr:
+        siteId.asAnyRef, post.id.asAnyRef)
+    runUpdate(statement, values)
+     */
+  }
 
   def indexAllPostsOnPage(pageId: PageId) {
     val statement = s"""

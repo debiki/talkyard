@@ -29,12 +29,13 @@ import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents, Result}
+import org.scalactic.{Good, Or, Bad}
 
 
 /** The Query API, Do API and Query-Do API, see: tests/e2e-wdio7/pub-api.ts
   */
-class QueryDoController @Inject()(cc: ControllerComponents, edContext: TyContext)
-  extends TyController(cc, edContext) {
+class QueryDoController @Inject()(cc: ControllerComponents, tyContext: TyContext)
+  extends TyController(cc, tyContext) {
 
 
   def apiV0_query(): Action[JsValue] = ApiSecretPostJsonAction(  // [PUB_API]
@@ -61,17 +62,22 @@ class QueryDoController @Inject()(cc: ControllerComponents, edContext: TyContext
         queryOnly: Bo = false): Result = {
     import request.{body, dao}
     val pretty = parseOptBo(body, "pretty")
-    val mainField =
-          if (doOnly) "doActions"
-          else if (queryOnly) "manyQueries"
-          else "queriesAndActions"
+    val (mainField, altName) =
+          if (doOnly) ("doActions", "")
+          else if (queryOnly) ("runQueries", "manyQueries")
+          else ("queriesAndActions", "")
 
-    val taskJsValList: Seq[JsValue] = parseJsArray(body, mainField)
-    var itemNr = -1
+    // See [api_do_as] in ../../../../../docs/ty-security.adoc .
+    val mayDoOnlyAs: Opt[Pat] =
+          if (request.theReqer.isSysbot) None  // No restriction. (Or .isAdmin instead?)
+          else Some(request.theReqer)  // Some restriction: This user only
+
+    val taskJsValList: Seq[JsValue] = parseJsArray(body, mainField, altName = altName)
+    var itemNr = 0
 
     // [do_api_limits]
-    throwForbiddenIf(taskJsValList.length > 5, "TyEAPI2MNYTSKS",
-          "Too many API tasks — at most 5, for now")
+    throwForbiddenIf(taskJsValList.length > 6, "TyEAPI2MNYTSKS",
+          "Too many API tasks — at most 6, for now")
 
     val tasks: Seq[ApiTask] = taskJsValList map { jsVal =>
       itemNr += 1
@@ -81,7 +87,7 @@ class QueryDoController @Inject()(cc: ControllerComponents, edContext: TyContext
       val listQueryJsOb = parseOptJsObject(jsOb, "listQuery")
       val searchQueryJsOb = parseOptJsObject(jsOb, "searchQuery")
       // Any nested queries or actions? (E.g. for fine grained transaction control.)
-      val nestedQueries: Opt[IndexedSeq[JsValue]] = parseOptJsArray(jsVal, "manyQueries")
+      val nestedQueries: Opt[IndexedSeq[JsValue]] = parseOptJsArray(jsVal, "runQueries", altName = "manyQueries")
       val nestedActions: Opt[IndexedSeq[JsValue]] = parseOptJsArray(jsVal, "doActions")
 
       val anyQueryDefined =
@@ -109,12 +115,13 @@ class QueryDoController @Inject()(cc: ControllerComponents, edContext: TyContext
             "TyEQUERYUNIMPL2", o"""Not implemented:  /-/v0/query-do
                   and nested queries or actions""")
 
-      def whatItem = s"Item nr $itemNr in the $mainField list (zero indexed)"
+      def whatItem = s"Item nr $itemNr in the $mainField list"
 
-      val queryOrAction = {
+      val queryOrAction: ApiAction = {
+        val parser = ActionParser(dao, mayDoOnlyAs = mayDoOnlyAs, IfBadAbortReq)
         if (doWhatSt.isDefined) {
-          ActionParser(dao).parseAction(doWhatSt.get, jsOb) getOrIfBad { problem =>
-            throwBadReq("TyEAPIACTN", s"$whatItem is a bad action: $problem")
+          parser.parseAction(doWhatSt.get, jsOb) getOrIfBad { msg =>
+            throwBadReq("TyEAPIACTN", s"$whatItem is a bad action: $msg")
           }
         } /*
         else if (getQueryJsOb.isDefined) {
@@ -132,32 +139,38 @@ class QueryDoController @Inject()(cc: ControllerComponents, edContext: TyContext
         }
       }
 
+      // Hmm, dupl check. The other one allows Sysbot only, oh well. [api_do_as]
+      if (queryOrAction.asWho.id != request.theReqer.id) {
+        throwForbiddenIf(!request.theReqer.isAdmin,
+              "TyEDOA_DOASOTHR", "Only Sysbot and admins may do things on behalf of others")
+      }
+
       queryOrAction
     }
 
-    val results = queryAndDo(tasks, dao, request.reqrId)
+    val results = queryAndDo(tasks, dao, request.reqrInf)
 
     OkApiJson(Json.obj(
           "results" -> JsArray(results)))
   }
 
 
-  private def queryAndDo(tasks: Seq[ApiTask], dao: SiteDao, reqerId: ReqrId)
+  private def queryAndDo(tasks: Seq[ApiTask], dao: SiteDao, reqrInf: ReqrInf)
           : Seq[JsObject] = {
-    var itemNr = -1
-    val actionDoer = ActionDoer(dao, reqerId)  // later: singleTransaction = true
+    var itemNr = 0
+    val actionDoer = ActionDoer(dao, reqrInf, IfBadAbortReq)  // later: singleTransaction = true
     tasks map { task =>
       itemNr += 1
       task match {
         case a: ApiAction =>
           // Later:  actionDoer.startTransactionIfNotDone
           actionDoer.doAction(a) match {
-            case p: Problem =>  // (message, siteId, adminInfo, debugInfo, anyException)
+            case Bad(msg) =>  // (message, siteId, adminInfo, debugInfo, anyException)
               // For now, just abort everything.
-              throwBadReq("TyEAPIERR", s"Error doing ${a.doWhat.toString} action: ${
-                    p.message}")
-            case Fine =>
-              Json.obj("ok" -> JsTrue)
+              throwBadReq("TyEAPIERR", s"Error doing task nr $itemNr, ${
+                                                        a.doWhat.toString}: $msg")
+            case Good(jsOb) =>
+              Json.obj("ok" -> JsTrue, "res" -> jsOb)
           }
       }
     }

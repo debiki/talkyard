@@ -17,6 +17,23 @@
 .s_SP_SearchB
   vertical-align: baseline;
 
+
+.c_SP_QueryWarns
+  list-style: none;
+  margin-top: 6px;
+  margin-left: 60px; // somewhat left-aligns with text input, oh well
+  li
+    margin: 0 0 0.6em;
+    background: $orangeTipsBackground
+    .n_Err_Msg
+      font-weight: bold;
+      color: $errorColor
+      white-space: pre-wrap;
+    .n_Err_Code
+      font-style: monospace;
+      font-size: 70%;
+      margin-left: 2ex;
+
 .s_SP_Adv
   margin: 20px 0;
 

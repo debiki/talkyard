@@ -68,7 +68,8 @@ trait PostsDao {
   def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
         postType: PostType, deleteDraftNr: Option[DraftNr],
         byWho: Who, spamRelReqStuff: SpamRelReqStuff,
-        anonHow: Opt[WhichAnon] = None)
+        anonHow: Opt[WhichAnon] = None, refId: Opt[RefId] = None,
+        withTags: ImmSeq[TagTypeValue] = Nil)  // oops forgot_to_use
         : InsertPostResult = {
 
     val authorId = byWho.id
@@ -92,7 +93,7 @@ trait PostsDao {
     val (newPost, author, notifications, anyReviewTask) = writeTx { (tx, staleStuff) =>
       deleteDraftNr.foreach(nr => tx.deleteDraft(byWho.id, nr))
       insertReplyImpl(textAndHtml, pageId, replyToPostNrs, postType,
-            byWho, spamRelReqStuff, now, authorId, tx, staleStuff, anonHow)
+            byWho, spamRelReqStuff, now, authorId, tx, staleStuff, anonHow, refId = refId)
     }
 
     refreshPageInMemCache(pageId)
@@ -116,7 +117,8 @@ trait PostsDao {
         authorId: UserId,
         tx: SiteTx, staleStuff: StaleStuff,
         doAsAnon: Opt[WhichAnon] = None,
-        skipNotfsAndAuditLog: Boolean = false)
+        skipNotfsAndAuditLog: Boolean = false,
+        refId: Opt[RefId] = None)
         : (Post, Participant, Notifications, Option[ReviewTask]) = {
 
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE25JP5L2")
@@ -213,6 +215,7 @@ trait PostsDao {
 
     val newPost = Post.create(
       uniqueId = uniqueId,
+      extImpId = refId,
       pageId = pageId,
       postNr = postNr,
       parent = anyParent,
@@ -2421,6 +2424,9 @@ trait PostsDao {
     writeTx { (tx, staleStuff) =>
       val post = tx.loadThePost(pageId, postNr = postNr)
       val voter = tx.loadTheParticipant(voterId)
+      SECURITY // Should access check the person *removing* the vote. [check_see_page]
+      // It is, however, ok for admin Alice to remove member Mema's vote, from a post
+      // Mema can no longer see, but Alice can access.
       throwIfMayNotSeePost(post, Some(voter))(tx)
 
       val gotDeleted = tx.deleteVote(pageId, postNr = postNr, voteType, voterId = voterId)
@@ -2473,6 +2479,7 @@ trait PostsDao {
       val page = newPageDao(pageId, tx)
       val voter = tx.loadTheParticipant(voterId)
       SECURITY // minor. Should be if-may-not-see-*post*. And should do a pre-check in VoteController.
+      // [check_see_page]  And should access check both the person adding the vote, and the voter?
       throwIfMayNotSeePage(page, Some(voter))(tx)
 
       val post = page.parts.thePostByNr(postNr)
@@ -3315,6 +3322,10 @@ trait PostsDao {
                   onlyOpenPosts = q.onlyOpen, limit = q.limit)
             val postIds = rels.map(_.toNodeId)
             tx.loadPostsByIdKeepOrder(postIds.distinct)
+          case q: PostQuery.PostsWithTag =>
+            TESTS_MISSING // TyTLISTTAGDPOSTS
+            tx.loadPostsByTag(tagTypeId = q.tagTypeId, inclUnapproved = q.inclUnapproved,
+                  limit = query.limit, orderBy = q.orderBy)
           case _ =>
             tx.loadPostsByQuery(query)
         }

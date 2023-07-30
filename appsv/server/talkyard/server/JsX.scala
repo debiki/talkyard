@@ -42,6 +42,12 @@ import scala.util.matching.Regex
 //
 object JsX {   RENAME // to JsonPaSe
 
+  def JsErrMsgCode(err: ErrMsgCode): JsObject = {  // ts: ErrMsgCode
+    Json.obj(
+        "errMsg" -> JsString(err.message),
+        "errCode" -> JsString(err.code))
+  }
+
   def JsSiteInclDetails_old(site: SiteInclDetails): JsObject = {
     Json.obj(
       "id" -> site.id,
@@ -828,16 +834,37 @@ object JsX {   RENAME // to JsonPaSe
     Json.obj(
         "id" -> tagType.id,
         "canTagWhat" -> tagType.canTagWhat,
-        "dispName" -> tagType.dispName)
+        "dispName" -> tagType.dispName,
+        "urlSlug" -> JsStringOrNull(tagType.urlSlug),
+        "wantsValue" -> JsNum32OrNull(tagType.wantsValue.map(_.toInt)),
+        "valueType" -> JsNum32OrNull(tagType.valueType.map(_.toInt)))
+  }
+
+
+  def JsTagTypeMaybeRefId(tagType: TagType, inclRefId: Bo): JsObject = {
+    var res = JsTagType(tagType)
+    if (inclRefId) tagType.refId foreach { refId =>
+      res += "refId" -> JsString(refId)
+    }
+    res
+  }
+
+
+  def JsTagTypeArray(tagTypes: Iterable[TagType], inclRefId: Bo): JsArray = {
+    JsArray(tagTypes.map(tt => JsTagTypeMaybeRefId(tt, inclRefId = inclRefId)).to[Vec])
   }
 
 
   def parseTagType(jsVal: JsValue, createdById: Opt[PatId])(mab: MessAborter): TagType = {
     val jOb = asJsObject(jsVal, "tag type")
     val id = parseInt32(jOb, "id")
+    val refId = parseOptSt(jOb, "refId")
     val canTagWhat = parseInt32(jOb, "canTagWhat")
     val dispName = parseSt(jOb, "dispName")
+    val anySlug = parseOptSt(jOb, "urlSlug").noneIfBlank
     val createdByIdInJson = parseOptInt32(jOb, "createdById")
+    val wantsValue: Opt[NeverAlways] = parseOptNeverAlways(jOb, "wantsValue")
+    val valueType: Opt[TypeValueType] = parseOptTypeValueType(jOb, "valueType")
     createdById foreach { id =>
       if (createdByIdInJson.isSomethingButNot(id)) {
         mab.abort("TyE2MW04MEFQ2", "createdById in JSON is wrong")
@@ -846,10 +873,13 @@ object JsX {   RENAME // to JsonPaSe
     val byId = createdById.orElse(createdByIdInJson) getOrDie "TyE603MRAI5"
     TagType(
           id = id,
+          refId = refId,
           canTagWhat = canTagWhat,
-          urlSlug_unimpl = None,
+          urlSlug = anySlug,
           dispName = dispName,
-          createdById = byId)(mab)
+          createdById = byId,
+          wantsValue = wantsValue,
+          valueType = valueType)(mab)
   }
 
 
@@ -857,12 +887,26 @@ object JsX {   RENAME // to JsonPaSe
     var jOb = Json.obj(
         "id" -> tag.id,
         "tagTypeId" -> tag.tagTypeId)
-    tag.onPatId foreach { patId =>
-      jOb += "onPatId" -> JsNumber(patId)
+    tag.onPatId foreach { id =>
+      jOb += "onPatId" -> JsNumber(id)
     }
-    tag.onPostId foreach { postId =>
-      jOb += "onPostId" -> JsNumber(postId)
+    tag.onPostId foreach { id =>
+      jOb += "onPostId" -> JsNumber(id)
     }
+    tag.valType foreach { t =>
+      jOb += "valType" -> JsNumber(t.toInt)
+    }
+    tag.valInt32 foreach { v =>
+      jOb += "valInt32" -> JsNumber(v)
+    }
+    tag.valFlt64 foreach { v =>
+      jOb += "valFlt64" -> JsNumber(v)
+    }
+    tag.valStr foreach { v =>
+      jOb += "valStr" -> JsString(v)
+    }
+    // valUrl?: St;      // later
+    // valJson?: Object; //
     jOb
   }
 
@@ -877,7 +921,13 @@ object JsX {   RENAME // to JsonPaSe
           tagTypeId = tagTypeId,
           parentTagId_unimpl = None,
           onPatId = onPatId,
-          onPostId = onPostId)(mab)
+          onPostId = onPostId,
+          // Dupl code, ok? [parse_tag_vals]
+          valType = parseOptTypeValueType(jOb, "valType"),
+          valInt32 = parseOptInt32(jOb, "valInt32"),
+          valFlt64 = parseOptFloat64(jOb, "valFlt64"),
+          valStr = parseOptSt(jOb, "valStr"),
+          )(mab)
   }
 
 

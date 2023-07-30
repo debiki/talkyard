@@ -1671,28 +1671,19 @@ export function loadForumCategoriesTopics(forumPageId: St, topicFilter: St,
 }
 
 
-// SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead, & change the reply
+// Change the reply
 // 'users' field to 'usersBrief', no, 'patsBr'? 'Tn = Tiny, Br = Brief, Vb = Verbose?  [.get_n_patch]
 export function loadForumTopics(categoryId: CatId, orderOffset: OrderOffset,
     onOk: (resp: LoadTopicsResponse) => Vo) {
   const url = '/-/list-topics?categoryId=' + categoryId + '&' +
       ServerApi.makeForumTopicsQueryParams(orderOffset);
-  get(url, (resp: LoadTopicsResponse) => {
-    ReactActions.patchTheStore(resp.storePatch);  // [2WKB04R]
-    onOk(resp);
-  });
+  getAndPatchStore(url, onOk);  // [2WKB04R]
 }
 
 
-// SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead, & change the reply
-// 'users' field to 'usersBrief'.  [.get_n_patch]
-export function loadTopicsByUser(userId: UserId,
-        doneCallback: (topics: Topic[]) => void) {
+export function loadTopicsByUser(userId: UserId, onOk: (topics: Topic[]) => void) {
   const url = `/-/list-topics-by-user?userId=${userId}`;
-  get(url, (resp: LoadTopicsResponse) => {
-    ReactActions.patchTheStore(resp.storePatch);
-    doneCallback(resp.topics);
-  });
+  getAndPatchStore(url, r => onOk(r.topics));
 }
 
 
@@ -2102,25 +2093,29 @@ export function loadPostByNr(postNr: PostNr, success: (patch: StorePatch) => voi
 }
 
 
-// SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead.  [.get_n_patch]
 export function loadPostsByAuthor(authorId: UserId, showWhat: 'Tasks' | U,
-          onlyOpen: Bo, onOk: (resp) => Vo) {
+          onlyOpen: Bo, onOk: (posts: PostWithPage[]) => Vo) {
   const showWhatParam = showWhat ? `&relType=${PatPostRelType.AssignedTo}` : '';
   const onlyOpenParam = onlyOpen ? '&which=678321' : '';  // for now.
   // RENAME 'authorId' to 'relToPatId'?
   const url = `/-/list-posts?authorId=${authorId}${showWhatParam}${onlyOpenParam}`
-  get(url, function (resp: LoadPostsResponse) {
-    ReactActions.patchTheStore({ tagTypes: resp.tagTypes, usersBrief: resp.patsBrief });
-    onOk(resp);
-  });
+  getAndPatchStore(url, (r: LoadPostsResponse) => onOk(r.posts));
 }
 
 
-export function makeDownloadMyContentUrl(authorId: UserId) {
+export function loadPostsWithTag(ps: { typeIdOrSlug: TagTypeId | St, orderBy?: St },
+        onOk: (typeId: TagTypeId, posts: PostWithPage[]) => V) {
+  const anyOrderBy = !ps.orderBy ? '' : `&orderBy=${ps.orderBy}`;
+  const url = `/-/list-posts-with-tag?typeIdOrSlug=${ps.typeIdOrSlug}${anyOrderBy}`;
+  getAndPatchStore(url, (r: LoadPostsWithTagResponse) => onOk(r.typeId, r.posts));
+}
+
+
+export function makeDownloadMyContentUrl(authorId: UserId): St {
   return `/-/download-my-content?authorId=${authorId}`;
 }
 
-export function makeDownloadPersonalDataUrl(authorId: UserId) {
+export function makeDownloadPersonalDataUrl(authorId: UserId): St {
   return `/-/download-personal-data?userId=${authorId}`;
 }
 
@@ -2170,8 +2165,8 @@ export function editPostSettings(postId: PostId, settings: PostSettings) {
 }
 
 
-export function createTagType(newTagType: TagType, onOk: (newWithId: TagType) => Vo) {
-  postAndPatchStore(`/-/create-tag-type`, (r: StorePatch) => onOk(r.tagTypes[0]), newTagType);
+export function upsertType(type: TagType, onOk: (type: TagType) => V, onErr?: () => V) {
+  postAndPatchStore(`/-/upsert-type`, (r: StorePatch) => onOk(r.tagTypes[0]), type, onErr);
 }
 
 
@@ -2206,13 +2201,15 @@ export function loadMyTagNotfLevels() {
 } */
 
 
-export function addRemoveTags(ps: { add: Tag[], remove: Tag[] }, onOk: () => Vo) {
-  postJsonSuccess('/-/add-remove-tags', (response) => {
+export function updateTags(ps: { add?: Tag[], remove?: Tag[], edit?: Tag[] },
+          onOk?: () => V) {
+  postJsonSuccess('/-/update-tags', (response) => {
     ReactActions.patchTheStore(response);
-    onOk();
+    onOk && onOk();
   }, {
-    tagsToAdd: ps.add,
-    tagsToRemove: ps.remove,
+    tagsToAdd: ps.add || [],
+    tagsToRemove: ps.remove || [],
+    tagsToEdit: ps.edit || [],
   });
 }
 

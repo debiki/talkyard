@@ -65,6 +65,7 @@ trait PagesDao {
   MOVE // loadMaySeePagesInCategory and listMaySeeTopicsInclPinned to here?  [move_list_pages]
 
   REMOVE; CLEAN_UP // use createPage2 instead, and rename it to createPage().
+  @deprecated
   def createPage(pageRole: PageType, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
         anyFolder: Option[String], anySlug: Option[String], title: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
@@ -73,8 +74,8 @@ trait PagesDao {
         discussionIds: Set[AltPageId] = Set.empty, embeddingUrl: Option[String] = None,
         extId: Option[ExtId] = None,
         ): PagePathWithId = {
-
-    createPage2(pageRole, pageStatus = pageStatus, anyCategoryId = anyCategoryId,
+    val withTags = Nil
+    createPage2(pageRole, pageStatus = pageStatus, anyCategoryId = anyCategoryId, withTags,
           anyFolder = anyFolder, anySlug = anySlug, title = title,
           bodyTextAndHtml = bodyTextAndHtml, showId = showId,
           deleteDraftNr = deleteDraftNr, byWho = byWho,
@@ -87,6 +88,7 @@ trait PagesDao {
 
 
   def createPage2(pageRole: PageType, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
+        withTags: ImmSeq[TagTypeValue],
         anyFolder: Option[String], anySlug: Option[String], title: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
         spamRelReqStuff: SpamRelReqStuff,
@@ -129,7 +131,7 @@ trait PagesDao {
     val result = writeTx { (tx, staleStuff) =>
       val (pagePath, bodyPost, anyReviewTask) =
             createPageImpl(
-                pageRole, pageStatus, anyCategoryId,
+                pageRole, pageStatus, anyCategoryId, withTags,
                 anyFolder = anyFolder, anySlug = anySlug, showId = showId,
                 title = title, body = bodyTextAndHtml,
                 pinOrder = None,
@@ -160,6 +162,7 @@ trait PagesDao {
   def createPageImpl(pageRole: PageType,
       pageStatus: PageStatus,
       anyCategoryId: Option[CategoryId],
+      withTags: ImmSeq[TagTypeValue],
       anyFolder: Option[String],
       anySlug: Option[String],
       showId: Boolean,
@@ -309,6 +312,15 @@ trait PagesDao {
         bodyHiddenById = ifThenSome(hidePageBody, authorMaybeAnon.id), 
         bodyHiddenReason = None) // add `hiddenReason` function parameter?
 
+    var nextTagId: TagId =
+          if (withTags.nonEmpty) tx.nextTagId()
+          else -1
+    val newTags: ImmSeq[Tag] = withTags map { typeAndVal: TagTypeValue =>
+      val tag: Tag = typeAndVal.withIdAndPostId(nextTagId, postId = bodyPost.id, IfBadAbortReq)
+      nextTagId += 1
+      tag
+    }
+
     val uploadRefs = body.uploadRefs
     if (Globals.isDevOrTest) {
       val uplRefs2 = findUploadRefsInPost(bodyPost, site = Some(site))
@@ -393,6 +405,7 @@ trait PagesDao {
     tx.insertPagePath(pagePath)
     tx.insertPost(titlePost)
     tx.insertPost(bodyPost)
+    newTags foreach tx.insertTag
 
     // By default, one follows all activity on a page one has created — unless this is some page
     // that gets auto created by System. [EXCLSYS]

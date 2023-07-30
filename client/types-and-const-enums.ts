@@ -25,8 +25,8 @@
 //
 // And this or this — I think "boolean" is so long and distracting:
 //
-//   const shallFeedLion: boolean = countDaysSinceLastZebra();
-//   const shallFeedLion: Bo = countDaysSinceLastZebra();
+//   const shallFeedLion: boolean = countDaysSinceLastZebra() > 9.8 - lionSize - zebraYuminess;
+//   const shallFeedLion: Bo = countDaysSinceLastZebra() > 9.8 - lionSize - zebraYuminess;
 //
 // And thanks to St and Nr, lots of line breaks in function signatures,
 // can be avoided. — Really short names, for really frequently used things?
@@ -43,6 +43,7 @@ type Ay = any;  // but not 'An' because that sounds like 'an'. Upd: Skip this. U
 type A = any;   // Why not A! Let's use 'A'.
 type Bo = boolean;
 type Nr = number;
+type Ix = number; // zero based index into an array
 type St = string;
 type Bitfield = Nr;  // in Javascript, only 53? bits, the rest is for the exponent [make_opaque_type]
 
@@ -113,14 +114,17 @@ type WhenMins = number; // Unix time: minutes since 1970, needs just 4 bytes
 type ExtId = string;
 type ExtImpId = ExtId; // RENAME to ExtId
 
-type Ref = string;
+type Ref = string;   // e.g. 'rid:some-ref-id' or 'username:some_username'
+type RefId = string; // e.g. 'some-ref-id',  i.e. the actual id only (no 'rid:' prefix)
 type RefOrId = Ref | number;
 
 
 const enum UrlPaths {
   AdminLogin = '/-/admin-login',
   AuthnRoot = '/-/authn/',
-  Groups = '/-/groups/'
+  Groups = '/-/groups/',
+  SearchQ = '/-/search?q=',
+  Tags = '/-/tags/',
 }
 
 
@@ -162,6 +166,41 @@ const enum ShowEmbAuthnBtnsBitf {
 
 const enum QueryParams {
   TopicFilter = 'filter',
+}
+
+
+/// Sync with TypeValueType in Scala:
+const enum TypeValueType {
+  //Null          = -3,
+  //BoolTrue      = -2,
+  //BoolFalse     = -1,
+
+  NoValue         =  0,
+
+  Int32           =  1,
+  // Int53        =  2,
+  // BigInt       =  3,
+  // Flt32        =  4,
+  Flt64           =  5,
+  // BigDecimal   =  6,
+  // Int32Range?
+  // Int53Range?
+  // BigIntRange?
+  // Flt32Range?
+  // Flt64Range?
+  // BigDecRange?
+
+  StrKwd          = 17,
+  /*
+  StrTxt          = 18,
+  StrUrl          = 19,
+  SemanticVersion = 2?,
+
+  Date            = 33,
+  DateRange       = 34,
+
+  LocationLatLong = 49,
+  */
 }
 
 
@@ -447,6 +486,10 @@ const enum AutoPageType {
   GroupProfilePage = -2,
   AllGroupsPage = -3,
   SearchPage = -11,
+  TagsList = -13,
+  AboutOneTag = -14,
+  //BadgesList = -15,
+  //AboutOneBadge = -16,
   //StaffSpace = -21,
   AdminArea = -22,
   //SuperAdminArea = -23,
@@ -693,6 +736,12 @@ const enum LayoutFor {   // or maybe ..From?
   PageNoTweaks   = PageWithTweaks + 1,
   Ancestors      = PageNoTweaks + 1,   // RENAME to Cats?
   SiteSettings   = Ancestors + 1,
+}
+
+
+const enum DiagFlavor {
+  Dropdown = 1,
+  Dialog   = 2,
 }
 
 

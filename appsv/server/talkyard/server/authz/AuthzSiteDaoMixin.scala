@@ -108,6 +108,7 @@ trait AuthzSiteDaoMixin {
   }
 
 
+  RENAME // to  mayOtherUserSeePage_useCache  ?
   /** Looks up permissions and categories in the mem cache.
     */
   def maySeePageUseCache(pageMeta: PageMeta, user: Opt[Pat], maySeeUnlisted: Bo = true)
@@ -115,8 +116,18 @@ trait AuthzSiteDaoMixin {
     maySeePageImpl(pageMeta, user, anyTx = None, maySeeUnlisted = maySeeUnlisted)
   }
 
+  RENAME // to  mayReqrSeePage_useCache  ?  & explain is only for the current requester
+  // — since maySeePageWhenAuthContext() assumes the  [authn_aprvd_checks] checks
+  // have been done already.
+  //
+  // Or combine mayOtherUserSeePage_useCache and mayReqrSeePage_useCache to one: ?
+  //
+  //   maySeePage_useCache(reqrInf: Opt[ReqrInf], otherPat: Opt[Pat], pageMeta, maySeeUnlisted)
+  //
   def maySeePageUseCacheAndAuthzCtx(pageMeta: PageMeta, authzContext: AuthzCtxOnPages,
         maySeeUnlisted: Bo = true): SeePageResult = {
+    // This skips the checks in maySeePageImpl() — those checks were done already, for
+    // the requester, in PlainApiActions.runBlockIfAuthOk().  [authn_aprvd_checks]
     maySeePageWhenAuthContext(pageMeta, authzContext, anyTx = None,
         maySeeUnlisted = maySeeUnlisted)
   }
@@ -136,6 +147,12 @@ trait AuthzSiteDaoMixin {
     }
     everyoneCanSee
   }
+
+  /*
+  def canSeeCategory(catId: CatId, reqr: ReqrInf, otherPat: Opt[Pat], tx: SiteTx): Bo ?
+  def canOtherUserSeeCategory(catId: CatId, pa: Opt[Pat], tx: SiteTx): Bo ?
+  def canSeeCategory_useTxMostly(catId: CatId, pa: Opt[Pat], tx: SiteTx): Bo ?
+  */
 
 
   /** Note: If may *probably* see the page. Returns true also for /-/user/... although perhaps
@@ -202,13 +219,13 @@ trait AuthzSiteDaoMixin {
       return PageCtx(anyCats(pageMeta, anyTx))
 
     val settings = getWholeSiteSettings()
-    if (settings.userMustBeAuthenticated) {
+    if (settings.userMustBeAuthenticated) {  // [authn_aprvd_checks]
       if (!user.exists(u => u.isAuthenticated))
         return NotSeePage("TyMLOGINREQ")
-
-      if (settings.userMustBeApproved && !user.exists(_.isApprovedOrStaff))
-        return NotSeePage("TyMNOTAPPR")
     }
+
+    if (settings.userMustBeApproved && !user.exists(_.isApprovedOrStaff))
+      return NotSeePage("TyMNOTAPPR")
 
     val groupIds: immutable.Seq[UserId] =
       anyTx.map(_.loadGroupIdsMemberIdFirst(user)) getOrElse {
@@ -227,6 +244,10 @@ trait AuthzSiteDaoMixin {
   }
 
 
+  /** Call directly, only if `authzContext` is for the current requester — then,
+    * some authn checks have been done already,  in  PlainApiActions.runBlockIfAuthOk().
+    * But otherwise, they wouldn't happen.  [authn_aprvd_checks]
+    */
   private def maySeePageWhenAuthContext(pageMeta: PageMeta, authzContext: AuthzCtxOnPages,
         anyTx: Opt[SiteTx], maySeeUnlisted: Bo = true): SeePageResult = {
 

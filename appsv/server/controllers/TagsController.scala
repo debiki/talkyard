@@ -18,7 +18,7 @@
 package controllers
 
 import com.debiki.core._
-import com.debiki.core.Prelude.{IfBadAbortReq, IfBadDie, throwUnimpl}
+import com.debiki.core.Prelude.{IfBadAbortReq, IfBadDie, JsEmptyObj2, throwUnimpl}
 import debiki.{JsonMaker, RateLimits, SiteTpi}
 import debiki.EdHttp._
 import talkyard.server.{TyContext, TyController}
@@ -38,69 +38,70 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  // For now, admin only?
-  def tagsApp(clientRoute: String): Action[Unit] = StaffGetAction { apiReq =>
+  def tagsApp(whatever: St): Action[Unit] = AsyncGetAction { req =>
     _root_.controllers.dieIfAssetsMissingIfDevTest()
-    val siteTpi = SiteTpi(apiReq)
-    CSP_MISSING
-    val pageBody = views.html.adminPage(siteTpi, appId = "theTagsApp").body
-    Ok(pageBody) as HTML
+    RENAME // templates.users  to maybe  templates.moreApp?
+    val htmlStr = views.html.templates.users(SiteTpi(req)).body
+    ViewPageController.addVolatileJsonAndPreventClickjacking2(htmlStr,
+          unapprovedPostAuthorIds = Set.empty, req)
   }
 
 
-  def createTagType: Action[JsValue] = StaffPostJsonAction(
-        maxBytes = 2000) { req =>   // RateLimits.CreateTagCatPermGroup [to_rate_lim]
+  def upsertType: Action[JsValue] = StaffPostJsonAction2(
+        RateLimits.CreateTagCatPermGroup, maxBytes = 2000) { req =>
     import req.{dao, theRequester => reqer}
     // Pass a CheckThoroughly param to the mess aborter? And then check the tag name
     // too. [mess_aborter]. Or always do from inside JsX.parseTagType()
     val tagTypeMaybeId: TagType = JsX.parseTagType(req.body, Some(reqer.id))(IfBadAbortReq)
-    val tagType = dao.createTagType(tagTypeMaybeId)(IfBadAbortReq)
+    val tagType = dao.upsertTypeIfAuZ(tagTypeMaybeId, req.reqrInf)(IfBadAbortReq)
     OkSafeJson(Json.obj(  // ts: StorePatch
-      "tagTypes" -> Json.arr(JsX.JsTagType(tagType))))
+        "tagTypes" -> Json.arr(JsX.JsTagTypeMaybeRefId(tagType,
+            // Ooops, only for admins (not mod) here:  AuthzCtx.maySeeExtIds: Bo
+            inclRefId = true))))  // [who_sees_refid]  HMM  search for inclRefId everywhere
   }
 
 
 
   def listTagTypes(forWhat: Opt[i32], tagNamePrefix: Opt[St]): Action[U] =
           GetActionRateLimited(RateLimits.ReadsFromCache) { req =>
+    import req.{theReqer}
     // Later, when there are access restricted tags, need to authz filter here. [priv_tags]
-    // But tag stats isn't public, at least not now.
     val tagTypes = req.dao.getTagTypesSeq(forWhat, tagNamePrefix)
     val json = JsonMaker.makeStorePatch(Json.obj(
-          "allTagTypes" -> JsArray(tagTypes map JsX.JsTagType)), globals.applicationVersion)
+          "allTagTypes" -> JsX.JsTagTypeArray(tagTypes, inclRefId = theReqer.isStaff)), // [who_sees_refid] HMM
+          globals.applicationVersion)
     OkSafeJson(json)
   }
 
 
-  def loadTagsAndStats: Action[Unit] = StaffGetAction { request =>
-    import request.dao
+  def loadTagsAndStats: Action[Unit] = GetActionRateLimited(RateLimits.ReadsFromDb) {
+          request =>
+    // Later, filter may-see-tags.  [priv_tags]
+    import request.{dao, reqer}
+
+    val isStaff = reqer.exists(_.isStaff)
     val (tagTypes, tagStats) = dao.readTx { tx =>
       (tx.loadAllTagTypes(),
-          tx.loadTagTypeStats())
+          // For now, stats can be for staff only.  [priv_tags]
+          if (isStaff) tx.loadTagTypeStats() else Nil)
     }
 
     val json = JsonMaker.makeStorePatch(Json.obj(
-      "allTagTypes" -> JsArray(tagTypes map JsX.JsTagType),
-      "allTagTypeStatsById" ->
-            JsObject(tagStats.map(s => s.toString -> JsX.JsTagStats(s))),
-      /* Old!:   CLEAN_UP ; REMOVE
-      "tagsStuff" -> Json.obj( "tagsAndStats" -> JsArray(tagsAndStats.map(tagAndStats => {
-        Json.obj(
-          "label" -> tagAndStats.label,
-          "numTotal" -> tagAndStats.numTotal,
-          "numPages" -> tagAndStats.numPages,
-          // Don't think everyone should know about this:
-          "numSubscribers" -> (if (isStaff) tagAndStats.numSubscribers else JsNull),
-          "numMuted" -> (if (isStaff) tagAndStats.numMuted else JsNull))
-       })))*/
+      "allTagTypes" -> JsX.JsTagTypeArray(tagTypes, inclRefId = isStaff), // [who_sees_refid] HMM
+      "allTagTypeStatsById" -> (
+            JsObject(tagStats.map(s => s.tagTypeId.toString -> JsX.JsTagStats(s)))),
       ), globals.applicationVersion)
 
       OkSafeJson(json)
   }
 
 
-  // Break out to [CatsAndTagsController]?
-  def loadCatsAndTags: Action[U] = GetActionRateLimited(RateLimits.ReadsFromCache) { req =>
+  // Break out to [CatsAndTagsController]?  Or better:
+  REFACTOR; MOVE // to SearchController?
+  /** For the search page, so can list and choose which cats & tags to search in & for.
+    */
+  def loadCatsAndTags: Action[U] = GetActionRateLimited(RateLimits.ReadsFromDb) { req =>
+    // Later, filter may-see-tags.  [priv_tags]
     val catsJsArr = ForumController.loadCatsJsArrayMaySee(req)
     val tagTypes = req.dao.getTagTypesSeq(forWhat = None, tagNamePrefix = None)
     val json = JsonMaker.makeCatsAndTagsPatch(catsJsArr, tagTypes, globals.applicationVersion)
@@ -123,6 +124,7 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   def setTagNotfLevel: Action[JsValue] = PostJsonAction(
           RateLimits.ConfigUser, maxBytes = 500) { request =>
     throwUnimpl("TyE406MRE23")
+    // If reimplemented, check if may see tag.  [priv_tags]
     val body = request.body
     val tagLabel = (body \ "tagLabel").as[String]
     val notfLevelInt = (body \ "notfLevel").as[Int]
@@ -134,15 +136,21 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def addRemoveTags: Action[JsValue] = StaffPostJsonAction( // RateLimits.EditPost,
-          maxBytes = 5000) { req =>
+  def updateTags: Action[JsValue] = StaffPostJsonAction2(
+          RateLimits.EditPost, maxBytes = 5000) { req =>
+    // Later, more granular access control.  [priv_tags]
     import req.{body, dao}
-    val toAddJsVals: Seq[JsValue] = debiki.JsonUtils.parseJsArray(body, "tagsToAdd")
+    import debiki.JsonUtils.parseJsArray
+    val toAddJsVals: Seq[JsValue] = parseJsArray(body, "tagsToAdd")
     val toAdd = toAddJsVals.map(v => JsX.parseTag(v)(IfBadAbortReq))
-    val toRemoveJsVals = debiki.JsonUtils.parseJsArray(body, "tagsToRemove")
+    val toRemoveJsVals = parseJsArray(body, "tagsToRemove")
     val toRemove = toRemoveJsVals.map(v => JsX.parseTag(v)(IfBadAbortReq))
-    val affectedPostIds = dao.addRemoveTagsIfAuth(
-          toAdd = toAdd, toRemove = toRemove, req.who)(IfBadAbortReq)
+    val toEditJsVals = parseJsArray(body, "tagsToEdit")
+    val toEdit = toEditJsVals.map(v => JsX.parseTag(v)(IfBadAbortReq))
+
+    val affectedPostIds =
+          dao.updateTagsIfAuth(
+              toAdd = toAdd, toRemove = toRemove, toEdit = toEdit, req.who)(IfBadAbortReq)
 
     val storePatch = dao.jsonMaker.makeStorePatchForPostIds(
           postIds = affectedPostIds, showHidden = true, inclUnapproved = true,

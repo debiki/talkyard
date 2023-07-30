@@ -474,7 +474,8 @@ const PatTopPanel = createComponent({
     const thatIsYou = !isMe ? null :
       r.span({ className: 'esProfile_isYou' }, t.upp.you);
 
-    // COULD_OPTIMIZE Incl the updated pat in the response.
+    // COULD_OPTIMIZE Incl the updated pat in the response,
+    // maybe via a store patch, and listen via [useStoreEvent]().
     const pubTags = TagListLive({ forPat: user, store, onChanged: props.reloadUser });
 
     const bio = !!user.bio &&

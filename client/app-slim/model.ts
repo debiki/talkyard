@@ -807,8 +807,12 @@ interface CategoryPatch extends Category {  // or Partial<Category>?
 
 interface TagType {
   id: TagTypeId;
+  refId?: RefId;
   canTagWhat: ThingType;
   dispName: St;
+  urlSlug?: St;
+  wantsValue?: NeverAlways;
+  valueType?: TypeValueType;
 }
 
 
@@ -820,11 +824,21 @@ interface TagTypeStats {
 }
 
 
+// (Or maybe use the [detailed_tag_val_types]: interfaces TagInt32, TagFlt64,
+// TagLocationLatLong etc, from  ../../tests/e2e-wdio7/pub-api.ts  instead?
+// Fine either way, so let's not bother?)
 interface Tag {
   id: TagId;
   tagTypeId: TagTypeId;
   onPatId?: PatId;
   onPostId?: PostId;
+  valType?: TypeValueType;
+  valInt32?: Nr;
+  valFlt64?: Nr;
+  valStr?: St;
+  // Later:
+  // valUrl?: St;
+  // valJson?: Object;
 }
 
 
@@ -1886,6 +1900,7 @@ interface SearchQuery {
 interface SearchResults {
   thisIsAll: boolean;
   pagesAndHits: PageAndHits[];
+  warnings: ErrMsgCode[];
 }
 
 
@@ -1956,7 +1971,10 @@ interface TagTypesStorePatch {
 }
 
 interface PatsStorePatch {
+  // DEPRECATED name:
   usersBrief?: Pat[];
+  // Use instead:
+  patsBrief?: Pat[];
 }
 
 interface PageTweaksStorePatch {
@@ -2376,7 +2394,7 @@ interface TagListProps {
   // tagTypesById?: TagTypesById; — maybe later
   forPost?: Post;
   forPat?: Pat;
-  onClick?: () => Vo;
+  canEditTags?: Bo;
  }
 
 
@@ -2386,7 +2404,7 @@ interface TagListLiveProps {
   forPost?: Post;
   forPat?: Pat;
   live?: Bo; // default true
-  onChanged?: () => Vo;
+  onChanged?: () => Vo;  // or remove, use [useStoreEvent] instead?
 }
 
 
@@ -2449,12 +2467,52 @@ interface ExplainingTitleTextSelected extends ExplainingTitleText {
 interface ExplainingListItemProps extends ExplainingTitleText {
   id?: St;
   className?: St;
-  onClick?: any;
+  // Either:
+  // (Both onNav and linkTo are ok together — then, onNav happens on click, but
+  // if middle-mouse or ctrl-clicking, then, the browser typically opens the linkTo
+  // in a new tab, and the on-click won't happen.)
+  linkTo?: St;
+  onNav?: (event: MouseEvent) => V;
+  // Or:
+  onClick?: (event: MouseEvent) => V;
   onSelect?: (item: ExplainingTitleText) => void;
   eventKey?: any;
   active?: Bo;
   activeEventKey?;
   disabled?: Bo;
+}
+
+
+interface ProxyDiagParams extends SharedDiagParams {
+  atRect: Rect; // required (optional in SharedDiagParams)
+  flavor?: DiagFlavor;
+  showCloseButton?: Bo; // default true
+  dialogClassName?: St;
+  contentClassName?: St;
+  closeOnButtonClick?: Bo; // default false
+  stayOpenOnCmdShiftClick?: Bo;
+}
+
+
+interface DropdownProps extends SharedDiagParams {
+  dialogClassName2?: St; // RENAME remove '2'
+  className?: St;   // RENAME to contentClassName
+  show: Bo;
+  showCloseButton?: true;
+  //bottomCloseButton?: true; — not yet impl
+  onHide: () => Vo;
+  closeOnClickOutside?: Bo; // default true
+  onContentClick?: (event: MouseEvent) => Vo;
+  atX?: Nr;
+  atY?: Nr;
+  windowWidth?: Nr; // needed iff atRect
+}
+
+
+interface SharedDiagParams {
+  atRect?: Rect;
+  pullLeft?: Bo;
+  allowFullWidth?: Bo;
 }
 
 
@@ -2482,6 +2540,8 @@ interface InputProps {
   onFocus?;
   onBlur?;
   tabIndex?: Nr;
+  step?: Nr; // for numeric inputs
+  pattern?: St;
 
   // Checkboxes and radio buttons:
   inline?: Bo;
@@ -2669,6 +2729,11 @@ interface BrowserCode {
 
 type ErrCode = St;  // [opaque_type]
 
+interface ErrMsgCode {
+  errMsg: St;
+  errCode: ErrCode;
+}
+
 type OnDone = (() => void);
 type OnDoneOrBeacon = OnDone | UseBeacon;
 // Rename to RespErrHandler, which gets a RespErr { httpStatusCode, errCode, errMsg } ?
@@ -2758,9 +2823,12 @@ type TagTypesById = { [tagTypeId: number]: TagType };
 
 
 interface LoadPostsResponse {
-  posts: Post[];
-  patsBrief: Pat[];
-  tagTypes: TagType[];
+  posts: PostWithPage[];
+  storePatch: TagTypesStorePatch & PatsStorePatch;
+}
+
+interface LoadPostsWithTagResponse extends LoadPostsResponse {
+  typeId: TagTypeId;
 }
 
 

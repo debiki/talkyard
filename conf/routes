@@ -62,7 +62,7 @@ GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbedde
 
 GET   /-/search                 controllers.SearchController.showSearchPage(q: Option[String])
 POST  /-/search                 controllers.SearchController.doSearch
-GET   /-/v0/search              controllers.SearchController.apiV0_search_get(freetext: Option[String], pretty: Option[Boolean])
+GET   /-/v0/search              controllers.SearchController.apiV0_search_get
 POST  /-/v0/search              controllers.SearchController.apiV0_search_post
 
 GET   /-/reset-password                  controllers.ResetPasswordController.start
@@ -215,6 +215,7 @@ POST  /-/change-pat-node-rels   controllers.PageController.changePatNodeRels
 GET   /-/list-topics-by-user    talkyard.server.talk.PostsController.listTopicsByUser(userId: Int)
 GET   /-/list-posts             talkyard.server.talk.PostsController.listPostsByUser(authorId: Int, relType: Option[Int], which: Option[Int])
 GET   /-/download-my-content    talkyard.server.talk.PostsController.downloadUsersContent(authorId: Int)
+GET   /-/list-posts-with-tag    talkyard.server.talk.PostsController.listPostsWithTag(typeIdOrSlug)
 
 POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/chat                   controllers.ReplyController.handleChatMessage
@@ -342,16 +343,16 @@ GET   /-/site/:pubSiteId/*file  controllers.SiteAssetBundlesController.customAss
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
 
 GET   /-/tags                   controllers.TagsController.redirect
-GET   /-/tags/                  controllers.TagsController.tagsApp(clientRoute = "")
-GET   /-/tags/*clientRoute      controllers.TagsController.tagsApp(clientRoute)
-POST  /-/create-tag-type        controllers.TagsController.createTagType
+GET   /-/tags/                  controllers.TagsController.tagsApp(whatever = "")
+GET   /-/tags/*whatever         controllers.TagsController.tagsApp(whatever)
+POST  /-/upsert-type            controllers.TagsController.upsertType
 GET   /-/list-tag-types         controllers.TagsController.listTagTypes(forWhat: Option[Int], tagNamePrefix: Option[String])
 GET   /-/load-tags-and-stats    controllers.TagsController.loadTagsAndStats
 GET   /-/load-cats-and-tags     controllers.TagsController.loadCatsAndTags
 POST  /-/set-tag-notf-level     controllers.TagsController.setTagNotfLevel
 # Broken, after tags got reimplemented.
 #ET   /-/load-my-tag-notf-levels controllers.TagsController.loadMyTagNotfLevels
-POST  /-/add-remove-tags        controllers.TagsController.addRemoveTags
+POST  /-/update-tags            controllers.TagsController.updateTags
 
 POST  /-/handle-email            talkyard.server.emails.in.EmailsInController.handleIncomingEmail(debug: Boolean = false)
 

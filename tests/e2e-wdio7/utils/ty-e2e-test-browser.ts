@@ -6807,6 +6807,7 @@ export class TyE2eTestBrowser {
           await this.topic.clickMoreForPostNr(postNr);
           await this.waitAndClick(' .dw-a.icon-plus');  // add real e_SthB class?  [precise_tag_sels]
         }
+        await this.tagsDialog.waitUntilDisplayedCloseAnySecurityTips();
       },
 
       getTags: async (ps: { forPostNr?: PostNr, howManyTags: Nr, within?: Sel }): Pr<St[]> => {
@@ -7642,7 +7643,9 @@ export class TyE2eTestBrowser {
         },
 
         openBadgesDialog: async () => {
+          // Badges are implemented as tags, just tagging people instead, & different styling.
           await this.waitAndClick('.s_UP_Ab .c_TagL_AddB');
+          await this.tagsDialog.waitUntilDisplayedCloseAnySecurityTips();
         },
       },
 
@@ -9476,6 +9479,15 @@ export class TyE2eTestBrowser {
 
 
     tagsDialog = {
+      waitUntilDisplayedCloseAnySecurityTips: async () => {
+        await this.waitForDisplayed('.esTsD, .e_TgVisD');
+        if (await this.isDisplayed('.e_TgVisD')) {
+          await this.clickNow('.e_TgVisD .e_HelpOk');
+          await this.waitForGone('.e_TgVisD');
+          await this.waitForDisplayed('.esTsD');
+        }
+      },
+
       createAndAddTag: async (tagName: St, ps: { numAfterwards: Nr }) => {
         await this.waitAndSetValue('.e_CrTgI input', tagName);
         await this.waitAndClick('.e_CrTgB');

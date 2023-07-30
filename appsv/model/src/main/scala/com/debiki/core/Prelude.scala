@@ -226,6 +226,7 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     if (test) throwUnimpl(msg)
   }
 
+  CLEAN_UP; MOVE // up to package core, no need to wrap in Prelude.
   /// Checks that all is fine. If it's a mess, aborts, in the right way:
   /// - If parsing user provided data from a HTTP request, throws a
   ///   Bad Request exception, or Forbidden or Not Found, if the data is bad
@@ -242,8 +243,17 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     def abortIf(test: Bo, errCode: St, errMsg: => St = "Error"): U = {
       if (test) abort(errCode, errMsg)
     }
-    def abort(errCode: St, errMsg: St = ""): Nothing = {
+    def abort(errCode: St, errMsg: => St = ""): Nothing = {
       die(errCode, errMsg)
+    }
+    /** Same as abort(), but can be overridden to show a Forbidden message,
+      * instead of a Bad Request or Internal Server Error message.
+      */
+    def deny(errCode: St, errMsg: => St = "Forbidden"): Nothing = {
+      abort(errCode, errMsg)
+    }
+    def denyIf(test: Bo, errCode: St, errMsg: => St = "Forbidden"): U = {
+      if (test) abort(errCode, errMsg)
     }
   }
 
@@ -254,13 +264,16 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   /// For HTTP requests with bad data or that try to access forbidden things.
   RENAME // to IfMessAbortReq ?
   object IfBadAbortReq extends MessAborter {
-    override def abort(errCode: St, errMsg: St = ""): Nothing = {
+    override def abort(errCode: St, errMsg: => St = ""): Nothing = {
       throw new BadRequestEx(s"$errMsg [$errCode]")
+    }
+    override def deny(errCode: St, errMsg: => St = ""): Nothing = {
+      throw new ForbiddenEx(s"$errMsg [$errCode]")
     }
   }
 
   object IfBadThrowBadJson extends MessAborter {
-    override def abort(errCode: St, errMsg: St = ""): Nothing = {
+    override def abort(errCode: St, errMsg: => St = ""): Nothing = {
       throw new BadJsonEx(s"$errMsg [$errCode]")
     }
   }
@@ -1044,8 +1057,14 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     def toIntOption: Option[Int] =
       Try(underlying.toInt).toOption
 
+    def toInt64Option: Opt[i64] =
+      Try(underlying.toLong).toOption
+
     def toFloatOption: Option[Float] =
       Try(underlying.toFloat).toOption
+
+    def toFloat64Option: Opt[f64] =
+      Try(underlying.toDouble).toOption
 
     def orIfEmpty[A >: String](other: => A): A = {
       if (underlying nonEmpty) underlying

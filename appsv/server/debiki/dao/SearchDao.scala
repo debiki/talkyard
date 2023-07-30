@@ -19,25 +19,12 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import talkyard.server.search.{PageAndHits, SearchHit, SearchResultsCanSee}
+import talkyard.server.search._
 import scala.collection.immutable.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
 
-case class SearchQuery(
-  fullTextQuery: String,
-  tagNames: Set[String],
-  notTagNames: Set[String],
-  categoryIds: Set[CategoryId]) {
-
-  require(!tagNames.exists(_.isEmpty), "EsE6KWU80")
-
-  def isEmpty = fullTextQuery.trim.isEmpty && tagNames.isEmpty && categoryIds.isEmpty
-
-}
-
-
-
+// MOVE to package talkyard.server.search
 trait SearchDao {
   this: SiteDao =>
 
@@ -79,7 +66,7 @@ trait SearchDao {
         - hits.map(_.score).max
       }
 
-    // ----- Access check
+    // ----- Access check  [se_acs_chk]
 
     COULD_OPTIMIZE // Remember the categories — they're getting looked up, for
     // access control, but then forgotten. However, here we look them up again:

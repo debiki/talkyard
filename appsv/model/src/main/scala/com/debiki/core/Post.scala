@@ -147,6 +147,7 @@ sealed abstract class PostType(
 
 // REFACTOR. See harmless bug below. Should change to a bit field, or split into separate fields.
 //
+@deprecated  // [depr_post_type]
 object PostType {
 
   // Maybe could be the same as PageType, + a higher bit set, if is a chat message, and another,

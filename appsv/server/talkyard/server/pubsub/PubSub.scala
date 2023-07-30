@@ -545,7 +545,7 @@ class PubSubActor(val globals: Globals) extends Actor {
     val tags = siteDao.getTags(forPat = Some(user.id))
     val tagTypes = siteDao.getTagTypes(tags.map(_.tagTypeId).toSet)
 
-    sendWebSocketMessage(siteId, toUserIds, "presence", Json.obj(
+    sendWebSocketMessage(siteId, toUserIds, "presence", Json.obj( // ts: UserPresenceWsMsg
           "user" -> JsX.JsUser(user, tags),
           "presence" -> presence.toInt,
           "storePatch" -> Json.obj(

@@ -236,6 +236,11 @@ var SearchPageContentComponent = createReactClass(<any> {
         "Results for ",
           r.b({}, r.samp({ id: 'e2eSERP_SearchedFor' }, `"${this.state.lastRawQuery}"`)));
 
+    const anyWarningsList = searchResults && searchResults.warnings.map(err =>
+        r.li({},
+          r.span({ className: 'n_Err_Msg' }, err.errMsg),
+          r.span({ className: 'n_Err_Code' }, err.errCode)));
+
     return (
       r.div({ className: 's_SP container' },
         r.form({},
@@ -247,6 +252,8 @@ var SearchPageContentComponent = createReactClass(<any> {
             PrimaryButton({ value: "Search", className: 's_SP_SearchB',
                 onClick: () => this.searchAndUpdateUrl() },
               "Search"),
+          !anyWarningsList ? null :
+              r.ul({ className: 'c_SP_QueryWarns' }, anyWarningsList),
           advancedSearch),
         anyInfoText,
         resultsForText,

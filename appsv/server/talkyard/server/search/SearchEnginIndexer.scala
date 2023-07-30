@@ -156,12 +156,32 @@ class IndexingActor(
   val indexCreator = new IndexCreator()
   val postsRecentlyIndexed = new java.util.concurrent.ConcurrentLinkedQueue[SiteIdAndPost]
 
+  @volatile
+  var doneCreatingIndexes: Bo = false
+
   def tryReceiveUnlessJobsPaused(message: Any): U = message match {
     case IndexStuff =>
       // BUG race condition. Could instead: 1) find out in which languages indexes are missing.
       // 2) insert into the index queue entries for stuff in those languages. 3) create indexes.
-      val newIndexes: Seq[IndexSettingsAndMappings] = indexCreator.createIndexesIfNeeded(client)
-      enqueueEverythingInLanguages(newIndexes.map(_.language).toSet)
+      // Edit 2023: ?? Why not create indexes first, once, on startup, and thereafter add stuff
+      // to the index queue ?? Whatever, this `if` works too, avoids create-index noops:
+      // (Except for once per startup if already exists.)
+      if (!doneCreatingIndexes) {
+        val newIndexes: Seq[IndexSettingsAndMappings] =
+              indexCreator.createIndexesIfNeeded(client)
+        BUG; COULD // fix in [ty_v1]? What if, when starting the *very first* time,
+        // the server crashes here?  Then, after restart, newIndexes would be empty,
+        // and we wouldn't index everything.
+        // Can be fixed by deleting the (empty) indexes, or, better, and as mentioned in
+        // the comment above:  Insert into queues first, then create the indexes?
+        // There are unique keys, so, if already done, nothing would happen.
+        // However, once everything has been indexed, the queue would be empty again —
+        // then, how do we know that everything has been indexed already? Maybe
+        // ask ES for document counts, if >= 1, then, not starting for the 1st time?
+        // (Or, if exporting & importing?)
+        enqueueEverythingInLanguages(newIndexes.map(_.language).toSet)
+        doneCreatingIndexes = true
+      }
       deleteAlreadyIndexedPostsFromQueue()
       loadAndIndexPendingPosts()
     case ReplyWhenDoneIndexing =>
@@ -209,8 +229,13 @@ class IndexingActor(
       return
     }
     val tags = stuffToIndex.tags(siteId, post.id)
-    val doc = makeElasticSearchJsonDocFor(siteId, post, pageMeta.categoryId, tags)
+    val tags_old = stuffToIndex.tags_old(siteId, post.id)
+
+    val doc = makeElasticSearchJsonDocFor(siteId, pageMeta, post, tags, tags_old)
     val docId = makeElasticSearchIdFor(siteId, post)
+
+    COULD_OPTIMIZE // ES has a bulk API: Could send many documents to index,
+    // in one request.
     val requestBuilder: IndexRequestBuilder =
       client.prepareIndex(IndexName, PostDocType, docId)
         //.opType(es.action.index.IndexRequest.OpType.CREATE)

@@ -157,8 +157,8 @@ const RecentTopicsAndNotfs = createComponent({
     const recentTopics: WatchbarTopic[] = watchbar[WatchbarSection.RecentTopics];
     const chatChannels: WatchbarTopic[] = watchbar[WatchbarSection.ChatChannels];
     const directMessages: WatchbarTopic[] = watchbar[WatchbarSection.DirectMessages];
-    const topicElems = [];
     const recentTopicsSorted = cloneAndSort(recentTopics);
+    let topicElems = [];
 
     _.each(recentTopicsSorted, (topic: WatchbarTopic) => {
       // If the topic is listed in the Chat Channels or Direct Messages section, skip it
@@ -170,11 +170,14 @@ const RecentTopicsAndNotfs = createComponent({
             isCurrent: topic.pageId === store.currentPageId }));
     });
 
+    // People thought they should click the "Recent topics" title, when the list
+    // was empty (happens for new members).  But now, with the text "None" below,
+    // they'll realize the title isn't a link?
+    if (!topicElems.length)
+      topicElems = NoTopics({}, t.wb.NoChats);  // I18N needs a "NoRecent"
+
     return (
         r.div({ className: 'esWB_Ts' },
-          // UX, COULD: minor problem: This title looks clickable, at least when the list
-          // is empty (happens for new members). Someone tried to click it a few times.
-          // [looks_clickable]
           r.h3({ style: { wordSpacing: '2px' }}, t.wb.RecentlyViewed),
           r.ul({},
             topicElems)));

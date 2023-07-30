@@ -87,11 +87,12 @@ type MemberRef = string;
 type GuestRef = string;
 type PatRef = MemberRef | GuestRef;
 type PageRef = string;
-type TagRef = string;
+type PostRef = St;
+type TypeRef = string;
 type BadgeRef = string;
 
 type PageSortOrder = 'PopularFirst' | 'ActiveFirst' | 'NewestFirst';
-type PageTypeSt = 'Question' | 'Problem' | 'Idea' | 'Discussion' | 'Other';
+type PageTypeSt = 'Question' | 'Problem' | 'Idea' | 'Discussion';
 type PageDoingStatusSt = null | 'Planned' | 'Doing' | 'Done';
 type PageClosedStatusSt = null | 'Closed' | 'Locked' | 'Frozen';
 type PageDeletedStatusSt = null | 'Deleted' | 'HardDeleted';
@@ -240,7 +241,7 @@ interface LookWhere {
   inCategories?: CategoryRef[];
 
   // Pages with these tags.
-  withTags?: TagRef[];
+  withTags?: TypeRef[];
 
   // Posts written by these users or groups.
   writtenBy?: MemberRef[];
@@ -379,6 +380,57 @@ interface PostWrappedInPage extends PostFoundOrListed {
 
 type TagFound = Unimplemented;
 
+
+type UpsertTagParams = TagNoVal | TagInt32 | TagFlt64 | TagStrKwd;
+
+interface TagNoVal {
+  tagType: TypeRef;  // e.g. "rid:some-tag-type"
+  // Not needed, if included when creating a post (then, the tags are for that post).
+  //onPost?: PostRef;
+}
+
+// [detailed_tag_val_types]:
+
+interface TagInt32 extends TagNoVal {
+  valType: 'Int32';
+  valInt32: Nr;
+}
+
+interface TagFlt64 extends TagNoVal {
+  valType: 'Flt64';
+  valFlt64: Nr;
+}
+
+interface TagStrKwd extends TagNoVal {
+  valType: 'StrKwd';
+  valStr: St;
+}
+
+/* Later:  — valInt32 isn't always a plain int, can instead be a date-time:
+interface TagDateMins extends TagNoVal {
+  valType: 'DateMins';
+  valInt32: Nr;  // date, minute resolution
+}
+interface TagDateRangeMins extends TagNoVal {
+  valType: 'DateRangeMins';
+  valInt32: Nr;  // start date, minute resolution
+  valInt32b: Nr;  // end date
+}
+interface TagDateRangeMicros extends TagNoVal {
+  valType: 'DateRangeMicros';
+  valFlt64: Nr;  // start date, microsecond resolution
+  valFlt64b: Nr;  // end date
+}
+interface TagLocationLatLong extends TagNoVal {
+  valType: 'LocLatLong';
+  valInt32: Nr;
+  valInt32b: Nr;
+}
+ */
+
+
+// Sync w TypeValueType.
+type TypeValueTypeSt = 'Int32' | 'Flt64' | 'StrKwd';
 
 
 interface CategoryFound {
@@ -1077,7 +1129,7 @@ type SearchResultsScrollCursor = Unimplemented;
 // -------------------------
 //
 //  POST /-/v0/query  {
-//    manyQueries: [{
+//    runQueries: [{
 //      getQuery: {
 //        getWhat: 'Pages',
 //        getRefs: [
@@ -1108,7 +1160,7 @@ type SearchResultsScrollCursor = Unimplemented;
 //    }, {
 //      // Nested query list — to run in single transaction.
 //      inSingleTransaction: true,
-//      manyQueries: [...]
+//      runQueries: [...]
 //    }, {
 //      ...
 //    }]
@@ -1119,7 +1171,7 @@ interface QueryApiRequest extends ApiRequest, ManyQueriesApiTask {
 
 interface ManyQueriesApiTask extends ApiTask {
   inSingleTransaction?: Bo;
-  manyQueries: (QueryApiTask | ManyQueriesApiTask)[];
+  runQueries: (QueryApiTask | ManyQueriesApiTask)[];
 
   // Optional default for each QueryRequest.
   // sortOrder?
@@ -1162,8 +1214,10 @@ interface Action {
 }
 
 type ActionType =
-  'CreateReplyPost' |
-  'CreateMetaPost' |
+  'UpsertType' |
+  'CreatePage' |
+  'CreateComment' |
+  // 'CreateMetaComment' |
   'SetVote' |
   'SetNotfLevel';
   // Distant future:
@@ -1176,10 +1230,24 @@ type ActionType =
   // A workflow step could be a RunScriptAction for example.
 
 
+interface UpsertTypeAction extends Action {
+  doWhat: 'UpsertType';
+  doHow: UpsertTypeParams;
+}
+
+interface UpsertTypeParams {
+  refId?: RefId;
+  kindOfType: 'TagType';
+  dispName: St;
+  urlSlug?: St;
+  // wantsValue?: NeverAlways; — maybe later
+  valueType?: TypeValueTypeSt;
+}
+
 interface SetVoteAction extends Action {
   doWhat: 'SetVote';
   doHow: {
-    whatVote: 'Like';
+    voteType: 'Like';
     whatPost: { pageId: St, postNr: 1 };  // { postId: _ } | { pageId: _, postNr: _ },
     howMany: 0 | 1;
   }
@@ -1193,23 +1261,47 @@ interface SetNotfLevelAction extends Action {
   }
 }
 
-interface CreateReplyPostAction extends Action {
-  doWhat: 'CreateReplyPost';
-  doHow: {
-    replyTo: { pageId: PageId, postNr?: PostNr } | { postId: PostId };
-    body: St;
-    bodyFormat: 'CommonMark';
-  }
+interface CreatePageAction extends Action {
+  doWhat: 'CreatePage';
+  doHow: CreatePageParams;
 }
 
+interface CreatePageParams extends CreatePostParams {
+  title: St;
+  pageType: PageTypeSt;
+  inCategory: CatRef;
+}
+
+
+interface CreateCommentAction extends Action {
+  doWhat: 'CreateComment';
+  doHow: CreateCommentParams;
+}
+
+interface CreateCommentParams extends CreatePostParams {
+  parentNr?: PostNr;
+  whatPage: PageRef;
+  // replyTo: { pageId: PageId, postNr?: PostNr } | { postId: PostId };
+}
+
+
+interface CreatePostParams {
+  refId?: Ref;
+  bodySrc: St;
+  bodyFmt: 'CommonMark';
+  withTags?: UpsertTagParams[]
+}
+
+
+/* No, use a different comment type instead?
 interface CreateMetaPostAction extends Action {
-  doWhat: 'CreateMetaPost';
+  doWhat: 'CreateMetaComment';
   doHow: {
     appendTo: { pageId: PageId };
-    body: St;
-    bodyFormat: 'CommonMark';
+    bodySrc: St;
+    bodyFmt: 'CommonMark';
   }
-}
+} */
 
 
 
@@ -1220,7 +1312,7 @@ interface CreateMetaPostAction extends Action {
 //      asWho: 'sysbot' | 'tyid:_' | 'extid:_' | 'ssoid:_' | 'username:_',
 //      doWhat: 'SetVote'
 //      doHow: {
-//        whatVote: 'Like',
+//        voteType: 'Like',
 //        whatPost: { postId: _ } | { pageId: _, postNr: 1 },
 //        howMany: 1 | 0,
 //        // Future compat w assigning many Do-It votes
@@ -1235,28 +1327,24 @@ interface CreateMetaPostAction extends Action {
 //      }
 //    }, {
 //      asWho: 'ssoid:some-user-id',
-//      doWhat: 'CreateMetaPost',
+//      doWhat: 'CreateComment',
 //      doHow: {
-//        body: _,
-//        bodyFormat: 'CommonMark',
-//        appendTo: { pageId: _ },
-//      }
-//    }, {
-//      asWho: 'ssoid:some-user-id',
-//      doWhat: 'CreateReplyPost',
-//      doHow: {
-//        body: _,
-//        bodyFormat: 'CommonMark',
-//        replyTo: { pageId: _, postNr: _ },
+//        bodySrc: _,
+//        bodyFmt: 'CommonMark',
+//        whatPage: 'rid:page-reference-id',
+//        parentNr: 123,
+//        withTags?: [{ tagType: 'rid:tag-type' }, ...],
 //      }
 //    }, {
 //      asWho: _
 //      doWhat: 'CreatePage',
 //      doHow: {
-//        pageTitle: _,
-//        pageBody: _,
+//        pageType: 'Discussion',   # PageTypeSt
+//        title: _,
+//        bodySrc: _,
+//        bodyFmt: 'CommonMark',
 //        inCategory: CatRef,
-//        withTags: TagRef[];
+//        withTags?: [{ tagType: 'rid:pubyear', valType: 'Int32', valInt32: 1990 }, ...],
 //      }
 //    }, {
 //      asWho: 'sysbot',
@@ -1295,16 +1383,24 @@ interface CreateMetaPostAction extends Action {
 //    results: [{
 //      ok: true,   // if 'SetVote' went fine
 //    }, {
-//      ok: true,   // if 'SetNotfLevel' went fine
-//    }, {
-//      error: {    // if 'CreateMetaPost' failed
+//      error: {    // if 'SetNotfLevel' went fine
 //        errCode: _,
 //        errMsg: _,
 //      }
 //    }, {
+//      ok: true,    // if 'CreateComment' went fine
+//      postNr: 123,
+//      pageId: 12345,
+//      urlPath: 'https://server/-12345/page-slug#post-123,
+//    }, {
+//      ok: true,    // if 'CreatePage' went fine
+//      pageId: 12345,
+//      urlPath: 'https://server/-12345/page-slug,
+//    }, {
 //    ...
 //    }, {
 //      ok: true,   // user created
+//      urlPath: 'https://server/-/users/username',
 //    }, {
 //      ok: true,   // user added to group
 //    }, {
@@ -1320,7 +1416,7 @@ interface CreateMetaPostAction extends Action {
 //      asWho: 'sysbot' | 'tyid:_' | 'extid:_' | 'ssoid:_' | 'username:_',
 //      doWhat: 'custom-action:unique-name',  // hmm
 //      doHow: {
-//        whatVote: 'Like',
+//        voteType: 'Like',
 //        whatPost: { postId: _ } | { pageId: _, postNr: 1 },
 //        howMany: 1 | 0,
 //        // Future compat w assigning many Do-It votes
@@ -1372,7 +1468,7 @@ type RunQueriesDoActionsResults = ApiResponse<ManyResults>;
 //      }]
 //    }, {
 //      inSingleTransaction: true,
-//      manyQueries: [{
+//      runQueries: [{
 //        ...
 //      }]
 //    }, {
@@ -1388,8 +1484,8 @@ type RunQueriesDoActionsResults = ApiResponse<ManyResults>;
 //       { thingsOrErrs: [...] },  // getQuery results
 //       { thingsFound: [...] },   // listQuery results
 //       { thingsFound: [...] },   // searchQuery results
-//       { results: [{ ok: true }, ...] },  // nested doActions results
-//       { results: [...] },                // nested manyQueries results
+//       { results: [{ ok: true, res: {...} }, ...] },  // nested doActions results
+//       { results: [...] },                // nested runQueries results
 //     ],
 //   }
 

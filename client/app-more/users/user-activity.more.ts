@@ -123,6 +123,8 @@ interface UsersPostsState {
 
 
 // MOVE to new file: PostList, which takes a PostQuery.
+// Or move only PostList (it's below)? See:  OneTagPanel (in ../tags/tags-app.more.ts),
+// not all code makes sense to share?
 //
 export const UsersPosts = createFactory<any, any>({
   displayName: 'UsersPosts',
@@ -168,11 +170,11 @@ export const UsersPosts = createFactory<any, any>({
     if (this.nowLoading === user.id) return;
     this.nowLoading = user.id;
     Server.loadPostsByAuthor(user.id, props.showWhat, props.onlyOpen,
-            (response: LoadPostsResponse) => {
+            (posts: PostWithPage[]) => {
       this.nowLoading = null;
       if (this.isGone) return;
       this.setState({  // satisfies UsersPostsState
-        posts: response.posts,
+        posts,
       }, () => {
         // BUG but rather harmless. Runs processPosts (e.g. MathJax) also on topic titles,
         // although that's not done in the forum topic list or full page title.
@@ -196,9 +198,28 @@ export const UsersPosts = createFactory<any, any>({
       return (
         r.p({}, t.Loading));
 
-    const noPostsClass = _.isEmpty(posts) ? ' e_NoPosts' : '';
+    const postList = PostList({ store, posts });
 
-    const postElems = posts.map((post: PostWithPage) => {
+    return rFr({},
+        makeMaybeHiddenInfo(me, user),
+        postList);
+  }
+});
+
+
+interface PostListProps {
+  store: Store;
+  posts: PostWithPage[] | NU;
+
+}
+
+// REFACTOR; MOVE to where? A new file app-more/talk/posts.ts  maybe?
+export const PostList = React.createFactory<PostListProps>(function(props) {
+  const store: Store = props.store;
+  const posts: PostWithPage[] = props.posts;
+  const noPostsClass = _.isEmpty(posts) ? ' e_NoPosts' : '';
+
+  const postElems = posts.map((post: PostWithPage) => {
       const author = store.usersByIdBrief[post.authorId];
       return (
         r.li({ key: post.uniqueId, className: 's_UP_Act_Ps_P' },
@@ -209,12 +230,9 @@ export const UsersPosts = createFactory<any, any>({
             post.pageTitle),
           avatar.Avatar({ user: author, origins: store, size: AvatarSize.Small }),
           Post({ post, store, author, live: false }))); // author: [4WKA8YB]
-    });
+  });
 
-    return rFr({},
-      makeMaybeHiddenInfo(me, user),
-      r.ol({ className: 's_UP_Act_Ps' + noPostsClass }, postElems));
-  }
+  return r.ol({ className: 's_UP_Act_Ps' + noPostsClass }, postElems);
 });
 
 

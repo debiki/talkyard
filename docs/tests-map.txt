@@ -458,6 +458,13 @@ security:
   task list won't show tasks (pages) one can't see,
   can't assign a task to sbd who can't see it:
             - assign-can-see.2br.d  TyTASSIGNCANSEE
+  not notified about pages one can't see:
+            - notf-prefs-private-groups.2browsers.test.ts  TyT406WMDKG26
+  one's own page that one can no longer see:
+    is ignored when deriving one's user stats?:
+            - SEC_TEST_MISSING
+    is excluded from one's activity list also for oneself:
+            - SEC_TEST_MISSING  TyT0SEEOWNPAGE
 
 deleted users:  [.del_susp_usr]
             - SEC_TEST_MISSING
@@ -642,6 +649,12 @@ tags, post tags, content tags,
 badges, user badges, user flairs:
             - badges-basic.2br  TyTE2EBADGESBSC
             - tags-basic.2br  TyTE2ETAGSBSC
+  nav to tags list, via 'View Categories, Tags':
+            - TESTS_MISSING
+  list tagged posts:
+            - TESTS_MISSING   TyTLISTTAGDPOSTS
+    can't see private pages via tagged posts list:
+            - TESTS_MISSING   TyTLISTTAGDPOSTS
   works for oneself and others who are already online,
       (there was a bug where users-online-data without tags overwrote users with tags),
   works for others who goes online: (WS message with user):
@@ -653,6 +666,11 @@ badges, user badges, user flairs:
             - TESTS_MISSING
   server side tag tests:
             - TESTS_MISSING see:   TyTIT_TAGS
+  
+tags with values:
+            - do-api-create-pages-comts-check-webhooks-search.2br  ?
+  cannot create tags with the wrong value type: (different from the tag type's value type)
+            - TESTS_MISSING  TyTTAGVALBADTYPE
 
 # Move to ^security:  ?
 access permissions,

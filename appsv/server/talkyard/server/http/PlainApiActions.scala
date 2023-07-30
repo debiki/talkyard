@@ -66,10 +66,11 @@ class PlainApiActions(
         skipXsrfCheck = skipXsrfCheck)
 
   def PlainApiActionStaffOnly[B](
+          rateLimits: RateLimits,
           parser: BodyParser[B],
           minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
           ): ActionBuilder[ApiRequest, B] =
-    PlainApiActionImpl(parser, NoRateLimits, minAuthnStrength, staffOnly = true)
+    PlainApiActionImpl(parser, rateLimits, minAuthnStrength, staffOnly = true)
 
   def PlainApiActionAdminOnly[B](rateLimits: RateLimits, parser: BodyParser[B])
         : ActionBuilder[ApiRequest, B] =
@@ -691,6 +692,9 @@ class PlainApiActions(
 
         val siteSettings = dao.getWholeSiteSettings()   // TODO pass along inst
 
+        // Sometimes, the API requester (`anyUser` here) does things on behalf
+        // of *another* user — then, these checks are done for that other user too,
+        // here: [authn_aprvd_checks], in AuthzSiteDaoMixin.maySeePageImpl().
         if (!anyUser.exists(_.isAuthenticated) && siteSettings.userMustBeAuthenticated)
           goToHomepageOrIfApiReqThen(throwForbidden(
                 "TyE0AUTHN_", s"Not authenticated. ${

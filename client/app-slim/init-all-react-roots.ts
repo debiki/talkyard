@@ -61,16 +61,6 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate'
     return;
   }
 
-  // /-/tags/ *
-  // adminPage.scala.html, appId = "theTagsApp"
-  // No! This should be part of  MoreScriptsRoutesComponent.
-  const tagsAppElem = document.getElementById('theTagsApp');
-  if (tagsAppElem) {
-    ReactDOM.render(
-        Router({}, tags.routes()), tagsAppElem);
-    return;
-  }
-
   // / (server root) if not created
   // app/views/specialpages/createSomethingHerePage.scala.html
   // <div class="container">
@@ -214,6 +204,7 @@ const MoreScriptsRoutesComponent = createReactClass(<any> {  // dupl code [4WKBT
       return r.h1({}, t.Loading + ' ...');
 
     return Switch({},
+      Route({ path: UrlPaths.Tags, component: tags.TagsAppComponent }),
       Route({ path: UsersRoot, component: users.UsersHomeComponent }),
       Route({ path: GroupsRoot, component: users.UsersHomeComponent }),
       search.searchRoute());

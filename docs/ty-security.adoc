@@ -105,3 +105,37 @@ or ... Doing anything except for reading, writing and moderating blog comments.
 Strict cookies aren't normally used for discussion forum software —
 banks though, use these cookies, if you log in to your online bank account,
 and there are cases where SameSite Strict is good also for communication software.
+
+
+
+== The Query-Do API
+
+A few security notes about the Query-Do API.
+
+=== Do-as-Who
+
+What if you have a Sysbot API secret, and invoke the Do API as Sysbot
+(who can do anything `[api_secret_caps]`),
+and if you in the request json set the `asWho` parameter to someone else, say,
+ordinary user Ed.  Then, should a CreatePage action succeed, in a category
+where Ed is not allowed to create pages? `[api_do_as]`
+
+For now, Talkyard replies Forbidden, doesn't allow this.
+
+Otherwise, you have Ed create a page in a staff-only category — this could make
+others confused (which would be bad)?
+Security wise, this should be harmless though? (test `TyT0SEEOWNPAGE`):
+Ed couldn't see that page, since he can't access that category.
+
+Still, maybe there are use cases where it'd make sense to do things (e.g. create a page)
+where `asWho` lacks permissions but the API requester _has_ permissions.
+(Mabye support staff doing things via an external app + Ty's API, on behalf of
+a "Customer Support" user?)
+If so, there could be a `skipAsWhoPermissionChecks` API parameter or sth like that?
+Otherwise, the API invoker _can_ accomplish the same _anyway_, in two steps:
+Set `asWho` to Ed, create a page where Ed has access, then, move it to whereever
+you wanted but Ed lacks access.
+
+If you invoke the Query-Do API as yourself and you aren't admin,
+then, you can't set `asWho` to anyone else than yuorself, and you can only
+create pages where you have the necessary permissions.

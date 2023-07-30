@@ -139,7 +139,7 @@ case class Category( // [exp] ok use   too long name! use Cat instead
   frozenAt: Option[ju.Date] = None,
   deletedAt: Option[ju.Date] = None,
   )
-  extends DiscPropsSource with SectPropsSource {
+  extends DiscPropsSource with SectPropsSource with HasInt32Id {
 
   import Category._
 

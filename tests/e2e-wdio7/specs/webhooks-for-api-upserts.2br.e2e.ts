@@ -91,7 +91,7 @@ describe(`webhooks-for-api-upserts.2br  TyTE2EWBHK4API`, () => {
 
   let upsertResponse;
 
-  it("Upsert a page", () => {
+  it("Upsert a page", async () => {
     upsertResponse = server.apiV0.upsertSimple({
       origin: site.origin,
       apiRequesterId: c.SysbotUserId,
@@ -123,7 +123,7 @@ describe(`webhooks-for-api-upserts.2br  TyTE2EWBHK4API`, () => {
 
   // Related test:  api-upsert-posts.2br.d  TyT60RKNJF24C
 
-  it("Upsert a reply", () => {
+  it("Upsert a reply", async () => {
     upsertResponse = server.apiV0.upsertSimple({
       ...upsSimpleParams,
       data: {

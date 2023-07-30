@@ -97,11 +97,60 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
               inclUnlistedPagePosts =
                     // Not listing pat's assignments, would be confusing? [.incl_unl]
                     relType == PatNodeRelType.AssignedTo || reqrIsStaffOrSelf,
-              limit = 100,
+              limit = 100, // UX, [to_paginate]
               orderBy = OrderBy.MostRecentFirst)
 
-        _listPostsImpl2(query, req.dao)
+        OkSafeJson(
+            _listPostsImpl2(query, req.dao))
     }
+  }
+
+
+  def listPostsWithTag(typeIdOrSlug: St): Action[U] = GetActionRateLimited(
+          RateLimits.ReadsFromDb) { req =>
+    import req.dao
+    // Later, excl private tags (once implemented). [priv_tags]
+
+    val reqrIsStaff = req.requester.exists(_.isStaff)
+
+    val tagTypeId = typeIdOrSlug.toIntOption getOrElse {
+      val tagType = dao.getTagTypesBySlug().getOrElse(typeIdOrSlug,
+            throwNotFound("TyETYPESLUG", s"There's no type with URL slug '$typeIdOrSlug'"))
+      tagType.id
+    }
+
+    /* [sort_tag_vals_in_pg]
+    val orderBy2: PostsWithTagOrder = orderBy match {
+      case None => PostsWithTagOrder.ByPublishedAt(desc = true)
+      case Some(str) =>
+        if (str == "value:asc") PostsWithTagOrder.ByTagValue(desc = false)
+        else if (str == "value:desc") PostsWithTagOrder.ByTagValue(desc = true)
+        else throwBadRequest("TyEBADSORT502", s"Unsupported sort order: $str")
+    } */
+
+    val query = PostQuery.PostsWithTag(
+          reqrInf = req.reqrInf,
+          tagTypeId: TagTypeId,
+          // UX; COULD: Show one's own unapproved posts with this tag, also if isn't staff.
+          inclUnapproved = reqrIsStaff,
+          // Pages that aren't listed in a category, also shouldn't be listed if
+          // listing by tag? (Otherwise, what's the point with Unlisted)  [.incl_unl]
+          // `inclUnlistedPagePosts` doesn't make sense here, because this is a tags query,
+          // but `inclUnlistedPagePosts` isn't a tags prop but a pages prop, hmm.
+          // Maybe change value from true/false to:
+          //   Never / Always / If-Requester-Is-Author-And-Page-Not-Deleted,  hmm.
+          // For now:
+          inclUnlistedPagePosts = reqrIsStaff,
+          limit = 100, // UX, [to_paginate]
+          orderBy = OrderBy.MostRecentFirst)
+
+    var res = _listPostsImpl2(query, dao)
+
+    // If we're looking up the tag type by url slug, then, the client might not know
+    // the id of the tag type.
+    res += "typeId" -> JsNumber(tagTypeId)
+
+    OkSafeJson(res)
   }
 
 
@@ -119,10 +168,10 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
     throwForbiddenIfActivityPrivate(authorId, requester, dao)
 
     // For now. LATER: if really many posts, generate an archive in the background.
-    // And if !all, and > 100 posts, add a load-more button.
+    // And if !all, and > 100 posts, add a load-more button.  UX, [to_paginate]
     val limit = all ? 9999 | 100
 
-    _listPostsImpl2(
+    val res = _listPostsImpl2(
           PostQuery.PostsByAuthor(
                 reqrInf = request.reqrInf,
                 orderBy = OrderBy.MostRecentFirst,
@@ -136,10 +185,11 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
                 // to be listed. Also see [.incl_unl] above.
                 inclUnlistedPagePosts = requesterIsStaffOrAuthor,
                 authorId = authorId), dao)
+    OkSafeJson(res)
   }
 
 
-  private def _listPostsImpl2(query: PostQuery, dao: SiteDao): mvc.Result = {
+  private def _listPostsImpl2(query: PostQuery, dao: SiteDao): JsObject = {
     val LoadPostsResult(postsOneMaySee, pageStuffById) =
           // This excludes any stuff the requester may not see. [downl_own_may_see]
           dao.loadPostsMaySeeByQuery(query)
@@ -152,11 +202,15 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // Bit dupl code. [pats_by_id_json]
     val patsById: Map[PatId, Pat] = dao.getParticipantsAsMap(patIds)
 
+    val anyTypeIdInQuery = query match {
+      case q: PostQuery.PostsWithTag => Set(q.tagTypeId)
+      case _ => Set.empty
+    }
 
     COULD_OPTIMIZE // cache tags per post? And badges per pat?
     // What about [assignees_badges]? Currently not shown.
     val tagsAndBadges: TagsAndBadges = dao.readTx(_.loadPostTagsAndAuthorBadges(posts.map(_.id)))
-    val tagTypes = dao.getTagTypes(tagsAndBadges.tagTypeIds)
+    val tagTypes = dao.getTagTypes(tagsAndBadges.tagTypeIds ++ anyTypeIdInQuery)
 
     val patsJsArr = JsArray(patsById.values.toSeq map { pat =>
       JsPat(pat, tagsAndBadges,
@@ -173,6 +227,10 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
             tagsAndBadges)
 
       pageStuffById.get(post.pageId) map { pageStuff =>
+        // Since these posts aren't wrapped in a page, but rather listed separately
+        // outside their parent pages, it's nice to have the page title available
+        // to show in the browser.  [posts_0_page_json]
+        // Typescript: PostWithPage
         postJson += "pageId" -> JsString(post.pageId)
         postJson += "pageTitle" -> JsString(pageStuff.title)
         postJson += "pageRole" -> JsNumber(pageStuff.pageRole.toInt)
@@ -184,10 +242,13 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
       }
     }
 
-    OkSafeJson(Json.obj(  // Typescript: LoadPostsResponse
-      "posts" -> JsArray(postsJson),
-      "patsBrief" -> patsJsArr,
-      "tagTypes" -> JsArray(tagTypes map JsTagType)))
+    Json.obj(  // Typescript: LoadPostsResponse
+            "posts" -> JsArray(postsJson),
+            "storePatch" -> Json.obj(
+              // RENAME  to patsBr? (for "brief", Ty standard abbreviation)
+              "patsBrief" -> patsJsArr,
+              // RENAME  to tagsBr?
+              "tagTypes" -> JsTagTypeArray(tagTypes, inclRefId = query.reqr.isStaff)))
   }
 
 

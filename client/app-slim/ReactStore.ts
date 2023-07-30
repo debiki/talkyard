@@ -53,6 +53,8 @@ export function win_getSessWinStore(): SessWinStore {
 type StoreStateSetter = (store: Store) => void;
 const useStoreStateSetters: StoreStateSetter[] = [];
 
+type StoreEventListener = (patch: StorePatch) => V;
+const storeEventListeners: StoreEventListener[] = [];
 
 // Read-only hooks based store state. WOULD REFACTOR make it read-write and delete ReactActions,
 // and remove EventEmitter too? [4WG20ABG2]  Have all React code use `useStoreState`
@@ -83,6 +85,81 @@ export function useStoreState(): [Store, () => void] {
   return [state,
       // For now, update via ReactActions instead.
       function() { die('TyESETSTORESTATE'); }];
+}
+
+
+/// Some components don't care about the store state — they instead keep their own
+/// useState() list of stuff, e.g. [a list of posts with a certain tag].
+/// However, they care about *changes* to the stuff in their state, e.g.
+/// if [a tag of one of the posts in their state is edited].  And by listening to
+/// store events, they can find out.  (They need to inspect the patch to find out if
+/// anything of relevance, changed. See usePostList(), which looks at
+/// `patch.postsByPageId`.)
+///
+/// This is similar to useReducer()? See:
+///      https://react.dev/learn/extracting-state-logic-into-a-reducer
+/// or Redux' dispatcher?  But in Ty's case, simpler: there's no need to pass
+/// around any dispatcher functions, instead, the useStoreEvent() listeners
+/// run after the store gets patched via any of the already-existing ways
+/// to patch it  (primarily via ReactActions.patchTheStore()).
+///
+export function useStoreEvent(listener: StoreEventListener, dependencies: any[]) {
+  // See useStoreState() above — this fn functions in the same way.
+  React.useEffect(function() {
+    // @ifdef DEBUG
+    const index = storeEventListeners.indexOf(listener);
+    dieIf(index !== -1, 'TyE506MRS25');
+    // @endif
+    storeEventListeners.push(listener);
+
+    return function() {
+      const index = storeEventListeners.indexOf(listener);
+      // @ifdef DEBUG
+      dieIf(index === -1, 'TyE03HMAD25');
+      // @endif
+      if (index >= 0) {
+        storeEventListeners.splice(index, 1);
+      }
+    };
+  }, dependencies);
+}
+
+
+/// Returns [posts, setPosts] — a list of posts, and a setter. Initially, the list is
+/// null, and once you've loaded the posts, you can set the list to an array, or
+/// to false if access was denied.  Listens to StorePatch events, and automatically
+/// updates any posts in the list — e.g. if one of the posts has a tag whose value
+/// got edited.
+///
+export function usePostList(): [PostWithPage[] | N | false, (posts: PostWithPage[]) => V] {
+  const [postsNullOrFalse, setPosts] = React.useState<PostWithPage[] | N | false>(null);
+  useStoreEvent((patch: StorePatch) => {
+    // @ifdef DEBUG
+    console.debug(`Patch: ${JSON.stringify(patch, undefined, 3)},
+          and postsNullOrFalse: ${JSON.stringify(postsNullOrFalse, undefined, 3)}`);
+    // @endif
+    // If the patch is about any post in `postsNullOrFalse`, then, update it and
+    // then setPosts().
+    if (!patch.postsByPageId || !postsNullOrFalse || !postsNullOrFalse.length)
+      return;
+    const updatedPosts: Post[] = _.flatten(_.values(patch.postsByPageId));
+    const postsAfter: PostWithPage[] = [...postsNullOrFalse];
+    const ixAndOldById: { [id: PostId]: [Ix, PostWithPage] } =
+            arr_toMapKeepOne(postsNullOrFalse, (oldP, ix) => [oldP.uniqueId, [ix, oldP]]);
+    let anyChanges = false;
+    for (const updatedPost of updatedPosts) {
+      const ixAndOld: [Ix, PostWithPage] | U = ixAndOldById[updatedPost.uniqueId];
+      if (ixAndOld) {
+        const [ix, oldPost] = ixAndOld;
+        postsAfter[ix] = { ...oldPost, ...updatedPost }; // keeps .pageTitle etc
+        anyChanges = true;
+      }
+    }
+    if (anyChanges) {
+      setPosts(postsAfter);
+    }
+  }, [postsNullOrFalse]);
+  return [postsNullOrFalse, setPosts];
 }
 
 
@@ -139,6 +216,7 @@ export function makeNoPageData(): MyPageData {
 ReactDispatcher.register(function(payload) {
   const action = payload.action;
   const currentPage: Page = store.currentPage;
+  let patchedTheStore: true | U;
   // SHOULD clone the store here? [8GKB3QA] but might introduce so many bugs, so wait a bit.
   // So becomes (more) immutable.
   switch (action.actionType) {
@@ -172,6 +250,7 @@ ReactDispatcher.register(function(payload) {
         publicCategories: action.publicCategories,
         restrictedCategories: action.restrictedCategories,
       });
+      patchedTheStore = true;  // but no  storePatch obj :-/
 
       store.me.permsOnPages =
             perms_addNew(store.me.permsOnPages, action.myNewPermissions);
@@ -334,6 +413,7 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.VoteOnPost:
       voteOnPost(action);
+      patchedTheStore = true; // voteOPost() does
       break;
 
     case ReactActions.actionTypes.MarkPostAsRead:
@@ -437,6 +517,7 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.PatchTheStore:
       patchTheStore(action.storePatch);
+      patchedTheStore = true;
       break;
 
     case ReactActions.actionTypes.ShowNewPage:
@@ -446,6 +527,7 @@ ReactDispatcher.register(function(payload) {
     case ReactActions.actionTypes.UpdateUserPresence:
       const data: UserPresenceWsMsg = action.data;
       maybePatchTheStore(data);
+      patchedTheStore = true; // always patches, see UserPresenceWsMsg server side.
       if (data.presence === Presence.Active) {
         theStore_addOnlineUser(data.user);
       }
@@ -480,6 +562,16 @@ ReactDispatcher.register(function(payload) {
   useStoreStateSetters.forEach(setStore => {  // ... new, hooks based code
     setStore(storeCopy);
   });
+
+  // (CreateEditForumCategory patches the store, but has no storePatch obj,
+  // doesn't matter for the moment, oh well.)
+  if (patchedTheStore && action.storePatch) {
+    // LoadPostsResponse and LoadTopicsResponse have the storePatch in a sub field.
+    const thePatch = action.storePatch.storePatch || action.storePatch;
+    storeEventListeners.forEach(listener => {
+      listener(thePatch);
+    });
+  }
 
   resetQuickUpdateInPlace(store);
 
@@ -1585,7 +1677,9 @@ function maybePatchTheStore(ps: { storePatch?: StorePatch }) {
 }
 
 
-function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly, instead of via [flux_mess].
+function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directly, instead of via [flux_mess].
+  // Later, won't need the `|| ...`. [storepatch_field]
+  const storePatch: StorePatch = respWithStorePatch.storePatch || respWithStorePatch;
   if (isDefined2(storePatch.setEditorOpen) && storePatch.setEditorOpen !== store.isEditorOpen) {
     store.isEditorOpen = storePatch.setEditorOpen;
     store.editorsPageId = storePatch.setEditorOpen && storePatch.editorsPageId;
@@ -1701,7 +1795,7 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
 
   // ----- Users
 
-  store_patchPatsInPl(store, storePatch.usersBrief);
+  store_patchPatsInPl(store, storePatch.usersBrief || storePatch.patsBrief);
 
   // ----- Pages
 

@@ -147,6 +147,9 @@ Wasn't fixed in first iteration.
 
 [nested_tags][child_tags] hierarchical tags
 
+[to_paginate]
+E.g. don't list only 100 tags — add a Show More ... button.
+
 [sw] [sse]
 DONE: Service worker.  No, skip, using Websocket instead of:  Server sent events.
 
@@ -1028,6 +1031,8 @@ Without! any long running db transactions. 1) loads the data it needs, in a read
 Then, compiles Commonmark to html, finds all links etc.
 Then, a read-write-tx: If the post wasn't changed since the r/o tx, then
 save the rebuilt post.
+Also, when upgrading ElasticSearch, maybe reindex everything and improve the mapping:
+Change ids, e.g. site & category id, from type integer to type keword.  [es_kwd]
 
 [x_plat_offl_builds]
 Offline builds on various Linux distros, not just Debian 10?

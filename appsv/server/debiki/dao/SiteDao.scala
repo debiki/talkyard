@@ -26,8 +26,8 @@ import org.{elasticsearch => es}
 import redis.RedisClient
 import talkyard.server.dao._
 import talkyard.server.{PostRendererSettings, TyLogging}
+import scala.collection.{immutable => imm}
 import scala.collection.immutable
-import scala.collection.mutable
 import talkyard.server.TyContext
 import talkyard.server.authz.MayMaybe
 import talkyard.server.notf.NotificationGenerator
@@ -79,10 +79,13 @@ class SiteDaoFactory (
 
 
 trait ReadOnlySiteDao {
+  def getCatsBySlugs(catNames: Iterable[St]): imm.Seq[Opt[Cat]]
   def getCategoryByRef(ref: Ref): Option[Category] Or ErrorMessage  // repl w ParsedRef?
   def getCategoryByParsedRef(parsedRef: ParsedRef): Option[Category]
+  def getTagTypesByNamesOrSlugs(catNames: Iterable[St]): imm.Seq[Opt[TagType]]
   def getPageMetaByParsedRef(parsedRef: ParsedRef): Option[PageMeta]
   def getPageMetaByExtId(extId: ExtId): Option[PageMeta]
+  def getMembersByUsernames(usernames: Iterable[Username]): imm.Seq[Opt[Member]]
   def getParticipantByRef(ref: Ref): Option[Participant] Or ErrorMessage  // remove?
   def getParticipantByParsedRef(ref: ParsedRef): Option[Participant]
   def loadPostByPageIdNr(pageId: PageId, postNr: PostNr): Option[Post]
@@ -94,6 +97,26 @@ trait ReadOnlySiteDao {
   @deprecated // can create new tx
   def textAndHtmlMaker: TextAndHtmlMaker
   def makePostRenderSettings(pageType: PageType): PostRendererSettings
+}
+
+
+class TestReadOnlySiteDao extends ReadOnlySiteDao {
+  def unim() = unimpl("For tests, not impl")
+  def getCatsBySlugs(catNames: Iterable[St]): imm.Seq[Opt[Cat]] = unim()
+  def getCategoryByRef(ref: Ref): Option[Category] Or ErrorMessage = unim()
+  def getCategoryByParsedRef(parsedRef: ParsedRef): Option[Category] = unim()
+  def getTagTypesByNamesOrSlugs(catNames: Iterable[St]): imm.Seq[Opt[TagType]] = unim()
+  def getPageMetaByParsedRef(parsedRef: ParsedRef): Option[PageMeta] = unim()
+  def getPageMetaByExtId(extId: ExtId): Option[PageMeta] = unim()
+  def getMembersByUsernames(usernames: Iterable[Username]): imm.Seq[Opt[Member]] = unim()
+  def getParticipantByRef(ref: Ref): Option[Participant] Or ErrorMessage = unim()
+  def getParticipantByParsedRef(ref: ParsedRef): Option[Participant] = unim()
+  def loadPostByPageIdNr(pageId: PageId, postNr: PostNr): Option[Post] = unim()
+  def getPagePath2(pageId: PageId): Option[PagePathWithId] = unim()
+  def now(): When = unim()
+  def nashorn: Nashorn = unim()
+  def textAndHtmlMaker: TextAndHtmlMaker = unim()
+  def makePostRenderSettings(pageType: PageType): PostRendererSettings = unim()
 }
 
 
@@ -159,6 +182,8 @@ class SiteDao(
   lazy val redisCache = new RedisCache(siteId, redisClient, context.globals.now)
 
   protected lazy val searchEngine = new SearchEngine(siteId, elasticSearchClient)
+
+  def readOnly: ReadOnlySiteDao = this.asInstanceOf[ReadOnlySiteDao]
 
   def copyWithNewSiteId(siteId: SiteId): SiteDao =
     new SiteDao(
