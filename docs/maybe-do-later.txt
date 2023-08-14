@@ -145,6 +145,7 @@ Wasn't fixed in first iteration.
 + for some endpoints, [tags_and_badges_missing]
 + access restricted tags [priv_tags]
 
+[nested_tags][child_tags] hierarchical tags
 
 [sw] [sse]
 DONE: Service worker.  No, skip, using Websocket instead of:  Server sent events.

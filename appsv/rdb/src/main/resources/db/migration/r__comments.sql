@@ -35,6 +35,17 @@ Or if postponed, could get DormantBits.Postponed set?
 $_$;  -- '
 
 ------------------------------------------------------------------------
+comment on domain  ref_id_d  is $_$
+Reference id. Can be provided by API clients, when they create posts, users, tag types,
+categories, whatever, via the API. Talkyard remembers the ref id, and in subsequent
+API requests, the clients can reference the reference id, use it as a stable identifier
+— it stays the same, also if the-referenced-thing gets renamed or gets a new URL path.
+
+Previously called "external id", but "reference id" is a more precise name? And
+used by lots of other software.
+$_$;
+
+------------------------------------------------------------------------
 comment on domain  pat_rel_type_d  is $_$
 Says what a relationship from a pat to a post (or sth else) means. Ex:
 PatRelType.AssignedTo or VotedOn, from a pat to a post.
@@ -186,9 +197,8 @@ $_$;
 
 ------------------------------------------------------------------------
 comment on table  post_actions3 is $_$
-To be renamed to  pat_rels_t.  Later, will store AssignedTo,
-votes, and who knows what more. Currently stores
-votes and flags, but later, flags will be kept in posts_t instead,
+To be renamed to  pat_post_rels_t or pat_node_rels_t. Currently stores votes,
+AssignedTo, and flags.  Later, flags will be kept in posts_t instead,
 linked to the flagged things via the upcoming table post_rels_t.
 $_$;
 
@@ -603,6 +613,9 @@ in types_t (currently named tagtypes_t)
 
 Tags can have values, e.g. 'Version: 1.23.4', 'Event-Location: Some-Where',
 'Event-Date: Aug 22 20:00 to Aug 23 03:00', 'Published-Year: 1990'.
+
+Use val_i32_c, val_f64_c etc primarily, and val_*_b_c only if two fields
+are needed e.g. to store a location (long & lat).
 $_$;
 ------------------------------------------------------------------------
 
@@ -658,6 +671,14 @@ tag, relationship, etc can have its own custom integer or jsonb value.)
 $_$;  -- '
 
 ------------------------------------------------------------------------
+comment on constraint  types_c_wantsval_valtype_null  on  tagtypes_t  is $_$
+It's ok to remember any value type this type wanted, previously, so
+value_type_c != null, when wants_value_c is null or <= NeverButCanContinue = 2,
+is ok.
+$_$;  -- '
+
+------------------------------------------------------------------------
+
 
 
 --======================================================================

@@ -100,6 +100,117 @@ alter table users3 add constraint pats_c_members_have_username check (
 
 
 --=============================================================================
+--  Parent / child_tag types?  [nested_tags]
+--=============================================================================
+-- Also see Custom_types below.
+
+-- UX: Probably, when child tags implemented, then, if adding a parent tag,
+-- a dropdown should open where one can select one (or more) child tags too,
+-- to save clicks, and to avoid people forgetting this,  and to not
+-- have to search for the child tags in a long list of "all tags in the world".
+
+-- UX: Some tag sets might have min-tags > 0 in some category, and then,
+-- when posting a page in such a cat, one needs to choose > 0 tags from that
+-- tag set, before posting. (Even if that tag set has no parent tag.)
+
+------------
+-- Alt 1, bad, because sometimes the same tags can appear as children of
+-- two different parent tags?  Could this be an example:
+-- Product tags, e.g. "bike", "shoes", "rollerskates".
+-- And an "Inventory" tag, with product sub tags, for pages that
+-- describe products for sale in a store.
+-- But there'd also be users and "Wishlist" tags — also with product sub tags.
+-- So, the product tags, can appear as children of both "Inventory" and "Wishlist"
+-- tags.  — So, do not assume just one parent tag type.
+alter table types_t add column parent_type_id_c references types_t; -- tagtypes_t = types_t
+
+------------
+-- Alt 2:  Parent to child tag types table. But here data like
+-- `child_needed_c never_always_d` is duplicated, bad.
+create table type_sets_t (
+  parent_type_id_c,
+  child_set_nr_c,
+  child_needed_c never_always_d,
+  child_type_id_c,
+)
+
+------------
+-- Alt 3:  A types_t child-type row, plus rows in a type sets table:
+create table type_sets_t (
+  set_type_id_c,  -- references types_t: the type set
+  elem_type_id_c);  -- references types_t: child tag types
+-- And also:
+alter table types_t
+    add column is_type_set_c  bool, -- ??
+     -- or --
+      kind_id_c = ThingKindIds.TypeSet -- But then, could add the wrong thing kinds
+      -- to a type set? However, if kind_id_c is part of the pimary key, and the same
+      -- as any parent, then, maybe can prevent? Not that important.
+
+    add column parent_type_id_c references types_t,  -- makes this a child type set
+    add constraint check  (if parent_type_id_c not null) then (is_type_set_c is true),
+
+    -- If you add a tag of the parent type, you might also need to add
+    -- child tags, these many:
+    -- **Or maybe this should be per category?** Sometimes, child tags might not
+    -- be needed.  Maybe there should be a  type_node_rels_t,  just like
+    -- there are  pat_node_rels_t (or  pat_post_rels_t)  etc?
+    -- (If a child tag is always needed, in the whole site, then, set min >= 1
+    -- for the site root category.)
+    add column min_children_c i16_gez,
+    add column max_children_c i16_gez,
+    add constraint check min <= max,
+    add constraint check (0 <= min or min is null) and (0 <= max or max is null),
+    ;
+-- types_t rows with parent_type_id_c set, is a type set consisting of the
+-- types listed in type_sets_t:
+--
+--   [parent tag type in types_t]
+--       ^————  [type set, also in types_t]
+--                   ^––––––—  [type_sets_t]  —————> [parent tag type in  types_t]
+
+------------
+-- Alt 4:  Same as Alt 3, but  min_children / max are in another table:
+create table  type_node_rels_t (  -- No! use  perms_on_pages3  instead (but renamed to what?)
+  type_id_c,
+  node_id_c,
+  can_use_c,      -- if the type can be used as tags in category id node_id_c  ?
+                  -- by default, Yes, iff the type is a ThingKind.Tag?
+                  -- (Other types not allowed here?)
+                  -- Unless set to False on some ancestor cat?
+
+  wants_min_c,    -- If creating a page in category `node_id_c`, then, one needs to
+                  -- add `wants_min_c` tags from type/type-set `type_id_c`.
+  wants_max_c,    -- But can't add more than this many.
+
+  -- ... Probably sth more, later?
+);
+
+
+-- Also, edit perms_on_pages3:
+-- Rename  on_tag_id   to   on_type_id_c,
+--
+-- And look at these two permission rows:
+--   row 1:
+--       for_people_id  = Developers
+--       on_category_id = Dev's Cat
+--       on_type_id_c   = Pending-Review
+--   row 2:
+--       for_people_id  = Marketers
+--       on_category_id = Marketer's Cat
+--       on_type_id_c   = Pending-Review
+--
+-- That means there's a Pending-Review tag type, and the developers can use
+-- that tag in therir *own* category, but the marketers can't add that tag,
+-- in the developer's category. They (the marketers) can use it in their own
+-- category instead.
+--
+-- How nice, Ty's table structure is already designed with that use case in mind
+-- — just need to relax the constraint  permsonpages_c_on_one   so it lets you
+-- specify both  on_category_id  and  on_type_id_c  (currently named on_tag_id).
+
+
+--=============================================================================
 --  Custom_types   Alt_5 below is best?
 --=============================================================================
 
@@ -209,7 +320,7 @@ alter table types_t add constraint types_p_thingtype_subtype primary key (
 
 -- Alt_5: ------
 
--- Kinds, types and subtypes:
+-- Kinds (ThingKind:s), types and subtypes:
 -- What kind of thing is that? It's a node     ——> kind_id_c  = Kind.Node
 --                          it's a participant     kind_id_c  = Kind.Pat
 -- What type of node? It's a page.             ——> type_id_c  = NodeType.Page
