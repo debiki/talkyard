@@ -145,7 +145,7 @@ Compile / dependencyOverrides ++= {
       "org.apache.tuweni" % "tuweni-io" % "0.10.0",
       "org.apache.tuweni" % "tuweni-units" % "0.10.0",
       "org.checkerframework" % "checker-qual" % "3.12.0",
-      "org.elasticsearch" % "elasticsearch" % "6.8.23",
+      "org.elasticsearch" % "elasticsearch" % "8.9.1",
       "org.elasticsearch" % "elasticsearch-cli" % "6.8.23",
       "org.elasticsearch" % "elasticsearch-core" % "6.8.23",
       "org.elasticsearch" % "elasticsearch-secure-sm" % "6.8.23",
