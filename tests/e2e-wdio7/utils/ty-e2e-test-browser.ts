@@ -7631,6 +7631,9 @@ export class TyE2eTestBrowser {
       _goHere: async (username: St, ps: { isGroup?: true, origin?: St }, suffix: St) => {
         await this.go((ps.origin || '') +
                 `/-/${ps.isGroup ? 'groups' : 'users'}/${username}${suffix}`);
+        // Aviod login-dialog-disappears-because-page-refreshes-when-done-loading
+        // problem. [e2e_login_race]
+        await this.waitForGone('.e_LdngUP');
       },
 
       aboutPanel: {
@@ -9829,6 +9832,10 @@ export class TyE2eTestBrowser {
           opts = <any> password;
           password = null;
         }
+        // If on a user profile page, and clicking while the page is still loading,
+        // then, once done loading, the login dialog apparently closes,
+        // and then the ongoing e2e test fails, when the username and password fields
+        // suddenly disappear. — So, _goHere waits until done loading. [e2e_login_race]
         await this.topbar.clickLogin();
         const credentials = _.isObject(username) ?  // already { username, password } object
             username : { username: username, password: password };

@@ -212,7 +212,7 @@ const UserPageComponent = createReactClass(<any> {
     // Wait until url updated to show username, instead of id, to avoid mounting & unmounting
     // sub comoponents, which could result in duplicated load-data requests.  (5GKWS20)
     if (!user || !me || (user.username && isDigitsOnly(usernameOrId)))
-      return r.p({ className: 'container' }, t.Loading);
+      return r.p({ className: 'container e_LdngUP' }, t.Loading);
 
     const imStaff = isStaff(me);
     const userGone = user_isGone(user);
