@@ -43,7 +43,7 @@
     "chai": "^4.3.4",
     "concurrently": "^3.5.1",
     "nodemon": "^1.18.10",
-    "shelljs": "^0.8.4",
+    "shelljs": "^0.8.5",
     "supertest": "^3.0.0",
     "ts-node": "^10.2.1",
     "tslint": "^6.1.3",
