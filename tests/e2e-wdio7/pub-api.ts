@@ -1246,11 +1246,17 @@ interface UpsertTypeParams {
 
 interface SetVoteAction extends Action {
   doWhat: 'SetVote';
-  doHow: {
-    voteType: 'Like';
-    whatPost: { pageId: St, postNr: 1 };  // { postId: _ } | { pageId: _, postNr: _ },
-    howMany: 0 | 1;
-  }
+  doHow: SetVoteParams;
+}
+
+interface SetVoteParams {
+  voteType: 'Like';
+  howMany: 0 | 1; // 0 clears any votes (by the same person)
+  // Either:
+  whatPage?: PageRef;
+  postNr?: PostNr; // defaults to the page (the orig post)
+  // Or:
+  whatPost?: PostRef;  // but skip?:  | { pageId: St, postNr: 1 } | { postId: _ }
 }
 
 interface SetNotfLevelAction extends Action {

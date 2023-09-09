@@ -8,6 +8,8 @@ import * as webhooksRetryImpl from './webhooks-retry-impl';
 import type { WebhookRetryTestState } from './webhooks-retry-impl';
 import server from '../utils/server';
 import settings from '../utils/settings';
+import { makeCreateTypeAction, makeCreatePageAction,
+    makeCreateCommentAction } from '../utils/do-api-actions';
 
 let brA: TyE2eTestBrowser;
 let brB: TyE2eTestBrowser;
@@ -21,8 +23,6 @@ let testState: WebhookRetryTestState;
 let site: IdAddress;
 let forum: TwoCatsTestForum;
 let apiSecret: TestApiSecret;
-
-let upsSimpleParams;
 
 const categoryAExtId = 'categoryAExtId';
 
@@ -152,12 +152,6 @@ describe(`do-api-create-pages-comts-check-webhooks-search.2br  TyTDOAPI_TAGD_PGS
     memah = forum.members.memah;
     memah_brB = brB = testState.brB;
     nextEvent.id = testState.nextEventId;
-
-    upsSimpleParams = {
-      origin: site.origin,
-      apiRequesterId: c.SysbotUserId,
-      apiSecret: apiSecret.secretKey,
-    };
   });
 
 
@@ -254,30 +248,4 @@ describe(`do-api-create-pages-comts-check-webhooks-search.2br  TyTDOAPI_TAGD_PGS
   // Also:  Close page via API?   TESTS_MISSING  TyTEWHKSAPICLS
 
 
-
-  function makeCreateTypeAction(doHow: UpsertTypeParams): UpsertTypeAction {
-    return {
-      asWho: 'username:sysbot',
-      doWhat: 'UpsertType',
-      doHow,
-    };
-  }
-
-
-  function makeCreatePageAction(asWho: St, doHow: CreatePageParams): CreatePageAction {
-    return {
-      asWho,
-      doWhat: 'CreatePage',
-      doHow,
-    };
-  }
-
-
-  function makeCreateCommentAction(asWho: St, doHow: CreateCommentParams): CreateCommentAction {
-    return {
-      asWho,
-      doWhat: 'CreateComment',
-      doHow,
-    };
-  }
 });
