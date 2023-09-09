@@ -141,7 +141,7 @@ describe(`forum-sort-and-scroll.d.2br  TyT5ABK2WL4`, () => {
     // scrolls up a tiny bit more, in the step just above?
     const minScroll = settings.browserName === 'firefox' ? 990 : 1000;
     assert.greaterThan(scrollPosByActivityTopic1015, minScroll); // else test broken
-    await strangersBrowser.forumTopicList.goToTopic('1015')
+    await strangersBrowser.forumTopicList.goToTopic('1015', { mayScroll: false });
   });
 
   it("... And navigates back", async () => {
@@ -171,7 +171,7 @@ describe(`forum-sort-and-scroll.d.2br  TyT5ABK2WL4`, () => {
     for (let i = 0; i < 3; ++i) {
       await strangersBrowser.scrollIntoViewInPageColumn(page1015LinkSelector);
       scrollPosByActivityTopic1015 = await strangersBrowser.getPageScrollY();
-      await strangersBrowser.forumTopicList.goToTopic('1015');
+      await strangersBrowser.forumTopicList.goToTopic('1015', { mayScroll: false });
       await strangersBrowser.topbar.clickHome();
       await strangersBrowser.waitForVisible(page1015LinkSelector);
       await wait5SecondsUntilHasResetScroll();

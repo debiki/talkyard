@@ -113,6 +113,19 @@ case class ActionDoer(dao: SiteDao, reqrInf: ReqrInf, mab: MessAborter) {
       case params: SetVoteParams =>
         // Currently only for Like voting or un-voting.
         dieIf(action.doWhat != ActionType.SetVote, "TyEDOA_BADACTYP_VOPA")
+
+        val (pageId: PageId, postNr: PostNr) = params.whatPost match {
+          case Left(postRef: PostRef) =>
+            RACE // ok, so minor
+            val post = dao.loadPostByRef(postRef) getOrElse {
+              _throwNotFound("TyE0POST0274", s"No post with ref id '$postRef'")
+            }
+            (post.pageId, post.nr)
+          case Right((pageRef, postNr)) =>
+            val page: PageMeta = _getThePageByRef(pageRef)
+            (page.pageId, postNr)
+        }
+
         throwUnimplIf(params.whatVote != PostVoteType.Like,
               "TyE062MSE: Can only Like vote via the API, currently.")
 
@@ -121,21 +134,20 @@ case class ActionDoer(dao: SiteDao, reqrInf: ReqrInf, mab: MessAborter) {
         //       throwIfMayNotSeePage(page, Some(voter))(tx)
         SECURITY; SLEEPING // [check_see_page]
 
-        val page = _getThePageByRef(params.whatPage)
         if (params.howMany == 1) {
           dao.addVoteIfAuZ(
-                pageId = page.pageId,
-                postNr = params.whatPostNr,
+                pageId = pageId,
+                postNr = postNr,
                 voteType = params.whatVote,
                 voterId = action.asWho.id,
                 // The backend server IP is not interesting, right.
                 voterIp = None,
-                postNrsRead = Set(params.whatPostNr))
+                postNrsRead = Set(postNr))
         }
         else if (params.howMany == 0) {
           dao.deleteVoteIfAuZ(
-                pageId = page.pageId,
-                postNr = params.whatPostNr,
+                pageId = pageId,
+                postNr = postNr,
                 voteType = params.whatVote,
                 voterId = action.asWho.id)
         }

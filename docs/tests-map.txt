@@ -550,6 +550,12 @@ forum -
     show waiting:
     show deleted -
       not/staff: authz-view-as-stranger.test.ts
+  do-it votes,
+  sort by votes,
+  sort order of topics: _topic_order
+            - do-api-upvote-ideas-sort-by-votes.2br.d  TyTDOAPI_UPVOTE_IDEAS
+  lock sort order:
+            - do-api-upvote-ideas-sort-by-votes.2br.d  TyTDOAPI_UPVOTE_IDEAS.TyTLOCK_TPC_ORD
   popular topics -
     all categories:
     only one category:
@@ -713,6 +719,7 @@ topics -
   ideas,
   doing status (planned/started/done):
             - page-type-idea-statuses-comments.2br.d  TyTPATYIDEA
+            - do-api-upvote-ideas-sort-by-votes.2br.d  TyTDOAPI_UPVOTE_IDEAS
   problems:
   solved status (planned/started/fixed):
             - page-type-problem-statuses.2br.d  TyT602AKK73
@@ -893,6 +900,7 @@ discussion -
     oldest first:
             - embcom.drafts-previews-not-logged-in.2br.e2e.ts  TyT2ZBKPW048.TyTPOSTORDR
     newest first:
+  sort order of topics:  see _topic_order
 
 large pages,
 really large:
@@ -1674,7 +1682,8 @@ api:
     slugifying long and weird titles:
           - api-upsert-pages.2browsers.test.ts   TyT692SKBDWJ74
   upsert posts:
-          - api-upsert-posts.2br.d   TyT60RKNJF24C
+            - api-upsert-posts.2br.d   TyT60RKNJF24C
+            - do-api-upvote-ideas-sort-by-votes.2br.d  TyTDOAPI_UPVOTE_IDEAS
     gets sanitized:
           - api-upsert-posts.2br.d   TyT60RKNJF24C: TyT0RKDL5MW
   private chat:
@@ -1722,6 +1731,7 @@ api:
 
   do api:
             - do-api-like-and-subscribe.2br  TyTEAPILIKESUBS
+            - do-api-upvote-ideas-sort-by-votes.2br.d  TyTDOAPI_UPVOTE_IDEAS
   atom feed:
             - TESTS_MISSING
   rss feed: No, there're only Atom feeds.

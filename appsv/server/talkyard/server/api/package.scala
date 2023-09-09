@@ -112,8 +112,7 @@ package object api {
   case class SetVoteParams(
         whatVote: PostVoteType,
         howMany: i32,
-        whatPage: PageRef,
-        whatPostNr: PostNr,
+        whatPost: Either[PostRef, (PageRef, PostNr)],
         )(mab: MessAborter) extends ActionParams
   {
     mab.check(howMany == 0 || howMany == 1, "TyE446MEP2")

@@ -3246,6 +3246,18 @@ trait PostsDao {
     readOnlyTransaction(_.loadPostsByUniqueId(Vector(postId))).values.headOption
 
 
+  def loadPostByRef(ref: PostRef): Opt[Post] = ref match {
+    case ParsedRef.ExternalId(refId) =>
+      loadPostByRefId(refId)
+    //case ParsedRef.TalkyardId(id) => but that's a String. Need [int_num_id]?
+    //  loadPostByUniqueId(id)
+  }
+
+  def loadPostByRefId(refId: RefId): Opt[Post] = {
+      readTx(_.loadPostsByExtIdAsMap(Vector(refId))).values.headOption
+  }
+
+
   /** Finds all of postNrs. If any single one (or more) is missing, returns Error. */
   def loadPostsAllOrError(pageId: PageId, postNrs: Iterable[PostNr])
         : immutable.Seq[Post] Or One[PostNr] =

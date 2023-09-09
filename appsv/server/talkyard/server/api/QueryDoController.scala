@@ -76,8 +76,8 @@ class QueryDoController @Inject()(cc: ControllerComponents, tyContext: TyContext
     var itemNr = 0
 
     // [do_api_limits]
-    throwForbiddenIf(taskJsValList.length > 6, "TyEAPI2MNYTSKS",
-          "Too many API tasks — at most 6, for now")
+    throwForbiddenIf(taskJsValList.length > 7, "TyEAPI2MNYTSKS",
+          "Too many API tasks — at most 7, for now")
 
     val tasks: Seq[ApiTask] = taskJsValList map { jsVal =>
       itemNr += 1
@@ -121,7 +121,7 @@ class QueryDoController @Inject()(cc: ControllerComponents, tyContext: TyContext
         val parser = ActionParser(dao, mayDoOnlyAs = mayDoOnlyAs, IfBadAbortReq)
         if (doWhatSt.isDefined) {
           parser.parseAction(doWhatSt.get, jsOb) getOrIfBad { msg =>
-            throwBadReq("TyEAPIACTN", s"$whatItem is a bad action: $msg")
+            throwBadReq("TyEAPIACTN", s"$whatItem of type ${doWhatSt.get} is a bad action: $msg")
           }
         } /*
         else if (getQueryJsOb.isDefined) {

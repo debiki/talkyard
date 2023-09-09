@@ -324,21 +324,20 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     }
   }
 
-  /*   id: / postid: / nr: / extid:  pageidpostnr/idnr:123,456  ?
-  def parsePostRef(json: JsValue, fieldName: St): PageRef = {
+  //   iid: / postid: / rid:   or maybe: pageid:123#post-456 ?   not:  pageidpostnr/idnr:123,456
+  def parsePostRef(json: JsValue, fieldName: St): PostRef = {
     parseOptPostRef(json, fieldName) getOrElse {
       throwMissing("TyEJSN0POREF", fieldName)
     }
   }
 
-  def parseOptPostRef(json: JsValue, fieldName: St): Opt[PostRef] = Some {
-    val rawRef = parseOptSt(json, fieldName) getOrElse {
-      return None
+  def parseOptPostRef(json: JsValue, fieldName: St): Opt[PostRef] = {
+    parseOptSt(json, fieldName) map { refSt =>
+      core.parsePostRef(refSt) getOrIfBad { msg =>
+        throwBadJson("TyEJSBADPOREF", s"Not a post ref: '$refSt', problem: $msg")
+      }
     }
-    core.parsePostRef(rawRef) getOrIfBad { errMsg =>
-      throwBadJson("TyEJSBADPOREF", s"Not a post ref: '$rawRef', problem: $errMsg")
-    }
-  } */
+  }
 
 
   // RENAME! to just parseRef

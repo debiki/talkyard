@@ -480,6 +480,8 @@ function runAllE2eTests {
   $r s/wdio-7 --only page-type-question-closed.2br.d --cd -i $args
   $r s/wdio-7 --only page-type-info-page.1br.d --cd -i $args
 
+  $r s/wdio-7 --only do-api-upvote-ideas-sort-by-votes.2br.d --cd -i $args
+
   $r s/wdio --only search-public-basic.2browsers $args
   $r s/wdio --only search-private-chat.2browsers $args
 

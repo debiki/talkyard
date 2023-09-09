@@ -87,6 +87,7 @@ case class ActionParser(dao: SiteDao, mayDoOnlyAs: Opt[Pat], mab: MessAborter) {
 
     def anyRefId: Opt[RefId] = debiki.JsonUtils.parseOptSt(howJsOb, "refId")
     def pageRef: PageRef = debiki.JsonUtils.parsePageRef(howJsOb, "whatPage")
+    def postRef: Opt[PostRef] = debiki.JsonUtils.parseOptPostRef(howJsOb, "whatPost")
 
     val params = actionType match {
 
@@ -159,14 +160,10 @@ case class ActionParser(dao: SiteDao, mayDoOnlyAs: Opt[Pat], mab: MessAborter) {
       case ActionType.SetVote =>
         val whatVote = parsePostVoteType(howJsOb, "voteType", altName = "whatVote")
         val howMany = parseInt32(howJsOb, "howMany", min = Some(0), max = Some(1))
-        val postNr: PostNr = BodyNr
-        /* Or a specific post, if `.whatPost` present and `.whatPage` absent:
-        val whatPostJsOb = parseJsObject(howJsOb, "whatPost")
-        val pageRef: PageRef = debiki.JsonUtils.parsePageRef(whatPostJsOb, "page")
-        val postNr: PostNr = parseInt32(whatPostJsOb, "postNr")
-         */
+        def postNr: PostNr = parseOptInt32(howJsOb, "postNr") getOrElse BodyNr
         SetVoteParams(whatVote, howMany = howMany,
-              whatPage = pageRef, whatPostNr = postNr)(mab)
+              // Either a post ref,  or a  page ref + post nr:
+              whatPost = postRef.map(Left.apply).getOrElse(Right(pageRef -> postNr)))(mab)
 
       case ActionType.SetNotfLevel =>
         val notfLevel = parseNotfLevel(howJsOb, "whatLevel")

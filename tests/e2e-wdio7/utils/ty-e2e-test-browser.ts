@@ -2289,11 +2289,17 @@ export class TyE2eTestBrowser {
     }
 
     async waitForThenClickText(selector: St, regex: St | RegExp,
-            opts: { tryNumTimes?: Nr } = {}) {   // RENAME to waitAndClickSelectorWithText (above)
+            opts: { tryNumTimes?: Nr, mayScroll?: Bo } = {}) {   // RENAME to waitAndClickSelectorWithText (above)
       // [E2EBUG] COULD check if visible and enabled, and loading overlay gone? before clicking
       const numTries = opts.tryNumTimes || 3;
+      let isRetry: Bo | U;
       await utils.tryManyTimes(`waitForThenClickText(${selector}, ${regex})`, numTries,
               async () => {
+        // Try once without scrolling, almost always works.
+        if ((opts.mayScroll !== false && isRetry) || (opts.mayScroll === true)) {
+          await this.scrollIntoViewInPageColumn(selector);
+        }
+        isRetry = true;
         const elem = await this.waitAndGetElemWithText(selector, regex);
         await this.clickNow(elem);
       });
@@ -4950,6 +4956,21 @@ export class TyE2eTestBrowser {
         await this.forumTopicList.waitForCategoryName(toCatName);
       },
 
+      getTopicSortOrder: async (): Pr<'New' | 'Top' | 'Active'> => {
+        const els = await this.$$('.esForum_catsNav_sort .active');
+        dieIf(els.length > 1, `Many active topic sort orders: ${els.length} [TyE026MRL4]`);
+        dieIf(!els.length, `No active topic sort order [TyE026MRL5]`);
+        const el = els[0];
+        const id: St = await el.getAttribute('id');
+        switch (id) {
+          case 'e_SortNewB': return 'New';
+          case 'e2eSortTopB': return 'Top';
+          case 'e2eSortLatestB': return 'Active';
+          default:
+            die(`Bad sort btn id: ${id} [TyE026MRL52]`);
+        }
+      },
+
       clickViewLatest: async () => {
         await this.waitAndClick('#e2eSortLatestB');
         await this.waitUntilGone('.s_F_SI_TopB');
@@ -4975,13 +4996,13 @@ export class TyE2eTestBrowser {
         await this.waitAndClickFirst(`.edAvtr[title~="${username}"]`);
       },
 
-      goToTopic: async (title: St) => {   // RENAME to navToTopic
-        await this.forumTopicList.navToTopic(title);
+      goToTopic: async (title: St, opts: { mayScroll?: Bo } = {}) => {   // RENAME to navToTopic
+        await this.forumTopicList.navToTopic(title, opts);
       },
 
-      navToTopic: async (title: St) => {
+      navToTopic: async (title: St, opts: { mayScroll?: Bo } = {}) => {
         await this.rememberCurrentUrl();
-        await this.waitForThenClickText(this.forumTopicList.titleSelector, title);
+        await this.waitForThenClickText(this.forumTopicList.titleSelector, title, opts);
         await this.waitForNewUrl();
         await this.assertPageTitleMatches(title);
       },
@@ -4999,18 +5020,26 @@ export class TyE2eTestBrowser {
       },
 
       assertTopicTitlesAreAndOrder: async (titles: St[]) => {
-        const els = await this.$$(this.forumTopicList.titleSelector);
-        for (let i = 0; i < titles.length; ++i) {
-          const titleShouldBe = titles[i];
-          const actualTitleElem = els[i];
-          if (!actualTitleElem) {
-            assert.ok(false, `Title nr ${i} missing, should be: "${titleShouldBe}"`);
+        // If there's a React component change, the elems go stale, so try a few times.
+        // But will that really help? Seems wdio 7 got stuck in an internal loop, printing:
+        //    "[0-0] 2023-09-09T07:11:52.390Z WARN webdriver:
+        //         Request encountered a stale element - terminating request"
+        // all the time. [E2EBUG]
+        await utils.tryManyTimes(`Checking topic titles and order`, 3, async () => {
+          const els = await this.$$(this.forumTopicList.titleSelector);
+          for (let i = 0; i < titles.length; ++i) {
+            const titleShouldBe = titles[i];
+            const actualTitleElem = els[i];
+            if (!actualTitleElem) {
+              assert.ok(false, `Title ix ${i} missing, should be: "${titleShouldBe}"`);
+            }
+            const actualTitle = await actualTitleElem.getText();
+            if (titleShouldBe !== actualTitle) {
+              assert.ok(false,
+                      `Title ix ${i} is: "${actualTitle}", should be: "${titleShouldBe}"`);
+            }
           }
-          const actualTitle = await actualTitleElem.getText();
-          if (titleShouldBe !== actualTitle) {
-            assert.ok(false, `Title nr ${i} is: "${actualTitle}", should be: "${titleShouldBe}"`);
-          }
-        }
+        });
       },
 
       assertTopicVisible: async (title: St, ps: { andHidden?: Bo } = {}) => {
@@ -5196,6 +5225,10 @@ export class TyE2eTestBrowser {
       clearParentCategory: async () => {
         await this.waitAndClick('.s_CD_0SubCat');
         await this.waitUntilTextIs('.s_CD .e_SelCatB', "None");
+      },
+
+      setDoItVotes: async (enabled: Bo) => {
+        await this.setCheckbox('.s_CD .e_DoVote input', enabled);
       },
 
       openDiscLayout: async () => {
