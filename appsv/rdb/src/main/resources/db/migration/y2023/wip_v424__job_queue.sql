@@ -28,6 +28,8 @@ alter table  index_queue3  add constraint  ixq_c_daterange_ofs_null  check (
 alter table  index_queue3  add column  search_eng_vers_c  text_oneline_120_d[];
 alter table  index_queue3  add column  lang_codes_c       text_oneline_60_d[];
 
+-- E.g. reindex orig post upovtes (Do-It votes), or regenerate html to
+-- update CDN links? or reindex in ElasticSearch, ... or ... what more
 alter table  index_queue3  add column  do_what_c  i64_nz_d  not null default 1;
 
 

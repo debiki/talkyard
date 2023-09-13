@@ -53,6 +53,12 @@ trait SearchSiteDaoMixin extends SiteTransaction {
         values (?, ?, ($selectSiteVersion), ?, ?)
       $OnPostConflictAction
       """
+
+    BUG; UX; COULD // pretty harmless: Might make it take a tiny bit longer for edits to
+    // become visible to the full-text-search engine:
+    //      action_at shouldn't always be createdAt? What if the post
+    // just got *edited* recently?  Then, better use now().
+
     // What if appr rev nr gets decremented? should that perhaps not be allowed? [85YKF30]
     val revNr = post.approvedRevisionNr.getOrElse(post.currentRevisionNr)
     val values = List(post.createdAt, siteId.asAnyRef, siteId.asAnyRef,
