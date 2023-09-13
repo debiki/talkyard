@@ -249,11 +249,19 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     /** Same as abort(), but can be overridden to show a Forbidden message,
       * instead of a Bad Request or Internal Server Error message.
       */
-    def deny(errCode: St, errMsg: => St = "Forbidden"): Nothing = {
+    def abortDeny(errCode: St, errMsg: => St = "Forbidden"): Nothing = {
       abort(errCode, errMsg)
     }
-    def denyIf(test: Bo, errCode: St, errMsg: => St = "Forbidden"): U = {
-      if (test) abort(errCode, errMsg)
+    def abortDenyIf(test: Bo, errCode: St, errMsg: => St = "Forbidden"): U = {
+      if (test) abortDeny(errCode, errMsg)
+    }
+    /** Same as abort(), but can show a Not Found message.
+      */
+    def abortNotFound(errCode: St, errMsg: => St = "Not Found"): Nothing = {
+      abort(errCode, errMsg)
+    }
+    def abortNotFoundIf(test: Bo, errCode: St, errMsg: => St = "Not Found"): U = {
+      if (test) abortNotFound(errCode, errMsg)
     }
   }
 
@@ -267,8 +275,11 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     override def abort(errCode: St, errMsg: => St = ""): Nothing = {
       throw new BadRequestEx(s"$errMsg [$errCode]")
     }
-    override def deny(errCode: St, errMsg: => St = ""): Nothing = {
+    override def abortDeny(errCode: St, errMsg: => St = ""): Nothing = {
       throw new ForbiddenEx(s"$errMsg [$errCode]")
+    }
+    override def abortNotFound(errCode: St, errMsg: => St = ""): Nothing = {
+      throw new NotFoundEx(s"$errMsg [$errCode]")
     }
   }
 

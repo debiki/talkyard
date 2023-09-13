@@ -93,7 +93,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(anyCategoryId)
 
-    throwNoUnless(Authz.mayCreatePage(  // [dupl_api_perm_check]
+    throwNoUnless(Authz.mayCreatePage(  // [dupl_api_perm_check]  use createPageIfAuZ() instead CLEAN_UP
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
       pageRole, PostType.Normal, pinWhere = None, anySlug = anySlug, anyFolder = anyFolder,
       inCategoriesRootLast = categoriesRootLast,

@@ -868,7 +868,7 @@ package object core {
   type ReqrId = Who // RENAME to ReqrIds? (with an ...s),  [edit] NO, instead, to ReqrInf. [/edit]
                     // ... because is more than one id (user id, ip, bowser id cookie, etc)
 
-  case class ReqrInf( // better
+  case class ReqrInf( // better, no, ... best:  talkyard.server.authz.ReqrAndTgt, use instead
     reqr: Pat,
     browserIdData: BrowserIdData,
   ) {
@@ -889,6 +889,7 @@ package object core {
   // be exposed to internal parts of Ty (would increase the coupling, in a bad way).
   // So, not ReqInf, but ReqrInf.  [/edit]
   // Is isAnon always false, hmmm?
+  @deprecated
   case class Who(trueId: TrueId, browserIdData: BrowserIdData, isAnon: Bo = false) {
     def id: PatId = trueId.curId
     def ip: String = browserIdData.ip

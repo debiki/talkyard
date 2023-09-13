@@ -25,6 +25,7 @@ import debiki.{SpecialContentPages, TextAndHtml}
 import debiki.dao.{PagePartsDao, SettingsDao, AuditDao}
 import talkyard.server.notf.NotificationGenerator
 import talkyard.server.pop.PagePopularityDao
+import talkyard.server.authz.ReqrAndTgt
 import scala.collection.immutable
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -1504,8 +1505,10 @@ case class SitePatcher(globals: debiki.Globals) {
       // each pat's [numLikesReceived]:
       //    tx.insertPostAction(vote.toPostAction(postId = post.id))
       // Instead:  (and this is more like the Do API, should use instead)
+      val voter = newSiteDao.getTheParticipant(vote.voterId) // just for tests, see comment above
+      val voterAsReqrTgt = ReqrAndTgt(voter, browserIdData, voter)
       newSiteDao.addVoteIfAuZ(pageId = vote.pageId, postNr = vote.postNr, vote.voteType,
-            voterId = vote.voterId, voterIp = None, postNrsRead = Set.empty)
+            voterAsReqrTgt, voterIp = None, postNrsRead = Set.empty)
     }
 
     // If we restored a site, then there're already things in the mem cache and Redis cache,

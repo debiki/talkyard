@@ -20,6 +20,7 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude.{IfBadAbortReq, IfBadDie, JsEmptyObj2, throwUnimpl}
 import debiki.{JsonMaker, RateLimits, SiteTpi}
+import debiki.JsonUtils.parseJsArray
 import debiki.EdHttp._
 import talkyard.server.{TyContext, TyController}
 import play.api.libs.json._
@@ -47,13 +48,15 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
+  // Later: Trusted or Core Members should by default be allowed to do this?  [tag_perms]
   def upsertType: Action[JsValue] = StaffPostJsonAction2(
         RateLimits.CreateTagCatPermGroup, maxBytes = 2000) { req =>
     import req.{dao, theRequester => reqer}
     // Pass a CheckThoroughly param to the mess aborter? And then check the tag name
     // too. [mess_aborter]. Or always do from inside JsX.parseTagType()
     val tagTypeMaybeId: TagType = JsX.parseTagType(req.body, Some(reqer.id))(IfBadAbortReq)
-    val tagType = dao.upsertTypeIfAuZ(tagTypeMaybeId, req.reqrInf)(IfBadAbortReq)
+    val tagType = dao.upsertTypeIfAuZ(
+          tagTypeMaybeId, req.reqrTargetSelf.denyUnlessStaff())(IfBadAbortReq)
     OkSafeJson(Json.obj(  // ts: StorePatch
         "tagTypes" -> Json.arr(JsX.JsTagTypeMaybeRefId(tagType,
             // Ooops, only for admins (not mod) here:  AuthzCtx.maySeeExtIds: Bo
@@ -136,11 +139,10 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def updateTags: Action[JsValue] = StaffPostJsonAction2(
+  def updateTags: Action[JsValue] = PostJsonAction(
           RateLimits.EditPost, maxBytes = 5000) { req =>
     // Later, more granular access control.  [priv_tags]
     import req.{body, dao}
-    import debiki.JsonUtils.parseJsArray
     val toAddJsVals: Seq[JsValue] = parseJsArray(body, "tagsToAdd")
     val toAdd = toAddJsVals.map(v => JsX.parseTag(v)(IfBadAbortReq))
     val toRemoveJsVals = parseJsArray(body, "tagsToRemove")
@@ -148,9 +150,11 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val toEditJsVals = parseJsArray(body, "tagsToEdit")
     val toEdit = toEditJsVals.map(v => JsX.parseTag(v)(IfBadAbortReq))
 
+    val reqrTgt = req.reqrTargetSelf.denyUnlessMember()
+
     val affectedPostIds =
-          dao.updateTagsIfAuth(
-              toAdd = toAdd, toRemove = toRemove, toEdit = toEdit, req.who)(IfBadAbortReq)
+          dao.updateTagsIfAuZ(
+              toAdd = toAdd, toRemove = toRemove, toEdit = toEdit, reqrTgt)(IfBadAbortReq)
 
     val storePatch = dao.jsonMaker.makeStorePatchForPostIds(
           postIds = affectedPostIds, showHidden = true, inclUnapproved = true,

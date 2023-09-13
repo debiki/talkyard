@@ -81,7 +81,7 @@ package object api {
     def bodyFormat: MarkupLang
   }
 
-  // Also see SitePatchParser.readSimplePagePatchOrBad
+  // Also see SitePatchParser.readSimplePagePatchOrBad, and  [ref_and_id_params].
   case class CreatePageParams(
         refId: Opt[RefId],
         pageType: PageType,

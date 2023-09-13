@@ -68,6 +68,9 @@ class QueryDoController @Inject()(cc: ControllerComponents, tyContext: TyContext
           else ("queriesAndActions", "")
 
     // See [api_do_as] in ../../../../../docs/ty-security.adoc .
+    // But there's also:  UserDao._editMemberThrowUnlessSelfStaff — which does
+    // similar checks. Maybe reuse that fn instead?
+    // If changing this, review & fix:  [vote_as_otr] & [do_as_otr]  first.
     val mayDoOnlyAs: Opt[Pat] =
           if (request.theReqer.isSysbot) None  // No restriction. (Or .isAdmin instead?)
           else Some(request.theReqer)  // Some restriction: This user only

@@ -32,6 +32,7 @@ import talkyard.server._
 import talkyard.server.dao.StaleStuff
 import talkyard.server.authn.{Join, Leave, JoinOrLeave, StayIfMaySee}
 import talkyard.server.authz.{AuthzCtxOnPats, AuthzCtxOnAllWithReqer, AuthzCtxWithReqer}
+import talkyard.server.authz.{ReqrAndTgt}
 
 
 case class LoginNotFoundException(siteId: SiteId, userId: UserId)
@@ -1988,39 +1989,43 @@ trait UserDao {
   }
 
 
-  def savePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, reqrInf: ReqrInf): U = {
+  def savePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, reqrTgt: ReqrAndTgt): U = {
+    require(pageNotfPref.peopleId == reqrTgt.target.id, "TyE_PPL_NE_TGT_93MR2")
     _editMemberThrowUnlessSelfStaff(
-          pageNotfPref.peopleId, reqrInf.toWho, "TyE2AS0574", "change notf prefs") {
+          pageNotfPref.peopleId, reqrTgt.reqrToWho, "TyE2AS0574", "change notf prefs") {
             case c @ EditMemberCtx(tx, _, _, _) =>
-      SECURITY; SLEEPING
-      /* [check_see_page]  Check if byWho  *and*  PageNotfPref.peopleId  may see the page.
-      Sth like:
-      pageNotfPref.pageId foreach { id =>
-        val page = tx.loadPageMeta(id) getOrElse {
-          security.throwIndistinguishableNotFound("SAVENOTFPREF_0SEEPG")
-        }
-        throwIfMayNotSeePage(page, Some(c.member))(tx)
-        throwIfMayNotSeePage(page, Some(byWho))(tx)
-      }
-      pageNotfPref.pagesInCategoryId foreach { catId =>
-        No!:  val authzCtx = getForumAuthzContext(Some(c.member))
-        throwIfMayNotSeeCategory(catId, Some(c.member))(tx)
-        throwIfMayNotSeeCategory(catId, Some(byWho))(tx)
-      } */
+      _authzNotfPref(pageNotfPref, reqrTgt)(tx)
       tx.upsertPageNotfPref(pageNotfPref)
     }
   }
 
 
-  def deletePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, reqrInf: ReqrInf): Unit = {
+  def deletePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, reqrTgt: ReqrAndTgt): Unit = {
+    require(pageNotfPref.peopleId == reqrTgt.target.id, "TyE_PPL_NE_TGT_93MR3")
     _editMemberThrowUnlessSelfStaff(
-          pageNotfPref.peopleId, reqrInf.toWho, "TyE5KP0GJL", "delete notf prefs") {
+          pageNotfPref.peopleId, reqrTgt.reqrToWho, "TyE5KP0GJL", "delete notf prefs") {
             case EditMemberCtx(tx, _, _, _) =>
-      SECURITY; SLEEPING
-      // [check_see_page]  Can be enough to check if byWho may see the page
-      // — because *removing* notfs prefs for pageNotfPref.peopleId if they may not
-      // see that content anyway, is ok?
+      _authzNotfPref(pageNotfPref, reqrTgt,
+            // It's ok for an admin to *remove* a notf pref, even if the target user
+            // can no longer see the page or category.
+            checkOnlyReqr = true)(tx)
       tx.deletePageNotfPref(pageNotfPref)
+    }
+  }
+
+
+  /**  Checks if both the requester and the target user may see the page.
+    */
+  private def _authzNotfPref(notfPref: PageNotfPref, reqrTgt: ReqrAndTgt,
+          checkOnlyReqr: Bo = true)(tx: SiteTx): U = {
+    // Related test:
+    //   - notf-prefs-private-groups.2browsers.test.ts  TyT406WMDKG26
+
+    notfPref.pageId foreach { pageId =>
+      throwIfMayNotSeePage2(pageId, reqrTgt, checkOnlyReqr = checkOnlyReqr)(Some(tx))
+    }
+    notfPref.pagesInCategoryId foreach { catId =>
+      throwIfMayNotSeeCategory2(catId, reqrTgt, checkOnlyReqr = checkOnlyReqr)(Some(tx))
     }
   }
 
@@ -2518,6 +2523,10 @@ trait UserDao {
         mayNotWhat: St, mustBeAdmin: Bo = false)(block: EditMemberCtx => U): MemberVb = {
     SECURITY // review all fns in UserDao, and in UserController, and use this helper fn?
     // Also create a helper fn:  readMemberThrowUnlessSelfStaff2 ...
+
+    // There's a similar check in the Do-API:  [api_do_as],  maybe break out this fn
+    // and use everywhere instead?  Maybe should use this fn also here:  [vote_as_otr]
+    // or in fact whereever  ReqrAndTgt.areNotTheSame?
 
     throwForbiddenIf(byWho.id <= MaxGuestId,
       errorCode + "-MEGST", s"Guests may not $mayNotWhat")

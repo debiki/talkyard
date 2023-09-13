@@ -136,14 +136,16 @@ Nice props / tags in Gerrit: https://chromium-review.googlesource.com/c/v8/v8/+/
 
 [missing_tags_feats]
 Wasn't fixed in first iteration.
-+ search by content tags, incl in ElasticSearch index (faceted search).
 + orig post author user flair (badge).
 + might as well add search-by-user-id/username/full-name at the same time?
-  And upgr ES to 7.x.
+  And upgr ES to 8.x.
 + search for all JsUser(_) — then tags (badges) not included.
 + get notified about posts w tags one follows
 + for some endpoints, [tags_and_badges_missing]
 + access restricted tags [priv_tags]
+
++ [tag_perms] Grant create/edit tag permissions to groups or trust levels?
+
 
 [nested_tags][child_tags] hierarchical tags
 

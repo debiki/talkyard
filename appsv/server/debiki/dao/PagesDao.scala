@@ -24,7 +24,7 @@ import com.debiki.core.PageParts.FirstReplyNr
 import com.debiki.core.Participant.SystemUserId
 import debiki._
 import debiki.EdHttp._
-import talkyard.server.authz.Authz
+import talkyard.server.authz.{Authz, ReqrAndTgt}
 import talkyard.server.spam.SpamChecker
 import java.{util => ju}
 import scala.collection.immutable
@@ -55,6 +55,7 @@ case class CreatePageResult(
 trait PagesDao {
   self: SiteDao =>
 
+  import context.security.throwNoUnless
 
   def loadPagesByUser(userId: PatId, isStaffOrSelf: Bo, inclAnonPosts: Bo = false, limit: i32)
           : Seq[PagePathAndMeta] = {
@@ -64,8 +65,8 @@ trait PagesDao {
 
   MOVE // loadMaySeePagesInCategory and listMaySeeTopicsInclPinned to here?  [move_list_pages]
 
-  REMOVE; CLEAN_UP // use createPage2 instead, and rename it to createPage().
-  @deprecated
+  REMOVE; CLEAN_UP
+  @deprecated("use createPageIfAuZ instead?")
   def createPage(pageRole: PageType, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
         anyFolder: Option[String], anySlug: Option[String], title: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
@@ -87,6 +88,70 @@ trait PagesDao {
   }
 
 
+
+  // Break out a  CreatePageParams class?  But deleteDraftNr  shouldn't be part of it,
+  // maybe  reqrTgt  also shouldn't?
+  // There's also:  talkyard.server.api.CreatePageParams
+  // but it's different, in that it has still unresolved "refid:..."s instead
+  // of e.g. category id.
+  // Maybe they could be named  CreatePageRefParams and  CreatePageIdParams? [ref_and_id_params]
+  //                       Or:  CreatePageApiParams and  CreatePageInt(ernal)Params?
+  //                       Or:                           CreatePageExpImpParams? (export import)
+  def createPageIfAuZ(
+        pageType: PageType, pageStatus: PageStatus, inCatId: Opt[CategoryId],
+        withTags: ImmSeq[TagTypeValue],
+        anyFolder: Opt[St], anySlug: Opt[St], title: TitleSourceAndHtml,
+        bodyTextAndHtml: TextAndHtml, showId: Bo, deleteDraftNr: Opt[DraftNr],
+        reqrAndCreator: ReqrAndTgt,
+        spamRelReqStuff: SpamRelReqStuff,
+        doAsAnon: Opt[WhichAnon.NewAnon] = None, // make non-optional?
+        discussionIds: Set[AltPageId] = Set.empty,
+        embeddingUrl: Opt[St] = None,
+        refId: Opt[RefId] = None,
+        ): CreatePageResult = {
+
+    val reqrAndLevels = readTx(loadUserAndLevels(reqrAndCreator.reqrToWho, _))
+    val catsRootLast = getAncestorCategoriesSelfFirst(inCatId)
+    val tooManyPermissions = getPermsOnPages(categories = catsRootLast)
+
+    // A bot might be creating the page on behalf of another user, via the API. Then,
+    // the requester is the bot (it sends the HTTP request), and the creator is the human.
+    // Both the requester and the creator need the mayCreatePage() permission. [2_perm_chks]
+    // See docs in docs/ty-security.adoc [api_do_as].
+
+    // [dupl_api_perm_check]
+    throwNoUnless(Authz.mayCreatePage(
+          reqrAndLevels, getOnesGroupIds(reqrAndLevels.user),
+          pageType, PostType.Normal, pinWhere = None,
+          anySlug = anySlug, anyFolder = anyFolder,
+          inCategoriesRootLast = catsRootLast,
+          tooManyPermissions),
+          "TyE_CRPG_REQR_PERMS")
+
+    if (reqrAndCreator.areNotTheSame) {
+      val creatorAndLevels = readTx(loadUserAndLevels(reqrAndCreator.targetToWho, _))
+      throwNoUnless(Authz.mayCreatePage(
+            creatorAndLevels, getOnesGroupIds(creatorAndLevels.user),
+            pageType, PostType.Normal, pinWhere = None,
+            anySlug = anySlug, anyFolder = anyFolder,
+            inCategoriesRootLast = catsRootLast,
+            tooManyPermissions),
+            "TyE_CRPG_TGT_PERMS")
+    }
+
+    createPage2(
+          pageType, pageStatus, anyCategoryId = inCatId, withTags,
+          anyFolder = anyFolder, anySlug = anySlug, title,
+          bodyTextAndHtml = bodyTextAndHtml, showId = showId, deleteDraftNr = deleteDraftNr,
+          byWho = reqrAndCreator.targetToWho,
+          spamRelReqStuff,
+          doAsAnon,
+          discussionIds = discussionIds,
+          embeddingUrl = embeddingUrl,
+          extId = refId)
+  }
+
+  @deprecated("Merge with  createPageIfAuZ?")
   def createPage2(pageRole: PageType, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
         withTags: ImmSeq[TagTypeValue],
         anyFolder: Option[String], anySlug: Option[String], title: TitleSourceAndHtml,

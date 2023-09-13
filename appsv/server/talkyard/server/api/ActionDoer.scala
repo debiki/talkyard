@@ -8,7 +8,7 @@ import debiki.{TextAndHtml, TitleSourceAndHtml}
 import collection.{mutable => mut}
 import play.api.libs.json._
 import org.scalactic.{Good, Or, Bad}
-import talkyard.server.authz.Authz
+import talkyard.server.authz.{Authz, ReqrAndTgt}
 
 
 case class ActionDoer(dao: SiteDao, reqrInf: ReqrInf, mab: MessAborter) {
@@ -44,11 +44,13 @@ case class ActionDoer(dao: SiteDao, reqrInf: ReqrInf, mab: MessAborter) {
 
   def doAction(action: ApiAction): JsObject Or ErrMsg = Good {
     val doAsInf: ReqrInf = ReqrInf(action.asWho, reqrInf.browserIdData)
+    val reqrTgt = ReqrAndTgt(reqrInf, target = action.asWho)
+
     action.doHow match {
       case params: UpsertTypeParams =>
         dieIf(action.doWhat != ActionType.UpsertType, "TyEDOA_BADACTYP_UPSTYP")
         val theType = params.toType(createdById = action.asWho.id)(mab)
-        dao.upsertTypeIfAuZ(theType, doAsInf)(mab)
+        dao.upsertTypeIfAuZ(theType, reqrTgt.denyUnlessStaff())(mab)
         JsEmptyObj2
 
       case params: CreatePageParams =>
@@ -60,27 +62,12 @@ case class ActionDoer(dao: SiteDao, reqrInf: ReqrInf, mab: MessAborter) {
         val cat = _getCatByRef(params.inCategory)
         val tags: ImmSeq[TagTypeValue] = _resolveTagTypes(params.withTags, IfBadAbortReq)
 
-        val userAndLevels = dao.readTx(dao.loadUserAndLevels(doAsInf.toWho, _))
-        val categoriesRootLast = dao.getAncestorCategoriesRootLast(Some(cat.id))
-
-        // [dupl_api_perm_check]  Maybe better to move this authz check to
-        // dao.createPage2(), and rename it to  createPageIfAuZ?
-        SECURITY; SLEEPING // ! Check if reqrInf can see the page. [check_see_page]  [api_do_as]
-        // Change  createPage2()  to   createPageIfAuZ?
-        throwNoUnless(Authz.mayCreatePage(
-              userAndLevels, dao.getOnesGroupIds(userAndLevels.user),
-              params.pageType, PostType.Normal, pinWhere = None,
-              anySlug = params.urlSlug, anyFolder = None,
-              inCategoriesRootLast = categoriesRootLast,
-              tooManyPermissions = dao.getPermsOnPages(categories = categoriesRootLast)),
-              "TyEDOA_CREATEPAGE_PERMS")
-
         val result: CreatePageResult =
-              dao.createPage2(
-                  params.pageType, PageStatus.Published, anyCategoryId = Some(cat.id), tags,
+              dao.createPageIfAuZ(
+                  params.pageType, PageStatus.Published, inCatId = Some(cat.id), tags,
                   anyFolder = None, anySlug = params.urlSlug, titleSourceAndHtml,
-                  bodyTextAndHtml, showId = true, deleteDraftNr = None, doAsInf.toWho,
-                  spamRelReqStuff = SystemSpamStuff, doAsAnon = None, extId = params.refId)
+                  bodyTextAndHtml, showId = true, deleteDraftNr = None, reqrTgt,
+                  spamRelReqStuff = SystemSpamStuff, doAsAnon = None, refId = params.refId)
         Json.obj(
             "pageId" -> result.path.pageId,
             "pagePath" -> result.path.value)
@@ -91,17 +78,10 @@ case class ActionDoer(dao: SiteDao, reqrInf: ReqrInf, mab: MessAborter) {
         val pagePath = _getThePagePath(pageMeta.pageId)
         val textAndHtml = _commmarkToHtml(params, pageMeta.pageType)
         val tags: ImmSeq[TagTypeValue] = _resolveTagTypes(params.withTags, IfBadAbortReq)
-
-        // See docs in docs/ty-security.adoc [api_do_as].
-        // Maybe better to move this authz check to dao.insertReply(), and rename it
-        // to  insertReplyIfAuZ? [dupl_api_perm_check]
-        // throwNoUnless(Authz.mayPostReply(... asWhoInf ...))     // check both byWho
-        // throwNoUnless(Authz.mayPostReply(... reqrInf ...))   // and reqer
-        SECURITY; SLEEPING // [check_see_page]
         val result: InsertPostResult =
-              dao.insertReply(
+              dao.insertReplyIfAuZ(
                   textAndHtml, pageId = pageMeta.pageId, replyToPostNrs = params.parentNr.toSet,
-                  params.postType, deleteDraftNr = None, doAsInf.toWho,
+                  params.postType, deleteDraftNr = None, reqrTgt,
                   spamRelReqStuff = SystemSpamStuff, anonHow = None, refId = params.refId,
                   tags)  // ooops forgot_to_use
         Json.obj(
@@ -129,19 +109,16 @@ case class ActionDoer(dao: SiteDao, reqrInf: ReqrInf, mab: MessAborter) {
         throwUnimplIf(params.whatVote != PostVoteType.Like,
               "TyE062MSE: Can only Like vote via the API, currently.")
 
-        //  Check if reqrInf may see the page,  maybe  ActionDoer should get an AuthnCtx?
-        // addVoteIfAuZ checks only if action.asWho can see the page:
-        //       throwIfMayNotSeePage(page, Some(voter))(tx)
-        SECURITY; SLEEPING // [check_see_page]
-
         if (params.howMany == 1) {
           dao.addVoteIfAuZ(
                 pageId = pageId,
                 postNr = postNr,
                 voteType = params.whatVote,
-                voterId = action.asWho.id,
+                reqrAndVoter = reqrTgt,
                 // The backend server IP is not interesting, right.
-                voterIp = None,
+                // Edit: What! It can still be? Maybe a bot on sbd's laptop or who knows what.
+                // But now it's included in reqrAndTgt :-)
+                voterIp = None,  // so REMOVE this param, then?
                 postNrsRead = Set(postNr))
         }
         else if (params.howMany == 0) {
@@ -149,7 +126,7 @@ case class ActionDoer(dao: SiteDao, reqrInf: ReqrInf, mab: MessAborter) {
                 pageId = pageId,
                 postNr = postNr,
                 voteType = params.whatVote,
-                voterId = action.asWho.id)
+                reqrAndVoter = reqrTgt)
         }
         else {
           die("TyE4MWEGJ6702")
@@ -164,8 +141,7 @@ case class ActionDoer(dao: SiteDao, reqrInf: ReqrInf, mab: MessAborter) {
               peopleId = action.asWho.id,
               notfLevel = params.whatLevel,
               pageId = Some(pageMeta.pageId))
-        SECURITY; SLEEPING // [check_see_page]
-        dao.savePageNotfPrefIfAuZ(newNotfPref, reqrInf)
+        dao.savePageNotfPrefIfAuZ(newNotfPref, reqrTgt)
         JsEmptyObj2
     }
   }

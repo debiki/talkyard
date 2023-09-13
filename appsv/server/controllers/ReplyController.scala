@@ -72,6 +72,8 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
           anyEmbeddingUrl = anyEmbeddingUrl, lazyCreatePageInCatId = lazyCreatePageInCatId,
           request)
 
+    REMOVE // these 3 vals, once we're using dao.insertReplyIfAuZ() instead of
+    // doing authz here in this fn.
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE5FKW20")
     val replyToPosts = dao.loadPostsAllOrError(pageId, replyToPostNrs) getOrIfBad { missingPostNr =>
       throwNotFound(s"Post nr $missingPostNr not found", "EdEW3HPY08")
@@ -80,6 +82,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     CHECK_AUTHN_STRENGTH
 
+    CLEAN_UP // [dupl_re_authz_chk]  and see the REM OVE just above too, and COU LD below.
     throwNoUnless(Authz.mayPostReply(
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
       postType, pageMeta, replyToPosts, dao.getAnyPrivateGroupTalkMembers(pageMeta),

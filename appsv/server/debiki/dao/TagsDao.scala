@@ -21,11 +21,12 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp.{throwForbidden, throwForbiddenIf}
 import talkyard.server.pubsub.StorePatchMessage
+import talkyard.server.authz.{MembReqrAndTgt, StaffReqrAndTgt}
 import play.api.libs.json.JsObject
 import TagsDao._
 import scala.util.matching.Regex
 import scala.{collection => col}
-import scala.collection.{mutable => mut}
+import scala.collection.{mutable => mut, immutable => imm}
 
 
 object TagsDao {
@@ -182,16 +183,19 @@ trait TagsDao {
   }
 
 
-  def upsertTypeIfAuZ(tagTypeMaybeId: TagType, reqrInf: ReqrInf)(mab: MessAborter): TagType = {
-    import mab.{abort, abortIf, denyIf}
+  def upsertTypeIfAuZ(tagTypeMaybeId: TagType, reqrTgt: StaffReqrAndTgt)(
+        mab: MessAborter): TagType = {
+    import mab._
+
+    require(tagTypeMaybeId.createdById == reqrTgt.target.id, "TyE602RDL5")
 
     // But can mods see / change refids?  Probably should be for admins only.  [who_sees_refid]
-    denyIf(!reqrInf.isStaff, "TyEDENYREQR05733", "Only mods may edit types")
-    if (tagTypeMaybeId.createdById != reqrInf.id) {
-      denyIf(!reqrInf.isAdmin, "TyE0ADM0386", "Only admins can upsert types on behalf of others")
-      val by = getTheParticipant(tagTypeMaybeId.createdById)
-      denyIf(!by.isStaff, "TyEDENYDOAS05363", "Bad createdById: Only mods may edit types")
-    }
+    abortDenyIf(!reqrTgt.targetIsStaff,
+          "TyEDENYREQR05733", "Only mods & admins can edit types")
+
+    // Move this check to  ReqrAndTgt  instead?  [do_as_otr]
+    abortDenyIf(reqrTgt.areNotTheSame && !reqrTgt.reqrIsAdmin,
+          "TyE0ADM0386", "Only admins can upsert types on behalf of others")
 
     // Or call a TagType.validate() fn?  (Or validate(Thoroughly) ?) [mess_aborter]
     debiki.dao.TagsDao.findTagLabelProblem(tagTypeMaybeId.dispName) foreach { errMsg =>
@@ -283,13 +287,17 @@ trait TagsDao {
     loadTagsByPostId(Seq(postId)).getOrElse(postId, Set.empty)
 
 
-  RENAME // to ... IfAuZ,  change  who  to  reqrInf?
-  def updateTagsIfAuth(toAdd: Seq[Tag], toRemove: Seq[Tag], toEdit: Seq[Tag], who: Who)(
+  def updateTagsIfAuZ(toAdd: Seq[Tag], toRemove: Seq[Tag], toEdit: Seq[Tag],
+          reqrAndTagger: MembReqrAndTgt)(
           mab: MessAborter): Set[PostId] = {
-    import mab.{abort, abortIf}
+    import mab._
 
-    SECURITY; SHOULD // [check_see_page]
-    SECURITY; SHOULD // require is-core-member, or `who` is the post author? [ok_tag_own]
+    val reqr: Pat = reqrAndTagger.reqr
+    val tagger: Pat = reqrAndTagger.target
+
+    // Only admins may edit tags on others' behalf.  (Move this check eleswhere? [do_as_otr])
+    abortDenyIf(reqrAndTagger.areNotTheSame && !reqr.isAdmin,
+          "TyETAGOTHRSPO", "Can't edit tags on other people's behalf")
 
     // Check that any tag values are of the correct type.
     // (Ok to do outside the tx below.  And, if there are already tags with values
@@ -309,6 +317,48 @@ trait TagsDao {
     }
 
     writeTx { (tx, staleStuff) =>
+      val postIdsDirectlyAffected: Set[PostId] =
+            toAdd.flatMap(_.onPostId).toSet ++
+            toRemove.flatMap(_.onPostId).toSet ++
+            toEdit.flatMap(_.onPostId).toSet
+
+      val postsById: Map[PostId, Post] =
+            tx.loadPostsByUniqueId(postIdsDirectlyAffected)
+
+      // (Don't:  postsById.values — then we wouldn't find out if a post wasn't found.)
+      val postsAffected: Seq[Post] = postIdsDirectlyAffected.toSeq map { postId =>
+        postsById.getOrElse(postId, {
+          abortNotFound("TyEPOST0FND025", s"No post with id $postId")
+        })
+      }
+
+      val postIdsReqrAndTaggerMustSee = mut.Set[PostId]()
+      toAdd.foreach(t => t.onPostId.foreach(postIdsReqrAndTaggerMustSee.add))
+      toEdit.foreach(t => t.onPostId.foreach(postIdsReqrAndTaggerMustSee.add))
+
+      postIdsReqrAndTaggerMustSee foreach { postId =>
+        val post = postsById.getOrDie(postId, "TyE5028SP4")
+        throwIfMayNotSeePost2(ThePost.Here(post), reqrAndTagger)(tx)
+      }
+
+      val postIdsOnlyReqrMustSee = toRemove.flatMap(_.onPostId)
+
+      postIdsOnlyReqrMustSee foreach { postId =>
+        val post = postsById.getOrDie(postId, "TyE5028SP5")
+        throwIfMayNotSeePost2(ThePost.Here(post), reqrAndTagger, checkOnlyReqr = true)(tx)
+      }
+
+      // For now, trusted members can tag others' posts. [priv_tags] [ok_tag_own]
+      // (Later, will be more fine grained [tag_perms].)
+      // (Skip reqr here — we've already verified that reqr may act on tagger's behalf.)
+      if (!tagger.isStaffOrTrustedNotThreat) {
+        postsAffected foreach { post =>
+          abortDenyIf(post.createdById != tagger.id, "TyETAG0YOURPOST",
+            s"Can't tag other people's posts, post.createdById (${
+              post.createdById}) != tagger (${tagger.nameParaId})")
+        }
+      }
+
       // (Remove first, maybe frees some ids.)
       tx.deleteTags(toRemove)
 
@@ -327,17 +377,12 @@ trait TagsDao {
         nextTagId += 1
       })
 
-      val postIdsDirectlyAffected: Set[PostId] =
-            toAdd.flatMap(_.onPostId).toSet ++
-            toRemove.flatMap(_.onPostId).toSet ++
-            toEdit.flatMap(_.onPostId).toSet
-
       staleStuff.addPagesWithPostIds(postIdsDirectlyAffected, tx)
 
       // Reindex the posts, since can search by tags.
-      WOULD_OPTIMIZE // Use indexPostIdsSoon_unimpl instead, so won't need to
-      // look up the posts.
-      val postsAffected = tx.loadPostsByIdKeepOrder(postIdsDirectlyAffected)
+      CLEAN_UP  // Use indexPostIdsSoon_unimpl instead, so won't need to
+      // look up the posts. — BUT seems we need to look up anyway?  Maybe remove
+      // indexPostIdsSoon_unimpl()?
       tx.indexPostsSoon(postsAffected: _*)
 
       val patIdsAffected: Set[PatId] =

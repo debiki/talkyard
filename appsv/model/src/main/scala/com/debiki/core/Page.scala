@@ -1326,6 +1326,8 @@ object PageFilterType {
 
 case class PagePostId(pageId: PageId, postId: PostId)
 
+// But there's also:  com.debiki.core.ThePost.OnPageWithNr  — maybe remove PagePostNr,
+// and use OnPageWithNr instead?
 case class PagePostNr(pageId: PageId, postNr: PostNr) {
   def toList: List[AnyRef] = List(pageId, postNr.asInstanceOf[AnyRef])
 }
