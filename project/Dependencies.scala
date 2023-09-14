@@ -21,6 +21,13 @@ object Dependencies {
 
   object Play {
     val json = "com.typesafe.play" %% "play-json" % "2.9.4"
+
+    // Play Framework 2.8.20 tries to use 1.5.1 but we want 1.5.2 because it uses
+    // scala-xml v2.1.0, which avoids errors when using sbt 1.4+.
+    // But they've messed up the server? Sbt tries to download from:
+    //   https://scala-tools.org/repo-releases/com/typesafe/play/sbt-twirl...  but
+    // scala-tools.org doesn't have a valid HTTPS cert and shows a "sorry isn't found" page.
+    // val twirl = "com.typesafe.play" %% "sbt-twirl" % "1.5.2"
   }
 
   object Libs {
@@ -29,7 +36,7 @@ object Dependencies {
     //val jaxbApi = "javax.xml.bind" % "jaxb-api" % "2.3.1"
 
     // See: https://mvnrepository.com/artifact/org.postgresql/postgresql/
-    // Upgr to: 42.2.14?
+    // Upgr to: 42.2.14?   rm comment?? at  42.6 already
     //   https://github.com/pgjdbc/pgjdbc#maven-central
     //   https://github.com/pgjdbc/pgjdbc/blob/master/CHANGELOG.md
     //   Cool:  cancelQuery()  https://github.com/pgjdbc/pgjdbc/pull/1157
@@ -39,7 +46,7 @@ object Dependencies {
     // supports listener-notify.
     // https://stackoverflow.com/questions/21632243/
     //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
-    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.5.4"
+    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.6.0"
 
     // Database migrations.
     val flywaydb = "org.flywaydb" % "flyway-core" % "5.0.7"   // scala-steward:off
@@ -54,21 +61,20 @@ object Dependencies {
     val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
     val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "6.8.23"
 
-    // Play Framework 2.8.9 uses 31.0.1-jre
-    val guava = "com.google.guava" % "guava" % "31.1-jre"
+    val guava = "com.google.guava" % "guava" % "32.1.2-jre"
 
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
 
     val apacheCommonsEmail = "org.apache.commons" % "commons-email" % "1.5"
-    val apacheCommonsLang3 = "org.apache.commons" % "commons-lang3" % "3.12.0"
+    val apacheCommonsLang3 = "org.apache.commons" % "commons-lang3" % "3.13.0"
 
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
-    val apacheTika = "org.apache.tika" % "tika-core" % "2.8.0"
+    val apacheTika = "org.apache.tika" % "tika-core" % "2.9.0"
 
     val jsoup = "org.jsoup" % "jsoup" % "1.16.1"
 
-    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.15.1"
+    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.15.2"
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
     // ScribeJava is listed by Microsoft as compatible with Azure,
@@ -98,14 +104,14 @@ object Dependencies {
     app_1      | SLF4J: Ignoring binding found at [jar:file:/home/owner/.cache/coursier/v1/https/repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.2.11/logback-classic-1.2.11.jar!/org/slf4j/impl/StaticLoggerBinder.class]
     app_1      | SLF4J: See http://www.slf4j.org/codes.html#ignoredBindings for an explanation.
     */
-    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.3.6"
+    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.3.11"
 
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
     // 1.3.x is for Java EE, 1.4.x is for Jakarta (which I don't think we use), otherwise identical.
-    val logbackCore = "ch.qos.logback" % "logback-core" % "1.3.6"
+    val logbackCore = "ch.qos.logback" % "logback-core" % "1.3.11"
 
     // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
-    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.3"
+    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.4"
     //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
 
 
@@ -171,8 +177,8 @@ object Dependencies {
 
     // ----- Test
 
-    val scalactic = "org.scalactic" %% "scalactic" % "3.2.16"
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.16" % "test"
+    val scalactic = "org.scalactic" %% "scalactic" % "3.2.17"
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.17" % "test"
     val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 
     // Don't use, migrate to ScalaTest instead, some day.

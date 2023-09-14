@@ -50,6 +50,7 @@ val appDependencies = Seq(
   // Gzip filter.
   play.sbt.Play.autoImport.filters,
   Dependencies.Play.json,
+  //Dependencies.Play.twirl,
 
   // For some reason, withouth this, an older version gets used which throws
   // an error because some dependencies use jackson 2.13.0 (and the others too,
