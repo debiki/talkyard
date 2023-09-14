@@ -324,6 +324,9 @@ package object core {
     val isSsoOrExtId: Bo = false)
 
   object ParsedRef {
+    REFACTOR // _refactor_ref_matches:  Break out the if(){...} to blocks and
+    // place in lists of things to try, the find-first-match.
+
     RENAME // to RefId [refid_0_extid]
     case class ExternalId(value: ExtId)
       extends ParsedRef(isSsoOrExtId = true)
@@ -1965,8 +1968,9 @@ package object core {
   }
 
   implicit class RichTry[T](val underlying: Try[T]) {
-    def getOrIfFailure(fn: Throwable => Nothing): T = underlying match {
-      case Failure(ex) => fn(ex)
+    def getOrIfFailure(fn: Exception => Nothing): T = underlying match {
+      case Failure(ex: Exception) if ex.isInstanceOf[Exception] => fn(ex)
+      case Failure(t: Throwable) => throw t
       case Success(value) => value
     }
   }

@@ -39,7 +39,7 @@ let owensSecondMessage = "Hello hello. Hello!";
 let michaelsSecondMessage = "Well yea. Bye for now then!";
 
 
-describe("priv chat", () => {
+describe("search-private-chat.2br  TyTSEARCHPRIVCHAT", () => {
 
   it("initialize people", () => {
     everyone = new TyE2eTestBrowser(wdioBrowser);

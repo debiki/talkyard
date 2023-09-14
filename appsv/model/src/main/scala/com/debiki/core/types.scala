@@ -125,6 +125,8 @@ trait MaybeValue {
       if (isOk) None
       else if (_numValueFieldsSet == 0) Some(ErrMsgCode(
         "A value type specified, but no value", "TyEVALTYPE0VAL"))
+      else if (_numValueFieldsSet == 1) Some(ErrMsgCode(
+        "Wrong value type field specified", "TyEVALWRONGTYPE"))
       else Some(ErrMsgCode(
         "Too many value fields specified, need just one", "TyETYPE2MANYVALS"))
     }

@@ -205,6 +205,13 @@ trait TagsRdbMixin extends SiteTransaction {
   }
 
 
+  def loadAllTags_forExport(): ImmSeq[Tag] = {
+    val query = """ -- loadAllTags_forExport
+          select * from tags_t where site_id_c = ?  """
+    runQueryFindMany(query, List(siteId.asAnyRef), parseTag)
+  }
+
+
   override def loadPostTagsAndAuthorBadges(postIds: Iterable[PostId]): TagsAndBadges = {
     if (postIds.isEmpty)
       return TagsAndBadges(

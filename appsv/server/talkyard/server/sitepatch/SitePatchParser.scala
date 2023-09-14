@@ -61,7 +61,7 @@ case class SitePatchParser(context: TyContext) {
     }
     catch {
       case ex: JsonUtils.BadJsonException =>
-        throwBadRequest("EsE4GYM8", "Bad json structure: " + ex.getMessage)
+        throwBadRequest("TyESITEJSN", "Bad site json: " + ex.getMessage)
       case ex: IllegalArgumentException =>
         // Some case class constructor failure.
         throwBadRequest("EsE7BJSN4", o"""Invalid values, or combinations of values,
@@ -173,8 +173,9 @@ case class SitePatchParser(context: TyContext) {
 
     val (permsOnPagesJson, pagesJson, pathsJson, pageIdsByAltIdsJson,
         pagePopularityScoresJson, pageParticipantsJson,
-        categoriesJson, draftsJson, postsJson, postActionsJson, postVotesJson, linksJson, reviewTasksJson,
-        webhooksJson,
+        typesJson, tagsJson,
+        categoriesJson, draftsJson, postsJson, postActionsJson, postVotesJson,
+        linksJson, reviewTasksJson, webhooksJson,
         isTestSiteOkDelete, isTestSiteIndexAnyway) =
       try {
         (readJsArray(bodyJson, "permsOnPages", optional = true),
@@ -183,6 +184,8 @@ case class SitePatchParser(context: TyContext) {
           readOptJsObject(bodyJson, "pageIdsByAltIds") getOrElse JsObject(Nil),  // RENAME to "pageIdsByLookupKeys"
           readJsArray(bodyJson, "pagePopularityScores", optional = true),
           readJsArray(bodyJson, "pageParticipants", optional = true),
+          readJsArray(bodyJson, "types", optional = true),
+          readJsArray(bodyJson, "tags", optional = true),
           readJsArray(bodyJson, "categories", optional = true),
           readJsArray(bodyJson, "drafts", optional = true),
           readJsArray(bodyJson, "posts", optional = true),
@@ -368,6 +371,20 @@ case class SitePatchParser(context: TyContext) {
              the 'pageParticipants' list: $errorMessage, json: $json"""))
     }
 
+    val types = typesJson.value.toVector.zipWithIndex map { case (json, ix) =>
+      Try(JsX.parseTagType(json)(IfBadThrowBadJson)).recover({ case ex: BadJsonEx =>
+        throwBadReq(
+              "TyE50RJF29B", o"""Invalid tag type json at index $ix in the 'types' list:
+                  ${ex.getMessage}, json: $json""") }).get
+    }
+
+    val tags = tagsJson.value.toVector.zipWithIndex map { case (json, ix) =>
+      Try(JsX.parseTag(json)(IfBadThrowBadJson)).recover({ case ex: BadJsonEx =>
+        throwBadReq(
+              "TyE50RJF29C", o"""Invalid tag json at index $ix in the 'tags' list:
+                  ${ex.getMessage}, json: $json""") }).get
+    }
+
     val categoryPatches = mutable.ArrayBuffer[CategoryPatch]()
     val categories = mutable.ArrayBuffer[Category]()
 
@@ -455,6 +472,7 @@ case class SitePatchParser(context: TyContext) {
       groupParticipants,
       users, ppStats, ppVisitStats, usernameUsages, memberEmailAddrs,
       identities, invites, notifications,
+      types, tags,
       categoryPatches.toVector, categories.toVector,
       pages, paths, pageIdsByAltIds, pagePopularityScores,
       pageNotfPrefs, pageParticipants,

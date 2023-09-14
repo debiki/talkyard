@@ -2510,6 +2510,12 @@ export class TyE2eTestBrowser {
     }
 
 
+    async waitAndGetListLinks(selector: St): Pr<(St | U)[]> {
+      return await this.__waitAndGetThingsInList(
+              selector, async (e) => await e.getAttribute('href'));
+    }
+
+
     async __waitAndGetThingsInList<T>(listItemSelector: St, fn: (e: WElm) => Pr<T>): Pr<T[]> {
       const elms: WElm[] = await this.$$(listItemSelector);
       const promises: Pr<T>[] = elms.map(async (e: WElm) => {
@@ -5026,6 +5032,7 @@ export class TyE2eTestBrowser {
         //         Request encountered a stale element - terminating request"
         // all the time. [E2EBUG]
         await utils.tryManyTimes(`Checking topic titles and order`, 3, async () => {
+          // Or use  this.waitAndGetListTexts()  instead?
           const els = await this.$$(this.forumTopicList.titleSelector);
           for (let i = 0; i < titles.length; ++i) {
             const titleShouldBe = titles[i];
@@ -6214,6 +6221,7 @@ export class TyE2eTestBrowser {
         await this.switchToEmbCommentsIframeIfNeeded();
         await this.waitForVisible(selector);
 
+        // Or use  this.__waitAndGetThingsInList()  instead?
         const postElems: WElm[] = await this.$$(selector);
 
         if (postElems.length >= expectedPostNrs.length) {
@@ -7358,6 +7366,11 @@ export class TyE2eTestBrowser {
 
 
     searchResultsPage = {
+      goHere: async (origin?: St) => {
+        await this.go2((origin || '') + '/-/search/');
+        await this.searchResultsPage.waitForSearchInputField();
+      },
+
       waitForSearchInputField: async () => {
         await this.waitForVisible('.s_SP_QueryTI');
       },
@@ -7384,17 +7397,24 @@ export class TyE2eTestBrowser {
 
       searchForUntilNumPagesFound: async (phrase: St, numResultsToFind: Nr) => {
         let numFound;
+        let hitLinks;
+        let attemptNr = 0;
         await this.waitUntil(async () => {
+          attemptNr += 1;
           await this.searchResultsPage.searchForWaitForResults(phrase);
           numFound = await this.searchResultsPage.countNumPagesFound_1();
           if (numFound >= numResultsToFind) {
             tyAssert.eq(numFound, numResultsToFind);
             return true;
           }
+          // Race, might not match numFound, oh well, it's just for the message() below.
+          hitLinks = await this.searchResultsPage.getHitLinks();
           await this.#br.pause(111);
         }, {
-          message: `Waiting for ${numResultsToFind} pages found for search ` +
-              `phrase:  "${phrase}"  found this far: ${numFound}`,
+          message: () => `Waiting for ${numResultsToFind} pages found for search ` +
+              `phrase:  "${phrase}",  found this far: ${numFound}` + (
+                  attemptNr <= 2 || ((attemptNr % 2) === 0) ? '' :
+                  `,\n    hit links: ${j2s(hitLinks)}`),
         });
       },
 
@@ -7413,6 +7433,37 @@ export class TyE2eTestBrowser {
 
       assertResultPageTitlePresent: async (title: St) => {
         await this.waitAndGetElemWithText('.esSERP_Hit_PageTitle', title, { timeoutMs: 1 });
+      },
+
+      getHitLinks: async (): Pr<(St | U)[]> => {
+        return await this.waitAndGetListLinks('.s_SR .esSERP_Hit_In a');
+      },
+
+      assertResultLinksAre: async (expected: St[], ps: { anyOrder: Bo } = {}) => {
+        const exp = ps.anyOrder ? [...expected].sort() : expected;
+        const actualLinks: (St | U)[] = await this.searchResultsPage.getHitLinks();
+        const act = ps.anyOrder ? [...actualLinks].sort() : actualLinks;
+        const showHits = () => (!ps.anyOrder ? '' :
+                `\n   Any order,`) +
+                `\n   All hit links: ${j2s(act)
+                }\n   All expected:  ${j2s(exp)}\n`;
+
+        for (let i = 0; i < exp.length; ++i) {
+          const shouldBe = exp[i];
+          if (act.length <= i) {
+            assert.ok(false, // throws
+                  `Search hit ix ${i} missing, should be: "${shouldBe}"` + showHits());
+          }
+          const itIs = act[i];
+          if (itIs !== shouldBe) {
+            assert.ok(false,
+                  `Search hit ix ${i} is: "${itIs}", should be: "${shouldBe}"` + showHits());
+          }
+        }
+        // Better place this at the end? So we'll know if all expected links were found.
+        tyAssert.eq(exp.length, act.length,
+                  `Too many search hits, got ${act.length}, expected ${exp.length}`
+                  + showHits());
       },
 
       goToSearchResult: async (linkText?: St) => {
@@ -8178,6 +8229,7 @@ export class TyE2eTestBrowser {
           },
 
           getAllEmailAddresses: async (): Pr<St[]> => {
+            // REFACTOR use instead: this.waitAndGetListTexts(selector) ?
             await this.waitForDisplayed('.s_UP_EmLg_EmL_It_Em');
             const elms = await this.$$('.s_UP_EmLg_EmL_It_Em');
             const adrs = [];

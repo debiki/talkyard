@@ -376,32 +376,32 @@ interface PostWrappedInPage extends PostFoundOrListed {
   approvedHtmlSanitized: St;
 }
 
-
-
 type TagFound = Unimplemented;
 
 
-type UpsertTagParams = TagNoVal | TagInt32 | TagFlt64 | TagStrKwd;
 
-interface TagNoVal {
+interface TagAnyVal {
   tagType: TypeRef;  // e.g. "rid:some-tag-type"
   // Not needed, if included when creating a post (then, the tags are for that post).
   //onPost?: PostRef;
 }
 
+interface TagNoVal extends TagAnyVal {
+}
+
 // [detailed_tag_val_types]:
 
-interface TagInt32 extends TagNoVal {
+interface TagInt32 extends TagAnyVal {
   valType: 'Int32';
   valInt32: Nr;
 }
 
-interface TagFlt64 extends TagNoVal {
+interface TagFlt64 extends TagAnyVal {
   valType: 'Flt64';
   valFlt64: Nr;
 }
 
-interface TagStrKwd extends TagNoVal {
+interface TagStrKwd extends TagAnyVal {
   valType: 'StrKwd';
   valStr: St;
 }
@@ -1295,7 +1295,7 @@ interface CreatePostParams {
   refId?: Ref;
   bodySrc: St;
   bodyFmt: 'CommonMark';
-  withTags?: UpsertTagParams[]
+  withTags?: TagAnyVal[]
 }
 
 

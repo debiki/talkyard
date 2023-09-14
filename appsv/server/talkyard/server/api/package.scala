@@ -1,7 +1,9 @@
 package talkyard.server
 
 import com.debiki.core._
+import com.debiki.core.Prelude.RichOption // isSomethingButNot
 import com.debiki.core.Prelude.MessAborter
+import org.scalactic.{Good, Or, Bad}
 
 
 package object api {
@@ -63,6 +65,7 @@ package object api {
         valueType: Opt[TypeValueType],
         ) extends ActionParams
   {
+
     def toType(createdById: PatId)(mab: MessAborter): TagType = {
       TagType(
             id = anyId getOrElse NoTagTypeId,
@@ -136,7 +139,8 @@ package object api {
         tagType: TypeRef,
         parentTagId_unimpl: None.type,
         whatPage: Opt[PageRef],
-        postNr: Opt[PostNr],
+        onPostNr: Opt[PostNr],
+        onPostRef: Opt[PostRef],
         valType: Opt[TypeValueType],
         valInt32: Opt[i32],
         valFlt64: Opt[f64],
@@ -144,7 +148,9 @@ package object api {
         ) extends ActionParams
   {
 
-    /** But tag id is not yet known  (tag not yet created).
+    /** If tag created together with a post, then, the tag type internal id might
+      * not yet be known (only its ref id),
+      * and the tag id also wouldn't be known, yet  (tag not yet created).
       */
     def withTypeIdKnown(typeId: TagTypeId, mab: MessAborter): TagTypeValue =
       TagTypeValue(

@@ -20,6 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import talkyard.server.search._
+import scala.collection.{mutable => mut}
 import scala.collection.immutable.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -52,18 +53,30 @@ trait SearchDao {
 
   private def groupByPageAccessCheckAndSort(searchHits: Seq[SearchHit], user: Opt[Pat])
           : SearchResultsCanSee = {
-    val hitsByPageId: Map[PageId, Seq[SearchHit]] =
-      searchHits.groupBy(hit => hit.pageId)
+
+    // ElasticSearch has already sorted the hits by score or by any by-us explicitly
+    // specified sort order.  Let's remember the order of the pages on which the best
+    // hits were found:
+    val pageSortOrder: Vec[PageId] = {
+      val linkedSet = mut.LinkedHashSet[PageId]() // elem order is insertion order
+      searchHits.foreach(h => linkedSet.add(h.pageId))
+      linkedSet.toVector
+    }
 
     // ----- Group by page
 
-    // Sort hits-and-pages by the best hit on each page. This means that
-    // the page with the highest scored hit is shown first.
-    COULD_OPTIMIZE // Skip this for pages pat may not see anyway. (Then need to move this
+    // For each page, group all hits on that page, together.
+
+    val hitsByPageId: Map[PageId, Seq[SearchHit]] = searchHits.groupBy(hit => hit.pageId)
+
+    WOULD_OPTIMIZE // Skip this for pages pat may not see anyway. (Then need to move this
     // downwards to after the access check.)
     val pageIdsAndHitsSorted: Seq[(PageId, Seq[SearchHit])] =
-      hitsByPageId.toVector sortBy { case (pageId, hits: Seq[SearchHit]) =>
-        - hits.map(_.score).max
+      pageSortOrder map { pageId =>
+        // These should already be in best-first order — groupBy() preserves
+        // element order, at least in Scala 2.17 and the previous 10+ years.
+        val hits = hitsByPageId.getOrDie(pageId, "TyE7MRTLN25")
+        pageId -> hits
       }
 
     // ----- Access check  [se_acs_chk]

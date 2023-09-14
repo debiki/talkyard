@@ -293,6 +293,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadTagsForPages(pageIds: Iterable[PageId]): Map[PageId, ImmSeq[Tag]]
   def loadPostTagsAndAuthorBadges(postIds: Iterable[PostId]): TagsAndBadges
   def loadTagsToRenderSmallPage(pageId: PageId): Seq[Tag]
+  def loadAllTags_forExport(): ImmSeq[Tag]
 
   CLEAN_UP ; REMOVE // old tags code
   // -- Old: (TagsSiteDaoMixin) -----

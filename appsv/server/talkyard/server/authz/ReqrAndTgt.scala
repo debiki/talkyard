@@ -132,7 +132,9 @@ private case class AdminReqrAndTgtClass(
 }
 
 
-trait StaffReqrAndTgt extends ReqrAndTgt with MembReqrAndTgt
+trait StaffReqrAndTgt extends ReqrAndTgt with MembReqrAndTgt {
+  override def denyUnlessStaff(): StaffReqrAndTgt = this
+}
 
 private case class StaffReqrAndTgtClass(
   reqr: Pat,
@@ -143,12 +145,16 @@ private case class StaffReqrAndTgtClass(
   require(reqr.isModerator, "TyEREQR0MOD")
   // Better use the most specific Staff/AdminReqrAndTgt class.
   require(!reqr.isAdmin, "TyEREQRMEMBADM")
-
-  override def denyUnlessStaff(): StaffReqrAndTgt = this
 }
 
 
-trait MembReqrAndTgt extends ReqrAndTgt
+trait MembReqrAndTgt extends ReqrAndTgt {
+  override def denyUnlessMember(): MembReqrAndTgt = this
+
+  // Don't return a MembReqrAndTgt — then, someone might use denyUnlessLoggedIn() where
+  // they meant to use denyUnlessMember (wouldn't be a compilation error).
+  override def denyUnlessLoggedIn(): ReqrAndTgt = this
+}
 
 private case class MembReqrAndTgtClass(
   reqr: Pat,
@@ -159,13 +165,6 @@ private case class MembReqrAndTgtClass(
   require(reqr.isMember, "TyEREQR0MEMBR")
   // Better to use the most specific Memb/Staff/AdminReqrAndTgt class.
   require(!reqr.isStaff, "TyEREQRMEMBSTAFF")
-
-  override def denyUnlessMember(): MembReqrAndTgt = this
-
-  // Don't return a MembReqrAndTgt — then, someone might use denyUnlessLoggedIn() where
-  // they meant to use denyUnlessMember (wouldn't be a compilation error).
-  override def denyUnlessLoggedIn(): ReqrAndTgt = this
-
 }
 
 

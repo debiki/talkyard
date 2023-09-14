@@ -23,9 +23,11 @@ I'm planning to implement the text on lines with "NEXT" soon (probably because
 someone reproted a bug & it got fixed, better avoid regressions.)
 
 
-search /
+search,
 full text search:
-  ... lots of places ...
+            - search-public-basic.2br  TyTSEARCHPUBBASIC
+            - search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT
+            ... plus lots of places ...
   staff only page:
     found by admins:
             navigation-as-admin.test.ts  TyT7WAAR2J4 TyT85WABR0
@@ -33,20 +35,25 @@ full text search:
             - api-search-full-text.test.ts  TyT60KTSJ35J
   custom groups private pages not found:
             - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
+  private chat:
+            - search-private-chat.2br  TyTSEARCHPRIVCHAT
   direct message,
   private chat,
   restricted category:
             - api-search-full-text.test.ts  TyT60KTSJ35J
+            - search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT
   sub cat in access restricted base category:
             - category-perms.2br.d  TyTE2ECATPREMS01.TyTSEARCHPRIVCAT
   deleted cat:
             - categories-delete.2br   TyTE2ECATDEL01
   from external backend server:
             - api-search-ext-site-and-server.2br.cors  TyTEAPIEXTSRV
-  advanced search:
+  advanced search queries:
     only with specific tags,
     only in specific category:
-            - TESTS_MISSING
+            - search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT
+  advanced search page:
+            - TESTS_MISSING  adv search UI incomplete, can only select cats
   username fuzzy search:
             - TESTS_MISSING  and not implemented
 
@@ -435,6 +442,9 @@ security:
             - api-list-query-for-topics-popular-first.test.ts  TyT603AKSL25.TyT502RKDJ46
   api search restricted categories and private topics:
             - api-search-full-text.test.ts  TyT60KTSJ35J
+  ui search restricted chats & cats:
+            - search-private-chat.2br  TyTSEARCHPRIVCHAT
+            - search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT
   add group to category security settings:
             - api-list-query-for-topics.test.ts  TyT69WKTEJG4
             - api-search-full-text.test.ts       TyT69WKTEJG4

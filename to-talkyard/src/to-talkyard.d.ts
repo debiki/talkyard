@@ -39,10 +39,35 @@ interface PageToAdd {
   layout?: PageLayout;
   title: string;
   body: string;
+  tags?: TagV0[];
   categoryId?: number;// CategoryId;
   authorId: number;// UserId;
   createdAtMs?: number;// WhenMs;
   bumpedAtMs?: number;// WhenMs;
+}
+
+
+interface TypeV0 {
+  id?: TagTypeId; // or assigned by the server
+  refId?: ExtId;
+  canTagWhat: ThingType;
+  dispName: St;
+  urlSlug?: St;
+  //wantsValue?: NeverAlways;
+  valueType: TypeValueType; // Or?: 'Int32' | 'Flt64' | 'StrKwd'
+  createdById: PatId;
+}
+
+
+interface TagV0 {
+  //typeRef: St;  // e.g. 'rid:some-tag-type'
+  id?: TagId;
+  tagTypeId: TagTypeId;
+  onPostId?: PostId;
+  valType?: 'Int32' | 'Flt64' | 'StrKwd'; // no the TypeValueType enum?
+  valInt32?: Nr;
+  valFlt64?: Nr;
+  valStr?: St;
 }
 
 

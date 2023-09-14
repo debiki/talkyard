@@ -54,7 +54,8 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
     import req.{dao, theRequester => reqer}
     // Pass a CheckThoroughly param to the mess aborter? And then check the tag name
     // too. [mess_aborter]. Or always do from inside JsX.parseTagType()
-    val tagTypeMaybeId: TagType = JsX.parseTagType(req.body, Some(reqer.id))(IfBadAbortReq)
+    val tagTypeMaybeId: TagType = JsX.parseTagType(
+          req.body, createdById = Some(reqer.id))(IfBadAbortReq)
     val tagType = dao.upsertTypeIfAuZ(
           tagTypeMaybeId, req.reqrTargetSelf.denyUnlessStaff())(IfBadAbortReq)
     OkSafeJson(Json.obj(  // ts: StorePatch

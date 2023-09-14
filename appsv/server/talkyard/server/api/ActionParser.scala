@@ -9,6 +9,7 @@ import talkyard.server.JsX
 import play.api.libs.json.{JsObject, JsValue, JsArray, Json}
 import org.scalactic.{Bad, Good, Or}
 import debiki.JsonUtils._
+import scala.util.Try
 
 case class ActionParser(dao: SiteDao, mayDoOnlyAs: Opt[Pat], mab: MessAborter) {
 
@@ -92,29 +93,7 @@ case class ActionParser(dao: SiteDao, mayDoOnlyAs: Opt[Pat], mab: MessAborter) {
     val params = actionType match {
 
       case ActionType.UpsertType =>
-        // Sync with: JsX.parseTagType(howJsOb)
-        val kindOfType = parseSt(howJsOb, "kindOfType")
-        val canTagWhat = kindOfType match {
-          case "TagType" => TagType.CanTagAllPosts
-          //   "BadgeType" => TagType.CanTagAllPats
-          case _ =>
-            return Bad(s"Unknown type: '$actionType' [TyE603MSRLU2]")
-        }
-        val dispName = parseSt(howJsOb, "dispName")
-        val anySlug = parseOptSt(howJsOb, "urlSlug").noneIfBlank
-        val valueType: Opt[TypeValueType] = parseOptTypeValueTypeStr_apiV0(howJsOb, "valueType")
-        val wantsValue: Opt[NeverAlways] =
-                // parseOptNeverAlways(howJsOb, "wantsValue") — maybe later
-                if (valueType.isEmpty) None
-                else Some(NeverAlways.AlwaysButCanContinue)
-        UpsertTypeParams(
-              anyId = None, // looking up by refId instead [type_id_or_ref_id]
-              refId = anyRefId,
-              canTagWhat = canTagWhat,
-              urlSlug = anySlug,
-              dispName = dispName,
-              wantsValue = wantsValue,
-              valueType = valueType)
+        JsX.parseUpsertTypeParams(howJsOb)(mab)
 
       case ActionType.CreatePage =>
         // Also see SitePatchParser.readSimplePagePatchOrBad().
@@ -201,28 +180,10 @@ case class ActionParser(dao: SiteDao, mayDoOnlyAs: Opt[Pat], mab: MessAborter) {
     tagsArr.map(jsVal => {
       nr += 1
       val jOb = asJsObject(jsVal, s"Tags array item nr $nr")
-      _parseTagParam(jOb, whatPage) getOrIfBad { err =>
-        return Bad(s"Tag nr $nr: $err")
+      Try(JsX.parseTagParam(jOb, whatPage)) getOrIfFailure { ex =>
+        return Bad(s"Tag nr $nr: ${ex.getMessage}")
       }
     }).to[Vec]
-  }
-
-
-  private def _parseTagParam(jOb: JsObject, whatPage: Opt[PageRef]): CreateTagParams Or ErrMsg
-          = Good {
-    val tagTypeSt = parseSt(jOb, "tagType")
-    val tagTypeRef = parseTypeRef(tagTypeSt) getOrIfBad { err => return Bad(err) }
-    val postNr = parseOptInt32(jOb, "postNr")
-    CreateTagParams(
-          tagTypeRef,
-          whatPage = whatPage,
-          parentTagId_unimpl = None,
-          postNr = postNr,
-          // Dupl code, that's ok? [parse_tag_vals]
-          valType = parseOptTypeValueTypeStr_apiV0(jOb, "valType"),
-          valInt32 = parseOptInt32(jOb, "valInt32"),
-          valFlt64 = parseOptFloat64(jOb, "valFlt64"),
-          valStr = parseOptSt(jOb, "valStr"))
   }
 
 }

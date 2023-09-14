@@ -646,7 +646,7 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     throw new BadJsonException(s"$message [$errorCode]")
 
 
-  private def throwMissing(errorCode: String, fieldName: String) =
+  def throwMissing(errorCode: String, fieldName: String) =
     throwBadJson(errorCode, s"'$fieldName' field missing")
 
 }
