@@ -336,10 +336,12 @@ package object core {
       extends ParsedRef(canOnlyBeToPat = true, canBeToPage = false, isSsoOrExtId = true)
       with PatRef
 
-    case class TalkyardId(value: St)
+    case class InternalIntId(value: i32)
+      extends ParsedRef with PatRef with PostRef
+
+    RENAME // to InternalStrId?
+    case class TalkyardId(value: St)  // hmm or only PageRef
       extends ParsedRef with PatRef with PageRef
-          // with PostRef — no, posts ids are numbers.
-          // Maybe new class:  InternalIntId?  [int_num_id]
 
     case class PageId(value: core.PageId)
       extends ParsedRef(canBeToPat = false) with PageRef
@@ -423,6 +425,14 @@ package object core {
     if (ref startsWith "rid:") {
       val refId = ref drop "rid:".length
       ParsedRef.ExternalId(refId)
+    }
+    else if (ref startsWith "iid:") {
+      // See _refactor_ref_matches
+      val internalIdSt = ref drop "iid:".length
+      val intId = internalIdSt.toIntOption getOrElse {
+        return Bad(s"""Ref value is not an integer: "$ref"""")
+      }
+      ParsedRef.InternalIntId(intId)
     }
     else {
       return _badRef(ref, "rid:....")

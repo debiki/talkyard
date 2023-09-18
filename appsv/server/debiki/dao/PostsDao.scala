@@ -3311,8 +3311,8 @@ trait PostsDao {
   def loadPostByRef(ref: PostRef): Opt[Post] = ref match {
     case ParsedRef.ExternalId(refId) =>
       loadPostByRefId(refId)
-    //case ParsedRef.TalkyardId(id) => but that's a String. Need [int_num_id]?
-    //  loadPostByUniqueId(id)
+    case ParsedRef.InternalIntId(id) =>
+      loadPostByUniqueId(id)
   }
 
   def loadPostByRefId(refId: RefId): Opt[Post] = {
