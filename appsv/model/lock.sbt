@@ -20,7 +20,7 @@ Compile / dependencyOverrides ++= {
       "com.lambdaworks" % "scrypt" % "1.4.0",
       "com.sun.mail" % "javax.mail" % "1.5.6",
       "com.typesafe.play" % "play-functional_2.12" % "2.9.4",
-      "com.typesafe.play" % "play-json_2.12" % "2.9.4",
+      "com.typesafe.play" % "play-json_2.12" % "2.10.1",
       "commons-beanutils" % "commons-beanutils" % "1.9.4",
       "commons-codec" % "commons-codec" % "1.15",
       "commons-collections" % "commons-collections" % "3.2.2",
