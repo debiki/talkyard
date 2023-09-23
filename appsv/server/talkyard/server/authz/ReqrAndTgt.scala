@@ -34,6 +34,15 @@ sealed trait AnyReqrAndTgt {
   def denyUnlessStaff(): StaffReqrAndTgt =
     throwForbidden("TyEREQR0MOD", "You're not a moderator")
 
+  /* Could create a CoreMembReqrAndTgt class?
+  def denyUnlessCoreMember(): MembReqrAndTgt =
+    throwForbidden("TyEREQR0CORMEMB", "You're not a core member or moderator")
+
+  // Could create a TrustedReqrAndTgt class?
+  def denyUnlessTrusted(): MembReqrAndTgt =
+    throwForbidden("TyEREQR0TRUSTD", "You don't have enough permissions")
+   */
+
   def denyUnlessMember(): MembReqrAndTgt =
     throwForbidden("TyEREQR0MEMB", "You're not a member")
 
@@ -71,6 +80,10 @@ sealed trait ReqrAndTgt extends AnyReqrAndTgt {
   def target: Pat
   def targetToWho: Who = Who(target.trueId2, browserIdData, target.isAnon)
   def targetIsStaff: Bo = target.isStaff
+  def targetIsCoreMember: Bo = target.isStaffOrCoreMember
+  def targetIsTrusted: Bo = target.isStaffOrTrustedNotThreat
+  def targetIsFullMember: Bo =
+        target.isStaff || target.effectiveTrustLevel.isAtLeast(TrustLevel.FullMember)
 
   override def otherTarget: Opt[Pat] =
     if (target.id == reqr.id) None // not an *other* target, but the *same* as reqr

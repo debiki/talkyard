@@ -271,6 +271,8 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
 
   /// For HTTP requests with bad data or that try to access forbidden things.
   RENAME // to IfMessAbortReq ?
+  SECURITY; COULD // add an `indistinguishableNotFound: Bo` param? [abrt_indist_404]
+  // which would be set by default, unless one is admin? or moderator?
   object IfBadAbortReq extends MessAborter {
     override def abort(errCode: St, errMsg: => St = ""): Nothing = {
       throw new BadRequestEx(s"$errMsg [$errCode]")

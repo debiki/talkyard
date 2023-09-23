@@ -48,16 +48,22 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  // Later: Trusted or Core Members should by default be allowed to do this?  [tag_perms]
-  def upsertType: Action[JsValue] = StaffPostJsonAction2(
+  def upsertType: Action[JsValue] = PostJsonAction(
         RateLimits.CreateTagCatPermGroup, maxBytes = 2000) { req =>
     import req.{dao, theRequester => reqer}
+
+    // Later: Make this configurable, per tag type. [tag_perms]  For now:
+    val reqrSelf = req.reqrTargetSelf.denyUnlessMember()
+    throwForbiddenIf(!reqrSelf.target.isStaffOrCoreMember,
+          "TyETYPEPERMS39", "Only moderators and core members can edit tag and badge types")
+
     // Pass a CheckThoroughly param to the mess aborter? And then check the tag name
     // too. [mess_aborter]. Or always do from inside JsX.parseTagType()
     val tagTypeMaybeId: TagType = JsX.parseTagType(
           req.body, createdById = Some(reqer.id))(IfBadAbortReq)
-    val tagType = dao.upsertTypeIfAuZ(
-          tagTypeMaybeId, req.reqrTargetSelf.denyUnlessStaff())(IfBadAbortReq)
+
+    val tagType = dao.upsertTypeIfAuZ(tagTypeMaybeId, reqrSelf)(IfBadAbortReq)
+
     OkSafeJson(Json.obj(  // ts: StorePatch
         "tagTypes" -> Json.arr(JsX.JsTagTypeMaybeRefId(tagType,
             // Ooops, only for admins (not mod) here:  AuthzCtx.maySeeExtIds: Bo
@@ -142,8 +148,13 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   def updateTags: Action[JsValue] = PostJsonAction(
           RateLimits.EditPost, maxBytes = 5000) { req =>
-    // Later, more granular access control.  [priv_tags]
     import req.{body, dao}
+
+    // Later, more granular access control. [priv_tags] [tag_perms]  For now:
+    val reqrSelf = req.reqrTargetSelf.denyUnlessMember()
+    throwForbiddenIf(!reqrSelf.targetIsFullMember,
+          "TyETAGPERMS83", "Only full members can add and edit tags")
+
     val toAddJsVals: Seq[JsValue] = parseJsArray(body, "tagsToAdd")
     val toAdd = toAddJsVals.map(v => JsX.parseTag(v)(IfBadAbortReq))
     val toRemoveJsVals = parseJsArray(body, "tagsToRemove")
@@ -151,11 +162,9 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val toEditJsVals = parseJsArray(body, "tagsToEdit")
     val toEdit = toEditJsVals.map(v => JsX.parseTag(v)(IfBadAbortReq))
 
-    val reqrTgt = req.reqrTargetSelf.denyUnlessMember()
-
     val affectedPostIds =
           dao.updateTagsIfAuZ(
-              toAdd = toAdd, toRemove = toRemove, toEdit = toEdit, reqrTgt)(IfBadAbortReq)
+              toAdd = toAdd, toRemove = toRemove, toEdit = toEdit, reqrSelf)(IfBadAbortReq)
 
     val storePatch = dao.jsonMaker.makeStorePatchForPostIds(
           postIds = affectedPostIds, showHidden = true, inclUnapproved = true,

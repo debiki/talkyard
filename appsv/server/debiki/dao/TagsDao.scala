@@ -92,6 +92,8 @@ case class TagTypesByX(types: ImmSeq[TagType]) {
 trait TagsDao {
   this: SiteDao =>
 
+  import context.security.throwIndistinguishableNotFound
+
 
   def getTagTypes(tagTypeIds: Set[TagTypeId]): ImmSeq[TagType] = {
     getAllTagTypesSeq().filter(tt => tagTypeIds.contains(tt.id))
@@ -183,15 +185,15 @@ trait TagsDao {
   }
 
 
-  def upsertTypeIfAuZ(tagTypeMaybeId: TagType, reqrTgt: StaffReqrAndTgt)(
+  def upsertTypeIfAuZ(tagTypeMaybeId: TagType, reqrTgt: MembReqrAndTgt)(
         mab: MessAborter): TagType = {
     import mab._
 
     require(tagTypeMaybeId.createdById == reqrTgt.target.id, "TyE602RDL5")
 
     // But can mods see / change refids?  Probably should be for admins only.  [who_sees_refid]
-    abortDenyIf(!reqrTgt.targetIsStaff,
-          "TyEDENYREQR05733", "Only mods & admins can edit types")
+    abortDenyIf(!reqrTgt.targetIsCoreMember,
+          "TyEDENYREQR05733", "Only core members can edit types")
 
     // Move this check to  ReqrAndTgt  instead?  [do_as_otr]
     abortDenyIf(reqrTgt.areNotTheSame && !reqrTgt.reqrIsAdmin,
@@ -295,6 +297,9 @@ trait TagsDao {
     val reqr: Pat = reqrAndTagger.reqr
     val tagger: Pat = reqrAndTagger.target
 
+    abortDenyIf(!reqrAndTagger.targetIsFullMember,
+          "TyETAGPERMS05", "Only full members can tag posts")
+
     // Only admins may edit tags on others' behalf.  (Move this check eleswhere? [do_as_otr])
     abortDenyIf(reqrAndTagger.areNotTheSame && !reqr.isAdmin,
           "TyETAGOTHRSPO", "Can't edit tags on other people's behalf")
@@ -328,7 +333,8 @@ trait TagsDao {
       // (Don't:  postsById.values — then we wouldn't find out if a post wasn't found.)
       val postsAffected: Seq[Post] = postIdsDirectlyAffected.toSeq map { postId =>
         postsById.getOrElse(postId, {
-          abortNotFound("TyEPOST0FND025", s"No post with id $postId")
+          if (tagger.isStaff) abortNotFound("TyEPOST0FND025", s"No post with id $postId")
+          else throwIndistinguishableNotFound("POST2TAG")  // [abrt_indist_404]
         })
       }
 
@@ -354,8 +360,8 @@ trait TagsDao {
       if (!tagger.isStaffOrTrustedNotThreat) {
         postsAffected foreach { post =>
           abortDenyIf(post.createdById != tagger.id, "TyETAG0YOURPOST",
-            s"Can't tag other people's posts, post.createdById (${
-              post.createdById}) != tagger (${tagger.nameParaId})")
+                s"Can't tag other people's posts, post.createdById (${
+                  post.createdById}) != tagger (${tagger.nameParaId})")
         }
       }
 
