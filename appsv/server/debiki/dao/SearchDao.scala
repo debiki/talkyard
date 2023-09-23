@@ -20,6 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import talkyard.server.search._
+import talkyard.server.authz.AuthzCtxOnForum
 import scala.collection.{mutable => mut}
 import scala.collection.immutable.Seq
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,21 +38,21 @@ trait SearchDao {
     *   <mark class="esHL1">text hit</mark> should be included or not.
     */
   def fullTextSearch(searchQuery: SearchQuery, anyRootPageId: Opt[PageId],
-          user: Opt[Pat], addMarkTagClasses: Bo)
+          authzCtx: AuthzCtxOnForum, addMarkTagClasses: Bo)
           : Future[SearchResultsCanSee] = {
     COULD_OPTIMIZE // cache the most recent N search results for M minutes?
     // And refresh whenever anything changes anywhere, e.g. gets edited /
     // permissions changed / moved elsewhere / created / renamed.
     // But! Bug risk! What if takes 1 second until ElasticSearch is done indexing —
     // and we cached sth 0.5 before. Stale search results cache!
-    searchEngine.search(searchQuery, anyRootPageId, user,
-        addMarkTagClasses = addMarkTagClasses) map { hits: Seq[SearchHit] =>
-      groupByPageAccessCheckAndSort(hits, user)
+    searchEngine.search(searchQuery, anyRootPageId, user = authzCtx.requester,
+          addMarkTagClasses = addMarkTagClasses) map { hits: Seq[SearchHit] =>
+      groupByPageAccessCheck(hits, authzCtx)
     }
   }
 
 
-  private def groupByPageAccessCheckAndSort(searchHits: Seq[SearchHit], user: Opt[Pat])
+  private def groupByPageAccessCheck(searchHits: Seq[SearchHit], authzCtx: AuthzCtxOnForum)
           : SearchResultsCanSee = {
 
     // ElasticSearch has already sorted the hits by score or by any by-us explicitly
@@ -79,38 +80,65 @@ trait SearchDao {
         pageId -> hits
       }
 
-    // ----- Access check  [se_acs_chk]
+    // ----- Access check pages  [se_acs_chk]
 
-    COULD_OPTIMIZE // Remember the categories — they're getting looked up, for
+    WOULD_OPTIMIZE // Remember the categories — they're getting looked up, for
     // access control, but then forgotten. However, here we look them up again:
     // [search_results_extra_cat_lookup]
+    // But the Dao [caches_the_cats], doesn't it? So won't get looked up again then?
 
-    // Later: Have ElasticSearch do as much filtering as possible instead, to e.g. filter
+    COULD_OPTIMIZE // Have ElasticSearch do as much filtering as possible instead, to e.g. filter
     // out private messages the user isn't not allowed to see, earlier. Better performance,
     // and we'll get as many search hits as we want.
-    val pageStuffByIdInclForbidden = getPageStuffById(hitsByPageId.keys)
-    val pageStuffByIdCanSee = pageStuffByIdInclForbidden filter { case (_, pageStuff) =>
-      val isStaffOrAuthor = user.exists(u => u.isStaff || u.id == pageStuff.pageMeta.authorId)
-      COULD_OPTIMIZE // Do for all pages in the same cat, at once?  [authz_chk_mny_pgs]
-      val maySeeResult = maySeePageUseCache(pageStuff.pageMeta, user,
-            maySeeUnlisted = isStaffOrAuthor)
-      maySeeResult.maySee
-    }
+    // But probably need to double check here anyway that we only return things
+    // the requester may see, in case the ES index is stale somehow. Still, that'll
+    // be a bit more efficient if there's fewer may-not-see things.
 
-    // ----- Sort
+    val pageStuffById = getPageStuffById(hitsByPageId.keys)
+    // So we can load all posts at once, that's more efficient.
+    val hitPostIds = mut.HashSet[PostId]()
+    val reqr: Opt[Pat] = authzCtx.requester
 
-    // Add page meta and also sort hits by score, desc.
-    val pageStuffAndHitsTotallySorted: Seq[PageAndHits] =
-      pageIdsAndHitsSorted flatMap { case (pageId, hits) =>
-        pageStuffByIdCanSee.get(pageId) flatMap { pageStuff =>
+    val pagesPathHits: Seq[(PageStuff, PagePathWithId, Seq[SearchHit])] =
+            pageIdsAndHitsSorted flatMap { case (pageId, hits) =>
+      pageStuffById.get(pageId) flatMap { pageStuff: PageStuff =>
+        val isStaffOrAuthor = reqr.exists(u => u.isStaff || u.id == pageStuff.pageMeta.authorId)
+        WOULD_OPTIMIZE // Do for all pages in the same cat, at once?  [authz_chk_mny_pgs]
+
+        val maySeeResult =
+              maySeePageUseCacheAndAuthzCtx(
+                      pageStuff.pageMeta, authzCtx, maySeeUnlisted = isStaffOrAuthor)
+        if (!maySeeResult.maySee) None
+        else {
           getPagePath2(pageStuff.pageId) map { path =>
-            PageAndHits(pageStuff, path, hitsByScoreDesc = hits.sortBy(-_.score))
+            hits.foreach(h => hitPostIds.add(h.postId))
+            (pageStuff, path, hits)
           }
         }
       }
+    }
 
-    SearchResultsCanSee(
-          pageStuffAndHitsTotallySorted)
+    // ----- Access check posts  [se_acs_chk]
+
+    val postsById = readTx(_.loadPostsByUniqueId(hitPostIds))
+
+    val pagesPostsHitsMaySee = pagesPathHits flatMap { case (pageStuff, path, hits) =>
+      val hitsAndPostsMaySee: Seq[(SearchHit, Post)] = hits flatMap { hit =>
+        postsById.get(hit.postId) flatMap { post =>
+          val (seePost, debugCode) =
+                maySeePostIfMaySeePage(reqr, post)
+          if (!seePost.may) None
+          else Some(hit -> post)
+        }
+      }
+
+      if (hitsAndPostsMaySee.isEmpty) None
+      else Some(
+            // The hits have been sorted already by ES.
+            PageAndHits(pageStuff, path, hitPosts = hitsAndPostsMaySee))
+    }
+
+    SearchResultsCanSee(pagesPostsHitsMaySee)
   }
 
 

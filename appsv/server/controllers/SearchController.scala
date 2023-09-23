@@ -21,6 +21,7 @@ import com.debiki.core._
 import debiki.{RateLimits, SiteTpi}
 import talkyard.server.search._
 import talkyard.server.http._
+import talkyard.server.authz.AuthzCtxOnForum
 import debiki.EdHttp._
 import scala.collection.immutable.Seq
 import Prelude._
@@ -56,12 +57,12 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   def doSearch(): Action[JsValue] = AsyncPostJsonAction(RateLimits.FullTextSearch, maxBytes = 1000) {
         request: JsonPostRequest =>
-    import request.{dao, user => requester}
+    import request.dao
 
     val rawQuery = (request.body \ "rawQuery").as[String]
     val searchQuery = SearchQueryParser.parseRawSearchQueryString(rawQuery, dao.readOnly)
 
-    dao.fullTextSearch(searchQuery, anyRootPageId = None, requester,
+    dao.fullTextSearch(searchQuery, anyRootPageId = None, request.authzContext,
           addMarkTagClasses = true) map { results: SearchResultsCanSee =>
       import play.api.libs.json._
       OkSafeJson(Json.obj(
@@ -78,7 +79,11 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
                 "approvedRevisionNr" -> hit.approvedRevisionNr,
                 "approvedTextWithHighlightsHtml" ->
                     Json.arr(hit.approvedTextWithHighligtsHtml),  // BUG: double array. Harmless, is waht the browse expects :- P
-                "currentRevisionNr" -> hit.currentRevisionNr
+                "currentRevisionNr" -> hit.currentRevisionNr,
+                // Later, see [post_to_json], and ThingsFoundJson.makePagesFoundSearchResponse:
+                // "pubTags" -> JsArray(postTags map JsTag),
+                // "authorIds" ->  ...
+                // "assigneeIds" -> ...
               ))))
           })
         ))
@@ -114,25 +119,32 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // Right now, only { freetext: ... } supported — same as: GET /-/v0/search?freetext=...  .
     val searchQuery = SearchQueryParser.parseRawSearchQueryString(q, dao.readOnly)
 
-    // Public API — run the search query as a not logged in user, None.
-    val requester: Option[User] = None
+    // Public API — run the search query as a not logged in user.
+    val pubAuthzCtx = dao.getForumPublicAuthzContext()
 
-    doSearchPubApiImpl(searchQuery, dao, request, requester, pretty)
+    doSearchPubApiImpl(searchQuery, dao, request, pubAuthzCtx, pretty)
   }
 
 
 
   private def doSearchPubApiImpl(searchQuery: SearchQuery,
-        dao: SiteDao, request: ApiRequest[_], requester: Option[Participant],
-        pretty: Boolean): Future[Result] = {
+        dao: SiteDao, request: ApiRequest[_], authzCtx: AuthzCtxOnForum,
+        pretty: Bo): Future[Result] = {
     // No <mark> tag class. Instead, just: " ... <mark>text hit</mark> ...",
     // that is, don't:  <mark class="...">  — so people cannot write code that
     // relies on those classes.
-    dao.fullTextSearch(searchQuery, anyRootPageId = None, requester,
+    dao.fullTextSearch(searchQuery, anyRootPageId = None, authzCtx,
           addMarkTagClasses = false) map { results: SearchResultsCanSee =>
-      val authzCtx = dao.getAuthzContextOnPats(request.reqer)
+
+      // We're using the authz ctx below not to filter pages and comments, but to
+      // know if names of other users should be included — in the future, some
+      // members might be private [private_pats].
+      WOULD_OPTIMIZE // reuse authzCtx, but currently it's for pages only (not for
+      // see-user perms).
+      val authzCtxOnPats = dao.getAuthzContextOnPats(request.reqer)
+
       ThingsFoundJson.makePagesFoundSearchResponse(results, dao,
-            tysv.JsonConf.v0_0(pretty = pretty), authzCtx)
+            tysv.JsonConf.v0_0(pretty = pretty), authzCtxOnPats)
     }
   }
 

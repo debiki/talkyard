@@ -131,7 +131,8 @@ package object search {
   case class PageAndHits(
     pageStuff: PageStuff,
     pagePath: PagePathWithId,
-    hitsByScoreDesc: immutable.Seq[SearchHit]) {
+    hitPosts: imm.Seq[(SearchHit, Post)]) {
+    def hitsByScoreDesc: imm.Seq[SearchHit] = hitPosts.map(_._1)
     def pageId: PageId = pageStuff.pageId
     def pageTitle: String = pageStuff.title
     def pageType: PageType = pageStuff.pageRole
@@ -254,6 +255,7 @@ package object search {
       val siteId = (json \ Fields.SiteId).get match {
         case x: JsString => x.value.toInt  // <— CLEAN_UP remove once I've reindexed edm & edc.
         case x: JsNumber => x.value.toInt
+        case x => die("TyESESITEID", s"Bad site id: '$x', type: ${classNameOf(x)}")
       }
       Good(SearchHit(
         siteId = siteId,

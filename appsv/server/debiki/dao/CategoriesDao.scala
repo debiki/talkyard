@@ -770,6 +770,9 @@ trait CategoriesDao {
 
 
   /** Returns (categoriesById, categoriesByParentId).
+    *
+    * [caches_the_cats], until garbage collected (typically until any ongoing
+    * HHTP request has finished).
     */
   private def getAndRememberCategories()
         : (Map[CategoryId, Category], Map[CategoryId, Vector[Category]]) = {

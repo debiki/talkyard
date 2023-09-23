@@ -432,6 +432,14 @@ trait AuthzSiteDaoMixin {
     if (!seePageResult.maySee)
       return (MaySeeOrWhyNot.NopeUnspecified, s"${seePageResult.debugCode}-ABX94WN")
 
+    maySeePostIfMaySeePage(ppt, post)
+  }
+
+
+  def maySeePostIfMaySeePage(pat: Opt[Pat], post: Post): (MaySeeOrWhyNot, St) = {
+    val ppt = pat
+
+    MOVE // to Authz, should be a pure fn.
     CLEAN_UP // Dupl code, this stuff repeated in Authz.mayPostReply. [8KUWC1]
 
     // Below: Since the requester may see the page, it's ok if hen learns
