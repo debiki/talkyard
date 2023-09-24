@@ -154,9 +154,6 @@ const TagValEditor = React.createFactory<{ tag: Tag, tagType: TagType,  // I18N
       r.div({ className: 'c_DlgBtns' },
           Button({ onClick: props.closeParent }, t.Cancel),
           !isVal(newValue) ? null : PrimaryButton({ onClick: () => {
-            // UX BUG SHOULD update the post, also if it's not in the store, e.g. if
-            // looking at all posts with a certain tag — but currently one needs
-            // to reload to see the changes.
             const editedTag: Tag = tag_copySetVal(tag, tagType, newValue);
             Server.updateTags({ edit: [editedTag] }, props.closeParent);
           }}, t.Save)));
