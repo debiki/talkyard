@@ -536,7 +536,7 @@ function runAllE2eTests {
   $r s/wdio --only api-upsert-page-notfs.2browsers $args
   $r s/wdio-7 --only api-upsert-posts.2br.d --cd -i $args
 
-  $r s/wdio --only api-search-full-text $args
+  $r s/wdio-7 --only api-search-full-text.1br.f --cd -i $args
   $r s/wdio --only api-list-query-for-topics-popular-first $args
   $r s/wdio --only api-list-query-for-topics-recent-etc-first $args
   $r s/wdio --only api-list-query-for-posts $args

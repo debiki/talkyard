@@ -32,7 +32,7 @@ full text search:
     found by admins:
             navigation-as-admin.test.ts  TyT7WAAR2J4 TyT85WABR0
     not found by non-staff:
-            - api-search-full-text.test.ts  TyT60KTSJ35J
+            - api-search-full-text.1br.f  TyT70ADNEFTD36.TyT60KTSJ35J
   custom groups private pages not found:
             - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
   private chat:
@@ -40,7 +40,7 @@ full text search:
   direct message,
   private chat,
   restricted category:
-            - api-search-full-text.test.ts  TyT60KTSJ35J
+            - api-search-full-text.1br.f  TyT70ADNEFTD36.TyT60KTSJ35J
             - search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT
   sub cat in access restricted base category:
             - category-perms.2br.d  TyTE2ECATPREMS01.TyTSEARCHPRIVCAT
@@ -441,13 +441,13 @@ security:
   api list restriceted category:
             - api-list-query-for-topics-popular-first.test.ts  TyT603AKSL25.TyT502RKDJ46
   api search restricted categories and private topics:
-            - api-search-full-text.test.ts  TyT60KTSJ35J
+            - api-search-full-text.1br.f  TyT70ADNEFTD36.TyT60KTSJ35J
   ui search restricted chats & cats:
             - search-private-chat.2br  TyTSEARCHPRIVCHAT
             - search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT
   add group to category security settings:
             - api-list-query-for-topics.test.ts  TyT69WKTEJG4
-            - api-search-full-text.test.ts       TyT69WKTEJG4
+            - api-search-full-text.1br.f  TyT70ADNEFTD36.TyT69WKTEJG4
   join page one may not see:
           - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK.TyT502RKTJF4
   add to watchbar a page one may not see:
@@ -963,7 +963,7 @@ direct messages:
   test email notf link:
             - direct-messages-delete.2browsers.test.ts   TyT5033FKSNS57
   not searchable by the wrong people:
-            - api-search-full-text.test.ts  TyT5027KRUTP
+            - api-search-full-text.1br.f  TyT70ADNEFTD36.TyT5027KRUTP
   may direct-message me trust level:
             - block-dir-msgs.2br.d  TyTBLOCKDIRMSGS
 
@@ -982,13 +982,13 @@ chat:
   private chat:             ==
             - private-chat.3br.d  TyT2ABKR045
     not searchable:
-            - api-search-full-text.test.ts  TyT602SKDL52
+            - api-search-full-text.1br.f  TyT70ADNEFTD36.TyT602SKDL52
   shows last 50 messages:
   pin globally —> appears in watchbar:  (6KWQ2)
   create, when in no site section:
           - chat-create-from-direct-message.2browsers.test.ts  TyT5FKB2A
           - chat-create-from-profile-pages.2browsers.test.ts  TyT306RAKN2 TyTPAGENOTF
-          - api-search-full-text.test.ts  TyT602SKDL52
+          - api-search-full-text.1br.f  TyT70ADNEFTD36.TyT602SKDL52
   switch to advanced editor:
           - drafts-chat-adv-ed.2browsers.test.ts  TyT7JKMW24
   delete chat message:
@@ -1729,7 +1729,7 @@ api:
             - api-list-query-for-posts.test.ts  TyT702KRJGF57
   search,
   full text search:
-            - api-search-full-text.test.ts   TyT70ADNEFTD36
+            - api-search-full-text.1br.f  TyT70ADNEFTD36
   get api:
             - api-get-query-for-pats.2br  TyTEAPIGETQPATS
             - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS

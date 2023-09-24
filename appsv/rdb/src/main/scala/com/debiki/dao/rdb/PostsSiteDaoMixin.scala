@@ -977,7 +977,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
   // Will return a set or list, later when there can be many authors per post.
   def loadAuthorIdsByPostId(postIds: Set[PostId]): Map[PostId, UserId] = {
-    // Tested here: TyT5086XJW2 (the e2e test api-search-full-text.test.ts)
+    // Tested here:
+    //   - api-search-full-text.1br.f  TyT70ADNEFTD36.TyT5086XJW2
     if (postIds.isEmpty)
       return Map.empty
 
