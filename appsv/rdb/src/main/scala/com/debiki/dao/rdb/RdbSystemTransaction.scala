@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import _root_.java.{util => ju}
 import java.{sql => js}
 import org.flywaydb.core.Flyway
+import scala.collection.{immutable => imm, mutable => mut}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import Rdb._
@@ -168,6 +169,10 @@ class RdbSystemTransaction(
   }
 
 
+  RENAME // to asSiteTx(siteId), so it's clear that there's no new tx.
+  /** "Casts" the current transaction to a for-one-specific site transaction, so you
+    * can modify that site within this SystemTx.
+    */
   override def siteTransaction(siteId: SiteId): SiteTransaction = {
     val siteTransaction = new RdbSiteTransaction(siteId, daoFactory, now)
     siteTransaction.setTheOneAndOnlyConnection(theOneAndOnlyConnection)
@@ -858,19 +863,23 @@ class RdbSystemTransaction(
     val postsBySite = Map[SiteId, immutable.Seq[Post]](
       entries.map(siteAndPosts => {
         val siteId = siteAndPosts._1
-        val siteTrans = siteTransaction(siteId)
-        val posts = siteTrans.loadPostsByUniqueId(siteAndPosts._2).values.toVector
+        val siteTx = siteTransaction(siteId)
+        val posts = siteTx.loadPostsByUniqueId(siteAndPosts._2).values.toVector
         sitePageIds ++= posts.map(post => SitePageId(siteId, post.pageId))
         (siteId, posts)
       }): _*)
 
-    val pagesBySitePageId = loadPagesBySitePageId(sitePageIds)
-    val tagsBySitePostId = loadTagsBySitePostId(postsBySite)
-    StuffToIndex(postsBySite, pagesBySitePageId, tagsBySitePostId)
+    val pagesBySitePageId: Map[SitePageId, PageMeta] = _loadPagesBySitePageId(sitePageIds)
+    val tagsBySitePostId: Map[SitePostId, imm.Seq[Tag]] = _loadTagsBySitePostId(postsBySite)
+    // Old tags, remove.  [index_tags]
+    val tagsBySitePostId_old = loadTagsBySitePostId_old(postsBySite)
+
+    StuffToIndex(postsBySite, pagesBySitePageId, tagsBySitePostId, tagsBySitePostId_old)
   }
 
 
-  def loadPagesBySitePageId(sitePageIds: collection.Set[SitePageId]): Map[SitePageId, PageMeta] = {
+  private def _loadPagesBySitePageId(sitePageIds: collection.Set[SitePageId])
+          : Map[SitePageId, PageMeta] = {
     COULD_OPTIMIZE // For now, load pages one at a time.
     Map[SitePageId, PageMeta](sitePageIds.toSeq.flatMap({ sitePageId =>
       siteTransaction(sitePageId.siteId).loadPageMeta(sitePageId.pageId) map { pageMeta =>
@@ -880,7 +889,36 @@ class RdbSystemTransaction(
   }
 
 
-  def loadTagsBySitePostId(postsBySite: Map[SiteId, immutable.Seq[Post]])
+  private def _loadTagsBySitePostId(postsBySite: Map[SiteId, imm.Seq[Post]])
+        : Map[SitePostId, imm.Seq[Tag]] = {
+    if (postsBySite.isEmpty) return Map.empty
+    val values = MutArrBuf[AnyRef]()
+    val querySb = new mut.StringBuilder(initCapacity = 1024, initValue =
+          """ -- _loadTagsBySitePostId
+          select * from tags_t""")
+    var isFirst = true
+    for ((siteId, posts) <- postsBySite) {
+      val whereOrOr = isFirst ? "where" | "or"
+      isFirst = false
+      querySb.append(s"""
+          $whereOrOr (
+              site_id_c = ? and
+              on_post_id_c in (${ makeInListFor(posts) })) """)
+      values.append(siteId.asAnyRef)
+      values.appendAll(posts.map(_.id.asAnyRef))
+    }
+
+    runQueryBuildMultiMap(querySb.toString, values.toList, rs => {
+      val siteId = getInt32(rs, "site_id_c")
+      val tag: Tag = TagsRdbMixin.parseTag(rs)
+      val postId = tag.onPostId.getOrDie("TyE023SMJW46", s"Post id missing, tag: $tag")
+      SitePostId(siteId, postId) -> tag
+    })
+  }
+
+
+  @deprecated
+  def loadTagsBySitePostId_old(postsBySite: Map[SiteId, immutable.Seq[Post]])
         : Map[SitePostId, Set[TagLabel]] = {
     COULD_OPTIMIZE // could load tags for all sites at once, instead of once per site
     var tagsBySitePostId = Map[SitePostId, Set[TagLabel]]()

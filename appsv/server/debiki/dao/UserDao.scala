@@ -32,6 +32,7 @@ import talkyard.server._
 import talkyard.server.dao.StaleStuff
 import talkyard.server.authn.{Join, Leave, JoinOrLeave, StayIfMaySee}
 import talkyard.server.authz.{AuthzCtxOnPats, AuthzCtxOnAllWithReqer, AuthzCtxWithReqer}
+import talkyard.server.authz.{ReqrAndTgt}
 
 
 case class LoginNotFoundException(siteId: SiteId, userId: UserId)
@@ -1062,6 +1063,11 @@ trait UserDao {
   }
 
 
+  def getMembersByUsernames(usernames: Iterable[Username]): ImmSeq[Opt[Member]] = {
+    usernames.to[Vec].map(getMemberByUsername)
+  }
+
+
   def getMemberByUsername(username: String): Option[Member] = {
     // The username shouldn't include '@'. Also, if there's a '@', might be
     // an email addr not a username.
@@ -1983,20 +1989,43 @@ trait UserDao {
   }
 
 
-  def savePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, byWho: Who): U = {
+  def savePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, reqrTgt: ReqrAndTgt): U = {
+    require(pageNotfPref.peopleId == reqrTgt.target.id, "TyE_PPL_NE_TGT_93MR2")
     _editMemberThrowUnlessSelfStaff(
-          pageNotfPref.peopleId, byWho, "TyE2AS0574", "change notf prefs") {
-            case EditMemberCtx(tx, _, _, _) =>
+          pageNotfPref.peopleId, reqrTgt.reqrToWho, "TyE2AS0574", "change notf prefs") {
+            case c @ EditMemberCtx(tx, _, _, _) =>
+      _authzNotfPref(pageNotfPref, reqrTgt)(tx)
       tx.upsertPageNotfPref(pageNotfPref)
     }
   }
 
 
-  def deletePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, byWho: Who): Unit = {
+  def deletePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, reqrTgt: ReqrAndTgt): Unit = {
+    require(pageNotfPref.peopleId == reqrTgt.target.id, "TyE_PPL_NE_TGT_93MR3")
     _editMemberThrowUnlessSelfStaff(
-          pageNotfPref.peopleId, byWho, "TyE5KP0GJL", "delete notf prefs") {
+          pageNotfPref.peopleId, reqrTgt.reqrToWho, "TyE5KP0GJL", "delete notf prefs") {
             case EditMemberCtx(tx, _, _, _) =>
+      _authzNotfPref(pageNotfPref, reqrTgt,
+            // It's ok for an admin to *remove* a notf pref, even if the target user
+            // can no longer see the page or category.
+            checkOnlyReqr = true)(tx)
       tx.deletePageNotfPref(pageNotfPref)
+    }
+  }
+
+
+  /**  Checks if both the requester and the target user may see the page.
+    */
+  private def _authzNotfPref(notfPref: PageNotfPref, reqrTgt: ReqrAndTgt,
+          checkOnlyReqr: Bo = true)(tx: SiteTx): U = {
+    // Related test:
+    //   - notf-prefs-private-groups.2browsers.test.ts  TyT406WMDKG26
+
+    notfPref.pageId foreach { pageId =>
+      throwIfMayNotSeePage2(pageId, reqrTgt, checkOnlyReqr = checkOnlyReqr)(Some(tx))
+    }
+    notfPref.pagesInCategoryId foreach { catId =>
+      throwIfMayNotSeeCategory2(catId, reqrTgt, checkOnlyReqr = checkOnlyReqr)(Some(tx))
     }
   }
 
@@ -2494,6 +2523,10 @@ trait UserDao {
         mayNotWhat: St, mustBeAdmin: Bo = false)(block: EditMemberCtx => U): MemberVb = {
     SECURITY // review all fns in UserDao, and in UserController, and use this helper fn?
     // Also create a helper fn:  readMemberThrowUnlessSelfStaff2 ...
+
+    // There's a similar check in the Do-API:  [api_do_as],  maybe break out this fn
+    // and use everywhere instead?  Maybe should use this fn also here:  [vote_as_otr]
+    // or in fact whereever  ReqrAndTgt.areNotTheSame?
 
     throwForbiddenIf(byWho.id <= MaxGuestId,
       errorCode + "-MEGST", s"Guests may not $mayNotWhat")

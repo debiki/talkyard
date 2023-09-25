@@ -14,6 +14,19 @@ export const enum NewSiteOwnerType {
 }
 
 
+export const enum TestThingType {
+  Pats = 7,
+  Posts = 56,
+  All = Pats + Posts,
+}
+
+/// Sync with TypeValueType in Scala:
+export const enum TestTypeValueType {
+  NoValue         =  0,
+  Int32           =  1,
+  Flt64           =  5,
+  StrKwd          = 17,
+}
 
 // Need to include here, for now, ? because client/app/ doesn't use any modules system,
 // doesn't export any constants ?

@@ -671,7 +671,7 @@ function fullTextSearch<T extends ThingFound>(ps: {
 
   const responseObj = postOrDie(url, requestBody, ps.opts);
 
-  if (ps.opts.fail)
+  if (ps.opts?.fail)
     return responseObj.bodyText;
 
   const responseBody = responseObj.bodyJson() as SearchQueryApiResponse<T>;

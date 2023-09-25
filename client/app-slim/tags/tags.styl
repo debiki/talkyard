@@ -6,30 +6,31 @@
     display: inline;
     margin: 0;
 
-.c_TagT_Tag,
-.c_TagL_Tag,
+.c_Tag,
+.c_Tag:visited,
+.c_Tag:link,
 .c_TagL_AddB
   display: inline-block;
-  color: hsl(0 0% 25%);
   line-height: 1;
   padding: 2px 6px;
   text-align: center;
-
   border-radius: 2px;
   box-shadow: 1px 1px 3.7px #333;
   margin: 1px 6px 2px 1px;
-  color: hsl(0deg 0% 20%);
+  color: hsl(0 0% 21%);
   background: hsl(0 0% 98%);
 
+  &:active,
   &:hover
     cursor: pointer;
-    a
-      text-decoration: none; // no <a> underline
+    text-decoration: none; // no <a> underline
 
-
-.c_TagL-CanEdAny:hover
-  .c_TagL_Tag-CanEd,
-  .c_TagL_AddB
+// Tags are clickable (opens a dropdown, or jumps to the tag), so highlight on hover.
+// Curerntly badges aren't, though, so -Po only (tags on 'Po'sts) for now.
+.c_Tag-Po,
+.c_TagL_Tag.c_Tag-Po,
+.c_TagL_AddB
+  &:hover
     background: hsl(207 100% 96%);
     box-shadow: 1px 1px 3.3px hsl($uiHue 100% 40%);
     color: black;
@@ -45,7 +46,7 @@
 .c_Tag-Po
   min-width: 30px;
 
-.c_Tag-Pat
+.c_TagL .c_Tag-Pat
   // There's usually nothing to the left (in the about dialog, on the profile page).
   margin-left: 0;
   margin-right: 7px;
@@ -80,3 +81,20 @@
       margin-left: 0;
   .c_Tag-Pat
     text-align: left;
+
+
+// The tags page (lists tags, & info about single tags)
+
+.c_TagsP
+  h1
+    margin-bottom: 1.8ex;
+    .c_Tag
+      margin: 0 0 0 0.45ex;
+      padding: 0.33ex 0.77ex 0.4ex;
+      color: hsl(0 0% 27%);
+      background: hsl(0 0% 97.7%);
+      font-size: inherit; // same as "About tag:" in the <h1>
+
+  h2
+    margin-bottom: 2.5ex;
+    font-size: 22px;

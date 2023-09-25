@@ -38,7 +38,7 @@ const r = ReactDOMFactories;
 export var ExplainingListItem = createComponent({
   displayName: 'ExplainingListItem',
 
-  onClick: function(event) {
+  onClick: function(event: MouseEvent) {
     const props: ExplainingListItemProps = this.props;
     event.preventDefault();
     if (props.onClick) {
@@ -52,20 +52,34 @@ export var ExplainingListItem = createComponent({
   render: function() {
     const props: ExplainingListItemProps = this.props;
     const entry: ExplainingTitleText = this.props;
+    // @ifdef DEBUG
+    // (Both onNav and linkTo are ok together — see the ExplainingListItemProps interface docs.)
+    dieIf((props.onClick || props.onSelect) && (props.onNav || props.linkTo), 'TyEDBLACTN0356');
+    dieIf(!props.onClick && !props.onSelect && !props.linkTo, 'TyE0ACTN03825');
+    // @endif
     const activeClass =
         props.active || _.isUndefined(props.active) && (
-          props.onSelect && props.activeEventKey === props.eventKey) ?
+          props.onSelect && !isUndef(props.eventKey) &&
+          props.activeEventKey === props.eventKey) ?
         ' active' : '';
     const disabledClass = props.disabled ? ' c_Dis' : '';
     const subStuff = !entry.subStuff ? null :
             r.div({ className: 'esExplDrp_entry_sub' }, entry.subStuff);
-    const onClick = props.disabled ? undefined : this.onClick;
+
+    const onClick = props.disabled ? undefined : (
+            props.onNav || (
+                props.linkTo ? undefined : this.onClick));
+
+    const linkTo = props.disabled ? undefined : props.linkTo;
+
+    const elemFn = props.linkTo ? LinkUnstyled : r.a;
 
     return (
       r.li({ className: 'esExplDrp_entry' + activeClass + disabledClass},
-        r.a({ onClick, id: props.id, className: props.className },
-          r.div({ className: 'esExplDrp_entry_title' }, entry.title),
-          r.div({ className: 'esExplDrp_entry_expl' }, entry.text)),
+        elemFn.apply(this, [
+            { onClick, to: linkTo, id: props.id, className: props.className },
+            r.div({ className: 'esExplDrp_entry_title' }, entry.title),
+            r.div({ className: 'esExplDrp_entry_expl' }, entry.text)]),
         subStuff));
   },
 });

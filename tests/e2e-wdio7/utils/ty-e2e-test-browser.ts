@@ -2289,11 +2289,17 @@ export class TyE2eTestBrowser {
     }
 
     async waitForThenClickText(selector: St, regex: St | RegExp,
-            opts: { tryNumTimes?: Nr } = {}) {   // RENAME to waitAndClickSelectorWithText (above)
+            opts: { tryNumTimes?: Nr, mayScroll?: Bo } = {}) {   // RENAME to waitAndClickSelectorWithText (above)
       // [E2EBUG] COULD check if visible and enabled, and loading overlay gone? before clicking
       const numTries = opts.tryNumTimes || 3;
+      let isRetry: Bo | U;
       await utils.tryManyTimes(`waitForThenClickText(${selector}, ${regex})`, numTries,
               async () => {
+        // Try once without scrolling, almost always works.
+        if ((opts.mayScroll !== false && isRetry) || (opts.mayScroll === true)) {
+          await this.scrollIntoViewInPageColumn(selector);
+        }
+        isRetry = true;
         const elem = await this.waitAndGetElemWithText(selector, regex);
         await this.clickNow(elem);
       });
@@ -2501,6 +2507,12 @@ export class TyE2eTestBrowser {
 
     async waitAndGetListTexts(selector: St): Pr<St[]> {
       return await this.__waitAndGetThingsInList(selector, async (e) => await e.getText());
+    }
+
+
+    async waitAndGetListLinks(selector: St): Pr<(St | U)[]> {
+      return await this.__waitAndGetThingsInList(
+              selector, async (e) => await e.getAttribute('href'));
     }
 
 
@@ -4950,6 +4962,21 @@ export class TyE2eTestBrowser {
         await this.forumTopicList.waitForCategoryName(toCatName);
       },
 
+      getTopicSortOrder: async (): Pr<'New' | 'Top' | 'Active'> => {
+        const els = await this.$$('.esForum_catsNav_sort .active');
+        dieIf(els.length > 1, `Many active topic sort orders: ${els.length} [TyE026MRL4]`);
+        dieIf(!els.length, `No active topic sort order [TyE026MRL5]`);
+        const el = els[0];
+        const id: St = await el.getAttribute('id');
+        switch (id) {
+          case 'e_SortNewB': return 'New';
+          case 'e2eSortTopB': return 'Top';
+          case 'e2eSortLatestB': return 'Active';
+          default:
+            die(`Bad sort btn id: ${id} [TyE026MRL52]`);
+        }
+      },
+
       clickViewLatest: async () => {
         await this.waitAndClick('#e2eSortLatestB');
         await this.waitUntilGone('.s_F_SI_TopB');
@@ -4975,13 +5002,13 @@ export class TyE2eTestBrowser {
         await this.waitAndClickFirst(`.edAvtr[title~="${username}"]`);
       },
 
-      goToTopic: async (title: St) => {   // RENAME to navToTopic
-        await this.forumTopicList.navToTopic(title);
+      goToTopic: async (title: St, opts: { mayScroll?: Bo } = {}) => {   // RENAME to navToTopic
+        await this.forumTopicList.navToTopic(title, opts);
       },
 
-      navToTopic: async (title: St) => {
+      navToTopic: async (title: St, opts: { mayScroll?: Bo } = {}) => {
         await this.rememberCurrentUrl();
-        await this.waitForThenClickText(this.forumTopicList.titleSelector, title);
+        await this.waitForThenClickText(this.forumTopicList.titleSelector, title, opts);
         await this.waitForNewUrl();
         await this.assertPageTitleMatches(title);
       },
@@ -4999,18 +5026,27 @@ export class TyE2eTestBrowser {
       },
 
       assertTopicTitlesAreAndOrder: async (titles: St[]) => {
-        const els = await this.$$(this.forumTopicList.titleSelector);
-        for (let i = 0; i < titles.length; ++i) {
-          const titleShouldBe = titles[i];
-          const actualTitleElem = els[i];
-          if (!actualTitleElem) {
-            assert.ok(false, `Title nr ${i} missing, should be: "${titleShouldBe}"`);
+        // If there's a React component change, the elems go stale, so try a few times.
+        // But will that really help? Seems wdio 7 got stuck in an internal loop, printing:
+        //    "[0-0] 2023-09-09T07:11:52.390Z WARN webdriver:
+        //         Request encountered a stale element - terminating request"
+        // all the time. [E2EBUG]
+        await utils.tryManyTimes(`Checking topic titles and order`, 3, async () => {
+          // Or use  this.waitAndGetListTexts()  instead?
+          const els = await this.$$(this.forumTopicList.titleSelector);
+          for (let i = 0; i < titles.length; ++i) {
+            const titleShouldBe = titles[i];
+            const actualTitleElem = els[i];
+            if (!actualTitleElem) {
+              assert.ok(false, `Title ix ${i} missing, should be: "${titleShouldBe}"`);
+            }
+            const actualTitle = await actualTitleElem.getText();
+            if (titleShouldBe !== actualTitle) {
+              assert.ok(false,
+                      `Title ix ${i} is: "${actualTitle}", should be: "${titleShouldBe}"`);
+            }
           }
-          const actualTitle = await actualTitleElem.getText();
-          if (titleShouldBe !== actualTitle) {
-            assert.ok(false, `Title nr ${i} is: "${actualTitle}", should be: "${titleShouldBe}"`);
-          }
-        }
+        });
       },
 
       assertTopicVisible: async (title: St, ps: { andHidden?: Bo } = {}) => {
@@ -5196,6 +5232,10 @@ export class TyE2eTestBrowser {
       clearParentCategory: async () => {
         await this.waitAndClick('.s_CD_0SubCat');
         await this.waitUntilTextIs('.s_CD .e_SelCatB', "None");
+      },
+
+      setDoItVotes: async (enabled: Bo) => {
+        await this.setCheckbox('.s_CD .e_DoVote input', enabled);
       },
 
       openDiscLayout: async () => {
@@ -6181,6 +6221,7 @@ export class TyE2eTestBrowser {
         await this.switchToEmbCommentsIframeIfNeeded();
         await this.waitForVisible(selector);
 
+        // Or use  this.__waitAndGetThingsInList()  instead?
         const postElems: WElm[] = await this.$$(selector);
 
         if (postElems.length >= expectedPostNrs.length) {
@@ -6807,6 +6848,7 @@ export class TyE2eTestBrowser {
           await this.topic.clickMoreForPostNr(postNr);
           await this.waitAndClick(' .dw-a.icon-plus');  // add real e_SthB class?  [precise_tag_sels]
         }
+        await this.tagsDialog.waitUntilDisplayedCloseAnySecurityTips();
       },
 
       getTags: async (ps: { forPostNr?: PostNr, howManyTags: Nr, within?: Sel }): Pr<St[]> => {
@@ -7324,6 +7366,11 @@ export class TyE2eTestBrowser {
 
 
     searchResultsPage = {
+      goHere: async (origin?: St) => {
+        await this.go2((origin || '') + '/-/search/');
+        await this.searchResultsPage.waitForSearchInputField();
+      },
+
       waitForSearchInputField: async () => {
         await this.waitForVisible('.s_SP_QueryTI');
       },
@@ -7350,17 +7397,24 @@ export class TyE2eTestBrowser {
 
       searchForUntilNumPagesFound: async (phrase: St, numResultsToFind: Nr) => {
         let numFound;
+        let hitLinks;
+        let attemptNr = 0;
         await this.waitUntil(async () => {
+          attemptNr += 1;
           await this.searchResultsPage.searchForWaitForResults(phrase);
           numFound = await this.searchResultsPage.countNumPagesFound_1();
           if (numFound >= numResultsToFind) {
             tyAssert.eq(numFound, numResultsToFind);
             return true;
           }
+          // Race, might not match numFound, oh well, it's just for the message() below.
+          hitLinks = await this.searchResultsPage.getHitLinks();
           await this.#br.pause(111);
         }, {
-          message: `Waiting for ${numResultsToFind} pages found for search ` +
-              `phrase:  "${phrase}"  found this far: ${numFound}`,
+          message: () => `Waiting for ${numResultsToFind} pages found for search ` +
+              `phrase:  "${phrase}",  found this far: ${numFound}` + (
+                  attemptNr <= 2 || ((attemptNr % 2) === 0) ? '' :
+                  `,\n    hit links: ${j2s(hitLinks)}`),
         });
       },
 
@@ -7379,6 +7433,37 @@ export class TyE2eTestBrowser {
 
       assertResultPageTitlePresent: async (title: St) => {
         await this.waitAndGetElemWithText('.esSERP_Hit_PageTitle', title, { timeoutMs: 1 });
+      },
+
+      getHitLinks: async (): Pr<(St | U)[]> => {
+        return await this.waitAndGetListLinks('.s_SR .esSERP_Hit_In a');
+      },
+
+      assertResultLinksAre: async (expected: St[], ps: { anyOrder: Bo } = {}) => {
+        const exp = ps.anyOrder ? [...expected].sort() : expected;
+        const actualLinks: (St | U)[] = await this.searchResultsPage.getHitLinks();
+        const act = ps.anyOrder ? [...actualLinks].sort() : actualLinks;
+        const showHits = () => (!ps.anyOrder ? '' :
+                `\n   Any order,`) +
+                `\n   All hit links: ${j2s(act)
+                }\n   All expected:  ${j2s(exp)}\n`;
+
+        for (let i = 0; i < exp.length; ++i) {
+          const shouldBe = exp[i];
+          if (act.length <= i) {
+            assert.ok(false, // throws
+                  `Search hit ix ${i} missing, should be: "${shouldBe}"` + showHits());
+          }
+          const itIs = act[i];
+          if (itIs !== shouldBe) {
+            assert.ok(false,
+                  `Search hit ix ${i} is: "${itIs}", should be: "${shouldBe}"` + showHits());
+          }
+        }
+        // Better place this at the end? So we'll know if all expected links were found.
+        tyAssert.eq(exp.length, act.length,
+                  `Too many search hits, got ${act.length}, expected ${exp.length}`
+                  + showHits());
       },
 
       goToSearchResult: async (linkText?: St) => {
@@ -7631,6 +7716,9 @@ export class TyE2eTestBrowser {
       _goHere: async (username: St, ps: { isGroup?: true, origin?: St }, suffix: St) => {
         await this.go((ps.origin || '') +
                 `/-/${ps.isGroup ? 'groups' : 'users'}/${username}${suffix}`);
+        // Aviod login-dialog-disappears-because-page-refreshes-when-done-loading
+        // problem. [e2e_login_race]
+        await this.waitForGone('.e_LdngUP');
       },
 
       aboutPanel: {
@@ -7639,7 +7727,9 @@ export class TyE2eTestBrowser {
         },
 
         openBadgesDialog: async () => {
+          // Badges are implemented as tags, just tagging people instead, & different styling.
           await this.waitAndClick('.s_UP_Ab .c_TagL_AddB');
+          await this.tagsDialog.waitUntilDisplayedCloseAnySecurityTips();
         },
       },
 
@@ -8139,6 +8229,7 @@ export class TyE2eTestBrowser {
           },
 
           getAllEmailAddresses: async (): Pr<St[]> => {
+            // REFACTOR use instead: this.waitAndGetListTexts(selector) ?
             await this.waitForDisplayed('.s_UP_EmLg_EmL_It_Em');
             const elms = await this.$$('.s_UP_EmLg_EmL_It_Em');
             const adrs = [];
@@ -9473,6 +9564,15 @@ export class TyE2eTestBrowser {
 
 
     tagsDialog = {
+      waitUntilDisplayedCloseAnySecurityTips: async () => {
+        await this.waitForDisplayed('.esTsD, .e_TgVisD');
+        if (await this.isDisplayed('.e_TgVisD')) {
+          await this.clickNow('.e_TgVisD .e_HelpOk');
+          await this.waitForGone('.e_TgVisD');
+          await this.waitForDisplayed('.esTsD');
+        }
+      },
+
       createAndAddTag: async (tagName: St, ps: { numAfterwards: Nr }) => {
         await this.waitAndSetValue('.e_CrTgI input', tagName);
         await this.waitAndClick('.e_CrTgB');
@@ -9829,6 +9929,10 @@ export class TyE2eTestBrowser {
           opts = <any> password;
           password = null;
         }
+        // If on a user profile page, and clicking while the page is still loading,
+        // then, once done loading, the login dialog apparently closes,
+        // and then the ongoing e2e test fails, when the username and password fields
+        // suddenly disappear. — So, _goHere waits until done loading. [e2e_login_race]
         await this.topbar.clickLogin();
         const credentials = _.isObject(username) ?  // already { username, password } object
             username : { username: username, password: password };

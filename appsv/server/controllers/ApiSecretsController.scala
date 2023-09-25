@@ -56,7 +56,7 @@ class ApiSecretsController @Inject()(cc: ControllerComponents, edContext: TyCont
     val forUserId: Option[UserId] = (body \ "forUserId").asOpt[UserId]
     val forAnyUser: Option[Boolean] = (body \ "forAnyUser").asOpt[Boolean]
 
-    // Right now, only API secrets that work with any user id, have been implemented.
+    // Only API secrets that work with any user id, have been implemented.  [api_secret_caps]
     throwForbiddenIf(forUserId.isDefined, "TyE2ABKR5", "Unimplemented")
     throwForbiddenIf(forAnyUser isNot true, "TyE5KLRG02", "Unimplemented")
 

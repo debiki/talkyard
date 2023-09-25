@@ -78,7 +78,7 @@ class TyController(cc: ControllerComponents, val context: TyContext)
     PlainApiAction(cc.parsers.empty, rateLimits, minAuthnStrength, allowAnyone = allowAnyone)(f)
 
   def StaffGetAction(f: GetRequest => Result): Action[Unit] =
-    PlainApiActionStaffOnly(cc.parsers.empty)(f)
+    PlainApiActionStaffOnly(NoRateLimits, cc.parsers.empty)(f)
 
   def AsyncAdminGetAction(f: GetRequest => Future[Result]): Action[Unit] =
     PlainApiActionAdminOnly(NoRateLimits, cc.parsers.empty).async(f)
@@ -135,12 +135,18 @@ class TyController(cc: ControllerComponents, val context: TyContext)
     PlainApiAction(cc.parsers.text(maxLength = maxBytes),
       rateLimits, minAuthnStrength, allowAnyone = allowAnyone)(f)
 
-  SECURITY // add rate limits for staff too
+  SECURITY // add rate limits for staff too. Started, use  StaffPostJsonAction2  below.
   def StaffPostJsonAction(
         minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
         maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiActionStaffOnly(
-      cc.parsers.json(maxLength = maxBytes), minAuthnStrength)(f)
+      NoRateLimits, cc.parsers.json(maxLength = maxBytes), minAuthnStrength)(f)
+
+  def StaffPostJsonAction2(
+        rateLimits: RateLimits, minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
+        maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
+    PlainApiActionStaffOnly(
+      rateLimits, cc.parsers.json(maxLength = maxBytes), minAuthnStrength)(f)
 
   SECURITY // add rate limits for admins — use AdminPostJsonAction2, then remove this & rm '2' from name.
   def AdminPostJsonAction(maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =

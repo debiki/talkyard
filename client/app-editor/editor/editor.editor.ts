@@ -38,6 +38,7 @@ let theEditor: any;
 // Switch to ProseMirror instead + CommmonMark plugin:
 //   https://prosemirror.net/examples/markdown/
 // and listen for '@...' and then pop up Ty's DropdownModal but not-modal-mode.
+// Also, then can [convert_html_to_commonmark].
 //
 export const ReactTextareaAutocomplete =
         reactCreateFactory(window['ReactTextareaAutocomplete']);

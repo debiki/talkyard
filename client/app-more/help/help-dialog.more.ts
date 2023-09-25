@@ -87,7 +87,7 @@ const HelpDialog = createComponent({
         label: "Hide this tips" });
 
     content = !content ? null :
-        ModalBody({},
+        ModalBody({ className: message.className },
           r.div({ className: 'esHelpDlg_body_wrap'},
             r.div({ className: 'esHelpDlg_body' }, content),
             r.div({ className: 'esHelpDlg_btns' },

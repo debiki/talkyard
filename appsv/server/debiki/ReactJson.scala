@@ -1424,7 +1424,7 @@ class JsonMaker(dao: SiteDao) {
     }
   }
 
-
+  // [post_to_json]
   private def makeStorePatchForPostIds(postIds: Set[PostId],
           showHidden: Bo, inclUnapproved: Bo, maySquash: Bo,
           transaction: SiteTx, reqerId: Opt[PatId]): JsObject = {
@@ -2108,6 +2108,7 @@ object JsonMaker {
 
     COULD_OPTIMIZE; SAVE_BANDWIDTH // Exclude all zero (0) fields? E.g. 0 like votes.
     // And use an ArrayBuffer instead of a Vector.
+    // [post_to_json]
     var fields = Vector(
       "uniqueId" -> JsNumber(post.id),
       "nr" -> JsNumber(post.nr),

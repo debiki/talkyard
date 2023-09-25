@@ -108,12 +108,14 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
     ANON_UNIMPL // don't allow, if is anon post by oneself
     // val author = dao.getParticipantOrUnknown( the-post .createdById)
 
+    val reqrTgt = request.reqrTargetSelf.denyUnlessLoggedIn()
+
     if (delete) {
-      dao.deleteVoteIfAuZ(pageId, postNr, voteType, voterId = request.theUser.id)
+      dao.deleteVoteIfAuZ(pageId, postNr, voteType, reqrAndVoter = reqrTgt)
     }
     else {
-      dao.addVoteIfAuZ(pageId, postNr, voteType,
-            voterId = request.theReqerId, voterIp = Some(request.ip), postNrsRead)
+      dao.addVoteIfAuZ(pageId, postNr, voteType, reqrAndVoter = reqrTgt,
+            voterIp = Some(request.ip), postNrsRead)
     }
 
     RACE // Fine, harmless.

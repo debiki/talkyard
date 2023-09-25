@@ -42,7 +42,8 @@ export function openAnonsAllowedDiag(ps: DiscLayoutDiagState) {
 const AnonsAllowedDiag = React.createFactory<{}>(function() {
   //displayName: 'DiscLayoutDiag',
 
-  // Dupl code [node_props_diag], similar to  ./disc-layout-dialog.more.ts .
+  // Dupl code [node_props_diag], similar to  ./disc-layout-dialog.more.ts
+  // and  ../morekit/proxy-diag.more.ts .
 
   const [diagState, setDiagState] =
       React.useState<DiscLayoutDiagState | N>(null);

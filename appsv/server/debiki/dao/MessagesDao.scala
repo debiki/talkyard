@@ -112,7 +112,7 @@ trait MessagesDao {
       // This generates no review task — staff aren't asked to review and approve
       // direct messages; such messages can be semi private.
       val (pagePath, bodyPost, _) = createPageImpl(
-            pageRole, PageStatus.Published, anyCategoryId = None,
+            pageRole, PageStatus.Published, anyCategoryId = None, withTags = Nil,
             anyFolder = None, anySlug = None, showId = true,
             title = title, body = body,
             byWho = sentByWho, spamRelReqStuff = Some(spamRelReqStuff),

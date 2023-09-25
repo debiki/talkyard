@@ -78,6 +78,35 @@ class IndexCreator {
         throw error
     }
 
+    // Update the mapping: Include tags.  Ok to do many times (once each server startup).
+    // See the [index_mapping_changelog].
+    val putMappingReq = es.client.Requests.putMappingRequest(IndexName)
+          .`type`(PostDocType)
+          .source(
+              indexSettings.postMappingJsonStringNoDocType, XContentType.JSON)
+
+    val mappingRequestOk_ignored = try {
+      val response: es.action.support.master.AcknowledgedResponse =
+            client.admin().indices().putMapping(putMappingReq).actionGet()
+      val message = s"Updated search index mapping for '$language' [TyMSEMAPPINGUPD]"
+      if (response.isAcknowledged) {
+        logger.info(message + ".")
+      }
+      else {
+        logger.warn(o"""$message? But the index mappings have not yet propagated
+            to all nodes in the cluster? [TyMSEMAPPIN0UPD]""")
+      }
+      // But it might not have changed. So don't reindex everything.
+      true
+    }
+    catch {
+      case NonFatal(error) =>
+        // Continue anyway? What else to do, refuse to start?
+        logger.error(s"Error updating search index mapping for '${language
+              }' [TyEESUPDMAPNG]", error)
+        false
+    }
+
     languagesLogged.add(indexSettings.language)
     wasCreated
   }

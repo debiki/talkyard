@@ -130,6 +130,7 @@ object PostsListFoundJson {
     // If not in a page { ... } obj, with the page id and name, then, more context needed
     // — so the remote server won't need to fetch page details via separate requests.
     if (!isWrappedInPage) {
+      // Also see [posts_0_page_json] and Typescript: PostWithPage.
       json += "pageId" -> JsString(post.pageId)
       json += "pageTitle" -> JsString(pageStuff.title)
       // COULD use the page's actual path (folder + slug).

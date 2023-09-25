@@ -431,10 +431,17 @@ export const TopBar = createComponent({
     let customTitle: St | U | RElm = props.customTitle;
     let backToSiteButton = props.backToSiteButtonTitle;
 
+    // [back_btn]
     const backToGroups = autoPageType !== AutoPageType.GroupProfilePage ? null :
             LinkUnstyled({ to: GroupsRoot,
                 className: 's_Tb_Ln s_Tb_Ln-Grps btn icon-reply' },
               t.mm.ViewGroups);
+    const backToTags = autoPageType !== AutoPageType.AboutOneTag ? null :
+            LinkUnstyled({ to: UrlPaths.Tags,
+                // RENAME  s_Tb_Ln-Grps  to ..Ln-Bck2Ls (back to list)?
+                className: 's_Tb_Ln s_Tb_Ln-Grps btn icon-reply' },
+              "View tags");  // I18N  [back_btn]
+
 
     if (autoPageType_isProfile(autoPageType)) {
       backToSiteButton = t.tb.BackFromUsr;
@@ -451,6 +458,19 @@ export const TopBar = createComponent({
       customTitle = t.tb.SearchPg;
       backToSiteButton = t.Back;
     }
+    else if (autoPageType === AutoPageType.TagsList) {
+      // This is better: customTitle = "All tags"
+      // However, doesn't make sense when looking at a single tag — currently
+      // no easy way to get its name into the topbar?  [title_in_topbar]
+      // See just below....
+      backToSiteButton = t.Back;
+    }
+    else if (autoPageType === AutoPageType.AboutOneTag) {
+      // ...Would be nice to show the tag title here, but we don't know what the
+      // title is.  [title_in_topbar]
+      // customTitle = "About tag: [Tag Name]"
+      backToSiteButton = "Back to discussion"; // I18N
+    }
 
     if (siteLogoTitle) {
       // Show only siteLogoTitle, i.e. custom site logo & title.
@@ -461,6 +481,11 @@ export const TopBar = createComponent({
     }
 
     if (props.showBackToSite || backToSiteButton) {
+      // [back_btn]
+      // UX: Depending on to where this link links, change the title? So it
+      // is e.g. "Back to tags list" (e.g. back from the Admin Area, to tags),
+      // or "Back to discussion" if links back to a discussion page,
+      // or "Back to topic list" etc?
       backToSiteButton = LinkUnstyled({ className: 's_Tb_Ln s_Tb_Ln-Bck btn icon-reply',
           href: linkBackToSite() }, backToSiteButton || t.tb.BackFromAdm);
       extraMargin = true;
@@ -638,6 +663,7 @@ export const TopBar = createComponent({
           anyMaintWorkMessage,
           // ----------------------
           backToGroups,
+          backToTags,
           backToSiteButton),
         // Incl also if custNavRow2 defined — otherwise React's hydration won't work.
         custNavRow1,

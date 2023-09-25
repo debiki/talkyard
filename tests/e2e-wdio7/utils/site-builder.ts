@@ -9,12 +9,26 @@ import * as _ from 'lodash';
 import c from '../test-constants';
 import { dieIf } from './log-and-die';
 
-import { NewTestVote as VoteToInsert, TestVoteType } from '../test-types2';
+import { NewTestVote as VoteToInsert } from '../test-types2';
 
 export function makeSiteOwnedByOwenBuilder() {
   return buildSite();
 }
 
+
+// Also in make.ts, for posts.  [_next_sth_id]
+
+let nextTagId = 1001;
+export function getAndBumpNextTagId() {
+  nextTagId += 1;
+  return nextTagId - 1;
+}
+
+let nextTypeId = 1001;
+export function getAndBumpNextTypeId() {
+  nextTypeId += 1;
+  return nextTypeId - 1;
+}
 
 export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean } = {}) {
   // Wdio seems to retry, if we just throw an exception here. So exit the process instead
@@ -40,6 +54,7 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
     },
 
     defaultCreatedAtMs: make.DefaultCreatedAtMs,  // oops, was small d —> undef
+
 
     addForumPageAndRootCategory: function(opts: {
       id: string,
@@ -153,12 +168,17 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
       }));
 
       // Page body.
-      site.posts.push(make.post({
+      const bodyPost = make.post({
         page: page,
         nr: c.BodyNr,
         approvedSource: opts.body,
         approvedHtmlSanitized: `<p>${opts.body}</p>`,
-      }));
+      });
+      site.posts.push(bodyPost);
+
+      for (let tag of (opts.tags || [])) {
+        api.addTag({ ...tag, onPostId: bodyPost.id });
+      }
 
       return <PageJustAdded> _.assign({}, opts, page, path || {});
     },
@@ -178,6 +198,20 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
 
     addVote: function(testVoteData: VoteToInsert) {
       site.postVotes_forTests.push({ ...testVoteData });
+    },
+
+
+    addTag: function(tag: TagV0) {
+      const id = getAndBumpNextTagId();
+      site.tags.push({ id, ...tag });
+    },
+
+
+    addType: function(type: TypeV0): TypeV0 {
+      const id = getAndBumpNextTypeId();
+      const withId = { id, ...type };
+      site.types.push(withId);
+      return withId;
     },
 
 
@@ -373,6 +407,7 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
     },
 
 
+    // Later, add an option to make cat B members-only?  [cat_B_members_only]
     addCatABTrustedForum: function(opts: { title: St, introText?: St,
           members?: WellKnownMemberUsername[], categoryAExtId?: St,
            }):CatABTrustedTestForum {
