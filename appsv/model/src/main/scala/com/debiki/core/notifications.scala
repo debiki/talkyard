@@ -85,6 +85,14 @@ object NotificationType {
 
 
   // 400-499 Something interesting happened with an already existing topic or post.
+
+  // These are not cleared, when a post that's visible on screen gets marked as read
+  // — because thees changes can be small (e.g. a new Assigned To name silently appears
+  // below the page title, easy to miss), so it's good if the colorful notification
+  // icon stays, and an email gets sent. [0clr_asgd_tagd_notfs]
+  val PostChangedNotfTypeMin = 400
+  val PostChangedNotfTypeMax = 499
+
   case object PostTagged extends NotificationType(406)
   // + PostEdited
   // + TopicProgress  ——————.—— or just  DoingStautsChanged?

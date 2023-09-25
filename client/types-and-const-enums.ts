@@ -383,6 +383,11 @@ const enum NotificationType {
   Message = 304,   // rename to DirectMessage
   NewPost = 305,
   // NewPage =      // Add  — no? knows, since nr === BodyNr
+
+  // [0clr_asgd_tagd_notfs]
+  PostChangedMin = 400,
+  PostChangedMax = 499,
+
   PostTagged = 406,
 
   AssigneesChanged = 451,

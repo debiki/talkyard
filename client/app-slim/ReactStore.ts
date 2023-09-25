@@ -1642,7 +1642,10 @@ function handleNotifications(newNotfs: Notification[]) {
 function markAnyNotificationssAsSeen(postNr) {
   const notfs: Notification[] = store.me.notifications;
   _.each(notfs, (notf: Notification) => {
-    if (notf.pageId === store.currentPageId && notf.postNr === postNr) {
+    if (notf.pageId === store.currentPageId && notf.postNr === postNr &&
+          // Don't auto-mark Assigned-to or Post-tagged notfs. [0clr_asgd_tagd_notfs]
+          (notf.type < NotificationType.PostChangedMin ||
+                        NotificationType.PostChangedMax <  notf.type)) {
       // Modifying state directly, oh well [redux]
       if (!notf.seen) {
         notf.seen = true;
