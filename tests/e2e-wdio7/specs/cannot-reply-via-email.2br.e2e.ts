@@ -29,10 +29,11 @@ const memahsReplyToOwen = 'memahsReplyToOwen';
 
 describe(`cannot-reply-via-email.2br  TyTE0REVIAEML`, () => {
 
+  /* Works now?
   if (settings.prod) {
-    console.log("Skipping this spec — needs talkyard.emailWebhooksApiSecret=..."); // E2EBUG
+    console.log("Skipping this spec — needs talkyard.emailWebhooksApiSecret=..."); // 0E2EBUG
     return;
-  }
+  } */
 
   it(`Construct site`, async () => {
     const builder = buildSite();

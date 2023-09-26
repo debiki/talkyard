@@ -45,6 +45,7 @@ all_orig_options="$@"
 
 skip_e2e_tests=''
 skip_build=''
+skip_restart=''
 
 for arg in "$@"; do
   case $arg in
@@ -64,6 +65,13 @@ for arg in "$@"; do
     skip_build=yes
     shift
     ;;
+    --skip-restart)
+    echo "Will not restart, instead, I'll reuse already running containers,
+        because of --skip-restart."
+    echo
+    skip_restart=yes
+    shift
+    ;;
     *)
     # Unknown option, ignore. Maybe it's for wdio.conf?
     ;;
@@ -76,11 +84,14 @@ done
 
 # Dupl kill-down prod test code. [KLLPRDTST]  [prod_test_docker_conf]
 test_containers='docker-compose -p edt -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml -f docker-compose-no-limits.yml'
-sudo $test_containers kill web app search cache rdb
-sudo $test_containers down
 
-s/d kill web app
-s/d down
+if [ -z "$skip_restart" ]; then
+  sudo $test_containers kill web app search cache rdb
+  sudo $test_containers down
+
+  s/d kill web app
+  s/d down
+fi
 
 # Any unexpected containers up and running might cause problems.
 
@@ -93,12 +104,20 @@ function containers_running_test() {
 }
 
 if [ -n "`containers_running_test`" ]; then
-  echo
-  echo "Docker containers are running, PLEASE STOP THEM, thanks. Look:"
-  echo
-  sudo docker ps
-  echo
-  die_if_in_script
+  if [ -z "$skip_restart" ]; then
+    echo
+    echo "Docker containers are running, PLEASE STOP THEM. Look:"
+    echo
+    sudo docker ps
+    echo
+    die_if_in_script
+  else
+    echo
+    echo "Docker containers are running, will try to use these:  (since --skip-restart)"
+    echo
+    sudo docker ps
+    echo
+  fi
 fi
 
 
@@ -153,9 +172,11 @@ if [ -z "$skip_e2e_tests" ]; then
       DOCKER_REPOSITORY=debiki \
       $test_containers"
 
-  sudo $latest_test_containers down
-  sudo rm -fr modules/ed-prod-one-test/data
-  sudo $latest_test_containers up -d
+  if [ -z "$skip_restart"  -o  -z "`containers_running_test`" ]; then
+    sudo $latest_test_containers down
+    sudo rm -fr modules/ed-prod-one-test/data
+    sudo $latest_test_containers up -d
+  fi
 
   if [ -n "`jobs`" ]; then
     echo 'Other jobs running:'

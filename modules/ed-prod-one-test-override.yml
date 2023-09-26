@@ -15,6 +15,9 @@ services:
       FORBIDDEN_PASSWORD: 'public'
       PLAY_SECRET_KEY: 'public-03xP4K463krs4397j923fuyRKB5sek4928674luh49rka5692kj9089'
       POSTGRES_PASSWORD: 'public'
+      TY_SYSMAINT_API_SECRET: 'test_sysmaint_api_secret'
+      TY_EMAIL_WEBHOOKS_API_SECRET: 'publicEmailWebhooksApiTestSecret'
+      TY_FEATURE_FLAGS: 'ffMayPatchSite'
       MAY_FAST_FORWARD_TIME: 'true'
 
   cache:
