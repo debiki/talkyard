@@ -565,6 +565,29 @@ class SystemDao(
 
   // ----- Indexing
 
+  def addPendingPostsFromTimeRanges(howManyAtATime: i32): U = {
+  /*
+  select  q.site_id,  q.date_range_c,  count(distinct q2.post_id)
+  from  index_queue3 q
+  left outer join  index_queue3 q2
+       on  q.site_id = q2.site_id
+      and  q.date_range_c is not null
+      and  q2.post_id is not null
+  group by  q.site_id, q.date_range_c;
+
+   site_id |                 date_range_c                  | count
+  ---------+-----------------------------------------------+-------
+      -704 | ("1970-01-01 00:00:00","2024-01-01 00:00:00"] |     0
+
+    */
+    writeTxLockAllSites { tx =>
+      val rangesBefore = tx.loadReindexRanges()
+      val rangesAfter = rangesBefore map { range =>
+        tx.addPendingPostsFromTimeRanges(howManyAtATime = howManyAtATime)
+      }
+    }
+  }
+
   def loadStuffToIndex(limit: Int): StuffToIndex = {
     readOnlyTransaction { transaction =>
       transaction.loadStuffToIndex(limit)

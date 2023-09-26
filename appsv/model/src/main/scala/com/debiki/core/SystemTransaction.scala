@@ -98,6 +98,7 @@ trait SystemTransaction {  RENAME // to SysTx, started already
 
   // ----- Indexing
 
+  def addPendingPostsFromTimeRanges(howManyAtATime: i32): U
   def loadStuffToIndex(limit: Int): StuffToIndex
   def deleteFromIndexQueue(post: Post, siteId: SiteId): Unit
   def addEverythingInLanguagesToIndexQueue(languages: Set[String]): Unit

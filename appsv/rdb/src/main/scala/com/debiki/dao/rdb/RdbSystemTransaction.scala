@@ -838,6 +838,11 @@ class RdbSystemTransaction(
   }
 
 
+  def addPendingPostsFromTimeRanges(howManyAtATime: i32): U = {
+    val ranges =
+  }
+
+
   def loadStuffToIndex(limit: Int): StuffToIndex = {
     val postIdsBySite = mutable.Map[SiteId, ArrayBuffer[PostId]]()
     // Hmm, use action_at or inserted_at? Normally, use inserted_at, but when
@@ -973,6 +978,43 @@ class RdbSystemTransaction(
       ${SearchSiteDaoMixin.OnPostConflictAction}
       """
 
+    runUpdate(statement, Nil)
+  }
+
+
+  def addEverythingInLanguagesToIndexQueue_usingDateRange(languages: Set[St]) {
+    if (languages.isEmpty)
+      return
+
+    // First, ensure we won't be reindexing everything multiple times:
+    _deleteAnyReindexAllRanges()
+
+    val zero = ${When.Genesis.secondsFlt64}
+
+    val statement2 = s"""
+      insert into index_queue3 (
+          inserted_at, action_at, site_id, site_version, date_range)
+      select
+          ?,
+          to_timestamp($zero),
+          sites3.id,
+          sites3.version,
+          tsrange(to_timestamp($zero), to_timestamp(?))
+      from sites3
+      """
+
+    // Let's make sure there's no time zone or daylight saving time issue that
+    // accidentally makes us skip the most recent posts. — If there's nothing more
+    // in the date range to reindex (because all done, and the end range is in the
+    // future), then the date range gets deleted anyway.
+    runUpdate(statement, List(now(), now() + OneDayInSecondsFlt64))
+  }
+
+
+  private def _deleteAnyReindexAllRanges(): U = {
+    val statement2 = s"""
+      delete from index_queue3
+      where extract(epoch from lower(date_range)) = 0 """
     runUpdate(statement, Nil)
   }
 

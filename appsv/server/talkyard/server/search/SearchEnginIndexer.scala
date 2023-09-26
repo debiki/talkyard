@@ -183,6 +183,7 @@ class IndexingActor(
         doneCreatingIndexes = true
       }
       deleteAlreadyIndexedPostsFromQueue()
+      //_addPendingPostsFromTimeRanges()
       loadAndIndexPendingPosts()
     case ReplyWhenDoneIndexing =>
       ???
@@ -199,6 +200,14 @@ class IndexingActor(
     systemDao.addEverythingInLanguagesToIndexQueue(languages)
   }
 
+
+  /** If there are any  job_queue_t.date_range_c  for which all posts should get reindexed,
+    * this'll find the first (lowest timestamp) 1000 posts in that range, add each one of
+    * them to the queue, and then update */
+  /*
+  private def _addPendingPostsFromTimeRanges(): U = {
+    systemDao.addPendingPostsFromTimeRanges(howManyAtATime = 1000)
+  } */
 
   private def loadAndIndexPendingPosts(): Unit = {
     val stuffToIndex = systemDao.loadStuffToIndex(limit = batchSize)
