@@ -46,6 +46,7 @@ trait SystemTransaction {  RENAME // to SysTx, started already
     quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
     isTestSiteOkayToDelete: Boolean, createdAt: When): Site
 
+  def asSiteTx(siteId: SiteId): SiteTx = siteTransaction(siteId)
   def siteTransaction(siteId: SiteId): SiteTransaction  // oops doesn't (and cannot) use SiteDao.synchronizeOnSiteId
 
   def loadSiteByPubId(pubId: PubSiteId): Option[Site]
@@ -98,9 +99,12 @@ trait SystemTransaction {  RENAME // to SysTx, started already
 
   // ----- Indexing
 
+  def loadReindexRangesAndQueueSizes(): Map[SiteId, (Opt[TimeRange], i32)]
   def loadStuffToIndex(limit: Int): StuffToIndex
   def deleteFromIndexQueue(post: Post, siteId: SiteId): Unit
   def addEverythingInLanguagesToIndexQueue(languages: Set[String]): Unit
+  def addEverythingInLanguagesToIndexQueue_usingTimeRange(
+        siteIds: Set[SiteId] = Set.empty, all: Bo = false): U
 
   // ----- Spam check queue
 

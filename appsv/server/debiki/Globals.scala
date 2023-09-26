@@ -20,6 +20,7 @@ package debiki
 import akka.actor._
 import akka.pattern.gracefulStop
 import com.codahale.metrics
+import com.debiki.core
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{Rdb, RdbDaoFactory}
@@ -31,6 +32,7 @@ import debiki.dao._
 import talkyard.server.migrations.ScalaBasedMigrations
 import talkyard.server.search.SearchEngineIndexer
 import talkyard.server.notf.NotifierActor
+
 import java.{lang => jl, net => jn}
 import java.util.concurrent.TimeUnit
 import talkyard.server.pubsub.{PubSub, PubSubApi, StrangerCounterApi}
@@ -39,6 +41,7 @@ import org.scalactic._
 import play.{api => p}
 import play.api.libs.ws.WSClient
 import redis.RedisClient
+
 import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future, TimeoutException}
@@ -1317,8 +1320,20 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
       else Some(
         NotifierActor.startNewActor(executionContext, actorSystem, systemDao, siteDaoFactory))
 
-    def indexerBatchSize: Int = getIntOrDefault("talkyard.search.indexer.batchSize", 100)
-    def indexerIntervalSeconds: Int = getIntOrDefault("talkyard.search.indexer.intervalSeconds", 5)
+    def indexerBatchSize: Int = getIntOrDefault(
+          "talkyard.search.indexer.batchSize",
+          // Not too many, could put the server under a bit much load?
+          if (!isDevOrTest) 40
+          // If running tests, we'd like the indexer to be even slower — otherwise,
+          // this e2e test:  reindex-sites.2br.f  TyTREINDEX3
+          // couldn't verify that the indexer indexes posts in the expected order.
+          // The biggest test forum has 50 pages, that's 100+ posts, so indexing 40 at a
+          // time, means there'll be > `indexerIntervalSeconds` in between the first and
+          // last posts get indexed, and that should be enough.
+          // Later, COULD_OPTIMIZE: Auto adjust the batch size & interval depending
+          // on the CPU load.
+          else 20)
+    def indexerIntervalSeconds: Int = getIntOrDefault("talkyard.search.indexer.intervalSeconds", 1)
 
     val indexerActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None

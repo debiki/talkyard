@@ -35,6 +35,14 @@ import talkyard.server.TyLogger
 
 class NumSites(val byYou: Int, val total: Int)
 
+/** SuperAdmin Site Stuff. Info to show in the super admin interface about a site.
+  */
+case class SASiteStuff(
+  site: SiteInclDetails,
+  staff: Seq[UserInclDetails],
+  reindexRange: Opt[TimeRange],
+  reindexQueueLen: i32)
+
 
 /** Database and cache queries that take all sites in mind.
  */
@@ -143,13 +151,21 @@ class SystemDao(
     readOnlyTransaction(_.loadSiteByPubId(pubId))
 
 
-  def loadSitesInclDetailsAndStaff()
-        : (Seq[SiteInclDetails], Map[SiteId, Seq[UserInclDetails]]) =
+  def loadSitesInclDetailsAndStaff(): Seq[SASiteStuff] = {
     readOnlyTransaction { tx =>
       val sites = tx.loadAllSitesInclDetails()
       val staff = tx.loadStaffForAllSites()
-      (sites, staff)
+      val jobsInf = tx.loadReindexRangesAndQueueSizes()
+      sites map { site =>
+        val anyJobsInf: Opt[(Opt[TimeRange], i32)] = jobsInf.get(site.id)
+        SASiteStuff(
+              site,
+              staff.getOrElse(site.id, Nil),
+              reindexRange = anyJobsInf.flatMap(_._1),
+              reindexQueueLen = anyJobsInf.map(_._2).getOrElse(0))
+      }
     }
+  }
 
   def loadSiteInclDetailsById(siteId: SiteId): Option[SiteInclDetails] =
     readOnlyTransaction(_.loadSiteInclDetailsById(siteId))
@@ -565,6 +581,49 @@ class SystemDao(
 
   // ----- Indexing
 
+  /** Loads all remaining reindex-all time range, per site, and how many posts there
+    * currently are, in the reindex queue, per site. If for a site, the queue is short,
+    * we'll find a bunch of posts from the end of the time range, and add to the queue,
+    * and decrease the end of the time range.
+    */
+  def addPendingPostsFromTimeRanges(howManyAtATime: i32): U = {
+    writeTxLockAllSites { tx =>
+      val rangesBefore: Map[SiteId, (Opt[TimeRange], i32)] =
+            tx.loadReindexRangesAndQueueSizes().filter(_._2._1.isDefined)
+      rangesBefore foreach { case (siteId, rangeAndQueueSize) =>
+        val (anyRange: Opt[TimeRange], numPendingPostsInQueue: i32) = rangeAndQueueSize
+        if (numPendingPostsInQueue > howManyAtATime || anyRange.isEmpty) {
+          // Let's wait until there aren't so many in the queue already.
+          STARVATION // Could theoretically happen, if the server is slow and people keep editing
+          // their comments "all the time" — then we'll keep indexing those, never having
+          // time to reindex the time ranges.  If that ever becomes a problem, then: Could reindex
+          // edited posts less often, so there's time to reindex the pending time ranegs.
+        }
+        else {
+          val siteTx: SiteTx = tx.asSiteTx(siteId)
+          val range: TimeRange = anyRange.getOrDie("TyE60VMG46X")
+          val nextPosts: ImmSeq[Post] =
+                siteTx.loadPostsByTimeExclAggs(range, limit = howManyAtATime)
+          if (nextPosts.isEmpty) {
+            siteTx.deleteQueueRange(range)
+          }
+          else {
+            siteTx.indexPostsSoon(nextPosts: _*)
+            val oldest: Post =
+                  nextPosts.reduceLeft((oldestSoFar: Post, other: Post) => {
+                    if (oldestSoFar.createdAt.getTime < other.createdAt.getTime) oldestSoFar
+                    else if (other.createdAt.getTime < oldestSoFar.createdAt.getTime) other
+                    else if (oldestSoFar.id < other.id) oldestSoFar
+                    else if (other.id < oldestSoFar.id) other
+                    else die("TyEDUPLPOST2057", s"Site id: $siteId, post id: ${other.id}")
+                  })
+            siteTx.alterQueueRange(range, newEndWhen = When.fromDate(oldest.createdAt), newEndOffset = oldest.id)
+          }
+        }
+      }
+    }
+  }
+
   def loadStuffToIndex(limit: Int): StuffToIndex = {
     readOnlyTransaction { transaction =>
       transaction.loadStuffToIndex(limit)
@@ -574,6 +633,19 @@ class SystemDao(
   def deleteFromIndexQueue(post: Post, siteId: SiteId): U = {
     writeTxLockAllSites { tx =>
       tx.deleteFromIndexQueue(post, siteId)
+    }
+  }
+
+  def reindexSites(siteIds: Set[SiteId]): U = {
+    writeTxLockAllSites { tx =>
+      tx.addEverythingInLanguagesToIndexQueue_usingTimeRange(siteIds)
+      /*
+      for (id <- siteIds) {
+        val siteTx = tx.asSiteTx(id)
+        val siteSettings = siteTx.loadSiteSettings() getOrElse mab.abortNotFound(
+                "TyE40G263", s"No such site: $id")
+        tx.reindexSite(siteId = id, langCode = siteSettings.languageCode)
+      } */
     }
   }
 

@@ -139,6 +139,20 @@ class RdbSystemTransaction(
   }
 
 
+  // Dupl code [9UFK2Q6]
+  def runQueryBuildMap[K, V](query: String, values: List[AnyRef],
+          singleRowHandler: js.ResultSet => (K, V)): immutable.Map[K, V] = {
+    var valuesByKey = immutable.HashMap[K, V]()
+    runQuery(query, values, rs => {
+      while (rs.next) {
+        val (key, value) = singleRowHandler(rs)
+        valuesByKey += key -> value
+      }
+    })
+    valuesByKey
+  }
+
+
   // Dupl code [9UFK2Q7]
   def runQueryBuildMultiMap[K, V](query: String, values: List[AnyRef],
     singleRowHandler: js.ResultSet => (K, V)): immutable.Map[K, immutable.Seq[V]] = {
@@ -838,13 +852,60 @@ class RdbSystemTransaction(
   }
 
 
+  def addPendingPostsFromTimeRanges(howManyAtATime: i32): U = {
+    val ranges = ???
+  }
+
+
+  def loadReindexRangesAndQueueSizes(): Map[SiteId, (Opt[TimeRange], i32)] = {
+    /*
+    select  q.site_id,  q.date_range_c,  count(distinct q2.post_id)
+    from  job_queue_t q
+    left outer join  job_queue_t q2
+         on  q.site_id = q2.site_id
+        and  q.date_range_c is not null
+        and  q2.post_id is not null
+    group by  q.site_id, q.date_range_c;
+
+     site_id |                 date_range_c                  | count
+    ---------+-----------------------------------------------+-------
+        -704 | ("1970-01-01 00:00:00","2024-01-01 00:00:00"] |     0
+      */
+    val query = s"""
+       select
+          q.site_id,
+          time_range_to_c,
+          time_range_to_ofs_c,
+          -- (extract(epoch from lower(q.date_range_c)) +
+          --     extract(milliseconds from lower(q.date_range_c)))::bigint / 1000  as range_lower,
+          -- (extract(epoch from upper(q.date_range_c)) +
+          --     extract(milliseconds from upper(q.date_range_c)))::bigint / 1000  as range_upper,
+          (select  count(distinct q2.post_id)  from  job_queue_t q2
+              where  q2.site_id  =  q.site_id)
+               as  queue_len
+       from  job_queue_t q;
+       """
+
+    runQueryBuildMap(query, Nil, rs => {
+      val siteId = rs.getInt("site_id")
+      val anyTimeRange = getOptWhen(rs, "time_range_to_c").map(end => TimeRange(
+            from = When.Genesis, fromOfs = 0,
+            to = end, toOfs = getOptInt32(rs, "time_range_to_ofs_c").getOrElse(0)))
+      val queueLen = rs.getInt("queue_len")
+      siteId -> (anyTimeRange, queueLen)
+    })
+  }
+
   def loadStuffToIndex(limit: Int): StuffToIndex = {
     val postIdsBySite = mutable.Map[SiteId, ArrayBuffer[PostId]]()
     // Hmm, use action_at or inserted_at? Normally, use inserted_at, but when
     // reindexing everything, everything gets inserted at the same time. Then should
     // instead use posts3.created_at, desc order, so most recent indexed first.
     val query = s"""
-       select site_id, post_id from index_queue3 order by inserted_at limit $limit
+       select  site_id,  post_id
+       from  job_queue_t
+       where  post_id  is not null
+       order by  inserted_at  limit $limit
        """
 
     runQuery(query, Nil, rs => {
@@ -897,7 +958,7 @@ class RdbSystemTransaction(
           """ -- _loadTagsBySitePostId
           select * from tags_t""")
     var isFirst = true
-    for ((siteId, posts) <- postsBySite) {
+    for ((siteId, posts) <- postsBySite ; if posts.nonEmpty) {
       val whereOrOr = isFirst ? "where" | "or"
       isFirst = false
       querySb.append(s"""
@@ -936,7 +997,7 @@ class RdbSystemTransaction(
 
   def deleteFromIndexQueue(post: Post, siteId: SiteId) {
     val statement = s"""
-      delete from index_queue3
+      delete from job_queue_t
       where site_id = ? and post_id = ? and post_rev_nr <= ?
       """
     // [85YKF30] Only approved posts currently get indexed. Perhaps I should add a rule that
@@ -959,7 +1020,7 @@ class RdbSystemTransaction(
 
     // Later: COULD index also deleted and hidden posts, and make available to staff.
     val statement = s"""
-      insert into index_queue3 (action_at, site_id, site_version, post_id, post_rev_nr)
+      insert into job_queue_t (action_at, site_id, site_version, post_id, post_rev_nr)
       select
         posts3.created_at,
         sites3.id,
@@ -974,6 +1035,76 @@ class RdbSystemTransaction(
       """
 
     runUpdate(statement, Nil)
+  }
+
+
+  def addEverythingInLanguagesToIndexQueue_usingTimeRange(siteIds: Set[SiteId], all: Bo): U = {
+    dieIf(siteIds.nonEmpty && all, "TyE602RMGLC4")
+    if (siteIds.isEmpty && !all)
+      return
+
+    val values = MutArrBuf[AnyRef]()
+
+    val whereSiteIdIn: St = if (siteIds.isEmpty) "" else {
+      values.appendAll(siteIds.map(_.asAnyRef))
+      s"where s.id in (${makeInListFor(siteIds)})"
+    }
+
+    // First, ensure we won't be reindexing everything multiple times:
+    _deleteAnyReindexAllRanges(siteIds = siteIds, all = all)
+
+    val zero: f64 = When.Genesis.secondsFlt64
+
+    val endOfTime: f64 = When.EndOfTime.secondsFlt64
+
+    val statement = s"""
+          insert into job_queue_t (
+              action_at,
+              site_id,
+              site_version,
+              do_what_c,
+              time_range_from_c,
+              time_range_from_ofs_c,
+              time_range_to_c,
+              time_range_to_ofs_c)
+          select
+              to_timestamp($zero),
+              s.id,
+              s.version,
+              1,
+              to_timestamp($zero),
+              0,
+              to_timestamp($endOfTime),
+              0
+          from sites3 s $whereSiteIdIn """
+
+    runUpdate(statement, values.toList)
+
+    /*
+    // Add a day: Let's make sure there's no time zone or daylight saving time issue
+    // that accidentally makes us skip the most recent posts. — If there's nothing more
+    // in the date range to reindex (because all done, and the end range is in the
+    // future), then the date range gets deleted anyway. Might index a small fraction of all
+    // posts twice.
+    runUpdate(statement, List(now.secondsFlt64.asAnyRef, (now.secondsFlt64 + OneDayInSecondsFlt64).asAnyRef))
+     */
+  }
+
+
+  private def _deleteAnyReindexAllRanges(siteIds: Set[SiteId], all: Bo): U = {
+    dieIf(siteIds.isEmpty && !all, "TyE502RJMF67")
+
+    val values = MutArrBuf[AnyRef]()
+    val andSiteIdIn: St = if (siteIds.isEmpty) "" else {
+      values.appendAll(siteIds.map(_.asAnyRef))
+      s"and site_id in (${makeInListFor(siteIds)})"
+    }
+    val statement = s"""
+          delete from job_queue_t
+          where extract(epoch from time_range_from_c) = 0
+                $andSiteIdIn  """
+
+    runUpdate(statement, values.toList)
   }
 
 
@@ -1199,7 +1330,7 @@ class RdbSystemTransaction(
       delete from audit_log3
       delete from webhook_reqs_out_t
       delete from webhooks_t
-      delete from index_queue3
+      delete from job_queue_t
       delete from spam_check_queue3
       delete from tags_t
       delete from tagtypes_t

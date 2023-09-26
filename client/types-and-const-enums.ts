@@ -750,6 +750,11 @@ const enum DiagFlavor {
 }
 
 
+const enum Time {
+  OneDayInMllis = 24 * 3600 * 1000,
+}
+
+
 const enum Sizes {
   Kilobyte = 1000,   // kB
   Kibibyte = 1024,   // KiB

@@ -18,6 +18,7 @@
 package talkyard.server.search
 
 import akka.actor._
+import com.debiki.core
 import com.debiki.core._
 import debiki.dao.SystemDao
 import org.elasticsearch.action.bulk.BulkResponse
@@ -55,7 +56,7 @@ object SearchEngineIndexer extends TyLogging {
     implicit val execCtx = executionContext
     val actorRef = actorSystem.actorOf(Props(
       new IndexingActor(indexerBatchSize, elasticSearchClient, systemDao)), name = s"IndexingActor")
-    actorSystem.scheduler.schedule(
+    actorSystem.scheduler.scheduleWithFixedDelay(
         initialDelay = intervalSeconds seconds, intervalSeconds seconds, actorRef, IndexStuff)
     actorRef
   }
@@ -183,6 +184,7 @@ class IndexingActor(
         doneCreatingIndexes = true
       }
       deleteAlreadyIndexedPostsFromQueue()
+      _addPendingPostsFromTimeRanges()
       loadAndIndexPendingPosts()
     case ReplyWhenDoneIndexing =>
       ???
@@ -199,6 +201,18 @@ class IndexingActor(
     systemDao.addEverythingInLanguagesToIndexQueue(languages)
   }
 
+
+  /** If there are any  job_queue_t.date_range_c  for which all posts should get reindexed,
+    * this'll find the first (lowest timestamp) 1000 posts in that range, add each one of
+    * them to the queue, and then update */
+  private def _addPendingPostsFromTimeRanges(): U = {
+    systemDao.addPendingPostsFromTimeRanges(
+          // Let's add a few batches each time, so we don't need to run SQL queries so
+          // often to find the next posts.  Not too fast, if testing — or
+          // this e2e test:  reindex-sites.2br.f  TyTREINDEX3
+          // would run into race conditions and become flappy.
+          howManyAtATime = batchSize * (if (!core.isDevOrTest) 4 else 2))
+  }
 
   private def loadAndIndexPendingPosts(): Unit = {
     val stuffToIndex = systemDao.loadStuffToIndex(limit = batchSize)

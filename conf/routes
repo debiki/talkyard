@@ -364,6 +364,8 @@ GET   /-/superadmin/             controllers.SuperAdminController.superAdminApp(
 GET   /-/superadmin/*clientRoute controllers.SuperAdminController.superAdminApp(clientRoute)
 GET   /-/sa/list-sites           controllers.SuperAdminController.listSites
 POST  /-/sa/update-sites         controllers.SuperAdminController.updateSites
+POST  /-/test-reindex-sites      controllers.SuperAdminController.testIndexSites
+POST  /-/sa/reindex-sites        controllers.SuperAdminController.reindexSites
 POST  /-/sa/schedule-purge-sites controllers.SuperAdminController.schedulePurgeSites
 POST  /-/v0/plan-maintenance     controllers.SuperAdminController.apiV0_planMaintenance
 

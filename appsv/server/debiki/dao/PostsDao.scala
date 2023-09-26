@@ -1607,7 +1607,7 @@ trait PostsDao {
         // Two solution, to avoid slow things (like Nashorn) inside
         // a tx, are 1) to add  editedPost  to a background queue,
         // which re-indexes the post later?
-        // That could actually be index_queue3! Already there, and updated
+        // That could actually be job_queue_t! Already there, and updated
         // properly.
         // Or 2) to generate the prev post's refs in a separate step,
         // before this tx. And remember which ones are approved, and

@@ -4,19 +4,13 @@ import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
 import server from '../utils/server';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/ty-e2e-test-browser';
-import settings from '../utils/settings';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import c from '../test-constants';
 
-let brA: TyE2eTestBrowser;
-let brB: TyE2eTestBrowser;
-let trillian: Member;
-let trillian_brA: TyE2eTestBrowser;
-let maja: Member;
-let maja_brB: TyE2eTestBrowser;
-
-let site: IdAddress;
-let forum: CatABTrustedTestForum;
+export interface ForumSite {
+  site: IdAddress;
+  forum: CatABTrustedTestForum;
+};
 
 
 // More params later: ?
@@ -34,9 +28,12 @@ let forum: CatABTrustedTestForum;
 //
 export function addTestsForConstructingLoadTestSiteAndLoggingIn(ps: {
   siteName: St,
+  hostnameSuffix?: St,
   numPages: Nr,
   numUsers: Nr,
-}) {
+  halfPagesTrustedOnly?: Bo,
+  logInAsTrillianAndMaja?: Bo,
+}): ForumSite {
   assert.that((ps.numUsers % 6) === 0, `numUsers should be divisible by 6,
       so can create numUsers / 6 users in each trust level`);
   const numUsersPerTl = ps.numUsers / 6;
@@ -45,8 +42,26 @@ export function addTestsForConstructingLoadTestSiteAndLoggingIn(ps: {
       so can create numPages / 2 public + numPages / 2 access restricted pages.`);
   const halfNumPages = ps.numPages / 2;
 
+  const forumSite: Partial<ForumSite> = {};
+
+  let brA: TyE2eTestBrowser;
+  let brB: TyE2eTestBrowser;
+  let trillian: Member;
+  let trillian_brA: TyE2eTestBrowser;
+  let maja: Member;
+  let maja_brB: TyE2eTestBrowser;
+
+  let site: IdAddress;
+  let forum: CatABTrustedTestForum;
+
+
   it(`Construct site`, async () => {
     const builder = buildSite();
+    if (ps.hostnameSuffix) {
+      const m: SiteMeta = builder.getSite().meta;
+      m.localHostname = m.localHostname + ps.hostnameSuffix;
+    }
+
     forum = builder.addCatABTrustedForum({
       title: ps.siteName,
       members: ['mons', 'modya', 'corax', 'regina', 'trillian',
@@ -73,7 +88,7 @@ export function addTestsForConstructingLoadTestSiteAndLoggingIn(ps: {
     // Pages halfNumPages..<ps.numPages are for >= Trusted members only.
     //
     for (let pageNr = 0; pageNr < ps.numPages; pageNr +=1) {
-      const trustedOnly = pageNr >= halfNumPages;
+      const trustedOnly = ps.halfPagesTrustedOnly !== false && pageNr >= halfNumPages;
       const trustedPrefix = trustedOnly ? "Trusted " : '';
 
       const categoryId = trustedOnly ?
@@ -88,11 +103,15 @@ export function addTestsForConstructingLoadTestSiteAndLoggingIn(ps: {
       const author = authorsList[pageNr % authorsList.length];
 
       // When sorting by time, let every 2nd recent page be an access restricted page.
-      // (By making its created-at time 1 year more recent — otherwise they'd all
+      // OLD: (By making its created-at time 1 year more recent — otherwise they'd all
       // be placed last. Or 1 year older.)
       const extraTimeMs = trustedOnly ? 1000 * 60 : 0; // !trustedOnly ? 0 : ((pageNr % 2) * 2 - 1) * 1000 * 3600 * 24 * 365;
       const createdAtMs =
-              extraTimeMs + c.JanOne2020HalfPastFive + 1000 * 3600 * (pageNr % halfNumPages);
+              extraTimeMs + c.JanOne2020HalfPastFive + (
+                  ps.halfPagesTrustedOnly !== false
+                      ? 1000 * 3600 * (pageNr % halfNumPages)
+                      // One minute between each page
+                      : pageNr * 1000 * 60);
 
       const newPage: PageJustAdded = builder.addPage({
         id: '' + pageId,
@@ -121,19 +140,11 @@ export function addTestsForConstructingLoadTestSiteAndLoggingIn(ps: {
           parentNr: c.BodyNr,
           authorId: replyer.id,
           approvedSource:  `Reply nr ${replyNr}`,
-          // createdAtMs + 600 * (i + 1)  — later
+          createdAtMs: createdAtMs + i,
         });
       }
     }
 
-    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
-    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
-
-    trillian = forum.members.trillian;
-    trillian_brA = brA;
-
-    maja = forum.members.maria;
-    maja_brB = brB;
 
     assert.refEq(builder.getSite(), forum.siteData);
   });
@@ -141,19 +152,35 @@ export function addTestsForConstructingLoadTestSiteAndLoggingIn(ps: {
 
   it(`Import site`, async () => {
     site = server.importSiteData(forum.siteData);
+    forumSite.forum = forum;
+    forumSite.site = site;
     // Could skip disk quota limits too?
     server.skipRateLimits(site.id);
   });
 
 
-  it(`Trillian logs in — she can see the access restricted pages`, async () => {
-    await trillian_brA.go2(site.origin);
-    await trillian_brA.complex.loginWithPasswordViaTopbar(trillian);
-  });
+  if (ps.logInAsTrillianAndMaja !== false) {
+    it(`Init browsers`, async () => {
+      brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+      brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
-  it(`Maja logs in — can see public pages only`, async () => {
-    await maja_brB.go2(site.origin);
-    await maja_brB.complex.loginWithPasswordViaTopbar(maja);
-  });
+      trillian = forum.members.trillian;
+      trillian_brA = brA;
 
+      maja = forum.members.maria;
+      maja_brB = brB;
+    });
+
+    it(`Trillian logs in — she can see the access restricted pages`, async () => {
+      await trillian_brA.go2(site.origin);
+      await trillian_brA.complex.loginWithPasswordViaTopbar(trillian);
+    });
+
+    it(`Maja logs in — can see public pages only`, async () => {
+      await maja_brB.go2(site.origin);
+      await maja_brB.complex.loginWithPasswordViaTopbar(maja);
+    });
+  }
+
+  return forumSite as ForumSite;
 }

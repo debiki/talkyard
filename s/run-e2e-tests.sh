@@ -484,6 +484,8 @@ function runAllE2eTests {
 
   $r s/wdio --only search-public-basic.2browsers $args
   $r s/wdio --only search-private-chat.2browsers $args
+  $r s/wdio-7 --only reindex-sites.2br.f --cd -i $args
+
 
   # This test is flaky because missing feature: disabling email notfs for replies
   # one has seen.

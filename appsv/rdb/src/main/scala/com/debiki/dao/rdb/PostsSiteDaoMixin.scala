@@ -434,6 +434,24 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
+  /*
+  def loadPostsByTimeRange(range: TimeRange): immutable.Seq[Post] = {
+    val sqlQuery = s"""
+          $select__posts_po__leftJoin__patPostRels_pa
+              where po.site_id = ?
+                  $and__po_approved_at__is_not_null
+          $groupBy__siteId_postId
+          order by po.created_at desc, po.unique_post_id desc
+          limit 1000 """
+
+    val values = ArrayBuffer[AnyRef](siteId.asAnyRef)
+
+    runQueryFindMany(sqlQuery, values.toList, rs => {
+      readPost(rs)
+    })
+  } */
+
+
   def loadPostsByTag(tagTypeId: TagTypeId, inclUnapproved: Bo, limit: i32,
           orderBy: OrderBy): immutable.Seq[Post] = {
     dieIf(orderBy != OrderBy.MostRecentFirst, "TyE60RKTJF9", "Unimpl")
@@ -498,6 +516,31 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       """
     runQueryFindMany(query, List(siteId.asAnyRef), rs => {
       readPost(rs)
+    })
+  }
+
+
+  /** Doesn't join with & aggregate pat_node_rels_t.
+   */
+  def loadPostsByTimeExclAggs(timeRange: TimeRange, limit: i32): immutable.Seq[Post] = {
+    val query = s""" -- loadPostsByTimeExclAggs,  uses ix: posts_i_createdat
+          select * from  posts3 p
+          where  p.site_id = ?
+              and (
+                  p.created_at < ?
+                  or (p.created_at = ? and p.unique_post_id < ?))  -- IntervQ ?
+              and  p.hidden_at is null
+              and  p.deleted_status = 0
+              and  p.approved_at is not null
+          order by  created_at desc,  unique_post_id desc
+          limit  $limit"""
+    val values = List(
+          siteId.asAnyRef,
+          timeRange.to.toJavaDate,
+          timeRange.to.toJavaDate,
+          timeRange.toOfs.asAnyRef)
+    runQueryFindMany(query, values, rs => {
+      readPost(rs, inclAggs = false)
     })
   }
 

@@ -46,6 +46,16 @@ alter table sites3 add constraint sites_c_smtpconf_min_len check (
     length(smtp_conf_json_c) > 50);
 
 
+-- See:  smtp_msg_ids_out_d  text[], has a fancy array constraint.
+create domain alnum_plusdashdot_arr_d text[];
+alter domain  alnum_plusdashdot_arr_d add
+   constraint alnum_plusdashdot_arr_d_c_nonempty check (
+      length(array_to_string(value, '')) > 0);
+alter domain  alnum_plusdashdot_arr_d add
+   constraint alnum_plusdashdot_arr_d_c_chars check (
+      (array_to_string(value, ' ') || ' ')  ~  '^(([a-zA-Z0-9_.+-]+ )*| )$');
+
+
 
 --=============================================================================
 --  Upload refs
@@ -68,7 +78,21 @@ create unique index uploadrefs_u_postid_ref on upload_refs3 (
 create unique index uploadrefs_u_draftnr_ref on upload_refs3 (
     site_id, draft_nr_c, base_url, hash_path) where draft_nr_c is not null;
 
+--=============================================================================
+--  Job queue
+--=============================================================================
 
+-- Maybe:
+
+alter table  job_queue_t
+    -- To remember why sth got added to the index queue — what language, what ES version
+    -- (in case indexing in a new index, before a major upgrade, in parallell with
+    -- indexing in a current index?).  Maybe not actually needed, but nice for
+    -- troubleshooting and developer / admin insight?
+    add column  search_eng_vers_c  alnum_plusdashdot_arr_d,
+    add column  lang_codes_c       alnum_plusdashdot_arr_d,
+    add constraint jobq_c_searchengv_len check (pg_column_size(search_eng_vers_c) < 250),
+    add constraint jobq_c_langcodes_len  check (pg_column_size(lang_codes_c) < 250);
 
 --=============================================================================
 --  Circles

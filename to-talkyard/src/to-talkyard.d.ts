@@ -159,6 +159,7 @@ interface NewTestPost {   // RENAME to PostToAdd  and move to  /tests/e2e/..some
   postedAtUtcStr?: string;
   postedAtMs?: number;// WhenMs;
   approvedAtMs?: number; // WhenMs;
+  createdAtMs?: WhenMs;
 }
 
 
