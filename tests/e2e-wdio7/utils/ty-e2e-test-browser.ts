@@ -7461,7 +7461,7 @@ export class TyE2eTestBrowser {
           }
         }
         // Better place this at the end? So we'll know if all expected links were found.
-        tyAssert.eq(exp.length, act.length,
+        tyAssert.eq(act.length, exp.length,
                   `Too many search hits, got ${act.length}, expected ${exp.length}`
                   + showHits());
       },

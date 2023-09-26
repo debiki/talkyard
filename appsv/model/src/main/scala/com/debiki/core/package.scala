@@ -721,6 +721,12 @@ package object core {
   type UnixDays = Int
 
 
+  case class TimeRange(from: When, fromOfs: i32, to: When, toOfs: i32) {
+    def fromIsIncl: Bo = false // for now
+    def toIsIncl: Bo = true    // for now
+  }
+
+
   /** I'll use this instead of whatever-date-time-stuff-there-is.
     */
   class When(val unixMillis: UnixMillis) extends AnyVal {
@@ -754,6 +760,9 @@ package object core {
     def toDouble: Double = unixMillis.toDouble
     def numSeconds: Long = unixMillis / 1000
     def seconds: Long = unixMillis / 1000
+
+    /** For PostgreSQL, which wants fractional Unix seconds passed to to_timestamp(). */
+    def secondsFlt64 = unixMillis.toDouble / 1000
 
     def isAfter(other: When): Boolean = unixMillis > other.unixMillis
     def isBefore(other: When): Boolean = unixMillis < other.unixMillis
@@ -1140,6 +1149,7 @@ package object core {
   val OneHourInMillis: Long = 3600 * 1000
   val MillisPerDay: Long = 24 * OneHourInMillis
   val OneDayInMillis: Long = MillisPerDay
+  val OneDayInSecondsFlt64: f64 = (3600 * 24).toDouble
   val OneWeekInMillis: Long = 7 * MillisPerDay
   val OneMonthInMillis: Long = 365 * MillisPerDay / 12  // divides evenly
   val OneYearInMillis: Long = 365 * MillisPerDay
@@ -1286,8 +1296,13 @@ package object core {
   }
 
 
-  case class StuffToIndex(
-    postsBySite: Map[SiteId, immutable.Seq[Post]],
+  object JobType {
+    val Index = 1
+  }
+
+
+  case class PostsToIndex(
+    postsToIndexBySite: Map[SiteId, immutable.Seq[Post]],
     pagesBySitePageId: Map[SitePageId, PageMeta],
     tagsBySitePostId: Map[SitePostId, imm.Seq[Tag]],
     tagsBySitePostId_old: Map[SitePostId, immutable.Set[TagLabel]]) {
@@ -2089,6 +2104,7 @@ package object core {
                           // sequential numbers that make it possible to estimate frequency.
   def BUG = ()            // Need not be a terribly important bug.
   def RACE = ()           // A race condition bug / situation.
+  def STARVATION = ()
   def MUST = ()           // Fix before next release.
   def SHOULD = ()         // Fix before release, unless short of time, or it's too boring.
   def COULD = ()          // Could do this, but not important right now, can wait a year or two.

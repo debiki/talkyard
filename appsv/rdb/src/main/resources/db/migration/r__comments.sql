@@ -439,6 +439,55 @@ non-standard json.
 $_$;
 
 
+------------------------------------------------------------------------
+
+
+--======================================================================
+--  job_queue_t
+--======================================================================
+
+------------------------------------------------------------------------
+comment on table  job_queue_t  is $_$
+
+Remembers for example 1) what posts to (re)index, when new posts got posted,
+or old got edited.  Or 2) what posts to reindex, after a category got moved
+to another parent category.  3) What posts to *rerender* (not reindex),
+if e.g. the CDN address has changed, so links to user generated contents
+need to get updated, or some other renderer settings changed.
+
+The time_range_from_c and ..._to_c are for (re)indexing parts of, or everything in,
+a site — without adding all posts
+at once to the index queue and possibly runnign out disk — instead, we add a
+time range row, and then we add the most recent say 100 posts in that time range
+to the job queue, and decrease the range's upper bound, handle those 100, pick the
+next 100 and so on.
+
+Reindexing everything can be needed, when upgrading to new versions of ElasticSearch,
+or if switching to some other search engine (if we'll support othersearch engines
+too), or more fields are to be searchable.
+
+If combining a time range with a category id, then, pages & comments in that
+category that got posted during that time, will get processed (e.g. reindexed,
+depending on do_what_c).  — Since a page might get moved from one category,
+to another category B that is getting reindexed, then, the app server could,
+before it starts indexing a page in category B in the time range,
+ask ElasticSearch if that page is in fact already up-to-date.
+
+If combining a time range with a tag, then, the cached HTML for pages with that
+tag, could be rerendered — maybe the tag name got changed, for example,
+so the html is stale. There's no do_what_c value for rerendering posts or
+page html yet though.
+
+If lots of posts were imported simultaneously, they might all have the same
+externally generated timestamp. Or if two posts are created at the exact same time
+(e.g. page title and body).  Then, to remember where to continue indexing,
+a date isn't enough — we also need a post id offset (combined with a date);
+that's what time_range_from_ofs_c and ...to_ofs_c are for.
+(But can't use just a tsrange.)
+$_$;  -- '
+------------------------------------------------------------------------
+
+
 
 ------------------------------------------------------------------------
 

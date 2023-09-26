@@ -139,6 +139,20 @@ class RdbSystemTransaction(
   }
 
 
+  // Dupl code [9UFK2Q6]
+  def runQueryBuildMap[K, V](query: String, values: List[AnyRef],
+          singleRowHandler: js.ResultSet => (K, V)): immutable.Map[K, V] = {
+    var valuesByKey = immutable.HashMap[K, V]()
+    runQuery(query, values, rs => {
+      while (rs.next) {
+        val (key, value) = singleRowHandler(rs)
+        valuesByKey += key -> value
+      }
+    })
+    valuesByKey
+  }
+
+
   // Dupl code [9UFK2Q7]
   def runQueryBuildMultiMap[K, V](query: String, values: List[AnyRef],
     singleRowHandler: js.ResultSet => (K, V)): immutable.Map[K, immutable.Seq[V]] = {
@@ -477,7 +491,7 @@ class RdbSystemTransaction(
   }
 
 
-  def loadStaffForAllSites(): Map[SiteId, Vector[UserInclDetails]] = {
+  def loadStaffBySiteId(): Map[SiteId, Vector[UserInclDetails]] = {
     import Participant.LowestAuthenticatedUserId
     val query = s"""
       select u.site_id, $CompleteUserSelectListItemsWithUserId
@@ -838,14 +852,67 @@ class RdbSystemTransaction(
   }
 
 
-  def loadStuffToIndex(limit: Int): StuffToIndex = {
+  def loadJobQueueNumPosts(countUpTo: i32): i32 = {
+    val query = s""" -- loadJobQueueNumPosts
+        with
+          post_rows as (
+              select 1 from  job_queue_t
+              where   post_id is not null
+              limit $countUpTo)
+          select count(*) num from post_rows  """
+    runQueryFindExactlyOne(query, Nil, rs => {
+      rs.getInt("num")
+    })
+  }
+
+
+  def loadJobQueueLengthsBySiteId(): Map[SiteId, i32] = {
+    // The job queue should never be hopelessly long, so a full scan is ok. [jobq_0_2_long]
+    val query = s""" -- loadJobQueueLengthsBySiteId
+          select  site_id,  count(*) as queue_len
+          from  job_queue_t
+          where post_id is not null
+          group by site_id  """
+    runQueryBuildMap(query, Nil, rs => {
+      val siteId = rs.getInt("site_id")
+      val queueLen = rs.getInt("queue_len")
+      siteId -> queueLen
+    })
+  }
+
+
+  def loadJobQueueRangesBySiteId(): Map[SiteId, TimeRange] = {
+    val query = s""" -- loadJobQueueRangesBySiteId, uses ix:  jobq_u_dowhat_timerange_for_now
+          select  site_id,  time_range_to_c,  time_range_to_ofs_c
+            from  job_queue_t
+            where  do_what_c = ${JobType.Index}
+              -- There's one or none per site, see this unique constr:
+              -- jobq_u_dowhat_timerange_for_now
+              -- (and also: jobq_u_dowhat_site_timerange)
+              and  time_range_to_c is not null  """
+
+    runQueryBuildMap(query, Nil, rs => {
+      val siteId = rs.getInt("site_id")
+      val timeRange = TimeRange(
+            // Currently [all_time_ranges_start_at_time_0].
+            from = When.Genesis,
+            fromOfs = 0,
+            to = getWhen(rs, "time_range_to_c"),
+            // Always present, see db constr jobq_c_timerange_ofs_null.
+            toOfs = getOptInt32(rs, "time_range_to_ofs_c").getOrDie("TyE307MRG82"))
+      siteId -> timeRange
+    })
+  }
+
+
+  REFACTOR; COULD // move everything but the SQL query to the Dao?
+  def loadPostsToIndex(limit: i32): PostsToIndex = {
     val postIdsBySite = mutable.Map[SiteId, ArrayBuffer[PostId]]()
-    // Hmm, use action_at or inserted_at? Normally, use inserted_at, but when
-    // reindexing everything, everything gets inserted at the same time. Then should
-    // instead use posts3.created_at, desc order, so most recent indexed first.
     val query = s"""
-       select site_id, post_id from index_queue3 order by inserted_at limit $limit
-       """
+       select  site_id,  post_id
+       from  job_queue_t
+       where  post_id  is not null
+       order by  inserted_at  limit $limit  """
 
     runQuery(query, Nil, rs => {
       while (rs.next()) {
@@ -874,7 +941,7 @@ class RdbSystemTransaction(
     // Old tags, remove.  [index_tags]
     val tagsBySitePostId_old = loadTagsBySitePostId_old(postsBySite)
 
-    StuffToIndex(postsBySite, pagesBySitePageId, tagsBySitePostId, tagsBySitePostId_old)
+    PostsToIndex(postsBySite, pagesBySitePageId, tagsBySitePostId, tagsBySitePostId_old)
   }
 
 
@@ -897,7 +964,7 @@ class RdbSystemTransaction(
           """ -- _loadTagsBySitePostId
           select * from tags_t""")
     var isFirst = true
-    for ((siteId, posts) <- postsBySite) {
+    for ((siteId, posts) <- postsBySite ; if posts.nonEmpty) {
       val whereOrOr = isFirst ? "where" | "or"
       isFirst = false
       querySb.append(s"""
@@ -936,7 +1003,7 @@ class RdbSystemTransaction(
 
   def deleteFromIndexQueue(post: Post, siteId: SiteId) {
     val statement = s"""
-      delete from index_queue3
+      delete from job_queue_t
       where site_id = ? and post_id = ? and post_rev_nr <= ?
       """
     // [85YKF30] Only approved posts currently get indexed. Perhaps I should add a rule that
@@ -951,29 +1018,74 @@ class RdbSystemTransaction(
   }
 
 
-  def addEverythingInLanguagesToIndexQueue(languages: Set[String]) {
-    if (languages.isEmpty)
+  def addEverythingInLanguagesToIndexQueue(siteIds: Set[SiteId], allSites: Bo): U = {
+    dieIf(siteIds.nonEmpty && allSites, "TyE602RMGLC4")
+    if (siteIds.isEmpty && !allSites)
       return
 
-    require(languages == Set("english"), s"Langs not yet impl: ${languages.toString} [EsE2PYK40]")
+    val values = MutArrBuf[AnyRef]()
 
-    // Later: COULD index also deleted and hidden posts, and make available to staff.
+    val whereSiteIdIn: St = if (siteIds.isEmpty) "" else {
+      values.appendAll(siteIds.map(_.asAnyRef))
+      s"where sites3.id in (${makeInListFor(siteIds)})"
+    }
+
+    // First, ensure we won't be reindexing everything multiple times:
+    _deleteAnyReindexAllRanges(siteIds = siteIds, allSites = allSites)
+
+    val zero: f64 = When.Genesis.secondsFlt64
+
+    // For `distinct on (..)`, see:
+    //     https://www.postgresql.org/docs/9.0/sql-select.html#SQL-DISTINCT
     val statement = s"""
-      insert into index_queue3 (action_at, site_id, site_version, post_id, post_rev_nr)
-      select
-        posts3.created_at,
-        sites3.id,
-        sites3.version,
-        posts3.unique_post_id,
-        posts3.approved_rev_nr
-      from posts3 inner join sites3
-        on posts3.site_id = sites3.id
-      where
-        ${SearchSiteDaoMixin.PostShouldBeIndexedTests}
-      ${SearchSiteDaoMixin.OnPostConflictAction}
-      """
+          with most_recent_post as (
+              select distinct on (site_id) site_id, created_at, unique_post_id
+              from posts3
+              order by site_id, created_at desc, unique_post_id desc)
+          insert into job_queue_t (
+              inserted_at,
+              action_at,
+              site_id,
+              site_version,
+              do_what_c,
+              time_range_from_c,
+              time_range_from_ofs_c,
+              time_range_to_c,
+              time_range_to_ofs_c)
+          select
+              now_utc(),
+              to_timestamp($zero),  -- not in use anyway, hmm
+              sites3.id,
+              sites3.version,
+              ${JobType.Index},
+              -- Currently [all_time_ranges_start_at_time_0].
+              to_timestamp($zero),
+              0,
+              most_recent_post.created_at,
+              most_recent_post.unique_post_id
+          from  sites3  inner join  most_recent_post
+            on  sites3.id = most_recent_post.site_id
+          $whereSiteIdIn  """
 
-    runUpdate(statement, Nil)
+    runUpdate(statement, values.toList)
+  }
+
+
+  private def _deleteAnyReindexAllRanges(siteIds: Set[SiteId], allSites: Bo): U = {
+    dieIf(siteIds.isEmpty && !allSites, "TyE502RJMF67")
+
+    val values = MutArrBuf[AnyRef]()
+    val andSiteIdIn: St = if (siteIds.isEmpty) "" else {
+      values.appendAll(siteIds.map(_.asAnyRef))
+      s"and site_id in (${makeInListFor(siteIds)})"
+    }
+    // Currently [all_time_ranges_start_at_time_0].
+    val statement = s"""
+          delete from job_queue_t
+          where extract(epoch from time_range_from_c) = 0
+                $andSiteIdIn  """
+
+    runUpdate(statement, values.toList)
   }
 
 
@@ -1199,7 +1311,7 @@ class RdbSystemTransaction(
       delete from audit_log3
       delete from webhook_reqs_out_t
       delete from webhooks_t
-      delete from index_queue3
+      delete from job_queue_t
       delete from spam_check_queue3
       delete from tags_t
       delete from tagtypes_t

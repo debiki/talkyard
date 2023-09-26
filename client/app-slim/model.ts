@@ -2627,6 +2627,8 @@ interface SuperAdminStuff {
   baseDomain: string;
   autoPurgeDelayDays?: Nr;
   sites: SASite[];
+  totReindexRanges: Nr;
+  totReindexQueueLen: Nr;
 }
 
 
@@ -2652,6 +2654,8 @@ interface SASite {
   logLimsMult: Nr | Nl;
   createLimsMult: Nr | Nl;
   featureFlags: St;
+  reindexRangeMs?: [Nr, Nr, Nr, Nr];
+  reindexQueueLen: Nr;
 }
 
 

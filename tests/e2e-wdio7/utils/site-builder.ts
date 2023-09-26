@@ -133,6 +133,7 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
         body: opts.aboutPageText,
         categoryId: category.id,
         authorId: c.SystemUserId,
+        createdAtMs: opts.createdAtMs,
       });
 
       category.aboutPage = page;
@@ -380,6 +381,7 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
 
 
     addCatABForum: function(opts: { title: St, introText?: St,
+          everythingCreatedAtSameMs?: WhenMs,
           members?: WellKnownMemberUsername[], categoryAExtId?: St,
           categoryPerms?: 'FullMembersMayEditWiki' }): CatABTestForum {
 
@@ -399,6 +401,7 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
         name: "CatB",
         slug: 'cat-b',
         aboutPageText: "Category B description.",
+        createdAtMs: opts.everythingCreatedAtSameMs,
       });
       api.addDefaultCatPerms(site, forum.categories.catB.id,
             startPermsId, opts.categoryPerms);
@@ -409,6 +412,7 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
 
     // Later, add an option to make cat B members-only?  [cat_B_members_only]
     addCatABTrustedForum: function(opts: { title: St, introText?: St,
+          everythingCreatedAtSameMs?: WhenMs,
           members?: WellKnownMemberUsername[], categoryAExtId?: St,
            }):CatABTrustedTestForum {
 
@@ -429,6 +433,7 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
         name: "TrustedCat",
         slug: 'trusted-cat',
         aboutPageText: "Trusted Category description.",
+        createdAtMs: opts.everythingCreatedAtSameMs,
       });
 
       const nextPermsId = 3 + 3 + 1 + 1;  // A + B + staff + 1?

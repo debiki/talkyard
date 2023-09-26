@@ -46,6 +46,7 @@ trait SystemTransaction {  RENAME // to SysTx, started already
     quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
     isTestSiteOkayToDelete: Boolean, createdAt: When): Site
 
+  def asSiteTx(siteId: SiteId): SiteTx = siteTransaction(siteId)
   def siteTransaction(siteId: SiteId): SiteTransaction  // oops doesn't (and cannot) use SiteDao.synchronizeOnSiteId
 
   def loadSiteByPubId(pubId: PubSiteId): Option[Site]
@@ -78,7 +79,7 @@ trait SystemTransaction {  RENAME // to SysTx, started already
 
   // ----- Staff users
 
-  def loadStaffForAllSites(): Map[SiteId, Vector[UserInclDetails]]
+  def loadStaffBySiteId(): Map[SiteId, Vector[UserInclDetails]]
 
 
   // ----- Summary emails, and notifications
@@ -98,9 +99,13 @@ trait SystemTransaction {  RENAME // to SysTx, started already
 
   // ----- Indexing
 
-  def loadStuffToIndex(limit: Int): StuffToIndex
+  def loadJobQueueNumPosts(countUpTo: i32): i32
+  def loadJobQueueRangesBySiteId(): Map[SiteId, TimeRange]
+  def loadJobQueueLengthsBySiteId(): Map[SiteId, i32]
+  def loadPostsToIndex(limit: i32): PostsToIndex
   def deleteFromIndexQueue(post: Post, siteId: SiteId): Unit
-  def addEverythingInLanguagesToIndexQueue(languages: Set[String]): Unit
+  def addEverythingInLanguagesToIndexQueue(
+        siteIds: Set[SiteId] = Set.empty, allSites: Bo = false): U
 
   // ----- Spam check queue
 

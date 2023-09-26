@@ -20,6 +20,7 @@ package debiki
 import akka.actor._
 import akka.pattern.gracefulStop
 import com.codahale.metrics
+import com.debiki.core
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{Rdb, RdbDaoFactory}
@@ -1317,8 +1318,17 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
       else Some(
         NotifierActor.startNewActor(executionContext, actorSystem, systemDao, siteDaoFactory))
 
-    def indexerBatchSize: Int = getIntOrDefault("talkyard.search.indexer.batchSize", 100)
-    def indexerIntervalSeconds: Int = getIntOrDefault("talkyard.search.indexer.intervalSeconds", 5)
+    COULD_OPTIMIZE // Auto adjust indexing batch size & interval depending on CPU load.
+    def indexerBatchSize: Int = getIntOrDefault(
+          "talkyard.search.indexer.batchSize",
+          // Not too many, could put the server under a bit much load?
+          if (!isDevOrTest) 40
+          // If running tests, we'd like the indexer to be not-too-fast. Otherwise,
+          // this e2e test:  reindex-sites.2br.f  TyTREINDEX3
+          // couldn't verify that the indexer indexes posts in the expected order.
+          // [dont_index_too_fast_if_testing] [indexer_batch_size_is_20]
+          else 20)
+    def indexerIntervalSeconds: Int = getIntOrDefault("talkyard.search.indexer.intervalSeconds", 1)
 
     val indexerActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None

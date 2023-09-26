@@ -24,6 +24,7 @@ import debiki.EdHttp._
 import debiki.JsonUtils._
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.http.JsonPostRequest
+import debiki.dao.SASiteStuff
 import javax.inject.Inject
 import play.{api => p}
 import play.api.libs.json._
@@ -105,23 +106,50 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
   }
 
 
+  def testIndexSites(): Action[JsValue] = PostJsonAction(
+          RateLimits.AdminWritesToDb, maxBytes = 1000) { req =>
+    throwForbiddenIf(globals.isProdLive, "TyE0INDEX3967", o"""I want as payload
+          a complete index from the closest-to-you-but-one public library, of books
+          at least 100.00 years old, with titles that include the word "Fire",
+          which my doves can read for my phoenix bird, who otherwise gets quite
+          restless and even hot with anger.""")
+    _reindexImpl(req)
+  }
+
+  def reindexSites(): Action[JsValue] = SuperAdminPostJsonAction(maxBytes = 1000) { req =>
+    _reindexImpl(req)
+  }
+
+  private def _reindexImpl(req: JsonPostRequest): p.mvc.Result = {
+    val body = asJsObject(req.body, "The request body")
+    val siteIds = parseJsArray(body, "siteIdsToReIx").map(it => asInt32(it, "site id"))
+    globals.systemDao.reindexSites(siteIds = siteIds.toSet)
+    Ok
+  }
+
+
   private def listSitesImpl(): p.mvc.Result = {
-    // The most recent first.
-    val (sitesUnsorted: Seq[SiteInclDetails], staffBySiteId) =
-          globals.systemDao.loadSitesInclDetailsAndStaff()
-    val sitesNewFirst = sitesUnsorted.sortBy(-_.createdAt.toUnixMillis)
+    val siteStuff: Seq[SASiteStuff] = globals.systemDao.loadSitesInclDetailsAndStaff()
+    // Sort recent first.
+    val sitesNewFirst = siteStuff.sortBy(-_.site.createdAt.toUnixMillis)
+    // Count reindex ranges, and reindex queue length.
+    val jobSumStat = siteStuff.foldLeft((0, 0)) { (stat: (i32, i32), stuff: SASiteStuff) =>
+      (stat._1 + stuff.reindexRange.oneIfDefined, stat._2 + stuff.reindexQueueLen)
+    }
     OkSafeJson(Json.obj(
       "appVersion" -> globals.applicationVersion,
       "superadmin" -> Json.obj(
         "firstSiteHostname" -> JsStringOrNull(globals.defaultSiteHostname),
         "baseDomain" -> globals.baseDomainWithPort,
         "autoPurgeDelayDays" -> JsFloat64OrNull(globals.config.autoPurgeDelayDays),
-        "sites" -> sitesNewFirst.map(site => siteToJson(
-                      site, staffBySiteId.getOrElse(site.id, Nil))))))
+        "totReindexRanges" -> jobSumStat._1,
+        "totReindexQueueLen" -> jobSumStat._2,
+        "sites" -> sitesNewFirst.map(_siteToJson))))
   }
 
 
-  private def siteToJson(site: SiteInclDetails, staff: Seq[UserInclDetails]) = {
+  private def _siteToJson(siteStuff: SASiteStuff) = {
+    val site = siteStuff.site
     Json.obj(  // ts: SASite
       "id" -> site.id,
       "pubId" -> site.pubId,
@@ -139,10 +167,20 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
       "logLimsMult" -> JsFloatOrNull(site.logLimitsMultiplier),
       "createLimsMult" -> JsFloatOrNull(site.createLimitsMultiplier),
       "stats" -> JsSiteStats(site.stats),
-      "staffUsers" -> JsArray(staff.map { staffUser =>
+      "staffUsers" -> JsArray(siteStuff.staff.map { staffUser =>
         JsUserInclDetails(
               staffUser, usersById = Map.empty, groups = Nil, callerIsAdmin = true)
-      }))
+      }),
+      "reindexRangeMs" -> (siteStuff.reindexRange match {
+        case None => JsNull
+        case Some(range) => Json.arr(
+              JsWhenMs(range.from),
+              JsNumber(range.fromOfs),
+              JsWhenMs(range.to),
+              JsNumber(range.toOfs))
+      }),
+      "reindexQueueLen" -> siteStuff.reindexQueueLen,
+      )
   }
 
 

@@ -2469,6 +2469,12 @@ export function updateSites(sites: SASite[]) {
 }
 
 
+export function reindexSites(siteIds: SiteId[]) {
+  postJsonSuccess('/-/sa/reindex-sites', () => {
+  }, { siteIdsToReIx: siteIds });
+}
+
+
 export function schedulePurge(ps: { purgeAfterDays: Nr, siteId: SiteId }) {
   postJsonSuccess('/-/sa/schedule-purge-sites', (patch) => {
     ReactActions.patchTheStore(patch);
