@@ -510,7 +510,8 @@ function runAllE2eTests {
   $r s/wdio-7 --only category-perms.2br.d --cd -i $args
   $r s/wdio-7 --only cats-perf-many.2br.d --cd -i $args
 
-  $r s/wdio --only search-tag-vals-priv-cats.2br.f $args
+  # E2EBUG: Flappy  (or cats-perf-many.2br.d above?)
+  $r s/wdio-7 --only search-tag-vals-priv-cats.2br.f --cd -i $args
 
   $r s/wdio --only slow-3g-navigate-edit-drafts.2browsers $args
 
@@ -563,7 +564,11 @@ function runAllE2eTests {
   $r s/wdio-7 --only webhooks-enable-disable.2br --cd -i $args
   $r s/wdio-7 --only webhooks-for-api-upserts.2br --cd -i $args
 
+  # E2EBUG: Disable if conf val missing?
   $r s/wdio-7 --only plan-maintenance.2br.d --cd -i $args
+
+  # ! countdownUndoTimeout  slooow if mod task list is long.
+
 
 
   # wip:
@@ -576,6 +581,7 @@ function runAllE2eTests {
   # ------------
 
   $r s/wdio --only utx-all-logins.1br.extidp $args
+
 
 
   #------------------------------------------------------------
@@ -599,44 +605,44 @@ function runAllE2eTests {
   $r s/wdio --only sso-all-ways-to-login.2browsers $args
   $r s/wdio --only sso-access-denied-login.2browsers $args
   $r s/wdio --only sso-one-time-key-errors.2browsers $args
-
+ 
   # Also see  --only embcom.sso  below.
-
-
+ 
+ 
   # API + SSO
   # ------------
-
+ 
   $r s/wdio --only api-update-user-and-sso-user.2br $args
   $r s/wdio --only api-w-sso-upsert-pages.2browsers $args
   $r s/wdio --only api-private-chat-two-pps-sso-extid.2browsers $args
   $r s/wdio --only api-private-chat-two-pps-list-use-usernames.2browsers $args
-
-
+ 
+ 
   # API: CORS
   # ------------
-
+ 
   $r s/wdio-7 --only api-search-ext-site-and-server.2br.cors --cd -i $args
-
-
+ 
+ 
   # Embedded forum
   # ------------
-
+ 
   #$r s/wdio --b3c  --only embforum.b3c.login.1br  $args
   #$r s/wdio --b3c  --only embforum.b3c.sso-login.1br $args
-
-
+ 
+ 
   # Embedded comments
   # ------------
-
+ 
   # For testing manually. Just verify the test starts properly.
   # For now, not "manual" (with 'l' at the end) — that'd start manual.2browsers too  o.O
   $r s/wdio       --only embcom.manua.2br $args  # delete soon
   $r s/wdio-7     --only embcom.manual.2br --cd -i $args
   $r s/wdio-7     --only embcom.manyframes.manual.2br --cd -i $args
-
+ 
   # Also see navigation-as-* above.
   $r s/wdio       --only embedded-comments-navigation-as-guest $args
-
+ 
   $r s/wdio       --only embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers $args
   $r s/wdio-7     --only embcom.create-site-req-verif-email-exit-tours.2br --cd -i $args
   $r s/wdio       --only embedded-comments-create-site-forum-intro-tour $args
@@ -645,13 +651,13 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-scroll-and-load-more.2browsers $args
   $r s/wdio       --only embedded-comments-scroll-embedding-page $args
   # (no -old-name version, because the new name is always included in the server's genetarted html.)
-
+ 
   $r s/wdio       --only embedded-comments-different-disc-ids-same-page $args
   #r s/wdio       --only embcom.many-comment-iframes-click-load-more.2br $args TESTS_MISSING
   $r s/wdio       --only embedded-comments-discussion-id.test $args
   $r s/wdio       --only embedded-comments-discussion-id-old-name $args
   $r s/wdio-7     --only embcom.ignore-query-params.2br --cd -i $args
-
+ 
   $r s/wdio       --only embedded-comments-guest-login-email-notf-unsbscribe $args
   $r s/wdio       --only embcom.all-idp-logins.1br.extidp $args
   $r s/wdio       --only embcom.all-idp-logins-old-name.1br.extidp $args
@@ -664,7 +670,10 @@ function runAllE2eTests {
   $r s/wdio-7     --only embcom.vote-bef-page-exists.1br --cd -i $args
   $r s/wdio-7     --only embcom.reply-vote-report-bef-login.2br --cd -i $args
   $r s/wdio       --only embedded-comments-conf-notf-pref-first $args
+
+  # E2EBUG: Flappy
   $r s/wdio       --only embedded-comments-sort-order-op-likes-btn-txt.2browsers $args
+
   $r s/wdio       --only embedded-comments-category-refs.2browsers $args
   $r s/wdio       --only embedded-comments-cat-refs-and-disc-ids.2browsers $args
   $r s/wdio       --only embedded-comments-uploads-origin $args
