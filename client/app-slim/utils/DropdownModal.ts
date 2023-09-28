@@ -87,7 +87,7 @@ export const ModalDropdownButton = createComponent({
          DropdownModal({ show: state.isOpen, pullLeft: props.pullLeft,
             onHide: this.closeDropdown, atX: state.buttonX, atY: state.buttonY,
             dialogClassName2: props.dialogClassName2, // <— should be this? CLEAN_UP: remove '2'
-            className: props.dialogClassName,  // <— CLEAN_UP REMOVE/RENAME to dialogContentClassName?
+            className: props.dialogClassName,  // <— CLEAN_UP REMOVE/RENAME to contentClassName?
             id: props.dialogId,
             allowFullWidth: props.allowFullWidth, ref: 'dropdownModal',
             showCloseButton: props.showCloseButton,
@@ -139,7 +139,8 @@ export const DropdownModal = createComponent({
     // fires before the browser has done that — because without setTimeout(_, 0), the dialog
     // can become too small.
     setTimeout(() => {
-      if (!this.props.show || !this.refs.content || this.isGone)
+    const props: DropdownProps = this.props;
+      if (!props.show || !this.refs.content || this.isGone)
         return;
       const content = this.refs.content;
       const rect = cloneRect(content.getBoundingClientRect());
@@ -219,26 +220,27 @@ export const DropdownModal = createComponent({
     if (!this.state.moreBundleLoaded)
       return null;
 
+    const props: DropdownProps = this.props;
     let content;
-    if (this.props.show) {
-      const closeButton = !this.props.showCloseButton ? null :
-        r.div({ className: 'esDropModal_CloseB esCloseCross', onClick: this.props.onHide });
+    if (props.show) {
+      const closeButton = !props.showCloseButton ? null :
+        r.div({ className: 'esDropModal_CloseB esCloseCross', onClick: props.onHide });
 
       const bottomCloseButton = undefined;
       // COULD LATER UX  show extra close button, if small screen, so won't need to scroll up to
       // the menu top, to find the close button
-      //const bottomCloseButton = !this.props.bottomCloseButton ? null :
-      //  r.div({ className: 'esDropModal_CloseB esCloseCross', onClick: this.props.onHide });
+      //const bottomCloseButton = !props.bottomCloseButton ? null :
+      //  r.div({ className: 'esDropModal_CloseB esCloseCross', onClick: props.onHide });
 
       // Try to remove props.atX & .pullLeft, use betweenX everywhere instead. CLEAN_UP
-      let atX = this.props.atX;
-      let atY = this.props.atY;
-      let pullLeft = this.props.pullLeft;
+      let atX = props.atX;
+      let atY = props.atY;
+      let pullLeft = props.pullLeft;
       if (eds.isRtl) pullLeft = !pullLeft;
 
-      const rect: ClientRect = this.props.atRect;
+      const rect: Rect = props.atRect;
       if (rect) {
-        const windowMiddle = this.props.windowWidth / 2;
+        const windowMiddle = props.windowWidth / 2;
         const spaceLeft = windowMiddle - rect.left;
         const spaceRight = rect.right - windowMiddle;
         pullLeft = spaceLeft > spaceRight;
@@ -265,20 +267,20 @@ export const DropdownModal = createComponent({
       };
 
       content =
-        r.div({ className: 'esDropModal_content ' + (this.props.className || ''), style: styles,
-            ref: 'content', onClick: this.props.onContentClick },
+        r.div({ className: 'esDropModal_content ' + (props.className || ''), style: styles,
+            ref: 'content', onClick: props.onContentClick },
           closeButton,
-          this.props.children,
+          (props as any).children,
           bottomCloseButton);
     }
 
     const backdropStyle: any = { opacity: 0.14 };
     if (this.state.hideBackdrop) backdropStyle.display = 'none';
 
-    const dialogClassName = this.props.dialogClassName2 ? ' ' + this.props.dialogClassName2 : '';
-    const notTooWideClass = this.props.allowFullWidth ? '' : ' esDropModal-NotTooWide';
+    const dialogClassName = props.dialogClassName2 ? ' ' + props.dialogClassName2 : '';
+    const notTooWideClass = props.allowFullWidth ? '' : ' esDropModal-NotTooWide';
     return (
-      rb.Modal({ show: this.props.show, onHide: this.props.onHide,
+      rb.Modal({ show: props.show, onHide: props.onHide,
           onShow: () => this.setState({ hideBackdrop: false }),
           dialogClassName: 'esDropModal' + notTooWideClass + dialogClassName,
           backdropStyle: backdropStyle },

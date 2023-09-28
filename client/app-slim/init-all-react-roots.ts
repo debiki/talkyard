@@ -31,7 +31,8 @@
 // REFACTOR rename this file to render-page-in-browser.ts? and combine with start-page.ts? [7VUBWR45]
 
 
-export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') {
+export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate'
+        ): U | 'SkipTheRest' {
   // /-/admin/ *
   // app/views/adminPage.scala.html
   // <div id="esPageColumn">
@@ -57,16 +58,6 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
   if (superAdminAppElem) {
     ReactDOM.render(
         Router({}, superadmin.routes()), superAdminAppElem);
-    return;
-  }
-
-  // /-/tags/ *
-  // adminPage.scala.html, appId = "theTagsApp"
-  // No! This should be part of  MoreScriptsRoutesComponent.
-  const tagsAppElem = document.getElementById('theTagsApp');
-  if (tagsAppElem) {
-    ReactDOM.render(
-        Router({}, tags.routes()), tagsAppElem);
     return;
   }
 
@@ -99,10 +90,21 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
     return;
   }
 
+  // Any place to place a rendered page?
+  const pageElem = document.getElementById('dwPosts');
+
+  // ... If none, we're in a login popup (always?). Then, don't run any of the
+  // normal page subsequent steps.
+  // ((In fact, if continuing in renderPageInBrowser() (the only caller), then,
+  // activateVolatileData() wouldn't work: the login popup contents would disappear.
+  // There is no volatile data in the login popups. — Previously, this function
+  // "exited" because of a React no-elem error when pageElem was null, but by
+  // returning here, we can avoid a harmless error log message. A bit hacky? Oh well.))
+  if (!pageElem)
+    return 'SkipTheRest';
+
   // The rest below is for the main React app: the forum topic list, topic pages, user profile
   // pages, the search page.
-
-  const pageElem = document.getElementById('dwPosts');
 
   const renderOrHydrate = ReactDOM[reactRenderMethodName];
 
@@ -199,9 +201,10 @@ const MoreScriptsRoutesComponent = createReactClass(<any> {  // dupl code [4WKBT
 
   render: function() {
     if (!this.state)
-      return r.p({}, "Loading...");
+      return r.h1({}, t.Loading + ' ...');
 
     return Switch({},
+      Route({ path: UrlPaths.Tags, component: tags.TagsAppComponent }),
       Route({ path: UsersRoot, component: users.UsersHomeComponent }),
       Route({ path: GroupsRoot, component: users.UsersHomeComponent }),
       search.searchRoute());

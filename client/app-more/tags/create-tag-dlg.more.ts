@@ -36,10 +36,13 @@ type NewTagTypeCallback = (_: TagType) => Vo;
 let pub_setOnCreatedCallback: (_: [NewTagTypeCallback]) => Vo;
 
 export function openCreateTagDialog(onCreated: NewTagTypeCallback) {
-  if (!pub_setOnCreatedCallback) {
-    ReactDOM.render(CreateTagTypeDialog(), debiki2.utils.makeMountNode());
-  }
-  pub_setOnCreatedCallback([onCreated]);
+  // We need the editor-bundle.js; it contains window.debikiSlugify [5FK2W08].
+  Server.loadEditorAndMoreBundles(() => {
+    if (!pub_setOnCreatedCallback) {
+      ReactDOM.render(CreateTagTypeDialog(), debiki2.utils.makeMountNode());
+    }
+    pub_setOnCreatedCallback([onCreated]);
+  });
 }
 
 
@@ -47,9 +50,11 @@ const CreateTagTypeDialog = React.createFactory<{}>(function() {
   const [onCreatedCallback, setOnCreatedCallback] =
           React.useState<[NewTagTypeCallback]>(null);
   const [dispName, setDispName] = React.useState<ValueOk<St>>({});
+
+  // For now, just posts.
   const [canTagWhat, setCanTagWhat] = React.useState<ValueOk<ThingType>>({
     // Dropdown/checkbox to selet what can be tagged? [.or_badge_or_tag] [missing_tags_feats]
-    value: ThingType.Pats,
+    value: ThingType.Posts,
     isOk: true,
   });
   pub_setOnCreatedCallback = setOnCreatedCallback;
@@ -60,11 +65,16 @@ const CreateTagTypeDialog = React.createFactory<{}>(function() {
     const newTagType: TagType = {
       id: No.TagTypeId as TagTypeId,
       dispName: dispName.value,
+      urlSlug: window['debikiSlugify'](dispName.value),
       canTagWhat: canTagWhat.value,
     };
-    Server.createTagType(newTagType, (newTagTypeWithId: TagType) => {
+    Server.upsertType(newTagType, (newTagTypeWithId: TagType) => {
       onCreatedCallback?.[0](newTagTypeWithId);
       setOnCreatedCallback(null);
+      // Show the type details page — that's currently the only place where type props
+      // other than the title can be edited (this Create Tag dialog is a bit simplistic).
+      page.Hacks.navigateTo(  // we're outside the main React root
+            linkToType(newTagTypeWithId));
     });
   }
 
@@ -73,11 +83,12 @@ const CreateTagTypeDialog = React.createFactory<{}>(function() {
 
   if (isOpen) {
     contents = rFr({},
-        // Hmm, new input needed?
+        // Hmm, new input type needed? (Using FullNameInput is a bit odd?)
         util.FullNameInput({ label: "Tag name:", className: 'e_CrTagD_Un', tabIndex: 1,  // I18N
           defaultValue: '',
           onChangeValueOk: (value, isOk) => setDispName({ value, isOk })
         }),
+        r.p({}, "You can customize the tag more, once you've created it."),  // I18N
         );
 
     const allFine = dispName.isOk && canTagWhat.isOk;

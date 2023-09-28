@@ -67,6 +67,11 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
         // ['mons', 'modya', 'regina', 'corax', 'memah', 'maria', 'michael', 'mallory']
     });
 
+    // Search engine
+    // To have the search engine index the imported site: (by default, test sites
+    // aren't indexed)
+    //builder.getSite().isTestSiteIndexAnyway = true;
+
     // Change hostname
     //builder.getSite().meta.localHostname = 'e2e-test-something';  // at .localhost
     // Or for embedded comments:  EMBCMTS

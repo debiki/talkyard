@@ -90,6 +90,10 @@ export function location_autoPageType(location: { pathname: string } | U): AutoP
   if (urlPath.indexOf(GroupsRoot) === 0) return AutoPageType.GroupProfilePage;
   if (urlPath.indexOf(SearchRootPath) === 0) return AutoPageType.SearchPage;
   if (urlPath.indexOf(AdminRoot) === 0) return AutoPageType.AdminArea;
+  if (urlPath === UrlPaths.Tags) return AutoPageType.TagsList;
+  if (urlPath.indexOf(UrlPaths.Tags) === 0) return AutoPageType.AboutOneTag;
+  // (urlPath === UrlPaths.Badges) return AutoPageType.BadgesList;
+  // (urlPath.indexOf(UrlPaths.Badges) === 0) return AutoPageType.AboutOneBadge;
 
   // This'd be weird: (instead, ought to match one of the locations above)
   if (urlPath.indexOf(ApiUrlPathPrefix) === 0) return AutoPageType.ApiSomewhere;

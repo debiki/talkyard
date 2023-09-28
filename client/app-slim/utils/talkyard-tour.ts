@@ -89,6 +89,14 @@ function TalkyardTour() {
   if (!step)
     return r.div({ className: 'e_NoTourStep' });
 
+  let flashHandle;
+  function stopFlashing() {
+    if (flashHandle) {
+      clearTimeout(flashHandle);
+      flashHandle = null;
+    }
+  }
+
   function waitForAndScrollToElemThenShowDialog() {
     if (!tour) return;
     if (!step) return;
@@ -226,12 +234,30 @@ function TalkyardTour() {
     }
 
     // Show a colored circle around the elem to click, otherwise people don't realize
-    // they are to click it.
+    // they are to click it (instead, they might click the disabled Next button in the
+    // dimmed out dialog a few times, and then click Exit) ... They sometimes still
+    // don't! So now the circle flashes (blinks) too.
     if (step.waitForClick) {
       clickHereElem.style.left = highlightElem.style.left;
       clickHereElem.style.top = highlightElem.style.top;
       clickHereElem.style.padding = highlightElem.style.padding;
       clickHereElem.style.display = 'block';
+      const delaysMs = [300, 200, 150, 900];
+      let delaysIx = 0;
+      function flashFn() {
+        const showHighlight = delaysIx % 2;
+        const delay = delaysMs[delaysIx]
+        delaysIx = (delaysIx + 1) % delaysMs.length;
+        try {
+          clickHereElem.style.display = showHighlight ? 'block' : 'none';
+          flashHandle = setTimeout(flashFn, delay);
+        }
+        catch (ex) {
+          // Elem gone, who cares why.
+          stopFlashing();
+        }
+      }
+      flashHandle = setTimeout(flashFn, 1000)
     }
 
     // Ignore clicks outside the highlighted area.
@@ -260,11 +286,13 @@ function TalkyardTour() {
       exitTour();
     }
     else {
+      stopFlashing();
       setStepIx(stepIx + 1);
     }
   }
 
   function goToPrevStep() {
+    stopFlashing();
     setStepIx(stepIx - 1);
   }
 
@@ -274,6 +302,7 @@ function TalkyardTour() {
     Server.toggleTips({ tipsId: tour.id, hide: true });
     setTour(null);
     tourRunning = false;
+    stopFlashing();
   }
 
   function maybeGoNextOnElemClick() {

@@ -313,7 +313,7 @@ case object Participant {
   val SysbotUserFullName = "Sysbot"
 
   /** If a superadmin logs in and does something.  COULD start using, instead of System? [SYS0LGI] */
-  val SuperAdminId = 3  // no, 4? or 49?  see below
+  val SuperAdminId_later = 3  // no, 4? or 49?  see below  [better_ids]
 
   /** Maintenance tasks by bot(s) that supervise all sites. */
   // val SuperStaffId = 4  ?
@@ -336,7 +336,7 @@ case object Participant {
   //     — no, using anonym_id_c  and anonym_ids_t instead?  And optional pen names
   // val AnonymousUserId = 7
 
-  // UnknownUserId = 6
+  // UnknownUserId = 6   (not a guest, but an unknown *user*)
   // UnknownStaffId = 7
 
   // The real ids of deactivated and deleted users, could be replaced with these ids, when rendering
@@ -661,7 +661,7 @@ case object Participant {
   * Someone = Guest or User, that is, just 1 person or bot (called "Someone" not
   * "Person" since could be a bot).
   */
-sealed trait Pat {
+sealed trait Pat extends HasInt32Id {
 
   def id: PatId
   def trueId2: TrueId = TrueId(id)  ; RENAME // to  trueId  remove '2'.
@@ -684,7 +684,8 @@ sealed trait Pat {
   def isAuthenticated: Bo = isRoleId(id)
   def isApprovedOrStaff: Bo
   final def isSystemUser: Bo = id == SystemUserId
-  final def isSystemOrSysbot: Bo = id == SystemUserId || id == SysbotUserId
+  final def isSysbot: Bo = id == SysbotUserId
+  final def isSystemOrSysbot: Bo = isSystemUser || isSysbot
   final def isStaff: Bo = isAdmin || isModerator || isSystemUser
   final def isHuman: Bo = id >= LowestTalkToMemberId || id <= MaxGuestId
   final def isBuiltIn: Bo = Participant.isBuiltInPerson(id) || Participant.isBuiltInGroup(id)
@@ -705,8 +706,11 @@ sealed trait Pat {
   final def isGuest: Bo = Participant.isGuestId(id) && !isAnon
   final def isGuestOrAnon: Bo = Participant.isGuestId(id)
   final def canAddToGroup: Bo = !isGuestOrAnon && !isSystemOrSysbot
-  // Rename to jus isUser later when "user" means "user not guest" everywhere anyway.
-  final def isUserNotGuest: Bo = isMember && !isGroup && !isBuiltIn
+  RENAME // to jus isUserOrSysbot? later when "user" means "user not guest" everywhere anyway.
+  /** Sysbot counts as a user, because its intended for API clients to use (it's a user
+    * of the API).  But System doesn't count as a user — it's .... the system itself.
+    */
+  final def isUserNotGuest: Bo = isMember && !isGroup && (!isBuiltIn || isSysbot)
 
   def isGroup: Bo
   final def anyMemberId: Opt[MembId] = if (isRoleId(id)) Some(id) else None
@@ -1565,8 +1569,15 @@ case class UsernameUsage(
 }
 
 
+object UnknownParticipant extends BuiltInPat  // RENAME to Stranger?, and break out GuestAnonOrStranger?
 
-object UnknownParticipant extends Participant {  // RENAME to Stranger?, and break out GuestAnonOrStranger?
+object SystemUser_forTests extends BuiltInSysUser_forTests(
+  SystemUserId, "System", "system")
+
+object SysbotUser_forTests extends BuiltInSysUser_forTests(
+  SysbotUserId, "Sysbot", "sysbot")
+
+class BuiltInPat extends Participant {
   override def id: UserId = UnknownUserId
   override def extId: Opt[ExtId] = None
   override def email: String = ""
@@ -1585,6 +1596,20 @@ object UnknownParticipant extends Participant {  // RENAME to Stranger?, and bre
   def nameOrUsername: String = UnknownUserName
   def anyName: Opt[St] = Some(UnknownUserName)
   def anyUsername: Opt[St] = None
+}
+
+/** Currently, for system & sysbot: isModerator and isOwner are false — isAdmin is enough.
+  * And trust level is NewMember. (Not just when testing, but in prod.)
+  */
+class BuiltInSysUser_forTests(override val id: PatId, val name: St, val username: St)
+extends BuiltInPat {
+  override def isApprovedOrStaff = true
+  override def isAdmin = true
+  override def isStaffOrMinTrustNotThreat(level: TrustLevel): Bo = true
+  override def usernameOrGuestName: St = username
+  override def nameOrUsername: St = name
+  override def anyName: Opt[St] = Some(name)
+  override def anyUsername: Opt[St] = Some(username)
 }
 
 
@@ -2182,6 +2207,8 @@ object BrowserIdData {
   val NoFingerprint = 0
   val Missing = BrowserIdData("0.0.0.0", None, NoFingerprint)
   val System = BrowserIdData("127.0.0.1", None, NoFingerprint)
+  // [better_ids]  Change Sysbot to  .2  and Forgotten  to ... maybe .9?
+  val Sysbot = BrowserIdData("127.0.0.4", None, NoFingerprint)
   val Forgotten = BrowserIdData("127.0.0.2", None, NoFingerprint)
 }
 

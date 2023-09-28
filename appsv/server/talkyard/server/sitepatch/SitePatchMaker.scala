@@ -66,6 +66,10 @@ case class SitePatchMaker(context: TyContext) {
 
       val pagePps = tx.loadAllPageParticipantsAllPages().sortBy(_.pageId)
 
+      val types = tx.loadAllTagTypes()
+
+      val tags = tx.loadAllTags_forExport()
+
       val categories = tx.loadCategoryMap().values.toVector.sortBy(_.id)
 
       val permsOnPages = tx.loadPermsOnPages()
@@ -91,6 +95,8 @@ case class SitePatchMaker(context: TyContext) {
         guests = guests,
         guestEmailNotfPrefs = guestEmailNotfPrefs,
         notifications = notfs,
+        types = types,
+        tags = tags,
         categories = categories,
         pages = pageMetas,
         pagePaths = pagePaths,
@@ -261,6 +267,12 @@ object SitePatchMaker {
           }
           json
         }))
+
+      val types: Seq[TagType] = anyDump.map(_.types) getOrElse tx.loadAllTagTypes()
+      fields("types") = JsTagTypeArray(types, inclRefId = true, inclCreatedBy = true)
+
+      val tags: Seq[Tag] = anyDump.map(_.tags) getOrElse tx.loadAllTags_forExport()
+      fields("tags") = JsArray(tags.map(JsX.JsTag))
 
       val permsOnPages: Seq[PermsOnPages] =
         anyDump.map(_.permsOnPages) getOrElse tx.loadPermsOnPages()

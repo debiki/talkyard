@@ -33,7 +33,7 @@ let qwertyAbcReply = `${wordQwertyReply} ${wordAbcdef}`;
 let xyzTitle = "xyz_title";
 
 
-describe("basic publ search:", () => {
+describe("search-public-basic.2br  TyTSEARCHPUBBASIC", () => {
 
   it("initialize people", () => {
     everyone = new TyE2eTestBrowser(wdioBrowser);

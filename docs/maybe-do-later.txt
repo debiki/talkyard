@@ -136,15 +136,21 @@ Nice props / tags in Gerrit: https://chromium-review.googlesource.com/c/v8/v8/+/
 
 [missing_tags_feats]
 Wasn't fixed in first iteration.
-+ search by content tags, incl in ElasticSearch index (faceted search).
 + orig post author user flair (badge).
 + might as well add search-by-user-id/username/full-name at the same time?
-  And upgr ES to 7.x.
+  And upgr ES to 8.x.
 + search for all JsUser(_) — then tags (badges) not included.
 + get notified about posts w tags one follows
 + for some endpoints, [tags_and_badges_missing]
 + access restricted tags [priv_tags]
 
++ [tag_perms] Grant create/edit tag permissions to groups or trust levels?
+
+
+[nested_tags][child_tags] hierarchical tags
+
+[to_paginate]
+E.g. don't list only 100 tags — add a Show More ... button.
 
 [sw] [sse]
 DONE: Service worker.  No, skip, using Websocket instead of:  Server sent events.
@@ -670,6 +676,16 @@ Maybe let  0@username generate a link, but no (zero) notification? or ...
                       Ty would auto add the 2nd '@' even if one typed just 1, if it's a group?
 
 
+[settings_templates]
+Select one of a few pre-defined use cases (ways of using Talkyard), and have
+a bunch of settings automatically tweaked, for that use case.
+  - Organization internal
+  - Public support
+  - Teachers & students
+  - Community
+  - Blog comments
+
+
 [power_admin]
 Various fancy admin features, disabled by default.
 
@@ -1017,6 +1033,8 @@ Without! any long running db transactions. 1) loads the data it needs, in a read
 Then, compiles Commonmark to html, finds all links etc.
 Then, a read-write-tx: If the post wasn't changed since the r/o tx, then
 save the rebuilt post.
+Also, when upgrading ElasticSearch, maybe reindex everything and improve the mapping:
+Change ids, e.g. site & category id, from type integer to type keword.  [es_kwd]
 
 [x_plat_offl_builds]
 Offline builds on various Linux distros, not just Debian 10?

@@ -24,6 +24,7 @@ import debiki.{TextAndHtml, TextAndHtmlMaker, TitleSourceAndHtml, MaxLimits}
 import talkyard.server.authz.{Authz, ForumAuthzContext, MayMaybe}
 import java.{util => ju}
 import org.scalactic.{Good, ErrorMessage, Or, Bad}
+import scala.collection.{immutable => imm}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import talkyard.server.dao._
@@ -390,6 +391,11 @@ trait CategoriesDao {
     Map.apply(ids.flatMap(id => {
       getCategory(id).map(id -> _)
     }).toSeq : _*)
+  }
+
+
+  def getCatsBySlugs(catNames: Iterable[St]): imm.Seq[Opt[Cat]] = {
+    catNames.to[Vec] map getCategoryBySlug
   }
 
 
@@ -764,6 +770,9 @@ trait CategoriesDao {
 
 
   /** Returns (categoriesById, categoriesByParentId).
+    *
+    * [caches_the_cats], until garbage collected (typically until any ongoing
+    * HHTP request has finished).
     */
   private def getAndRememberCategories()
         : (Map[CategoryId, Category], Map[CategoryId, Vector[Category]]) = {
@@ -966,6 +975,7 @@ trait CategoriesDao {
 
     val aboutPagePath = createPageImpl(
         PageType.AboutCategory, PageStatus.Published, anyCategoryId = Some(categoryId),
+        withTags = Nil,
         anyFolder = None, anySlug = Some("about-" + newCategoryData.slug), showId = true,
         title = titleSourceAndHtml, body = bodyTextAndHtml,
         pinOrder = None, pinWhere = None,

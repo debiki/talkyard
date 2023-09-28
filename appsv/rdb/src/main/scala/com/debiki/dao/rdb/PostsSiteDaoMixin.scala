@@ -78,6 +78,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
           $groupBy__siteId_postId
           order by po.site_id, po.unique_post_id """
 
+  private val and__po_approved_at__is_not_null = "and po.approved_at is not null"
+
   private def loadPostsOnPageImpl(pageId: PageId, postNr: Opt[PostNr]): Vec[Post] = {
     // Similar to:  loadPostsByNrs(_: Iterable[PagePostNr])
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef, pageId)
@@ -319,10 +321,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   } */
 
 
-  def loadPostsByQuery(postQuery: PostQuery): /* limit: Int, orderBy: OrderBy, byUserId: Option[UserId],
-        relatedToPat: Opt[(PatId, PatNodeRelType)] = None,
-        includeTitlePosts: Boolean, includeUnapproved: Boolean,
-        inclUnlistedPagePosts_unimpl: Boolean): */ immutable.Seq[Post] = {
+  def loadPostsByQuery(postQuery: PostQuery): immutable.Seq[Post] = {
     dieIf(postQuery.orderBy != OrderBy.MostRecentFirst, "EdE1DRJ7Y", "Unimpl")
 
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef)
@@ -339,13 +338,14 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     val andNotTitle = postQuery.inclTitles ? "" | s"and po.post_nr <> $TitleNr"
 
     val andSomeVersionApproved = postQuery.inclUnapproved ?
-          "" | "and po.approved_at is not null"
+          "" | and__po_approved_at__is_not_null
 
     // This'll require a join w pages3 and categories3.
     val andPageNotUnlisted_unimpl = !postQuery.inclUnlistedPagePosts ? "" | ""
 
     val (andRelatedPatIdEq, andRelTypeEq, anyOrderByRelAddedAt)  = postQuery match {
       case q: PostQuery.PostsRelatedToPat[_] =>
+        CLEAN_UP; REMOVE // Or? Not in use.
         // Including tasks assigned to one's anonyms, hasn't been implemented.
         unimplIf(postQuery.inclAnonPosts, "TyEANONUNIMP05") ; ANON_UNIMPL
 
@@ -367,6 +367,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
     val select__posts_po__theJoin__patPostRels_pa =
           if (andRelatedPatIdEq.nonEmpty) {
+            CLEAN_UP; REMOVE // Or? Not in use.
             unimpl("Would .not_load_all_post_rels [TyE602MRTL6]")
 
             // Then we want only posts with at least one relationship to the pat id.
@@ -433,10 +434,54 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def loadPostsByTag(tagTypeId: TagTypeId, inclUnapproved: Bo, limit: i32,
+          orderBy: OrderBy): immutable.Seq[Post] = {
+    dieIf(orderBy != OrderBy.MostRecentFirst, "TyE60RKTJF9", "Unimpl")
+    COULD_OPTIMIZE // inner-join posts3 and tags_t first?  [posts_join_order]
+
+    val andSomeVersionApproved = inclUnapproved ?
+          "" | and__po_approved_at__is_not_null
+
+    val orderBySql = orderBy match {
+      case OrderBy.MostRecentFirst => "po.created_at desc"
+      case OrderBy.OldestFirst => "po.created_at asc"
+    }
+    /* [sort_tag_vals_in_pg]
+    val orderBySql = orderBy match {
+      case PostsWithTagOrder.ByPublishedAt(desc) => "po.created_at desc, po.unique_post_id desc"
+      case PostsWithTagOrder.ByTagValue(desc, valType) =>
+        val colName = valType match {
+          case "i32" => "val_i32_c"
+          case "f64" => "val_f64_c"
+          case "str" => "val_str_c"
+        }
+        val descSql = if (desc) " desc" else ""
+        s"t.$colName $descSql"  // maybe better avoid:  po.created_at desc, po.unique_post_id desc  ?
+    } */
+
+    val query = s""" -- loadPostsByTag
+          $select__posts_po__leftJoin__patPostRels_pa
+          inner join  tags_t t
+             on   t.site_id_c    =  po.site_id
+             and  t.on_post_id_c =  po.unique_post_id
+             and  t.tagtype_id_c =  ?
+          where  po.site_id =  ?
+            and  (po.type is null  or  po.type between 1 and 12)  -- [depr_post_type]
+            and  po.deleted_at is null
+            and  po.hidden_at is null
+            $andSomeVersionApproved
+          $groupBy__siteId_postId
+          order by  $orderBySql  limit $limit """
+    runQueryFindMany(query, List(tagTypeId.asAnyRef, siteId.asAnyRef), rs => {
+      readPost(rs)
+    })
+  }
+
+
   def loadEmbeddedCommentsApprovedNotDeleted(limit: Int, orderBy: OrderBy): immutable.Seq[Post] = {
     dieIf(orderBy != OrderBy.MostRecentFirst, "TyE60RKTJF4", "Unimpl")
     COULD_OPTIMIZE // It would be better to inner-join posts3 and pages3 first, before
-    // left-outer-joining with post_actions3?
+    // left-outer-joining with post_actions3? [posts_join_order]
     val query = s""" -- loadEmbeddedCommentsApprovedNotDeleted
       $select__posts_po__leftJoin__patPostRels_pa
       inner join pages3 pg using (site_id, page_id)
@@ -932,7 +977,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
   // Will return a set or list, later when there can be many authors per post.
   def loadAuthorIdsByPostId(postIds: Set[PostId]): Map[PostId, UserId] = {
-    // Tested here: TyT5086XJW2 (the e2e test api-search-full-text.test.ts)
+    // Tested here:
+    //   - api-search-full-text.1br.f  TyT70ADNEFTD36.TyT5086XJW2
     if (postIds.isEmpty)
       return Map.empty
 

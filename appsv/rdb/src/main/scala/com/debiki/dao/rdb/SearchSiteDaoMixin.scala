@@ -53,6 +53,12 @@ trait SearchSiteDaoMixin extends SiteTransaction {
         values (?, ?, ($selectSiteVersion), ?, ?)
       $OnPostConflictAction
       """
+
+    BUG; UX; COULD // pretty harmless: Might make it take a tiny bit longer for edits to
+    // become visible to the full-text-search engine:
+    //      action_at shouldn't always be createdAt? What if the post
+    // just got *edited* recently?  Then, better use now().
+
     // What if appr rev nr gets decremented? should that perhaps not be allowed? [85YKF30]
     val revNr = post.approvedRevisionNr.getOrElse(post.currentRevisionNr)
     val values = List(post.createdAt, siteId.asAnyRef, siteId.asAnyRef,
@@ -60,6 +66,23 @@ trait SearchSiteDaoMixin extends SiteTransaction {
     runUpdateSingleRow(statement, values)
   }
 
+  def indexPostIdsSoon_unimpl(postIds: Set[PostId]) {
+    unimpl("Not implemented:  indexPostIdsSoon_unimpl")
+    /* Sth like this:
+    val statement = s"""
+        insert into index_queue3 (action_at, site_id, site_version, post_id, post_rev_nr)
+        select ?, ?, ($selectSiteVersion), post_id, post_rev_nr
+        from posts3 where site_id = ? and unique_post_id in (${makeInListFor(postIds)})
+        $OnPostConflictAction """
+
+    val values = List(
+        tx.now(), siteId.asAnyRef, siteId.asAnyRef,
+        ...postIds.asAnyRef,
+        // For looking up the post rev nr:
+        siteId.asAnyRef, post.id.asAnyRef)
+    runUpdate(statement, values)
+     */
+  }
 
   def indexAllPostsOnPage(pageId: PageId) {
     val statement = s"""

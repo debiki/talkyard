@@ -113,10 +113,12 @@ Cr  = create
 Cu  = Custom, e.g. CuNav = custom navigation links
 CUD = create user dialog
 D  = dialog,  e.g. AbtUsrD
+Dlg,
 Dg = dialog, when inside a phrase, e.g. InstaDgW = Instant-Dialog-Wrap
 Dd = deleted
 Del,
 Dl = delete  — change to 'Dt'? 'Dl' looks like Download doesn't it?
+Dnd = denied, as in Access Denied
 Dft,
 Df  = draft
 DiVo = Do-It vote
@@ -126,6 +128,8 @@ Dsc,
 Disc = discussion
 Dl = download — change to Dwnl? so rare
 Dis = disabled, Ena = enabled
+Drp = drop
+Drpd = dropdown
 Ed  = edit
 Edr = editor
 Eff = effective, but Fx = effect
@@ -197,10 +201,10 @@ R   = table row,  NO, should be Rw, and Cl = column
 Rw, Row = row, Col = column
 Sav = save
 SAn = Server Announcement, also see Ann = announcement
+Sbm = submit
 Sch = Search
 SgU = sign up, also LgI/LgO = log in/out, and Au = Authentication, e.g. AuD
 Sm  = small (screen), also: Md, Lg, Xl
-Sbm = submit
 Snz = Snooze
 SStg = Site Setting
 St = status or state

@@ -232,11 +232,7 @@ class SiteTpi protected (
           "isTestSite" -> site.isTestSite,  // .toString },
           "loadGlobalAdminScript" -> globals.loadGlobalAdminScript, // .toString },
           "loadGlobalStaffScript" -> globals.loadGlobalStaffScript, // .toString },
-          "mainWorkUntilSecs" -> {
-            // Extra line to avoid weird compil err.
-            val s: Long = globals.maintWorkUntilSecs.getOrElse(0L)
-            JsNumber(s)
-          })
+          )
 
     if (isCreateSitePage) {
       safeStaticJson += "baseDomain" -> JsString(globals.baseDomainNoPort)

@@ -44,6 +44,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   def createPage: Action[JsValue] = PostJsonAction(RateLimits.CreateTopic, maxBytes = 20 * 1000) {
         request =>
     import request.{dao, theRequester => requester}
+    // Similar to Do API with CreatePageParams. [create_page]
 
     throwForbiddenIf(requester.isGroup, "EdE3FDK7M6", "Groups may not create pages")
 
@@ -92,7 +93,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(anyCategoryId)
 
-    throwNoUnless(Authz.mayCreatePage(
+    throwNoUnless(Authz.mayCreatePage(  // [dupl_api_perm_check]  use createPageIfAuZ() instead CLEAN_UP
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
       pageRole, PostType.Normal, pinWhere = None, anySlug = anySlug, anyFolder = anyFolder,
       inCategoriesRootLast = categoriesRootLast,

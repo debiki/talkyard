@@ -197,6 +197,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     if (anyFolder.exists(!PagePath.isOkayFolder(_)))
       throwBadReq("DwE4KEF23", "Bad folder, must be like: '/some/folder/'")
 
+    // Also done for tag type slugs. [dupl_slug_checks]
     if (anySlug.exists(_.length > PagePath.MaxSlugLength))
       throwBadReq("TyE5YWH3A", s"Bad page slug: Too long — max ${PagePath.MaxSlugLength} characters")
 

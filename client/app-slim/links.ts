@@ -62,6 +62,11 @@ export function linkToPostNr(pageId: PageId, postNr: PostNr): string {
 }
 
 
+export function linkToType(type: TagType): St {
+  return origin() + UrlPaths.Tags + (type.urlSlug || type.id);
+}
+
+
 export function linkToAdminPage(): string {
   return origin() + '/-/admin/';
 }

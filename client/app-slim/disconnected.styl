@@ -1,9 +1,11 @@
 // Move and rename file to?...  topbar/important-messages.styl  ?
 //                       or to  global-messages.styl  ?
 
-.s_MaintWorkM,
 .s_NoInetM  // [NOINETMSG]
   display: none;
+
+.c_MaintWorkM,
+.s_NoInetM  // [NOINETMSG]
   margin: 5px 5px 0;
   padding: 4px 10px 5px 12px;
   font-size: 14.5px;
@@ -17,7 +19,8 @@
     padding: 10px 22px 13px
     font-size: 15.5px;
 
-.s_MaintWorkM button
+/* Currently not included. Maybe later.
+.c_MaintWorkM button
   margin: 2px 3px 0 0;
   padding: 1px 7px 3px;
   border: none;
@@ -25,14 +28,21 @@
   background: hsl(207 100% 47%);
   box-shadow: 3px 2px 3px rgba(0, 0, 0, 0.35);
   font-weight: bold;
+  */
 
-html.n_MaintWork .s_MaintWorkM,
 html.s_NoInet .s_NoInetM
   display: inline-block;
 
-.s_Tb-Fxd .s_MaintWorkM
+.s_Tb-Fxd .c_MaintWorkM
+  // Show when has scrolled down.
+  display: inline-block;
   // Otherwise the page title will be 0px to the right. [maint_msg_in_middle]
   margin-right: 17px;
+
+.s_Tb-Stc .c_MaintWorkM
+  // Hide. When hasn't scrolled down, there's [another_maint_msg] in a server
+  // announcement box visible at the top of the page.
+  display: none;
 
 // Or maybe use this always? — Let's wait.
 html.n_MaintWork .esTopbar_custom
@@ -42,6 +52,14 @@ html.n_MaintWork .esTopbar_custom
 html.n_MaintWork .s_TbW-Stc
   margin-bottom: 20px;
 
+// Shown together with other server announcements.
+.c_MaintWorkM
+  display: block;
+  max-width: 700px;
+  margin: 0 auto;
+  h1, h2
+    margin: 0 auto 0.6ex;
+    text-align: center;
 
 // For now, until has made WebSocket reconnect work, see: tryReonnectWebSocket() [WSRECONN].
 .s_NoInetM
@@ -66,7 +84,12 @@ html.n_MaintWork
   // The edit-forum-intro button.
   .esForumIntro_edit,
   // It's ok to click View Answer, but not any other Change Page dialog button.
-  .s_ChPgD button:not(.e_VwAnsB)
-    opacity: 0.4 !important;
+  .s_ChPgD button:not(.e_VwAnsB),
+  // User profile pages
+  .s_UP_Act_List input,
+  .s_UP_Act_List textarea,
+  .s_UP_Act_List button,
+  .s_UP_Prefs_ChangePwB
+    opacity: 0.43 !important;
     pointer-events: none;
     cursor: not-allowed;

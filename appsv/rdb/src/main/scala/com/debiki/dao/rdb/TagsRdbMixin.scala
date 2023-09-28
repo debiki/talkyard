@@ -24,6 +24,7 @@ import RdbUtil._
 import java.sql.{ResultSet => j_ResultSet, SQLException => j_SQLException}
 import collection.{mutable => mut}
 
+import TagsRdbMixin._
 
 
 /** Manages tags on posts and pats.
@@ -95,24 +96,35 @@ trait TagsRdbMixin extends SiteTransaction {
           insert into tagtypes_t (
               site_id_c,
               id_c,
+              ref_id_c,
               can_tag_what_c,
               url_slug_c,
               disp_name_c,
-              created_by_id_c)
-          values (?, ?, ?, ?, ?, ?)
+              created_by_id_c,
+              wants_value_c,
+              value_type_c)
+          values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          -- It's ok to always use id_c, not ref_id_c, see: [type_id_or_ref_id].
           on conflict (site_id_c, id_c) do update set
+              ref_id_c = excluded.ref_id_c,
               can_tag_what_c = excluded.can_tag_what_c,
               url_slug_c = excluded.url_slug_c,
-              disp_name_c = excluded.disp_name_c
+              disp_name_c = excluded.disp_name_c,
               -- leave created_by_id_c as is
+              wants_value_c = excluded.wants_value_c,
+              value_type_c = excluded.value_type_c
               """
     val values = List(
           siteId.asAnyRef,
           tagType.id.asAnyRef,
+          tagType.refId.orNullVarchar,
           tagType.canTagWhat.asAnyRef,
-          NullVarchar, // later: tagType.urlSlug_unimpl,
+          tagType.urlSlug.orNullVarchar,
           tagType.dispName,
-          tagType.createdById.asAnyRef)
+          tagType.createdById.asAnyRef,
+          tagType.wantsValue.map(_.toInt).orNullInt32,
+          tagType.valueType.map(_.toInt).orNullInt32,
+          )
 
     try runUpdateExactlyOneRow(statement, values)
     catch {
@@ -193,6 +205,13 @@ trait TagsRdbMixin extends SiteTransaction {
   }
 
 
+  def loadAllTags_forExport(): ImmSeq[Tag] = {
+    val query = """ -- loadAllTags_forExport
+          select * from tags_t where site_id_c = ?  """
+    runQueryFindMany(query, List(siteId.asAnyRef), parseTag)
+  }
+
+
   override def loadPostTagsAndAuthorBadges(postIds: Iterable[PostId]): TagsAndBadges = {
     if (postIds.isEmpty)
       return TagsAndBadges(
@@ -255,7 +274,7 @@ trait TagsRdbMixin extends SiteTransaction {
   }
 
 
-  def addTag(tag: Tag): U = {
+  def insertTag(tag: Tag): U = {
     val statement = s"""
           insert into tags_t (
               site_id_c,
@@ -263,44 +282,86 @@ trait TagsRdbMixin extends SiteTransaction {
               tagtype_id_c,
               parent_tag_id_c,
               on_pat_id_c,
-              on_post_id_c)
-            values (?, ?, ?, ?, ?, ?) """
+              on_post_id_c,
+              val_type_c,
+              val_i32_c,
+              val_f64_c,
+              val_str_c)
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """
     val values = List(
           siteId.asAnyRef,
           tag.id.asAnyRef,
           tag.tagTypeId.asAnyRef,
           tag.parentTagId_unimpl.orNullInt,
           tag.onPatId.orNullInt,
-          tag.onPostId.orNullInt)
+          tag.onPostId.orNullInt,
+          tag.valType.map(_.toInt).orNullInt,
+          tag.valInt32.orNullInt,
+          tag.valFlt64.orNullFloat64,
+          tag.valStr.trimOrNullVarchar)
     runUpdateExactlyOneRow(statement, values)
   }
 
 
-  def removeTags(tags: Seq[Tag]): U = {
+  def updateTag(tag: Tag): U = {
+    val statement = s"""
+          update tags_t set
+            val_type_c = ?,
+            val_i32_c = ?,
+            val_f64_c = ?,
+            val_str_c = ?
+          where site_id_c = ?
+            and id_c = ? """
+    val values = List(
+          tag.valType.map(_.toInt).orNullInt,
+          tag.valInt32.orNullInt,
+          tag.valFlt64.orNullFloat64,
+          tag.valStr.trimOrNullVarchar,
+          siteId.asAnyRef,
+          tag.id.asAnyRef)
+    runUpdateExactlyOneRow(statement, values)
+  }
+
+
+  def deleteTags(tags: Seq[Tag]): U = {
     if (tags.isEmpty) return ()
     val statement = s"""
           delete from tags_t where site_id_c = ? and id_c in (${makeInListFor(tags)}) """
     val values = siteId.asAnyRef :: tags.map(_.id.asAnyRef).toList
     runUpdate(statement, values)
   }
+}
 
 
-  private def parseTagType(rs: j_ResultSet): TagType = {
+object TagsRdbMixin {
+
+  def parseTagType(rs: j_ResultSet): TagType = {
     TagType(
           id = getInt(rs, "id_c"),
+          refId = getOptString(rs, "ref_id_c"),
           canTagWhat = getInt(rs, "can_tag_what_c"),
-          urlSlug_unimpl = getOptString(rs, "url_slug_c"),
+          urlSlug = getOptString(rs, "url_slug_c"),
           dispName = getString(rs, "disp_name_c"),
-          createdById = getInt(rs, "created_by_id_c"))(IfBadDie)
+          createdById = getInt(rs, "created_by_id_c"),
+          wantsValue = NeverAlways.fromOptInt(getOptInt(rs, "wants_value_c")),
+          valueType = getOptInt(rs, "value_type_c").flatMap(TypeValueType.fromInt),
+          )(IfBadDie)
   }
 
 
-  private def parseTag(rs: j_ResultSet): Tag = {
+  def parseTag(rs: j_ResultSet): Tag = {
     Tag(id = getInt(rs, "id_c"),
           tagTypeId = getInt(rs, "tagtype_id_c"),
           parentTagId_unimpl = getOptInt32(rs, "parent_tag_id_c"),
           onPatId = getOptInt32(rs, "on_pat_id_c"),
-          onPostId = getOptInt32(rs, "on_post_id_c"))(IfBadDie)
+          onPostId = getOptInt32(rs, "on_post_id_c"),
+          valType = getOptInt32(rs, "val_type_c").flatMap(TypeValueType.fromInt),
+          valInt32 = getOptInt32(rs, "val_i32_c"),
+          valFlt64 = getOptFloat64(rs, "val_f64_c"),
+          valStr = getOptString(rs, "val_str_c"),
+          // val_url_c — later
+          // val_jsonb_c
+          )(IfBadDie)
   }
 
 }
