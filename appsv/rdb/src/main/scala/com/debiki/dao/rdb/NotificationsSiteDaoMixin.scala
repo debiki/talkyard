@@ -278,8 +278,12 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
       if (postIds.isEmpty)
         return 0
       // Tested here:  notfs-mark-seen-as-seen  TyT2AKBR0T
+      import NotificationType.{PostChangedNotfTypeMin, PostChangedNotfTypeMax}
       values.appendAll(postIds.map(_.asAnyRef))
-      s"about_post_id_c in (${ makeInListFor(postIds) })"
+      s"about_post_id_c in (${ makeInListFor(postIds)
+            // Don't clear Un/Assigned or Post-tagged notifications. Such changes
+            // are hard to notice. [0clr_asgd_tagd_notfs]
+            }) and notf_type not between $PostChangedNotfTypeMin and $PostChangedNotfTypeMax"
     })).getOrElse({
       // This marks all one's notf as read. Tested here: [TyT4KA2PU6]
       "true"

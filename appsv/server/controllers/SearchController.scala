@@ -21,11 +21,13 @@ import com.debiki.core._
 import debiki.{RateLimits, SiteTpi}
 import talkyard.server.search._
 import talkyard.server.http._
+import talkyard.server.authz.AuthzCtxOnForum
 import debiki.EdHttp._
 import scala.collection.immutable.Seq
 import Prelude._
-import debiki.dao.{SearchQuery, SiteDao}
+import debiki.dao.SiteDao
 import talkyard.{server => tysv}
+import talkyard.server.JsX.JsErrMsgCode
 import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import play.api.libs.json.{JsObject, JsValue}
@@ -40,7 +42,6 @@ import talkyard.server.api.ThingsFoundJson
 class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
   extends TyController(cc, edContext) {
 
-  import SearchController._
 
   /** 'q' not 'query', so urls becomes a tiny bit shorter, because people will sometimes
     * copy & paste search phrase urls in emails etc? Google uses 'q' not 'query' anyway.
@@ -56,20 +57,16 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   def doSearch(): Action[JsValue] = AsyncPostJsonAction(RateLimits.FullTextSearch, maxBytes = 1000) {
         request: JsonPostRequest =>
-    import request.{dao, user => requester}
+    import request.dao
 
     val rawQuery = (request.body \ "rawQuery").as[String]
-    val searchQuery = parseRawSearchQueryString(rawQuery, categorySlug => {
-      // BUG (need not fix now): What if many sub communities, with the same cat slug? [4GWRQA28]
-      // Then, could prefix with the community / forum-page name, when selecting category?
-      // And if unspecified — search all cats w matching slug?
-      dao.getCategoryBySlug(categorySlug).map(_.id)
-    })
+    val searchQuery = SearchQueryParser.parseRawSearchQueryString(rawQuery, dao.readOnly)
 
-    dao.fullTextSearch(searchQuery, anyRootPageId = None, requester,
+    dao.fullTextSearch(searchQuery, anyRootPageId = None, request.authzContext,
           addMarkTagClasses = true) map { results: SearchResultsCanSee =>
       import play.api.libs.json._
       OkSafeJson(Json.obj(
+          "warnings" -> JsArray(searchQuery.warnings.map(JsErrMsgCode)),
           "pagesAndHits" -> results.pagesAndHits.map((pageAndHits: PageAndHits) => {
             Json.obj(
               "pageId" -> pageAndHits.pageId,
@@ -82,7 +79,11 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
                 "approvedRevisionNr" -> hit.approvedRevisionNr,
                 "approvedTextWithHighlightsHtml" ->
                     Json.arr(hit.approvedTextWithHighligtsHtml),  // BUG: double array. Harmless, is waht the browse expects :- P
-                "currentRevisionNr" -> hit.currentRevisionNr
+                "currentRevisionNr" -> hit.currentRevisionNr,
+                // Later, see [post_to_json], and ThingsFoundJson.makePagesFoundSearchResponse:
+                // "pubTags" -> JsArray(postTags map JsTag),
+                // "authorIds" ->  ...
+                // "assigneeIds" -> ...
               ))))
           })
         ))
@@ -90,32 +91,20 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  /** "Freetext" refers to free-form text, meaning, unstructured text:
-    * the user can type anything. And the server interprets the meaning as best
-    * it can, maybe interprets "buy ice skating shoes" as "buy ice skates".
-    */
-  def apiV0_search_get(freetext: Option[String], pretty: Option[Boolean]): Action[Unit] =  // [PUB_API]
+  def apiV0_search_get(/*freetext: Opt[St], pretty: Opt[Bo]*/): Action[Unit] =  // [PUB_API]
          AsyncGetActionRateLimited( RateLimits.FullTextSearch) { request: GetRequest =>
-    import request.{dao, user => requester}
-
-    // Actually, maybe allow POST only? However it's nice to get this developer
+    // Allow POST only. However it's nice to get this developer
     // friendly No message, rather than an "endpoint not found" error. [devfriendly]
     throwForbidden("TyEUSEPOST",
           "You did a GET request to /-/v0/search, please use POST instead")
-
+    /*
     // Developer friendly. Otherwise, if freetext: String (not Option), then Play
-    // replies with lots of HTML, but that's hard to read when in Dev Tools or
-    // Bash + curl.
+    // replies with lots of HTML and CSS with an error message, but that's hard to read
+    // when having sent the request from Dev Tools or Bash + curl.
     val theText = freetext.getOrThrowBadRequest("TyEAPI0QUERY",
           o"""You did a GET request, but  ?freetext=... query param missing.
             Or you can send a POST request with JSON body""")
-
-    val searchQuery = parseRawSearchQueryString(theText, categorySlug => {
-      // BUG (need not fix now): What if many sub communities, same cat slug? [4GWRQA28]
-      dao.getCategoryBySlug(categorySlug).map(_.id)
-    })
-
-    doSearchPubApiImpl(searchQuery, dao, request, requester, pretty.getOrElse(false))
+    */
   }
 
 
@@ -128,79 +117,35 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val q = (searchQueryJson \ "freetext").as[String]
 
     // Right now, only { freetext: ... } supported — same as: GET /-/v0/search?freetext=...  .
-    val searchQuery = parseRawSearchQueryString(q, categorySlug => {
-      // BUG (need not fix now): What if many sub communities, same cat slug? [4GWRQA28]
-      dao.getCategoryBySlug(categorySlug).map(_.id)
-    })
+    val searchQuery = SearchQueryParser.parseRawSearchQueryString(q, dao.readOnly)
 
-    // Public API — run the search query as a not logged in user, None.
-    val requester: Option[User] = None
+    // Public API — run the search query as a not logged in user.
+    val pubAuthzCtx = dao.getForumPublicAuthzContext()
 
-    doSearchPubApiImpl(searchQuery, dao, request, requester, pretty)
+    doSearchPubApiImpl(searchQuery, dao, request, pubAuthzCtx, pretty)
   }
 
 
 
   private def doSearchPubApiImpl(searchQuery: SearchQuery,
-        dao: SiteDao, request: ApiRequest[_], requester: Option[Participant],
-        pretty: Boolean): Future[Result] = {
+        dao: SiteDao, request: ApiRequest[_], authzCtx: AuthzCtxOnForum,
+        pretty: Bo): Future[Result] = {
     // No <mark> tag class. Instead, just: " ... <mark>text hit</mark> ...",
     // that is, don't:  <mark class="...">  — so people cannot write code that
     // relies on those classes.
-    dao.fullTextSearch(searchQuery, anyRootPageId = None, requester,
+    dao.fullTextSearch(searchQuery, anyRootPageId = None, authzCtx,
           addMarkTagClasses = false) map { results: SearchResultsCanSee =>
-      val authzCtx = dao.getAuthzContextOnPats(request.reqer)
+
+      // We're using the authz ctx below not to filter pages and comments, but to
+      // know if names of other users should be included — in the future, some
+      // members might be private [private_pats].
+      WOULD_OPTIMIZE // reuse authzCtx, but currently it's for pages only (not for
+      // see-user perms).
+      val authzCtxOnPats = dao.getAuthzContextOnPats(request.reqer)
+
       ThingsFoundJson.makePagesFoundSearchResponse(results, dao,
-            tysv.JsonConf.v0_0(pretty = pretty), authzCtx)
+            tysv.JsonConf.v0_0(pretty = pretty), authzCtxOnPats)
     }
-  }
-
-}
-
-
-object SearchController {
-
-  SECURITY // can these regexes be DoS attacked?
-  // Regex syntax: *? means * but non-greedy — but doesn't work, selects "ccc,ddd" in this:
-  // "tags:aaa,bbb tags:ccc,ddd", why, wheird [4GPK032]
-  private val TagNamesRegex =        """^(?:.*? )?tags:([^ ]*) *(?:.*)$""".r
-  private val NotTagNamesRegex =     """^(?:.*? )?-tags:([^ ]*) *(?:.*)$""".r
-  private val CatSlugsRegex =        """^(?:.*? )?categories:([^ ]*) *(?:.*)$""".r
-
-
-  def parseRawSearchQueryString(rawQuery: String,
-        getCategoryIdFn: String => Option[CategoryId]): SearchQuery = {
-    // Sync with parseSearchQueryInputText(text) in JS [5FK8W2R]
-    var fullTextQuery = rawQuery
-
-    // Look for and replace "-tags" first, before "tags" (which would otherwise also match "-tags").
-    val notTagNames: Set[String] = NotTagNamesRegex.findGroupIn(rawQuery) match {
-      case None => Set.empty
-      case Some(commaSeparatedTags) =>
-        fullTextQuery = fullTextQuery.replaceAllLiterally(s"-tags:$commaSeparatedTags", "")
-        commaSeparatedTags.split(',').toSet.filter(_.nonEmpty)
-    }
-
-    val tagNames: Set[String] = TagNamesRegex.findGroupIn(rawQuery) match {
-      case None => Set.empty
-      case Some(commaSeparatedTags) =>
-        fullTextQuery = fullTextQuery.replaceAllLiterally(s"tags:$commaSeparatedTags", "")
-        commaSeparatedTags.split(',').toSet.filter(_.nonEmpty)
-    }
-
-    val categoryIds: Set[CategoryId] = CatSlugsRegex.findGroupIn(rawQuery) match {
-      case None => Set.empty
-      case Some(commaSeparatedCats) =>
-        fullTextQuery = fullTextQuery.replaceAllLiterally(s"categories:$commaSeparatedCats", "")
-        val slugs = commaSeparatedCats.split(',').toSet.filter(_.nonEmpty)
-        slugs.flatMap(getCategoryIdFn(_))
-    }
-
-    SearchQuery(
-      fullTextQuery = fullTextQuery.trim, // ignore weird unicode blanks for now
-      tagNames = tagNames,
-      notTagNames = notTagNames,
-      categoryIds = categoryIds)
   }
 
 }

@@ -1327,11 +1327,12 @@ class EdSecurity(globals: Globals) {
   /** Use this if page not found, or the page is private and we don't want strangers
     * to find out that it exists. [7C2KF24]
     */
-  def throwIndistinguishableNotFound(devModeErrCode: String = ""): Nothing = {
+  def throwIndistinguishableNotFound(devModeErrCode: St = "",
+          showErrCodeAnyway: Bo = false): Nothing = {
     val suffix =
-      if (!globals.isProd && devModeErrCode.nonEmpty) s"-$devModeErrCode"
+      if (showErrCodeAnyway || !globals.isProd && devModeErrCode.nonEmpty) s"-$devModeErrCode"
       else ""
-    throwNotFound("TyE404_" + suffix, "Page not found")
+    throwNotFound("TyE404_" + suffix, "Not found")
   }
 
   def throwNoUnless(mayMaybe: MayMaybe, errorCode: String): Unit = {

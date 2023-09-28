@@ -76,8 +76,14 @@ http://localhost:9200/_aliases
 List everything:  
 http://localhost:9200/_search?pretty&size=9999
 
-List posts in site 3:  
+List posts in site 3:  (note: routing=3)
 http://localhost:9200/all_english_v1/post/_search?pretty&routing=3&size=9999
+
+Get post 110, site -12, by id: (note that the id must be "quoted")
+curl 'http://localhost:9200/all_english_v1/post/_search?pretty&q=_id:"-12:110"'
+
+Show mappings:
+curl http://localhost:9200/all_english_v1/_mapping
 
 Search:  
 http://localhost:9200/_search?pretty&q=approvedText:zzwwqq2
@@ -92,7 +98,13 @@ $ curl -XGET 'http://localhost:9200/_search' -d '{
     "query" : {
         "term" : { "approvedText" : "something" }
     }
-}
+}'
+
+# Or, with JSON in a file:
+curl -X POST -H 'Content-Type: application/json' 'http://localhost:9200/_search' -d @data.json
+
+# The data.json contents could be e.g.:
+    {"from":0,"size":60,"query":{"bool":{"filter":...,"must":...}}...}
 ```
 
 Reindex everything: (might take long: minutes/hours/weeks, depending on db size)
@@ -145,7 +157,12 @@ rsync -av  \
 ### ASCII punctuation chars
 
 ```
-!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
+All ASCII symbols, in char val order:  [all_symbols]
+ ! " # $ % & ' ( ) * + , - .  / : ; < = > ?  @ [ \ ] ^ _ ` { | } ~
 
-! " # $ % & ' () * + , - .  / : ; < = > ?  @ ` [ \ ~ ] ↑ ^ ← _ { ¬ | }
+In Java regexps, these need to be escaped: (not always, e.g. '-' at the end of [...])
+\.[]{}()<>*+-=!?^$|
+
+What's these? Some extras:
+ ! " # $ % & ' ( ) * + , - .  / : ; < = > ?  @ ` [ \ ~ ] ↑ ^ ← _ { ¬ | }
 ```

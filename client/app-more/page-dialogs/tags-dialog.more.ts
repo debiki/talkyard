@@ -51,12 +51,25 @@ interface TagsDiagState {
   onChanged?: () => Vo;
 }
 
+const VisibleToAll = () => rFr({},  // [priv_tags]
+  "Tag are currently ", r.b({}, "visible"),
+  " to ", r.b({}, "everyone"), " with access to this site.");
 
 export function openTagsDialog(ps: TagDiagProps) {
-  if (!tagsDialog) {
-    tagsDialog = ReactDOM.render(TagsDialog(), utils.makeMountNode());
-  }
-  tagsDialog.open(ps);
+  // We need the editor-bundle.js; it contains window.debikiSlugify [5FK2W08].
+  Server.loadEditorAndMoreBundles(() => help.openHelpDialogUnlessHidden({
+    className: 'e_TgVisD',
+    content: r.span({},
+      VisibleToAll(),
+      " So don't create tags with \"secret\" names."),
+    id: 'TAGVIS44',
+    doAfter: function() {
+      if (!tagsDialog) {
+        tagsDialog = ReactDOM.render(TagsDialog(), utils.makeMountNode());
+      }
+      tagsDialog.open(ps);
+    }
+  }));
 }
 
 
@@ -155,17 +168,20 @@ const TagsDialog = createComponent({
     this.setState({ canAddTag: canAddTag });
   },
 
-  createTagTypeAddTag: function() {
-    // [redux] modifying state in place
-    const newTagType: TagType = {
-      id: No.TagTypeId as TagTypeId,
-      dispName: this.refs.newTagInput.getValue(),
-      // Dropdown/checkbox to select what can be tagged? [missing_tags_feats]
-      // For now: (badges more often requested than content tags)
-      canTagWhat: ThingType.Pats,
-    };
+  upsertTypeAddTag: function() {
+    // [redux] modifying state in place  [edit] Hmm? Where?
     const stateBef: TagsDiagState = this.state;
-    Server.createTagType(newTagType, (tagTypeWitId: TagType) => {
+    const dispName: St = this.refs.newTagInput.getValue();
+    const newTagType: TagType = {
+      // The server will generate an id.
+      id: No.TagTypeId as TagTypeId,
+      dispName,
+      urlSlug: window['debikiSlugify'](dispName),
+      // Dropdown/checkbox to select what can be tagged? [missing_tags_feats]
+      // But we can just look at if we've opened this dialog via a user or a post:
+      canTagWhat: stateBef.forPat ? ThingType.Pats : ThingType.Posts,
+    };
+    Server.upsertType(newTagType, (tagTypeWitId: TagType) => {
       if (this.isGone) return;
       const stateAft: TagsDiagState = this.state;
       const differentPat = stateBef.forPat?.id !== stateAft.forPat?.id;
@@ -198,7 +214,7 @@ const TagsDialog = createComponent({
         tagsRemoved.push(tagBef);
       }
     }
-    Server.addRemoveTags({ add: tagsAdded, remove: tagsRemoved }, () => {
+    Server.updateTags({ add: tagsAdded, remove: tagsRemoved }, () => {
       // If this.state !== state, call the original state.onChanged — that's the
       // one related to the tags pat changed.
       if (state.onChanged) state.onChanged(); // not this.state
@@ -274,11 +290,12 @@ const TagsDialog = createComponent({
               // or unicode: /[^\p{L}\p{N}\p{M} '!?&#%_.:=\/^~+*-]/u  ?
               notMessageTwo: `No weird chars like ",|[{(<" please`,
             }),
-            Button({ onClick: this.createTagTypeAddTag, className: 'e_CrTgB',
+            Button({ onClick: this.upsertTypeAddTag, className: 'e_CrTgB',
                   disabled: isForGroup || !state.canAddTag },
               `Create ${what}`),
             r.span({ className: 'help-block' },
-              "(Click ", r.b({}, "Save"), " too, to the right.)"));
+              "(Click ", r.b({}, "Save"), " too, to the right.)"),
+            r.p({}, VisibleToAll()));
 
       content =
         r.div({ className: 'esTsD_CreateTs' },

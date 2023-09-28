@@ -480,6 +480,8 @@ function runAllE2eTests {
   $r s/wdio-7 --only page-type-question-closed.2br.d --cd -i $args
   $r s/wdio-7 --only page-type-info-page.1br.d --cd -i $args
 
+  $r s/wdio-7 --only do-api-upvote-ideas-sort-by-votes.2br.d --cd -i $args
+
   $r s/wdio --only search-public-basic.2browsers $args
   $r s/wdio --only search-private-chat.2browsers $args
 
@@ -508,6 +510,8 @@ function runAllE2eTests {
   $r s/wdio-7 --only category-perms.2br.d --cd -i $args
   $r s/wdio-7 --only cats-perf-many.2br.d --cd -i $args
 
+  $r s/wdio --only search-tag-vals-priv-cats.2br.f $args
+
   $r s/wdio --only slow-3g-navigate-edit-drafts.2browsers $args
 
   $r s/wdio-7 --only assign-to-basic.2br.d --cd -i $args
@@ -532,7 +536,7 @@ function runAllE2eTests {
   $r s/wdio --only api-upsert-page-notfs.2browsers $args
   $r s/wdio-7 --only api-upsert-posts.2br.d --cd -i $args
 
-  $r s/wdio --only api-search-full-text $args
+  $r s/wdio-7 --only api-search-full-text.1br.f --cd -i $args
   $r s/wdio --only api-list-query-for-topics-popular-first $args
   $r s/wdio --only api-list-query-for-topics-recent-etc-first $args
   $r s/wdio --only api-list-query-for-posts $args
@@ -545,6 +549,8 @@ function runAllE2eTests {
  #$r s/wdio-7 --only api-get-query-for-tags.2br --cd -i $args
 
   $r s/wdio-7 --only do-api-like-and-subscribe.2br --cd -i $args
+  $r s/wdio-7 --only do-api-create-pages-comts-check-webhooks-search.2br --cd -i $args
+  
 
   $r s/wdio-7 --only dir.create-site-via-api.2br --cd -i $args
   $r s/wdio-7 --only embcom.create-site-via-api.2br --cd -i $args
@@ -556,6 +562,9 @@ function runAllE2eTests {
   $r s/wdio-7 --only webhooks-retry.2br --cd -i --waitforTimeout 40100 $args
   $r s/wdio-7 --only webhooks-enable-disable.2br --cd -i $args
   $r s/wdio-7 --only webhooks-for-api-upserts.2br --cd -i $args
+
+  $r s/wdio-7 --only plan-maintenance.2br.d --cd -i $args
+
 
   # wip:
   # settings-allow-local-signup

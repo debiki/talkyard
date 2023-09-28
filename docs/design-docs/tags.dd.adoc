@@ -24,8 +24,9 @@ Skip: suggestion_status_d
      1 = new suggestion, 2 = under review, 3 = accepted, pending creation,  4 = accepted, created,  -1 = rejected?
 
 
-
-create table types_t (    -- currently named  tagtypes_t
+-- See  docs/tyworld.adoc: Custom_types.
+--
+table types_t (    -- currently named  tagtypes_t (rename it)
   -- Later, these as well?:
 
   owned_by_id_c int,    -- by default visible only to that user/group, null = global, everyone can see
@@ -226,6 +227,14 @@ See: http://www.databasesoup.com/2015/01/tag-all-things.html & part 2 & 3.
 BUT there can be a  tag_rels_t  with links from tags to posts or pats, if that
    ever makes sense. With foreign keys.  Just like there's  post_rels_t and pat_rels_t.)
 
+    -- Hmm this can handle almost everything?:
+    val_type_c     i32,
+    val_f64_c      f64,
+    val_text_c     text,
+    val_http_url_c http_url_d,
+    val_jsonb_c    jsonb_ste100_000_d,
+    ----------
+
     val_i64_c      i64_d,    -- name it  cust_i64_c ?
     -- Mabye skip all this (just an i64 and a jsonb can be enough?!) -----
     val_i64_end_c  i64_d,
@@ -241,8 +250,6 @@ BUT there can be a  tag_rels_t  with links from tags to posts or pats, if that
     val_text_arr_c  text[],
     ----------------------------------------------------------------------
 
-    val_jsonb_c    jsonb_ste100_000_d,   -- name it  cust_jsonb_c
-   
 
 And tag_types_t:
   allowed_val_types_c  User   for example    — maybe a bitfield?
@@ -285,9 +292,19 @@ And also, this makes it harder to write queries for looking up who's assigned to
 
 So don't use tags for AssignedTo etc.  Instead, pat_rels_t and the AssignedTo type.
 
-
+-- Don't: ----------
 Or a Do-After tag, saying that something should/needs-to wait until
 after another feature/problem has been done/fixed.
+-- Instead: --------
+A  post_post_rels_t  relationship of type  PostPostRelType.DoAfter?
+Just one row:
+            [idea post] ——> Depends-On ———> [other idea post]
+instead of with tags:  3 rows?
+            the tag itself
+            tag ——> do first post
+            tag ——> do later post
+But the  types_t  table is still needed, where not built-in types like  Depends-On  can be stored?
+--------------------
 
 --- NO, this'll probably be a post of type sth like AboutNotes, and a post_rels_t entry
       linking the post to the person?  No need to bring tags into this. Links are simpler,

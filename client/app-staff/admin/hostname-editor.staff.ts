@@ -129,8 +129,10 @@ const HostnameEditorDialog = createComponent({
           // in that info, to show that hen has really read it?
           // COULD BUG harmless: Need to tweak this regex, for just 'localhost' to work, in dev mode?
           regexFour: /^[^\.]+\.([^\.]+\.[^\.]+.*|localhost(\..*)?)?$/,
-              messageFour: "Bare domains not allowed — prefix with 'www.' ?",
+              messageFour: "Please add 'www.' in front (bare domains aren't supported).",
           lastRegex: /^(.+\.)*[^\.]+\.[^\.]{2,}$/, lastMessage: "Should look like: forum.example.com",
+          // BUG, missing min length check: Sbd typed a hostname like  nn.talkyard.net
+          // — too short. (& don't count .talkyard.net)
           error: this.state.error, onChangeValueOk: this.onHostnameChanged }));
 
     return (

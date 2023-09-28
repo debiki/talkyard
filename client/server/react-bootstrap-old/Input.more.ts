@@ -1,6 +1,6 @@
 module debiki2 {
 
-  export function Input() {
+  export function Input(props) {
     die('The Input component is used server side [EsE4FK0WY2]');
   }
 

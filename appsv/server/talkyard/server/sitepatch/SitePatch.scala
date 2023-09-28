@@ -66,6 +66,8 @@ case class SitePatch(
   identities: immutable.Seq[Identity],
   invites: immutable.Seq[Invite],
   notifications: immutable.Seq[Notification],
+  types: ImmSeq[TagType],
+  tags: ImmSeq[Tag],
   categoryPatches: immutable.Seq[CategoryPatch],
   categories: immutable.Seq[Category],  // later, remove, see: [PPATCHOBJS]
   pages: immutable.Seq[PageMeta],
@@ -98,7 +100,7 @@ case class SitePatch(
  public | page_html_cache_t       | table    | edc  — can skip, is a cache
  public | post_read_stats3        | table    | edc
  public | post_revisions3         | table    | edc
- public | post_tags3              | table    | edc
+ public | post_tags3              | table    | edc  — fixing now
  public | spam_check_queue3       | table    | edc
  public | tag_notf_levels3        | table    | edc
  public | upload_refs3            | table    | edc
@@ -187,6 +189,8 @@ object SitePatch {
     pagePopularityScores = Vector.empty,
     pageNotfPrefs = Vector.empty,
     pageParticipants = Vector.empty,
+    types = Vector.empty,
+    tags = Vector.empty,
     categoryPatches = Vector.empty,
     categories = Vector.empty,
     drafts = Vector.empty,

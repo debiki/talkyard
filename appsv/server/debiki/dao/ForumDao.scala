@@ -105,6 +105,7 @@ trait ForumDao {
       val introText: TextAndHtml = isForEmbCmts ? EmbeddedCommentsIntroText | ForumIntroText
       val forumPagePath = createPageImpl(
             PageType.Forum, PageStatus.Published, anyCategoryId = Some(rootCategoryId),
+            withTags = Nil,
             anyFolder = Some(options.folder), anySlug = Some(""), showId = false,
             title = titleSourceAndHtml, body = introText,
             byWho = byWho, spamRelReqStuff = None,
@@ -460,6 +461,7 @@ trait ForumDao {
     createPageImpl(
       PageType.Discussion, PageStatus.Published,
       anyCategoryId = Some(generalCategoryId),
+      withTags = Nil,
       anyFolder = None, anySlug = Some("welcome"), showId = true,
       title = makeTitle(WelcomeTopicTitle),
       body = welcomeTopic,
@@ -477,6 +479,7 @@ trait ForumDao {
       val discussionPagePath = createPageImpl(
         PageType.Discussion, PageStatus.Published,
         anyCategoryId = Some(generalCategoryId), //anySampleTopicsCategoryId,
+        withTags = Nil,
         anyFolder = None, anySlug = Some("sample-discussion"), showId = true,
         title = makeTitle(SampleThreadedDiscussionTitle),
         body = SafeStaticSourceAndHtml(SampleThreadedDiscussionText,
@@ -505,6 +508,7 @@ trait ForumDao {
       createPageImpl(
         PageType.Problem, PageStatus.Published,
         anyCategoryId = anySampleTopicsCategoryId,
+        withTags = Nil,
         anyFolder = None, anySlug = Some("sample-problem"), showId = true,
         title = makeTitle(SampleProblemTitle),
         body = SampleProblemText,
@@ -518,6 +522,7 @@ trait ForumDao {
       val ideaPagePath = createPageImpl(
         PageType.Idea, PageStatus.Published,
         anyCategoryId = anyIdeasCategoryId.orElse(Some(generalCategoryId)), //anySampleTopicsCategoryId,
+        withTags = Nil,
         anyFolder = None, anySlug = Some("sample-idea"), showId = true,
         title = makeTitle(SampleIdeaTitle),
         body = SampleIdeaText,
@@ -552,6 +557,7 @@ trait ForumDao {
       val questionPagePath = createPageImpl(
         PageType.Question, PageStatus.Published,
         anyCategoryId = anyQuestionsCategoryId.orElse(Some(generalCategoryId)), //anySampleTopicsCategoryId,
+        withTags = Nil,
         anyFolder = None, anySlug = Some("sample-question"), showId = true,
         title = makeTitle(SampleQuestionTitle),
         body = SampleQuestionText,
@@ -581,6 +587,7 @@ trait ForumDao {
     createPageImpl(
       PageType.OpenChat, PageStatus.Published,
       anyCategoryId = Some(staffCategoryId),
+      withTags = Nil,
       anyFolder = None, anySlug = Some("staff-chat"), showId = true,
       title = makeTitle(StaffChatTopicTitle),
       body = SafeStaticSourceAndHtml(StaffChatTopicText, s"<p>$StaffChatTopicText</p>"),

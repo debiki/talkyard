@@ -933,11 +933,14 @@ const SecurityPrefsTab = React.createFactory<any>(function(props: {
     });
   }
 
-  const isMyOnlySession = me.id === user.id && numActive === 1;
+  const isMySession = me.id === user.id;
+  const isMyOnlySession = isMySession && numActive === 1;
 
   const logOutEverywhereBtn = !numActive || isMyOnlySession ? null :
       Button({ className: 'c_SessL_EndAllB', onClick: () => endSession({ all: true })},
-          "Log out everywhere (but not here)");   // I18N
+          isMySession
+              ? "Log out everywhere (but not here)"      // I18N
+              : `Log out ${pat_name(user)} everywhere`); // 0I18N, is for admins
 
   return (
     r.div({},
@@ -963,8 +966,7 @@ function SessionInfo(session: Session, endSessionFn: (ps: { session: Session }) 
     else deletedAt = null;
   }
 
-  const isCurrent = me.mySidPart1 !== session.part1 ? '' :
-          " — this session, here";
+  const isCurrent = !session.isCurrent ? '' : " — this session, here";
 
   let terminateBtn: RElm | U;
   let activeOrEndedClass = 'c_SessL_Sess-Ended';
@@ -982,7 +984,7 @@ function SessionInfo(session: Session, endSessionFn: (ps: { session: Session }) 
     // Skip logout button for the current session. It's better if one stays logged
     // in and can see that the relevant sessions got terminated properly. And
     // thereafter click Log Out in one's username menu. (Or?)
-    terminateBtn = me.mySidPart1 === session.part1 ? null :
+    terminateBtn = isCurrent ? null :
           Button({ className: 'c_SessL_Sess_EndB',
               onClick: () => endSessionFn({ session }) }, "Log out");  // I18N
   }

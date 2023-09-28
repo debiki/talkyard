@@ -39,7 +39,7 @@ export const GroupMembers = React.createFactory<GroupMembersProps>(function(prop
   const myId = React.useRef(me.id);
   const builtInOrNotStaff = member_isBuiltIn(group) || !isStaff(me);
 
-  const [membersNullOrFalse, setMembers] = React.useState<Participant[] | null | false>(null);
+  const [membersNullOrFalse, setMembers] = React.useState<Pat[] | N | false>(null);
 
   // Break out hook? [my_cur_id]
   React.useEffect(() => {

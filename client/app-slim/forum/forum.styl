@@ -177,6 +177,18 @@ html.js:not(.dw-react-started)
 .esForum_catsNav_btn.btn
   float: left;
 
+.c_F_BB:has(.c_F_BB_TagsLn)
+  // The links "View categories   Tags", place them closer together,
+  // by reducing margins & padding:
+  .c_F_BB_CatsLn,
+  .c_F_BB_TpcsLn
+    margin-right: 0 !important;
+    padding-right: 4px !important;
+  .c_F_BB_TagsLn
+    margin-left: 0 !important;
+    // More padding-left (7px not 4px), so simpler to click — is smaller.
+    padding-left: 7px !important;
+
 // Make restricted/unlisted/deleted icons in the categories dropdown lighter.
 .s_F_BB_CsM
   [class^="icon-"]:before,
@@ -802,8 +814,12 @@ html.js:not(.dw-react-started) .dw-tpc-activity .dw-ago-ltr
       margin-left: 0;
       margin-right: 9px;
 
-.s_F_Ts
-  .c_TagL_Tag
+// When in a forum topic list, make the colors less strong — the topic title,
+// tends to be the interesting thing.
+.c_TagL_Tag.c_Tag-Po
+  &,
+  &:visited,
+  &:link
     font-size: 14px;
     // No, a bit hard to read:
     //background: hsl(0deg 0% 98%);
@@ -812,6 +828,17 @@ html.js:not(.dw-react-started) .dw-tpc-activity .dw-ago-ltr
     color: hsl(0 0% 40%);
     background: none;
 
+// When in a post header in a discussion, make the tags a bit stronger, than in
+// the topic list — now, the reader isn't just skimming titles, but clicked this
+// partiuclar topic, so then, more contrast, making the tags simpler to read.
+.dw-p-hd
+  .c_TagL_Tag.c_Tag-Po,
+  .c_TagL_AddB
+    color: hsl(0 0% 30.5%);
+    box-shadow: 0.7px 0.7px 3px hsl(0 0% 40%);
+    background: hsl(0 0% 98.7%);
+  .c_TagL_AddB
+    opacity: 0.67; // this button isn't that interesting
 
 
 // Categories tree

@@ -33,6 +33,9 @@ import scala.collection.mutable.ArrayBuffer
 
 
 
+/**
+  * [Scala_3] Opaque type: safeHtml should be of type HtmlSafe.
+  */
 case class RenderCommonmarkResult(safeHtml: String, mentions: Set[String])
 
 
@@ -194,6 +197,9 @@ class Nashorn(
   }
 
 
+  /**
+    * [Scala_3] Opaque type: commonMarkSource should be of type CommonmarkUnsafe?
+    */
   def renderAndSanitizeCommonMark(commonMarkSource: St, renderParams: NashornParams)
           : RenderCommonmarkResult = {
 

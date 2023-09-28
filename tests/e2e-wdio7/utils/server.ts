@@ -6,7 +6,9 @@ import * as _ from 'lodash';
 import assert from './ty-assert';
 import * as utils from './utils';
 import c from '../test-constants';
-import { j2s, boldNormalColor, logMessage, logWarning, logErrorNoTrace, logServerRequest, die, dieIf, logServerResponse,
+import { j2s, boldNormalColor, boldUnusualColor, debugColor,
+          logMessage, logWarning, logErrorNoTrace, logServerRequest,
+          die, dieIf, logServerResponse, logUnusual,
         } from './log-and-die';
 
 const syncRequest = require('sync-request');
@@ -170,6 +172,16 @@ function postOrDie(
 
     logMessage("... Done getting new xsrf token.");
     return postOrDie(url, data, { ...opts, retryIfXsrfTokenExpired: false });
+  }
+
+  if (response.statusCode === 503 && /TyMMAINTWORK/.test(responseBody)) {
+    logMessage(debugColor(`The server is in ${boldUnusualColor(` MAINTENANCE MODE `)
+        }, you can disable:`) + `
+
+      docker-compose exec rdb psql talkyard talkyard -c "update system_settings_t set maintenance_until_unix_secs_c = null;"
+
+if it causes problems when you're trying to run e2e tests.`);
+    // Continue below.
   }
 
   if (opts.fail) {
@@ -659,7 +671,7 @@ function fullTextSearch<T extends ThingFound>(ps: {
 
   const responseObj = postOrDie(url, requestBody, ps.opts);
 
-  if (ps.opts.fail)
+  if (ps.opts?.fail)
     return responseObj.bodyText;
 
   const responseBody = responseObj.bodyJson() as SearchQueryApiResponse<T>;
@@ -794,6 +806,18 @@ async function do_(ps: { origin: St, apiRequesterId: UserId, apiSecret: St, fail
 }
 
 
+function planMaintenance(ps: { origin: St, basicAuthUsername: St, apiSecret: St, fail?: Bo,
+      data: { maintenanceUntilUnixSecs?: Nr, maintWordsHtml?: St, maintMessageHtml?: St }}): St {
+  const url = ps.origin + '/-/v0/plan-maintenance';
+  const response = postOrDie(
+      url, ps.data, {
+        fail: ps.fail,
+        apiRequester: ps.basicAuthUsername,
+        apiSecret: ps.apiSecret });
+  return response.bodyText;
+}
+
+
 
 // ----- Export functions
 
@@ -843,6 +867,7 @@ export default {
     upsertUserGetLoginSecret,
     upsertSimple,
     listUsers,
+    planMaintenance,
   },
 };
 

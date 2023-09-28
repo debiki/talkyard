@@ -20,13 +20,13 @@ package talkyard.server.search
 import collection.JavaConverters._
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.dao.SearchQuery
 import org.elasticsearch.action.search.{SearchRequestBuilder, SearchResponse}
 import org.elasticsearch.client.Client
 import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.action.ActionListener
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder
 import org.{elasticsearch => es}
+import es.search.sort.{FieldSortBuilder => es_FieldSortBuilder}
 import org.scalactic.{Bad, Good}
 import scala.collection.immutable
 import scala.concurrent.{Future, Promise}
@@ -47,40 +47,174 @@ class SearchEngine(
     // For filter-by-category-id, see [4FYK85] below.
     val boolQuery = QueryBuilders.boolQuery()
 
-    if (searchQuery.fullTextQuery.nonEmpty)
+    // ----- Free text
+
+    // Fuzzy search, should find "shoe" also if you search for "shoes".
+    // (Don't use `fullTextQuery` — it includes params like "tags:... category:...".)
+    if (searchQuery.queryWithoutParams.nonEmpty) {
       boolQuery.must(
         // If is staff, could search unapproved html too, something like:
         // .setQuery(QueryBuilders.multiMatchQuery(phrase, "approvedHtml", "unapprovedSource"))
-        // SECURITY ElasticSearch won't interpret any stuff in fullTextQuery as magic commands
-        // and start doing weird things? E.g. do a "*whatever" regex search, enabling a DoS attack?
-        QueryBuilders.matchQuery(PostDocFields.ApprovedPlainText, searchQuery.fullTextQuery))
+        QueryBuilders.matchQuery(
+                  PostDocFields.ApprovedPlainText, searchQuery.queryWithoutParams))
+    }
+
+    // ----- Special
 
     // Form submissions are private, currently for admins only. [5GDK02]
     if (!user.exists(_.isAdmin)) {
+      WOULD_OPTIMIZE // Use some flavor of  filterNot() instead, for performance. [filter_not]
+      // (Any matches are filtered out anyway, later.  [se_acs_chk])
+      // Apparently  `"bool" { "filter" { "bool": { "must_not": ...` can work? But then,
+      // would "must_not" contribute to scoring, and thus be slower? It normally does,
+      // but it's wrapped in "filter" which does not.
+      // See:  https://stackoverflow.com/a/41134914
+      //        "How to implement elastic search not filter?"
       boolQuery.mustNot(
-        QueryBuilders.termQuery(PostDocFields.PostType, PostType.CompletedForm.toInt))
+            QueryBuilders.termQuery(
+                  PostDocFields.PostType, PostType.CompletedForm.toInt))
     }
 
-    if (searchQuery.tagNames.nonEmpty) {
-      boolQuery.must(
-        QueryBuilders.termsQuery(
-            PostDocFields.Tags, searchQuery.tagNames.asJava))
+    // ----- Tags
+
+    // Matching more tags is better, so, if many, use must(). But if just one,
+    // use filter(). (Or does ES optimize this, itself?)  _must_if_many
+    val useMustForTags = searchQuery.tagTypeIds.size +  searchQuery.tagValComps.size >= 2
+
+    if (searchQuery.tagTypeIds.nonEmpty) {
+      val q = QueryBuilders.termsQuery(
+                  PostDocFields.TagTypeIds, searchQuery.tagTypeIds.asJava)
+      if (useMustForTags)
+        boolQuery.must(q)
+      else
+        boolQuery.filter(q)
     }
 
-    if (searchQuery.notTagNames.nonEmpty) {
+    if (searchQuery.notTagTypeIds.nonEmpty) {
+      WOULD_OPTIMIZE // Use filterNot() [filter_not].
       boolQuery.mustNot(
-        QueryBuilders.termsQuery(
-          PostDocFields.Tags, searchQuery.notTagNames.asJava))
+            QueryBuilders.termsQuery(
+                  PostDocFields.TagTypeIds, searchQuery.notTagTypeIds.asJava))
     }
 
-    if (searchQuery.categoryIds.nonEmpty) {
+    // ----- Authors
+
+    if (searchQuery.authorIds.nonEmpty) {
+      // _must_if_many
+      val q = QueryBuilders.termsQuery(
+                  PostDocFields.AuthorIds, searchQuery.authorIds.asJava)
+      if (searchQuery.authorIds.size >= 2)
+        boolQuery.must(q)
+      else
+        boolQuery.filter(q)
+    }
+
+    // ----- Category
+
+    if (searchQuery.catIds.nonEmpty) {
+      // (Each page is in only one category, so it's pointless to use a must() query.)
       boolQuery.filter(
-        QueryBuilders.termsQuery(
-            PostDocFields.CategoryId, searchQuery.categoryIds.asJava))
+            QueryBuilders.termsQuery(
+                  PostDocFields.CategoryId, searchQuery.catIds.asJava))
     }
 
     boolQuery.filter(
-      QueryBuilders.termQuery(PostDocFields.SiteId, siteId))
+          QueryBuilders.termQuery(PostDocFields.SiteId, siteId))
+
+    // ----- Tag values
+
+    // We need one nested query, per tag value (right?) — since each one of them
+    // is in its own nested doc.
+    // ((filter() adds another nested query to the same list of filter queries as the
+    // earlier filter queries, that is, the tag value queries end up in the same
+    // filter-queries-list as the `siteId` and `catIds` queries.))
+    for (tagValComp <- searchQuery.tagValComps) {
+      // Find any tag-value nested doc of the correct tag type.
+      val tagType: TagType = tagValComp._1
+      val tagTypeQ = QueryBuilders.termQuery(
+              s"${PostDocFields.TagValsNested}.${ValFields.TagTypeId}", tagType.id)
+
+      // Compare tag value, depending on the operator (e.g.  '=', '>', '>=').
+      val compOpVal: CompOpVal = tagValComp._2
+      val valAsObj: Object = compOpVal.compWith.valueAsObj // ES wants an Object
+      val valueFieldName = PostDocFields.TagValsNested + "." + ValFields.fieldNameFor(
+            // Should always be defined — we [skip_tag_comps_if_tag_type_cant_have_values].
+            tagType.valueType getOrDie "TyE5MWSLUFP4")
+      val tagValQ = compOpVal.compOp match {
+        case CompOp.Eq =>
+          QueryBuilders.termQuery(valueFieldName, valAsObj)
+
+        case CompOp.Lt | CompOp.Gt | CompOp.Lte | CompOp.Gte =>
+          val rangeQ = QueryBuilders.rangeQuery(valueFieldName)
+          compOpVal.compOp match {
+            case CompOp.Lt => rangeQ.lt(valAsObj)
+            case CompOp.Gt => rangeQ.gt(valAsObj)
+            case CompOp.Lte => rangeQ.lte(valAsObj)
+            case CompOp.Gte => rangeQ.gte(valAsObj)
+            case _ => die("TyESECOMPSYMB02", s"Forgot to handle comp op: ${compOpVal.compOp}")
+          }
+          rangeQ
+
+        case _ =>
+          die("TyESECOMPSYMB03", s"Forgot to handle comp op: ${compOpVal.compOp}")
+      }
+
+      val tagQ = QueryBuilders.nestedQuery(
+            // Path to the nested docs with e.g.:  { tagTypeId: ... valInt32:... }
+            PostDocFields.TagValsNested,
+            QueryBuilders.boolQuery()
+                .filter(tagTypeQ)  // right type of tag?
+                .filter(tagValQ),  // tag value matches value in query?
+            // Should a tag have *many* numeric values (they don't), use the average.
+            org.apache.lucene.search.join.ScoreMode.Avg)
+      if (useMustForTags)
+        boolQuery.must(tagQ)
+      else
+        boolQuery.filter(tagQ)
+    }
+
+    // ----- Sort order
+
+    val sortBuilders: ImmSeq[es_FieldSortBuilder] = searchQuery.sortOrder map {
+      case byTagVal: SortHitsBy.TagVal =>
+        // Consider only tags of the correct type (when sorting by tag value).
+        // (About filtering & sorting by nested objects — see:
+        // https://www.elastic.co/guide/en/elasticsearch/reference/8.9/sort-search-results.html#_nested_sorting_examples)
+        // Example (from the ES docs):
+        // POST /_search  {
+        //    "query" : { "term" : { "product" : "chocolate" } },
+        //    "sort" : [{
+        //       "offer.price" : {    <——  e.g. "tagValsNested.valInt32" in our case
+        //          "mode" :  "avg",
+        //          "order" : "asc",
+        //          "nested": {
+        //             "path": "offer",
+        //             "filter": {       <——— so we don't sort by the wrong tag types
+        //                "term" : { "offer.color" : "blue" } } } } }] }
+        //
+        val tagTypeQ: es.index.query.QueryBuilder =
+              QueryBuilders.termQuery(
+                  s"${PostDocFields.TagValsNested}.${ValFields.TagTypeId}", byTagVal.tagType.id)
+        val nestedSortBuilder: es.search.sort.NestedSortBuilder =
+              new es.search.sort.NestedSortBuilder(PostDocFields.TagValsNested)
+                .setFilter(tagTypeQ)
+
+        val valueFieldName = PostDocFields.TagValsNested + "." + ValFields.fieldNameFor(
+              // Should always be defined — we [skip_sort_if_tag_type_cant_have_values].
+              byTagVal.tagType.valueType getOrDie "TyE5MWSLUFP5")
+        val sortBuilder: es_FieldSortBuilder =
+              es.search.sort.SortBuilders.fieldSort(valueFieldName)
+              .setNestedSort(nestedSortBuilder)
+              .order(
+                  if (byTagVal.asc) es.search.sort.SortOrder.ASC
+                  else es.search.sort.SortOrder.DESC)
+        sortBuilder
+
+      case x =>
+        die("TyESEUNIMPORD", s"Unimplemented sort order: $x")
+    }
+
+    // ----- Highlight matches
 
     val highlighter = new HighlightBuilder()
       .field(PostDocFields.ApprovedPlainText)
@@ -94,6 +228,8 @@ class SearchEngine(
       .postTags("</mark>")
       // This escapes any <html> stuff in the text, and thus prevents XSS issues. [7YK24W]
       .encoder("html"); SECURITY; TESTS_MISSING
+
+    // ----- Put it all together
 
     val requestBuilder: SearchRequestBuilder = elasticSearchClient.prepareSearch(IndexName)
       .setTypes(PostDocType)
@@ -112,6 +248,12 @@ class SearchEngine(
       .setSize(60)       // num hits to return
       .setExplain(true)  // includes hit ranking
       .setRouting(siteId.toString)  // all data for this site is routed by siteId [4YK7CS2]
+
+    sortBuilders foreach { b =>
+      requestBuilder.addSort(b)
+    }
+
+    // ----- Send to ES
 
     val promise = Promise[immutable.Seq[SearchHit]]()
 
@@ -140,7 +282,7 @@ class SearchEngine(
     promise.future
   }
 
-  /*
+  /* CLEAN_UP
 
     Old code. Delete later, when highlights and category filtering work.  [4FYK85]
 

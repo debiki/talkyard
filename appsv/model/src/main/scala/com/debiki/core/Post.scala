@@ -147,6 +147,7 @@ sealed abstract class PostType(
 
 // REFACTOR. See harmless bug below. Should change to a bit field, or split into separate fields.
 //
+@deprecated  // [depr_post_type]
 object PostType {
 
   // Maybe could be the same as PageType, + a higher bit set, if is a chat message, and another,
@@ -1154,3 +1155,16 @@ object Post {
   }
 }
 
+
+/** Different ways of identifying what post we have in mind.
+  *
+  * Useful e.g. when doing access checks: Sometimes we have a post id, in
+  * other cases, a page id and post nr (but no the post id).
+  */
+sealed trait WhatPost
+object ThePost {
+  case class Here(post: Post) extends WhatPost
+  case class WithId(postId: PostId) extends WhatPost
+  // But there's also:  com.debiki.core.PagePostNr  — maybe remove, use OnPageWithNr instead?
+  case class OnPageWithNr(pageId: PageId, postNr: PostNr) extends WhatPost
+}

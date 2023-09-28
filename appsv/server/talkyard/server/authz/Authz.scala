@@ -67,6 +67,7 @@ sealed trait AuthzCtx {
     }
   }
 
+  // [who_sees_refid]
   final def maySeeExtIds: Bo = requester.exists(_.isAdmin)
 }
 

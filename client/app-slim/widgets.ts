@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Kaj Magnus Lindberg
+ * Copyright (c) 2016-2023 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -12,11 +12,12 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /// <reference path="prelude.ts" />
 /// <reference path="links.ts" />
+/// <reference path="tags/tags.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2 {
@@ -412,8 +413,10 @@ export function UserName(props: {
 }
 
 
+// ----- CLEAN_UP, MOVE to: ./tags/tags.ts ------------------------------------
 
-
+// REMOVE, use only TagList instead, and an extra prop?  Or, maybe should always be
+// editable for those with edit perms, why not?
 export function TagListLive(ps: TagListLiveProps): RElm | U {
   const store: Store = ps.store;
   if (store.settings.enableTags === false)
@@ -428,10 +431,7 @@ export function TagListLive(ps: TagListLiveProps): RElm | U {
   if (!thereAreTags && !canEditTags)
     return;
 
-  const maybeOpenTagsDiag = !canEditTags ? null : () => {
-    morebundle.openTagsDialog(ps);
-  }
-  return TagList({ ...ps, onClick: maybeOpenTagsDiag });
+  return TagList({ ...ps, canEditTags });
 }
 
 
@@ -444,25 +444,20 @@ export function TagList(ps: TagListProps): RElm | U {
   dieIf(ps.forPost && ps.forPat, 'TyE4MGD2RUJ7');
   // @endif
 
-  const patOrPostClass = ps.forPat ? ' c_Tag-Pat' : ' c_Tag-Po';
+  const store: Store = ps.store;
+  const me: Me = store.me;
   const anyTags: Tag[] | U = ps.tags || ps.forPost?.pubTags || ps.forPat?.pubTags;
   const tagTypesById: TagTypesById = (
           //ps.tagTypesById ||  // maybe later
           ps.store?.tagTypesById || {});
   const thereAreTags = anyTags && anyTags.length;
-  const canEditTags = ps.onClick;
 
   let tagElms: RElm[] = [];
-  const canEditAnyClass = !canEditTags ? '' : ' c_TagL-CanEdAny';
-  const canEditThisClass = !canEditTags ? '' : ' c_TagL_Tag-CanEd';
 
-  function onClick(event: MouseEvent) {
-    event.stopPropagation();
-    event.preventDefault();
-    if (ps.onClick) ps.onClick();
-  }
+  // ----- Tags, or user badges
 
   if (thereAreTags) {
+    const isForPat = !!ps.forPat;
     // The e2e tests expect the tags in the same order always. [sort_tags]
     // Not that much point in sorting server side, because it's good to sort
     // here anyway, if pat adds a single tag browser side.
@@ -471,25 +466,38 @@ export function TagList(ps: TagListProps): RElm | U {
       const tagType = tagTypesById[tag.tagTypeId];
       return (
           r.li({ key: tag.id },
-            r.a({ className: 'c_TagL_Tag' + canEditThisClass + patOrPostClass, onClick },
-              tagType?.dispName ||
-                  // In case there's some bug so the tag type wasn't found.
-                  `tag_id: ${tag.id} tag_type: ${tag.tagTypeId}`)));
+            Tag({ tag, tagType,
+                // The /-/tags/* page and dropdown currently doesn't make sense for /
+                // isn't meant for badges.
+                onClickDropdown: !isForPat,
+                isForPat, me })));
     });
   }
 
-  // Don't show the add tag button at reply posts — usually doesn't make
-  // any sense to tag replies.
-  if (canEditTags && (!ps.forPost || ps.forPost.nr === BodyNr)) {
+  // ----- Add tags button
+
+  // Don't show, for user badges — badges are added via the user profile pages instead.
+  // And don't show, for comments — in the rare cases when sbd wants to tag a comment,
+  // they can use the comment dropdown menu instead.
+  //
+  // Hmm, what about the topic list, which sends us `ps.tags` instead of `ps.forPost`?
+  // Whatever. The [+...] button doesn't appear there, which it shouldn't.
+  // [edit_tags_via_topic_list]
+  //
+  const isPatOrOrigPost = !ps.forPost || ps.forPost.nr === BodyNr;
+  if (ps.canEditTags && isPatOrOrigPost) {
     tagElms.push(r.li({ key: '+' },
-        Button({ onClick, className: 'c_TagL_AddB' }, '+ ...' )))
+        Button({ className: 'c_TagL_AddB',
+                onClick: () => morebundle.openTagsDialog(ps) },
+            '+ ...' )));
   }
 
   // Maybe always add classes 'n_TagL-Pat' and 'n_TagL-Po' here? Instead of only
   // if on a discussion page?  [alw_tag_type]
-  return r.ul({ className: ' c_TagL ' + (ps.className || '') + canEditAnyClass }, tagElms);
+  return r.ul({ className: ' c_TagL ' + (ps.className || '') }, tagElms);
 }
 
+// ----- END move to  tags/ ---------------------------------------------------
 
 
 export interface InstaDiagProps {

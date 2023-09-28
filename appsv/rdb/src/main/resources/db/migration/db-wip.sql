@@ -100,7 +100,118 @@ alter table users3 add constraint pats_c_members_have_username check (
 
 
 --=============================================================================
---  Custom types
+--  Parent / child_tag types?  [nested_tags]
+--=============================================================================
+-- Also see Custom_types below.
+
+-- UX: Probably, when child tags implemented, then, if adding a parent tag,
+-- a dropdown should open where one can select one (or more) child tags too,
+-- to save clicks, and to avoid people forgetting this,  and to not
+-- have to search for the child tags in a long list of "all tags in the world".
+
+-- UX: Some tag sets might have min-tags > 0 in some category, and then,
+-- when posting a page in such a cat, one needs to choose > 0 tags from that
+-- tag set, before posting. (Even if that tag set has no parent tag.)
+
+------------
+-- Alt 1, bad, because sometimes the same tags can appear as children of
+-- two different parent tags?  Could this be an example:
+-- Product tags, e.g. "bike", "shoes", "rollerskates".
+-- And an "Inventory" tag, with product sub tags, for pages that
+-- describe products for sale in a store.
+-- But there'd also be users and "Wishlist" tags — also with product sub tags.
+-- So, the product tags, can appear as children of both "Inventory" and "Wishlist"
+-- tags.  — So, do not assume just one parent tag type.
+alter table types_t add column parent_type_id_c references types_t; -- tagtypes_t = types_t
+
+------------
+-- Alt 2:  Parent to child tag types table. But here data like
+-- `child_needed_c never_always_d` is duplicated, bad.
+create table type_sets_t (
+  parent_type_id_c,
+  child_set_nr_c,
+  child_needed_c never_always_d,
+  child_type_id_c,
+)
+
+------------
+-- Alt 3:  A types_t child-type row, plus rows in a type sets table:
+create table type_sets_t (
+  set_type_id_c,  -- references types_t: the type set
+  elem_type_id_c);  -- references types_t: child tag types
+-- And also:
+alter table types_t
+    add column is_type_set_c  bool, -- ??
+     -- or --
+      kind_id_c = ThingKindIds.TypeSet -- But then, could add the wrong thing kinds
+      -- to a type set? However, if kind_id_c is part of the pimary key, and the same
+      -- as any parent, then, maybe can prevent? Not that important.
+
+    add column parent_type_id_c references types_t,  -- makes this a child type set
+    add constraint check  (if parent_type_id_c not null) then (is_type_set_c is true),
+
+    -- If you add a tag of the parent type, you might also need to add
+    -- child tags, these many:
+    -- **Or maybe this should be per category?** Sometimes, child tags might not
+    -- be needed.  Maybe there should be a  type_node_rels_t,  just like
+    -- there are  pat_node_rels_t (or  pat_post_rels_t)  etc?
+    -- (If a child tag is always needed, in the whole site, then, set min >= 1
+    -- for the site root category.)
+    add column min_children_c i16_gez,
+    add column max_children_c i16_gez,
+    add constraint check min <= max,
+    add constraint check (0 <= min or min is null) and (0 <= max or max is null),
+    ;
+-- types_t rows with parent_type_id_c set, is a type set consisting of the
+-- types listed in type_sets_t:
+--
+--   [parent tag type in types_t]
+--       ^————  [type set, also in types_t]
+--                   ^––––––—  [type_sets_t]  —————> [parent tag type in  types_t]
+
+------------
+-- Alt 4:  Same as Alt 3, but  min_children / max are in another table:
+create table  type_node_rels_t (  -- No! use  perms_on_pages3  instead (but renamed to what?)
+  type_id_c,
+  node_id_c,
+  can_use_c,      -- if the type can be used as tags in category id node_id_c  ?
+                  -- by default, Yes, iff the type is a ThingKind.Tag?
+                  -- (Other types not allowed here?)
+                  -- Unless set to False on some ancestor cat?
+
+  wants_min_c,    -- If creating a page in category `node_id_c`, then, one needs to
+                  -- add `wants_min_c` tags from type/type-set `type_id_c`.
+  wants_max_c,    -- But can't add more than this many.
+
+  -- ... Probably sth more, later?
+);
+
+
+-- Also, edit perms_on_pages3:
+-- Rename  on_tag_id   to   on_type_id_c,
+--
+-- And look at these two permission rows:
+--   row 1:
+--       for_people_id  = Developers
+--       on_category_id = Dev's Cat
+--       on_type_id_c   = Pending-Review
+--   row 2:
+--       for_people_id  = Marketers
+--       on_category_id = Marketer's Cat
+--       on_type_id_c   = Pending-Review
+--
+-- That means there's a Pending-Review tag type, and the developers can use
+-- that tag in therir *own* category, but the marketers can't add that tag,
+-- in the developer's category. They (the marketers) can use it in their own
+-- category instead.
+--
+-- How nice, Ty's table structure is already designed with that use case in mind
+-- — just need to relax the constraint  permsonpages_c_on_one   so it lets you
+-- specify both  on_category_id  and  on_type_id_c  (currently named on_tag_id).
+
+
+--=============================================================================
+--  Custom_types   Alt_5 below is best?
 --=============================================================================
 
 -- Types and values for plugins, in the future.
@@ -111,7 +222,7 @@ create domain cust_type_d  i32_lt2e9_gt1000_d;
 alter table tagtypes_t rename to types_t; -- and let  types_t.id_c  be of type  cust_type_d?
 
 
------ Thing types and Sub types / Enums
+----- Thing types and Sub types / Enums ... See Alt_5 below: Kinds, types and sub types
 
 -- Custom tag types, pat and post relationship types, is nice. Enumerations seem
 -- common, supported by all (?) programming languages, and turns up often in Ty —
@@ -136,6 +247,14 @@ alter table tagtypes_t rename to types_t; -- and let  types_t.id_c  be of type  
 
 
 -- Alt 1: ------
+-- Update 2023-07:  Not good?  Stores built-in types in  types_t,  and custom types
+-- on other rows also in types_t,  foreign-key link to the built-in types.
+-- But it's misleading to keep built-in types in any table? Because that gives the
+-- impression that they can be edited (by updating the table). But that's not
+-- possible — the built-in types cannot be changed. (E.g. participants of type
+-- User or Group, or content nodes of type Page and Comment — mostly doesn't make
+-- sense to change or delete those types.)
+
 -- To reuse a built-in thing type,
 alter table types_t add column thing_type_c  thing_type_d;
 -- fk ix: types_i_thingtypeid_id
@@ -149,6 +268,9 @@ alter table types_t add column thing_type_built_in_id_c   i32_gz_d;
 -- But is the above the right way to do it? — Alternatively, change the primary key:
 
 -- Alt 2: ------
+-- Update 2023-07:  Also not good? Because also stores built-in types in
+-- in types_t although can't be modified?
+-- (Old comment below)
 -- Seems better! [alwys_sub_type]. But then, what's then name of the thing type?
 -- How verify that there's always a row with sub_id_c = 0 with the thing type name?
 -- Maybe if missing, could just be "Type 1234" and some admin problem message.
@@ -167,13 +289,18 @@ alter table types_t add constraint types_p_id_subid primary key (
 -- Problematic, in that if a type gets used as a tag, and then an admin changes
 -- the flag so the type becomes something completely different?
 
--- Alt 4: ------
--- Have exactly one built-in thing type, for each type in types_t,
--- e.g. a custom type is of thing type Vote, or thing type ContentTag or AssignedTo.
--- So, in e.g.  pat_rels_t,  rel_type_c  would be a built-in type e.g. VotedOn,
+-- Alt_4: ------
+-- Specify one built-in thing type or relationship type, for each type in types_t,
+-- e.g. a custom type is of built-in thing type Vote or ContentTag or AssignedTo.
+-- So, in e.g.  pat_node_rels_t,  rel_type_c  would be a built-in type e.g. VotedOn,
 -- no foreign key.
--- whilst  sub_type_c  would usually be built-in, e.g.  VoteType.Like,
--- and sometimes a custom type, let's say thing type Vote and:
+--
+-- The built-in type tells Talkyard where the custom type instance should appear
+-- — e.g. as a vote, or in the assignees list somehow, or as a flag etc.
+--
+-- Nodes and relationships can have a   sub_type_c  too, and it would usually
+-- be built-in too, e.g.  VoteType.Like,
+-- but sometimes a custom type, let's say thing type Vote and:
 --     sub type  VoteType.LooksGoodToMe
 --       with id > 1000 (because it's a custom sub type)
 --       and foreign-key referencing  types_t.
@@ -181,13 +308,76 @@ alter table types_t add constraint types_p_id_subid primary key (
 -- e.g.  CanUseHow.AsVote or AsContentTag, and this'd be part of the primary key
 -- in types_t? Hmm, no, thing type and sub type sounds simpler?
 --
-alter table types_t add column  thing_type_c  thing_type_d  not null  default Content-tags-type;
+alter table types_t add column  thing_type_c  thing_type_d  not null  default ThingType.ContentTag;
 alter table types_t rename column  id_c  to  sub_type_c  sub_type_d  not null;
--- **Maybe this (alt 4) is simplest?  Then won't ever need to think about what
--- happens with existing usages of a type, if changing how the type can be used
--- — because a thing type would be part of the primary key, so couldn't
+-- **Maybe this (alt 4) is simplest? (No, Alt_5 instead) Then won't ever need to think
+-- about what happens with existing usages of a type, if changing how the type can
+-- be used — because a thing type would be part of the primary key, so couldn't
 -- change where a type can be used. Instead, one would create a new type.
+--
+alter table types_t add constraint types_p_thingtype_subtype primary key (
+    site_id_c, thing_type_c, sub_type_c);
 
+-- Alt_5: ------
+
+-- Kinds (ThingKind:s), types and subtypes:
+-- What kind of thing is that? It's a node     ——> kind_id_c  = Kind.Node
+--                          it's a participant     kind_id_c  = Kind.Pat
+-- What type of node? It's a page.             ——> type_id_c  = NodeType.Page
+--                  or ... a comment.                         = NodeType.Comment
+--                     ... a flag, etc.                       = NodeType.Flag
+-- What type of page? It's an Idea page.    ——> sub_type_id_c = PageType.Idea
+--                     ... a Question.                        = PageType.Question
+--          ... flag? It's a Spam flag.     ——> sub_type_id_c = FlagType.Spam
+--                       ... Toxic flag.                      = FlagType.Toxic
+-- What type of participant? A user.           ——> type_id_c  = PatType.User
+--                           A group.                         = PatType.Group*
+--                          An anonym, etc.                   = PatType.Anon*
+--                                    (* Currently  Pat.isGroup instead of PatType though)
+
+-- What kind of thing is that? A person-node-relationship  ——> kind_id_c = Kind.PatNodeRel
+-- What type of relationship?  A voted-on relationship   ——> type_id_c = PatNodeRelType.VotedOn
+-- What type of vote?  A Like vote.                   ——> sub_type_id_c = VoteType.Like
+
+-- What kind of thing something is, determines in what table it gets saved.
+-- E.g.  Kind.Node —>  saved in  nodes_t         (currently named posts3).
+--       Kind.PatNodeRel —>  in  pat_node_rels_t  (currently post_actions3).
+--       Kind.Pat        —>  in  pats_t          (currently users3).
+--
+-- What type of thing it is (more specific than kind), determines how it's used,
+-- where it's shown,
+-- for example, nodes:
+--     NodeType.Category appears in the category list.
+--     NodeType.Page    are listed in their parent category.
+--     NodeType.Comment are listed on the page where they got posted.
+--     NodeType.Flag    shown to moderators.
+--
+-- and pat-node-relationships:
+--     PatNodeRelType.VotedOn: a vote icon and count appears below the post (eg 3 Likes).
+--     PatNodeRelType.AssignedTo: the assignee appears in the Assiged To list above the post.
+--
+-- and the sub type suggests how to handle the thing? Eg:
+--     PageType.Question — needs an answer
+--     PageType.Idea   — discuss and maybe do
+--     FlagType.Spam  — delete & ban
+--     FlagType.Rude  — delete / rewrite, talk w the person about the guidelines
+--
+-- Only custom types are stored in types_t, and type & subtype ids should be > 1000
+-- so as not to collide with built-in type ids. (Like in Alt_4)
+--
+alter table tagtypes_t rename to types_t;
+alter table types_t
+       rename column  id_c  to    type_id_c,
+       add column  kind_id_c      kind_d  not null
+                                      -- all currently existing types are for tags.
+                                      default  Kind.Tag,
+       add column  sub_type_id_c  sub_type_d  not null
+                                      -- 0 means it's not a sub type (tags aren't sub types).
+                                      default  0,
+
+       drop constraint tagtypes_p_id,
+       add constraint types_p_kind_type_subtype primary key (
+              site_id_c, kind_id_c, type_id_c, sub_type_id_c);
 ----------------
 
 

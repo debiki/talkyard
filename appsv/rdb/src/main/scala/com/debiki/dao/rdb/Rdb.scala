@@ -111,6 +111,10 @@ object Rdb {
     def orNullFloat: AnyRef = opt.map(_.asAnyRef).getOrElse(NullFloat)
   }
 
+  implicit class PimpOptionWithNullFloat64(opt: Opt[f64]) {
+    def orNullFloat64: AnyRef = opt.map(_.asAnyRef).getOrElse(NullDouble)
+  }
+
   implicit class PimpOptionWithNullBoolean(opt: Option[Boolean]) {
     def orNullBoolean: AnyRef = orNullBo
     def orNullBo: AnyRef = opt.map(_.asAnyRef).getOrElse(NullBoolean)
@@ -264,6 +268,20 @@ object Rdb {
   def getOptFloat(rs: js.ResultSet, column: String): Option[Float] = {
     // rs.getFloat() returns 0 instead of null.
     val value = rs.getFloat(column)
+    if (rs.wasNull) None
+    else Some(value)
+  }
+
+  def getFloat64(rs: js.ResultSet, column: St): f64 = {
+    // rs.getDouble() returns 0 instead of null.
+    val value = rs.getDouble(column)
+    dieIf(rs.wasNull, "TyECOLDBLISNL", s"Column f64 value is null: $column")
+    value
+  }
+
+  def getOptFloat64(rs: js.ResultSet, column: St): Opt[f64] = {
+    // rs.getDouble() returns 0 instead of null.
+    val value = rs.getDouble(column)
     if (rs.wasNull) None
     else Some(value)
   }

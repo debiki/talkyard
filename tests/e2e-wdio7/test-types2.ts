@@ -192,6 +192,8 @@ interface SiteData2 {   // [3SD5PB7]
   invites: any[];
   memberEmailAddresses: any[];
   blocks: any;
+  types: TypeV0[];
+  tags: TagV0[];
   categories: TestCategory[];
   pagePopularityScores: any[];
   pageNotfPrefs: any[];

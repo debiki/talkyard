@@ -385,6 +385,7 @@ interface TestCategory {  // try to merge with Category in model.ts?
   description?: string;
   newTopicTypes?: number[]; // currently ignored, server side [962MRYPG]
   defaultTopicType: number;
+  doItVotesPopFirst?: Bo;
   createdAtMs: number;
   updatedAtMs: number;
   lockedAtMs?: number;

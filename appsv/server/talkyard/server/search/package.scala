@@ -24,6 +24,7 @@ import org.{elasticsearch => es}
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
+import scala.collection.{immutable => imm, mutable => mut}
 import scala.collection.immutable
 import talkyard.server.JsX._
 
@@ -82,7 +83,7 @@ package object search {
     *   https://www.elastic.co/guide/en/elasticsearch/reference/master/analysis-lang-analyzer.html
     *       #_configuring_language_analyzers
     */
-  val SupportedLanguages = Vector(
+  val SupportedLanguages: Vec[St] = Vector(
     "arabic", "armenian", "basque", "brazilian", "bulgarian", "catalan", "cjk", "czech",
     "danish", "dutch", "english", "finnish", "french", "galician", "german", "greek",
     "hindi", "hungarian", "indonesian", "irish", "italian", "latvian", "lithuanian",
@@ -130,7 +131,8 @@ package object search {
   case class PageAndHits(
     pageStuff: PageStuff,
     pagePath: PagePathWithId,
-    hitsByScoreDesc: immutable.Seq[SearchHit]) {
+    hitPosts: imm.Seq[(SearchHit, Post)]) {
+    def hitsByScoreDesc: imm.Seq[SearchHit] = hitPosts.map(_._1)
     def pageId: PageId = pageStuff.pageId
     def pageTitle: String = pageStuff.title
     def pageType: PageType = pageStuff.pageRole
@@ -145,16 +147,16 @@ package object search {
     )
 
 
-  def makeElasticSearchJsonDocFor(siteId: SiteId, post: Post, categoryId: Option[CategoryId],
-        tags: Set[TagLabel]): JsObject = {
+  def makeElasticSearchJsonDocFor(siteId: SiteId, pageMeta: PageMeta,
+          post: Post, tags: imm.Seq[Tag], tags_old: Set[TagLabel])
+          : JsObject = {
     val Fields = PostDocFields
     val approvedPlainText = post.approvedHtmlSanitized.map(org.jsoup.Jsoup.parse(_).text())
-    val json = Json.obj(
+    var json = Json.obj(
       Fields.SiteId -> siteId,
       Fields.PageId -> post.pageId,
+      Fields.PageType -> pageMeta.pageType.toInt,
       // JsonKeys.SectionPageId -> forum or blog page id,
-      // JsonKeys.CategoryIds -> list of category ids
-      // JsonKeys.TagIds -> list of tag ids
       Fields.PostId -> post.id,
       Fields.PostNr -> post.nr,
       Fields.PostType -> post.tyype.toInt,
@@ -163,9 +165,70 @@ package object search {
       Fields.CurrentRevisionNr -> post.currentRevisionNr,
       Fields.UnapprovedSource -> (  // [ix_unappr]
         if (post.isCurrentVersionApproved) JsNull else JsString(post.currentSource)),
-      Fields.Tags -> JsArray(tags.toSeq.map(JsString)),
-      Fields.CategoryId -> JsNumberOrNull(categoryId),
-      Fields.CreatedAtUnixSeconds -> post.createdAtUnixSeconds)
+
+      Fields.CategoryId -> JsNumberOrNull(pageMeta.categoryId),
+      // Fields.AncCatIds_notInUse -> JsArray(ancestorCatIds),
+      //          — needs to reindex if moving to other cat, ok? If throttling reindexing,
+      //          & maybe doing with a bit lower prio, than indexing new stuff?
+
+      Fields.CreatedAtUnixSeconds -> post.createdAtUnixSeconds,
+
+      Fields.AuthorIds -> Json.arr(post.createdById),
+      Fields.AssigneeIds -> JsArray(post.assigneeIds.map(JsNumber(_))),
+      //Fields.Tags -> JsArray(tags_old.toSeq.map(JsString)),
+      Fields.TagTypeIds -> JsArray(tags.map(t => JsNumber(t.tagTypeId))),
+
+      // Wait. Would need to reindex all comments, if a page tag is added  [how_ix_page_tags]
+      // or author changed (once implemented).  [es_dont_ix_now]
+      // Is it better to incl all comments texts in the orig post, in one single
+      // [allPageText] field?
+      // Fields.PageAuthorIds -> Json.arr(pageMeta.authorId),
+      // Fields.PageTagTypeIds -> Json.arr(tags.map(_.tagTypeId)),
+      // Fields.PageTagValues — "multiplied" by all comments!? Bad idea I suppose?
+      )
+
+    /* Wait with this? [es_dont_ix_now]   Maybe better to index the whole embedding url,
+    // for example. Or indexing the nesting depth, instead of orig-post y/n?
+    if (post.isOrigPost) {
+      json += Fields.IsOp -> JsTrue
+    }
+    if (pageMeta.embeddingPageUrl.isDefined) {
+      json += Fields.IsEmbedded -> JsTrue
+    }
+    if (..) HasAttachment -> JsTrue?  AttachmentSizeBytes -> JsNum...?
+    */
+
+    if (tags.exists(_.hasValue)) {
+      val tagsWithValue = tags.filter(_.hasValue)
+      val arrOfTagValObjs = MutArrBuf[JsObject]()
+
+      for (tag <- tagsWithValue) {
+        var jOb = Json.obj(ValFields.TagTypeId -> tag.tagTypeId)
+        // MaybeValue._anyValueAndValueTypeErr would already have detected any value
+        // field inconsistencies, so we can just add all values, for now.
+        // Later, need to:  tag.valType match
+        //   case TypeValueType.DateMins =>
+        //      use ValFields.ValDate instead, wich is of field type 'date',
+        //      instead of type 'integer'.
+        //   case TypeValueType.StrTxt =>
+        //      use ValFields.ValStrTxt instead, wich is of field type 'text',
+        //      instead of type 'keyword'.
+        //   cases ... e.g. date range,  location-lat-long,
+        //      each use their own field of the appropriate ES field type.
+        if (tag.valInt32.isDefined) {
+          jOb += ValFields.ValInt32 -> JsNumber(tag.valInt32.get)
+        }
+        if (tag.valFlt64.isDefined) {
+          jOb += ValFields.ValFlt64 -> JsNumber(tag.valFlt64.get)
+        }
+        if (tag.valStr.isDefined) {
+          jOb += ValFields.ValStrKwd -> JsString(tag.valStr.get)
+        }
+        arrOfTagValObjs.append(jOb)
+      }
+
+      json += Fields.TagValsNested -> JsArray(arrOfTagValObjs)
+    }
 
     json
   }
@@ -180,7 +243,7 @@ package object search {
         case null =>
           // Why no highlights? Oh well, just return the plain text then.
           val textUnsafe = (json \ Fields.ApprovedPlainText).as[String]
-          SECURITY; TESTS_MISSING
+          SECURITY; TESTS_MISSING  // Hmm. Use Jsoup to sanitize too just in case?
           Vector(org.owasp.encoder.Encode.forHtmlContent(textUnsafe))
         case highlightField: HighlightField =>
           // Html already escaped. [7YK24W]
@@ -192,6 +255,7 @@ package object search {
       val siteId = (json \ Fields.SiteId).get match {
         case x: JsString => x.value.toInt  // <— CLEAN_UP remove once I've reindexed edm & edc.
         case x: JsNumber => x.value.toInt
+        case x => die("TyESESITEID", s"Bad site id: '$x', type: ${classNameOf(x)}")
       }
       Good(SearchHit(
         siteId = siteId,
@@ -214,18 +278,75 @@ package object search {
   object PostDocFields {
     val SiteId = "siteId"
     val PageId = "pageId"
+    val PageType = "pageType"
     val PostId = "postId"
     val PostNr = "postNr"
     val PostType = "postType"
+    /* Wait. [es_dont_ix_now]
+    val IsOp = "isOp"
+    val IsEmbedded = "isEmb"
+    val HasAttachment = "hasAttachment"
+    */
     val ApprovedRevisionNr = "approvedRevNr"
     val ApprovedPlainText = "approvedText"
     val CurrentRevisionNr = "currentRevNr"
     // Later: index plain text instead of markdown source.
     val UnapprovedSource = "unapprovedSource"
     val CreatedAtUnixSeconds = "createdAt"
-    val Tags = "tags"  // all posts, page and replies
-    val PageTags = "pageTags"  // later — the page / article / orig post, only
+
+    val AuthorIds = "authorIds"
+    val AssigneeIds = "assigneeIds"
+
+    val Tags = "tags"  // all posts, page and replies.  [index_tags]  Old! Use instead:
+    val TagTypeIds = "tagTypeIds"
+    val TagValsNested = "tagValsNested"
+
+    /* Maybe later — the page / article / orig post's tags. Or is  [allPageText] better?
+    val PageAuthorIds = "pageAuthorIds"
+    val PageTagTypeIds = "pageTagTypeIds"
+    val PageTagValues = "tagValues" */
+
+    /** The parent category. */ RENAME // to parentCatId, in [ty_v1] ?
     val CategoryId = "categoryId"
+    /** The parent category and all ancestor categories.
+      * Or skip? Is it better to send category ids for the whole sub tree of the
+      * category one searches in?  In most cases I'd think so?  Unless *very* many?
+      */
+    val AncCatIds_notInUse = "ancCatIds"
+  }
+
+
+  object ValFields {
+    // One tag type field:
+    val TagTypeId = "tagTypeId"
+
+    // And one of these value fields:
+    // (Later, possibly many, e.g. lat & long could use  valInt32 and valInt32b
+    // hmm but no, instead,  there's a ES type:  geo_point,  so
+    // the database fields  val_int32_c  and val_int32_b_c  would both be
+    // combined into one valGeoPoint field:
+    //    tagValsNested: [{ valType: TypeValueType.GeoPoint.toInt, valGeoPoint: ... }]
+    // — generally, although Ty maybe needed many fields, ES needs just one, because
+    // ES has many different & nice field types.
+    // (ES complains if a single "value: ..." field was used to store values
+    // of different types, e.g. an int32 in one doc, a text in another.  But by
+    // appending the value type (e.g. int-32 or float-64) that problum won't happen.)
+    val ValInt32 = "valInt32"
+    val ValInt64 = "valInt64" // let's call it Int64 although js has only 53 "int bits"
+    val ValFlt64 = "valFlt64"
+    val ValStrKwd = "valStrKwd"
+    val ValStrTxt = "valStrTxt"
+    val ValDate = "valDate"
+    val ValDateRange = "valDateRange"
+    val ValGeoPoint = "valGeoPoint"  // for:  "type": "geo_point"
+
+    def fieldNameFor(valType: TypeValueType): St = valType match {
+      case TypeValueType.Int32 => ValInt32
+      case TypeValueType.Flt64 => ValFlt64
+      case TypeValueType.StrKwd => ValStrKwd
+      case _ => unimpl(o"""Searching for tag values of type $valType hasn't been
+                         implemented [TyEUNIMPLVALTYP]""")
+    }
   }
 
 
@@ -241,12 +362,22 @@ package object search {
       |"number_of_replicas": 0
       |}"""
 
+    // See: https://www.elastic.co/guide/en/elasticsearch/reference/8.9/number.html
     val typeText = """"type": "text""""
+    val typeBool = """"type": "boolean""""
+    val typeShort = """"type": "short""""
     val typeInteger = """"type": "integer""""
+    val typeLong = """"type": "long""""
+    val typeFloat = """"type": "float""""
+    val typeDouble = """"type": "double""""
     val typeKeyword = """"type": "keyword""""
     val typeDate = """"type": "date""""
+    val typeDateRange = """"type": "date_range""""
+    val typeGeoPoint = """"type": "geo_point""""
+    val typeNested = """"type": "nested""""
     val indexed = """"index": true"""
     val notIndexed = """"index": false"""
+    val dynamicFalse = """"dynamic": false"""
     val formatEpochSeconds = """"format": "epoch_second""""
     def analyzerLanguage = s""""analyzer": "$language""""
 
@@ -261,19 +392,107 @@ package object search {
       |"$PostDocType": {
       |  "_all": { "enabled": false  },
       |  "properties": {
-      |    "$SiteId":                { $typeInteger, $indexed },
+      |    $postMappingJsonStringContent
+      |  }
+      |}}
+      |"""
+
+    def postMappingJsonStringNoDocType: St = i"""{
+         |"properties": {
+         |  $postMappingJsonStringContent
+         |}}
+         |"""
+
+    /** Why nested docs, to store tag values?  See:
+      * https://www.elastic.co/blog/great-mapping-refactoring#_nested_fields_for_each_data_type
+      *
+      * Why are ids mapped as keywords, not integers? — Because we don't do range
+      * queries on ids, instead, we look up using term queries, and then, the
+      * keyword type is faster. See:
+      * https://www.elastic.co/guide/en/elasticsearch/reference/current/tune-for-search-speed.html#map-ids-as-keyword
+      * But why aren't all ids mapped as keywords? Because I didn't know that was better,
+      * back at that time (or maybe it wasn't, back at that time?).
+      */
+    private def postMappingJsonStringContent: St = i"""
+      |    "$SiteId":                { $typeInteger, $indexed /* keyword is better [es_kwd] */ },
       |    "$PageId":                { $typeKeyword, $indexed },
-      |    "$PostId":                { $typeInteger, $notIndexed },
-      |    "$PostNr":                { $typeInteger, $notIndexed },
+      |    "$PageType":              { $typeKeyword, $indexed },
+      |    "$PostId":                { $typeInteger, $notIndexed /* in doc id already */},
+      |    "$PostNr":                { $typeInteger, $notIndexed /* or kwd? */ },
+      |    "$PostType":              { $typeKeyword, $indexed },${""/*
+      |    // Let's wait with this. Maybe better to index the embedded url as type keyword,
+      |    // and can then prefix-search for embedding pages, e.g. type:
+      |    // "website/blog/2022/..." and find all embedded comments from 2022 (if the
+      |    // website uses that format).  [es_dont_ix_now]
+      |    "$IsOp":                  { $typeBool,    $indexed },
+      |    "$IsEmbedded":            { $typeBool,    $indexed },
+      |    "$HasAttachment":         { $typeBool,    $indexed }, */}
       |    "$ApprovedRevisionNr":    { $typeInteger, $notIndexed },
       |    "$ApprovedPlainText":     { $typeText,    $indexed, $analyzerLanguage },
       |    "$CurrentRevisionNr":     { $typeInteger, $notIndexed },
       |    "$UnapprovedSource":      { $typeText,    $indexed, $analyzerLanguage },
+      |    "$AuthorIds":             { $typeKeyword, $indexed },
+      |    "$AssigneeIds":           { $typeKeyword, $indexed },
       |    "$Tags":                  { $typeKeyword, $indexed },
-      |    "$CategoryId":            { $typeInteger, $indexed },
+      |    "$TagTypeIds":            { $typeKeyword, $indexed },
+      |    "$TagValsNested": {
+      |       $typeNested,
+      |       $dynamicFalse,
+      |       "properties": {${""/*
+      |           Always present: */}
+      |          "${ValFields.TagTypeId}":      { $typeKeyword, $indexed },${""/*
+      |           One of all the values below: */}
+      |          "${ValFields.ValInt32}":       { $typeInteger, $indexed },
+      |          "${ValFields.ValInt64}":       { $typeLong,    $indexed },
+      |          "${ValFields.ValFlt64}":       { $typeDouble,  $indexed },${""/*
+      |          Type 'keyword' is Ty's default. But sometimes indexing as 'text' is better? */}
+      |          "${ValFields.ValStrKwd}":      { $typeKeyword, $indexed },
+      |          "${ValFields.ValStrTxt}":      { $typeText,    $indexed, $analyzerLanguage },
+      |          "${ValFields.ValDate}":        { $typeDate,    $indexed },
+      |          "${ValFields.ValDateRange}":   { $typeDateRange, $indexed }
+      |       }${""/*
+      |    Could also, if won't be that many tags with values — but wouldn't work
+      |    with multitenancy? Because then all sites together can have many tag types
+      |    with values.
+      |    Few projects have > 200 tag types, see e.g. github.com/saltstack/salt/labels
+      |    and  kubernetes/kubernetes/labels  — they have 264 and 201 labels
+      |    but none of those labels can have any values (!).  So having a limit of
+      |    at most say 100 or 200 tag types that can have values, per site,
+      |    should be ok.
+      |    "$TagValuesObj":
+      |        "properties":
+      |          "typeNNN_fieldType": { $typeInt/Float/Text...,  $indexed },
+      |          // If type changed, we'd use fields with different suffixes,
+      |          // for the same Talkyard type id prefix.  Otherwise, if the same
+      |          // field name was used, ES would complains (if using the same
+      |          // field for different data types).
+      |          // e.g.:
+      |          "type1_int32":    { $typeInteger, $indexed }, // same type id (1), but
+      |          "type1_strKwd":   { $typeKeyword, $indexed }, // different field types
+      |          "type4_int32":    { $typeInteger, $indexed },
+      |          "type57_flt64":   { $typeDouble,  $indexed },
+      |          "type207_strTxt": { $typeText,    $indexed, analyzerLanguage },
+      |          "type207_int64":  { $typeLong,    $indexed },
+      |          // COULD_OPTIMIZE: Start with the above tag-value-in-single-field
+      |          // (instead of nested objects) approach, for a new site, and
+      |          // if number-of-tags-with-values ever approaches the limit,
+      |          // then, for that site, switch to the nested documents approach?
+      |          // (Might need to reindex.)  Might even use the tags-in-fields
+      |          // approach for the most commonly searched tags, and nested-doc-tags
+      |          // for infrequently used tags? Getting complicated...
+      |        */}
+      |    },${""/*
+      |     Or is it too bad for performance to repeat all page tag values,
+      |     for *every comment* (!) on the page? — Maybe it'd be better to
+      |     add an  [allPageText]  field to the OriginalPost?
+      |     Let's wait:
+      |    "$PageAuthorIds":         { $typeKeyword, $indexed },
+      |    "$PageTagTypeIds":        { $typeKeyword, $indexed },
+      |    "$PageTagValues":         { $typeNested,  $indexed },
+      |     */}
+      |    "$CategoryId":            { $typeInteger, $indexed /* keyword is better [es_kwd]
+      |    "$AncCatIds_notInUse":    { $typeKeyword, $indexed }, */},
       |    "$CreatedAtUnixSeconds":  { $typeDate,    $formatEpochSeconds }
-      |  }
-      |}}
       |"""
   }
 
@@ -285,3 +504,13 @@ package object search {
 
 }
 
+/*  Maybe nice to see how & when the index mappings have been updated?
+    Here:   [index_mapping_changelog]:
+
+    201x-??-??: Created the index, inital mapping.
+    2023-08-04: Added:
+                  - tag type id field, tag values
+                  - anc cat ids
+                  - page type,  is orig post,  author ids,  assignee ids
+
+ */

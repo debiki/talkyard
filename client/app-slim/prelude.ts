@@ -527,8 +527,8 @@ export function firstDefinedOf(x, y, z?) {
 }
 
 
-export function firstValOf(x, y, z?) {
-  return isVal(x) ? x : (isVal(y) ? y : z);
+export function firstValOf(x, y, z?, w?) {
+  return isVal(x) ? x : (isVal(y) ? y : (isVal(z) ? z : w));
 }
 
 
@@ -579,6 +579,11 @@ export function obj_isDeepEqIgnUndef(a: Object, b: Object): Bo {
     RENAME to arr_groupByKeepOne ?
   */
 export function groupByKeepOne<V>(vs: V[], fn: (v: V) => number): { [key: number]: V } {
+  return arr_groupByKeepOne(vs, fn);
+}
+export function arr_groupByKeepOne<Va>(vs: Va[], fn: (v: Va) => Nr): { [key: Nr]: Va } {
+  // Could:  return  arr_toMapKeepOne(vs, (v: Va, ixUnused) => [fn(v), v]);
+  // But we already have the code below; it's a tiny bit faster:
   const result = {};
   for (let v of vs) {
     const key = fn(v);
@@ -586,6 +591,24 @@ export function groupByKeepOne<V>(vs: V[], fn: (v: V) => number): { [key: number
     // Keep the first value only.
     if (!result.hasOwnProperty(key)) {
       result[key] = v;
+    }
+  }
+  return result;
+}
+
+/// `items`: The array. `fn`: Gets an item and it's position in the array,
+/// and returns a key-value to add to the map. If `fn` returns the same key,
+/// for two or more items, only the first key-value is added to the map.
+export function arr_toMapKeepOne<It, Va>(items: It[], fn: (item: It, ix: Ix) => [St | Nr, Va])
+        : { [key: St | Nr]: Va } {
+  const result = {};
+  for (let ix = 0; ix < items.length; ++ix) {
+    const item = items[ix];
+    const [key, value]: [St | Nr, Va] = fn(item, ix);
+    if (notVal(key)) continue;
+    // Keep the first value only.
+    if (!result.hasOwnProperty(key)) {
+      result[key] = value;
     }
   }
   return result;
@@ -783,6 +806,15 @@ export function ifEventOnNotThen(event: string, selector: string,
     }
     callback(elem, event);
   });
+}
+
+
+export function elm_isBtn(elm: HTMLElement | EventTarget): Bo {
+  // Can be a <button>, or e.g. a <div class='btn'>.
+  // The Typescript declarations don't include any elem properties, if we're
+  // server side, so cast to any, to avoid compiler errors.
+  const e = elm as any;
+  return e.nodeName === 'BUTTON' || /\bbtn\b/.test(e.className);
 }
 
 
