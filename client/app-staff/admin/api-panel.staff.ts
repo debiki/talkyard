@@ -140,10 +140,10 @@ const ApiSecretItem = createComponent({
 
     return r.tr({ className: clazz + ' ' + clazzActiveOrDeleted },
       r.td({}, secret.nr),
-      r.td({}, "Any"),  // currently may call API using any user id
+      r.td({}, "Any"),  // currently may call API using any user id  [api_secret_caps]
       r.td({}, timeExact(secret.createdAt)),
       r.td({}, secret.isDeleted ? rFragment("Yes, ", timeExact(secret.deletedAt)) : "No"),
-      r.td({}, "Do anything"), // secret.secretType is always for any user
+      r.td({}, "Do anything"), // secret.secretType is always for any user  [api_secret_caps]
       r.td({}, deleteButton, secretKeyOrShowButton));
   }
 });

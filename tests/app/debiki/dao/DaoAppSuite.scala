@@ -377,7 +377,7 @@ class DaoAppSuite(
         doAsAnon: Opt[WhichAnon.NewAnon] = None,
         extId: Option[ExtId] = None, discussionIds: Set[AltPageId] = Set.empty): CreatePageResult = {
     dao.createPage2(
-      pageRole, PageStatus.Published, anyCategoryId = anyCategoryId,
+      pageRole, PageStatus.Published, anyCategoryId = anyCategoryId, withTags = Nil,
       anyFolder = Some("/"), anySlug = Some(""),
       title = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
       showId = true, deleteDraftNr = None, Who(authorId, browserIdData), dummySpamRelReqStuff,

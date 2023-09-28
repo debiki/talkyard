@@ -37,9 +37,11 @@ class SessionController @Inject()(cc: ControllerComponents, edContext: TyContext
   def listSessions(patId: PatId): Action[U] = GetAction { req =>
     import req.{dao, theRequester => reqer}
     throwForbiddenIfMayNot("view", dao, reqer, patId)
+    val reqrsSessCompId = req.tySession.part1CompId
     val activeSessions = dao.listPatsSessions(patId)
     val json = Json.obj("sessions" -> JsArray(activeSessions.map(s =>
-          JsSession(s, inclPart1 = reqer.isAdmin))))
+          JsSession(s, inclPart1 = reqer.isAdmin,
+                    isCurrent = s.part1CompId == reqrsSessCompId))))
     OkApiJson(json)
   }
 

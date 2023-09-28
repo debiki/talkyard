@@ -139,6 +139,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   //    includeChatMessages: Boolean,  onlyUnapproved: Boolean,
   //    onPageId: Option[PageId]
   def loadPostsByQuery(query: PostQuery): immutable.Seq[Post]
+  def loadPostsByTag(tagTypeId: TagTypeId, inclUnapproved: Bo, limit: i32,
+        orderBy: OrderBy): immutable.Seq[Post]
 
   def loadEmbeddedCommentsApprovedNotDeleted(limit: Int, orderBy: OrderBy): immutable.Seq[Post]
 
@@ -167,6 +169,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
     * [[ed.server.search.makeElasticSearchJsonDocFor]]. [ix_unappr]
     */
   def indexPostsSoon(posts: Post*): Unit
+  def indexPostIdsSoon_unimpl(postIds: Set[PostId]): Unit
+
   def indexAllPostsOnPage(pageId: PageId): Unit
   def indexPagesSoon(pageMeta: PageMeta*): Unit
 
@@ -282,12 +286,14 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   // ----- Tags (TagsRdbMixin)
   def nextTagId(): i32
-  def addTag(tag: Tag): U
-  def removeTags(tags: Seq[Tag]): U
+  def insertTag(tag: Tag): U
+  def updateTag(tag: Tag): U
+  def deleteTags(tags: Seq[Tag]): U
   def loadTagsByPatId(patIds: PatId): ImmSeq[Tag]
   def loadTagsForPages(pageIds: Iterable[PageId]): Map[PageId, ImmSeq[Tag]]
   def loadPostTagsAndAuthorBadges(postIds: Iterable[PostId]): TagsAndBadges
   def loadTagsToRenderSmallPage(pageId: PageId): Seq[Tag]
+  def loadAllTags_forExport(): ImmSeq[Tag]
 
   CLEAN_UP ; REMOVE // old tags code
   // -- Old: (TagsSiteDaoMixin) -----

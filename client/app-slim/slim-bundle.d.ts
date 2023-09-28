@@ -100,6 +100,7 @@ declare const UsersRoot: string;
 declare const GroupsRoot: string;
 declare const SearchRootPath: string;
 declare const AdminRoot: string;
+declare const AdminUsersRoot: St;
 
 
 declare const RoutePathLatest: string;
@@ -165,6 +166,7 @@ declare namespace debiki2 {
   function firstToLower(text: St, doIt?: Bo): St;
   function oneIfDef(x: any): number;
 
+  function elm_isBtn(elm: HTMLElement | EventTarget): Bo;
   function $first(selector: string): HTMLElement;
   function $all(selector: string): HTMLCollectionOf<HTMLElement>;
   function $byId(elemId: string): HTMLElement;
@@ -185,6 +187,10 @@ declare namespace debiki2 {
   var NavLink; // ReactRouterDOM.NavLink
   function LiNavLink(props, ...contents); // A NavLink in a <li>
   function LiExtLink(props, ...contents); // An <a href=...> in a <li>
+
+  function Tag(ps: { tag?: Tag, tagType: TagType, canEdit?: Bo,
+      onClickDropdown?: Bo, me: Me }): RElm;
+  function tag_getVal(tag: Tag, tagType: TagType): Nr | St | U;
 
   var createComponent: any;       // don't use — I'm renaming to createFactory
   var createClassAndFactory: any; // don't use — I'm renaming to createFactory
@@ -234,6 +240,7 @@ declare namespace debiki2 {
     var HelpMessageBox;
     function isHelpMessageClosedAnyVersion(store: Store, messageId: string): boolean;
     function getServerAnnouncements(store: Store): RElm;
+    function anyMaintMsg(): RElm | N;
   }
 
   namespace topbar {
@@ -286,6 +293,8 @@ declare namespace debiki2 {
 
   // Currenty read-only (never call the returned 'setState'). Instead, ...
   function useStoreState(): [Store, () => void];
+  function useStoreEvent(listener: (patch: StorePatch) => V, dependencies: any[]);
+  function usePostList(): [PostWithPage[] | N | false, (posts: PostWithPage[]) => V];
   // ... use ReactActions to update the store. For now. Would want to remove ReactActions,
   // and use only hooks instead? [4WG20ABG2]
   var ReactActions: any;
@@ -320,6 +329,7 @@ declare namespace debiki2 {
     function forEachDraft(pageId: PageId, fn: (draft: Draft, keyStr: string) => void);
   }
 
+  function event_isCmdShiftClick(event): Bo;
   function event_isCtrlEnter(event): boolean;
   function event_isEscape(event): boolean;
   function page_isOpenChat(pageRole: PageRole): Bo;
@@ -339,7 +349,11 @@ declare namespace debiki2 {
   function uppercaseFirst(text: string): string;
   function firstDefinedOf(x, y, z?): any;
   function firstValOf(x, y, z?): any;
+  // Renaming from...
   function groupByKeepOne<V>(vs: V[], fn: (v: V) => number): { [key: number]: V };
+  // ...to:
+  function arr_groupByKeepOne<Va>(vs: Va[], fn: (v: Va) => Nr): { [key: Nr]: Va };
+  function arr_toMapKeepOne<It, Va>(items: It[], fn: (item: It, ix: Ix) => [St | Nr, Va]);
   function isNullOrUndefined(x): boolean;  // REMOVE  use  notVal(x)  instead
   function isVal(x): Bo;
   function notVal(x): Bo;
@@ -434,6 +448,7 @@ declare namespace debiki2 {
   function origin(): string;
   function linkToPageId(pageId: PageId): string;
   function linkToPostNr(pageId: PageId, postNr: PostNr): string;
+  function linkToType(type: TagType): St;
   function linkToDraftSource(draft: Draft, pageId?: PageId, postNr?: PostNr): string;
   function linkToNotificationSource(notf: Notification): string;
   function linkToAdminPageAdvancedSettings(hostname?: string): string;
@@ -514,6 +529,7 @@ declare namespace debiki2 {
   namespace page {
     var Post;
     namespace Hacks {
+      function navigateTo(path: St): V;
       function processPosts(startElemId?: string);
     }
   }

@@ -125,6 +125,7 @@ trait SystemTransaction {  RENAME // to SysTx, started already
   // ----- System
 
   def loadSystemSettings(): SystemSettings
+  def updateSystemSettings(settings: SystemSettings): U
 
   // ----- Testing
 

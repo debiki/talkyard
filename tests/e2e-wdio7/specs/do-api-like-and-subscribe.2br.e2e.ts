@@ -4,6 +4,7 @@ import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
 import server from '../utils/server';
 import { buildSite } from '../utils/site-builder';
+import { makeVoteAction, makeSubscribeAction } from '../utils/do-api-actions';
 import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/ty-e2e-test-browser';
 import c from '../test-constants';
 
@@ -130,9 +131,11 @@ describe(`do-api-like-and-subscribe.2br  TyTEAPILIKESUBS`, () => {
       apiSecret: apiSecret.secretKey,
       data: {
         doActions: [
-              makeLikeAction(
+              makeVoteAction(
                   // Test direct id refs.  TyTREFTYPES01
-                  'userid:' + memah.id, 'pageid:' + forum.topics.byMichaelCatA.id)],
+                  'userid:' + memah.id, {
+                    whatPage: 'pageid:' + forum.topics.byMichaelCatA.id,
+                    voteType: 'Like', howMany: 1 })],
       },
     });
   });
@@ -261,24 +264,8 @@ describe(`do-api-like-and-subscribe.2br  TyTEAPILIKESUBS`, () => {
 
   function makeLikeAndSubscribeActions(asWho: St, whatPage: St, undo?: true): Action[] {
     return [
-        makeLikeAction(asWho, whatPage, undo),
+        makeVoteAction(asWho, { whatPage, voteType: 'Like', howMany: undo ? 0 : 1 }),
         makeSubscribeAction(asWho, whatPage, undo)];
-  }
-
-  function makeLikeAction(asWho: St, whatPage: St, undo?: true): Action {
-    return {
-      asWho,
-      doWhat: 'SetVote',
-      doHow: { whatPage, whatVote: 'Like', howMany: undo ? 0 : 1 },
-    };
-  }
-
-  function makeSubscribeAction(asWho: St, whatPage: St, undo?: true): Action {
-    return {
-      asWho,
-      doWhat: 'SetNotfLevel',
-      doHow: { whatPage, whatLevel: undo ? 'Normal' : 'NewPosts', }
-    };
   }
 
 });

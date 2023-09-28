@@ -105,6 +105,8 @@ describe(`d.sessions-staff-logout-others.4br  TyTESESLGOOTR`, () => {
 
   it(`Moderator Mons goes to Mallory's profile page`, async () => {
     await mons_brA.userProfilePage.preferences.goHere(mallory.username, { origin: site.origin });
+  });
+  it(`... logs in`, async () => {
     await mons_brA.complex.loginWithPasswordViaTopbar(mons);
   });
   it(`... sees the Preferences tab  ttt`, async () => {

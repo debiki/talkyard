@@ -456,7 +456,8 @@ const DashboardPanel = React.createFactory<any>(function(props) {
   if (!dashboardData)
     return r.p({}, "Loading ...");
 
-  const ps = admin.prettyStats(dashboardData.siteStats);
+  const stats = dashboardData.siteStats;
+  const ps = admin.prettyStats(stats);
 
   const megabytesDiskUsed =
         `${prettyNum(ps.fsMb)} MB` + (
@@ -466,9 +467,12 @@ const DashboardPanel = React.createFactory<any>(function(props) {
     r.div({ class: 's_A_Db' },
       r.h2({}, "Site size"),
       r.p({},
-        r.b({}, "Num members: "), r.span({}, dashboardData.siteStats.numParticipants), r.br(),
-        r.b({}, "Num pages: "), r.span({}, dashboardData.siteStats.numPages), r.br(),
-        r.b({}, "Num posts: "), r.span({}, dashboardData.siteStats.numPosts), r.br(),
+        r.b({},
+          "Num ", Link({ to: AdminUsersRoot }, "users"),
+          " and ", r.a({ href: GroupsRoot }, "groups"), // different React app
+          ": "), r.span({}, stats.numParticipants), r.br(),
+        r.b({}, "Num pages: "), r.span({}, stats.numPages), r.br(),
+        r.b({}, "Num posts: "), r.span({}, stats.numPosts), r.br(),
         ),
       //r.pre({}, JSON.stringify(dashboardData.siteStats, undefined, 4)),
       r.h2({}, "Disk usage"),
@@ -487,7 +491,7 @@ const DashboardPanel = React.createFactory<any>(function(props) {
       r.p({ class: 's_A_Db_Storage' },
         r.span({}, `Uploaded files storage used: `),
         r.code({}, megabytesDiskUsed),
-        r.span({}, ", in " + dashboardData.siteStats.numUploads + " files."),
+        r.span({}, ", in " + stats.numUploads + " files."),
         r.br(),
         r.span({}, "(E.g. images and attachments.)")),
 
@@ -658,8 +662,8 @@ const LoginAndSignupSettings = createFactory({
         }), */
 
         embCommentsBroken1,
-
-        Setting2(props, { type: 'checkbox', label: "Login required", id: 'e2eLoginRequiredCB',
+        Setting2(props, { type: 'checkbox', label: "Login required",  // [settings_templates]
+          id: 'e2eLoginRequiredCB',
           className: 'e_A_Ss_S-LoginRequiredCB',
           // Won't work with blog comments !
           // Maybe new category access permission? Visible to strangers,
@@ -923,7 +927,8 @@ const LoginAndSignupSettings = createFactory({
         }),
 
         enableTySsoOrOnlyCustIdps || !allowSignup ? null : Setting2(props, {
-          type: 'checkbox', label: "Allow anonymous \"login\"", id: 'e2eAllowGuestsCB',
+          type: 'checkbox', label: "Allow anonymous \"login\"",  // [settings_templates]
+          id: 'e2eAllowGuestsCB',
           className: 'e_A_Ss_S-AllowGuestsCB',
           help: "Lets people post comments and create topics, without creating real accounts " +
             "with username and password. Instead, they just type a name and email address. " +
@@ -937,7 +942,7 @@ const LoginAndSignupSettings = createFactory({
         }),
 
 
-        // ---- Ways to sign up: OpenAuth
+        // ---- Ways to sign up: OpenAuth  [settings_templates]
 
         enableTySsoOrOnlyCustIdps || !allowSignup ? null : Setting2(props, {
           type: 'checkbox', label: "Enable Google signup", id: 'e_EnableGoogleLogin',
@@ -1010,7 +1015,8 @@ const LoginAndSignupSettings = createFactory({
           "Who may sign up?"),
 
         Setting2(props, {
-          type: 'textarea', label: "Email domain allowlist", className: 'e_EmailWhitelist',
+          type: 'textarea', label: "Email domain allowlist",  // [settings_templates]
+          className: 'e_EmailWhitelist',
           help: rFr({},
             "People may ", r.i({}, "only "),
             "sign up with emails from these domains. One domain per row. " +
@@ -1314,7 +1320,7 @@ const ModerationSettings = createFactory({
       r.div({},
 
         r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl'},
-          "Require approval before"),
+          "Require approval before"),  // [settings_templates]
 
         r.p({ className: 'col-sm-offset-3 s_A_Ss_Expl'},
           // "Spammers are somewhat often real humans, who get paid a cent to solve CAPTCHAS " +
@@ -1396,7 +1402,7 @@ const ModerationSettings = createFactory({
 
 
         r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl'},
-          "Review after published"),
+          "Review after published"),  // [settings_templates]
 
         r.p({ className: 'col-sm-offset-3 s_A_Ss_Expl'},
           "After you've approved a new member's first few posts, " +
@@ -1513,7 +1519,8 @@ const SpamFlagsSettings = createFactory({
       r.div({},
         !currentSettings.akismetApiKey ? null :  // currently, needs server side key
         Setting2(props, {
-          type: 'checkbox', label: "Enable Akismet", id: 'e_EnableAkismet',
+          type: 'checkbox', label: "Enable Akismet",  // [settings_templates]
+          id: 'e_EnableAkismet',
           help: "Akismet is a spam filter service. Uncheck to disable.",
           getter: (s: Settings) => s.enableAkismet,
           update: (newSettings: Settings, target) => {
@@ -2858,7 +2865,7 @@ const LegalSettings = createFactory({
         }), */
 
         hasCustomToU ? null : Setting2(props, {
-          type: 'select', label: "Contributors agreement",
+          type: 'select', label: "Contributors agreement",  // [settings_templates]
           help: r.span({}, "Which rights should people grant to you on material they create " +
               "and post to this community? (This setting affects your ", userContentTermsLink,
             " page.)"),
@@ -2880,7 +2887,7 @@ const LegalSettings = createFactory({
         ]),
 
         hasCustomToU ? null : Setting2(props, {
-          type: 'select', label: "Content license",
+          type: 'select', label: "Content license",  // [settings_templates]
           help: r.span({},
             "Under which ",
             r.a({ href: 'https://creativecommons.org/licenses/', target: '_blank' },

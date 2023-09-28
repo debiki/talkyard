@@ -25,6 +25,7 @@ import debiki.{SpecialContentPages, TextAndHtml}
 import debiki.dao.{PagePartsDao, SettingsDao, AuditDao}
 import talkyard.server.notf.NotificationGenerator
 import talkyard.server.pop.PagePopularityDao
+import talkyard.server.authz.ReqrAndTgt
 import scala.collection.immutable
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -38,6 +39,13 @@ case class SitePatcher(globals: debiki.Globals) {
 
   def upsertIntoExistingSite(siteId: SiteId, siteData: SitePatch, browserIdData: BrowserIdData)
         : SitePatch = {
+
+    // Not yet supported, when patching:  [_dont_patch_tags_yet]
+    // (People can use the Do API instead. — But supported, when restoring a site.)
+    throwBadRequestIf(siteData.types.nonEmpty,
+          "TyE306AK7MS2", "Can't patch tag types: Not implemented. Use the Do-API instead.")
+    throwBadRequestIf(siteData.tags.nonEmpty,
+          "TyE306AK7MS3", "Can't patch tags: Not implemented. Use the Do-API instead.")
 
     // Tested e.g. here:
     // - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
@@ -631,6 +639,9 @@ case class SitePatcher(globals: debiki.Globals) {
         }
       }
 
+      // Use the Do API instead?  [_dont_patch_tags_yet]
+      assert(siteData.types.isEmpty)
+      assert(siteData.tags.isEmpty)
 
       // ----- Categories
 
@@ -1412,6 +1423,10 @@ case class SitePatcher(globals: debiki.Globals) {
 
       siteData.pageParticipants foreach tx.insertPageParticipant
 
+      siteData.types foreach { type_ =>
+        tx.upsertTagType(type_)(IfBadAbortReq)
+      }
+
       siteData.categories foreach { categoryMeta =>
         //val newId = transaction.nextCategoryId()
         tx.insertCategoryMarkSectionPageStale(categoryMeta, IfBadAbortReq)
@@ -1443,6 +1458,9 @@ case class SitePatcher(globals: debiki.Globals) {
         tx.upsertLink(link)
       }
 
+      siteData.tags foreach { tag =>
+        tx.insertTag(tag)
+      }
       siteData.permsOnPages foreach { permission =>
         tx.insertPermsOnPages(permission)
       }
@@ -1504,8 +1522,10 @@ case class SitePatcher(globals: debiki.Globals) {
       // each pat's [numLikesReceived]:
       //    tx.insertPostAction(vote.toPostAction(postId = post.id))
       // Instead:  (and this is more like the Do API, should use instead)
+      val voter = newSiteDao.getTheParticipant(vote.voterId) // just for tests, see comment above
+      val voterAsReqrTgt = ReqrAndTgt(voter, browserIdData, voter)
       newSiteDao.addVoteIfAuZ(pageId = vote.pageId, postNr = vote.postNr, vote.voteType,
-            voterId = vote.voterId, voterIp = None, postNrsRead = Set.empty)
+            voterAsReqrTgt, voterIp = None, postNrsRead = Set.empty)
     }
 
     // If we restored a site, then there're already things in the mem cache and Redis cache,

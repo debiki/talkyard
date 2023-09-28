@@ -25,6 +25,9 @@
  *
  * If reading the same page more than once, total-seconds-spent-reading-that-page increases
  * further, but posts already reported as read, won't be reported again.
+ *
+ * But won't clear notifications about assignees-changed or post-tagged — such changes
+ * are harder to notice (also when looking at the page).  [0clr_asgd_tagd_notfs]
  */
 //------------------------------------------------------------------------------
    namespace debiki2.page.PostsReadTracker {

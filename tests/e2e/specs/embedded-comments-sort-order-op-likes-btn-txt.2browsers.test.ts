@@ -250,6 +250,10 @@ describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
 
 
   it("Maria adds a comment", () => {
+    // RACE E2EBUG: The login dialog somitimes pops up, although Maria is logged
+    // in already. — Does the test somehow click the button, before Maria's
+    // personal data has been added?
+    mariasBrowser.metabar.waitUntilLoggedIn();
     mariasBrowser.complex.replyToEmbeddingBlogPost("Hi I am here");
   });
 

@@ -37,7 +37,11 @@ export const UsersHomeComponent = createReactClass(<any> {
   displayName: 'UsersHomeComponent',
 
   render: function() {
-    return (
+    return rFr({},
+        // COULD show server announcements, but then need to load `store` here,
+        // and then maybe should pass it to the children? Let's think about later.
+        r.div({ className: 'c_SrvAnns' },
+          debiki2.help.anyMaintMsg()),
         Switch({},
           // Users
           Route({ path: UsersRoot, component: BadUrlComponent, exact: true }),
@@ -208,7 +212,7 @@ const UserPageComponent = createReactClass(<any> {
     // Wait until url updated to show username, instead of id, to avoid mounting & unmounting
     // sub comoponents, which could result in duplicated load-data requests.  (5GKWS20)
     if (!user || !me || (user.username && isDigitsOnly(usernameOrId)))
-      return r.p({ className: 'container' }, t.Loading);
+      return r.p({ className: 'container e_LdngUP' }, t.Loading);
 
     const imStaff = isStaff(me);
     const userGone = user_isGone(user);
@@ -470,7 +474,8 @@ const PatTopPanel = createComponent({
     const thatIsYou = !isMe ? null :
       r.span({ className: 'esProfile_isYou' }, t.upp.you);
 
-    // COULD_OPTIMIZE Incl the updated pat in the response.
+    // COULD_OPTIMIZE Incl the updated pat in the response,
+    // maybe via a store patch, and listen via [useStoreEvent]().
     const pubTags = TagListLive({ forPat: user, store, onChanged: props.reloadUser });
 
     const bio = !!user.bio &&

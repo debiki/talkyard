@@ -30,7 +30,7 @@ import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import talkyard.server.dao._
 import PostsDao._
-import talkyard.server.authz.Authz
+import talkyard.server.authz.{Authz, ReqrAndTgt, MembReqrAndTgt}
 import talkyard.server.spam.SpamChecker
 import org.scalactic.{Bad, Good, One, Or}
 import math.max
@@ -61,14 +61,62 @@ case class LoadPostsResult(
 trait PostsDao {
   self: SiteDao =>
 
+  import context.security.{throwNoUnless, throwIndistinguishableNotFound}
+
   // 3 minutes
   val LastChatMessageRecentMs: UnixMillis = 3 * 60 * 1000
+
+
+  def insertReplyIfAuZ(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
+        postType: PostType, deleteDraftNr: Option[DraftNr],
+        reqrAndReplyer: ReqrAndTgt,
+        spamRelReqStuff: SpamRelReqStuff,
+        anonHow: Opt[WhichAnon] = None, refId: Opt[RefId] = None,
+        withTags: ImmSeq[TagTypeValue] = Nil)  // oops forgot_to_use
+        : InsertPostResult = {
+
+    val pageMeta = this.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound(
+          "TyE5FKW20", showErrCodeAnyway = reqrAndReplyer.reqrIsAdmin)
+
+    val catsRootLast = this.getAncestorCategoriesSelfFirst(pageMeta.categoryId)
+    val tooManyPermissions = getPermsOnPages(categories = catsRootLast)
+
+    val replyToPosts = this.loadPostsAllOrError(pageId, replyToPostNrs) getOrIfBad {
+          missingPostNr =>
+      throwNotFound(s"Post nr $missingPostNr not found", "TyEW3HPY08")
+    }
+
+    val reqrAndLevels = readTx(this.loadUserAndLevels(reqrAndReplyer.reqrToWho, _))
+    val privTalkMembers = this.getAnyPrivateGroupTalkMembers(pageMeta)
+
+    // [2_perm_chks] [dupl_re_authz_chk]
+    throwNoUnless(Authz.mayPostReply(
+          reqrAndLevels, this.getOnesGroupIds(reqrAndLevels.user),
+          postType, pageMeta, replyToPosts, privTalkMembers,
+          inCategoriesRootLast = catsRootLast, tooManyPermissions),
+          "TyEM0REPLY1")
+
+    if (reqrAndReplyer.areNotTheSame) {
+      val replyerAndLevels = readTx(this.loadUserAndLevels(reqrAndReplyer.targetToWho, _))
+      throwNoUnless(Authz.mayPostReply(
+            replyerAndLevels, this.getOnesGroupIds(replyerAndLevels.user),
+            postType, pageMeta, replyToPosts, privTalkMembers,
+            inCategoriesRootLast = catsRootLast, tooManyPermissions),
+            "TyEM0REPLY2")
+    }
+
+    this.insertReply(textAndHtml, pageId = pageId, replyToPostNrs = replyToPostNrs,
+          postType, deleteDraftNr = deleteDraftNr,
+          byWho = reqrAndReplyer.targetToWho, spamRelReqStuff,
+          anonHow, refId = refId, withTags)
+  }
 
 
   def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
         postType: PostType, deleteDraftNr: Option[DraftNr],
         byWho: Who, spamRelReqStuff: SpamRelReqStuff,
-        anonHow: Opt[WhichAnon] = None)
+        anonHow: Opt[WhichAnon] = None, refId: Opt[RefId] = None,
+        withTags: ImmSeq[TagTypeValue] = Nil)  // oops forgot_to_use
         : InsertPostResult = {
 
     val authorId = byWho.id
@@ -92,7 +140,7 @@ trait PostsDao {
     val (newPost, author, notifications, anyReviewTask) = writeTx { (tx, staleStuff) =>
       deleteDraftNr.foreach(nr => tx.deleteDraft(byWho.id, nr))
       insertReplyImpl(textAndHtml, pageId, replyToPostNrs, postType,
-            byWho, spamRelReqStuff, now, authorId, tx, staleStuff, anonHow)
+            byWho, spamRelReqStuff, now, authorId, tx, staleStuff, anonHow, refId = refId)
     }
 
     refreshPageInMemCache(pageId)
@@ -116,7 +164,8 @@ trait PostsDao {
         authorId: UserId,
         tx: SiteTx, staleStuff: StaleStuff,
         doAsAnon: Opt[WhichAnon] = None,
-        skipNotfsAndAuditLog: Boolean = false)
+        skipNotfsAndAuditLog: Boolean = false,
+        refId: Opt[RefId] = None)
         : (Post, Participant, Notifications, Option[ReviewTask]) = {
 
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE25JP5L2")
@@ -213,6 +262,7 @@ trait PostsDao {
 
     val newPost = Post.create(
       uniqueId = uniqueId,
+      extImpId = refId,
       pageId = pageId,
       postNr = postNr,
       parent = anyParent,
@@ -2415,13 +2465,21 @@ trait PostsDao {
   }
 
 
-  def deleteVoteIfAuZ(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId): Unit = {
+  def deleteVoteIfAuZ(pageId: PageId, postNr: PostNr, voteType: PostVoteType,
+          reqrAndVoter: ReqrAndTgt): U = {
     require(postNr >= PageParts.BodyNr, "TyE2ABKPGN7")
 
+    SECURITY; SLEEPING // May the requester vote on behalf of voter?  [vote_as_otr]
+
     writeTx { (tx, staleStuff) =>
+      val reqr = tx.loadTheParticipant(reqrAndVoter.reqr.id)
+      val voterId: UserId = reqrAndVoter.target.id
       val post = tx.loadThePost(pageId, postNr = postNr)
-      val voter = tx.loadTheParticipant(voterId)
-      throwIfMayNotSeePost(post, Some(voter))(tx)
+      val voter = tx.loadTheParticipant(voterId)  ; COULD_OPTIMIZE // load at the same time
+
+      // No need to access check the target (voter) —  it is ok for an admin to remove
+      // someone else's vote from a post that other person can no longer see.
+      throwIfMayNotSeePost(post, Some(reqr))(tx)
 
       val gotDeleted = tx.deleteVote(pageId, postNr = postNr, voteType, voterId = voterId)
       throwForbiddenIf(!gotDeleted, "TyE50MWW14",
@@ -2466,19 +2524,25 @@ trait PostsDao {
 
 
   def addVoteIfAuZ(pageId: PageId, postNr: PostNr, voteType: PostVoteType,
-        voterId: UserId, voterIp: Opt[IpAdr], postNrsRead: Set[PostNr]): Unit = {
+        reqrAndVoter: ReqrAndTgt, voterIp: Opt[IpAdr], postNrsRead: Set[PostNr]): Unit = {
     require(postNr >= PageParts.BodyNr, "TyE5WKAB20")
+
+    SECURITY; SLEEPING // May the requester vote on behalf of voter?  [vote_as_otr]
+    // Currently not a problem, because either they're the same, or the requester is sysbot,
+    // see [api_do_as].  Later, use:  UserDao._editMemberThrowUnlessSelfStaff  here?
+    // Or even better (?), add the checks to  ReqrAndTgt ?
 
     writeTx { (tx, staleStuff) =>
       val page = newPageDao(pageId, tx)
-      val voter = tx.loadTheParticipant(voterId)
-      SECURITY // minor. Should be if-may-not-see-*post*. And should do a pre-check in VoteController.
-      throwIfMayNotSeePage(page, Some(voter))(tx)
-
       val post = page.parts.thePostByNr(postNr)
 
+      // Could do an [authz_pre_check] in VoteController? But why?
+      this.throwIfMayNotSeePost2(ThePost.Here(post), reqrAndVoter)(tx)
+
+      val voter = reqrAndVoter.target
+
       if (voteType == PostVoteType.Bury && !voter.isStaffOrFullMember &&  // [7UKDR10]
-          page.meta.authorId != voterId)
+          page.meta.authorId != voter.id)
         throwForbidden("DwE2WU74", "Only staff, full members and the page author may Bury-vote")
 
       if (voteType == PostVoteType.Unwanted && !voter.isStaffOrCoreMember)  // [4DKWV9J2]
@@ -2487,14 +2551,14 @@ trait PostsDao {
       ANON_UNIMPL // Don't let people upvote their own anonymous/pseudonymous posts.
 
       if (voteType == PostVoteType.Like) {
-        if (post.createdById == voterId)
+        if (post.createdById == voter.id)
           throwForbidden("DwE84QM0", "Cannot like own post")
       }
 
       try {
         tx.insertPostAction(
           PostVote(post.id, pageId = post.pageId, postNr = post.nr, doneAt = tx.now,
-            voterId = voterId, voteType))
+            voterId = voter.id, voteType))
       }
       catch {
         case DbDao.DuplicateVoteException =>
@@ -2519,14 +2583,14 @@ trait PostsDao {
           Set(postNr)
         }
 
-      tx.updatePostsReadStats(pageId, postsToMarkAsRead, readById = voterId,
+      tx.updatePostsReadStats(pageId, postsToMarkAsRead, readById = voter.id,
             readFromIp = voterIp)
       updatePageAndPostVoteCounts(post, tx)
       updatePagePopularity(page.parts, tx)
       addUserStats(UserStats(post.createdById, numLikesReceived = 1))(tx)
-      addUserStats(UserStats(voterId, numLikesGiven = 1))(tx)
+      addUserStats(UserStats(voter.id, numLikesGiven = 1))(tx)
 
-      if (voterId != SystemUserId && voteType == PostVoteType.Like) {
+      if (voter.id != SystemUserId && voteType == PostVoteType.Like) {
         val oldLikeNotfs = tx.loadNotificationsAboutPost(   // [toggle_like_email]
               postId = post.id, NotificationType.OneLikeVote,
               toPpId = Some(post.createdById))
@@ -2559,6 +2623,11 @@ trait PostsDao {
   }
 
 
+  /** Here there're many request target users, and two "kinds":
+    * those being added, and those being removed.
+    * Maybe change class ReqrAndTgt so it supports many targets,
+    * of types  needs-permissions,  or is-getting-removed?  [many_req_tgt_pats]
+    */
   def addRemovePatNodeRelsIfAuZ(addPatIds: Set[PatId], removePatIds: Set[PatId],
         postId: PostId, relType: PatNodeRelType, generateMetaComt: Bo,
         notifyPats: Bo, reqrInf: Who, mab: MessAborter): StorePatch = {
@@ -3239,6 +3308,18 @@ trait PostsDao {
     readOnlyTransaction(_.loadPostsByUniqueId(Vector(postId))).values.headOption
 
 
+  def loadPostByRef(ref: PostRef): Opt[Post] = ref match {
+    case ParsedRef.ExternalId(refId) =>
+      loadPostByRefId(refId)
+    case ParsedRef.InternalIntId(id) =>
+      loadPostByUniqueId(id)
+  }
+
+  def loadPostByRefId(refId: RefId): Opt[Post] = {
+      readTx(_.loadPostsByExtIdAsMap(Vector(refId))).values.headOption
+  }
+
+
   /** Finds all of postNrs. If any single one (or more) is missing, returns Error. */
   def loadPostsAllOrError(pageId: PageId, postNrs: Iterable[PostNr])
         : immutable.Seq[Post] Or One[PostNr] =
@@ -3315,6 +3396,10 @@ trait PostsDao {
                   onlyOpenPosts = q.onlyOpen, limit = q.limit)
             val postIds = rels.map(_.toNodeId)
             tx.loadPostsByIdKeepOrder(postIds.distinct)
+          case q: PostQuery.PostsWithTag =>
+            TESTS_MISSING // TyTLISTTAGDPOSTS
+            tx.loadPostsByTag(tagTypeId = q.tagTypeId, inclUnapproved = q.inclUnapproved,
+                  limit = query.limit, orderBy = q.orderBy)
           case _ =>
             tx.loadPostsByQuery(query)
         }

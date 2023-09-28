@@ -18,10 +18,12 @@
 package controllers
 
 import com.debiki.core._
-import debiki.SiteTpi
+import com.debiki.core.Prelude._
+import debiki.{JsonUtils, RateLimits, SiteTpi}
 import debiki.EdHttp._
 import debiki.JsonUtils._
 import talkyard.server.{TyContext, TyController}
+import talkyard.server.http.JsonPostRequest
 import javax.inject.Inject
 import play.{api => p}
 import play.api.libs.json._
@@ -143,5 +145,44 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
       }))
   }
 
+
+  // An API secret in the config file, will have to do, for now.
+  // Later, use ApiSecretsController, an ApiSecret of type PlanMaintenance  [api_secr_type]
+  def apiV0_planMaintenance: Action[JsValue] = ApiSecretPostJsonAction(
+          RateLimits.AdminWritesToDb, maxBytes = 2000) { req: JsonPostRequest =>
+    apiV0_planMaintenance_impl(req)
+  }
+
+
+  private def apiV0_planMaintenance_impl(req: JsonPostRequest): p.mvc.Result = {
+    val maintUntil: Opt[Opt[i64]] =
+          JsonUtils.parseOptInt64OrNullSomeNone(req.body, "maintenanceUntilUnixSecs")
+    throwBadRequestIf(maintUntil.exists(v => v.exists(_ <= 0)),
+          "TyEMAINTUNTIL", "maintenanceUntilUnixSecs should be > 0")
+
+    val maintWordsHtmlUnsafe: Opt[Opt[St]] =
+          JsonUtils.parseOptStOrNullSomeNone(req.body, "maintWordsHtml")
+    val maintMessageHtmlUnsafe: Opt[Opt[St]] =
+          JsonUtils.parseOptStOrNullSomeNone(req.body, "maintMessageHtml")
+
+    val settingsAft = context.globals.systemDao.writeTxLockNoSites { tx =>
+      val settingsBef = tx.loadSystemSettings()
+      val settingsAft = settingsBef.copy(
+            maintenanceUntilUnixSecs =
+                maintUntil.getOrElse(settingsBef.maintenanceUntilUnixSecs),
+            maintWordsHtmlUnsafe =
+                maintWordsHtmlUnsafe.getOrElse(settingsBef.maintWordsHtmlUnsafe),
+            maintMessageHtmlUnsafe =
+                maintMessageHtmlUnsafe.getOrElse(settingsBef.maintMessageHtmlUnsafe))
+      if (settingsAft == settingsBef)
+        return Ok
+
+      tx.updateSystemSettings(settingsAft)
+      settingsAft
+    }
+
+    globals.updateSystemSettings(settingsAft)
+    Ok
+  }
 }
 

@@ -29,6 +29,21 @@
 //========================
 
 
+export function openTagDropdown(atRect, ps: {
+      tag?: Tag, tagName: St, tagType: TagType, anyValue?, me: Me }) {
+  Server.loadMoreScriptsBundle(() => {
+    tags.openTagDropdown(atRect, ps);
+  });
+}
+
+
+export function openDropdown(ps: ProxyDiagParams, childrenFn: (close: () => V) => RElm) {
+  Server.loadMoreScriptsBundle(() => {
+    morekit.openProxyDiag(ps, childrenFn);
+  });
+}
+
+
 export function openDefaultStupidDialog(props: StupidDialogStuff) {
   Server.loadMoreScriptsBundle(() => {
     util.openDefaultStupidDialog(props);

@@ -35,6 +35,17 @@ Or if postponed, could get DormantBits.Postponed set?
 $_$;  -- '
 
 ------------------------------------------------------------------------
+comment on domain  ref_id_d  is $_$
+Reference id. Can be provided by API clients, when they create posts, users, tag types,
+categories, whatever, via the API. Talkyard remembers the ref id, and in subsequent
+API requests, the clients can reference the reference id, use it as a stable identifier
+— it stays the same, also if the-referenced-thing gets renamed or gets a new URL path.
+
+Previously called "external id", but "reference id" is a more precise name? And
+used by lots of other software.
+$_$;
+
+------------------------------------------------------------------------
 comment on domain  pat_rel_type_d  is $_$
 Says what a relationship from a pat to a post (or sth else) means. Ex:
 PatRelType.AssignedTo or VotedOn, from a pat to a post.
@@ -186,9 +197,8 @@ $_$;
 
 ------------------------------------------------------------------------
 comment on table  post_actions3 is $_$
-To be renamed to  pat_rels_t.  Later, will store AssignedTo,
-votes, and who knows what more. Currently stores
-votes and flags, but later, flags will be kept in posts_t instead,
+To be renamed to  pat_post_rels_t or pat_node_rels_t. Currently stores votes,
+AssignedTo, and flags.  Later, flags will be kept in posts_t instead,
 linked to the flagged things via the upcoming table post_rels_t.
 $_$;
 
@@ -593,6 +603,48 @@ $_$;
 
 
 --======================================================================
+--  tags_t
+--======================================================================
+
+------------------------------------------------------------------------
+comment on table  tags_t  is $_$
+Stores tags and user badges. The tag / badge titles, colors etc are
+in types_t (currently named tagtypes_t)
+
+Tags can have values, e.g. 'Version: 1.23.4', 'Event-Location: Some-Where',
+'Event-Date: Aug 22 20:00 to Aug 23 03:00', 'Published-Year: 1990'.
+
+Use val_i32_c, val_f64_c etc primarily, and val_*_b_c only if two fields
+are needed e.g. to store a location (long & lat).
+$_$;
+------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------
+comment on column  tags_t.val_type_c  is $_$
+
+1 (one) means it's a "simple" value, meaning, it's just what's stored:
+if val_i32_c is not null, the value is an integer, if val_f64_c is
+not null, it's a decimal value and so on.
+
+Later there might be more complex values, e.g. val_f64_c might be
+used to instead store a date (Unix time), or val_f64_c and val_i32_c
+to store the start and duration (seconds) of an event.
+
+The url in val_url_c can be combined with any other value, and makes
+it a link?  However, disabled for now.
+
+Or if the type is html, then val_str_c would be interpreted as
+unsanitized unsafe html. But if type is simple, then it's plain text.
+
+Later, could allow jsonb together with other vals too? Could display
+a '{}' after any numeric or text value, to indicate that there's json.
+
+For now, urls and jsonb aren't allowed — only numbers and plain text.
+$_$; -- '
+
+
+--======================================================================
 --  types_t   (currently named tagtypes_t)
 --======================================================================
 
@@ -619,6 +671,14 @@ tag, relationship, etc can have its own custom integer or jsonb value.)
 $_$;  -- '
 
 ------------------------------------------------------------------------
+comment on constraint  types_c_wantsval_valtype_null  on  tagtypes_t  is $_$
+It's ok to remember any value type this type wanted, previously, so
+value_type_c != null, when wants_value_c is null or <= NeverButCanContinue = 2,
+is ok.
+$_$;  -- '
+
+------------------------------------------------------------------------
+
 
 
 --======================================================================

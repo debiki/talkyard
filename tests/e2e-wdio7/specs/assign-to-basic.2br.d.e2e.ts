@@ -116,6 +116,10 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
 
 
   it(`Memah goes to the milk topic too, logs in`, async () => {
+    // There was a bug here: The notification to Memah about having been assigned,
+    // got auto-cleared *sometimes* (a race) since she logged in and looked at
+    // (read) the page, so this test was flappy.  Now, though, notifications
+    // about assignees-changed are no longer auto-cleared.  [0clr_asgd_tagd_notfs]
     await memah_brB.go2(site.origin + buyMilkPagePath);
     await memah_brB.complex.loginWithPasswordViaTopbar(memah);
   });

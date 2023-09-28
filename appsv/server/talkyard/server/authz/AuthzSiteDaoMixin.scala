@@ -20,6 +20,7 @@ package talkyard.server.authz
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.{MemCacheKey, SiteDao, CacheOrTx}
+import debiki.EdHttp.throwNotFound
 import MayMaybe.{NoMayNot, NoNotFound, Yes}
 import talkyard.server.http._
 import scala.collection.immutable
@@ -108,6 +109,7 @@ trait AuthzSiteDaoMixin {
   }
 
 
+  RENAME // to  mayOtherUserSeePage_useCache  ?
   /** Looks up permissions and categories in the mem cache.
     */
   def maySeePageUseCache(pageMeta: PageMeta, user: Opt[Pat], maySeeUnlisted: Bo = true)
@@ -115,8 +117,18 @@ trait AuthzSiteDaoMixin {
     maySeePageImpl(pageMeta, user, anyTx = None, maySeeUnlisted = maySeeUnlisted)
   }
 
+  RENAME // to  mayReqrSeePage_useCache  ?  & explain is only for the current requester
+  // — since maySeePageWhenAuthContext() assumes the  [authn_aprvd_checks] checks
+  // have been done already.
+  //
+  // Or combine mayOtherUserSeePage_useCache and mayReqrSeePage_useCache to one: ?
+  //
+  //   maySeePage_useCache(reqrInf: Opt[ReqrInf], otherPat: Opt[Pat], pageMeta, maySeeUnlisted)
+  //
   def maySeePageUseCacheAndAuthzCtx(pageMeta: PageMeta, authzContext: AuthzCtxOnPages,
         maySeeUnlisted: Bo = true): SeePageResult = {
+    // This skips the checks in maySeePageImpl() — those checks were done already, for
+    // the requester, in PlainApiActions.runBlockIfAuthOk().  [authn_aprvd_checks]
     maySeePageWhenAuthContext(pageMeta, authzContext, anyTx = None,
         maySeeUnlisted = maySeeUnlisted)
   }
@@ -136,6 +148,12 @@ trait AuthzSiteDaoMixin {
     }
     everyoneCanSee
   }
+
+  /*
+  def canSeeCategory(catId: CatId, reqr: ReqrInf, otherPat: Opt[Pat], tx: SiteTx): Bo ?
+  def canOtherUserSeeCategory(catId: CatId, pa: Opt[Pat], tx: SiteTx): Bo ?
+  def canSeeCategory_useTxMostly(catId: CatId, pa: Opt[Pat], tx: SiteTx): Bo ?
+  */
 
 
   /** Note: If may *probably* see the page. Returns true also for /-/user/... although perhaps
@@ -177,11 +195,60 @@ trait AuthzSiteDaoMixin {
   }
 
 
+  def throwIfMayNotSeeCategory2(catId: CatId, reqrTgt: ReqrAndTgt, checkOnlyReqr: Bo = false
+          )(anyTx: Opt[SiteTx]): U = {
+    val cats = getAncestorCategoriesRootLast(catId, inclSelfFirst = true, anyTx = anyTx)
+    def catName = cats.headOption.map(_.idName) getOrElse {
+      throwIndistinguishableNotFound(s"TyEM0SEECAT0-0FND")
+    }
+
+    {
+      val reqrCtx = getForumAuthzContext(Some(reqrTgt.reqr))
+      val result: MayWhat = Authz.maySeeCategory(reqrCtx, catsRootLast = cats)
+      if (result.maySee isNot true)
+        throwIndistinguishableNotFound(s"TyEM0SEECAT1-${result.debugCode}")
+    }
+
+    if (reqrTgt.areNotTheSame && !checkOnlyReqr) {
+      val targCtx = getForumAuthzContext(reqrTgt.otherTarget)
+      val result: MayWhat =  Authz.maySeeCategory(targCtx, catsRootLast = cats)
+      if (result.maySee isNot true)
+        throwNotFound(s"TyEM0SEECAT2-${result.debugCode}",
+              o"${reqrTgt.target.nameParaId} may not see category $catName")
+    }
+  }
+
+
+  def throwIfMayNotSeePage2(pageId: PageId, reqrTgt: ReqrAndTgt, checkOnlyReqr: Bo = false
+          )(anyTx: Opt[SiteTx]): U = {
+    val pageMeta: PageMeta =
+          anyTx.map(_.loadPageMeta(pageId)).getOrElse(getPageMeta(pageId)) getOrElse {
+            throwIndistinguishableNotFound(s"TyEM0SEEPG1")
+          }
+    {
+      val seePageResult = maySeePageImpl(pageMeta, Some(reqrTgt.reqr), anyTx)
+      if (!seePageResult.maySee)
+        throwIndistinguishableNotFound(s"TyEM0SEEPG2-${seePageResult.debugCode}")
+    }
+
+    if (reqrTgt.areNotTheSame && !checkOnlyReqr) {
+      COULD_OPTIMIZE // Getting categories and permissions a 2nd time here.
+      val res2 = maySeePageImpl(pageMeta, reqrTgt.otherTarget, anyTx)
+      if (!res2.maySee)
+        throwNotFound(s"TyEM0SEEPG3-${res2.debugCode}",
+              o"${reqrTgt.target.nameParaId} may not see page $pageId")
+    }
+  }
+
+
+  @deprecated("Use throwIfMayNotSeePage2 instead?")
   def throwIfMayNotSeePage(page: Page, pat: Opt[Pat])(tx: SiteTx): U = {
     throwIfMayNotSeePage(page.meta, pat)(tx)
   }
 
 
+  RENAME // to throwIfReqrMayNotSeePage ?
+  @deprecated("Use throwIfMayNotSeePage2 instead?")
   def throwIfMayNotSeePage(pageMeta: PageMeta, pat: Opt[Pat])(tx: SiteTx): U = {
     val result = maySeePageImpl(pageMeta, pat, Some(tx))
     if (!result.maySee)
@@ -202,13 +269,13 @@ trait AuthzSiteDaoMixin {
       return PageCtx(anyCats(pageMeta, anyTx))
 
     val settings = getWholeSiteSettings()
-    if (settings.userMustBeAuthenticated) {
+    if (settings.userMustBeAuthenticated) {  // [authn_aprvd_checks]
       if (!user.exists(u => u.isAuthenticated))
         return NotSeePage("TyMLOGINREQ")
-
-      if (settings.userMustBeApproved && !user.exists(_.isApprovedOrStaff))
-        return NotSeePage("TyMNOTAPPR")
     }
+
+    if (settings.userMustBeApproved && !user.exists(_.isApprovedOrStaff))
+      return NotSeePage("TyMNOTAPPR")
 
     val groupIds: immutable.Seq[UserId] =
       anyTx.map(_.loadGroupIdsMemberIdFirst(user)) getOrElse {
@@ -227,6 +294,10 @@ trait AuthzSiteDaoMixin {
   }
 
 
+  /** Call directly, only if `authzContext` is for the current requester — then,
+    * some authn checks have been done already,  in  PlainApiActions.runBlockIfAuthOk().
+    * But otherwise, they wouldn't happen.  [authn_aprvd_checks]
+    */
   private def maySeePageWhenAuthContext(pageMeta: PageMeta, authzContext: AuthzCtxOnPages,
         anyTx: Opt[SiteTx], maySeeUnlisted: Bo = true): SeePageResult = {
 
@@ -273,18 +344,46 @@ trait AuthzSiteDaoMixin {
     */
   def maySeePostUseCache(pageId: PageId, postNr: PostNr, user: Opt[Pat])
         : (MaySeeOrWhyNot, St) = {
-    maySeePostImpl(pageId, postNr, user, anyPost = None, anyTx = None)
+    _maySeePostImpl(ThePost.OnPageWithNr(pageId, postNr), user, anyTx = None)
   }
 
 
   def maySeePostUseCache(post: Post, pageMeta: PageMeta, ppt: Option[Participant],
                          maySeeUnlistedPages: Boolean): (MaySeeOrWhyNot, String) = {
-    maySeePostImpl(pageId = null, postNr = PageParts.NoNr, ppt, anyPost = Some(post),
-      anyPageMeta = Some(pageMeta), maySeeUnlistedPages = maySeeUnlistedPages,
-      anyTx = None)
+    _maySeePostImpl(ThePost.Here(post), ppt,
+          anyPageMeta = Some(pageMeta),
+          maySeeUnlistedPages = maySeeUnlistedPages, anyTx = None)
   }
 
 
+  def throwIfMayNotSeePost2(whatPost: WhatPost, reqrTgt: AnyReqrAndTgt,
+          checkOnlyReqr: Bo = false)(tx: SiteTx): U = {
+    {
+      val (result, debugCode) = _maySeePostImpl(
+            whatPost, reqrTgt.anyReqr, maySeeUnlistedPages = true, anyTx = Some(tx))
+      if (!result.may)
+        throwIndistinguishableNotFound(s"TyEREQR0SEEPO-$debugCode")
+    }
+
+    // If the request is on behalf of sbd else, e.g. an admin subscribing someone to
+    // notifications, require that that other someone can see whatever-it-is.  [2_perm_chks]
+    // (Except for some cases, when an admin *removes* e.g. a tag or vote or comment by
+    // sbd else — then, it's not necessary for that other person to have access (any longer).)
+    if (!checkOnlyReqr && reqrTgt.otherTarget.isDefined) {
+      val (res2, code2) = _maySeePostImpl(
+            whatPost, reqrTgt.otherTarget, maySeeUnlistedPages = true, anyTx = Some(tx))
+      if (!res2.may) {
+        // These errors can be confusing? If you *can* see whatever-it-is, but you
+        // still get a not-found error? (If the target user can't see it.)
+        // So, if the reqr is admin, show the error code anyway.
+        throwIndistinguishableNotFound(s"TyETGT0SEEPO-$code2",
+              showErrCodeAnyway = reqrTgt.reqrIsAdmin)
+      }
+    }
+  }
+
+
+  REMOVE // use throwIfMayNotSeePost2() instead.
   def throwIfMayNotSeePost(post: Post, ppt: Option[Participant])(tx: SiteTransaction): Unit = {
     val (result, debugCode) = maySeePost(post, ppt, maySeeUnlistedPages = true)(tx)
     if (!result.may)
@@ -292,20 +391,35 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  def maySeePost(post: Post, ppt: Option[Participant], maySeeUnlistedPages: Boolean)
-        (tx: SiteTransaction): (MaySeeOrWhyNot, String) = {
-    maySeePostImpl(post.pageId, postNr = PageParts.NoNr, ppt, anyPost = Some(post),
-      anyTx = Some(tx))
+  def maySeePost(post: Post, ppt: Opt[Pat],
+        // REMOVE `maySeeUnlistedPages` from all `maySee...()`?   It's always true.
+        maySeeUnlistedPages: Boolean)
+        (tx: SiteTx): (MaySeeOrWhyNot, St) = {
+    _maySeePostImpl(ThePost.Here(post), ppt, anyTx = Some(tx))
   }
 
 
-  private def maySeePostImpl(pageId: PageId, postNr: PostNr, ppt: Opt[Pat],
-        anyPost: Opt[Post], anyPageMeta: Opt[PageMeta] = None,
+  private def _maySeePostImpl(whatPost: WhatPost, ppt: Opt[Pat],
+        anyPageMeta: Opt[PageMeta] = None,
         maySeeUnlistedPages: Bo = true, anyTx: Opt[SiteTx])
         : (MaySeeOrWhyNot, St) = {
 
-    require(anyPageMeta.isDefined ^ (pageId ne null), "EdE25KWU24")
-    require(anyPost.isDefined == (postNr == PageParts.NoNr), "TyE3DJ8A0")
+    // COULD reuse anyTx?
+    val post = whatPost match {
+      case ThePost.Here(post) => post
+      case ThePost.WithId(postId) =>
+        loadPostByUniqueId(postId) getOrElse {
+          return (MaySeeOrWhyNot.NopeNoPostWithThatNr, "7URAZ8T-Post-Id-Not-Found")
+        }
+      case ThePost.OnPageWithNr(pageId, postNr) =>
+        // Or is it better to look up the page first?
+        loadPost(pageId, postNr) getOrElse {
+          return (MaySeeOrWhyNot.NopeNoPostWithThatNr, "7URAZ8S-Post-Not-Found")
+        }
+    }
+
+    val pageId = post.pageId
+    require(anyPageMeta.forall(_.pageId == pageId), "TyE25KWU24")
 
     val pageMeta = anyPageMeta getOrElse {
       anyTx.map(_.loadPageMeta(pageId)).getOrElse(getPageMeta(pageId)) getOrElse {
@@ -318,18 +432,20 @@ trait AuthzSiteDaoMixin {
     if (!seePageResult.maySee)
       return (MaySeeOrWhyNot.NopeUnspecified, s"${seePageResult.debugCode}-ABX94WN")
 
-    CLEAN_UP // Dupl code, this stuff repeated in Authz.mayPostReply. [8KUWC1]
+    maySeePostIfMaySeePage(ppt, post)
+  }
 
-    def thePageId = anyPageMeta.map(_.pageId) getOrElse pageId
+
+  def maySeePostIfMaySeePage(pat: Opt[Pat], post: Post): (MaySeeOrWhyNot, St) = {
+    val ppt = pat
+
+    MOVE // to Authz, should be a pure fn.
+    CLEAN_UP // Dupl code, this stuff repeated in Authz.mayPostReply. [8KUWC1]
 
     // Below: Since the requester may see the page, it's ok if hen learns
     // if a post has been deleted or it never existed? (Probably hen can
     // figure that out anyway, just by looking for holes in the post nr
     // sequence.)
-
-    val post = anyPost orElse loadPost(thePageId, postNr) getOrElse {
-      return (MaySeeOrWhyNot.NopeNoPostWithThatNr, "7URAZ8S-Post-Not-Found")
-    }
 
     // Staff may see all posts, if they may see the page. [5I8QS2A]
     def isStaffOrAuthor =
@@ -356,8 +472,7 @@ trait AuthzSiteDaoMixin {
     // Should also lookup one's true account and check if it has access. [pseudonyms_later]
     val requester = getTheParticipant(forWho.id)
     val (result, debugCode) =
-      maySeePostImpl(post.pageId, postNr = PageParts.NoNr, Some(requester), anyPost = Some(post),
-        anyTx = None)
+          _maySeePostImpl(ThePost.Here(post), Some(requester), anyTx = None)
     if (!result.may)
       throwIndistinguishableNotFound(s"TyEM0REVTSK-$debugCode")
   }

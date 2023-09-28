@@ -59,10 +59,19 @@ export const Input = createComponent({
       onFocus: props.onFocus,
       onBlur: props.onBlur,
       tabIndex: props.tabIndex,
+      step: props.step,
+      pattern: props.pattern,
     };
 
     const isCheckbox = props.type === 'checkbox';
     const isRadio = props.type === 'radio';
+
+    // About type 'number':  [odd_num_input]
+    // If `step` is an integer, apparently the <input> then allows only integer
+    // values, but not e.g. 1.5, 2.5, 3.5. Seems any `pattern` is ignored. And,
+    // oddly enough, you can type "numbers" like 123--45 or 12-34-56 but at most 2 '-'.
+    // 12++34 and 12+-34 works too — hmm, they want +-123 to work (it does),
+    // and they've been lazy?  (Chrome Version 116.0.5845.140, Sept 2023).
 
     if (isCheckbox || isRadio) {
       childProps.inline = props.inline;

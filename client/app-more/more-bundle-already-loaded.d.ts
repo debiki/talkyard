@@ -27,6 +27,10 @@ declare namespace rb {
 
 declare namespace debiki2 {
 
+  namespace morekit {
+    function openProxyDiag(ps: ProxyDiagParams, childrenFn: (close: () => V) => RElm);
+  }
+
   var Expandable;
   function Input(props: InputProps, children?): RElm;
 
@@ -115,6 +119,7 @@ declare namespace debiki2.nopage {
 
 declare namespace debiki2.tags {
   var routes;
+  function openTagDropdown(atRect, ps);
 }
 
 declare namespace debiki2.titleeditor {
@@ -125,6 +130,10 @@ declare namespace debiki2.help {
 
 declare namespace debiki2.forum {
   function openEditIntroDialog();
+}
+
+declare namespace debiki2.tags {
+  const TagsAppComponent;
 }
 
 declare namespace debiki2.users {

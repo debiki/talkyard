@@ -117,88 +117,104 @@ function makeMaybeHiddenInfo(me: Myself, user: UserInclDetails) {
 
 
 
-interface UsersPostsState {
-  posts?: PostWithPage[];
-}
-
-
 // MOVE to new file: PostList, which takes a PostQuery.
+// Or move only PostList (it's below)? See:  OneTagPanel (in ../tags/tags-app.more.ts),
+// not all code makes sense to share?
 //
-export const UsersPosts = createFactory<any, any>({
-  displayName: 'UsersPosts',
+export const UsersPosts = React.createFactory<PatPostsPanelProps>(function(props) {
+  //displayName: 'UsersPosts',
 
-  getInitialState: function() {
-    return {}; // satisfies UsersPostsState;
-  },
+  const pat: UserInclDetails = props.user;
+  const store: Store = props.store;
 
-  componentDidMount: function() {
-    this.loadPosts();
-  },
+  // Not store.me, it's been modif in-place? [redux]  — myIdRef.current === me.id
+  // wouldn't work?
+  const me: Me = props.me;
 
-  componentWillUnmount: function() {
-    this.isGone = true;
-  },
+  const myIdRef = React.useRef(me.id);
+  const patIdRef = React.useRef(props.user.id);
+  const onlyOpenRef = React.useRef(props.onlyOpen);
 
-  componentDidUpdate: function(prevProps: PatPostsPanelProps) {
-    // a bit dupl code [5AWS2E9]
-    const nextProps: PatPostsPanelProps = this.props;
-    const nextStore: Store = nextProps.store;
-    const prevMe: Myself = prevProps.me;  // not store.me, it's been modif in-place [redux]
-    const prevPat: UserInclDetails = prevProps.user;
-    const nextMe: Myself = nextStore.me;   // (... would be the same as this `me`?)
-    const nextPat: UserInclDetails = nextProps.user;
-    // If we log in as someone else, which posts we may see might change.
-    if (prevMe.id !== nextMe.id ||
-        prevPat.id !== nextPat.id ||
-        prevProps.onlyOpen !== nextProps.onlyOpen) {
-      this.loadPosts();
+  const [loadingPostsForPatId, setLoadingFor] = React.useState<PatId | N>(null);
+  const [postsNullOrFalse, setPosts] = usePostList();
+
+  React.useEffect(() => {
+    myIdRef.current = me.id;
+    patIdRef.current = props.user.id;
+    onlyOpenRef.current = props.onlyOpen;
+    loadPatsPosts();
+    return () => {
+      myIdRef.current = null;
+      patIdRef.current = null;
+      onlyOpenRef.current = null;
     }
-  },
+  }, [me.id, pat.id, props.onlyOpen]);
 
-  loadPosts: function() {
-    const props: PatPostsPanelProps = this.props;
-    const me: Myself = props.store.me;
-    const user: UserInclDetails = props.user;
+  // If we updated the posts list, then, re-process the dates.
+  // BUG but rather harmless. Runs processPosts (e.g. MathJax) also on topic titles,
+  // although that's not done in the forum topic list or full page title.
+  // BUG (but not really my bug): MathJax also runs on topics in the watchbar.
+  // Should instead iterate over all posts, give to processPosts one at a time?
+  // (Right now, MathJax would process math like `\[....\]` inside titles, here, which
+  // might look a bit funny.)
+  // (Maybe use useLayoutEffect instead?)
+  React.useEffect(() => {
+    debiki2.page.Hacks.processPosts('t_UP_Act_List');
+  }, [postsNullOrFalse]);
+
+  function loadPatsPosts() {
     // a bit dupl code [5AWS2E8]
-    const [isStaffOrSelf, hiddenForMe] = isHiddenForMe(me, user);
+    const [isStaffOrSelf, hiddenForMe] = isHiddenForMe(me, pat);
     if (hiddenForMe) {
-      this.setState({ posts: [] });  // satisfies UsersPostsState
+      setPosts([]);  // or false? Means access denied, see below
       return;
     }
-    if (this.nowLoading === user.id) return;
-    this.nowLoading = user.id;
-    Server.loadPostsByAuthor(user.id, props.showWhat, props.onlyOpen,
-            (response: LoadPostsResponse) => {
-      this.nowLoading = null;
-      if (this.isGone) return;
-      this.setState({  // satisfies UsersPostsState
-        posts: response.posts,
-      }, () => {
-        // BUG but rather harmless. Runs processPosts (e.g. MathJax) also on topic titles,
-        // although that's not done in the forum topic list or full page title.
-        // BUG (but not really my bug): MathJax also runs on topics in the watchbar.
-        // Should instead iterate over all posts, give to processPosts one at a time?
-        // (Right now, MathJax would process math like `\[....\]` inside titles, here, which
-        // might look a bit funny.)
-        debiki2.page.Hacks.processPosts('t_UP_Act_List');
-      });
+    if (loadingPostsForPatId === pat.id) return;
+    setLoadingFor(pat.id);
+    Server.loadPostsByAuthor(pat.id, props.showWhat, props.onlyOpen,
+            (posts: PostWithPage[]) => {
+      setLoadingFor(null);
+      // Similar to: [5AWS2E9]
+      if (myIdRef.current !== me.id || patIdRef.current !== pat.id ||
+            onlyOpenRef.current !== props.onlyOpen) {
+        // The response is for an old request about a different user or
+        // different onlyOpen, or we've logged in as sbd else — so ignore it.
+        return;
+      }
+      setPosts(posts);
     });
-  },
+  }
 
-  render: function() {
-    const props: PatPostsPanelProps = this.props;
-    const state: UsersPostsState = this.state;
-    const store: Store = props.store;
-    const me: Myself = props.me;
-    const user: UserInclDetails = props.user;
-    const posts: PostWithPage[] = state.posts;
-    if (!_.isArray(posts))
-      return (
-        r.p({}, t.Loading));
+  // Bit dupl code, see the posts-with-tag list. [dupl_list_posts]
+  if (postsNullOrFalse === null)
+    return r.p({}, t.Loading);
 
-    const noPostsClass = _.isEmpty(posts) ? ' e_NoPosts' : '';
+  if (!postsNullOrFalse)
+    return r.p({ className: 's_TagsP_Dnd' },
+        "Access denied"); // I18N, see: t.gpp.MayNotListMembers
 
-    const postElems = posts.map((post: PostWithPage) => {
+  const posts: PostWithPage[] = postsNullOrFalse;
+
+  const postList = PostList({ store, posts });
+
+  return rFr({},
+      makeMaybeHiddenInfo(me, pat),
+      postList);
+});
+
+
+interface PostListProps {
+  store: Store;
+  posts: PostWithPage[] | NU;
+}
+
+// REFACTOR; MOVE to where? A new file app-more/talk/posts.ts  maybe?
+export const PostList = React.createFactory<PostListProps>(function(props) {
+  const store: Store = props.store;
+  const posts: PostWithPage[] = props.posts;
+  const noPostsClass = _.isEmpty(posts) ? ' e_NoPosts' : '';
+
+  const postElems = posts.map((post: PostWithPage) => {
       const author = store.usersByIdBrief[post.authorId];
       return (
         r.li({ key: post.uniqueId, className: 's_UP_Act_Ps_P' },
@@ -209,12 +225,9 @@ export const UsersPosts = createFactory<any, any>({
             post.pageTitle),
           avatar.Avatar({ user: author, origins: store, size: AvatarSize.Small }),
           Post({ post, store, author, live: false }))); // author: [4WKA8YB]
-    });
+  });
 
-    return rFr({},
-      makeMaybeHiddenInfo(me, user),
-      r.ol({ className: 's_UP_Act_Ps' + noPostsClass }, postElems));
-  }
+  return r.ol({ className: 's_UP_Act_Ps' + noPostsClass }, postElems);
 });
 
 

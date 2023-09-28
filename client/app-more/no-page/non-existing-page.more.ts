@@ -158,7 +158,7 @@ const LoginToCreateSomething = createComponent({
         "Send email again");
 
     const pleaseLoginText =
-        "Please login as admin to " + (embCmts ? "continue." : "create something here.");
+        "Please log in as admin to " + (embCmts ? "continue." : "create something here.");
 
     return (
       r.div({},

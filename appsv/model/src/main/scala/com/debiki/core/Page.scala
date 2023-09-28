@@ -889,6 +889,13 @@ object PageType {
     case _ => return None
   })
 
+  def fromStr_apiV0(value: St): Opt[PageType] = Some(value match {
+    case "Idea" => PageType.Idea
+    case "Question" => PageType.Question
+    case "Problem" => PageType.Problem
+    case "Discussion" => PageType.Discussion
+    case _ => return None
+  })
 }
 
 
@@ -1224,6 +1231,21 @@ object PostQuery {
     override def reqrIsStaffOrObject: Bo = reqr.isStaff || reqr.id == authorId
   }
 
+
+  case class PostsWithTag(
+    reqrInf: ReqrInf,
+    tagTypeId: TagTypeId,
+    // These two don't make sense here? Instead of a bool, we'd want:
+    //     Yes / No / Yes-If-Requester-Is-Author?
+    inclUnapproved: Bo,
+    inclUnlistedPagePosts: Bo,
+    limit: i32,
+    orderBy: OrderBy,
+  ) extends PostQuery {
+
+    def inclAnonPosts = true
+    def inclTitles = false
+  }
 }
 
 
@@ -1304,6 +1326,8 @@ object PageFilterType {
 
 case class PagePostId(pageId: PageId, postId: PostId)
 
+// But there's also:  com.debiki.core.ThePost.OnPageWithNr  — maybe remove PagePostNr,
+// and use OnPageWithNr instead?
 case class PagePostNr(pageId: PageId, postNr: PostNr) {
   def toList: List[AnyRef] = List(pageId, postNr.asInstanceOf[AnyRef])
 }

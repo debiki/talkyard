@@ -12,6 +12,8 @@ import * as utils from './utils';
 export const DefaultCreatedAtMs = 1449198824000;
 
 
+// Also in site-builder.ts [_next_sth_id].
+
 let nextPostId = 101;
 function getAndBumpNextPostId() {
   nextPostId += 1;
@@ -56,6 +58,8 @@ function makeEmptySite(ps: { okInitEarly?: boolean } = {}): SiteData {
   blocks: [],
   invites: [],
   categories: [],
+  tags: [],
+  types: [],
   pages: [],
   pagePaths: [],
   posts: [],

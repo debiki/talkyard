@@ -618,16 +618,21 @@ const ForumButtons = createComponent({
           activeClassName: 'active' }, text);
     };
 
-    let omitCategoryStuff = showsCategoryTree || !settings_showCategories(store.settings, me);
-    let categoryTreeLink = omitCategoryStuff ? null :
+    const omitCategoryStuff = showsCategoryTree || !settings_showCategories(store.settings, me);
+    const omitTagsLink = store.settings.enableTags === false;
+
+    const categoryTreeLink = omitCategoryStuff ? null :
             makeCategoryLink(RoutePathCategories, false, '', t.fb.ViewCategories,
-                'e_ViewCatsB', 'esForum_navLink');
+                'e_ViewCatsB', 'esForum_navLink c_F_BB_CatsLn');
+    const tagsListLink = omitTagsLink ? null :
+            NavLink({ to: UrlPaths.Tags, className: 'btn esForum_navLink c_F_BB_TagsLn' },
+              "Tags");  // I18N  t.fb.Tags
 
     // COULD remember which topics were listed previously and return to that view.
     // Or would a Back btn somewhere be better?
     const topicListLink = showsTopicList ? null :
             makeCategoryLink(RoutePathLatest, false, '', t.fb.TopicList,
-                'e2eViewTopicsB', 'esForum_navLink');
+                'e2eViewTopicsB', 'esForum_navLink c_F_BB_TpcsLn');
 
     // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.
     const currentSortOrderPath = props.sortOrderRoute;
@@ -768,10 +773,11 @@ const ForumButtons = createComponent({
             topicFilterButton,
             latestNewTopButton,
             categoryTreeLink,
-            topicListLink);
+            topicListLink,
+            tagsListLink);
 
     return (
-        r.div({ className: 'dw-forum-actionbar clearfix ' + whatClass },
+        r.div({ className: 'dw-forum-actionbar clearfix c_F_BB ' + whatClass },
           filterAndSortButtons,
           createTopicBtn,
           createCategoryBtn));
@@ -1584,6 +1590,7 @@ const TopicRow = createComponent({
       anyPinOrHiddenIconClass = 'icon-eye-off';
     }
 
+    // Should this tag list be in-place editable?  [edit_tags_via_topic_list]
     const tags = settings.enableTags === false ? null :
         TagList({ tags: topic.pubTags, store });  // or forPage: topic?
 

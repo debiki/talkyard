@@ -26,6 +26,7 @@ import debiki.dao.{SiteDao, SystemDao}
 import debiki.EdHttp._
 import talkyard.server.TyContext
 import talkyard.server.authz.{AuthzCtxWithReqer, ForumAuthzContext, AuthzCtxOnAllWithReqer}
+import talkyard.server.authz.{AnyReqrAndTgt, ReqrAndTgt, ReqrStranger}
 import talkyard.server.pop
 import talkyard.server.security.{BrowserId, SidOk, SidStatus, XsrfOk}
 import java.{util => ju}
@@ -97,11 +98,13 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   // about another user — then, does 'user' refer to the requester or that other user?
   // Instead, use 'requester' always, to refer to the requester.
   def requester: Option[Participant] = user
+  @deprecated("Rename to anyReqr instead?")
   def reqer: Opt[Pat] = user  // shorter, nicer. "Req" = request, + "er" = "requester"
-                        RENAME // to  anyReqer?
+                        RENAME // to  anyReqr?
   def requesterOrUnknown: Participant = user getOrElse UnknownParticipant
   def theRequester: Participant = theUser
   def theReqer: Pat = theUser  // shorter, better
+  def reqr: Pat = theUser  // better
 
   def tenantId: SiteId = dao.siteId
   def siteId: SiteId = dao.siteId
@@ -121,7 +124,18 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   def whoOrUnknown: Who = Who(requesterOrUnknown.trueId2, theBrowserIdData)
 
   // Better than Who — the latter just discards requesterOrUnknown, why?
+  @deprecated("Use reqrTargetSelf or reqrAndTarget instead?")
   def reqrInf: ReqrInf = ReqrInf(requesterOrUnknown, theBrowserIdData)
+
+  /** The target is the requester hanself. */
+  def reqrTargetSelf: AnyReqrAndTgt = reqer match {
+    case None => ReqrStranger(theBrowserIdData)
+    case Some(theReqr) => ReqrAndTgt(theReqr, theBrowserIdData, target = theReqr)
+  }
+
+  def reqrAndTarget(target: Pat): ReqrAndTgt =
+    ReqrAndTgt(theReqer, theBrowserIdData, target = target)
+
 
   def authzCtxWithReqer: AuthzCtxWithReqer = dao.getAuthzCtxWithReqer(theRequester)
   lazy val authzContext: ForumAuthzContext = dao.getForumAuthzContext(requester)

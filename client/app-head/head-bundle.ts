@@ -284,7 +284,6 @@ if (!eds.isInEmbeddedEditor) {
   isTestSite: @{ tpi.site.isTestSite.toString },
   loadGlobalAdminScript: @{ tpi.globals.loadGlobalAdminScript.toString },
   loadGlobalStaffScript: @{ tpi.globals.loadGlobalStaffScript.toString },
-  mainWorkUntilSecs: @{ tpi.globals.mainWorkUntilSecs getOrElse 0 }
   */
 
 

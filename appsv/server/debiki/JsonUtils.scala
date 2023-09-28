@@ -122,6 +122,17 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     int64To32ThrowIfOutOfRange(int64, what, min = min, max = max)
   }
 
+  def parseOptNull(json: JsValue, fieldName: St): Opt[JsNull.type] = {
+    val r2 = (json \ fieldName)
+    r2 match {
+      case jsDef: JsDefined =>
+        val value = jsDef.value
+        if (value == JsNull) Some(JsNull)
+        else None
+      case _ => None
+    }
+  }
+
   def parseJsObject(json: JsValue, fieldName: St): JsObject =
     readJsObject(json, fieldName)
 
@@ -169,13 +180,15 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     }
   }
 
-  def parseJsArray(json: JsValue, fieldName: St, optional: Bo = false): Seq[JsValue] =
-    readJsArray(json, fieldName, optional).value
+  def parseJsArray(json: JsValue, fieldName: St, altName: St = "", optional: Bo = false)
+          : Seq[JsValue] =
+    readJsArray(json, fieldName, altName = altName, optional).value
 
   // Add a 2nd fn, or a param: all elems be of the same type? See below: [PARSEJSARR]
   // RENAME 'optional' to 'emptyIfAbsent'?
-  def readJsArray(json: JsValue, fieldName: St, optional: Bo = false): JsArray = {
-    val array = (json \ fieldName).toOption getOrElse {
+  def readJsArray(jv: JsValue, fieldName: St, altName: St = "", optional: Bo = false): JsArray = {
+    def altVal = if (altName.isEmpty) None else (jv \ altName).toOption
+    val array = (jv \ fieldName).toOption.orElse(altVal) getOrElse {
       if (optional) return JsArray()
       throwMissing("TyE0JSFIELD", fieldName)
     }
@@ -183,18 +196,20 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
       case o: JsArray => o
       case bad =>
         throwBadJson(
-          "EsE4GLK3", s"'$fieldName' is not a JsArray, but a ${classNameOf(bad)}")
+          "EsE4GLK3", s"'$fieldName' is not an array, but a ${classNameOf(bad)}")
     }
   }
 
-  def parseOptJsArray(jv: JsValue, fieldName: St): Opt[IndexedSeq[JsValue]] =
-    (jv \ fieldName).toOption map {
+  def parseOptJsArray(jv: JsValue, fieldName: St, altName: St = ""): Opt[IndexedSeq[JsValue]] = {
+    def altVal = if (altName.isEmpty) None else (jv \ altName).toOption
+    (jv \ fieldName).toOption.orElse(altVal) map {
       case a: JsArray => a.value
       case JsNull => return None
       case bad =>
         throwBadJson(
             "TyE4MGJ28RP", s"'$fieldName' is not an array, but a ${classNameOf(bad)}")
     }
+  }
 
   /*
   // No way to shorten this?  [PARSEJSARR]
@@ -235,6 +250,14 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     readOptString(json, fieldName, maxLen = maxLen) getOrElse throwMissing(
           "EsE7JTB3", fieldName)
 
+
+  def parseOptStOrNullSomeNone(json: JsValue, fieldName: St): Opt[Opt[St]] = {
+    // Dupl code. [parse_null_some_none]
+    if (parseOptNull(json, fieldName).isDefined)
+      return Some(None)
+
+    parseOptSt(json, fieldName = fieldName).map(s => Some(s))
+  }
 
   /** If noneIfLongerThan or throwIfLongerThan is >= 0, and the value is longer than that,
     * returns None or throws a BadJsonException, respectively.
@@ -301,21 +324,20 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     }
   }
 
-  /*   id: / postid: / nr: / extid:  pageidpostnr/idnr:123,456  ?
-  def parsePostRef(json: JsValue, fieldName: St): PageRef = {
+  //   iid: / postid: / rid:   or maybe: pageid:123#post-456 ?   not:  pageidpostnr/idnr:123,456
+  def parsePostRef(json: JsValue, fieldName: St): PostRef = {
     parseOptPostRef(json, fieldName) getOrElse {
       throwMissing("TyEJSN0POREF", fieldName)
     }
   }
 
-  def parseOptPostRef(json: JsValue, fieldName: St): Opt[PostRef] = Some {
-    val rawRef = parseOptSt(json, fieldName) getOrElse {
-      return None
+  def parseOptPostRef(json: JsValue, fieldName: St): Opt[PostRef] = {
+    parseOptSt(json, fieldName) map { refSt =>
+      core.parsePostRef(refSt) getOrIfBad { msg =>
+        throwBadJson("TyEJSBADPOREF", s"Not a post ref: '$refSt', problem: $msg")
+      }
     }
-    core.parsePostRef(rawRef) getOrIfBad { errMsg =>
-      throwBadJson("TyEJSBADPOREF", s"Not a post ref: '$rawRef', problem: $errMsg")
-    }
-  } */
+  }
 
 
   // RENAME! to just parseRef
@@ -328,8 +350,8 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
   }
 
 
-  def parsePostVoteType(json: JsObject, fieldName: St): PostVoteType = {
-    val voteTypeSt = parseSt(json, fieldName)
+  def parsePostVoteType(json: JsObject, fieldName: St, altName: St = ""): PostVoteType = {
+    val voteTypeSt = parseSt(json, fieldName, altName = altName)
     PostVoteType.apiV0_fromStr(voteTypeSt) getOrElse {
       throwBadJson("TyEJSNPOVOTY", s"$fieldName: Unsupported vote type: '$voteTypeSt'")
     }
@@ -399,6 +421,10 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     readOptDouble(json, fieldName).orElse(readOptDouble(json, altName)).orElse(default)
       .getOrElse(throwMissing("TyE078RVF3", fieldName))
 
+
+  def parseOptFloat64(json: JsValue, fieldName: St): Opt[f64] = {
+    readOptDouble(json, fieldName = fieldName)
+  }
 
   def readOptDouble(json: JsValue, fieldName: String): Option[Double] = {
     (json \ fieldName).validateOpt[Double] match {
@@ -515,6 +541,15 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     }
 
 
+  def parseOptInt64OrNullSomeNone(json: JsValue, fieldName: St): Opt[Opt[i64]] = {
+    // Dupl code. [parse_null_some_none]
+    if (parseOptNull(json, fieldName).isDefined)
+      return Some(None)
+
+    parseOptInt64(json, fieldName = fieldName).map(Some(_))
+  }
+
+
   def parseBo(json: JsValue, fieldName: St, default: Opt[Bo] = None): Bo =
     readOptBool(json, fieldName).orElse(default) getOrElse throwMissing(
           "TyE603MFE67", fieldName)
@@ -582,14 +617,36 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     }
   }
 
-  private def throwBadJsonIf(test: => Bo, errCode: St, message: St): U =
+
+  def parseOptTypeValueType(json: JsValue, field: St, altField: St = ""): Opt[TypeValueType] =
+    readOptInt(json, fieldName = field, altName = altField) map { int =>
+      TypeValueType.fromInt(int) getOrElse {
+        throwBadJson("TyETYPVALTYP", s"Invalid type value type: $int")
+      }
+    }
+
+
+  def parseOptTypeValueTypeStr_apiV0(json: JsValue, field: St): Opt[TypeValueType] = {
+    parseOptSt(json, fieldName = field) map { str =>
+      TypeValueType.fromStr_apiV0(str) getOrElse {
+        throwBadJson("TyETYPVALTYPST", s"Invalid type value type: '$str'")
+      }
+    }
+  }
+
+
+  def parseOptNeverAlways(json: JsValue, field: St, altField: St = ""): Opt[NeverAlways] =
+    NeverAlways.fromOptInt(readOptInt(json, fieldName = field, altName = altField))
+
+
+  def throwBadJsonIf(test: => Bo, errCode: St, message: St): U =
     if (test) throwBadJson(errCode, message)
 
   def throwBadJson(errorCode: String, message: String) =
     throw new BadJsonException(s"$message [$errorCode]")
 
 
-  private def throwMissing(errorCode: String, fieldName: String) =
+  def throwMissing(errorCode: String, fieldName: String) =
     throwBadJson(errorCode, s"'$fieldName' field missing")
 
 }
