@@ -20,7 +20,7 @@ object ProjectDirectory {
 object Dependencies {
 
   object Play {
-    val json = "com.typesafe.play" %% "play-json" % "2.10.1"
+    val json = "com.typesafe.play" %% "play-json" % "2.9.4"
   }
 
   object Libs {
