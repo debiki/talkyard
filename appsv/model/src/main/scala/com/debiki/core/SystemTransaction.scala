@@ -99,7 +99,9 @@ trait SystemTransaction {  RENAME // to SysTx, started already
 
   // ----- Indexing
 
-  def loadReindexRangesAndQueueSizes(): Map[SiteId, (Opt[TimeRange], i32)]
+  def loadJobQueueNumPosts(countUpTo: i32): i32
+  def loadJobQueueRangesAndSizes(limitSites: i32): Map[SiteId, (TimeRange, i32)]
+  def loadJobQueueAnyRangesAndSizes(limitSites: i32): Map[SiteId, (Opt[TimeRange], i32)]
   def loadStuffToIndex(limit: Int): StuffToIndex
   def deleteFromIndexQueue(post: Post, siteId: SiteId): Unit
   def addEverythingInLanguagesToIndexQueue(languages: Set[String]): Unit

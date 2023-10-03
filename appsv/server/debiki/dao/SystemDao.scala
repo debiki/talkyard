@@ -155,7 +155,11 @@ class SystemDao(
     readOnlyTransaction { tx =>
       val sites = tx.loadAllSitesInclDetails()
       val staff = tx.loadStaffForAllSites()
-      val jobsInf = tx.loadReindexRangesAndQueueSizes()
+      val limit = 5000 // for now
+      val jobsInf = tx.loadJobQueueAnyRangesAndSizes(limitSites = limit)
+      if (jobsInf.size >= limit) {
+        logger.warn(s"Too many sites, only loading stats for $limit [TyE2MNYSITS0374]")
+      }
       sites map { site =>
         val anyJobsInf: Opt[(Opt[TimeRange], i32)] = jobsInf.get(site.id)
         SASiteStuff(
@@ -587,28 +591,54 @@ class SystemDao(
     * and decrease the end of the time range.
     */
   def addPendingPostsFromTimeRanges(howManyAtATime: i32): U = {
+    // If the queue is long already, let's wait with converting ranges to even more items.
+    readTx { tx =>
+      val num = tx.loadJobQueueNumPosts(howManyAtATime + 10)
+      if (num > howManyAtATime)
+        return
+    }
+
+    var numRemaining = howManyAtATime
+
     writeTxLockAllSites { tx =>
-      val rangesBefore: Map[SiteId, (Opt[TimeRange], i32)] =
-            tx.loadReindexRangesAndQueueSizes().filter(_._2._1.isDefined)
+      val rangesBefore: Map[SiteId, (TimeRange, i32)] =
+            tx.loadJobQueueRangesAndSizes(
+                  // In case there's just 1 post per site, let's use numRemaining as limit.
+                  limitSites = numRemaining)
+
+      val approxPerSite = numRemaining / (math.max(rangesBefore.size, 1))
+      val skipIfQueueLongerThan =
+            if (rangesBefore.size == 1) approxPerSite
+            else {
+              // This _will_distribute indexing work accross sites with ranges to index, right?
+              approxPerSite / 2
+            }
+
       rangesBefore foreach { case (siteId, rangeAndQueueSize) =>
-        val (anyRange: Opt[TimeRange], numPendingPostsInQueue: i32) = rangeAndQueueSize
-        if (numPendingPostsInQueue > howManyAtATime || anyRange.isEmpty) {
-          // Let's wait until there aren't so many in the queue already.
-          STARVATION // Could theoretically happen, if the server is slow and people keep editing
-          // their comments "all the time" — then we'll keep indexing those, never having
-          // time to reindex the time ranges.  If that ever becomes a problem, then: Could reindex
-          // edited posts less often, so there's time to reindex the pending time ranegs.
+        val (range: TimeRange, numPendingPostsInQueue: i32) = rangeAndQueueSize
+        // numRemaining -= numPendingPostsInQueue
+        if (numPendingPostsInQueue > skipIfQueueLongerThan) {
+          // Let's wait with this site until its queue is shorter — we'll fetch posts from
+          // some other site's time range instead. Also, this _will_distribute the indexing
+          // more evenly accross all sites?
+          STARVATION // Could theoretically happen, in a site, if the server is slow and
+          // people keep editing their comments "all the time" in that site — then we'll
+          // be indexing those, never having time to reindex older posts in that site's
+          // time range.  If that ever becomes a problem, then: Could reindex
+          // edited posts less often, so there's time to reindex the pending time ranges.
         }
         else {
           val siteTx: SiteTx = tx.asSiteTx(siteId)
-          val range: TimeRange = anyRange.getOrDie("TyE60VMG46X")
           val nextPosts: ImmSeq[Post] =
-                siteTx.loadPostsByTimeExclAggs(range, limit = howManyAtATime)
+                siteTx.loadPostsByTimeExclAggs(
+                      range, toIndex = true, OrderBy.MostRecentFirst,
+                      limit = approxPerSite - numPendingPostsInQueue)
           if (nextPosts.isEmpty) {
-            siteTx.deleteQueueRange(range)
+            siteTx.deleteJobQueueRange(range)
           }
           else {
-            siteTx.indexPostsSoon(nextPosts: _*)
+            val numEnqueued = siteTx.indexPostsSoon(nextPosts: _*)
+            numRemaining -= numEnqueued
             val oldest: Post =
                   nextPosts.reduceLeft((oldestSoFar: Post, other: Post) => {
                     if (oldestSoFar.createdAt.getTime < other.createdAt.getTime) oldestSoFar
@@ -617,7 +647,8 @@ class SystemDao(
                     else if (other.id < oldestSoFar.id) other
                     else die("TyEDUPLPOST2057", s"Site id: $siteId, post id: ${other.id}")
                   })
-            siteTx.alterQueueRange(range, newEndWhen = When.fromDate(oldest.createdAt), newEndOffset = oldest.id)
+            siteTx.alterJobQueueRange(
+                  range, newEndWhen = When.fromDate(oldest.createdAt), newEndOffset = oldest.id)
           }
         }
       }

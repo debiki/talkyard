@@ -47,11 +47,16 @@ trait SearchSiteDaoMixin extends SiteTransaction {
 
   val selectSiteVersion = "select version from sites3 where id = ?"
 
-  def indexPostsSoon(posts: Post*) {
-    posts.foreach(enqueuePost)
+  def indexPostsSoon(posts: Post*): i32 = {
+    var numEnqueued = 0
+    posts foreach { p =>
+      val gotEnqueued = enqueuePost(p)
+      if (gotEnqueued) numEnqueued += 1
+    }
+    numEnqueued
   }
 
-  private def enqueuePost(post: Post) {
+  private def enqueuePost(post: Post): Bo = {
     // COULD skip 'post' if it's a code page, e.g. CSS or JS?
     val statement = s"""
       insert into job_queue_t (action_at, site_id, site_version, post_id, post_rev_nr)
@@ -129,7 +134,7 @@ trait SearchSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def alterQueueRange(range: TimeRange, newEndWhen: When, newEndOffset: PostId): U = {
+  def alterJobQueueRange(range: TimeRange, newEndWhen: When, newEndOffset: PostId): U = {
     // For now, there can be just one range per site.
     val zero = When.Genesis.secondsFlt64
     val statement = s"""
@@ -147,7 +152,7 @@ trait SearchSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def deleteQueueRange(range: TimeRange): U = {
+  def deleteJobQueueRange(range: TimeRange): U = {
     // Just one range per site.
     val statement = s"""
           delete from  job_queue_t
