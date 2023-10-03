@@ -852,61 +852,69 @@ class RdbSystemTransaction(
   }
 
 
-  def addPendingPostsFromTimeRanges(howManyAtATime: i32): U = {
-    val ranges = ???
-  }
-
-
-  def loadReindexRangesAndQueueSizes(): Map[SiteId, (Opt[TimeRange], i32)] = {
-    /*
-    select  q.site_id,  q.date_range_c,  count(distinct q2.post_id)
-    from  job_queue_t q
-    left outer join  job_queue_t q2
-         on  q.site_id = q2.site_id
-        and  q.date_range_c is not null
-        and  q2.post_id is not null
-    group by  q.site_id, q.date_range_c;
-
-     site_id |                 date_range_c                  | count
-    ---------+-----------------------------------------------+-------
-        -704 | ("1970-01-01 00:00:00","2024-01-01 00:00:00"] |     0
-      */
-    val query = s"""
-       select
-          q.site_id,
-          time_range_to_c,
-          time_range_to_ofs_c,
-          -- (extract(epoch from lower(q.date_range_c)) +
-          --     extract(milliseconds from lower(q.date_range_c)))::bigint / 1000  as range_lower,
-          -- (extract(epoch from upper(q.date_range_c)) +
-          --     extract(milliseconds from upper(q.date_range_c)))::bigint / 1000  as range_upper,
-          (select  count(distinct q2.post_id)  from  job_queue_t q2
-              where  q2.site_id  =  q.site_id)
-               as  queue_len
-       from  job_queue_t q;
-       """
-
-    runQueryBuildMap(query, Nil, rs => {
-      val siteId = rs.getInt("site_id")
-      val anyTimeRange = getOptWhen(rs, "time_range_to_c").map(end => TimeRange(
-            from = When.Genesis, fromOfs = 0,
-            to = end, toOfs = getOptInt32(rs, "time_range_to_ofs_c").getOrElse(0)))
-      val queueLen = rs.getInt("queue_len")
-      siteId -> (anyTimeRange, queueLen)
+  def loadJobQueueNumPosts(countUpTo: i32): i32 = {
+    val query = s""" -- loadJobQueueNumPosts
+        with
+          post_rows as (
+              select 1 from  job_queue_t
+              where   post_id is not null
+              limit $countUpTo)
+          select count(*) num from post_rows  """
+    runQueryFindExactlyOne(query, Nil, rs => {
+      rs.getInt("num")
     })
   }
 
+
+  def loadJobQueueLengthsBySiteId(): Map[SiteId, i32] = {
+    // But what if there's 10e6 posts in the queue! Then this might be a bit slow,
+    // a full scan?  Better REMOVE  addEverythingInLanguagesToIndexQueue()  ?
+    // so the table can't become that huge?
+    // COULD add a  limit  in the  queue_lengths  query, hmm
+    val query = s""" -- loadJobQueueLengthsBySiteId
+          select  site_id,  count(*) as queue_len
+          from  job_queue_t
+          group by site_id  """
+    runQueryBuildMap(query, Nil, rs => {
+      val siteId = rs.getInt("site_id")
+      val queueLen = rs.getInt("queue_len")
+      siteId -> queueLen
+    })
+  }
+
+
+  def loadJobQueueRangesBySiteId(): Map[SiteId, TimeRange] = {
+    val query = s""" -- loadJobQueueRangesBySiteId
+          select  site_id,  time_range_to_c,  time_range_to_ofs_c
+            from  job_queue_t
+            where  do_what_c = ${JobType.Index}
+              -- There's one or none per site, see this unique constr:
+              -- jobq_u_dowhat_timerange_for_now
+              -- (and also: jobq_u_dowhat_site_timerange)
+              and  time_range_to_c is not null  """
+
+    runQueryBuildMap(query, Nil, rs => {
+      val siteId = rs.getInt("site_id")
+      val timeRange = TimeRange(
+            // Currently [all_time_ranges_start_at_time_0].
+            from = When.Genesis,
+            fromOfs = 0,
+            to = getWhen(rs, "time_range_to_c"),
+            // Always present, see db constr jobq_c_timerange_ofs_null.
+            toOfs = getOptInt32(rs, "time_range_to_ofs_c").getOrDie("TyE307MRG82"))
+      siteId -> timeRange
+    })
+  }
+
+
+  RENAME // to loadPostsToIndex?  & should move everything but the SQL query to the Dao?
   def loadStuffToIndex(limit: Int): StuffToIndex = {
     val postIdsBySite = mutable.Map[SiteId, ArrayBuffer[PostId]]()
-    // Hmm, use action_at or inserted_at? Normally, use inserted_at, but when
-    // reindexing everything, everything gets inserted at the same time. Then should
-    // instead use posts3.created_at, desc order, so most recent indexed first.
     val query = s"""
        select  site_id,  post_id
        from  job_queue_t
        where  post_id  is not null
-       order by  inserted_at  limit $limit
-       """
+       order by  inserted_at  limit $limit  """
 
     runQuery(query, Nil, rs => {
       while (rs.next()) {
@@ -1012,6 +1020,7 @@ class RdbSystemTransaction(
   }
 
 
+  REMOVE // Only use addEverythingInLanguagesToIndexQueue_usingTimeRange() instead
   def addEverythingInLanguagesToIndexQueue(languages: Set[String]) {
     if (languages.isEmpty)
       return
@@ -1055,9 +1064,13 @@ class RdbSystemTransaction(
 
     val zero: f64 = When.Genesis.secondsFlt64
 
-    val endOfTime: f64 = When.EndOfTime.secondsFlt64
-
+    // For `distinct on (..)`, see:
+    //     https://www.postgresql.org/docs/9.0/sql-select.html#SQL-DISTINCT
     val statement = s"""
+          with most_recent_post as (
+              select distinct on (site_id) site_id, created_at, unique_post_id
+              from posts3
+              order by site_id, created_at desc, unique_post_id desc)
           insert into job_queue_t (
               action_at,
               site_id,
@@ -1068,26 +1081,17 @@ class RdbSystemTransaction(
               time_range_to_c,
               time_range_to_ofs_c)
           select
-              to_timestamp($zero),
+              to_timestamp($zero),  -- not in use anyway, hmm
               s.id,
               s.version,
-              1,
+              ${JobType.Index},
               to_timestamp($zero),
               0,
-              to_timestamp($endOfTime),
-              0
-          from sites3 s $whereSiteIdIn """
+              (select mrp.created_at from most_recent_post mrp where mrp.site_id = s.id),
+              (select mrp.unique_post_id from most_recent_post mrp where mrp.site_id = s.id)
+          from  sites3 s $whereSiteIdIn  """
 
     runUpdate(statement, values.toList)
-
-    /*
-    // Add a day: Let's make sure there's no time zone or daylight saving time issue
-    // that accidentally makes us skip the most recent posts. — If there's nothing more
-    // in the date range to reindex (because all done, and the end range is in the
-    // future), then the date range gets deleted anyway. Might index a small fraction of all
-    // posts twice.
-    runUpdate(statement, List(now.secondsFlt64.asAnyRef, (now.secondsFlt64 + OneDayInSecondsFlt64).asAnyRef))
-     */
   }
 
 

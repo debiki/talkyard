@@ -211,7 +211,7 @@ class IndexingActor(
           // often to find the next posts.  Not too fast, if testing — or
           // this e2e test:  reindex-sites.2br.f  TyTREINDEX3
           // would run into race conditions and become flappy.
-          howManyAtATime = batchSize * (if (!core.isDevOrTest) 4 else 2))
+          desiredQueueLen = batchSize * (if (!core.isDevOrTest) 4 else 2))
   }
 
   private def loadAndIndexPendingPosts(): Unit = {

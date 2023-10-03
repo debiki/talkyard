@@ -722,8 +722,8 @@ package object core {
 
 
   case class TimeRange(from: When, fromOfs: i32, to: When, toOfs: i32) {
-    def fromIsIncl: Bo = false // for now
-    def toIsIncl: Bo = true    // for now
+    def fromIsIncl: Bo = true // for now
+    def toIsIncl: Bo = false    // for now
   }
 
 
@@ -1295,10 +1295,14 @@ package object core {
     }
   }
 
-  // RENAME to PostsToIndex?
+
+  object JobType {
+    val Index = 1
+  }
+
+  // RENAME to PostsToIndex? y
   case class StuffToIndex(
-    //timeRangeBySiteId: Map[SiteId, TimeRange],
-    // RENAME to postsToIndexBySite?
+    // RENAME to postsToIndexBySite? y
     postsBySite: Map[SiteId, immutable.Seq[Post]],
     pagesBySitePageId: Map[SitePageId, PageMeta],
     tagsBySitePostId: Map[SitePostId, imm.Seq[Tag]],

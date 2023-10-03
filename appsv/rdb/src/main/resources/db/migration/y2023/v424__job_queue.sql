@@ -1,3 +1,4 @@
+-- CR missing
 -- It'd be nice with a place to remember what posts to rerender, if
 -- e.g. the CDN address has changed, so links to user generated contents
 -- need to get updated, or some other renderer settings or whatever.
@@ -46,9 +47,14 @@ alter table  job_queue_t
 
     drop constraint  ixq_page_or_post__c_xor,
     add  constraint  jobq_c_one_thing  check (
-      num_nonnulls(page_id, post_id, cat_id_c, pat_id_c, type_id_c) = 1),
+      -- Either reindex a speific thing (optionally, in a time range),
+      num_nonnulls(page_id, post_id, cat_id_c, pat_id_c, type_id_c) = 1
+      or (
+        -- Or the whole site, in a time range.
+        num_nonnulls(page_id, post_id, cat_id_c, pat_id_c, type_id_c) = 0
+        and (time_range_to_c is not null))),
 
-    -- For now, time ranges start at time 0 (1970) and only time_range_to_c matters.
+    -- For now, [all_time_ranges_start_at_time_0] (1970) and only time_range_to_c matters.
     add  constraint  jobq_c_timerange_from_0_for_now  check (
         extract(epoch from time_range_from_c) = 0 and time_range_from_ofs_c = 0),
 
@@ -82,7 +88,7 @@ create unique index jobq_u_dowhat_pat   on  job_queue_t (site_id, do_what_c, pat
 create unique index jobq_u_dowhat_type  on  job_queue_t (site_id, do_what_c, type_id_c) where type_id_c is not null;
 
 -- For now, just one time range per whole site.
-create unique index jobq_u_dowhat_1_site_timerange
+create unique index jobq_u_dowhat_site_timerange
     on job_queue_t (site_id, do_what_c)
     where time_range_to_c is not null
       and page_id   is null
@@ -91,9 +97,14 @@ create unique index jobq_u_dowhat_1_site_timerange
       and pat_id_c  is null
       and type_id_c is null;
 
+-- And, for now, just one time range.
+create unique index jobq_u_dowhat_timerange_for_now
+    on job_queue_t (site_id, do_what_c) where time_range_to_c is not null;
+
 
 create index posts_i_lastapprovedat_0deld on posts3(
                                   site_id, greatest(approved_at, last_approved_edit_at))
+    -- Or approved_rev_nr is not null?
     where approved_at is not null and deleted_status = 0;
 
 create index posts_gi_lastapprovedat_0deld on posts3(
@@ -101,5 +112,5 @@ create index posts_gi_lastapprovedat_0deld on posts3(
     where approved_at is not null and deleted_status = 0;
 
 
-create index posts_i_createdat on posts3 (site_id, created_at desc); 
+create index posts_i_createdat_id on posts3 (site_id, created_at desc, unique_post_id desc); 
 create index posts_gi_createdat on posts3 (created_at desc);

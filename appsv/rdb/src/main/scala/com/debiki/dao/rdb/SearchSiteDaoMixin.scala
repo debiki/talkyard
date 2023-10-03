@@ -25,10 +25,14 @@ import SearchSiteDaoMixin._
 
 
 object SearchSiteDaoMixin {
+
+  // Don't update `inserted_at`, only `action_at`.
   val OnPostConflictAction = o"""
     on conflict (site_id, do_what_c, post_id) where post_id is not null
     do update set
-      post_rev_nr = greatest(job_queue_t.post_rev_nr, excluded.post_rev_nr)
+      post_rev_nr = greatest(job_queue_t.post_rev_nr, excluded.post_rev_nr),
+      site_version = greatest(job_queue_t.site_version, excluded.site_version),
+      action_at    = greatest(job_queue_t.action_at, excluded.action_at)
       """
       // Later? But how make unique?
       //   lang_codes_c      = array_cat(lang_codes_c,       excluded.lang_codes_c),
@@ -47,11 +51,16 @@ trait SearchSiteDaoMixin extends SiteTransaction {
 
   val selectSiteVersion = "select version from sites3 where id = ?"
 
-  def indexPostsSoon(posts: Post*) {
-    posts.foreach(enqueuePost)
+  def indexPostsSoon(posts: Post*): i32 = {
+    var numEnqueued = 0
+    posts foreach { p =>
+      val gotEnqueued = enqueuePost(p)
+      if (gotEnqueued) numEnqueued += 1
+    }
+    numEnqueued
   }
 
-  private def enqueuePost(post: Post) {
+  private def enqueuePost(post: Post): Bo = {
     // COULD skip 'post' if it's a code page, e.g. CSS or JS?
     val statement = s"""
       insert into job_queue_t (action_at, site_id, site_version, post_id, post_rev_nr)
@@ -117,19 +126,22 @@ trait SearchSiteDaoMixin extends SiteTransaction {
   private def enqueuePage(pageMeta: PageMeta): U = {
     die("Untested", "EsE4YKG02")
     val statement = s"""
-      insert into job_queue_t (action_at, site_id, site_version, page_id, page_version)
-        values (?, ?, ($selectSiteVersion), ?, ?)
+      insert into job_queue_t (action_at, site_id, site_version, do_what_c, page_id, page_version)
+        values (?, ?, ($selectSiteVersion), ?, ?, ?)
       on conflict (site_id, do_what_c, page_id) where page_id is not null
       do update set
-        page_version = greatest(job_queue_t.page_version, excluded.page_version)
+        page_version = greatest(job_queue_t.page_version, excluded.page_version),
+        site_version = greatest(job_queue_t.site_version, excluded.site_version),
+        action_at    = greatest(job_queue_t.action_at, excluded.action_at)
       """
-    val values = List(pageMeta.createdAt, siteId.asAnyRef, siteId.asAnyRef, pageMeta.pageId,
-      pageMeta.version.asAnyRef)
+    val values = List(pageMeta.createdAt, siteId.asAnyRef,
+          siteId.asAnyRef, // for selecting site version
+          JobType.Index.asAnyRef, pageMeta.pageId, pageMeta.version.asAnyRef)
     runUpdateSingleRow(statement, values)
   }
 
 
-  def alterQueueRange(range: TimeRange, newEndWhen: When, newEndOffset: PostId): U = {
+  def alterJobQueueRange(range: TimeRange, newEndWhen: When, newEndOffset: PostId): U = {
     // For now, there can be just one range per site.
     val zero = When.Genesis.secondsFlt64
     val statement = s"""
@@ -137,7 +149,7 @@ trait SearchSiteDaoMixin extends SiteTransaction {
           set  time_range_to_c          = ?,
                time_range_to_ofs_c      = ?
           where  site_id                = ?
-            and  time_range_from_c      = to_timestamp(0)
+            and  time_range_from_c      = to_timestamp($zero)
             and  time_range_from_ofs_c  = 0
             and  time_range_to_c        is not null
             and  time_range_to_ofs_c    is not null
@@ -147,12 +159,13 @@ trait SearchSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def deleteQueueRange(range: TimeRange): U = {
+  def deleteJobQueueRange(range: TimeRange): U = {
     // Just one range per site.
+    val zero = When.Genesis.secondsFlt64
     val statement = s"""
           delete from  job_queue_t
           where  site_id                = ?
-            and  time_range_from_c      = to_timestamp(0)
+            and  time_range_from_c      = to_timestamp($zero)
             and  time_range_from_ofs_c  = 0
             and  time_range_to_c        is not null
             and  time_range_to_ofs_c    is not null

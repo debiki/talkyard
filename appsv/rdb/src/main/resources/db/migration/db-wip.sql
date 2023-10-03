@@ -46,7 +46,8 @@ alter table sites3 add constraint sites_c_smtpconf_min_len check (
     length(smtp_conf_json_c) > 50);
 
 
--- See:  smtp_msg_ids_out_d  text[], has a fancy array constraint.
+-- See:  smtp_msg_ids_out_d  text[], has a fancy array constraint, ...
+-- ... But this is better? Because of "| ".
 create domain alnum_plusdashdot_arr_d text[];
 alter domain  alnum_plusdashdot_arr_d add
    constraint alnum_plusdashdot_arr_d_c_nonempty check (
@@ -86,7 +87,7 @@ create unique index uploadrefs_u_draftnr_ref on upload_refs3 (
 
 alter table  job_queue_t
     -- To remember why sth got added to the index queue — what language, what ES version
-    -- (in case indexing in a new index, before a major upgrade, in parallell with
+    -- (in case indexing into a new index, before a major upgrade, in parallell with
     -- indexing in a current index?).  Maybe not actually needed, but nice for
     -- troubleshooting and developer / admin insight?
     add column  search_eng_vers_c  alnum_plusdashdot_arr_d,

@@ -206,7 +206,7 @@ trait LinksSiteTxMixin extends SiteTransaction {
           where po.site_id = ?
             and po.page_id = ?
             -- Access control done elsewhere, e.. can see deleted or not? So, not needed?:
-            -- and po.deleted_status is null
+            -- and po.deleted_status = ${DeletedStatus.NotDeleted.toInt}
           ) as lns
           order by
             lns.from_post_id_c, lns.link_url_c """

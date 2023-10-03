@@ -1,0 +1,40 @@
+20:09:06 86 ~/styd/ty2 (640f8a463...) $ $ tt diff --stat --from pkplsyxw --to ympqoswz # Add search engine...
+            appsv/model/src/main/scala/com/debiki/core/SiteTransaction.scala           |   7 +++
+            appsv/model/src/main/scala/com/debiki/core/SystemTransaction.scala         |   4 ++
+            appsv/model/src/main/scala/com/debiki/core/package.scala                   |  15 +++++-
+            appsv/rdb/src/main/resources/db/migration/db-wip.sql                       |  28 +++++++++-
+            appsv/rdb/src/main/resources/db/migration/y2023/v424__job_queue.sql        | 135 ++++++++++++++++++++++++++++++-------------
+            appsv/rdb/src/main/scala/com/debiki/dao/rdb/CreateSiteSystemDaoMixin.scala |   2 +-
+            appsv/rdb/src/main/scala/com/debiki/dao/rdb/PostsSiteDaoMixin.scala        |  43 ++++++++++++++
+            appsv/rdb/src/main/scala/com/debiki/dao/rdb/RdbSiteTransaction.scala       |   1 +
+            appsv/rdb/src/main/scala/com/debiki/dao/rdb/RdbSystemTransaction.scala     | 141 +++++++++++++++++++++++++++++++++++++++++++--
+            appsv/rdb/src/main/scala/com/debiki/dao/rdb/SearchSiteDaoMixin.scala       |  56 +++++++++++++++---
+            appsv/server/controllers/SuperAdminController.scala                        |  51 ++++++++++++++---
+            appsv/server/debiki/Globals.scala                                          |  19 ++++++-
+            appsv/server/debiki/dao/PostsDao.scala                                     |   2 +-
+            appsv/server/debiki/dao/SystemDao.scala                                    |  78 ++++++++++++++++++++++++-
+            appsv/server/talkyard/server/search/SearchEnginIndexer.scala               |  16 +++++-
+            appsv/server/talkyard/server/sitepatch/SitePatch.scala                     |   2 +-
+            client/app-slim/Server.ts                                                  |   6 ++
+            client/app-slim/model.ts                                                   |   2 +
+            client/app-staff/superadmin/superadmin-app.staff.ts                        | 125 +++++++++++++++++++++++++++++++++++++---
+            client/app-staff/superadmin/superadmin-app.styl                            |   4 +-
+            client/types-and-const-enums.ts                                            |   5 ++
+            conf/routes                                                                |   2 +
+            s/run-e2e-tests.sh                                                         |   2 +
+            tests/e2e-wdio7/specs/load-test-site-builder.ts                            |  91 +++++++++++++++++++----------
+            tests/e2e-wdio7/specs/reindex-sites.2br.f.e2e.ts                           | 180 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            tests/e2e-wdio7/utils/make.ts                                              |   7 ++-
+            tests/e2e-wdio7/utils/server.ts                                            |   6 ++
+            tests/e2e-wdio7/utils/ty-e2e-test-browser.ts                               |   2 +-
+            to-talkyard/src/to-talkyard.d.ts                                           |   1 +
+            29 files changed, 914 insertions(+), 119 deletions(-)
+
+
+move to skip:
+          -- (extract(epoch from lower(q.date_range_c)) +
+          --     extract(milliseconds from lower(q.date_range_c)))::bigint / 1000  as range_lower,
+          -- (extract(epoch from upper(q.date_range_c)) +
+          --     extract(milliseconds from upper(q.date_range_c)))::bigint / 1000  as range_upper,
+
+
