@@ -751,7 +751,7 @@ const enum DiagFlavor {
 
 
 const enum Time {
-  OneDayInMllis = 24 * 3600 * 1000,
+  OneDayInMillis = 24 * 3600 * 1000,
 }
 
 

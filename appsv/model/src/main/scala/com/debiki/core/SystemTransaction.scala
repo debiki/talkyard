@@ -79,7 +79,7 @@ trait SystemTransaction {  RENAME // to SysTx, started already
 
   // ----- Staff users
 
-  def loadStaffForAllSites(): Map[SiteId, Vector[UserInclDetails]]
+  def loadStaffBySiteId(): Map[SiteId, Vector[UserInclDetails]]
 
 
   // ----- Summary emails, and notifications
@@ -104,9 +104,8 @@ trait SystemTransaction {  RENAME // to SysTx, started already
   def loadJobQueueLengthsBySiteId(): Map[SiteId, i32]
   def loadStuffToIndex(limit: Int): StuffToIndex
   def deleteFromIndexQueue(post: Post, siteId: SiteId): Unit
-  def addEverythingInLanguagesToIndexQueue(languages: Set[String]): Unit
-  def addEverythingInLanguagesToIndexQueue_usingTimeRange(
-        siteIds: Set[SiteId] = Set.empty, all: Bo = false): U
+  def addEverythingInLanguagesToIndexQueue(
+        siteIds: Set[SiteId] = Set.empty, allSites: Bo = false): U
 
   // ----- Spam check queue
 

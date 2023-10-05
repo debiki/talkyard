@@ -33,6 +33,8 @@ export function addTestsForConstructingLoadTestSiteAndLoggingIn(ps: {
   numUsers: Nr,
   halfPagesTrustedOnly?: Bo,
   logInAsTrillianAndMaja?: Bo,
+  everythingCreatedAtSameMs?: WhenMs,
+  skipComments?: Bo,
 }): ForumSite {
   assert.that((ps.numUsers % 6) === 0, `numUsers should be divisible by 6,
       so can create numUsers / 6 users in each trust level`);
@@ -64,6 +66,7 @@ export function addTestsForConstructingLoadTestSiteAndLoggingIn(ps: {
 
     forum = builder.addCatABTrustedForum({
       title: ps.siteName,
+      everythingCreatedAtSameMs: ps.everythingCreatedAtSameMs,
       members: ['mons', 'modya', 'corax', 'regina', 'trillian',
           'memah', 'maria', 'maja', 'memah', 'michael', 'mallory']
     });
@@ -106,12 +109,12 @@ export function addTestsForConstructingLoadTestSiteAndLoggingIn(ps: {
       // OLD: (By making its created-at time 1 year more recent — otherwise they'd all
       // be placed last. Or 1 year older.)
       const extraTimeMs = trustedOnly ? 1000 * 60 : 0; // !trustedOnly ? 0 : ((pageNr % 2) * 2 - 1) * 1000 * 3600 * 24 * 365;
-      const createdAtMs =
+      const createdAtMs = ps.everythingCreatedAtSameMs || (
               extraTimeMs + c.JanOne2020HalfPastFive + (
                   ps.halfPagesTrustedOnly !== false
                       ? 1000 * 3600 * (pageNr % halfNumPages)
-                      // One minute between each page
-                      : pageNr * 1000 * 60);
+                      // One hour between each page
+                      : pageNr * 1000 * 3600));
 
       const newPage: PageJustAdded = builder.addPage({
         id: '' + pageId,
@@ -125,6 +128,9 @@ export function addTestsForConstructingLoadTestSiteAndLoggingIn(ps: {
         authorId: author.id,
         createdAtMs,
       });
+
+      if (ps.skipComments)
+        continue;
 
       // For now, 9 replies per page —> 10 posts (body + 9 replies).
       // Or, no, just 0, 2, 8 or 16 replies — otherwise out of disk quota.
@@ -140,7 +146,7 @@ export function addTestsForConstructingLoadTestSiteAndLoggingIn(ps: {
           parentNr: c.BodyNr,
           authorId: replyer.id,
           approvedSource:  `Reply nr ${replyNr}`,
-          createdAtMs: createdAtMs + i,
+          createdAtMs: createdAtMs + (ps.everythingCreatedAtSameMs ? 0 : i),
         });
       }
     }

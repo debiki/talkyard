@@ -51,18 +51,19 @@ trait SearchSiteDaoMixin extends SiteTransaction {
 
   val selectSiteVersion = "select version from sites3 where id = ?"
 
+  /** Returns how many posts were enqueued *or updated* if already in the queue. */
   def indexPostsSoon(posts: Post*): i32 = {
     var numEnqueued = 0
     posts foreach { p =>
-      val gotEnqueued = enqueuePost(p)
+      val gotEnqueued = _enqueuePost(p)
       if (gotEnqueued) numEnqueued += 1
     }
     numEnqueued
   }
 
-  private def enqueuePost(post: Post): Bo = {
+  private def _enqueuePost(post: Post): Bo = {
     // COULD skip 'post' if it's a code page, e.g. CSS or JS?
-    val statement = s"""
+    val statement = s""" -- _enqueuePost
       insert into job_queue_t (action_at, site_id, site_version, post_id, post_rev_nr)
         values (?, ?, ($selectSiteVersion), ?, ?)
       $OnPostConflictAction
@@ -99,7 +100,7 @@ trait SearchSiteDaoMixin extends SiteTransaction {
   }
 
   def indexAllPostsOnPage(pageId: PageId) {
-    val statement = s"""
+    val statement = s""" -- indexAllPostsOnPage
       insert into job_queue_t (action_at, site_id, site_version, post_id, post_rev_nr)
       select
         posts3.created_at,
@@ -120,12 +121,12 @@ trait SearchSiteDaoMixin extends SiteTransaction {
 
 
   def indexPagesSoon(pages: PageMeta*) {
-    pages.foreach(enqueuePage)
+    pages.foreach(_enqueuePage)
   }
 
-  private def enqueuePage(pageMeta: PageMeta): U = {
+  private def _enqueuePage(pageMeta: PageMeta): U = {
     die("Untested", "EsE4YKG02")
-    val statement = s"""
+    val statement = s""" -- _enqueuePage
       insert into job_queue_t (action_at, site_id, site_version, do_what_c, page_id, page_version)
         values (?, ?, ($selectSiteVersion), ?, ?, ?)
       on conflict (site_id, do_what_c, page_id) where page_id is not null
@@ -142,9 +143,9 @@ trait SearchSiteDaoMixin extends SiteTransaction {
 
 
   def alterJobQueueRange(range: TimeRange, newEndWhen: When, newEndOffset: PostId): U = {
-    // For now, there can be just one range per site.
+    // For now, there can be just one range per site, and  [all_time_ranges_start_at_time_0].
     val zero = When.Genesis.secondsFlt64
-    val statement = s"""
+    val statement = s""" -- alterJobQueueRange
           update  job_queue_t
           set  time_range_to_c          = ?,
                time_range_to_ofs_c      = ?
@@ -152,24 +153,24 @@ trait SearchSiteDaoMixin extends SiteTransaction {
             and  time_range_from_c      = to_timestamp($zero)
             and  time_range_from_ofs_c  = 0
             and  time_range_to_c        is not null
-            and  time_range_to_ofs_c    is not null
-          """
+            and  time_range_to_ofs_c    is not null  """
+
     val values = List(newEndWhen.asTimestamp, newEndOffset.asAnyRef, siteId.asAnyRef)
     runUpdateSingleRow(statement, values)
   }
 
 
   def deleteJobQueueRange(range: TimeRange): U = {
-    // Just one range per site.
+    // Just one range per site, and  [all_time_ranges_start_at_time_0].
     val zero = When.Genesis.secondsFlt64
-    val statement = s"""
+    val statement = s""" -- deleteJobQueueRange
           delete from  job_queue_t
           where  site_id                = ?
             and  time_range_from_c      = to_timestamp($zero)
             and  time_range_from_ofs_c  = 0
             and  time_range_to_c        is not null
-            and  time_range_to_ofs_c    is not null
-          """
+            and  time_range_to_ofs_c    is not null  """
+
     runUpdateSingleRow(statement, List(siteId.asAnyRef))
   }
 }

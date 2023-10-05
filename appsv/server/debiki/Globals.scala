@@ -32,7 +32,6 @@ import debiki.dao._
 import talkyard.server.migrations.ScalaBasedMigrations
 import talkyard.server.search.SearchEngineIndexer
 import talkyard.server.notf.NotifierActor
-
 import java.{lang => jl, net => jn}
 import java.util.concurrent.TimeUnit
 import talkyard.server.pubsub.{PubSub, PubSubApi, StrangerCounterApi}
@@ -41,7 +40,6 @@ import org.scalactic._
 import play.{api => p}
 import play.api.libs.ws.WSClient
 import redis.RedisClient
-
 import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future, TimeoutException}
@@ -1320,18 +1318,19 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
       else Some(
         NotifierActor.startNewActor(executionContext, actorSystem, systemDao, siteDaoFactory))
 
+    COULD_OPTIMIZE // Auto adjust indexing batch size & interval depending on CPU load.
     def indexerBatchSize: Int = getIntOrDefault(
           "talkyard.search.indexer.batchSize",
           // Not too many, could put the server under a bit much load?
           if (!isDevOrTest) 40
-          // If running tests, we'd like the indexer to be even slower — otherwise,
+          // If running tests, we'd like the indexer to be not-too-fast. Otherwise,
           // this e2e test:  reindex-sites.2br.f  TyTREINDEX3
           // couldn't verify that the indexer indexes posts in the expected order.
-          // The biggest test forum has 50 pages, that's 100+ posts, so indexing 40 at a
-          // time, means there'll be > `indexerIntervalSeconds` in between the first and
-          // last posts get indexed, and that should be enough.
-          // Later, COULD_OPTIMIZE: Auto adjust the batch size & interval depending
-          // on the CPU load.
+          // The biggest test forum has 50 pages, that's 100+ posts (title + body,
+          // and some comments)  so indexing 40 at a time, means there'll be
+          // > `indexerIntervalSeconds` in between the first and
+          // last posts get indexed, and that should be enough. [dont_index_too_fast_if_testing]
+          // [indexer_batch_size_is_20]
           else 20)
     def indexerIntervalSeconds: Int = getIntOrDefault("talkyard.search.indexer.intervalSeconds", 1)
 

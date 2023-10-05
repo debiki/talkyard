@@ -1,4 +1,4 @@
--- CR missing
+-- CR missing y
 -- It'd be nice with a place to remember what posts to rerender, if
 -- e.g. the CDN address has changed, so links to user generated contents
 -- need to get updated, or some other renderer settings or whatever.

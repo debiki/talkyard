@@ -491,7 +491,7 @@ class RdbSystemTransaction(
   }
 
 
-  def loadStaffForAllSites(): Map[SiteId, Vector[UserInclDetails]] = {
+  def loadStaffBySiteId(): Map[SiteId, Vector[UserInclDetails]] = {
     import Participant.LowestAuthenticatedUserId
     val query = s"""
       select u.site_id, $CompleteUserSelectListItemsWithUserId
@@ -867,13 +867,11 @@ class RdbSystemTransaction(
 
 
   def loadJobQueueLengthsBySiteId(): Map[SiteId, i32] = {
-    // But what if there's 10e6 posts in the queue! Then this might be a bit slow,
-    // a full scan?  Better REMOVE  addEverythingInLanguagesToIndexQueue()  ?
-    // so the table can't become that huge?
-    // COULD add a  limit  in the  queue_lengths  query, hmm
+    // The job queue should never be hopelessly long, so a full scan is ok. [jobq_0_2_long]
     val query = s""" -- loadJobQueueLengthsBySiteId
           select  site_id,  count(*) as queue_len
           from  job_queue_t
+          where post_id is not null
           group by site_id  """
     runQueryBuildMap(query, Nil, rs => {
       val siteId = rs.getInt("site_id")
@@ -884,7 +882,7 @@ class RdbSystemTransaction(
 
 
   def loadJobQueueRangesBySiteId(): Map[SiteId, TimeRange] = {
-    val query = s""" -- loadJobQueueRangesBySiteId
+    val query = s""" -- loadJobQueueRangesBySiteId, uses ix?:  jobq_u_dowhat_timerange_for_now
           select  site_id,  time_range_to_c,  time_range_to_ofs_c
             from  job_queue_t
             where  do_what_c = ${JobType.Index}
@@ -1020,7 +1018,8 @@ class RdbSystemTransaction(
   }
 
 
-  REMOVE // Only use addEverythingInLanguagesToIndexQueue_usingTimeRange() instead
+  /*
+  REMOVE
   def addEverythingInLanguagesToIndexQueue(languages: Set[String]) {
     if (languages.isEmpty)
       return
@@ -1044,23 +1043,23 @@ class RdbSystemTransaction(
       """
 
     runUpdate(statement, Nil)
-  }
+  } */
 
 
-  def addEverythingInLanguagesToIndexQueue_usingTimeRange(siteIds: Set[SiteId], all: Bo): U = {
-    dieIf(siteIds.nonEmpty && all, "TyE602RMGLC4")
-    if (siteIds.isEmpty && !all)
+  def addEverythingInLanguagesToIndexQueue(siteIds: Set[SiteId], allSites: Bo): U = {
+    dieIf(siteIds.nonEmpty && allSites, "TyE602RMGLC4")
+    if (siteIds.isEmpty && !allSites)
       return
 
     val values = MutArrBuf[AnyRef]()
 
     val whereSiteIdIn: St = if (siteIds.isEmpty) "" else {
       values.appendAll(siteIds.map(_.asAnyRef))
-      s"where s.id in (${makeInListFor(siteIds)})"
+      s"where sites3.id in (${makeInListFor(siteIds)})"
     }
 
     // First, ensure we won't be reindexing everything multiple times:
-    _deleteAnyReindexAllRanges(siteIds = siteIds, all = all)
+    _deleteAnyReindexAllRanges(siteIds = siteIds, allSites = allSites)
 
     val zero: f64 = When.Genesis.secondsFlt64
 
@@ -1072,6 +1071,7 @@ class RdbSystemTransaction(
               from posts3
               order by site_id, created_at desc, unique_post_id desc)
           insert into job_queue_t (
+              inserted_at,
               action_at,
               site_id,
               site_version,
@@ -1081,28 +1081,33 @@ class RdbSystemTransaction(
               time_range_to_c,
               time_range_to_ofs_c)
           select
+              now_utc(),
               to_timestamp($zero),  -- not in use anyway, hmm
-              s.id,
-              s.version,
+              sites3.id,
+              sites3.version,
               ${JobType.Index},
+              -- Currently [all_time_ranges_start_at_time_0].
               to_timestamp($zero),
               0,
-              (select mrp.created_at from most_recent_post mrp where mrp.site_id = s.id),
-              (select mrp.unique_post_id from most_recent_post mrp where mrp.site_id = s.id)
-          from  sites3 s $whereSiteIdIn  """
+              most_recent_post.created_at,
+              most_recent_post.unique_post_id
+          from  sites3  inner join  most_recent_post
+            on  sites3.id = most_recent_post.site_id
+          $whereSiteIdIn  """
 
     runUpdate(statement, values.toList)
   }
 
 
-  private def _deleteAnyReindexAllRanges(siteIds: Set[SiteId], all: Bo): U = {
-    dieIf(siteIds.isEmpty && !all, "TyE502RJMF67")
+  private def _deleteAnyReindexAllRanges(siteIds: Set[SiteId], allSites: Bo): U = {
+    dieIf(siteIds.isEmpty && !allSites, "TyE502RJMF67")
 
     val values = MutArrBuf[AnyRef]()
     val andSiteIdIn: St = if (siteIds.isEmpty) "" else {
       values.appendAll(siteIds.map(_.asAnyRef))
       s"and site_id in (${makeInListFor(siteIds)})"
     }
+    // Currently [all_time_ranges_start_at_time_0].
     val statement = s"""
           delete from job_queue_t
           where extract(epoch from time_range_from_c) = 0

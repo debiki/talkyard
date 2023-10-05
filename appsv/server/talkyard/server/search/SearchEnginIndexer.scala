@@ -180,7 +180,9 @@ class IndexingActor(
         // then, how do we know that everything has been indexed already? Maybe
         // ask ES for document counts, if >= 1, then, not starting for the 1st time?
         // (Or, if exporting & importing?)
-        enqueueEverythingInLanguages(newIndexes.map(_.language).toSet)
+        if (newIndexes.nonEmpty) {
+          enqueueEverythingInLanguages(newIndexes.map(_.language).toSet)
+        }
         doneCreatingIndexes = true
       }
       deleteAlreadyIndexedPostsFromQueue()
@@ -202,16 +204,17 @@ class IndexingActor(
   }
 
 
-  /** If there are any  job_queue_t.date_range_c  for which all posts should get reindexed,
-    * this'll find the first (lowest timestamp) 1000 posts in that range, add each one of
-    * them to the queue, and then update */
+  /** If there are time ranges in  job_queue_t  for which all posts should get reindexed,
+    * this'll find the most recently created  posts in those time ranges, add those
+    * posts to the queue, and decrease the end of the time range.
+    */
   private def _addPendingPostsFromTimeRanges(): U = {
     systemDao.addPendingPostsFromTimeRanges(
           // Let's add a few batches each time, so we don't need to run SQL queries so
           // often to find the next posts.  Not too fast, if testing — or
           // this e2e test:  reindex-sites.2br.f  TyTREINDEX3
-          // would run into race conditions and become flappy.
-          desiredQueueLen = batchSize * (if (!core.isDevOrTest) 4 else 2))
+          // would run into race conditions and become flappy. [dont_index_too_fast_if_testing]
+          desiredQueueLen = batchSize * (if (!core.isDevOrTest) 4 else 1))
   }
 
   private def loadAndIndexPendingPosts(): Unit = {

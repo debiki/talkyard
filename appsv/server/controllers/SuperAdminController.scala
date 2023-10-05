@@ -110,7 +110,9 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
           RateLimits.AdminWritesToDb, maxBytes = 1000) { req =>
     throwForbiddenIf(globals.isProdLive, "TyE0INDEX3967", o"""I want as payload
           a complete index from the closest-to-you-but-one public library, of books
-          at least 100.00 years old by authors whose names start with Y.""")
+          at least 100.00 years old, with titles that include the word "Fire",
+          which my doves can read for my phoenix bird, who otherwise gets quite
+          restless and even hot with anger.""")
     _reindexImpl(req)
   }
 
@@ -127,11 +129,10 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
 
 
   private def listSitesImpl(): p.mvc.Result = {
-    // The most recent first.
-    // : (Seq[SiteInclDetails], Map[SiteId, Seq[UserInclDetails]], Map[SiteId, (TimeRange, i32)]) =
-    //val (sitesUnsorted: Seq[SiteInclDetails], staffBySiteId) =
     val siteStuff: Seq[SASiteStuff] = globals.systemDao.loadSitesInclDetailsAndStaff()
+    // Sort recent first.
     val sitesNewFirst = siteStuff.sortBy(-_.site.createdAt.toUnixMillis)
+    // Count reindex ranges, and reindex queue length.
     val jobSumStat = siteStuff.foldLeft((0, 0)) { (stat: (i32, i32), stuff: SASiteStuff) =>
       (stat._1 + stuff.reindexRange.oneIfDefined, stat._2 + stuff.reindexQueueLen)
     }
@@ -141,6 +142,8 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
         "firstSiteHostname" -> JsStringOrNull(globals.defaultSiteHostname),
         "baseDomain" -> globals.baseDomainWithPort,
         "autoPurgeDelayDays" -> JsFloat64OrNull(globals.config.autoPurgeDelayDays),
+        "totReindexRanges" -> jobSumStat._1,
+        "totReindexQueueLen" -> jobSumStat._2,
         "sites" -> sitesNewFirst.map(_siteToJson))))
   }
 

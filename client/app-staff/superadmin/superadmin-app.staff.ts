@@ -123,7 +123,7 @@ const DashboardPanel = createFactory({
       if (showSite && filterReIxDays) {
         const filterValDays = parseFloat(filterReIxDays);
         const rangVals = site.reindexRangeMs; // Ms = millis
-        const rangeDays = !rangVals ? -1 : (rangVals[2] - rangVals[0]) / Time.OneDayInMllis;
+        const rangeDays = !rangVals ? -1 : (rangVals[2] - rangVals[0]) / Time.OneDayInMillis;
         showSite = rangeDays >= filterValDays;
       }
 
@@ -143,54 +143,6 @@ const DashboardPanel = createFactory({
         filteredSites.push(site);
       }
     });
-
-    /*
-    const filterText: St = this.state.filterText;
-    if (filterText && filterText.length >= 2) {
-      _.each(stuff.sites, (site: SASite) => {
-        let show: BoZ =
-              _.some(site.hostnames, h => h.indexOf(filterText) >= 0) ||
-              site.featureFlags.toLowerCase().indexOf(filterText) >= 0 ||
-              site.superStaffNotes &&
-                  site.superStaffNotes.toLowerCase().indexOf(filterText) >= 0;
-        show = show || _.some(site.staffUsers, (m: PatVb) =>
-            m.email?.toLowerCase().indexOf(filterText) >= 0 ||
-            m.username?.toLowerCase().indexOf(filterText) >= 0 ||
-            m.fullName?.toLowerCase().indexOf(filterText) >= 0);
-        if (show) {
-          filteredSites.push(site);
-        }
-      });
-    }
-    else {
-      filteredSites = stuff.sites;
-    }
-
-    const filterRdbUsagePct: Nr = this.state.filterRdbUsagePct;
-    if (filterRdbUsagePct) {
-      const copy = [...filteredSites];
-      filteredSites = [];
-      _.each(copy, (site: SASite) => {
-        let show = site.stats.dbStorageUsedBytes >=
-                      site.stats.dbStorageLimitBytes * filterRdbUsagePct / 100;
-        if (show) {
-          filteredSites.push(site);
-        }
-      });
-    }
-
-    const filterFsUsagePct: Nr = this.state.filterFsUsagePct;
-    if (filterFsUsagePct) {
-      const copy = [...filteredSites];
-      filteredSites = [];
-      _.each(copy, (site: SASite) => {
-        let show = site.stats.fileStorageUsedBytes >=
-                      site.stats.fileStorageLimitBytes * filterFsUsagePct / 100;
-        if (show) {
-          filteredSites.push(site);
-        }
-      });
-    } */
 
     const someSites =  _.take(filteredSites, numRows);
     const sitesToShow = someSites.map((site: SASite) =>
@@ -447,11 +399,6 @@ const SiteTableRow = createComponent({
     const MiB = Sizes.Mebibyte;
     const ps = admin.prettyStats(site.stats);
 
-    const rangVals = site.reindexRangeMs; // Ms = millis
-    const reIxRangeDays = !rangVals ? 0 : (rangVals[2] - rangVals[0]) / Time.OneDayInMllis;
-    const andReindexRange: St = !rangVals ? '' :
-            ` & —> ${whenMsToIsoDate(rangVals[2])} po id ${rangVals[3]} = ${reIxRangeDays} days`;
-
     const quota = r.div({ className: 's_SA_S_Storage'},
         `db: ${ps.dbMb.toPrecision(2)} MiB = ${ps.dbPercentStr}% of ${ps.dbMaxMb} MiB`,
         r.input({ className: 's_SA_S_Quota', type: 'number', min: '0', step: '1',
@@ -485,6 +432,11 @@ const SiteTableRow = createComponent({
                 createLimsMult: asFloatOrNull(event.target.value) } as SiteTableRowState),
             defaultValue: site.createLimsMult }),
         );
+
+    const rangVals = site.reindexRangeMs; // Ms = millis
+    const reIxRangeDays = !rangVals ? 0 : (rangVals[2] - rangVals[0]) / Time.OneDayInMillis;
+    const andReindexRange: St = !rangVals ? '' :
+          ` & —> ${whenMsToIsoDate(rangVals[2])} po id ${rangVals[3]} = ${reIxRangeDays} days`;
 
     const bgJobsInf = !site.reindexRangeMs && !site.reindexQueueLen ? null : (
             r.div({ className: 's_SA_S_BgJobs' },

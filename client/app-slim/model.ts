@@ -2627,6 +2627,8 @@ interface SuperAdminStuff {
   baseDomain: string;
   autoPurgeDelayDays?: Nr;
   sites: SASite[];
+  totReindexRanges: Nr;
+  totReindexQueueLen: Nr;
 }
 
 

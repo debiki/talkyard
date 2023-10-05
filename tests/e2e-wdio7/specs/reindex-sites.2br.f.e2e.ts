@@ -1,8 +1,10 @@
 /// <reference path="../test-types.ts"/>
 
+import * as _ from 'lodash';
 import server from '../utils/server';
 import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import { addTestsForConstructingLoadTestSiteAndLoggingIn } from './load-test-site-builder';
+import { j2s } from '../utils/log-and-die';
 import c from '../test-constants';
 
 let brA: TyE2eTestBrowser;
@@ -15,18 +17,30 @@ let stranger_brA: TyE2eTestBrowser;
 let stranger_brB: TyE2eTestBrowser;
 
 const _10001 = '10001';
+const _10021 = '10021';
 const _10031 = '10031';
 const _10061 = '10061';
 
+
+/// This test breaks if the indexer is "too fast", because this test tries to
+/// verify that the posts are indexed in the expected order — but if they're all
+/// done instantly, then, some tests herein fails. [dont_index_too_fast_if_testing]
+///
 describe(`reindex-sites.2br.f  TyTREINDEX3`, () => {
 
-  const forum2 = addTestsForConstructingLoadTestSiteAndLoggingIn({
-    siteName: "Forum-2 Reindex Test",
-    hostnameSuffix: '-f2',
-    numPages: 2,
+  const forum24 = addTestsForConstructingLoadTestSiteAndLoggingIn({
+    siteName: "Forum-24 Reindex Test",
+    hostnameSuffix: '-f24',
+    numPages: 24,
     numUsers: 6,
     halfPagesTrustedOnly: false,
     logInAsTrillianAndMaja: false,
+    // This'll test the reindex time range post id offset, since many posts
+    // will have the same created-at time.
+    everythingCreatedAtSameMs: c.JanOne2020HalfPastFive,
+    // Simpler to verify that all posts get indexed & searchable, if we don't
+    // need to think about comments (instead, only the 24 pages).
+    skipComments: true,
   });
 
   const forum32 = addTestsForConstructingLoadTestSiteAndLoggingIn({
@@ -36,7 +50,8 @@ describe(`reindex-sites.2br.f  TyTREINDEX3`, () => {
     numUsers: 6,
     halfPagesTrustedOnly: false,
     logInAsTrillianAndMaja: false,
-    everythingCreatedAtSameMs: 1234,
+    // Makes the test a little bit quicker ...
+    skipComments: true,
   });
 
   const forum62 = addTestsForConstructingLoadTestSiteAndLoggingIn({
@@ -46,6 +61,8 @@ describe(`reindex-sites.2br.f  TyTREINDEX3`, () => {
     numUsers: 6,
     halfPagesTrustedOnly: false,
     logInAsTrillianAndMaja: false,
+    // ... But good with some comments somewhere.
+    skipComments: false,
   });
 
   it(`Init browsers`, async () => {
@@ -59,16 +76,7 @@ describe(`reindex-sites.2br.f  TyTREINDEX3`, () => {
   });
 
 
-  it(`Someone searches for page 10001 in Forum-2`, async () => {
-    await stranger_brA.go2(forum2.site.origin);
-    await stranger_brA.topbar.searchFor(_10001);
-  });
-  it(`... finds nothing`, async () => {
-    await stranger_brA.searchResultsPage.assertResultLinksAre([]);
-  });
-
-
-  it(`Someone searches for page 10001 in Forum-32 too`, async () => {
+  it(`Someone searches for page 10001 in Forum-32`, async () => {
     await stranger_brB.go2(forum32.site.origin);
     await stranger_brB.topbar.searchFor(_10001);
   });
@@ -122,8 +130,8 @@ describe(`reindex-sites.2br.f  TyTREINDEX3`, () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([]);
   });
 
-  it(`... Page 31 also hasn't, in Forum-62  (because pages 32...61 are first)`, async () => {
-    await owen_brA.searchResultsPage.searchForWaitForResults(_10031);
+  it(`... Page 21 also hasn't, in Forum-62  (because pages 22...61 are first)`, async () => {
+    await owen_brA.searchResultsPage.searchForWaitForResults(_10021);
     await owen_brA.searchResultsPage.assertResultLinksAre([]);
   });
   it(`... until after a while`, async () => {
@@ -156,15 +164,42 @@ describe(`reindex-sites.2br.f  TyTREINDEX3`, () => {
 
 
 
-  it(`Forum-2 hasn't been indexed at all — page 10001 still not found`, async () => {
-    await stranger_brB.go2(forum2.site.origin);
+  it(`Forum-24 hasn't been indexed at all — page 10001 not found`, async () => {
+    await stranger_brB.go2(forum24.site.origin);
     await stranger_brB.topbar.searchFor(_10001);
     await stranger_brB.searchResultsPage.assertResultLinksAre([]);
   });
-  it(`Indexing Forum-2...`, async () => {
-    await server.reindexSites([forum2.site.id]);
+  it(`Indexing Forum-24, works fine, although everything has the same timestamp`, async () => {
+    await server.reindexSites([forum24.site.id]);
   });
-  it(`... Soon page 10001 is searchable in Forum-2 too`, async () => {
+
+  // The [indexer_batch_size_is_20] in dev-test. This'll test that adding posts
+  // from time ranges, will make use of the post id offset (when many posts have
+  // the same timestamp), without skipping any post.
+  //
+  // If there's an [off_by_one_bug_in_the_indexer], then a title or orig post
+  // won't get indexed, and one of the tests here fails. (Note that there
+  // are no comments.)  This query failed when I tested:  /-/search?q=10013  (found
+  // only the tite, not the page body).
+  for (let nr = 25 - 1; nr -= 1; nr >= -2) {   // why does 25 & -2 work, should be 23 & 0 !
+    const pageNameNr = 10000 + nr;
+    it(`... Soon page ${pageNameNr} is searchable in Forum-24`, async () => {
+      const expected = [  // already sorted
+            `/-${pageNameNr}/pub#post-0`,
+            `/-${pageNameNr}/pub#post-1`];
+      let actual: St[] | U;
+      await stranger_brB.searchResultsPage.searchForUntilNumPagesFound('' + pageNameNr, 1);
+      await stranger_brB.waitUntil(async () => {
+        actual = await stranger_brB.searchResultsPage.getHitLinks();
+        actual.sort();
+        return _.isEqual(actual, expected)
+      }, {
+        message: () => `Waiting for serch hits: ${j2s(expected)}, getting: ${j2s(actual)}`,
+      })
+    });
+  }
+
+  it(`... Page 10001 found, indeed,  ttt`, async () => {
     await stranger_brB.searchResultsPage.searchForUntilNumPagesFound(_10001, 1);
   });
 

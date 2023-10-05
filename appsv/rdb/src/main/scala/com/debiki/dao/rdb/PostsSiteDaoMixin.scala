@@ -507,8 +507,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   def loadPostsByTimeExclAggs(timeRange: TimeRange, toIndex: Bo, orderBy: OrderBy, limit: i32)
           : ImmSeq[Post] = {
     dieIf(orderBy != OrderBy.MostRecentFirst, "TyE60RKTGF9", "Unimpl")
-    dieIf(timeRange.toIsIncl, "TyE60RKTGFA", "Unimpl") // we use '<' below
-    dieIf(!toIndex, "TyE60RKTGFB", "Unimpl") // the only _posts_to_index clauses below
+    dieIf(!timeRange.toIsIncl, "TyE60RKTGFA", "Unimpl") // we use '<=' below
+    dieIf(!toIndex, "TyE60RKTGFB", "Unimpl") // there're _posts_to_index clauses below
 
     // Currently [all_time_ranges_start_at_time_0], so we can ignore the lower bound.
     val query = s""" -- loadPostsByTimeExclAggs,  uses ix: posts_i_createdat_id
@@ -516,7 +516,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
           where  site_id = ?
               and (
                   created_at < ?
-                  or (created_at = ? and unique_post_id < ?))
+                  or (created_at = ? and unique_post_id <= ?))
               -- Only _posts_to_index:
               and ${SearchSiteDaoMixin.PostShouldBeIndexedTests}
           order by  created_at desc,  unique_post_id desc
