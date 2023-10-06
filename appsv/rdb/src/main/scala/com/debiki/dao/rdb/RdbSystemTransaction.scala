@@ -905,8 +905,8 @@ class RdbSystemTransaction(
   }
 
 
-  RENAME // to loadPostsToIndex?  & should move everything but the SQL query to the Dao?
-  def loadStuffToIndex(limit: Int): StuffToIndex = {
+  REFACTOR; COULD // move everything but the SQL query to the Dao?
+  def loadPostsToIndex(limit: i32): PostsToIndex = {
     val postIdsBySite = mutable.Map[SiteId, ArrayBuffer[PostId]]()
     val query = s"""
        select  site_id,  post_id
@@ -941,7 +941,7 @@ class RdbSystemTransaction(
     // Old tags, remove.  [index_tags]
     val tagsBySitePostId_old = loadTagsBySitePostId_old(postsBySite)
 
-    StuffToIndex(postsBySite, pagesBySitePageId, tagsBySitePostId, tagsBySitePostId_old)
+    PostsToIndex(postsBySite, pagesBySitePageId, tagsBySitePostId, tagsBySitePostId_old)
   }
 
 

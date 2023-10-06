@@ -665,9 +665,9 @@ class SystemDao(
     }
   }
 
-  def loadStuffToIndex(limit: Int): StuffToIndex = {
-    readOnlyTransaction { transaction =>
-      transaction.loadStuffToIndex(limit)
+  def loadPostsToIndex(limit: i32): PostsToIndex = {
+    readTx { tx =>
+      tx.loadPostsToIndex(limit)
     }
   }
 

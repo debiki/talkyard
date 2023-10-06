@@ -102,7 +102,7 @@ trait SystemTransaction {  RENAME // to SysTx, started already
   def loadJobQueueNumPosts(countUpTo: i32): i32
   def loadJobQueueRangesBySiteId(): Map[SiteId, TimeRange]
   def loadJobQueueLengthsBySiteId(): Map[SiteId, i32]
-  def loadStuffToIndex(limit: Int): StuffToIndex
+  def loadPostsToIndex(limit: i32): PostsToIndex
   def deleteFromIndexQueue(post: Post, siteId: SiteId): Unit
   def addEverythingInLanguagesToIndexQueue(
         siteIds: Set[SiteId] = Set.empty, allSites: Bo = false): U

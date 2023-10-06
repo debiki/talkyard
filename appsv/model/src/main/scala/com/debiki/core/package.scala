@@ -1300,10 +1300,9 @@ package object core {
     val Index = 1
   }
 
-  // RENAME to PostsToIndex? yy
-  case class StuffToIndex(
-    // RENAME to postsToIndexBySite? yy
-    postsBySite: Map[SiteId, immutable.Seq[Post]],
+
+  case class PostsToIndex(
+    postsToIndexBySite: Map[SiteId, immutable.Seq[Post]],
     pagesBySitePageId: Map[SitePageId, PageMeta],
     tagsBySitePostId: Map[SitePostId, imm.Seq[Tag]],
     tagsBySitePostId_old: Map[SitePostId, immutable.Set[TagLabel]]) {
