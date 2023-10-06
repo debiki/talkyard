@@ -433,7 +433,7 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
         name: "TrustedCat",
         slug: 'trusted-cat',
         aboutPageText: "Trusted Category description.",
-        createdAtMs: opts.everythingCreatedAtSameMs, // USE
+        createdAtMs: opts.everythingCreatedAtSameMs,
       });
 
       const nextPermsId = 3 + 3 + 1 + 1;  // A + B + staff + 1?

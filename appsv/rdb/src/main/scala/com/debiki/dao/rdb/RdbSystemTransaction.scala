@@ -882,7 +882,7 @@ class RdbSystemTransaction(
 
 
   def loadJobQueueRangesBySiteId(): Map[SiteId, TimeRange] = {
-    val query = s""" -- loadJobQueueRangesBySiteId, uses ix?:  jobq_u_dowhat_timerange_for_now
+    val query = s""" -- loadJobQueueRangesBySiteId, uses ix:  jobq_u_dowhat_timerange_for_now
           select  site_id,  time_range_to_c,  time_range_to_ofs_c
             from  job_queue_t
             where  do_what_c = ${JobType.Index}
@@ -1016,34 +1016,6 @@ class RdbSystemTransaction(
     val revNr = post.approvedRevisionNr.getOrElse(post.currentRevisionNr)
     runUpdate(statement, List(siteId.asAnyRef, post.id.asAnyRef, revNr.asAnyRef))
   }
-
-
-  /*
-  REMOVE
-  def addEverythingInLanguagesToIndexQueue(languages: Set[String]) {
-    if (languages.isEmpty)
-      return
-
-    require(languages == Set("english"), s"Langs not yet impl: ${languages.toString} [EsE2PYK40]")
-
-    // Later: COULD index also deleted and hidden posts, and make available to staff.
-    val statement = s"""
-      insert into job_queue_t (action_at, site_id, site_version, post_id, post_rev_nr)
-      select
-        posts3.created_at,
-        sites3.id,
-        sites3.version,
-        posts3.unique_post_id,
-        posts3.approved_rev_nr
-      from posts3 inner join sites3
-        on posts3.site_id = sites3.id
-      where
-        ${SearchSiteDaoMixin.PostShouldBeIndexedTests}
-      ${SearchSiteDaoMixin.OnPostConflictAction}
-      """
-
-    runUpdate(statement, Nil)
-  } */
 
 
   def addEverythingInLanguagesToIndexQueue(siteIds: Set[SiteId], allSites: Bo): U = {

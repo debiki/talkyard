@@ -169,6 +169,13 @@ describe(`reindex-sites.2br.f  TyTREINDEX3`, () => {
     await stranger_brB.topbar.searchFor(_10001);
     await stranger_brB.searchResultsPage.assertResultLinksAre([]);
   });
+
+
+
+  // ----- Indexing posts with the same timestamp
+
+  // (This could have been a separate e2e test, oh well.)
+
   it(`Indexing Forum-24, works fine, although everything has the same timestamp`, async () => {
     await server.reindexSites([forum24.site.id]);
   });
@@ -178,15 +185,16 @@ describe(`reindex-sites.2br.f  TyTREINDEX3`, () => {
   // the same timestamp), without skipping any post.
   //
   // If there's an [off_by_one_bug_in_the_indexer], then a title or orig post
-  // won't get indexed, and one of the tests here fails. (Note that there
-  // are no comments.)  This query failed when I tested:  /-/search?q=10013  (found
-  // only the tite, not the page body).
-  for (let nr = 25 - 1; nr -= 1; nr >= -2) {   // why does 25 & -2 work, should be 23 & 0 !
+  // won't get indexed (or gets indexed twice), and one of the tests here fails (or not).
+  // (Note that there are no comments.)
+  // This query failed when I tested:  /-/search?q=10013  (found the tite, not the page body).
+  //
+  for (let nr = 24 - 1; nr >= 0 ; nr -= 1) {
     const pageNameNr = 10000 + nr;
     it(`... Soon page ${pageNameNr} is searchable in Forum-24`, async () => {
       const expected = [  // already sorted
-            `/-${pageNameNr}/pub#post-0`,
-            `/-${pageNameNr}/pub#post-1`];
+            `/-${pageNameNr}/pub#post-0`,  // page title
+            `/-${pageNameNr}/pub#post-1`]; // page body
       let actual: St[] | U;
       await stranger_brB.searchResultsPage.searchForUntilNumPagesFound('' + pageNameNr, 1);
       await stranger_brB.waitUntil(async () => {

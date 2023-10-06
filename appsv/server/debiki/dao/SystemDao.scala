@@ -582,14 +582,14 @@ class SystemDao(
 
   // ----- Indexing
 
-  /** Loads all remaining reindex-all time range, per site, and how many posts there
+  /** Loads all remaining reindex-all time ranges, per site, and how many posts there
     * currently are, in the reindex queue, per site. If for a site, the queue is short,
     * we'll find a bunch of posts from the end of that site's time range,
     * and add to the queue, and decrease the end of the time range.
     */
   def addPendingPostsFromTimeRanges(desiredQueueLen: i32): U = {
 
-    // Do nothing if there are lots of reindex-this-post rows already.  [jobq_0_2_long]
+    // Return, if there are lots of reindex-this-post rows already.  [jobq_0_2_long]
     val queueLenBef = readTx { tx =>
       tx.loadJobQueueNumPosts(countUpTo = desiredQueueLen + 10)
     }
@@ -603,7 +603,7 @@ class SystemDao(
       val queueRangesBySiteId: Map[SiteId, TimeRange] = tx.loadJobQueueRangesBySiteId()
       val queueSizesBySiteId: Map[SiteId, i32] = tx.loadJobQueueLengthsBySiteId()
 
-      val approxPerSite = numMoreToAdd / (math.max(queueRangesBySiteId.size, 1))
+      val approxPerSite = numMoreToAdd / math.max(queueRangesBySiteId.size, 1)
       val skipIfQueueLongerThan =
             if (queueRangesBySiteId.size == 1) approxPerSite
             else {

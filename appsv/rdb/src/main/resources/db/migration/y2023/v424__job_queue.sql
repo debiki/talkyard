@@ -1,4 +1,6 @@
--- CR missing y
+-- CR missing yy
+--  dw1_pages_category__i btree (site_id, category_id   ?
+
 -- It'd be nice with a place to remember what posts to rerender, if
 -- e.g. the CDN address has changed, so links to user generated contents
 -- need to get updated, or some other renderer settings or whatever.

@@ -206,7 +206,7 @@ class IndexingActor(
 
   /** If there are time ranges in  job_queue_t  for which all posts should get reindexed,
     * this'll find the most recently created  posts in those time ranges, add those
-    * posts to the queue, and decrease the end of the time range.
+    * posts to the queue, and decrease the ends of the time ranges.
     */
   private def _addPendingPostsFromTimeRanges(): U = {
     systemDao.addPendingPostsFromTimeRanges(
@@ -221,6 +221,7 @@ class IndexingActor(
     val postsToIndex = systemDao.loadPostsToIndex(limit = batchSize)
     postsToIndex.postsToIndexBySite foreach { case (siteId: SiteId, posts: Seq[Post]) =>
       val (toUnindex, toIndex) = posts.partition(post => {
+        // Later: COULD index also deleted and hidden posts, and make available to staff.
         postsToIndex.isPageDeleted(siteId, post.pageId) || !post.isVisible
       })
       _unindexPosts(siteId, toUnindex)

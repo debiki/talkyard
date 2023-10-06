@@ -157,7 +157,8 @@ const DashboardPanel = createFactory({
           "Show all");
 
     const howMany =
-        r.p({}, `There are ${stuff.sites.length} sites in total, incl both real and test.`);
+        r.p({}, `There are ${stuff.sites.length} sites, incl both real and test. ` +
+        `Reindex time ranges: ${stuff.totReindexRanges}, queue: ${stuff.totReindexQueueLen}.`);
 
     const filters = rFr({},
         r.div({ className: 's_SA_Filter s_SA_Filter-Txt' },
