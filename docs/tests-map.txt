@@ -57,6 +57,12 @@ full text search:
   username fuzzy search:
             - TESTS_MISSING  and not implemented
 
+indexing,
+job queue, job_queue_t:
+            - reindex-sites.2br.f  TyTREINDEX3
+  posts w same timestamp:
+            - reindex-sites.2br.f  TyTREINDEX3.[ix_posts_w_same_ts]
+
 create site & forum -
   via api: [.create_site_via_api]
   create:  create-site-all-logins

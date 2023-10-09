@@ -160,7 +160,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
       }
     }
 
-    "load all sites incl details, and staff" in {
+    "load all sites incl details and staff, BUT just running queries, not checking results" in {
       globals.systemDao.writeTxLockAllSites { tx =>
         // Just run the queries? for now
 
@@ -168,7 +168,13 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
         tx.loadAllSitesInclDetails()
 
         info("staff for all sites")
-        tx.loadStaffForAllSites()
+        tx.loadStaffBySiteId()
+
+        info("job queue")
+        tx.loadJobQueueNumPosts(countUpTo = 123)
+        tx.loadJobQueueRangesBySiteId()
+        tx.loadJobQueueLengthsBySiteId()
+        tx.loadPostsToIndex(limit = 123)
       }
     }
 

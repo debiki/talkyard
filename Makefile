@@ -637,8 +637,12 @@ prod-images-only-e2e-tests:  _kill_old_prod_build_project
 	@# This runs the e2e tests only.
 	s/build-prod-images.sh --skip-build
 
+prod-images-only-e2e-tests-skip-restart:
+	@# This runs the e2e tests only, in supposedly already running Docker containers.
+	@# Useful if an e2e test failed because of harmless boring reasons.
+	s/build-prod-images.sh --skip-build --skip-restart
+
 prod-images-skip-build-and-e2e-test:  _kill_old_prod_build_project
-	@# This runs the e2e tests only.
 	s/build-prod-images.sh --skip-build --skip-e2e-tests
 
 

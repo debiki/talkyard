@@ -21,6 +21,7 @@ import java.net.InetAddress
 import java.{util => ju}
 import scala.collection.immutable
 import scala.{collection => col}
+import col.{immutable => imm}
 import Prelude._
 
 
@@ -122,6 +123,10 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadUnapprovedPosts(pageId: PageId, by: UserId, limit: Int): immutable.Seq[Post]
   def loadCompletedForms(pageId: PageId, limit: Int): immutable.Seq[Post]
 
+
+  def loadPostsByTimeExclAggs(
+        timeRange: TimeRange, toIndex: Bo, order: OrderBy, limit: i32): imm.Seq[Post]
+
   /** Loads the most Like voted posts, per page.
     * Does *not* load assignee or additional author ids (that's why the name is "...ExclAggs").
     * Would be nice with type safety for that. [Scala_3]?
@@ -165,10 +170,13 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def insertPost(newPost: Post): Unit
   def updatePost(newPost: Post): Unit
 
+  def alterJobQueueRange(range: TimeRange, newEndWhen: When, newEndOffset: PostId)
+  def deleteJobQueueRange(range: TimeRange)
+
   /** We index any approed text, or the unapproved source, see:
     * [[ed.server.search.makeElasticSearchJsonDocFor]]. [ix_unappr]
     */
-  def indexPostsSoon(posts: Post*): Unit
+  def indexPostsSoon(posts: Post*): i32
   def indexPostIdsSoon_unimpl(postIds: Set[PostId]): Unit
 
   def indexAllPostsOnPage(pageId: PageId): Unit

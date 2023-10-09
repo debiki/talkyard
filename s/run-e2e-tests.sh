@@ -484,6 +484,8 @@ function runAllE2eTests {
 
   $r s/wdio --only search-public-basic.2browsers $args
   $r s/wdio --only search-private-chat.2browsers $args
+  $r s/wdio-7 --only reindex-sites.2br.f --cd -i $args
+
 
   # This test is flaky because missing feature: disabling email notfs for replies
   # one has seen.
@@ -510,7 +512,8 @@ function runAllE2eTests {
   $r s/wdio-7 --only category-perms.2br.d --cd -i $args
   $r s/wdio-7 --only cats-perf-many.2br.d --cd -i $args
 
-  $r s/wdio --only search-tag-vals-priv-cats.2br.f $args
+  # E2EBUG: Flappy  (or cats-perf-many.2br.d above?)
+  $r s/wdio-7 --only search-tag-vals-priv-cats.2br.f --cd -i $args
 
   $r s/wdio --only slow-3g-navigate-edit-drafts.2browsers $args
 
@@ -565,6 +568,9 @@ function runAllE2eTests {
 
   $r s/wdio-7 --only plan-maintenance.2br.d --cd -i $args
 
+  # ! countdownUndoTimeout  slooow if mod task list is long.
+
+
 
   # wip:
   # settings-allow-local-signup
@@ -576,6 +582,7 @@ function runAllE2eTests {
   # ------------
 
   $r s/wdio --only utx-all-logins.1br.extidp $args
+
 
 
   #------------------------------------------------------------
@@ -664,7 +671,10 @@ function runAllE2eTests {
   $r s/wdio-7     --only embcom.vote-bef-page-exists.1br --cd -i $args
   $r s/wdio-7     --only embcom.reply-vote-report-bef-login.2br --cd -i $args
   $r s/wdio       --only embedded-comments-conf-notf-pref-first $args
+
+  # E2EBUG: Flappy
   $r s/wdio       --only embedded-comments-sort-order-op-likes-btn-txt.2browsers $args
+
   $r s/wdio       --only embedded-comments-category-refs.2browsers $args
   $r s/wdio       --only embedded-comments-cat-refs-and-disc-ids.2browsers $args
   $r s/wdio       --only embedded-comments-uploads-origin $args

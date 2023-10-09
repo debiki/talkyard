@@ -492,15 +492,16 @@ export function post(values: NewTestPost): TestPost {
           values.approvedSource : `<p>${values.approvedSource}</p>`;
     }
     const authorId = values.authorId || values.page.authorId;
+    const createdAtMs = values.createdAtMs || values.page.createdAtMs;
     return {
       id: values.id || getAndBumpNextPostId(),
       pageId: values.page.id,
       nr: values.nr,
       parentNr: values.parentNr,
       multireply: undefined,
-      createdAtMs: values.page.createdAtMs,
+      createdAtMs,
       createdById: authorId,
-      currRevStartedAtMs: values.page.createdAtMs,
+      currRevStartedAtMs: createdAtMs,
       currRevLastEditedAtMs: undefined,
       currRevById: authorId,
       lastApprovedEditAtMs: undefined,
@@ -511,7 +512,7 @@ export function post(values: NewTestPost): TestPost {
       safeRevNr: undefined,
       approvedSource: values.approvedSource,
       approvedHtmlSanitized: approvedHtmlSanitized,
-      approvedAtMs: values.page.createdAtMs,
+      approvedAtMs: createdAtMs,
       approvedById: c.SystemUserId,
       approvedRevNr: 1,
       currRevSourcePatch: undefined,

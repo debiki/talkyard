@@ -74,64 +74,75 @@ const DashboardPanel = createFactory({
       filterText: '',
       filterRdbUsagePct: 0,
       filterFsUsagePct: 0,
+      filterReIxDays: 0,
+      filterReIxQueueLen: 0,
+      filterStatus: 0,
     };
   },
 
   render: function() {
     const store: Store = this.props.store;
-    const numRows = this.state.numRows;
+    const state = this.state;
+    const numRows = state.numRows;
     const stuff: SuperAdminStuff = store.superadmin;
     if (!stuff)
       return r.p({}, "Loading ...");
 
     let filteredSites: SASite[] = [];
 
-    const filterText: St = this.state.filterText;
-    if (filterText && filterText.length >= 2) {
-      _.each(stuff.sites, (site: SASite) => {
+    _.each(stuff.sites, (site: SASite) => {
+      let showSite: BoZ = true;
+
+      const filterText: St = this.state.filterText;
+      if (showSite && filterText && filterText.length >= 2) {
         let show: BoZ =
-              _.some(site.hostnames, h => h.indexOf(filterText) >= 0) ||
-              site.featureFlags.toLowerCase().indexOf(filterText) >= 0 ||
-              site.superStaffNotes &&
-                  site.superStaffNotes.toLowerCase().indexOf(filterText) >= 0;
+            _.some(site.hostnames, h => h.indexOf(filterText) >= 0) ||
+            site.featureFlags.toLowerCase().indexOf(filterText) >= 0 ||
+            site.superStaffNotes &&
+                site.superStaffNotes.toLowerCase().indexOf(filterText) >= 0;
         show = show || _.some(site.staffUsers, (m: PatVb) =>
-            m.email?.toLowerCase().indexOf(filterText) >= 0 ||
-            m.username?.toLowerCase().indexOf(filterText) >= 0 ||
-            m.fullName?.toLowerCase().indexOf(filterText) >= 0);
-        if (show) {
-          filteredSites.push(site);
-        }
-      });
-    }
-    else {
-      filteredSites = stuff.sites;
-    }
+          m.email?.toLowerCase().indexOf(filterText) >= 0 ||
+          m.username?.toLowerCase().indexOf(filterText) >= 0 ||
+          m.fullName?.toLowerCase().indexOf(filterText) >= 0);
+        showSite = show;
+      }
 
-    const filterRdbUsagePct: Nr = this.state.filterRdbUsagePct;
-    if (filterRdbUsagePct) {
-      const copy = [...filteredSites];
-      filteredSites = [];
-      _.each(copy, (site: SASite) => {
-        let show = site.stats.dbStorageUsedBytes >=
+      const filterRdbUsagePct: Nr = state.filterRdbUsagePct;
+      if (showSite && filterRdbUsagePct) {
+        showSite = site.stats.dbStorageUsedBytes >=
                       site.stats.dbStorageLimitBytes * filterRdbUsagePct / 100;
-        if (show) {
-          filteredSites.push(site);
-        }
-      });
-    }
+      }
 
-    const filterFsUsagePct: Nr = this.state.filterFsUsagePct;
-    if (filterFsUsagePct) {
-      const copy = [...filteredSites];
-      filteredSites = [];
-      _.each(copy, (site: SASite) => {
-        let show = site.stats.fileStorageUsedBytes >=
+      const filterFsUsagePct: Nr = state.filterFsUsagePct;
+      if (showSite && filterFsUsagePct) {
+        showSite = site.stats.fileStorageUsedBytes >=
                       site.stats.fileStorageLimitBytes * filterFsUsagePct / 100;
-        if (show) {
-          filteredSites.push(site);
-        }
-      });
-    }
+      }
+
+      const filterReIxDays: St = state.filterReIxDays;
+      if (showSite && filterReIxDays) {
+        const filterValDays = parseFloat(filterReIxDays);
+        const rangVals = site.reindexRangeMs; // Ms = millis
+        const rangeDays = !rangVals ? -1 : (rangVals[2] - rangVals[0]) / Time.OneDayInMillis;
+        showSite = rangeDays >= filterValDays;
+      }
+
+      const filterReIxQueueLen: St = state.filterReIxQueueLen;
+      if (showSite && filterReIxQueueLen) {
+        const filterVal = parseInt(filterReIxQueueLen);
+        showSite = site.reindexQueueLen >= filterVal;
+      }
+
+      const filterStatus: St = state.filterStatus;
+      if (showSite && filterStatus) {
+        const status = parseInt(filterStatus);
+        showSite = site.status === status;
+      }
+
+      if (showSite) {
+        filteredSites.push(site);
+      }
+    });
 
     const someSites =  _.take(filteredSites, numRows);
     const sitesToShow = someSites.map((site: SASite) =>
@@ -146,14 +157,15 @@ const DashboardPanel = createFactory({
           "Show all");
 
     const howMany =
-        r.p({}, `There are ${stuff.sites.length} sites in total, incl both real and test.`);
+        r.p({}, `There are ${stuff.sites.length} sites, incl both real and test. ` +
+        `Reindex time ranges: ${stuff.totReindexRanges}, queue: ${stuff.totReindexQueueLen}.`);
 
     const filters = rFr({},
         r.div({ className: 's_SA_Filter s_SA_Filter-Txt' },
           r.div({}, "Filter hostnames, staff names, emails, feature flags, notes: (at least 2 chars)"),
           r.input({
             tabIndex: 1,
-            value: this.state.filterText,
+            value: state.filterText,
             onChange: (event) => this.setState({
               filterText: event.target.value.toLowerCase(),
             }),
@@ -163,20 +175,48 @@ const DashboardPanel = createFactory({
             r.div({}, "Min rdb usage %:"),
             r.input({
               tabIndex: 1,
-              value: this.state.filterRdbUsagePct,
+              value: state.filterRdbUsagePct,
               onChange: (event) => this.setState({
-                filterRdbUsagePct: event.target.value,
+                filterRdbUsagePct: parseInt(event.target.value),
               }),
             })),
           r.div({ className: 's_SA_Filter' },
             r.div({}, "Min fs usage %:"),
             r.input({
               tabIndex: 1,
-              value: this.state.filterFsUsagePct,
+              value: state.filterFsUsagePct,
               onChange: (event) => this.setState({
-                filterFsUsagePct: event.target.value,
+                filterFsUsagePct: parseInt(event.target.value),
               }),
-            }))));
+            })),
+          r.div({ className: 's_SA_Filter' },
+            r.div({}, "Min re-ix range days"),
+            r.input({
+              tabIndex: 1,
+              value: state.filterReIxDays,
+              onChange: (event) => this.setState({
+                filterReIxDays: event.target.value,
+              }),
+            })),
+          r.div({ className: 's_SA_Filter' },
+            r.div({}, "Min re-ix queue"),
+            r.input({
+              tabIndex: 1,
+              value: state.filterReIxQueueLen,
+              onChange: (event) => this.setState({
+                filterReIxQueueLen: event.target.value,
+              }),
+            })),
+          r.div({ className: 's_SA_Filter' },
+            r.div({}, "Status (2 = active)"),
+            r.input({
+              tabIndex: 1,
+              value: state.filterStatus,
+              onChange: (event) => this.setState({
+                filterStatus: event.target.value,
+              }),
+            })),
+          ));
 
     return (
       r.div({},
@@ -236,6 +276,11 @@ const SiteTableRow = createComponent({
     const site: SASite = _.clone(this.props.site);
     site.status = newStatus;
     Server.updateSites([site]);
+  },
+
+  reindex: function() {
+    const site: SASite = this.props.site;
+    Server.reindexSites([site.id]);
   },
 
   saveNotesAndFlags: function() {
@@ -305,6 +350,11 @@ const SiteTableRow = createComponent({
     const wasPurgedAt = !site.purgedAtMs ? null :
         r.div({}, "Was purged at ", whenMsToIsoDate(site.purgedAtMs));
 
+    const reindexButton = site.status !== SiteStatus.Active ? null :
+        Button({ className: ' s_SA_StatusB',
+            onClick: () => this.reindex() },
+          "Reindex");
+
     let canonHostname = site.canonicalHostname;
     if (!canonHostname && site.id === FirstSiteId) {
       canonHostname = stuff.firstSiteHostname;
@@ -349,6 +399,7 @@ const SiteTableRow = createComponent({
     // MB = 1000 * 1000 byte. MiB = 1024 * 1024 bytes.
     const MiB = Sizes.Mebibyte;
     const ps = admin.prettyStats(site.stats);
+
     const quota = r.div({ className: 's_SA_S_Storage'},
         `db: ${ps.dbMb.toPrecision(2)} MiB = ${ps.dbPercentStr}% of ${ps.dbMaxMb} MiB`,
         r.input({ className: 's_SA_S_Quota', type: 'number', min: '0', step: '1',
@@ -383,6 +434,15 @@ const SiteTableRow = createComponent({
             defaultValue: site.createLimsMult }),
         );
 
+    const rangVals = site.reindexRangeMs; // Ms = millis
+    const reIxRangeDays = !rangVals ? 0 : (rangVals[2] - rangVals[0]) / Time.OneDayInMillis;
+    const andReindexRange: St = !rangVals ? '' :
+          ` & —> ${whenMsToIsoDate(rangVals[2])} po id ${rangVals[3]} = ${reIxRangeDays} days`;
+
+    const bgJobsInf = !site.reindexRangeMs && !site.reindexQueueLen ? null : (
+            r.div({ className: 's_SA_S_BgJobs' },
+        `Ix queue: ${site.reindexQueueLen}` + andReindexRange));
+
     const featureFlags =
         r.div({},
           r.input({ className: 's_SA_S_FeatFlgs',
@@ -416,8 +476,10 @@ const SiteTableRow = createComponent({
           willAutoPurgeAt,
           scheduleOrCancelPurge,
           wasPurgedAt,
+          reindexButton,
           quota,
           limitsMultipliers,
+          bgJobsInf,
           featureFlags),
         r.td({},
           r.div({},

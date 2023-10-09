@@ -96,7 +96,7 @@ case class SitePatch(
  public | backup_test_log3        | table    | edc
  public | blocks3                 | table    | edc
  public | emails_out3             | table    | edc  [4023SRKG5]
- public | index_queue3            | table    | edc
+ public | job_queue_t            | table    | edc
  public | page_html_cache_t       | table    | edc  — can skip, is a cache
  public | post_read_stats3        | table    | edc
  public | post_revisions3         | table    | edc

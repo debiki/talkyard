@@ -18,6 +18,7 @@
 package talkyard.server.search
 
 import akka.actor._
+import com.debiki.core
 import com.debiki.core._
 import debiki.dao.SystemDao
 import org.elasticsearch.action.bulk.BulkResponse
@@ -55,7 +56,7 @@ object SearchEngineIndexer extends TyLogging {
     implicit val execCtx = executionContext
     val actorRef = actorSystem.actorOf(Props(
       new IndexingActor(indexerBatchSize, elasticSearchClient, systemDao)), name = s"IndexingActor")
-    actorSystem.scheduler.schedule(
+    actorSystem.scheduler.scheduleWithFixedDelay(
         initialDelay = intervalSeconds seconds, intervalSeconds seconds, actorRef, IndexStuff)
     actorRef
   }
@@ -179,14 +180,17 @@ class IndexingActor(
         // then, how do we know that everything has been indexed already? Maybe
         // ask ES for document counts, if >= 1, then, not starting for the 1st time?
         // (Or, if exporting & importing?)
-        enqueueEverythingInLanguages(newIndexes.map(_.language).toSet)
+        if (newIndexes.nonEmpty) {
+          enqueueEverythingInLanguages(newIndexes.map(_.language).toSet)
+        }
         doneCreatingIndexes = true
       }
       deleteAlreadyIndexedPostsFromQueue()
+      _addPendingPostsFromTimeRanges()
       loadAndIndexPendingPosts()
     case ReplyWhenDoneIndexing =>
       ???
-      // If StuffToIndex.postsBySite.isEmpty, then: sender ! "Done indexing."
+      // If PostsToIndex.postsToIndexBySite.isEmpty, then: sender ! "Done indexing."
       // Else, somehow wait untily until isEmpty, then reply.
     case PoisonPill =>
       deleteAlreadyIndexedPostsFromQueue()
@@ -200,36 +204,50 @@ class IndexingActor(
   }
 
 
+  /** If there are time ranges in  job_queue_t  for which all posts should get reindexed,
+    * this'll find the most recently created  posts in those time ranges, add those
+    * posts to the queue, and decrease the ends of the time ranges.
+    */
+  private def _addPendingPostsFromTimeRanges(): U = {
+    systemDao.addPendingPostsFromTimeRanges(
+          // Let's add a few batches each time, so we don't need to run SQL queries so
+          // often to find the next posts.  Not too fast, if testing — or
+          // this e2e test:  reindex-sites.2br.f  TyTREINDEX3
+          // would run into race conditions and become flappy. [dont_index_too_fast_if_testing]
+          desiredQueueLen = batchSize * (if (!core.isDevOrTest) 4 else 1))
+  }
+
   private def loadAndIndexPendingPosts(): Unit = {
-    val stuffToIndex = systemDao.loadStuffToIndex(limit = batchSize)
-    stuffToIndex.postsBySite foreach { case (siteId: SiteId, posts: Seq[Post]) =>
+    val postsToIndex = systemDao.loadPostsToIndex(limit = batchSize)
+    postsToIndex.postsToIndexBySite foreach { case (siteId: SiteId, posts: Seq[Post]) =>
       val (toUnindex, toIndex) = posts.partition(post => {
-        stuffToIndex.isPageDeleted(siteId, post.pageId) || !post.isVisible
+        // Later: COULD index also deleted and hidden posts, and make available to staff.
+        postsToIndex.isPageDeleted(siteId, post.pageId) || !post.isVisible
       })
-      unindexPosts(siteId, toUnindex)
-      indexPosts(siteId, toIndex, stuffToIndex)
+      _unindexPosts(siteId, toUnindex)
+      _indexPosts(siteId, toIndex, postsToIndex)
     }
   }
 
 
-  private def indexPosts(siteId: SiteId, posts: Seq[Post], stuffToIndex: StuffToIndex): Unit = {
+  private def _indexPosts(siteId: SiteId, posts: Seq[Post], postsToIndex: PostsToIndex): Unit = {
     if (posts.isEmpty)
       return
 
     // Later: Use the bulk index API.
     posts foreach { post =>
-      indexPost(post, siteId, stuffToIndex)
+      _indexPost(post, siteId, postsToIndex)
     }
   }
 
 
-  private def indexPost(post: Post, siteId: SiteId, stuffToIndex: StuffToIndex): Unit = {
-    val pageMeta = stuffToIndex.page(siteId, post.pageId) getOrElse {
+  private def _indexPost(post: Post, siteId: SiteId, postsToIndex: PostsToIndex): Unit = {
+    val pageMeta = postsToIndex.page(siteId, post.pageId) getOrElse {
       logger.warn(s"Not indexing s:$siteId/p:${post.id} — page gone, was just deleted?")
       return
     }
-    val tags = stuffToIndex.tags(siteId, post.id)
-    val tags_old = stuffToIndex.tags_old(siteId, post.id)
+    val tags = postsToIndex.tags(siteId, post.id)
+    val tags_old = postsToIndex.tags_old(siteId, post.id)
 
     val doc = makeElasticSearchJsonDocFor(siteId, pageMeta, post, tags, tags_old)
     val docId = makeElasticSearchIdFor(siteId, post)
@@ -282,7 +300,7 @@ class IndexingActor(
   }
 
 
-  private def unindexPosts(siteId: SiteId, posts: Seq[Post]): Unit = {
+  private def _unindexPosts(siteId: SiteId, posts: Seq[Post]): Unit = {
     if (posts.isEmpty)
       return
 

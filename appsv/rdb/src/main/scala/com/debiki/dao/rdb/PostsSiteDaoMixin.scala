@@ -503,6 +503,38 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   /** Doesn't join with & aggregate pat_node_rels_t.
+   */
+  def loadPostsByTimeExclAggs(timeRange: TimeRange, toIndex: Bo, orderBy: OrderBy, limit: i32)
+          : ImmSeq[Post] = {
+    dieIf(orderBy != OrderBy.MostRecentFirst, "TyE60RKTGF9", "Unimpl")
+    dieIf(!timeRange.toIsIncl, "TyE60RKTGFA", "Unimpl") // we use '<=' below
+    dieIf(!toIndex, "TyE60RKTGFB", "Unimpl") // there're _posts_to_index clauses below
+
+    // Currently [all_time_ranges_start_at_time_0], so we can ignore the lower bound.
+    val query = s""" -- loadPostsByTimeExclAggs,  uses ix: posts_i_createdat_id
+          select * from  posts3
+          where  site_id = ?
+              and (
+                  created_at < ?
+                  or (created_at = ? and unique_post_id <= ?))
+              -- Only _posts_to_index:
+              and ${SearchSiteDaoMixin.PostShouldBeIndexedTests}
+          order by  created_at desc,  unique_post_id desc
+          limit  $limit  """
+
+    val values = List(
+          siteId.asAnyRef,
+          timeRange.to.toJavaDate,
+          timeRange.to.toJavaDate,
+          timeRange.toOfs.asAnyRef)
+
+    runQueryFindMany(query, values, rs => {
+      readPost(rs, inclAggs = false)
+    })
+  }
+
+
+  /** Doesn't join with & aggregate pat_node_rels_t.
     */
   def loadPopularPostsByPageExclAggs(pageIds: Iterable[PageId], limitPerPage: Int,
           exclOrigPost: Bo): Map[PageId, immutable.Seq[Post]] = {

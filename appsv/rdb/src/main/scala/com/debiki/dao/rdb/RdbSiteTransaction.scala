@@ -258,6 +258,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
+  // Dupl code [9UFK2Q6]
   def runQueryBuildMap[K, V](query: String, values: List[AnyRef],
     singleRowHandler: js.ResultSet => (K, V)): immutable.Map[K, V] = {
     var valuesByKey = immutable.HashMap[K, V]()
