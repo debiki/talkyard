@@ -5,6 +5,7 @@ import server from '../utils/server';
 import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import { addTestsForConstructingLoadTestSiteAndLoggingIn } from './load-test-site-builder';
 import { j2s } from '../utils/log-and-die';
+import settings from '../utils/settings';
 import c from '../test-constants';
 
 let brA: TyE2eTestBrowser;
@@ -27,6 +28,11 @@ const _10061 = '10061';
 /// done instantly, then, some tests herein fails. [dont_index_too_fast_if_testing]
 ///
 describe(`reindex-sites.2br.f  TyTREINDEX3`, () => {
+
+  if (settings.prod) {
+    console.log("Skipping this spec, test reindex endpoint disabled in prod mode");
+    return;
+  }
 
   const forum24 = addTestsForConstructingLoadTestSiteAndLoggingIn({
     siteName: "Forum-24 Reindex Test",
