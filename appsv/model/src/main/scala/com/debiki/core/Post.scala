@@ -600,7 +600,7 @@ case class Post(   // [exp] ok use
       else None
     }
 
-  def createdAtUnixSeconds: UnixMillis = createdAt.getTime / 1000
+  def createdAtUnixSeconds: UnixSecs = createdAt.getTime / 1000
   def createdAtMillis: UnixMillis = createdAt.getTime
   def createdWhen: When = When.fromMillis(createdAt.getTime)
 

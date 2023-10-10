@@ -62,52 +62,6 @@ object SearchEngineIndexer extends TyLogging {
   }
 
 
-  /*
-  /** The index can be deleted like so:  curl -XDELETE localhost:9200/sites_v0
-    * But don't do that in any production environment of course.
-    */
-  def createIndexAndMappinigsIfAbsent() {
-    import es.action.admin.indices.create.CreateIndexResponse
-
-    val createIndexRequest = es.client.Requests.createIndexRequest(IndexName)
-      .settings(IndexSettings)
-      .mapping(PostMappingName, PostMappingDefinition)
-
-    try {
-      val response: CreateIndexResponse =
-        client.admin().indices().create(createIndexRequest).actionGet()
-      if (response.isAcknowledged)
-        logger.info("Created ElasticSearch index and mapping.")
-      else
-        logger.warn("ElasticSearch index creation request not acknowledged? What does that mean?")
-    }
-    catch {
-      case _: es.indices.IndexAlreadyExistsException =>
-        logger.info("ElasticSearch index has already been created, fine.")
-      case NonFatal(error) =>
-        logger.warn("Error trying to create ElasticSearch index [DwE84dKf0]", error)
-        throw error
-    }
-  }
-
-
-  def debugDeleteIndexAndMappings() {
-    val deleteRequest = es.client.Requests.deleteIndexRequest(IndexName)
-    try {
-      val response = client.admin.indices.delete(deleteRequest).actionGet()
-      if (response.isAcknowledged)
-        logger.info("Deleted the ElasticSearch index.")
-      else
-        logger.warn("ElasticSearch index deletion request not acknowledged? What does that mean?")
-    }
-    catch {
-      case _: org.elasticsearch.indices.IndexMissingException => // ignore
-      case NonFatal(ex) => logger.warn("Error deleting ElasticSearch index [DwE5Hf39]:", ex)
-    }
-  }
-  */
-
-
   /** Waits for the ElasticSearch cluster to start. (Since I've specified 2 shards, it enters
     * yellow status only, not green status, since there's one ElasticSearch node only (not 2).)
     */
@@ -183,6 +137,10 @@ class IndexingActor(
         if (newIndexes.nonEmpty) {
           enqueueEverythingInLanguages(newIndexes.map(_.language).toSet)
         }
+
+        // Too old indexes prevent newer major versions of ElasticSearch from starting.
+        indexCreator.deleteAnyOldIndex(OldIndexName, client)
+
         doneCreatingIndexes = true
       }
       deleteAlreadyIndexedPostsFromQueue()
@@ -255,7 +213,7 @@ class IndexingActor(
     COULD_OPTIMIZE // ES has a bulk API: Could send many documents to index,
     // in one request.
     val requestBuilder: IndexRequestBuilder =
-      client.prepareIndex(IndexName, PostDocType, docId)
+      client.prepareIndex(IndexName, "_doc", docId)
         //.opType(es.action.index.IndexRequest.OpType.CREATE)
         //.version(...)
         .setSource(doc.toString, XContentType.JSON)
@@ -308,7 +266,7 @@ class IndexingActor(
     val bulkRequestBuilder = client.prepareBulk()
     posts foreach { post =>
       val deleteRequestBuilder = client.prepareDelete(
-        IndexName, PostDocType, makeElasticSearchIdFor(siteId, post.id)).setRouting(siteId.toString)
+        IndexName, "_doc", makeElasticSearchIdFor(siteId, post.id)).setRouting(siteId.toString)
       bulkRequestBuilder.add(deleteRequestBuilder)
     }
 

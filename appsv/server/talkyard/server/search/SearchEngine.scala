@@ -44,13 +44,19 @@ class SearchEngine(
     if (searchQuery.isEmpty)
       return Future.successful(Nil)
 
-    // For filter-by-category-id, see [4FYK85] below.
     val boolQuery = QueryBuilders.boolQuery()
 
     // ----- Free text
 
     // Fuzzy search, should find "shoe" also if you search for "shoes".
     // (Don't use `fullTextQuery` — it includes params like "tags:... category:...".)
+    // BUT this only works if the correct language settings are used,
+    // however currently we use English always. [es_wrong_lang]
+    //
+    // Search approved text only, but not not-yet-approved edits or new posts — not-yet-
+    // -approved things shouldn't be visible or searchable.
+    // (Any unapproved source is still indexed, but we don't search it here. [ix_unappr])
+    //
     if (searchQuery.queryWithoutParams.nonEmpty) {
       boolQuery.must(
         // If is staff, could search unapproved html too, something like:
@@ -115,7 +121,7 @@ class SearchEngine(
       // (Each page is in only one category, so it's pointless to use a must() query.)
       boolQuery.filter(
             QueryBuilders.termsQuery(
-                  PostDocFields.CategoryId, searchQuery.catIds.asJava))
+                  PostDocFields.ParentCatId, searchQuery.catIds.asJava))
     }
 
     boolQuery.filter(
@@ -232,7 +238,6 @@ class SearchEngine(
     // ----- Put it all together
 
     val requestBuilder: SearchRequestBuilder = elasticSearchClient.prepareSearch(IndexName)
-      .setTypes(PostDocType)
       // QUERY_AND_FETCH returns setSize() results from each shards — therefore it's fast
       // (other smarter search types returns setSize() in total instead). Since we have
       // only one shard per site anyway, this search type is a good one?
@@ -281,101 +286,6 @@ class SearchEngine(
 
     promise.future
   }
-
-  /* CLEAN_UP
-
-    Old code. Delete later, when highlights and category filtering work.  [4FYK85]
-
-    // Filter by site id and perhaps section id.
-    val siteIdFilter = eiq.FilterBuilders.termFilter(JsonKeys.SiteId, siteId)
-    val filterToUse = anyRootPageId match {
-      case None => siteIdFilter
-      case Some(sectionId) =>
-        val sectionIdFilter = eiq.FilterBuilders.termFilter(JsonKeys.SectionPageIds, sectionId)
-        eiq.FilterBuilders.andFilter().add(siteIdFilter).add(sectionIdFilter)
-    }
-
-    // Full-text-search the most recently approved text, for each post.
-    // (Don't search the current text, because it might not have been approved and isn't
-    // shown, by default. Also, it might be stored in compact diff format, and is
-    // not indexed, and thus really not searchable anyway.)
-    val queryBuilder = eiq.QueryBuilders.queryString(phrase).field(LastApprovedTextField)
-
-    val filteredQueryBuilder: eiq.FilteredQueryBuilder =
-      eiq.QueryBuilders.filteredQuery(queryBuilder,  filterToUse)
-
-    val searchRequestBuilder =
-      elasticSearchClient.prepareSearch(indexName)
-        .setRouting(siteId)
-        .setQuery(filteredQueryBuilder)
-        .addHighlightedField(LastApprovedTextField)
-        .setHighlighterPreTags(HighlightPreMark)
-        .setHighlighterPostTags(HighlightPostMark)
-
-    val futureJavaResponse: ea.ListenableActionFuture[eas.SearchResponse] =
-      searchRequestBuilder.execute()
-
-    val resultPromise = Promise[FullTextSearchResult]
-
-    futureJavaResponse.addListener(new ea.ActionListener[eas.SearchResponse] {
-      def onResponse(response: eas.SearchResponse) {
-        resultPromise.success(buildSearchResults(response))
-      }
-      def onFailure(t: Throwable) {
-        resultPromise.failure(t)
-      }
-    })
-
-    resultPromise.future
-  }
-
-
-  def debugUnindexPosts(pageAndPostNrs: PagePostNr*) {
-    // Mark posts as unindexed in DW1_PAGE_ACTIONS before deleting them from
-    // ElasticSearch, in case the server crashes.
-
-    rememberPostsAreIndexed(indexedVersion = 0, pageAndPostNrs: _*)
-
-    for (PagePostNr(pageId, postNr) <- pageAndPostNrs) {
-      val id = elasticSearchIdFor(siteId, pageId = pageId, postNr = postNr)
-      elasticSearchClient.prepareDelete(IndexName, PostMappingName, id)
-        .setRouting(siteId)
-        .execute()
-        .actionGet()
-    }
-  }
-
-  private def buildSearchResults(response: SearchResponse): FullTextSearchResult = {
-    var pageIds = Set[PageId]()
-    var authorIds = Set[String]()
-
-    val jsonAndElasticSearchHits = for (hit: SearchHit <- response.getHits.getHits) yield {
-      val reactStoreJsonString = hit.getSourceAsString
-      val json = play.api.libs.json.Json.parse(jsonString)
-      val pageId = (json \ PageIdField).as[PageId]
-      val authorId = (json \ UserIdField).as[String]
-      pageIds += pageId
-      authorIds += authorId
-      (json, hit)
-    }
-
-    val pageMetaByPageId = loadPageMetasAsMap(pageIds.toList)
-    // ... Could also load author names ...
-
-    val hits = for ((json, hit) <- jsonAndElasticSearchHits) yield {
-      val highlightField: HighlightField = hit.getHighlightFields.get(LastApprovedTextField)
-      val htmlTextAndMarks: List[String] = highlightField.getFragments.toList.map(_.toString)
-      val textAndMarks = htmlTextAndMarks.map(org.jsoup.Jsoup.parse(_).text())
-      val textAndHtmlMarks = textAndMarks.map(
-        _.replaceAllLiterally(HighlightPreMark, HighlightPreTag)
-          .replaceAllLiterally(HighlightPostMark, HighlightPostTag))
-      val post: Post = unimplemented("Search-engine-hitting-Post2 [DwE4JGU8]") // Post.fromJson(json)
-      FullTextSearchHit(post, hit.getScore, safeHighlightsHtml = textAndHtmlMarks)
-    }
-
-    FullTextSearchResult(hits, pageMetaByPageId)
-  }
-  */
 
 }
 

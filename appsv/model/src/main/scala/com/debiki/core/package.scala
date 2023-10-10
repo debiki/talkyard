@@ -717,6 +717,7 @@ package object core {
   /** Change this to a Long before year 2038. /KajMagnus, Jan 2015 */
   type UnixTime = Int    // don't use, I always forget if it's seconds or millis
   type UnixMillis = Long // this is millis :-)
+  type UnixSecs = i64
   type UnixMinutes = Int
   type UnixDays = Int
 
@@ -2111,6 +2112,7 @@ package object core {
   def ANNOYING = ()       // Something annoying that would be good to fix, not important though
   def INFO_LOG = ()       // Somehow change log message severity to Info only.
   def ADMIN_LOG = ()      // Info log for site admins — e.g. custom OIDC conf problems.
+  def NOTIFY_ADMINS = ()
   @deprecated
   def SHOULD_LOG_STH = ()
   def SHOULD_LOG = ()     // If an info/debug message ought to be logged here.
