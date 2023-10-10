@@ -1,0 +1,408 @@
+mapp_1   03:06:53.236 [application-akka.actor.default-dispatcher-8] DEBUG akka.io.TcpListener -- New connection accepted
+mapp_1   03:06:53.470 [application-akka.actor.default-dispatcher-13] INFO tysvapp.IndexCreator -- Search index already created for 'english', fine [EsM2FG40]
+mapp_1   03:06:53.902 [application-akka.actor.default-dispatcher-13] ERROR tysvapp.IndexCreator -- Error updating search index mapping for 'english' [TyEESUPDMAPNG]
+mapp_1   java.lang.IllegalArgumentException: mapper [authorIds] of different type, current_type [long], merged_type [keyword]
+mapp_1          at org.elasticsearch.index.mapper.FieldMapper.doMerge(FieldMapper.java:354)
+mapp_1          at org.elasticsearch.index.mapper.NumberFieldMapper.doMerge(NumberFieldMapper.java:1093)
+mapp_1          at org.elasticsearch.index.mapper.FieldMapper.merge(FieldMapper.java:340)
+mapp_1          at org.elasticsearch.index.mapper.FieldMapper.merge(FieldMapper.java:52)
+mapp_1          at org.elasticsearch.index.mapper.ObjectMapper.doMerge(ObjectMapper.java:487)
+mapp_1          at org.elasticsearch.index.mapper.RootObjectMapper.doMerge(RootObjectMapper.java:278)
+mapp_1          at org.elasticsearch.index.mapper.ObjectMapper.merge(ObjectMapper.java:457)
+mapp_1          at org.elasticsearch.index.mapper.RootObjectMapper.merge(RootObjectMapper.java:273)
+mapp_1          at org.elasticsearch.index.mapper.Mapping.merge(Mapping.java:91)
+mapp_1          at org.elasticsearch.index.mapper.DocumentMapper.merge(DocumentMapper.java:339)
+mapp_1          at org.elasticsearch.cluster.metadata.MetaDataMappingService$PutMappingExecutor.applyRequest(MetaDataMappingService.java:273)
+mapp_1          at org.elasticsearch.cluster.metadata.MetaDataMappingService$PutMappingExecutor.execute(MetaDataMappingService.java:231)
+mapp_1          at org.elasticsearch.cluster.service.MasterService.executeTasks(MasterService.java:643)
+mapp_1          at org.elasticsearch.cluster.service.MasterService.calculateTaskOutputs(MasterService.java:270)
+mapp_1          at org.elasticsearch.cluster.service.MasterService.runTasks(MasterService.java:200)
+mapp_1          at org.elasticsearch.cluster.service.MasterService$Batcher.run(MasterService.java:135)
+mapp_1          at org.elasticsearch.cluster.service.TaskBatcher.runIfNotProcessed(TaskBatcher.java:150)
+mapp_1          at org.elasticsearch.cluster.service.TaskBatcher$BatchedTask.run(TaskBatcher.java:188)
+mapp_1          at org.elasticsearch.common.util.concurrent.ThreadContext$ContextPreservingRunnable.run(ThreadContext.java:708)
+mapp_1          at org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor$TieBreakingPrioritizedRunnable.runAndClean(PrioritizedEsThreadPoolExecutor.java:252)
+mapp_1          at org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor$TieBreakingPrioritizedRunnable.run(PrioritizedEsThreadPoolExecutor.java:215)
+mapp_1          at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+mapp_1          at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:630)
+mapp_1          at java.lang.Thread.run(Thread.java:832)
+
+tyw mapping: {{{1
+
+{
+  "all_english_v1": {
+    "mappings": {
+      "post": {
+        "_all": {
+          "enabled": false
+        },
+        "properties": {
+          "approvedRevNr": {
+            "type": "integer",
+            "index": false
+          },
+          "approvedText": {
+            "type": "text",
+            "analyzer": "english"
+          },
+          "assigneeIds": {
+            "type": "long"
+          },
+          "authorIds": {
+            "type": "long"
+          },
+          "categoryId": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "date",
+            "format": "epoch_second"
+          },
+          "currentRevNr": {
+            "type": "integer",
+            "index": false
+          },
+          "pageId": {
+            "type": "keyword"
+          },
+          "pageType": {
+            "type": "long"
+          },
+          "postId": {
+            "type": "integer",
+            "index": false
+          },
+          "postNr": {
+            "type": "integer",
+            "index": false
+          },
+          "postType": {
+            "type": "long"
+          },
+          "siteId": {
+            "type": "integer"
+          },
+          "tagTypeIds": {
+            "type": "long"
+          },
+          "tagValsNested": {
+            "properties": {
+              "tagTypeId": {
+                "type": "long"
+              },
+              "valFlt64": {
+                "type": "long"
+              }
+            }
+          },
+          "tags": {
+            "type": "keyword"
+          },
+          "unapprovedSource": {
+            "type": "text",
+            "analyzer": "english"
+          }
+        }
+      }
+    }
+  }
+}
+
+}}}1
+
+ty @ tyd1 {{{1
+
+{
+  "all_english_v1": {
+    "mappings": {
+      "post": {
+        "_all": {
+          "enabled": false
+        },
+        "properties": {
+          "ancCatIds": {
+            "type": "keyword"
+          },
+          "approvedRevNr": {
+            "type": "integer",
+            "index": false
+          },
+          "approvedText": {
+            "type": "text",
+            "analyzer": "english"
+          },
+          "assigneeIds": {
+            "type": "keyword"
+          },
+          "authorIds": {
+            "type": "keyword"
+          },
+          "categoryId": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "date",
+            "format": "epoch_second"
+          },
+          "currentRevNr": {
+            "type": "integer",
+            "index": false
+          },
+          "hasAttachment": {
+            "type": "boolean"
+          },
+          "isEmb": {
+            "type": "boolean"
+          },
+          "isOp": {
+            "type": "boolean"
+          },
+          "pageAuthorIds": {
+            "type": "keyword"
+          },
+          "pageId": {
+            "type": "keyword"
+          },
+          "pageTagTypeIds": {
+            "type": "keyword"
+          },
+          "pageType": {
+            "type": "keyword"
+          },
+          "postId": {
+            "type": "integer",
+            "index": false
+          },
+          "postNr": {
+            "type": "integer",
+            "index": false
+          },
+          "postType": {
+            "type": "keyword"
+          },
+          "siteId": {
+            "type": "integer"
+          },
+          "tagTypeIds": {
+            "type": "keyword"
+          },
+          "tagValsNested": {
+            "type": "nested",
+            "dynamic": "false",
+            "properties": {
+              "tagTypeId": {
+                "type": "keyword"
+              },
+              "valDate": {
+                "type": "date"
+              },
+              "valDateRange": {
+                "type": "date_range"
+              },
+              "valFlt64": {
+                "type": "double"
+              },
+              "valInt32": {
+                "type": "integer"
+              },
+              "valInt64* Connection #0 to host localhost left intact": {
+                "type": "long"
+              },
+              "valStrKwd": {
+                "type": "keyword"
+              },
+              "valStrTxt": {
+                "type": "text",
+                "analyzer": "english"
+              }
+            }
+          },
+          "tags": {
+            "type": "keyword"
+          },
+          "unapprovedSource": {
+            "type": "text",
+            "analyzer": "english"
+          }
+        }
+      }
+    }
+  }
+}
+
+}}}1
+
+tyc {{{1
+
+{
+  "all_english_v1": {
+    "mappings": {
+      "post": {
+        "_all": {
+          "enabled": false
+        },
+        "properties": {
+          "approvedRevNr": {
+            "type": "integer",
+            "index": false
+          },
+          "approvedText": {
+            "type": "text",
+            "analyzer": "english"
+          },
+          "authorIds": {
+            "type": "long"
+          },
+          "categoryId": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "date",
+            "format": "epoch_second"
+          },
+          "currentRevNr": {
+            "type": "integer",
+            "index": false
+          },
+          "pageId": {
+            "type": "keyword"
+          },
+          "pageType": {
+            "type": "long"
+          },
+          "postId": {
+            "type": "integer",
+            "index": false
+          },
+          "postNr": {
+            "type": "integer",
+            "index": false
+          },
+          "postType": {
+            "type": "long"
+          },
+          "siteId": {
+            "type": "integer"
+          },
+          "tags": {
+            "type": "keyword"
+          },
+          "unapprovedSource": {
+            "type": "text",
+            "analyzer": "english"
+          }
+        }
+      }
+    }
+  }
+}
+
+}}}1
+
+tyc @ wab {{{1
+
+
+{
+  "all_english_v1": {
+    "mappings": {
+      "post": {
+        "_all": {
+          "enabled": false
+        },
+        "properties": {
+          "approvedRevNr": {
+            "type": "integer",
+            "index": false
+          },
+          "approvedText": {
+            "type": "text",
+            "analyzer": "english"
+          },
+          "assigneeIds": {
+            "type": "keyword"
+          },
+          "authorIds": {
+            "type": "keyword"
+          },
+          "categoryId": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "date",
+            "format": "epoch_second"
+          },
+          "currentRevNr": {
+            "type": "integer",
+            "index": false
+          },
+          "pageId": {
+            "type": "keyword"
+          },
+          "pageType": {
+            "type": "keyword"
+          },
+          "postId": {
+            "type": "integer",
+            "index": false
+          },
+          "postNr": {
+            "type": "integer",
+            "index": false
+          },
+          "postType": {
+            "type": "keyword"
+          },
+          "siteId": {
+            "type": "integer"
+          },
+          "tagTypeIds": {
+            "type": "keyword"
+          },
+          "tagValsNested": {
+            "type": "nested",
+            "dynamic": "false",
+            "properties": {
+              "tagTypeId": {
+                "type": "keyword"
+              },
+              "valDate": {
+                "type": "date"
+              },
+              "valDateRange": {
+                "type": "date_range"
+              },
+              "valFlt64": {
+                "type": "double"
+              },
+              "valInt32": {
+                "type": "integer"
+              },
+              "valInt64": {
+                "type": "long"
+              },
+              "valStrKwd": {
+                "type": "keyword"
+              },
+              "valStrTxt": {
+                "type": "text",
+                "analyzer": "english"
+              }
+            }
+          },
+          "tags": {
+            "type": "keyword"
+          },
+          "unapprovedSource": {
+            "type": "text",
+            "analyzer": "english"
+          }
+        }
+      }
+    }
+  }
+}
+
+}}}1
+
+
+
