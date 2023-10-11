@@ -18,9 +18,12 @@
 package talkyard.server.search
 
 import com.debiki.core._
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse
-import org.elasticsearch.common.xcontent.XContentType
 import org.{elasticsearch => es}
+import es.action.admin.indices.create.{CreateIndexRequest => es_CreateIndexRequest}
+import es.action.admin.indices.delete.{DeleteIndexRequest => es_DeleteIndexRequest}
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse
+import es.action.support.master.{AcknowledgedResponse => es_AcknowledgedResponse}
+import org.elasticsearch.common.xcontent.XContentType
 import scala.util.control.NonFatal
 import scala.collection.mutable
 import talkyard.server.TyLogger
@@ -47,9 +50,13 @@ class IndexCreator {
     */
   def createIndexIfNeeded(indexSettings: IndexSettingsAndMappings, client: es.client.Client)
         : Boolean = {
-    val createIndexRequest = es.client.Requests.createIndexRequest(IndexName)
-      .source(indexSettings.indexSettingsJsonString, XContentType.JSON)
-      .mapping(PostDocType, indexSettings.postMappingJsonString, XContentType.JSON)
+
+    // Is there any way to specify `include_type_name=false`?
+    val createIndexRequest: es_CreateIndexRequest =
+          es.client.Requests.createIndexRequest(IndexName)
+                .source(indexSettings.indexSettingsJsonString, XContentType.JSON)
+                .mapping("_doc", indexSettings.postMappingJsonString, XContentType.JSON)
+
     def language = indexSettings.language
 
     // Attempt to create the index, synchronously, and see if there's any
@@ -68,9 +75,10 @@ class IndexCreator {
       true
     }
     catch {
-      case _: es.ResourceAlreadyExistsException =>
+      case ex: es.ResourceAlreadyExistsException =>
         if (!languagesLogged.contains(indexSettings.language)) {
-          logger.info(o"""Search index already created for '$language', fine [EsM2FG40]""")
+          logger.info(o"""Search index already created for '$language', fine.
+                  Exception message: ${ex.getMessage()}  [TyMIXCRDALRDY]""")
         }
         false
       case NonFatal(error) =>
@@ -81,12 +89,12 @@ class IndexCreator {
     // Update the mapping: Include tags.  Ok to do many times (once each server startup).
     // See the [index_mapping_changelog].
     val putMappingReq = es.client.Requests.putMappingRequest(IndexName)
-          .`type`(PostDocType)
+          .`type`("_doc")
           .source(
               indexSettings.postMappingJsonStringNoDocType, XContentType.JSON)
 
     val mappingRequestOk_ignored = try {
-      val response: es.action.support.master.AcknowledgedResponse =
+      val response: es_AcknowledgedResponse =
             client.admin().indices().putMapping(putMappingReq).actionGet()
       val message = s"Updated search index mapping for '$language' [TyMSEMAPPINGUPD]"
       if (response.isAcknowledged) {
@@ -109,6 +117,33 @@ class IndexCreator {
 
     languagesLogged.add(indexSettings.language)
     wasCreated
+  }
+
+
+  def deleteAnyOldIndex(indexName: St, client: es.client.Client): U = {
+    val deleteIndexRequest: es_DeleteIndexRequest =
+          es.client.Requests.deleteIndexRequest(indexName)
+
+    try {
+      val response: es_AcknowledgedResponse =
+            client.admin().indices().delete(deleteIndexRequest).actionGet()
+      val message = s"Deleted old search index '$indexName' [TyMDELDOLDIX]"
+      if (response.isAcknowledged) {
+        logger.info(message + ".")
+      }
+      else {
+        logger.warn(o"""$message — but not yet propagated to all nodes
+              in the cluster? [TyWDELD0DNE3256].""")
+      }
+    }
+    catch {
+      case ex: org.elasticsearch.index.IndexNotFoundException =>
+        logger.info(s"Old search index '$indexName' not present, fine. Exception message: ${
+                  ex.getMessage()}  [TyM0DELDOLDIX]")
+      case NonFatal(error) =>
+        // Continue anyway, what else to do.
+        logger.error(s"Error deleting search index '$indexName' [TyEDELOLDIX]", error)
+    }
   }
 
 }

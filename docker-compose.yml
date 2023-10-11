@@ -329,16 +329,16 @@ services:
   #      -v (this-repo-dir)/tests/int-w/ghost/content:/var/lib/ghost/content ghost:4.34.0
   #
   # But let's include here, and use Ghost's default port 2368?
-  it-ghost:
-    # Image docs: https://hub.docker.com/_/ghost/
-    image: ghost:4.34.0
-    # Won't work in Prod tests — so, incl in image instead of mounting?  [ghost_prod_test_img]
-    volumes:
-      - ./tests/int-w/ghost/casper-post.hbs:/var/lib/ghost/current/content/themes/casper/post.hbs
-    ports:
-      # Why does Ghost like this port? Who knows
-      - '2368:2368'
-    # networks — don't use the internal net; Ghost is usually hosted elsewhere.
+  #it-ghost:
+  #  # Image docs: https://hub.docker.com/_/ghost/
+  #  image: ghost:4.34.0
+  #  # Won't work in Prod tests — so, incl in image instead of mounting?  [ghost_prod_test_img]
+  #  volumes:
+  #    - ./tests/int-w/ghost/casper-post.hbs:/var/lib/ghost/current/content/themes/casper/post.hbs
+  #  ports:
+  #    # Why does Ghost like this port? Who knows
+  #    - '2368:2368'
+  #  # networks — don't use the internal net; Ghost is usually hosted elsewhere.
 
 
 # vim: et ts=2 sw=2

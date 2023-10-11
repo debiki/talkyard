@@ -168,6 +168,11 @@ class IndexingActor(
       // to the index queue ?? Whatever, this `if` works too, avoids create-index noops:
       // (Except for once per startup if already exists.)
       if (!doneCreatingIndexes) {
+
+        MOVE // to after creation, later?
+        // Old indexes prevents newer versions of ElasticSearch from starting.
+        indexCreator.deleteAnyOldIndex(OldIndexName, client)
+
         val newIndexes: Seq[IndexSettingsAndMappings] =
               indexCreator.createIndexesIfNeeded(client)
         BUG; COULD // fix in [ty_v1]? What if, when starting the *very first* time,
@@ -183,6 +188,7 @@ class IndexingActor(
         if (newIndexes.nonEmpty) {
           enqueueEverythingInLanguages(newIndexes.map(_.language).toSet)
         }
+
         doneCreatingIndexes = true
       }
       deleteAlreadyIndexedPostsFromQueue()
@@ -255,7 +261,7 @@ class IndexingActor(
     COULD_OPTIMIZE // ES has a bulk API: Could send many documents to index,
     // in one request.
     val requestBuilder: IndexRequestBuilder =
-      client.prepareIndex(IndexName, PostDocType, docId)
+      client.prepareIndex(IndexName, "_doc", docId)
         //.opType(es.action.index.IndexRequest.OpType.CREATE)
         //.version(...)
         .setSource(doc.toString, XContentType.JSON)
@@ -308,7 +314,7 @@ class IndexingActor(
     val bulkRequestBuilder = client.prepareBulk()
     posts foreach { post =>
       val deleteRequestBuilder = client.prepareDelete(
-        IndexName, PostDocType, makeElasticSearchIdFor(siteId, post.id)).setRouting(siteId.toString)
+        IndexName, "_doc", makeElasticSearchIdFor(siteId, post.id)).setRouting(siteId.toString)
       bulkRequestBuilder.add(deleteRequestBuilder)
     }
 
