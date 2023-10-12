@@ -101,9 +101,10 @@ package object search {
     *
     * For now, English only.
     */
-  val IndexName = "all_english_v1"
+  val OldIndexName = "all_english_v1"
 
-  val PostDocType = "post"
+  // Created using ES version 6.8.23.  Always English, for now.  [es_wrong_lang]
+  val IndexName = "posts_es6_v2_english"
 
 
   def makeElasticSearchIdFor(siteId: SiteId, post: Post): String =
@@ -166,12 +167,13 @@ package object search {
       Fields.UnapprovedSource -> (  // [ix_unappr]
         if (post.isCurrentVersionApproved) JsNull else JsString(post.currentSource)),
 
-      Fields.CategoryId -> JsNumberOrNull(pageMeta.categoryId),
+      Fields.ParentCatId -> JsNumberOrNull(pageMeta.categoryId),
       // Fields.AncCatIds_notInUse -> JsArray(ancestorCatIds),
       //          — needs to reindex if moving to other cat, ok? If throttling reindexing,
       //          & maybe doing with a bit lower prio, than indexing new stuff?
 
-      Fields.CreatedAtUnixSeconds -> post.createdAtUnixSeconds,
+      // (We've told ES that the format is $formatEpochSeconds, in the index mapping.)
+      Fields.CreatedAt -> post.createdAtUnixSeconds,
 
       Fields.AuthorIds -> Json.arr(post.createdById),
       Fields.AssigneeIds -> JsArray(post.assigneeIds.map(JsNumber(_))),
@@ -290,14 +292,12 @@ package object search {
     val ApprovedRevisionNr = "approvedRevNr"
     val ApprovedPlainText = "approvedText"
     val CurrentRevisionNr = "currentRevNr"
-    // Later: index plain text instead of markdown source.
-    val UnapprovedSource = "unapprovedSource"
-    val CreatedAtUnixSeconds = "createdAt"
+    val UnapprovedSource = "unapprovedSrc"
+    val CreatedAt = "createdAt"  // stored as type: date, so no Ms or Sec suffix needed.
 
     val AuthorIds = "authorIds"
     val AssigneeIds = "assigneeIds"
 
-    val Tags = "tags"  // all posts, page and replies.  [index_tags]  Old! Use instead:
     val TagTypeIds = "tagTypeIds"
     val TagValsNested = "tagValsNested"
 
@@ -306,8 +306,9 @@ package object search {
     val PageTagTypeIds = "pageTagTypeIds"
     val PageTagValues = "tagValues" */
 
-    /** The parent category. */ RENAME // to parentCatId, in [ty_v1] ?
-    val CategoryId = "categoryId"
+    /** The parent category. */
+    val ParentCatId = "parentCatId"
+
     /** The parent category and all ancestor categories.
       * Or skip? Is it better to send category ids for the whole sub tree of the
       * category one searches in?  In most cases I'd think so?  Unless *very* many?
@@ -389,15 +390,20 @@ package object search {
     // - A type: keyword field doesn't have any 'analyzer' property (instead, exact matches only).
     //
     def postMappingJsonString: String = i"""{
-      |"$PostDocType": {
-      |  "_all": { "enabled": false  },
+      |"_doc": {
       |  "properties": {
       |    $postMappingJsonStringContent
       |  }
       |}}
       |"""
 
+    // Dynamic: false, because ElasticSearch otherwise usually guesses the *wrong*
+    // mapping type, e.g. 'long' instead of 'keyword', which is annoying since the mapping
+    // type cannot be changed later. (This setting is inherited to inner objects, so
+    // probably the 2nd dynamicFalse below isn't needed.)
+    //
     def postMappingJsonStringNoDocType: St = i"""{
+         |$dynamicFalse,
          |"properties": {
          |  $postMappingJsonStringContent
          |}}
@@ -414,10 +420,10 @@ package object search {
       * back at that time (or maybe it wasn't, back at that time?).
       */
     private def postMappingJsonStringContent: St = i"""
-      |    "$SiteId":                { $typeInteger, $indexed /* keyword is better [es_kwd] */ },
+      |    "$SiteId":                { $typeKeyword, $indexed },
       |    "$PageId":                { $typeKeyword, $indexed },
       |    "$PageType":              { $typeKeyword, $indexed },
-      |    "$PostId":                { $typeInteger, $notIndexed /* in doc id already */},
+      |    "$PostId":                { $typeKeyword, $notIndexed /* in doc id already */},
       |    "$PostNr":                { $typeInteger, $notIndexed /* or kwd? */ },
       |    "$PostType":              { $typeKeyword, $indexed },${""/*
       |    // Let's wait with this. Maybe better to index the embedded url as type keyword,
@@ -433,7 +439,6 @@ package object search {
       |    "$UnapprovedSource":      { $typeText,    $indexed, $analyzerLanguage },
       |    "$AuthorIds":             { $typeKeyword, $indexed },
       |    "$AssigneeIds":           { $typeKeyword, $indexed },
-      |    "$Tags":                  { $typeKeyword, $indexed },
       |    "$TagTypeIds":            { $typeKeyword, $indexed },
       |    "$TagValsNested": {
       |       $typeNested,
@@ -460,6 +465,7 @@ package object search {
       |    at most say 100 or 200 tag types that can have values, per site,
       |    should be ok.
       |    "$TagValuesObj":
+      |       $dynamicFalse,
       |        "properties":
       |          "typeNNN_fieldType": { $typeInt/Float/Text...,  $indexed },
       |          // If type changed, we'd use fields with different suffixes,
@@ -490,9 +496,9 @@ package object search {
       |    "$PageTagTypeIds":        { $typeKeyword, $indexed },
       |    "$PageTagValues":         { $typeNested,  $indexed },
       |     */}
-      |    "$CategoryId":            { $typeInteger, $indexed /* keyword is better [es_kwd]
+      |    "$ParentCatId":           { $typeKeyword, $indexed /*
       |    "$AncCatIds_notInUse":    { $typeKeyword, $indexed }, */},
-      |    "$CreatedAtUnixSeconds":  { $typeDate,    $formatEpochSeconds }
+      |    "$CreatedAt":             { $typeDate,    $indexed,  $formatEpochSeconds }
       |"""
   }
 

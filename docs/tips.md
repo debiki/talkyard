@@ -70,8 +70,9 @@ Thereafter ElasticSearch should start working again. Docs:
 https://www.elastic.co/guide/en/elasticsearch/reference/6.2/disk-allocator.html
 
 
-List indexes:  
-http://localhost:9200/_aliases
+List indexes, & create:
+d/c exec search curl http://localhost:9200/_aliases?pretty
+d/c exec search curl -X PUT 'localhost:9200/all_english_v1?pretty'
 
 List everything:  
 http://localhost:9200/_search?pretty&size=9999
