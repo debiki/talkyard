@@ -59,7 +59,7 @@ object Dependencies {
     // When upgrading to next major version, consider improving the mappings at the same
     // time? Change id fields from type integer to type keyword.  [es_kwd] [ty_v1]
     val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
-    val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "6.8.23"
+    val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "7.17.14"
 
     val guava = "com.google.guava" % "guava" % "32.1.2-jre"
 
