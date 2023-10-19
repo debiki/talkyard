@@ -36,7 +36,7 @@ import talkyard.server.authz.AuthzCtxOnForum
   * Not thread safe.
   */
 case class PagesCanSee(   // [Scala_3] opaque type with extension methods?
-  pages: Vec[PagePathAndMeta]) {
+  pages: ImmSeq[PagePathAndMeta]) {
 
   private var _pagesByCatId: Map[CatId, ImmSeq[PagePathAndMeta]] = _
 

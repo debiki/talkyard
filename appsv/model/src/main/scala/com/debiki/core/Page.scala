@@ -249,7 +249,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   // already. And copying/syncing settings between cats, would be simpler to implement
   // and give all (?) of the benefits with 0) 1) 2) 3) anyway (?).
   pageId: String,
-  extImpId: Option[ExtId] = None,  // RENAME to extId
+  extImpId: Option[ExtId] = None,  // RENAME to extId, no, to  refId
   pageType: PageType,
   version: PageVersion,
   createdAt: ju.Date,
