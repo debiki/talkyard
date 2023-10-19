@@ -178,6 +178,7 @@ case class Category( // [exp] ok use   too long name! use Cat instead
 
 object Category {
   val MinId = 1
+  val FirstRootCatId = 1
   val MaxNameLength = 50
   val MaxSlugLength = 50
   val MaxDescriptionLength = 1000

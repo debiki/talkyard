@@ -156,9 +156,20 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     lazy val catOrRootCat = anyCategory getOrElse {
       val rootCats = dao.getRootCategories()
-      throwUnimplementedIf(rootCats.length >= 2, "TyE0450WKTD")  // [subcomms]
-      rootCats.headOption getOrElse {
-        return nothingFound
+      if (rootCats.length >= 2) {
+        // This can happen for sites created long ago, if they started using a sub communities
+        // feature, before it got disabled.  The still active not-subcommunity category
+        // then has id 1; let's use it. (The disabled sub communities would have
+        // higher ids.)  [subcomms]
+        rootCats.find(_.id == Category.FirstRootCatId) getOrElse {
+          throwUnimpl(s"${rootCats.length} root categories, but none with id ${
+                Category.FirstRootCatId} [TyE0450WKTD]")
+        }
+      }
+      else {
+        rootCats.headOption getOrElse {
+          return nothingFound
+        }
       }
     }
 

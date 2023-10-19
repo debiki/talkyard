@@ -19,10 +19,13 @@ package talkyard.server.events
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import talkyard.server.api.ThingsFoundJson
+import talkyard.server.api.PostsListFoundJson.JsPostListFound
 import talkyard.server.authz.{AuthzCtxOnForum, AuthzCtxOnPats}
 import talkyard.server.JsX
 import talkyard.server.parser.JsonConf
 import debiki.dao.{LoadPostsResult, PageStuff, SiteDao}
+
 
 import play.api.libs.json._
 
@@ -36,6 +39,9 @@ case class EventAndJson(event: Event, json: JsObject)
 object EventsParSer {
 
 
+  // Vaguely similar code: ForumController.makeTopicsResponse()  and
+  // ThingsFoundJson._makePagesFoundResponseImpl()  [406RKD2JB]
+  //
   def makeEventsListJson(events: ImmSeq[Event], dao: SiteDao, reqer: Opt[Pat],
           avatarUrlPrefix: St, authzCtx: AuthzCtxOnForum): ImmSeq[EventAndJson] = {
 
@@ -149,9 +155,10 @@ object EventsParSer {
         for {
           post: Post <- postsById.get(postEvent.postId)
           page: PageStuff <- pageStuffById.get(post.pageId)
+          cat: Opt[Cat] = page.categoryId flatMap catsById.get
         }
         yield {
-          val json = JsPostEvent_apiv0(postEvent, post, page, authorsById,
+          val json = JsPostEvent_apiv0(postEvent, post, page, cat, authorsById,
                 avatarUrlPrefix = avatarUrlPrefix, authzCtx)
           EventAndJson(postEvent, json)
         }
@@ -208,9 +215,6 @@ object EventsParSer {
           anyOrigPost: Opt[Post], pagePathsById: Map[PageId, PagePathWithId],
           authorsById: Map[PatId, Pat], avatarUrlPrefix: St, authzCtx: AuthzCtxOnForum,
           ): JsObject = {
-    import talkyard.server.api.ThingsFoundJson
-    import talkyard.server.api.PostsListFoundJson.JsPostListFound
-
     val pageFoundStuff = new ThingsFoundJson.PageFoundStuff(
           pagePath = pagePathsById.getOrElse(page.pageId, PagePathWithId.fromIdOnly(page.pageId,
               // Since there's no other path, this should be the canonical path.
@@ -228,7 +232,7 @@ object EventsParSer {
 
     anyOrigPost foreach { origPost =>
       val origPostJson = JsPostListFound(
-            origPost, page, authorsById, avatarUrlPrefix = avatarUrlPrefix,
+            origPost, page, anyCat, authorsById, avatarUrlPrefix = avatarUrlPrefix,
             JsonConf.v0_1(), authzCtx, isWrappedInPage = true)
       pageJson += "posts" -> Json.arr(origPostJson)
     }
@@ -245,12 +249,11 @@ object EventsParSer {
 
 
 
-  def JsPostEvent_apiv0(event: PostEvent, post: Post, page: PageStuff,
+  def JsPostEvent_apiv0(event: PostEvent, post: Post, page: PageStuff, anyCat: Opt[Cat],
         authorsById: Map[PatId, Pat], avatarUrlPrefix: St, authzCtx: AuthzCtxOnForum,
         ): JsObject = {
-    import talkyard.server.api.PostsListFoundJson.JsPostListFound
-    val postJson = JsPostListFound(post, page, authorsById, avatarUrlPrefix = avatarUrlPrefix,
-          JsonConf.v0_1(), authzCtx, isWrappedInPage = false)
+    val postJson = JsPostListFound(post, page, anyCat, authorsById,
+          avatarUrlPrefix = avatarUrlPrefix, JsonConf.v0_1(), authzCtx, isWrappedInPage = false)
     Json.obj(  // ts: Event_, in tests/e2e-wdio7/pub-api.ts.
         "id" -> event.id,
         "atMs" -> JsX.JsWhenMs(event.when),

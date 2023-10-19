@@ -28,7 +28,6 @@ import talkyard.server.parser.JsonConf
 import talkyard.server.authz.AuthzCtxOnPats
 
 
-
 object PostsListFoundJson {
 
 
@@ -79,8 +78,8 @@ object PostsListFoundJson {
       pageStuff <- pageStuffById.get(post.pageId)
     }
     yield {
-      JsPostListFound(post, pageStuff, authorsById, avatarUrlPrefix = avatarUrlPrefix,
-            jsonConf, authzCtx)
+      JsPostListFound(post, pageStuff, anyCat = None, authorsById,
+            avatarUrlPrefix = avatarUrlPrefix, jsonConf, authzCtx)
     }
 
     // Typescript: SearchQueryResults, and ListQueryResults
@@ -90,7 +89,8 @@ object PostsListFoundJson {
   }
 
 
-  def JsPostListFound(post: Post, pageStuff: PageStuff, ppsById: Map[UserId, Participant],
+  def JsPostListFound(post: Post, pageStuff: PageStuff, anyCat: Opt[Cat],
+          ppsById: Map[UserId, Participant],
           avatarUrlPrefix: St, jsonConf: JsonConf, authzCtx: AuthzCtxOnPats,
           isWrappedInPage: Bo = false
           ): JsObject = {
@@ -109,6 +109,7 @@ object PostsListFoundJson {
 
     if (authzCtx.maySeeExtIds) {
       post.extImpId.foreach(json += "extId" -> JsString(_))
+      post.extImpId.foreach(json += "refId" -> JsString(_))  // renaming to refId
     }
 
     if (post.isTitle) {
@@ -127,14 +128,20 @@ object PostsListFoundJson {
             anyAuthor, avatarUrlPrefix = Some(avatarUrlPrefix), jsonConf, authzCtx)
     }
 
-    // If not in a page { ... } obj, with the page id and name, then, more context needed
-    // — so the remote server won't need to fetch page details via separate requests.
+    // If not in a page { ... } obj, with the page id, name, category, then, more context
+    // needed — so the remote server won't need to fetch page details via separate requests.
     if (!isWrappedInPage) {
       // Also see [posts_0_page_json] and Typescript: PostWithPage.
       json += "pageId" -> JsString(post.pageId)
       json += "pageTitle" -> JsString(pageStuff.title)
+      if (authzCtx.maySeeExtIds) {
+        pageStuff.pageMeta.extImpId foreach { json += "pageRefId" -> JsString(_) }
+      }
       // COULD use the page's actual path (folder + slug).
       json += "urlPath" -> JsString(s"/-${post.pageId}#post-${post.nr}")
+      // Later, incl all ancestor categories reqr may see. [incl_anc_cats]
+      json += "categoriesMainFirst" -> Json.arr(
+            ThingsFoundJson.JsCategoryFoundOrNull(anyCat, jsonConf, authzCtx))
     }
 
     json
