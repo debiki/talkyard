@@ -1686,6 +1686,8 @@ api:
     extid:_ for users and pages,
     username:_, pagepath:_
             - do-api-like-and-subscribe.2br  TyTEAPILIKESUBS.TyTREFTYPES01
+    tyid:_:
+            - api-upsert-posts.2br.d  TyT60RKNJF24C
   upsert categories:  (upscats)
           - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
   upsert pages:
@@ -1702,6 +1704,8 @@ api:
             - do-api-upvote-ideas-sort-by-votes.2br.d  TyTDOAPI_UPVOTE_IDEAS
     gets sanitized:
           - api-upsert-posts.2br.d   TyT60RKNJF24C: TyT0RKDL5MW
+    notifications yes/no:
+            - api-upsert-posts.2br.d   TyT60RKNJF24C.TyTUPSNTF825
   private chat:
           - api-private-chat-two-pps-sso-extid.2browsers.test.ts   TyT603WKVJW336
           - api-private-chat-two-pps-list-use-usernames.2browsers.test.ts  TYT6924VBNF962
