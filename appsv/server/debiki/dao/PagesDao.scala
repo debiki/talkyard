@@ -941,6 +941,7 @@ trait PagesDao {
 
   def refreshPageMetaBumpVersion(pageId: PageId, markSectionPageStale: Bo,
           newBumpedAt: Opt[When] = None)(tx: SiteTx): U = {
+    // Also elsewhere, bit dupl.  [dupl_upd_pg_stats]
     val page = newPageDao(pageId, tx)
     val newMeta = page.meta.copyWithUpdatedStats(page, newBumpedAt)
     tx.updatePageMeta(newMeta, oldMeta = page.meta,
