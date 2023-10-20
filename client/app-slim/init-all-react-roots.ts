@@ -139,6 +139,7 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate'
     for (let i = 0; i < store.siteSections.length; ++i) {
       const section: SiteSection = store.siteSections[i];
       if (section.pageRole === PageRole.Forum) {
+        // Dupl lines. [what_rootPathView]
         const forumRootSlash = section.path;
         const forumDefaultPath = forumRootSlash + (store.settings.forumMainView || RoutePathLatest);
 
