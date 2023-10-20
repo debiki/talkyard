@@ -41,6 +41,9 @@ export function CatsOrHomeLink(page: Page, store: Store, forTopbar?: Bo): RElm |
   const isUnlisted = _.some(page.ancestorsRootFirst, a => a.unlistCategory);
   const isUnlistedSoHideCats = isUnlisted && !isStaff(me);
   const hasAncestorsCats = nonEmpty(page.ancestorsRootFirst);
+  const siteSection: SiteSection = store_mainSiteSection(store);
+  const siteSectionView: St | U = store.settings.forumMainView;
+  const siteRootViewPath: St = !siteSectionView ? null : siteSection.path + siteSectionView;
   const showCategories =
           hasAncestorsCats &&
           !isUnlistedSoHideCats &&
@@ -53,6 +56,7 @@ export function CatsOrHomeLink(page: Page, store: Store, forTopbar?: Bo): RElm |
         // RENAME  esTopbar_ancestors  and  s_Tb_Pg_Cs
         r.ol({ className: 'esTopbar_ancestors s_Tb_Pg_Cs' },
           page.ancestorsRootFirst.map((ancestor: Ancestor) => {
+            const isRoot = ancestor.categoryId === siteSection.rootCategoryId;
             const deletedClass = ancestor.isDeleted ? ' s_Tb_Pg_Cs_C-Dd' : '';
             const catIcon = category_iconClass(ancestor.categoryId, store);  // [4JKKQS20]
             const key = ancestor.categoryId;
@@ -60,9 +64,9 @@ export function CatsOrHomeLink(page: Page, store: Store, forTopbar?: Bo): RElm |
                 r.li({ key, className: 's_Tb_Pg_Cs_C' + deletedClass },
                   // RENAME esTopbar_ancestors_link to just s_AncCs_Ln?
                   Link({ className: catIcon + 'esTopbar_ancestors_link btn',
-                      // The path is from here, server side: [anc_cat_path].
-                      to: ancestor.path },
-                  ancestor.title)));
+                      // `ancestor.path` is from here, server side: [anc_cat_path].
+                      to: isRoot && siteRootViewPath? siteRootViewPath : ancestor.path },
+                  isRoot ? t.Home : ancestor.title)));
           }));
   }
   else if (page_isInfoPage(page.pageRole) && !forTopbar) {
@@ -73,8 +77,7 @@ export function CatsOrHomeLink(page: Page, store: Store, forTopbar?: Bo): RElm |
   }
   else {
     // Show a Home link, so there's somewhere to return to. Dupl code [HOMELN495]
-    const mainSiteSection: SiteSection = store_mainSiteSection(store);
-    const homePath = mainSiteSection.path;
+    const homePath = siteSection.path + (siteSectionView || '');
     catsOrHomeLink =
         r.ol({ className: 'esTopbar_ancestors s_Tb_Pg_Cs' },
           r.li({ key: 'h' },
