@@ -11,8 +11,8 @@
 
 -- *_u: For unused columns, just sketching the future:
 create domain i16_u smallint;
-create domain i32_u smallint;
-create domain i64_u smallint;
+create domain i32_u int;
+create domain i64_u bigint;
 alter  domain i16_u add constraint i16_u_c_null check (value is null);
 alter  domain i32_u add constraint i32_u_c_null check (value is null);
 alter  domain i64_u add constraint i64_u_c_null check (value is null);
@@ -60,13 +60,6 @@ alter domain  alnum_plusdashdot_arr_d add
 --=============================================================================
 --  More indexes, constraints?
 --=============================================================================
-
-drop index dw1_pages_category__i; -- is on: (site_id, category_id)
-create index pages_i_cat_createdat on pages3 (
-    site_id, category_id, created_at desc);
-
-create index pages_i_cat_publishedat on pages3 (
-    site_id, category_id, published_at desc);
 
 -- Odd, last_approved_edit_at can be not null, also if  approved_at is null.
 -- Harmless but maybe surprising in the future.
