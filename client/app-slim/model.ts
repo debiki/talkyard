@@ -1039,7 +1039,7 @@ interface Page
       // Or rather, split into different objs and fields [disc_props_view_stats] [PAGETYPESETTNG]
       // No, instead, everything wil be in  nodes_t ?
   forumSearchBox?: ShowSearchBox;
-  forumMainView?: Nr;
+  forumMainView?: Nr; // Would be better with a string? [main_view_str_or_nr]
   forumCatsTopics?: Nr;
   //--------
   pageHtmlTagCssClasses?: string;
@@ -2054,7 +2054,7 @@ interface Settings extends TopicInterfaceSettings, SettingsDiscPropsOldNames {
   sendEmailToAkismet: boolean;
 
   // Forum
-  forumMainView: string;
+  forumMainView: string; // [main_view_str_or_nr]
   forumTopicsSortButtons: string;
   forumCategoryLinks: string;
   forumTopicsLayout: TopicListLayout;
