@@ -61,12 +61,7 @@ alter domain  alnum_plusdashdot_arr_d add
 --  More indexes, constraints?
 --=============================================================================
 
-drop index dw1_pages_category__i; -- is on: (site_id, category_id)
-create index pages_i_cat_createdat on pages3 (
-    site_id, category_id, created_at desc);
-
-create index pages_i_cat_publishedat on pages3 (
-    site_id, category_id, published_at desc);
+-- Ooops http:// not s  one website
 
 -- Odd, last_approved_edit_at can be not null, also if  approved_at is null.
 -- Harmless but maybe surprising in the future.
