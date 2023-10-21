@@ -72,7 +72,7 @@ function postJson(urlPath: string, requestData: RequestData) {
     'X-Requested-With': 'XMLHttpRequest',
   };
 
-  headers[XsrfTokenHeaderName] = getSetCookie('XSRF-TOKEN');
+  headers[XsrfTokenHeaderName] = getSetCookie('TyCoXsrf');
 
   addAnyNoCookieHeaders(headers);
 
@@ -395,7 +395,7 @@ function corsPost(ps) {
 export function uploadFiles(endpoint: string, files: any[], onDone, onError) {  // [FETCHEX]
   dieIf(files.length !== 1,  `${files.length} files [TyE06WKTDN23]`);
   const headers = {};
-  headers[XsrfTokenHeaderName] = getSetCookie('XSRF-TOKEN');
+  headers[XsrfTokenHeaderName] = getSetCookie('TyCoXsrf');
   fetch(endpoint, {
     method: 'POST',
     body: files[0],
@@ -461,7 +461,7 @@ function trySendBeacon(url, data) {
   // 1. Don't call variable `sendBeacon`, that results in an invalid-invokation error.
   // 2. sendBeacon() apparently always posts text/plain;charset=UTF-8.
   // 3. There's no way to add a xsrf header — so include a xsrf token in the request body.
-  let xsrfTokenLine = getSetCookie('XSRF-TOKEN') + '\n';  // [7GKW20TD]
+  let xsrfTokenLine = getSetCookie('TyCoXsrf') + '\n';  // [7GKW20TD]
   let json = JSON.stringify(data);
   (<any> navigator).sendBeacon(url + '-text', xsrfTokenLine + json);
 }

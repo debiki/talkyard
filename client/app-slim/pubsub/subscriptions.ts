@@ -154,7 +154,7 @@ export function subscribeToServerEvents(me: Myself) {
           "Service worker didn't claim this tab [TyESW0CLMTB]");
       // @endif
 
-      const xsrfToken = getSetCookie('XSRF-TOKEN');
+      const xsrfToken = getSetCookie('TyCoXsrf');
       // Later, maybe:
       //   const mainWin = getMainWin();
       //   const typs: PageSession = mainWin.typs;
