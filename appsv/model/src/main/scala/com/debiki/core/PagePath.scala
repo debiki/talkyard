@@ -35,6 +35,8 @@ case class PagePathWithId(  // better than PagePath? Has no site id, and always 
   def toOld(siteId: SiteId) = PagePath(
     siteId, folder, pageId = Some(pageId), showId = showId, pageSlug = pageSlug)
 
+  /** The actual page path, e.g.  /any/folder/   or   /-1234/page-slug  (where 1234 is the id).
+    */
   def value: String = toOld(9999999 /* dummy site id, won't be used */).value
 
   def copyNoId = PagePathNoId(folder, showId, slug = pageSlug)
@@ -74,6 +76,13 @@ case class PostPathWithIdNr(
   pageSlug: St,
   postNr: PostNr,
   canonical: Bo) {
+
+  def value: St = {
+   val pagePath = PagePathWithId(folder = folder, pageId = pageId, showId = showId,
+          pageSlug = pageSlug, canonical = canonical)
+    // Or do we sometimes want `CommentHashPrefixWithHash` instead?
+    pagePath.value + (if (postNr == BodyNr) "" else PostHashPrefixWithHash + postNr)
+  }
 
   require(postNr >= BodyNr, s"Bad post nr: $postNr, page id: $pageId [TyE7M05MRT]")
 }

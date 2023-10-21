@@ -2938,6 +2938,9 @@ export class TyE2eTestBrowser {
           okNotFoundReason = /-TyEM0CR0SEE_-TyMMBYSEE_/.test(source);
         }
         else if (ps.whyNot === 'MayNotSeeCat') {
+          // This is for a page in a category one cannot see.
+          // But what about accesing the category directly, not a page in it?
+          // Then:  [0see_page_in_cat_or_cat]
           okNotFoundReason = /-TyEM0SEE_-TyMMBYSEE_/.test(source);
         }
         else if (ps.whyNot === 'PageDeleted') {

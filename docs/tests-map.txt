@@ -639,7 +639,8 @@ categories:
             - category-perms.2br.d  TyTE2ECATPREMS01
             - cats-perf-many.2br.d  TyTECATPREFMNY.TyTPRIVCATS
             - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
-            - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyT0ACSPG043
+            - link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837.TyT0ACSPG043
+            - link-previews-internal-to-cats-not-see.2br.f  TyTE2ELN2CAT
     topics on cats list page:
             - category-perms.2br.d  TyTE2ECATPREMS01.TyTSEECATTOPS
             - cats-perf-many.2br.d  TyTECATPREFMNY.TyTSEECATTOPS
@@ -647,11 +648,13 @@ categories:
             - category-perms.2br.d  TyTE2ECATPREMS01.TyTCATLOCK
     sub cats:
             - category-perms.2br.d  TyTE2ECATPREMS01.TyTPRIVSUBCA
-            - TESTS_MISSING  link to access-denied sub category,  TyTE2ELNSUBCAT
+    link previews:
+            - link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837.TyTE2ELNSUBCAT
+            - link-previews-internal-to-cats-not-see.2br.d  TyTE2ELN2CAT.TyTE2ELNSUBCAT
   upsert categories:  (upscats)
   move topic to new category:
-          - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyTMVPG2OTRCAT
-          - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS.TyTMVPG2CAT
+            - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyTMVPG2OTRCAT
+            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS.TyTMVPG2CAT
 
   sub categories:
     create,
@@ -886,6 +889,8 @@ internal links:  # (687295)
           - link-previews-internal-not-see-cat.2br TyTE2ELNPVIN4837.TyT60T6SRTR3
   inline, just title:
           - TESTS_MISSING
+  to category:
+            - link-previews-internal-to-cats-not-see.2br.d  TyTE2ELN2CAT
 
 discussion -
   users on page:
