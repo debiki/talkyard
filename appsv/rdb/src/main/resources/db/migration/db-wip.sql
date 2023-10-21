@@ -11,6 +11,8 @@
 
 -- *_u: For unused columns, just sketching the future:
 create domain i16_u smallint;
+create domain i32_u int;
+create domain i64_u bigint;
 alter  domain i16_u add constraint i16_u_c_null check (value is null);
 alter  domain i32_u add constraint i32_u_c_null check (value is null);
 alter  domain i64_u add constraint i64_u_c_null check (value is null);
