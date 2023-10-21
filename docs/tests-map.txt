@@ -647,7 +647,9 @@ categories:
             - category-perms.2br.d  TyTE2ECATPREMS01.TyTCATLOCK
     sub cats:
             - category-perms.2br.d  TyTE2ECATPREMS01.TyTPRIVSUBCA
+    link previews:
             - TESTS_MISSING  link to access-denied sub category,  TyTE2ELNSUBCAT
+            - link-previews-internal-to-cats-not-see.2br.d  TyTE2ELN2CAT
   upsert categories:  (upscats)
   move topic to new category:
           - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyTMVPG2OTRCAT

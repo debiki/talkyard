@@ -21,7 +21,6 @@ let memah_brB: TyE2eTestBrowser;
 let site: IdAddress;
 let forum: TwoCatsTestForum;
 
-let owensStaffPageUrl: St;
 let mariasTopicId: St;
 
 const owensReplyUrl = (): St => `${owensStaffPageUrl}#post-${c.FirstReplyNr}`;
@@ -30,33 +29,13 @@ const mariasTopicTitle = 'mariasTopicTitle';
 
 
 
-describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
+describe(`link-previews-internal-to-cats-not-see.2br.d  TyTE2ELN2CAT`, () => {
 
   it(`Construct site`, async () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({
-      title: "Internal May-Not-See Link Previews E2E Test",
+      title: "Internal Cat Link Previews E2E Test",
       members: ['owen', 'memah', 'maria'],
-    });
-
-    const newPage: PageJustAdded = builder.addPage({
-      id: 'extraPageId',
-      folder: '/',
-      showId: false,
-      slug: 'owens-staff-page',
-      role: c.TestPageRole.Discussion,
-      title: "Owen's Staff Only Page",
-      body: "Non-staff members may not see any link preview of this page",
-      categoryId: forum.categories.staffOnlyCategory.id,
-      authorId: forum.members.owen.id,
-    });
-
-    builder.addPost({
-      page: newPage,
-      nr: c.FirstReplyNr,
-      parentNr: c.BodyNr,
-      authorId: forum.members.owen.id,
-      approvedSource: "Staff-only reply",
     });
 
     brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
@@ -76,12 +55,11 @@ describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
   it(`import site`, async () => {
     site = await server.importSiteData(forum.siteData);
     await server.skipRateLimits(site.id);
-    owensStaffPageUrl = site.origin + '/owens-staff-page';
   });
 
 
-  it(`Owen logs in to his staff page page`, async () => {
-    await owen_brA.go2(owensStaffPageUrl);
+  it(`Owen logs in`, async () => {
+    await owen_brA.go2(site.origin);
     await owen_brA.loginDialog.loginWithPassword(owen);
   });
 
@@ -98,27 +76,28 @@ describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
   });
 
 
-  it(`She adds a link to Owen's staff page`, async () => {
-    await maria_brB.editor.editText(owensStaffPageUrl);
+  it(`She adds a link to the staff category`, async () => {
+    await maria_brB.editor.editText('???');
   });
 
 
   it(`... a broken! link preview appears, in the new topic preview`, async () => {
     const sel = utils.makePreviewBrokenSelector('InternalLink', {
-            url: owensStaffPageUrl,
+            url: '???',
             errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN' });
     await maria_brB.preview.waitForExist(sel, { where: 'InEditor' });
   });
 
+  // ??   link to  B when sub cat of private  Staff Cat?
 
-  it(`She adds a 2nd link to Owen's reply`, async () => {
-    await maria_brB.editor.editText(`\n\n` + owensReplyUrl(), { append: true });
+  it(`She adds a 2nd link to Category B`, async () => {
+    await maria_brB.editor.editText(`\n\n` + '???', { append: true });
   });
 
 
   it(`... a 2nd link preview appears — it's Not-Found broken too`, async () => {
     const sel = utils.makePreviewBrokenSelector('InternalLink', {
-            url: owensReplyUrl(),
+            url: '???',
             errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN' });
     await maria_brB.preview.waitForExist(sel, { where: 'InEditor' });
   });
@@ -130,7 +109,7 @@ describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
   });
 
 
-  it(`In the new topic, there're 2 broken internal link previews`, async () => {
+  it(`In the new topic, there's 1 broken internal link preview`, async () => {
     const sel = utils.makePreviewBrokenSelector('InternalLink');
     await maria_brB.topic.waitForExistsInPost(c.BodyNr, sel, { howMany: 2 });
   });
@@ -149,24 +128,16 @@ describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
   });
 
 
+  it(`... and 1 ok link preview to Category A`, async () => {
+  });
+
+
   it(`Owen refreshes his staff page`, async () => {
     await owen_brA.refresh2();
   });
 
 
-  it(`... sees a backlink to Maria's topic  TyT60T6SRTR3
-        — although, from Maria's perspective, the links are broken,
-        since it's a staff-only page`, async () => {
-    await owen_brA.topic.backlinks.refreshUntilNum(1);
-    assert.ok(await owen_brA.topic.backlinks.isLinkedFromPageId(mariasTopicId));
-  });
-
-
-  it(`Owen moves the page to Category A, which is public  TyTMVPG2OTRCAT`, async () => {
-    await owen_brA.topic.movePageToOtherCategory(forum.categories.categoryA.name);
-  });
-
-
+  /*
   it(`Maria posts a reply, linking to Owen's page and reply, again`, async () => {
     await maria_brB.complex.replyToOrigPost(
           owensStaffPageUrl + '\n\n' + owensReplyUrl() + '\n');
@@ -223,8 +194,8 @@ describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
           'TyE404_', '-TyEM0SEE_-TyMMBYSEE_')
     // Instead, only this: (it's the same)
     await maria_brB.assertNotFoundError({ whyNot: 'MayNotSeeCat' });
-  });
+  }); */
 
-  // TESTS_MISSING  Link to access-denied *sub category*.  TyTE2ELNSUBCAT !
+  // TESTS_MISSING  Link to access-denied *sub category*.   !
 });
 
