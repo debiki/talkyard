@@ -60,7 +60,7 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
 
   it(`Construct site`, async () => {
     const builder = buildSite();
-    forum = builder.addTwoCatsForum({ // or addTwoPagesForum, addEmptyForum, addLargeForum
+    forum = builder.addCatABForum({ // or addTwoPagesForum, addTwoCatsForum, addEmptyForum
       title: "Some E2E Test",
       categoryAExtId: 'cat_a_ext_id',
       members: undefined, // default = everyone
@@ -80,6 +80,9 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
 
     // Adding a new member:
     const newMember: Member = builder.addMmember('hens_username');
+
+    // Placing Cat B in Staff Cat:
+    forum.categories.catB.parentId = forum.categories.staffCat.id;
 
     const newPage: PageJustAdded = builder.addPage({
       id: 'extraPageId',

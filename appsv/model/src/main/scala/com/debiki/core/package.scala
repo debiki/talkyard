@@ -183,6 +183,7 @@ package object core {
   type PageScoreAlg = i32  // for now  [Scala_3] opaque type
 
   type CategoryId = Int   // too long!
+  type CatStuff = CategoryStuff
   type CatId = CategoryId // better
   type Cat = Category     // better
   val Cat = Category
