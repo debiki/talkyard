@@ -933,15 +933,19 @@ function loadJQuery(callback?) {
 export function createSite(localHostname: string,
     anyEmbeddingSiteAddress: string, organizationName: string,
     doneCallback: (string) => void) {
-  const isTestSite = window.location.search.indexOf('testSiteOkDelete=true') !== -1 ||
-    window.location.pathname === '/-/create-test-site';
+  const params = new URLSearchParams(window.location.search);
+  // The server will [remove_not_allowed_feature_flags].
+  const featureFlags = params.get('featureFlags');
+  const testSiteOkDelete = params.get('testSiteOkDelete') === 'true' ||
+                            window.location.pathname === '/-/create-test-site';
   postJson('/-/create-site', {
     data: {
       acceptTermsAndPrivacy: true,
-      localHostname: localHostname,
+      localHostname,
       embeddingSiteAddress: anyEmbeddingSiteAddress,
-      organizationName: organizationName,
-      testSiteOkDelete: isTestSite,
+      organizationName,
+      featureFlags,
+      testSiteOkDelete,
     },
     success: (response) => {
       doneCallback(response.nextUrl);

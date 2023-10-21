@@ -1,6 +1,7 @@
 package talkyard.server
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import com.debiki.core.Prelude.RichOption // isSomethingButNot
 import com.debiki.core.Prelude.MessAborter
 import org.scalactic.{Good, Or, Bad}
@@ -161,5 +162,45 @@ package object api {
             valFlt64 = valFlt64,
             valStr = valStr)(mab)
 
+  }
+
+
+  /** A few well-known feature flags. Don't rename, are part of the API. */
+  object FeatureFlags {
+
+    /** This site is for a nonprofit (e.g. a tax-exempt charity). */
+    val ff4Nnp = "ff4Nnp"
+
+    /** This site is for a not-for-profit (e.g. a member organization). */
+    val ff4Nfp = "ff4Nfp"
+
+    /** This site is for education (e.g. a school). I suppose ff4Biz and ff4Edu can
+      * co-exist, since there are for profit schools, e.g. coding bootcamps.
+      */
+    val ff4Edu = "ff4Edu"
+
+    /** This site is for business. */
+    val ff4Biz = "ff4Biz"
+
+    /** This site provides embedded comments, usually for someone's blog. */
+    val ff4EmCo = "ff4EmCo"
+
+    /** This site provides embedded forums, usually for an organization's website. */
+    // Maybe later
+    // val ff4EmFo = "ff4EmFo"
+
+    /** Price plan NN (names might change) maybe incl some bit flags with externally
+      * defined meanings. */
+    val ffPrPNNRegex: scala.util.matching.Regex = "ffPrP[0-9]{1,10}".r
+
+    private val allowedNewSiteExactFlags = Vec(ff4Nnp, ff4Nfp, ff4Edu, ff4Biz, ff4EmCo)
+
+    def removeBadNewSiteFlags(flagsStr: St): St = {
+      TESTS_MISSING
+      val flagsMaybeBad = flagsStr.split(" ").to[Vec]
+      val flagsOk = flagsMaybeBad.filter(flag =>
+            allowedNewSiteExactFlags.contains(flag) || ffPrPNNRegex.matches(flag))
+      flagsOk.mkString(" ")
+    }
   }
 }
