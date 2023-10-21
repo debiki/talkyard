@@ -372,7 +372,7 @@ const PatTopPanel = createComponent({
         dieIf(files.length !== 1, 'DwE5UPM2');
         FileAPI.upload({   // a bit dupl code [2UK503]
           url: '/-/upload-avatar?userId=' + props.user.id,
-          headers: { 'X-XSRF-TOKEN': getSetCookie('XSRF-TOKEN') },
+          headers: { 'X-XSRF-TOKEN': getSetCookie('TyCoXsrf') },
           files: { images: files },
           imageOriginal: false,
           imageTransform: {
