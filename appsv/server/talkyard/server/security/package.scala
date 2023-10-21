@@ -167,19 +167,27 @@ object EdSecurity {
   val SessionIdPart4HttpOnlyCookieName = "TyCoSid4"
   val SessionIdPart5StrictCookieName = "TyCoSid5"
 
+  val XsrfCookieName = "TyCoXsrf"
+
   /** Don't rename. Is used by AngularJS: AngularJS copies the value of
     * this cookie to the HTTP header just above.
     * See: http://docs.angularjs.org/api/ng.$http, search for "XSRF-TOKEN".
-    * CLEAN_UP do rename to tyCoXsrf, Angular is since long gone.
+    *
+    * REMOVE after 2024-01-01, not using Angular any more, and this cookie
+    * caused collissoins with custom javascript that apparently set a cookie
+    * with the same name on Ty's domain  (but with an unexpected value).
     */
-  val XsrfCookieName = "XSRF-TOKEN"
+  private val OldXsrfCookieName = "XSRF-TOKEN"
 
-  /**
-    * A HTTP header in which AngularJS sends any xsrf token, when AngularJS
-    * posts JSON. (So you cannot rename this header.)
-    * CLEAN_UP rename to X-Ty-Xsrf, Angular is since long gone.
+  /** A HTTP header in which the browser sends any XSRF token, together with
+    * POSTS requests.
+    *
+    * Could rename to X-Ty-Xsrf?  The current name is from when Angular was in use.
+    * But maybe might as well continue using this name — what if proxies have
+    * been configured to remove any unexpected headers? But since this header
+    * is pretty commonly used (AngularJS uses it), it's less likely to get removed?
     */
-  val XsrfTokenHeaderName = "X-XSRF-TOKEN"
+  private val XsrfTokenHeaderName = "X-XSRF-TOKEN"
 
   private val BrowserIdCookieName = "dwCoBrId"
 
@@ -450,7 +458,8 @@ class EdSecurity(globals: Globals) {
 
     // On GET requests, simply accept the value of the xsrf cookie.
     // (On POST requests, however, we check the xsrf form input value)
-    val anyXsrfCookieValue = urlDecodeCookie(XsrfCookieName, request)
+    val anyXsrfCookieValue = urlDecodeCookie(XsrfCookieName, request).orElse(
+            urlDecodeCookie(OldXsrfCookieName, request))
 
     val isGet = request.method == "GET"
     val isPost = request.method == "POST"
@@ -515,15 +524,15 @@ class EdSecurity(globals: Globals) {
         // There must be an xsrf token in a certain header, or in a certain
         // input in any POST:ed form data. Check the header first, in case
         // this is a JSON request (then there is no form data).
-        val xsrfToken = request.headers.get(XsrfTokenHeaderName) orElse {
+        val xsrfTokenInHdrOrBdy = request.headers.get(XsrfTokenHeaderName) orElse {
           if (anyRequestBody.isEmpty) None else anyRequestBody.get match {
-            case params: Map[String, Seq[String]] =>
+            case params: Map[St, Seq[St]] =>
               params.get(XsrfTokenInputName).map(_.head)
             case body: JsonOrFormDataBody =>
               body.getFirst(XsrfTokenInputName)
-            case str: String =>
-              val xsrfToken = str.takeWhile(_ != '\n') // [7GKW20TD]
-              if (xsrfToken.nonEmpty) Some(xsrfToken)
+            case str: St =>
+              val token = str.takeWhile(_ != '\n') // [7GKW20TD]
+              if (token.nonEmpty) Some(token)
               else None
             case _ =>
               None
@@ -540,7 +549,7 @@ class EdSecurity(globals: Globals) {
         val xsrfOk = {
           val xsrfStatus =
                 checkXsrfToken(
-                    xsrfToken, anyXsrfCookieValue,
+                    xsrfTokenInHdrOrBdy, anyXsrfCookieValue,
                     thereIsASidCookie = gotAnyCookie,
                     now, expireIdleAfterMillis = expireIdleAfterMillis)
 
@@ -562,8 +571,8 @@ class EdSecurity(globals: Globals) {
             val (theProblem, errorCode)  =
               if (xsrfStatus == XsrfExpired) ("xsrf token expired", "TyEXSRFEXP1")
               else if (xsrfStatus == XsrfBadEmpty) ("xsrf token empty", "TyEXSRFEMPTY1")
-              else if (xsrfToken == "null") ("xsrf token is 'null'", "TyEXSRFNULL")
-              else if (xsrfToken == "undefined") ("xsrf token is 'undefined'", "TyEXSRFUNDF")
+              else if (xsrfTokenInHdrOrBdy == "null") ("xsrf token is 'null'", "TyEXSRFNULL")
+              else if (xsrfTokenInHdrOrBdy == "undefined") ("xsrf token is 'undefined'", "TyEXSRFUNDF")
               else ("bad xsrf token", "TyEXSRFBAD1")
 
             throwForbidden(
@@ -710,14 +719,15 @@ class EdSecurity(globals: Globals) {
 
 
 
-  private def checkXsrfToken(xsrfToken: St, anyXsrfCookieValue: Opt[St],
+  private def checkXsrfToken(xsrfTokenInHdrOrBdy: St, anyXsrfCookieValue: Opt[St],
         thereIsASidCookie: Bo, now: When, expireIdleAfterMillis: i64): XsrfStatus = {
     SECURITY; TESTS_MISSING // that tests if the wrong hashes are rejected
 
+    val xsrfToken = xsrfTokenInHdrOrBdy
+
     // Check matches cookie, or that there's an ok crypto hash.
-    val xsrfOk: XsrfOk = anyXsrfCookieValue match {
-      case Some(xsrfCookieValue) =>
-        // The Double Submit Cookie pattern [4AW2J7], usually also the Custom Request Header pattern, see:
+    anyXsrfCookieValue foreach { xsrfCookieValue =>
+        // The _Double_Submit_Cookie pattern, usually also the Custom Request Header pattern, see:
         // https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)_Prevention_Cheat_Sheet
         if (xsrfCookieValue != xsrfToken) {
           return XsrfBad
@@ -725,12 +735,26 @@ class EdSecurity(globals: Globals) {
         if (xsrfToken.isEmpty) {
           return XsrfBadEmpty // probably cannot happen
         }
-        XsrfOk(xsrfToken)
-      case None =>
-        // If the browser could send a session id cookie, it can also send a xsrf cookie?
-        dieIf(Globals.isDevOrTest && thereIsASidCookie, "TyESID0XTKN",
-            "Got a sid cookie but no xsrf cookie, weird")
 
+      // Continue below, with checking the hash.
+      //
+      // We could skip checking the XSRF token format and hash below, since the
+      // header (or request body) token and cookie token match, and that's enough.
+      // But OWASP thinks it's nice to check the hash too nevertheless, see:
+      // https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#signed-double-submit-cookie
+      //
+      // And seems it's good to do this — also rejects accidentally malformed & possibly
+      // less safe tokens:  There was some third party Javascript an admin added to
+      // their own Talkyard site, which set a XSRF-TOKEN cookie to something unexpected
+      // which made Talkyard error out in the XSRF check, back when Talkyard used that
+      // cookie name too.
+    }
+
+    // If the browser could send a session id cookie, it can also send a xsrf cookie?
+    dieIf(Globals.isDevOrTest && thereIsASidCookie && anyXsrfCookieValue.isEmpty,
+          "TyESID0XTKN", "Got a sid cookie but no xsrf cookie, weird")
+
+    val xsrfOk: XsrfOk = {
         // The Encrypted Token Pattern, usually also the Custom Request Header pattern.
         //
         // This is actually not needed, if !thereIsASidCookie, because then xsrf
@@ -741,12 +765,17 @@ class EdSecurity(globals: Globals) {
         // Do this check anyway, also if !thereIsASidCookie  (can be used for
         // rate limiting, if nothing else?).
         //
+        // The format is time dot random dot hash: "12345.randomChars.123def",
+        // see timeDotRandomDotHash(). The hash length is always the same, but maybe
+        // we'll sometimes change the number of random chars, so let's find the start
+        // of the hash by counting from the end:
         val hashIndex: Int = xsrfToken.length - HashLength
         if (hashIndex < 1) {
           return XsrfBad
         }
-        val value = xsrfToken.take(hashIndex - 1) // drops the dot between value and hash
+        val value = xsrfToken.take(hashIndex - 1) // '-1' drops the dot between value and hash
         val actualHash = xsrfToken.drop(hashIndex)
+        // Same as in timeDotRandomDotHash():
         val correctHashFullLength = hashSha1Base64UrlSafe(value + secretSalt)
         val correctHash = correctHashFullLength take HashLength
         if (correctHash != actualHash) {
@@ -774,7 +803,9 @@ class EdSecurity(globals: Globals) {
    * very first page and logins for the first time, no SID is available.)
    */
   def createXsrfToken(): XsrfOk = {
-    COULD_OPTIMIZE // skip the secure hash, when using the Double Submit Cookie pattern [4AW2J7].
+    // Could skip the secure hash, when using the _Double_Submit_Cookie pattern
+    // — but don't, because now year 2023, OWASP recommends signed double submit cookies,
+    // see:  https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#signed-double-submit-cookie
     XsrfOk(timeDotRandomDotHash())  // [2AB85F2]
   }
 
