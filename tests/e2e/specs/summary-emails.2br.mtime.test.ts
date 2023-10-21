@@ -277,7 +277,7 @@ describe("summary-emails.2br.mtime  TyTE2E06AJG256", () => {
   it("Trillian attempts to posts 'topicFiveMariaMonth'", () => {
     trilliansBrowser.go(idAddress.origin);
     // The xsrf token has expired (we've fast-forwarded time too much), so get a new one.
-    trilliansBrowser.deleteCookie('XSRF-TOKEN');  // ... or, see below (7KRT24)
+    trilliansBrowser.deleteCookie('TyCoXsrf');  // ... or, see below (7KRT24)
     trilliansBrowser.refresh();
     trilliansBrowser.complex.createAndSaveTopic(
         { title: topicFiveMariaMonth, body: topicFiveMariaMonth }); //, resultInError: true });
@@ -341,7 +341,7 @@ describe("summary-emails.2br.mtime  TyTE2E06AJG256", () => {
 
   it("... and logs out", () => {
     // The xsrf token has expired (we've fast-forwarded time too much), so get a new one.
-    mariasBrowser.deleteCookie('XSRF-TOKEN');
+    mariasBrowser.deleteCookie('TyCoXsrf');
     mariasBrowser.refresh();
     mariasBrowser.topbar.clickLogout();
   });

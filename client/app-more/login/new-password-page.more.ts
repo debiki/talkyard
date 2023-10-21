@@ -37,7 +37,7 @@ interface State {
 export function renderNewPasswordPage(secretKey: string) {
   const props: Props = {
     ...eds.newPasswordData,
-    xsrfToken: getSetCookie('XSRF-TOKEN'),
+    xsrfToken: getSetCookie('TyCoXsrf'),
   };
   ReactDOM.render(NewPasswordPage(props),
       document.getElementById('dw-react-new-password'));
