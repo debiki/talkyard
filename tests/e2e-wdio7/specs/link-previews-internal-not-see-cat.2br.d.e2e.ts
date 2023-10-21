@@ -106,7 +106,7 @@ describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
   it(`... a broken! link preview appears, in the new topic preview`, async () => {
     const sel = utils.makePreviewBrokenSelector('InternalLink', {
             url: owensStaffPageUrl,
-            errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN' });
+            errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN_' });
     await maria_brB.preview.waitForExist(sel, { where: 'InEditor' });
   });
 
@@ -119,7 +119,7 @@ describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
   it(`... a 2nd link preview appears — it's Not-Found broken too`, async () => {
     const sel = utils.makePreviewBrokenSelector('InternalLink', {
             url: owensReplyUrl(),
-            errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN' });
+            errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN_' });
     await maria_brB.preview.waitForExist(sel, { where: 'InEditor' });
   });
 
@@ -139,12 +139,12 @@ describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
   it(`... with the correct urls and invisible error codes`, async () => {
     let sel = utils.makePreviewBrokenSelector('InternalLink', {
             url: owensStaffPageUrl,
-            errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN' });
+            errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN_' });
     await maria_brB.topic.waitForExistsInPost(c.BodyNr, sel, { howMany: 1 });
 
     sel = utils.makePreviewBrokenSelector('InternalLink', {
             url: owensReplyUrl(),
-            errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN' });
+            errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN_' });
     await maria_brB.topic.waitForExistsInPost(c.BodyNr, sel, { howMany: 1 });
   });
 
@@ -204,7 +204,7 @@ describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
 
   it(`... because the page is again for staff only`, async () => {
     const sel = utils.makePreviewBrokenSelector('InternalLink', {
-            errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN' });
+            errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN_' });
     await maria_brB.topic.waitForExistsInPost(c.BodyNr, sel, { howMany: 2 });
   });
 
@@ -225,6 +225,6 @@ describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
     await maria_brB.assertNotFoundError({ whyNot: 'MayNotSeeCat' });
   });
 
-  // TESTS_MISSING  Link to access-denied *sub category*.  TyTE2ELNSUBCAT
+  // TESTS_MISSING  Link to access-denied *sub category*.  TyTE2ELNSUBCAT !
 });
 

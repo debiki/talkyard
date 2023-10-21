@@ -430,7 +430,7 @@ trait AuthzSiteDaoMixin {
     val seePageResult = maySeePageImpl(pageMeta, ppt, anyTx,
           maySeeUnlisted = maySeeUnlistedPages)
     if (!seePageResult.maySee)
-      return (MaySeeOrWhyNot.NopeUnspecified, s"${seePageResult.debugCode}-ABX94WN")
+      return (MaySeeOrWhyNot.NopeUnspecified, s"${seePageResult.debugCode}-ABX94WN_")
 
     maySeePostIfMaySeePage(ppt, post)
   }

@@ -20,7 +20,7 @@ package talkyard.server.linkpreviews.engines
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{Globals, TextAndHtml, JsonMaker}
-import debiki.dao.PageStuffDao
+import debiki.dao.{PageStuff, PageStuffDao}
 import talkyard.server.linkpreviews._
 import talkyard.server.authz.MaySeeOrWhyNot.{YesMaySee, NopeNoSuchPage}
 import org.scalactic.{Bad, Good, Or}
@@ -283,11 +283,13 @@ class InternalLinkPrevwRendrEng(globals: Globals, site: SiteIdHostnames)
     // If the link is broken, let's use the link url as the visible text — that's
     // a [good enough hint for the person looking at the edits preview] that
     // the link doesn't work? (when a linked page preview won't appear)
-    var unsafeTitle = unsafeUrl
+    var unsafeTitle = ""
     var unsafeExcerpt = ""
+    var anyCatFound: Opt[Bo] = None
     var pageFound = false
     var postFound = false
     var postNr = NoPostNr
+    var maySeeAnyCat: Opt[Bo] = None
     var maySeePage = false
     var maySeePost = false
     var mayNotSeeDbgCode = ""
@@ -323,51 +325,97 @@ class InternalLinkPrevwRendrEng(globals: Globals, site: SiteIdHostnames)
           case None =>
             // Suddenly gone? Fine, we're not in a db tx.
             pageFound = false
-          case Some(pageStuff) =>
-            // Linked post title.
-            unsafeTitle = pageStuff.title
-            val anyLinkedReply =
-                  if (postPath.postNr == BodyNr) {
-                    // Linking to the page — which we've found already: `pageStuff`.
-                    postFound = true
-                    None
+          case Some(pageStuff: PageStuff) =>
+            // Is it a forum page, and the URL path is to a category?
+            if (pageStuff.pageType == PageType.Forum) {
+                val sortCatSlug = unsafeUrlPath.drop(postPath.value.length)
+                // Later: Break out cat sort order name constants.  [5AQXJ2]
+                val orderSlashs = Vec("latest/", "active/", "new/", "top/", "unread/")
+                val catSlug = {
+                  orderSlashs.find(o => sortCatSlug.startsWith(o)) match {
+                    case None =>
+                      // No category slug, just: '/path/to/forum/[latest|top|...]'
+                      ""
+                    case Some(orderSlash) =>
+                      sortCatSlug.drop(orderSlash.length)
                   }
-                  else {
-                    unsafeTitle += s" #post-${postPath.postNr}"
-                    // Linking to a reply.
-                    COULD_OPTIMIZE // makes any sense to cache this?
-                    val anyPost = dao.loadPostByPageIdNr(
-                          pageId = postPath.pageId, postNr = postPath.postNr)
-                    postFound = anyPost.isDefined
-                    anyPost
+                }
+                sortCatSlug.drop("latest/".length)
+                // Is the link to a category, or to the forum index page itself?
+                if (catSlug.isEmpty) {
+                  // The link is to the forum index page itself. Continue in
+                  // _use_the_linked_post below.
+                }
+                else {
+                  // The link is to a category. Show the cat title and description.
+                  dao.getCategoryBySlug(catSlug) match {
+                    case None =>
+                      anyCatFound = Some(false)
+                    case Some(cat) =>
+                      val maySeeCat = dao.maySeeCat(cat, inclDeleted = false,
+                            dao.getForumPublicAuthzContext())   // [ln_pv_az]
+                      if (maySeeCat) {
+                        unsafeTitle = cat.name
+                        unsafeExcerpt = cat.description getOrElse ""
+                        maySeeAnyCat = Some(true)
+                      }
+                      else {
+                        maySeeAnyCat = Some(false)
+                      }
                   }
-
-            // Orig post or reply excerpt.
-            if (anyLinkedReply.isDefined) {
-              val replyPost = anyLinkedReply.get
-              replyPost.approvedHtmlSanitized foreach { html =>
-                // This also for orig posts, see: [post_excerpts].
-                val excerptAndImgs = JsonMaker.htmlToExcerpt(html,
-                      length = PageStuffDao.StartLength, firstParagraphOnly = false)
-                unsafeExcerpt = excerptAndImgs.text
-              }
-              // Else, if not yet approved?
-              // Then, for now, show only page title? So, leave unsafeExcerpt empty.
+                }
             }
-            else {
-              unsafeExcerpt = pageStuff.bodyExcerpt.getOrElse("").trim
+
+            if (pageFound && anyCatFound.isNot(false) && maySeeAnyCat.isNot(false) &&
+                  unsafeTitle.isEmpty) {
+              // The link is not to a category, but to a post; _use_the_linked_post title:
+              unsafeTitle = pageStuff.title
+              val anyLinkedReply =
+                    if (postPath.postNr == BodyNr) {
+                      // Linking to the page — which we've found already: `pageStuff`.
+                      postFound = true
+                      None
+                    }
+                    else {
+                      unsafeTitle += s" #post-${postPath.postNr}"
+                      // Linking to a reply.
+                      COULD_OPTIMIZE // makes any sense to cache this?
+                      val anyPost = dao.loadPostByPageIdNr(
+                            pageId = postPath.pageId, postNr = postPath.postNr)
+                      postFound = anyPost.isDefined
+                      anyPost
+                    }
+
+              // Orig post or reply excerpt.
+              if (anyLinkedReply.isDefined) {
+                val replyPost = anyLinkedReply.get
+                replyPost.approvedHtmlSanitized foreach { html =>
+                  // This also for orig posts, see: [post_excerpts].
+                  val excerptAndImgs = JsonMaker.htmlToExcerpt(html,
+                        length = PageStuffDao.StartLength, firstParagraphOnly = false)
+                  unsafeExcerpt = excerptAndImgs.text
+                }
+                // Else, if not yet approved?
+                // Then, for now, show only page title? So, leave unsafeExcerpt empty.
+              }
+              else {
+                unsafeExcerpt = pageStuff.bodyExcerpt.getOrElse("").trim
+              }
             }
         }
     }
 
-    if (!pageFound || !postFound || !maySeePage || !maySeePost) {
+    if (maySeeAnyCat.isNot(true) && (
+          !pageFound || !postFound || !maySeePage || !maySeePost)) {
       var errCode = "TyMLNPG404"
       val errMsg =
             if (!pageFound || !maySeePage) "Not found:"   // I18N
             else s"Post $postNr not found:"
 
       if (Globals.isDevOrTest) {
-        if (!pageFound) errCode += "-PG404"
+        if (anyCatFound is false) errCode += "-CAT404"
+        else if (maySeeAnyCat is false) errCode += "-M0SEECAT"
+        else if (!pageFound) errCode += "-PG404"
         else {
           // Could be may-not-see *page* combined with *post* not found.
           if (!maySeePage) errCode += "-M0SEEPG"
@@ -385,6 +433,9 @@ class InternalLinkPrevwRendrEng(globals: Globals, site: SiteIdHostnames)
             errorCode = errCode,
             isInternalLinkNotFoundOrMayNotSee = true))
     }
+
+    if (unsafeTitle.isEmpty)
+      unsafeTitle = unsafeUrl
 
     val safeUrlAttr = TextAndHtml.safeEncodeForHtmlAttrOnly(unsafeUrl)
     val safeTitleCont = TextAndHtml.safeEncodeForHtmlContentOnly(unsafeTitle)
