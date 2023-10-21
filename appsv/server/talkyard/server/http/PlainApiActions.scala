@@ -105,6 +105,7 @@ class PlainApiActions(
         avoidCookies: Boolean = false,
         isLogin: Boolean = false,
         superAdminOnly: Boolean = false,
+        superBotOnly: Bo = false,
         viaApiSecretOnly: Boolean = false,
         skipXsrfCheck: Bo = false): ActionBuilder[ApiRequest, B] =
       new ActionBuilder[ApiRequest, B] {
@@ -115,7 +116,8 @@ class PlainApiActions(
     override protected def executionContext: ExecutionContext =
       globals.executionContext
 
-    def numOnly: Int = adminOnly.toZeroOne + superAdminOnly.toZeroOne + staffOnly.toZeroOne
+    def numOnly: i32 = adminOnly.toZeroOne + superAdminOnly.toZeroOne
+                        + superBotOnly.toZeroOne + staffOnly.toZeroOne
     require(numOnly <= 1, "EsE4KYF02")
     require(!allowAnyone || numOnly == 0, "EsE8KU24K")
 
@@ -615,6 +617,9 @@ class PlainApiActions(
         // generally don't work in iframes), so we're getting only session parts 1+2(+3) via
         // javascript and custom HTTP headers).
         dieUnless(anyTySession.exists(_.part4Absent), "TyE70MWEG25SM")
+      }
+
+      if (superBotOnly) {
       }
 
       if (superAdminOnly) {
