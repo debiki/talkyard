@@ -91,12 +91,14 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
 
   def apiV0_createSite: Action[JsValue] = PostJsonAction(RateLimits.CreateSite, maxBytes = 500) {
         req =>
+    // But can't any site w their per-site sysbot secret call this?  [2_super_sysbot]
     createSiteImpl(req, isPubApi = true)
   }
 
 
   def createSite: Action[JsValue] = PostJsonAction(RateLimits.CreateSite, maxBytes = 500) {
         request =>
+    // But can't any site w their per-site sysbot secret call this?  [2_super_sysbot]
     createSiteImpl(request, isPubApi = false)
   }
 

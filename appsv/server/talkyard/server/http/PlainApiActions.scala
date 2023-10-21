@@ -293,12 +293,18 @@ class PlainApiActions(
       val (username, colonPassword) = usernameColonPassword.span(_ != ':')
       val secretKey = colonPassword.drop(1)
 
+      REFACTOR // Move these checks to inside the handler functions instead?
+      // Break out a checkServerApiSecret helper fn?  Or add a "ServerSecretAction"
+      // or "SuperBotAction" handler?
       // Could make username configurable in Play Fmw config, and on the API secrets
+      // There was a Sysbot-can-call-this bug,  [2_super_sysbot].
       HACK // 1/3: Hardcoding the email webhooks endpoint below (dupl path).
-      if (username == "emailwebhooks") {
+      val emailWebhooksPath = "/-/handle-email"
+      if (username == "emailwebhooks" || request.path == emailWebhooksPath) {
         throwForbiddenIf(globals.config.emailWebhooksApiSecret.isNot(secretKey),
-              "TyE60MREH35", "Wrong handle-email API secret")
-        throwForbiddenIf(request.path != "/-/handle-email", "TyE406MSE35", "Wrong path")
+              "TyEEMLWBHSECR_", "Wrong handle-email API secret")
+        throwForbiddenIf(request.path != emailWebhooksPath, "TyE406MSE35_",
+              s"Wrong URL path, is: ${request.path}, should be: $emailWebhooksPath")
 
         val sysbot = dao.getTheUser(SysbotUserId)
         return runBlockIfAuthOk(request, site, dao, Some(sysbot),
@@ -307,12 +313,12 @@ class PlainApiActions(
               XsrfOk("_email_webhook_"), None, block)
       }
       HACK // 2/3: Hardcoding the create site API endpoint (dupl path).
-      if (username == "createsite") {
+      val createSitePath = "/-/v0/create-site"
+      if (username == "createsite" || request.path == createSitePath) {
         throwForbiddenIf(globals.config.createSiteApiSecret.isNot(secretKey),
-              "TyE70MREH36", "Wrong create site API secret")
-        val correctPath = "/-/v0/create-site"
-        throwForbiddenIf(request.path != correctPath, "TyE406MSE36", s"Wrong URL path, is: ${
-              request.path}, should be: $correctPath")
+              "TyECRESITSECR_", "Wrong create site API secret")
+        throwForbiddenIf(request.path != createSitePath, "TyE406MSE36",
+              s"Wrong URL path, is: ${request.path}, should be: $createSitePath")
 
         val sysbot = dao.getTheUser(SysbotUserId)
         return runBlockIfAuthOk(request, site, dao, Some(sysbot),
@@ -321,12 +327,12 @@ class PlainApiActions(
               XsrfOk("_create_site_"), None, block)
       }
       HACK // 3/3: System maintenance API secret.
-      if (username == "sysmaint") {
+      val planMaintPath = "/-/v0/plan-maintenance"
+      if (username == "sysmaint" || request.path == planMaintPath) {
         throwForbiddenIf(globals.config.systemMaintenanceApiSecret.isNot(secretKey),
-              "TyESYSMAINTSECR", "Wrong system maintenance API secret")
-        val correctPath = "/-/v0/plan-maintenance"
-        throwForbiddenIf(request.path != correctPath, "TyE406MSE37", s"Wrong URL path, is: ${
-              request.path}, should be: $correctPath")
+              "TyESYSMAINTSECR_", "Wrong system maintenance API secret")
+        throwForbiddenIf(request.path != planMaintPath, "TyE406MSE37",
+              s"Wrong URL path, is: ${request.path}, should be: $planMaintPath")
 
         val sysbot = dao.getTheUser(SysbotUserId)
         return runBlockIfAuthOk(request, site, dao, Some(sysbot),

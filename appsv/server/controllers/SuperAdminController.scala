@@ -206,7 +206,7 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
           JsonUtils.parseOptInt64OrNullSomeNone(req.body, "maintenanceUntilUnixSecs")
     throwBadRequestIf(maintUntil.exists(v => v.exists(_ <= 0)),
           "TyEMAINTUNTIL", "maintenanceUntilUnixSecs should be > 0")
-
+// But can't any site w their per-site sysbot secret call this?  [2_super_sysbot]
     val maintWordsHtmlUnsafe: Opt[Opt[St]] =
           JsonUtils.parseOptStOrNullSomeNone(req.body, "maintWordsHtml")
     val maintMessageHtmlUnsafe: Opt[Opt[St]] =

@@ -49,6 +49,7 @@ class EmailsInController @Inject()(cc: ControllerComponents, edContext: TyContex
 
     throwForbiddenIf(!request.isViaApiSecret,
           "TyE8F03MSEJ46", "Must call emails-in webhook via API secret")
+    // But can't any site w their per-site sysbot secret call this?  [2_super_sysbot]
 
     val debugResponse = StringBuilder.newBuilder
     def logAndDebug(message: St): U = {

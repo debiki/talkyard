@@ -481,6 +481,8 @@ security:
             - SEC_TEST_MISSING
     is excluded from one's activity list also for oneself:
             - SEC_TEST_MISSING  TyT0SEEOWNPAGE
+  admins can't use sysbot secrets for the wrong things:
+            - site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB.TyTMAINTSECR
 
 deleted users:  [.del_susp_usr]
             - SEC_TEST_MISSING
@@ -540,6 +542,10 @@ emails -
           - summary-emails.2br.mtime  TyTE2E06AJG256
     new members' topics excluded until reviewed by staff:
           - TESTS_MISSING
+  api,
+  emails in: ?  & verify can't run:   if (username == "emailwebhooks")
+    & other special usernames!
+    Add to interview qs.
 
 getting started guide -
   guide present:
@@ -1823,6 +1829,8 @@ maintenance mode:
             - plan-maintenance.2br.d  TyTPLANMAINT01
   Ty becomes read-only:
             - TESTS_MISSING (add to the above?)
+  Sysbot secrets won't work for enabling:
+            - site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB.TyTMAINTSECR
 
 
 limits,
