@@ -184,6 +184,15 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
   }
 
 
+  def listCoworkersAllSites: Action[Unit] = SuperAdminGetAction { apiReq =>
+    _root_.controllers.dieIfAssetsMissingIfDevTest()
+    val siteTpi = SiteTpi(apiReq)
+    CSP_MISSING
+    val pageBody = views.html.adminPage(siteTpi, appId = "theSuperAdminApp").body
+    Ok(pageBody) as HTML
+  }
+
+
   // An API secret in the config file, will have to do, for now.
   // Later, use ApiSecretsController, an ApiSecret of type PlanMaintenance  [api_secr_type]
   def apiV0_planMaintenance: Action[JsValue] = ApiSecretPostJsonAction(

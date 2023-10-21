@@ -243,6 +243,11 @@ class SystemDao(
   }
 
 
+  def listCoworkersAllSites(): ListCoworkersResult = {
+    readOnlyTransaction(_.listCoworkersAllSites())
+  }
+
+
   private def createFirstSite(): Site = {
     val pubId =
           if (globals.isOrWasTest) Site.FirstSiteTestPublicId

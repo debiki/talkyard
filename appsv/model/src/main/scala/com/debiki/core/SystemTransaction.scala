@@ -80,6 +80,7 @@ trait SystemTransaction {  RENAME // to SysTx, started already
   // ----- Staff users
 
   def loadStaffBySiteId(): Map[SiteId, Vector[UserInclDetails]]
+  def listCoworkersAllSites(): ListCoworkersResult
 
 
   // ----- Summary emails, and notifications
