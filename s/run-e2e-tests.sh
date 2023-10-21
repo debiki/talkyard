@@ -569,6 +569,8 @@ function runAllE2eTests {
 
   $r s/wdio-7 --only plan-maintenance.2br.d --cd -i $args
 
+  $r s/wdio-7 --only site-api-secrets-not-global.2br.f --cd -i $args
+
   # ! countdownUndoTimeout  slooow if mod task list is long.
 
 

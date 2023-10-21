@@ -26,6 +26,7 @@ import debiki.JsonUtils._
 import Prelude._
 import debiki.dao.SiteDao
 import talkyard.server.{TyContext, TyController}
+import talkyard.server.security.WhatApiSecret
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents, Result}
@@ -39,22 +40,25 @@ class QueryDoController @Inject()(cc: ControllerComponents, tyContext: TyContext
 
 
   def apiV0_query(): Action[JsValue] = ApiSecretPostJsonAction(  // [PUB_API]
-          RateLimits.ReadsFromDb, maxBytes = 2000) { request: JsonPostRequest =>
-    queryDoImpl(request, queryOnly = true)
+          WhatApiSecret.SiteSecret, RateLimits.ReadsFromDb, maxBytes = 2000,
+          ) { req: JsonPostRequest =>
+    queryDoImpl(req, queryOnly = true)
   }
 
 
   def apiV0_do(): Action[JsValue] = ApiSecretPostJsonAction(  // [PUB_API]
           // For now, may do just a few things. [do_api_limits]
-          RateLimits.UpsertFew, maxBytes = 2000) { request: JsonPostRequest =>
-    queryDoImpl(request, doOnly = true)
+          WhatApiSecret.SiteSecret, RateLimits.UpsertFew, maxBytes = 2000,
+          ) { req: JsonPostRequest =>
+    queryDoImpl(req, doOnly = true)
   }
 
 
   def apiV0_queryDo(): Action[JsValue] = ApiSecretPostJsonAction(  // [PUB_API]
           // Just a few things only. [do_api_limits]
-          RateLimits.UpsertFew, maxBytes = 2000) { request: JsonPostRequest =>
-    queryDoImpl(request)
+          WhatApiSecret.SiteSecret, RateLimits.UpsertFew, maxBytes = 2000) {
+          req: JsonPostRequest =>
+    queryDoImpl(req)
   }
 
 

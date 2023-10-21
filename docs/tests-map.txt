@@ -14,7 +14,7 @@ Webdriver.io writes: (https://webdriver.io/docs/organizingsuites.html)
 
 > In general, try to test a only a single feature per spec file. Try to not have too many or too few tests in one file. (However, there is no golden rule here.)
 
-(ABC123) means see-elsewhere-in-this-file = search for ABC123 in this file.
+_abc123 (and '(ABC123)') means see-elsewhere-in-this-file = search for _abc123 in this file.
 [ABC123] = search all files everywhere
 
 Run all tests in different resolutions? Desktop, laptop, tablet, mobile.
@@ -481,6 +481,8 @@ security:
             - SEC_TEST_MISSING
     is excluded from one's activity list also for oneself:
             - SEC_TEST_MISSING  TyT0SEEOWNPAGE
+  admins can't use sysbot secrets for the wrong things:
+            - site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB
 
 deleted users:  [.del_susp_usr]
             - SEC_TEST_MISSING
@@ -537,9 +539,12 @@ emails -
   add email address, send verification email:
             - user-profile-change-email.test.ts  TyT305MHPJ25
   activity summary emails:
-          - summary-emails.2br.mtime  TyTE2E06AJG256
+            - summary-emails.2br.mtime  TyTE2E06AJG256
     new members' topics excluded until reviewed by staff:
-          - TESTS_MISSING
+            - TESTS_MISSING
+  api,
+  emails in:
+            - site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB.TyTEMLWEBHSECR
 
 getting started guide -
   guide present:
@@ -1680,6 +1685,7 @@ api:
   create site via api: [.create_site_via_api]
             - dir.create-site-via-api.2br  TyTE2ECREASITAPI
             - embcom.create-site-via-api.2br  TyTE2ECREAEMBSITAPI
+            - site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB.TyTCREASITSECR
   enable API:
             - embedded-comments-create-site-import-disqus.2br.test.ts  TyT5KFG0P75.TyTENAAPI
             - dir.create-site-imp-json.2br  TyTEIMPJSON01.TyTENAAPI
@@ -1830,6 +1836,8 @@ maintenance mode:
             - plan-maintenance.2br.d  TyTPLANMAINT01
   Ty becomes read-only:
             - TESTS_MISSING (add to the above?)
+  Sysbot secrets won't work for enabling:
+            - site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB.TyTMAINTSECR
 
 
 limits,

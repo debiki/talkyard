@@ -26,6 +26,7 @@ import debiki.RateLimits
 import debiki.dao.SiteDao
 import debiki.Globals.isDevOrTest
 import talkyard.server.{TyContext, TyController}
+import talkyard.server.security.WhatApiSecret.ServerSecretFor
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
@@ -43,11 +44,11 @@ class EmailsInController @Inject()(cc: ControllerComponents, edContext: TyContex
   // '(?s)' makes '.' match newlines too.
   private val EmailIdRegex = """(?s).*Ty_email_id=([a-zA-Z0-9_]+-[a-zA-Z0-9_]+).*""".r
 
-  def handleIncomingEmail(debug: Bo): Action[JsValue] =
-        PostJsonAction(RateLimits.PostReply,
-            maxBytes = 200*1000, allowAnyone = true) { request =>
+  def handleIncomingEmail(debug: Bo): Action[JsValue] = ApiSecretPostJsonAction(
+          ServerSecretFor("emailwebhooks"), RateLimits.PostReply, maxBytes = 200*1000,
+          ) { request =>
 
-    throwForbiddenIf(!request.isViaApiSecret,
+    dieIf(!request.isViaApiSecret,
           "TyE8F03MSEJ46", "Must call emails-in webhook via API secret")
 
     val debugResponse = StringBuilder.newBuilder
