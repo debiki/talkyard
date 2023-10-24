@@ -20,7 +20,7 @@ object ProjectDirectory {
 object Dependencies {
 
   object Play {
-    val json = "com.typesafe.play" %% "play-json" % "2.9.4"
+    val json = "com.typesafe.play" %% "play-json" % "2.10.2"
 
     // Play Framework 2.8.20 tries to use 1.5.1 but we want 1.5.2 because it uses
     // scala-xml v2.1.0, which avoids errors when using sbt 1.4+.
