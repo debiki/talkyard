@@ -24,6 +24,7 @@ import debiki.EdHttp._
 import debiki.JsonUtils._
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.http.JsonPostRequest
+import talkyard.server.security.WhatApiSecret.ServerSecretFor
 import debiki.dao.SASiteStuff
 import javax.inject.Inject
 import play.{api => p}
@@ -196,7 +197,8 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
   // An API secret in the config file, will have to do, for now.
   // Later, use ApiSecretsController, an ApiSecret of type PlanMaintenance  [api_secr_type]
   def apiV0_planMaintenance: Action[JsValue] = ApiSecretPostJsonAction(
-          RateLimits.AdminWritesToDb, maxBytes = 2000) { req: JsonPostRequest =>
+          ServerSecretFor("sysmaint"), RateLimits.AdminWritesToDb, maxBytes = 2000,
+          ) { req: JsonPostRequest =>
     apiV0_planMaintenance_impl(req)
   }
 

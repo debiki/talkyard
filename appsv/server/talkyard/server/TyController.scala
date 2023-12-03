@@ -5,6 +5,7 @@ import com.debiki.core._
 import debiki.RateLimits.NoRateLimits
 import debiki.{RateLimits, TextAndHtmlMaker}
 import talkyard.server.http._
+import talkyard.server.security.WhatApiSecret
 import play.api._
 import play.api.libs.Files.TemporaryFile
 import play.api.libs.json.JsValue
@@ -86,8 +87,9 @@ class TyController(cc: ControllerComponents, val context: TyContext)
   def AdminGetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiActionAdminOnly(NoRateLimits, cc.parsers.empty)(f)
 
-  def ApiSecretGetJsonAction(rateLimits: RateLimits)(f: GetRequest => Result): Action[Unit] =
-    PlainApiActionApiSecretOnly(rateLimits, cc.parsers.empty)(f)
+  def ApiSecretGetJsonAction(whatSecret: WhatApiSecret, rateLimits: RateLimits)(
+          f: GetRequest => Result): Action[Unit] =
+    PlainApiActionApiSecretOnly(whatSecret, rateLimits, cc.parsers.empty)(f)
 
   def SuperAdminGetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiActionSuperAdminOnly(cc.parsers.empty)(f)
@@ -158,10 +160,11 @@ class TyController(cc: ControllerComponents, val context: TyContext)
     PlainApiActionAdminOnly(
       rateLimits, cc.parsers.json(maxLength = maxBytes))(f)
 
-  def ApiSecretPostJsonAction(rateLimits: RateLimits, maxBytes: Int)(
+  def ApiSecretPostJsonAction(whatSecret: WhatApiSecret, rateLimits: RateLimits, maxBytes: i32,
+        allowAnyone: Bo = false)(
         f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiActionApiSecretOnly(
-      rateLimits, cc.parsers.json(maxLength = maxBytes))(f)
+          whatSecret, rateLimits, cc.parsers.json(maxLength = maxBytes))(f)
 
   def SuperAdminPostJsonAction(maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiActionSuperAdminOnly(

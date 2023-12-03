@@ -645,9 +645,11 @@ async function sendIncomingEmailWebhook(ps: { to: St, toAddrHasNeeded?: Bo,
         hintIfErr:
           `You need this in conf/my.conf:\n\n` +
           'talkyard.emailWebhooksApiSecret="publicEmailWebhooksApiTestSecret"' });
-  const respJson = fail ? resp.bodyText : resp.bodyJson();
-  logServerResponse(respJson);
-  return respJson;
+  // Always sends back text (the callers don't care anyway, they don't know what
+  // Talkyard is or does; they just send webhooks.)
+  const respTxt = resp.bodyText;
+  logServerResponse(respTxt);
+  return respTxt;
 }
 
 

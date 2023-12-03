@@ -76,9 +76,11 @@ class PlainApiActions(
         : ActionBuilder[ApiRequest, B] =
     PlainApiActionImpl(parser, rateLimits, adminOnly = true)
 
-  def PlainApiActionApiSecretOnly[B](rateLimits: RateLimits, parser: BodyParser[B])
+  def PlainApiActionApiSecretOnly[B](whatSecret: WhatApiSecret, rateLimits: RateLimits,
+        parser: BodyParser[B])
         : ActionBuilder[ApiRequest, B] =
-    PlainApiActionImpl(parser, rateLimits, MinAuthnStrength.ApiSecret, viaApiSecretOnly = true)
+    PlainApiActionImpl(parser, rateLimits, MinAuthnStrength.ApiSecret,
+          viaApiSecretOnly = Some(whatSecret))
 
   def PlainApiActionSuperAdminOnly[B](parser: BodyParser[B])
         : ActionBuilder[ApiRequest, B] =
@@ -105,8 +107,9 @@ class PlainApiActions(
         avoidCookies: Boolean = false,
         isLogin: Boolean = false,
         superAdminOnly: Boolean = false,
-        superBotOnly: Bo = false,
-        viaApiSecretOnly: Boolean = false,
+        superBotOnly: Bo = false,  // RM, instead?:
+        //isSuperBotServerSecret: Bo = false,  //? ?
+        viaApiSecretOnly: Opt[WhatApiSecret] = None,
         skipXsrfCheck: Bo = false): ActionBuilder[ApiRequest, B] =
       new ActionBuilder[ApiRequest, B] {
 
@@ -252,11 +255,15 @@ class PlainApiActions(
           request.headers.get("Authorization") match {
             case Some(authHeaderValue) =>
               invokeBlockAuthViaApiSecret(
-                    request, site, siteDao, siteSettings, authHeaderValue, block)
+                    viaApiSecretOnly, request, site, siteDao, siteSettings,
+                    authHeaderValue, block)
 
             case None =>
-              throwForbiddenIf(viaApiSecretOnly,
-                    "TyE0APIRQ", s"You may invoke ${request.path} only via the API")
+              throwForbiddenIf(viaApiSecretOnly.isDefined,
+                    "TyE0APIRQ", o"""You may invoke ${request.path} only via the API
+                    — you need to include a HTTP Authorization header with a
+                    Basic Auth username and API secret.""")
+
               dieIf(corsInfo.isCrossOrigin && corsInfo.hasCorsCreds &&
                     !siteSettings.allowCorsCreds, "TyE603RKDJL5")
 
@@ -278,9 +285,11 @@ class PlainApiActions(
     }
 
 
-    private def invokeBlockAuthViaApiSecret[A](request: Request[A], site: SiteBrief,
+    private def invokeBlockAuthViaApiSecret[A](
+          whatSecret: Opt[WhatApiSecret], request: Request[A], site: SiteBrief,
           dao: SiteDao, settings: AllSettings,
-          authHeaderValue: String, block: ApiRequest[A] => Future[Result]): Future[Result] = {
+          authHeaderValue: String, block: ApiRequest[A] => Future[Result],
+          ): Future[Result] = {
       val usernamePasswordBase64Encoded = authHeaderValue.replaceFirst("Basic ", "")
       val decodedBytes: Array[Byte] =
             try acb.Base64.decodeBase64(usernamePasswordBase64Encoded)
@@ -293,6 +302,51 @@ class PlainApiActions(
       val (username, colonPassword) = usernameColonPassword.span(_ != ':')
       val secretKey = colonPassword.drop(1)
 
+      if (whatSecret.isEmpty) {
+        // Seems this request.path can be invoked both with or without an API secret.
+        // We'll continue below with checking if the API secret is valid and
+        // what user it's for (looking only at users in this site).
+        // Thereafter, normal authorization control follows (for that user).
+      }
+      else whatSecret.get match {
+        case WhatApiSecret.SiteSecret =>
+          // We'll look up the secret and related user (for this site), below.
+        case WhatApiSecret.ServerSecretFor(correctUsername) =>
+          throwForbiddenIf(username != correctUsername, "TyEBASAUN_UN_",
+                o"""Wrong Basic Auth username: '$username'.
+                    This endpoint is for: '$correctUsername'""")
+          // This request.path is only allowed for a specific username and
+          // *server* secret (not any per site secret or user).
+          // Later, maybe there will be some way to look up in OS env,
+          // or some external secrets service. But for now, just the config file:
+          val anyCorrectSecret: Opt[St] = username match {
+            case "emailwebhooks" => globals.config.emailWebhooksApiSecret
+            case "createsite" => globals.config.createSiteApiSecret
+            case "sysmaint" => globals.config.systemMaintenanceApiSecret
+            case x =>
+              // Talkyard being open source, these usernames are public.
+              die("TyEBASAUN_UNKU", s"Unknown Basic Auth username: '$x'")
+          }
+          /* Maybe better not reveal if a secret has been configured or not? So skip:
+          anyCorrectSecret getOrElse throwForbidden(
+                "TyEBASICAUHT00C", o"""Not allowed: No server API secret configured
+                for username '$basicAuthUsername'""")  */
+
+          throwForbiddenIf(anyCorrectSecret isNot secretKey,
+                "TyEBASAUN_SECR_", s"Wrong API secret specified for Basic Auth user '${
+                    username}'  or  no secret has been configured")
+
+          COULD // use a different user id for superbot?  It's not the same as sysbot.
+          // Maybe id  -1 could be superadmin  and  -2  could be
+          // superbot?  They aren't really a user in any site, so ids < 0 make sense?
+          val sysbot = dao.getTheUser(SysbotUserId)
+          return runBlockIfAuthOk(request, site, dao, Some(sysbot),
+                Some(TySession.singleApiCallSession(asPatId = SysbotUserId)),
+                SidOk(TySession.ApiSecretPart12, 0, Some(SysbotUserId)),
+                XsrfOk(s"_${username}_"), None, block)
+      }
+
+      /*
       REFACTOR // Move these checks to inside the handler functions instead?
       // Break out a checkServerApiSecret helper fn?  Or add a "ServerSecretAction"
       // or "SuperBotAction" handler?
@@ -339,7 +393,7 @@ class PlainApiActions(
               Some(TySession.singleApiCallSession(asPatId = SysbotUserId)),
               SidOk(TySession.ApiSecretPart12, 0, Some(SysbotUserId)),
               XsrfOk("_sys_maint_"), None, block)
-      }
+      } */
 
       DO_AFTER // 2021-08-01 enable this always. Test in dev-test first, for now.
       throwForbiddenIf(Globals.isDevOrTest && !dao.getWholeSiteSettings().enableApi,
@@ -625,7 +679,7 @@ class PlainApiActions(
         dieUnless(anyTySession.exists(_.part4Absent), "TyE70MWEG25SM")
       }
 
-      if (superBotOnly) {
+      if (superBotOnly) {  // RM
       }
 
       if (superAdminOnly) {
@@ -689,7 +743,11 @@ class PlainApiActions(
                 "TyE0APPRVD1", "Your user account has not yet been approved")
       }
 
-      if (!allowAnyone && !isLogin) {
+      if (viaApiSecretOnly.isDefined) {
+        // Then, skip per site must-have-been-authenticated checks. This request
+        // isn't about a specific site but the server in general
+      }
+      else if (!allowAnyone && !isLogin) {
         // ViewPageController has allow-anyone = true.
         val isXhr = isAjax(request)
         val isInternalApi = isXhr  // TODO

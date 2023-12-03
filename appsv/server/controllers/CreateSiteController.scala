@@ -24,6 +24,7 @@ import debiki.EdHttp._
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.api
 import talkyard.server.http._
+import talkyard.server.security.WhatApiSecret.ServerSecretFor
 import javax.inject.Inject
 import org.owasp.encoder.Encode
 import play.api.libs.json._
@@ -89,16 +90,14 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
   }
 
 
-  def apiV0_createSite: Action[JsValue] = PostJsonAction(RateLimits.CreateSite, maxBytes = 500) {
-        req =>
-    // But can't any site w their per-site sysbot secret call this?  [2_super_sysbot]
+  def apiV0_createSite: Action[JsValue] = ApiSecretPostJsonAction(
+        ServerSecretFor("createsite"), RateLimits.CreateSite, maxBytes = 500) { req =>
     createSiteImpl(req, isPubApi = true)
   }
 
 
   def createSite: Action[JsValue] = PostJsonAction(RateLimits.CreateSite, maxBytes = 500) {
         request =>
-    // But can't any site w their per-site sysbot secret call this?  [2_super_sysbot]
     createSiteImpl(request, isPubApi = false)
   }
 

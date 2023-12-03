@@ -146,8 +146,11 @@ describe(`site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB`, () => {
     logBoring(`server.apiV0.planMaintenance() says: ` + maintRespText);
   });
 
-  it(`... the server sent back error code TyESYSMAINTSECR_`, async () => {
-    assert.includes(maintRespText, 'TyESYSMAINTSECR_');  // fok
+  it(`... the server sent back error code TyEBASAUN_UN_`, async () => {
+    assert.includes(maintRespText, 'TyEBASAUN_UN_');
+  });
+  it(`... and says that this endpoint is for user 'sysmaint'`, async () => {
+    assert.includes(maintRespText, `'sysmaint'`);
   });
 
 
@@ -165,8 +168,29 @@ describe(`site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB`, () => {
     logBoring(`server.apiV0.planMaintenance() says: ` + maintRespText);
   });
 
-  it(`... the server sent back a *different* error code, TyE406MSE35_`, async () => {
-    assert.includes(maintRespText, 'TyE406MSE35_');
+  it(`... the server sent back error code TyEBASAUN_UN_, this time too`, async () => {
+    assert.includes(maintRespText, 'TyEBASAUN_UN_');
+  });
+  it(`... and again says that this endpoint is for user 'sysmaint'`, async () => {
+    assert.includes(maintRespText, `'sysmaint'`);
+  });
+
+
+  it(`Mallory tries again, using 'sysmaint' but the wrong API secret`,
+          async () => {
+    maintRespText = await server.apiV0.planMaintenance({ origin: site.origin,
+        basicAuthUsername: 'sysmaint',
+        apiSecret: 'wrong-secret',
+        fail: true,
+        data: {
+            maintenanceUntilUnixSecs: 1,
+            maintWordsHtml: `Maint_mode_BAD_EDITED`,
+            maintMessageHtml: `<h1>Maint_mode_BAD_EDITED</h1>` }});
+    logBoring(`server.apiV0.planMaintenance() says: ` + maintRespText);
+  });
+
+  it(`... the server sent back error code TyEBASAUN_SECR_`, async () => {
+    assert.includes(maintRespText, 'TyEBASAUN_SECR_');
   });
 
 
@@ -230,8 +254,8 @@ describe(`site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB`, () => {
         wrongApiSecret: true });
   });
 
-  it(`... the server sent back error code TyECRESITSECR_`, async () => {
-    assert.includes(createSiteResp, 'TyECRESITSECR_');
+  it(`... the server sent back error code TyEBASAUN_UN_`, async () => {
+    assert.includes(createSiteResp, 'TyEBASAUN_UN_');
   })
 
 
@@ -248,8 +272,8 @@ describe(`site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB`, () => {
         wrongApiSecret: true });
   });
 
-  it(`... the server sent back error code TyECRESITSECR_`, async () => {
-    assert.includes(emailWebhookResp, 'TyEEMLWBHSECR_');
+  it(`... the server sent back error code TyEBASAUN_UN_`, async () => {
+    assert.includes(emailWebhookResp, 'TyEBASAUN_UN_');
   })
 
   it(`Someone who only toggles on maintenance, can't call /-/handle-email`, async () => {
@@ -260,8 +284,8 @@ describe(`site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB`, () => {
         wrongApiSecret: true });
   });
 
-  it(`... the server sent back error code TyECRESITSECR_ now too`, async () => {
-    assert.includes(emailWebhookResp, 'TyEEMLWBHSECR_');
+  it(`... the server sent back error code TyEBASAUN_UN_ now too`, async () => {
+    assert.includes(emailWebhookResp, 'TyEBASAUN_UN_');
   })
 
 
