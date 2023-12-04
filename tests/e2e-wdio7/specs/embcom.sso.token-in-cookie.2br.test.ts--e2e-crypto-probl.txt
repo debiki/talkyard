@@ -1,3 +1,11 @@
+Update 2023-12: This has now been fixed — using a Rust lib, Pasetors, instead,
+which supports v2.local.  (The Nodejs test suite calls out to a Rust-built binary,
+the one in <repo-root>/modules/paseto-cmd/.)
+
+But let's keep the below info (this file), in case we'd like to switch to js later,
+maybe to avoid the Rust build step.
+----------------------------------------------------------------------------------
+
 E2e tests for blog commets SSO are broken. Need to switch to another PASETO token lib.
 
 This js lib doesn't use the below-mentioned now-removed fn, and supports Paseto v3:
