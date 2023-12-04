@@ -2,6 +2,7 @@
 
 import * as _ from 'lodash';
 import assert = require('../utils/ty-assert');
+import { execSync} from 'child_process';
 import fs = require('fs');
 import server = require('../utils/server');
 import u = require('../utils/utils');
@@ -12,7 +13,7 @@ import lad = require('../utils/log-and-die');
 import c = require('../test-constants');
 
 // Crypto problem? See:  ./embcom.sso.token-in-cookie.2br.test.ts--e2e-crypto-probl.txt
-import * as Paseto from 'paseto.js';
+//import * as Paseto from 'paseto.js';
 
 
 // Dupl code  [embcom_sso_e2e_dupl]
@@ -142,30 +143,38 @@ describe(`embcom.sso.token-in-cookie.2br.test.ts  TyTE2EEMBSSO2`, () => {
   });
 
 
-  let sharedSecretKeyBytes;
+  //let sharedSecretKeyBytes;
 
 
   let selinasToken: St | U;
 
+  /*
   it(`An external server converts the symmetric secret to bytes`, () => {
     const pasetoV2LocalSecretNoHexPrefix = pasetoV2LocalSecret.replace(/^hex:/, '');
     sharedSecretKeyBytes = Buffer.from(
             pasetoV2LocalSecretNoHexPrefix, 'hex');
             // 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef', 'hex');
-  });
+  }); */
 
   it(`The external server generates a login token for Selina`, async () => {
     // Dupl code [.e2e_encr_paseto]
+    const pasetoV2LocalSecretNoHexPrefix = pasetoV2LocalSecret.replace(/^hex:/, '');
     const messageAsSt = JSON.stringify(selinaAutnhMsg);
-    const sharedSecretKey  = new Paseto.SymmetricKey(new Paseto.V2());
-    selinasToken = await sharedSecretKey.inject(sharedSecretKeyBytes).then(() => {
+    console.log('PWDDD: ' + execSync('pwd'));
+    const cmd = '../../modules/paseto-cmd/target/debug/paseto-cmd ' +
+                  `'${pasetoV2LocalSecretNoHexPrefix}' ` +
+                  `'${messageAsSt}'`;
+    selinasToken = 'paseto:' + execSync(cmd, { encoding: 'utf8' }).trim();
+    console.log(`Generated PASETO token for Selina, using Rust:  ${selinasToken}`);
+    const sharedSecretKey  = '???'; //new Paseto.SymmetricKey(new Paseto.V2());
+    /*selinasToken = 'paseto:???'; /*await sharedSecretKey.inject(sharedSecretKeyBytes).then(() => {
       const encoder = sharedSecretKey.protocol();
       return encoder.encrypt(messageAsSt, sharedSecretKey);
     }).then(token => {
       console.log(`Generated PASETO token for Selina:  ${token}`);
       // E.g. "v2.local.kBENRnu2p2.....JKJZB9Lw"
       return 'paseto:' + token;
-    });;
+    }); */
   });
 
 
@@ -175,16 +184,29 @@ describe(`embcom.sso.token-in-cookie.2br.test.ts  TyTE2EEMBSSO2`, () => {
   it(`... a bad login token appears from nowhere (!)`, async () => {
     // Dupl code [.e2e_encr_paseto]
     const messageAsSt = JSON.stringify(selinaAutnhMsg);
+    /*
     const badKeyBytes = Buffer.from(
             'bad00bad00bad00bad00beefdeadbeefdeadbeefdeadbeefdeadbeefbaadbeef', 'hex');
-    const wrongKey  = new Paseto.SymmetricKey(new Paseto.V2());
-    badAuthnToken = await wrongKey.inject(badKeyBytes).then(() => {
+    const wrongKey  = '???' ; // new Paseto.SymmetricKey(new Paseto.V2());
+    badAuthnToken = 'v2.local.hulUS9yqQ4uNfUBB-SvWknM277r0xk5WwjPzpQxikghQ-JQGEPKdf8Uf5GSH76516C5jcYg1dubaE8N6GQOB3O7zcqtgppAO1Az9JLM_vPrjsE1k4YjZzTcdaq6kid8vl50j29w4Pof_piRPco15J-uGBb0rC-B_0qn4KvO3hlSqR7Vo-eAfJ-33yncZyV_l618oEYkY29rDDe4435zaKtuWrhbd7d8Oj3r_g_sXKBJbbIvTj6NeuJIfTvcC8wN-JrRK-LrwA8wQax3SZrmmiAo';
+
+    badAuthnToken = 'paseto:' + execSync('/home/user/styd/paseto-cmd2/target/debug/paseto-cmd ' +
+          'bad00bad00bad00bad00beefdeadbeefdeadbeefdeadbeefdeadbeefbaadbeef' + ' ' +
+          messageAsSt, {
+          encoding: 'utf8' }).trim(); */
+    console.log(execSync('pwd'));
+    const cmd = '../../modules/paseto-cmd/target/debug/paseto-cmd ' +
+                  `'bad00bad00bad00bad00beefdeadbeefdeadbeefdeadbeefdeadbeefbaadbeef' ` +
+                  `'${messageAsSt}'`;
+    badAuthnToken = 'paseto:' + execSync(cmd, { encoding: 'utf8' }).trim();
+    console.log(`Generated bad PASETO token from bad bytes, using Rust:  ${badAuthnToken}`);
+    /* = await wrongKey.inject(badKeyBytes).then(() => {
       const encoder = wrongKey.protocol();
       return encoder.encrypt(messageAsSt, wrongKey);
     }).then(token => {
       console.log(`Generated bad PASETO token:  ${token}`);
       return 'paseto:' + token;
-    });;
+    }); */
   });
 
 
