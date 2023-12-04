@@ -1,18 +1,15 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('../utils/ty-assert');
-import fs = require('fs');
-import server = require('../utils/server');
-import u = require('../utils/utils');
+import assert from '../utils/ty-assert';
+import { execSync} from 'child_process';
+import * as fs from 'fs';
+import server from '../utils/server';
+import * as u from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import lad = require('../utils/log-and-die');
-import c = require('../test-constants');
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import c from '../test-constants';
 
-// Crypto problem? See:  ./embcom.sso.token-in-cookie.2br.test.ts--e2e-crypto-probl.txt
-import * as Paseto from 'paseto.js';
 
 
 // Dupl code  [embcom_sso_e2e_dupl]
@@ -66,9 +63,9 @@ let pasetoV2LocalSecret = '';
 
 
 
-describe(`embcom.sso.token-in-cookie.2br.test.ts  TyTE2EEMBSSO2`, () => {
+describe(`embcom.sso.token-in-cookie.2br.ec.e2e.ts  TyTE2EEMBSSO2`, () => {
 
-  it(`Construct site`, () => {
+  it(`Construct site`, async () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({
       title: "Some E2E Test",
@@ -92,8 +89,8 @@ describe(`embcom.sso.token-in-cookie.2br.test.ts  TyTE2EEMBSSO2`, () => {
       wholeSite: true,
     }];
 
-    brA = new TyE2eTestBrowser(wdioBrowserA);
-    brB = new TyE2eTestBrowser(wdioBrowserB);
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
     owen = forum.members.owen;
     owen_brA = brA;
@@ -106,90 +103,65 @@ describe(`embcom.sso.token-in-cookie.2br.test.ts  TyTE2EEMBSSO2`, () => {
     assert.refEq(builder.getSite(), forum.siteData);
   });
 
-  it(`Import site`, () => {
-    site = server.importSiteData(forum.siteData);
-    server.skipRateLimits(site.id);
+  it(`Import site`, async () => {
+    site = await server.importSiteData(forum.siteData);
+    await server.skipRateLimits(site.id);
   });
 
 
-  it(`Owen logs in to admin area, ... `, () => {
-    owen_brA.adminArea.settings.login.goHere(site.origin, { loginAs: owen });
+  it(`Owen logs in to admin area, ... `, async () => {
+    await owen_brA.adminArea.settings.login.goHere(site.origin, { loginAs: owen });
   });
 
-  it(`... and types an SSO login URL`, () => {
-    owen_brA.scrollToBottom(); // just speeds the test up slightly
-    owen_brA.adminArea.settings.login.typeSsoUrl(ssoUrl);
+  it(`... and types an SSO login URL`, async () => {
+    await owen_brA.scrollToBottom(); // just speeds the test up slightly
+    await owen_brA.adminArea.settings.login.typeSsoUrl(ssoUrl);
   });
 
-  it(`... and enables SSO`, () => {
-    owen_brA.adminArea.settings.login.setEnableSso(true);
+  it(`... and enables SSO`, async () => {
+    await owen_brA.adminArea.settings.login.setEnableSso(true);
   });
 
-  it(`... generates a PASETO v2.local shared secret`, () => {
-    owen_brA.adminArea.settings.login.generatePasetoV2LocalSecret();
+  it(`... generates a PASETO v2.local shared secret`, async () => {
+    await owen_brA.adminArea.settings.login.generatePasetoV2LocalSecret();
   });
 
-  it(`... copies the secret`, () => {
-    pasetoV2LocalSecret = owen_brA.adminArea.settings.login.copyPasetoV2LocalSecret();
+  it(`... copies the secret`, async () => {
+    pasetoV2LocalSecret =
+          await owen_brA.adminArea.settings.login.copyPasetoV2LocalSecret();
   });
 
-  it(`... and saves the new settings`, () => {
-    owen_brA.adminArea.settings.clickSaveAll();
+  it(`... and saves the new settings`, async () => {
+    await owen_brA.adminArea.settings.clickSaveAll();
   });
 
-  it(`There are external SSO login pages`, () => {
+  it(`There are external SSO login pages`, async () => {
     u.createSingleSignOnPagesInHtmlDir();
   });
 
 
-  let sharedSecretKeyBytes;
 
+  // ----- Encrypt tokens
 
+  // E.g. "v2.local.kBENRnu2p2.....JKJZB9Lw"
   let selinasToken: St | U;
 
-  it(`An external server converts the symmetric secret to bytes`, () => {
-    const pasetoV2LocalSecretNoHexPrefix = pasetoV2LocalSecret.replace(/^hex:/, '');
-    sharedSecretKeyBytes = Buffer.from(
-            pasetoV2LocalSecretNoHexPrefix, 'hex');
-            // 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef', 'hex');
-  });
-
   it(`The external server generates a login token for Selina`, async () => {
-    // Dupl code [.e2e_encr_paseto]
-    const messageAsSt = JSON.stringify(selinaAutnhMsg);
-    const sharedSecretKey  = new Paseto.SymmetricKey(new Paseto.V2());
-    selinasToken = await sharedSecretKey.inject(sharedSecretKeyBytes).then(() => {
-      const encoder = sharedSecretKey.protocol();
-      return encoder.encrypt(messageAsSt, sharedSecretKey);
-    }).then(token => {
-      console.log(`Generated PASETO token for Selina:  ${token}`);
-      // E.g. "v2.local.kBENRnu2p2.....JKJZB9Lw"
-      return 'paseto:' + token;
-    });;
+    selinasToken = u.encryptLocalPasetoV2Token(pasetoV2LocalSecret, selinaAutnhMsg);
   });
-
-
 
   let badAuthnToken: St | U;
 
   it(`... a bad login token appears from nowhere (!)`, async () => {
-    // Dupl code [.e2e_encr_paseto]
-    const messageAsSt = JSON.stringify(selinaAutnhMsg);
-    const badKeyBytes = Buffer.from(
-            'bad00bad00bad00bad00beefdeadbeefdeadbeefdeadbeefdeadbeefbaadbeef', 'hex');
-    const wrongKey  = new Paseto.SymmetricKey(new Paseto.V2());
-    badAuthnToken = await wrongKey.inject(badKeyBytes).then(() => {
-      const encoder = wrongKey.protocol();
-      return encoder.encrypt(messageAsSt, wrongKey);
-    }).then(token => {
-      console.log(`Generated bad PASETO token:  ${token}`);
-      return 'paseto:' + token;
-    });;
+    badAuthnToken = u.encryptLocalPasetoV2Token(
+          'bad00bad00bad00bad00beefdeadbeefdeadbeefdeadbeefdeadbeefbaadbeef', selinaAutnhMsg);
   });
 
 
 
-  it(`There's a website with embedding pages`, () => {
+  // ----- Create test website
+
+  it(`There's a website with embedding pages`, async () => {
     const dir = 'target';
     fs.writeFileSync(`${dir}/so-as-selina-cookie.html`,
             makeHtml('aaa', '#050', selinasToken));
@@ -232,102 +204,102 @@ describe(`embcom.sso.token-in-cookie.2br.test.ts  TyTE2EEMBSSO2`, () => {
 
 
 
-  // ----- Good token
+  // ----- SSO, good token
 
-  it(`Selina opens embedding page aaa`, () => {
-    selina_brB.go2(embeddingOrigin + '/so-as-selina-cookie.html');
+  it(`Selina opens embedding page aaa`, async () => {
+    await selina_brB.go2(embeddingOrigin + '/so-as-selina-cookie.html');
   });
-  it(`There's no authn token variable, instead, a cookie  ttt`, () => {
-    const html = selina_brB.getPageSource();
+  it(`There's no authn token variable, instead, a cookie  ttt`, async () => {
+    const html = await selina_brB.getPageSource();
     assertAuthnToken({ html, inCookie: true });
   });
-  it(`... can reply directly, auto logged in via PASETO token *in cookie*`, () => {
-    selina_brB.complex.replyToEmbeddingBlogPost("I logged_in_via_a_PASETO_token cookie");
+  it(`... can reply directly, auto logged in via PASETO token *in cookie*`, async () => {
+    await selina_brB.complex.replyToEmbeddingBlogPost("I logged_in_via_a_PASETO_token cookie");
   });
 
   it(`There's no logout button — not included, when auto logged in via token,
           then, the embedd*ing* page manages login/out
-          by including/excluding a PASETO token   UNIMPL   [hide_authn_btns]`, () => {
-    // assert.not(selina_brB.metabar.isLogoutBtnDisplayed());
+          by including/excluding a PASETO token   UNIMPL   [hide_authn_btns]`, async () => {
+    // assert.not(await selina_brB.metabar.isLogoutBtnDisplayed());
   });
-  it(`... and no login button  (already logged in)`, () => {
-    assert.not(selina_brB.metabar.isLoginButtonDisplayed());
+  it(`... and no login button  (already logged in)`, async () => {
+    assert.not(await selina_brB.metabar.isLoginButtonDisplayed());
   });
 
 
 
   // ----- No token
 
-  it(`Selina goes to a page without any token — not in var, nor in cookie`, () => {
-    selina_brB.go2('/so-no-token-cookie.html');
-    selina_brB.switchToEmbeddedCommentsIrame();
-    selina_brB.metabar.waitForDisplayed();
+  it(`Selina goes to a page without any token — not in var, nor in cookie`, async () => {
+    await selina_brB.go2('/so-no-token-cookie.html');
+    await selina_brB.switchToEmbeddedCommentsIrame();
+    await selina_brB.metabar.waitForDisplayed();
   });
-  it(`... there's no authn token anywhere   ttt`, () => {
-    const html = selina_brB.getPageSource();
+  it(`... there's no authn token anywhere   ttt`, async () => {
+    const html = await selina_brB.getPageSource();
     assertAuthnToken({ html });
   });
   it(`... she's NOT logged in, because auto token sessions are NOT remembered
-        across page reloads`, () => {
+        across page reloads`, async () => {
     // ttt  [.648927]
-    selina_brB.complex.waitForNotLoggedInInEmbeddedCommentsIframe({
+    await selina_brB.complex.waitForNotLoggedInInEmbeddedCommentsIframe({
           willBeLoginBtn: false });  // hmm [.is_or_isnt] [hide_authn_btns]
-    selina_brB.switchToEmbeddedCommentsIrame();
-    assert.not(selina_brB.metabar.isMyUsernameVisible());
+    await selina_brB.switchToEmbeddedCommentsIrame();
+    assert.not(await selina_brB.metabar.isMyUsernameVisible());
   });
-  it(`... there's a Login button`, () => {
-    assert.ok(selina_brB.metabar.isLoginButtonDisplayed());  // hmm [.is_or_isnt]
+  it(`... there's a Login button`, async () => {
+    assert.ok(await selina_brB.metabar.isLoginButtonDisplayed());  // hmm [.is_or_isnt]
   });
-  it(`... no logout button  UNIMPL   [hide_authn_btns]`, () => {
-    //assert.not(selina_brB.metabar.isLogoutBtnDisplayed());
+  it(`... no logout button  UNIMPL   [hide_authn_btns]`, async () => {
+    //assert.not(await selina_brB.metabar.isLogoutBtnDisplayed());
   });
 
 
 
   // ----- Bad token
 
-  it(`Selina goes to a page but The Token is Bad In The Cookie!`, () => {
-    selina_brB.go2(embeddingOrigin + '/so-bad-token-cookie.html');
+  it(`Selina goes to a page but The Token is Bad In The Cookie!`, async () => {
+    await selina_brB.go2(embeddingOrigin + '/so-bad-token-cookie.html');
   });
-  it(`... there's a cookie token   ttt`, () => {
-    const html = selina_brB.getPageSource();
+  it(`... there's a cookie token   ttt`, async () => {
+    const html = await selina_brB.getPageSource();
     assertAuthnToken({ html, inCookie: true });
   });
-  it(`... it's bad; there's a server error dialog`, () => {
-    selina_brB.switchToEmbeddedCommentsIrame();
-    selina_brB.serverErrorDialog.waitAndAssertTextMatches('TyEPASSECEX_');
+  it(`... it's bad; there's a server error dialog`, async () => {
+    await selina_brB.switchToEmbeddedCommentsIrame();
+    await selina_brB.serverErrorDialog.waitAndAssertTextMatches('TyEPASSECEX_');
   });
 
 
   // ----- Token in both var and cookie
 
-  it(`Selina goes to a page ...`, () => {
-    selina_brB.go2(embeddingOrigin + '/so-as-selina-var-and-cookie.html');
+  it(`Selina goes to a page ...`, async () => {
+    await selina_brB.go2(embeddingOrigin + '/so-as-selina-var-and-cookie.html');
   });
-  it(`... with both a cookie token and a var token — they're the same`, () => {
-    const html = selina_brB.getPageSource();
+  it(`... with both a cookie token and a var token — they're the same`, async () => {
+    const html = await selina_brB.getPageSource();
     assertAuthnToken({ html, inCookie: true, inVar: true });
   });
-  it(`... she's logged in, can reply`, () => {
-    selina_brB.switchToEmbeddedCommentsIrame();
-    selina_brB.me.waitUntilLoggedIn();
+  it(`... she's logged in, can reply`, async () => {
+    await selina_brB.switchToEmbeddedCommentsIrame();
+    await selina_brB.me.waitUntilLoggedIn();
   });
-  it(`... can reply`, () => {
-    selina_brB.complex.replyToEmbeddingBlogPost(
+  it(`... can reply`, async () => {
+    await selina_brB.complex.replyToEmbeddingBlogPost(
             "I logged_in_via_a_PASETO_token in both js var, and cookie");
   });
 
 
   // ----- Two different tokens
 
-  it(`Selina goes to a page w both cookie and var token, they're different`, () => {
-    selina_brB.go2(embeddingOrigin + '/so-different-var-cookie-token.html');
-    const html = selina_brB.getPageSource();
+  it(`Selina goes to a page w both cookie and var token, they're different`, async () => {
+    await selina_brB.go2(embeddingOrigin + '/so-different-var-cookie-token.html');
+    const html = await selina_brB.getPageSource();
     assertAuthnToken({ html, inCookie: true, inVar: true });
   });
-  it(`... she does not get logged in — Ty doesn't know which token to use`, () => {
-    selina_brB.switchToEmbeddedCommentsIrame();
-    selina_brB.me.waitUntilKnowsNotLoggedIn();
+  it(`... she does not get logged in — Ty doesn't know which token to use`, async () => {
+    await selina_brB.switchToEmbeddedCommentsIrame();
+    await selina_brB.me.waitUntilKnowsNotLoggedIn();
   });
 
 

@@ -694,10 +694,8 @@ function runAllE2eTests {
   $r s/wdio       --only embcom.comment-counts.2br.cors $args
 
   # Single Sign-On, embedded comments:
-  # Crypto problem! SHOULD fix, TESTS_MISSING [paseto_broken], See:
-  #   ../tests/e2e/specs/embcom.sso.token-in-cookie.2br.test.ts--e2e-crypto-probl.txt
-  #$r s/wdio       --only embcom.sso.token-direct-w-logout-url.2br $args
-  #$r s/wdio       --only embcom.sso.token-in-cookie.2br $args
+  $r s/wdio-7     --only embcom.sso.token-direct-w-logout-url.2br.ec --cd -i $args
+  $r s/wdio-7     --only embcom.sso.token-in-cookie.2br.ec --cd -i $args
 
   # Many comments iframes:
   $r s/wdio-7     --only embcom.manyframes.basic.2br --cd -i $args
