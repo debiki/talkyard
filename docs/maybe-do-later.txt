@@ -748,10 +748,10 @@ Let people combine both custom OIDC IDPs with Ty SSO — that's just
 fine, some time large organization have more than one authn system,
 or they invite external collaborators with other authn systems.
 
-[paseto_broken]
-Now paseto.js has stopped working, so the related e2e tests fail. Switch to another
-PASETO lib. See:
-    ../tests/e2e/specs/embcom.sso.token-in-cookie.2br.test.ts--e2e-crypto-probl.txt
+[paseto_v4_local]
+Start supporting v4.local? But what js and java libs to use? The old js lib stopped working,
+so currently using a small Rust PASETO cmd tool. See:
+    ../tests/e2e-wdio7/specs/embcom.sso.token-in-cookie.2br.test.ts--e2e-crypto-probl.txt
 
 DONE [blog_comments_sso]  emb_sso
 Use PASTEO https://news.ycombinator.com/item?id=17877332

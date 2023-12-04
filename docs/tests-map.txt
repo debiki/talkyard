@@ -250,7 +250,7 @@ single-sign-on:  (3093533)
           - sso-login-required-w-logout-url.2browsers  TyTE2ESSOLGOURL.TyTE2ELGOURL
   logout redir url:
           - sso.logout-url.2br  TyTE2ESSOLGOURL2.TyTSSOLGO002
-          - embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1.TyTSSOLGO002
+          - embcom.sso.token-direct-w-logout-url.2br.ec  TyTE2EEMBSSO1.TyTSSOLGO002
   unusual names:
           - sso-login-new-members.2browsers  TyT306FKRDJ5.TyT603KTMM653
   email conflict:
@@ -264,7 +264,7 @@ sso, embedded comments, [.embcom_sso],
 embedded comments sso,
 blog comments sso:
             - embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1
-            - embcom.sso.token-in-cookie.2br.test.ts  TyTE2EEMBSSO2
+            - embcom.sso.token-in-cookie.2br.ec  TyTE2EEMBSSO2
 
 impersonate:
           - impersonate-post-as-other.2browsers  TyT502KNG24
@@ -1737,7 +1737,7 @@ api:
   upsert user:
           - api-update-user-and-sso-user.2br   TyTE2E05MRR9
   import user with ssoid:
-            - embcom.sso.token-direct-w-logout-url.2br.test.ts TyTE2EEMBSSO1.TyTIMPWSSOID
+            - embcom.sso.token-direct-w-logout-url.2br.ec TyTE2EEMBSSO1.TyTIMPWSSOID
   list usernames:
           - TyT05RKVJF68
   list topics:
