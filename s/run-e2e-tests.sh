@@ -700,7 +700,8 @@ function runAllE2eTests {
   # Many comments iframes:
   $r s/wdio-7     --only embcom.manyframes.basic.2br --cd -i $args
   $r s/wdio-7     --only embcom.manyframes.drafts-repl-to.2br --cd -i $args
-  $r s/wdio-7     --only embcom.manyframes.js-api.2br --cd -i $args
+  $r s/wdio-7     --only embcom.manyframes.js-api.2br.ec --cd -i $args
+  $r s/wdio-7     --only embcom.manyframes.js-api.sso.2br.ec --cd -i $args
   $r s/wdio-7     --only embcom.manyframes.comment-counts.2br.cors --cd -i $args
 
   # Stealing an embedded session id
