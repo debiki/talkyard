@@ -274,7 +274,8 @@ export function makeEmbeddedCommentsHtml(ps: { pageName: string, discussionId?: 
       talkyardPageId?: string, categoryRef?: string,
       localHostname?: string, color?: string, bgColor: string, htmlToPaste?: string,
       talkyardConsiderQueryParams?: St[],
-      authnToken?: St | Ay, authnTokenCookie?: St | Ay  }): St {
+      authnToken?: St | Ay, authnTokenCookie?: St | Ay,
+      appendExtraHtml?:  St  }): St {
     // Dupl code [046KWESJJLI3].
     dieIf(!!ps.localHostname && !!ps.htmlToPaste, 'TyE502PK562');
     dieIf(!ps.localHostname && !ps.htmlToPaste, 'TyE7FHQJ45X');
@@ -322,8 +323,9 @@ talkyardServerUrl='${settings.scheme}://${ps.localHostname}.localhost';
 ${ignQueryParams}
 </script>
 <script async defer src="${settings.scheme}://${ps.localHostname}.localhost/-/talkyard-comments.js"></script>
-<div class="talkyard-comments" ${discIdAttr} ${catRefAttr} style="margin-top: 45px;">
+<div class="talkyard-comments" ${discIdAttr} ${catRefAttr} style="margin-top: 45px;"></div>
 `}
+${ps.appendExtraHtml || ''}
 <hr>
 <p>/End of page.</p>
 </body>

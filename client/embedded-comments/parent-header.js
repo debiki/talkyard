@@ -19,6 +19,26 @@
 // See readme.txt.
 
 
+// Don't run this script twice, or we'd end up with duplicated state, e.g. authnTried
+// (in blog-comments.ts) in two different closures. Then this happened:
+// Trying to single-sign-on using a PASETO token, but with a session id in the
+// sign-on request, making the server reply Error and an error message popping up
+// in the comments iframe.
+//
+// (Generally, Javascript files are written to execute once only, see:
+//   https://stackoverflow.com/questions/70564723/what-happens-when-a-script-source-is-loaded-multiple-times )
+//
+if (window['talkyardScriptLoaded']) {
+  throw Error(`Talkyard comments script loaded twice [TyEEMBJSLD2]`);
+  // Does this make sense to incl in the error text, or is it just confusing, if the
+  // problem is sth else (e.g. just accidentally adding two <script> tags):
+  //   `Can you use talkyardAddCommentsIframe() or talkyardLoadNewCommentIframes() instead?`
+  // — Maybe better with an error code (incl above) or read-more URL.
+}
+window['talkyardScriptLoaded'] = true;
+
+
+
 window.eds = {};  // CLEAN_UP REMOVE  not needed here any more?
 window.debiki = { internal: {}, v0: { util: {} } };
 

@@ -297,6 +297,24 @@ export class TyE2eTestBrowser {
     await this.go2(whereToday);
   }
 
+  /// Message format is:  <script url> <line>:<col> <the actual message>
+  /// The actual message can be:  e.g.: Uncaught Error: Talkyard comments script is being loaded twice. Ca…ame() or talkyardLoadNewCommentIframes() instead?'))
+  /// `source` is 'javascript', `level` is e.g. 'SEVERE', `timestamp` e.g. 1702810449536.
+  ///
+  /// See:
+  /// https://webdriver.io/docs/api/chromium/#getlogs
+  /// But, deprecated!  "Use the "devtools" instead to get logs!"
+  /// — how do I do that? The "devtools", from here?
+  ///
+  /// Also:
+  /// https://github.com/SeleniumHQ/selenium/wiki/JsonWireProtocol#sessionsessionidlog
+  ///  ——> https://www.selenium.dev/documentation/legacy/json_wire_protocol/#log-type
+  async getLogs_worksInChrome(type: 'browser' | 'driver'): Pr<[{ message: St, level: St, source: St, timestamt: Nr }]> {
+    // This logs:  ["browser","driver"]  as of 2023-12-17.
+    // logUnusual(j2s(await this.#br.getLogTypes()));
+    return await this.#br.getLogs(type);
+  }
+
   // The global $ might be for the wrong this.#br somehow, so:
 
   async $(selector: St | Function | object): Pr<WElm> {
