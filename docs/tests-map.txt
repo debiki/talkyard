@@ -243,7 +243,7 @@ single-sign-on:  (3093533)
           - sso-all-ways-to-login.2browsers.test.ts  TyT7FKRTTSR024
           - sso-access-denied-login.2browsers.test.ts  TyT4AKT02DKJ41
           - api-w-sso-upsert-pages.2browsers.test.ts  TyT60KRJXT4X3
-          - [.embcom_sso]
+          - [_embcom_sso]
   one-time login secret abuse:
           - sso-one-time-key-errors.2browsers.test.ts  TyT5025BDUJQP4R
   login required ty-only logout url:
@@ -260,11 +260,12 @@ single-sign-on:  (3093533)
   update sso user's email, username etc:
           - api-update-user-and-sso-user.2br   TyTE2E05MRR9
 
-sso, embedded comments, [.embcom_sso],
+sso, embedded comments, [_embcom_sso],
 embedded comments sso,
 blog comments sso:
             - embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1
             - embcom.sso.token-in-cookie.2br.ec  TyTE2EEMBSSO2
+            - embcom.manyframes.js-api.sso.2br.ec  TyTEMANYEMBDISAPISSO
 
 impersonate:
           - impersonate-post-as-other.2browsers  TyT502KNG24
@@ -1066,8 +1067,9 @@ embedded comments:
             - embcom.manyframes.basic.2br  TyTEMANYCOMIFR01
             - embcom.manyframes.drafts-repl-to.2br  TyTEMANYCOMIFR02
             - embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI
+            - embcom.manyframes.js-api.sso.2br.ec  TyTEMANYEMBDISAPISSO
             - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
-  sso: see [.embcom.sso]
+  sso: see [_embcom_sso]
 
 upload links,
 uploads -  (7KFC2)
@@ -1771,6 +1773,7 @@ api for comments,
 comments api,
 embedded comments api:
             - embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI
+            - embcom.manyframes.js-api.sso.2br.ec  TyTEMANYEMBDISAPISSO
 
 url api,
 frag action api,
