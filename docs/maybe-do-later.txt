@@ -749,6 +749,7 @@ fine, some time large organization have more than one authn system,
 or they invite external collaborators with other authn systems.
 
 [paseto_broken]
+Fixing...
 Now paseto.js has stopped working, so the related e2e tests fail. Switch to another
 PASETO lib. See:
     ../tests/e2e/specs/embcom.sso.token-in-cookie.2br.test.ts--e2e-crypto-probl.txt

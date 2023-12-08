@@ -63,7 +63,7 @@ let pasetoV2LocalSecret = '';
 
 
 
-describe(`embcom.sso.token-in-cookie.2br.test.ts  TyTE2EEMBSSO2`, () => {
+describe(`embcom.sso.token-in-cookie.2br.ec.e2e.ts  TyTE2EEMBSSO2`, () => {
 
   it(`Construct site`, async () => {
     const builder = buildSite();
@@ -154,6 +154,8 @@ describe(`embcom.sso.token-in-cookie.2br.test.ts  TyTE2EEMBSSO2`, () => {
   }); */
 
   it(`The external server generates a login token for Selina`, async () => {
+    selinasToken = u.encryptLocalPasetoV2Token(pasetoV2LocalSecret, selinaAutnhMsg);
+    /*
     // Dupl code [.e2e_encr_paseto]
     const pasetoV2LocalSecretNoHexPrefix = pasetoV2LocalSecret.replace(/^hex:/, '');
     const messageAsSt = JSON.stringify(selinaAutnhMsg);
@@ -179,6 +181,9 @@ describe(`embcom.sso.token-in-cookie.2br.test.ts  TyTE2EEMBSSO2`, () => {
   let badAuthnToken: St | U;
 
   it(`... a bad login token appears from nowhere (!)`, async () => {
+    badAuthnToken = u.encryptLocalPasetoV2Token(
+          'bad00bad00bad00bad00beefdeadbeefdeadbeefdeadbeefdeadbeefbaadbeef', selinaAutnhMsg);
+    /*
     // Dupl code [.e2e_encr_paseto]
     const messageAsSt = JSON.stringify(selinaAutnhMsg);
     /*
@@ -190,7 +195,7 @@ describe(`embcom.sso.token-in-cookie.2br.test.ts  TyTE2EEMBSSO2`, () => {
     badAuthnToken = 'paseto:' + execSync('/home/user/styd/paseto-cmd2/target/debug/paseto-cmd ' +
           'bad00bad00bad00bad00beefdeadbeefdeadbeefdeadbeefdeadbeefbaadbeef' + ' ' +
           messageAsSt, {
-          encoding: 'utf8' }).trim(); */
+          encoding: 'utf8' }).trim(); * /
     console.log(execSync('pwd'));
     const cmd = '../../modules/paseto-cmd/target/debug/paseto-cmd ' +
                   `'bad00bad00bad00bad00beefdeadbeefdeadbeefdeadbeefdeadbeefbaadbeef' ` +
