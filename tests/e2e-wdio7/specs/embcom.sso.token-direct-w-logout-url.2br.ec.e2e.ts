@@ -78,7 +78,7 @@ let pasetoV2LocalSecret = '';
 
 
 
-describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () => {
+describe(`embcom.sso.token-direct-w-logout-url.2br.ec  TyTE2EEMBSSO1`, () => {
 
   it(`Construct site`, async () => {
     const builder = buildSite();
@@ -180,14 +180,17 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
 
   let selinasToken: St | U;
 
+  /*
   it(`An external server converts the symmetric secret to bytes`, async () => {
     const pasetoV2LocalSecretNoHexPrefix = pasetoV2LocalSecret.replace(/^hex:/, '');
     sharedSecretKeyBytes = Buffer.from(
             pasetoV2LocalSecretNoHexPrefix, 'hex');
             // 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef', 'hex');
-  });
+  }); */
 
   it(`The external server generates a login token for Selina`, async () => {
+    selinasToken = u.encryptLocalPasetoV2Token(pasetoV2LocalSecret, selinaAutnhMsg);
+    /*
     // Dupl code [.e2e_encr_paseto]
     const messageAsSt = JSON.stringify(selinaAutnhMsg);
     const sharedSecretKey  = new Paseto.SymmetricKey(new Paseto.V2());
@@ -198,7 +201,7 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
       console.log(`Generated PASETO token for Selina:  ${token}`);
       // E.g. "v2.local.kBENRnu2p2.....JKJZB9Lw"
       return 'paseto:' + token;
-    });;
+    });; */
   });
 
 
@@ -216,6 +219,8 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
     assert.not(mariaAutnhMsg.data.user.fullName);
     assert.ok(maria.username && maria.fullName);
 
+    mariasToken = u.encryptLocalPasetoV2Token(pasetoV2LocalSecret, mariaAutnhMsg);
+    /*
     // Dupl code [.e2e_encr_paseto]
     const messageAsSt = JSON.stringify(mariaAutnhMsg);
     const sharedSecretKey  = new Paseto.SymmetricKey(new Paseto.V2());
@@ -225,13 +230,16 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
     }).then(token => {
       console.log(`Generated PASETO token for Maria:  ${token}`);
       return 'paseto:' + token;
-    });;
+    });; */
   });
 
 
   let badAuthnToken: St | U;
 
   it(`... a bad login token appears from nowhere (!)`, async () => {
+    badAuthnToken = u.encryptLocalPasetoV2Token(
+          'bad00bad00bad00bad00beefdeadbeefdeadbeefdeadbeefdeadbeefbaadbeef', selinaAutnhMsg);
+    /*
     // Dupl code [.e2e_encr_paseto]
     const messageAsSt = JSON.stringify(selinaAutnhMsg);
     const badKeyBytes = Buffer.from(
@@ -243,12 +251,14 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
     }).then(token => {
       console.log(`Generated bad PASETO token:  ${token}`);
       return 'paseto:' + token;
-    });;
+    });; */
   });
 
   let tokenNoUser: St | U;
 
   it(`... another one with a missing 'user' field  (hmm!)`, async () => {
+    tokenNoUser = u.encryptLocalPasetoV2Token(pasetoV2LocalSecret, { data: { user: null }});
+    /*
     // Dupl code [.e2e_encr_paseto]
     const messageAsSt = JSON.stringify({ data: { user: null }});
     const sharedSecretKey  = new Paseto.SymmetricKey(new Paseto.V2());
@@ -258,12 +268,15 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
     }).then(token => {
       console.log(`Generated a PASETO token with no 'user' field:  ${token}`);
       return 'paseto:' + token;
-    });;
+    });; */
   });
 
   let tokenNoSsoId: St | U;
 
   it(`... another one with no 'ssoId' field  (gah!)`, async () => {
+    tokenNoSsoId = u.encryptLocalPasetoV2Token(pasetoV2LocalSecret,
+          { data: { user: { username: 'Brynolf' } }});  // 'ssoId' missing
+    /*
     // Dupl code [.e2e_encr_paseto]
     const messageAsSt = JSON.stringify(
             { data: { user: { username: 'Brynolf' } }});  // 'ssoId' missing
@@ -274,12 +287,15 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
     }).then(token => {
       console.log(`Generated a PASETO token with no 'ssoId' field:  ${token}`);
       return 'paseto:' + token;
-    });;
+    });; */
   });
 
   let tokenWrongEmail: St | U;
 
   it(`... another one with Selena's 'ssoId' but Maria's email  (oops!)`, async () => {
+    tokenWrongEmail = u.encryptLocalPasetoV2Token(
+          pasetoV2LocalSecret, selinaWithMariasEmailAuthnMsg);
+    /*
     // Dupl code [.e2e_encr_paseto]
     const messageAsSt = JSON.stringify(selinaWithMariasEmailAuthnMsg);
     const sharedSecretKey  = new Paseto.SymmetricKey(new Paseto.V2());
@@ -289,7 +305,7 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
     }).then(token => {
       console.log(`Generated PASETO token with Selena's id but Maria's email:  ${token}`);
       return 'paseto:' + token;
-    });;
+    });; */
   });
 
 
