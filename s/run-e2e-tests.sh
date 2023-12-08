@@ -704,6 +704,9 @@ function runAllE2eTests {
   $r s/wdio-7     --only embcom.manyframes.js-api.sso.2br.ec --cd -i $args
   $r s/wdio-7     --only embcom.manyframes.comment-counts.2br.cors --cd -i $args
 
+  # Single-Page Applications (SPA)
+  $r s/wdio-7     --only embcom.dont-load-script-twice.1br.ec --cd -i $args
+
   # Stealing an embedded session id
   $r s/wdio-7     --only embcom.sessions-emb-sess-cannot-moderate.3br --cd -i $args
 

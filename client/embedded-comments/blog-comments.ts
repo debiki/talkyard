@@ -28,14 +28,22 @@ declare const Bliss: any | undefined;
 declare function smoothScroll(elem: Element, x: number, y: number,
     durationMs?: number, onDone?: () => void);
 
+// Why do we prefix everything with `talkyard` instead of placing in a `talkyard: {...}`
+// object?  It's for developer & support friendliness:
+// - If websearching for any of these functions, one will find Talkyard's docs
+//   & discussions, and no off-topic things from unrelated software.
+// - Someone A who helps sbd else B with getting blog comments working, can know
+//   that B is indeed talking about a Talkyard function, and not something B
+//   has created themselves (which could have been slightly unclear if B
+//   said e.g. "authnToken" instead of "talkyardAuthnToken").
 interface WindowWithTalkyardProps {
   talkyardLogLevel?: Nr;
   talkyardDebug: boolean | number | undefined; // deprecated 2020-06-16
   talkyardAuthnToken?: St | Ay;
   talkyardManyCommentIframes?: Bo;
   talkyardConsiderQueryParams?: St[];
-  edRemoveCommentsAndEditor: () => void;
-  edReloadCommentsAndEditor: () => void;
+  edRemoveCommentsAndEditor: () => void;  // deprecated
+  edReloadCommentsAndEditor: () => void;  //
   talkyardRemoveCommentsAndEditor: () => void;
   talkyardReloadCommentsAndEditor: () => void;
   talkyardAddCommentsIframe: (ps: { appendInside: HElm, discussionId: St }) => HElm;
@@ -100,7 +108,6 @@ const logE = makeTalkyardLogFn(true, console.error);
 
 logM(`Starting ${TalkyardVersion} ... ` +
       `(disable logging by setting talkyardLogLevel = 'warn')`);
-
 
 
 const d = { i: debiki.internal };

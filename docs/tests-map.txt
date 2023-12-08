@@ -1069,6 +1069,12 @@ embedded comments:
             - embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI
             - embcom.manyframes.js-api.sso.2br.ec  TyTEMANYEMBDISAPISSO
             - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
+  installation mistakes:
+    don't load js script twice:
+            - embcom.dont-load-script-twice.1br.ec  TyTECLOADTWICE
+  log levels,
+  on-load callbacks:
+            - embcom.log-levels-on-loaded.1br.ec  TyTECLOGSCLBKS
   sso: see [_embcom_sso]
 
 upload links,
