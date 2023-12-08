@@ -1,17 +1,14 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('../utils/ty-assert');
-import fs = require('fs');
-import server = require('../utils/server');
-import u = require('../utils/utils');
+import assert from '../utils/ty-assert';
+import * as fs from 'fs';
+import server from '../utils/server';
+import * as u from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import lad = require('../utils/log-and-die');
-import c = require('../test-constants');
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import c from '../test-constants';
 
-import * as Paseto from 'paseto.js';
 
 
 // Dupl code  [embcom_sso_e2e_dupl]
@@ -83,7 +80,7 @@ let pasetoV2LocalSecret = '';
 
 describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () => {
 
-  it(`Construct site`, () => {
+  it(`Construct site`, async () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({
       title: "Some E2E Test",
@@ -109,8 +106,8 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
       wholeSite: true,
     }];
 
-    brA = new TyE2eTestBrowser(wdioBrowserA);
-    brB = new TyE2eTestBrowser(wdioBrowserB);
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
     owen = forum.members.owen;
     owen_brA = brA;
@@ -138,42 +135,42 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
     assert.refEq(builder.getSite(), forum.siteData);
   });
 
-  it(`Import site`, () => {
-    site = server.importSiteData(forum.siteData);
-    server.skipRateLimits(site.id);
+  it(`Import site`, async () => {
+    site = await server.importSiteData(forum.siteData);
+    await server.skipRateLimits(site.id);
   });
 
 
-  it(`Owen logs in to admin area, ... `, () => {
-    owen_brA.adminArea.settings.login.goHere(site.origin, { loginAs: owen });
+  it(`Owen logs in to admin area, ... `, async () => {
+    await owen_brA.adminArea.settings.login.goHere(site.origin, { loginAs: owen });
   });
 
-  it(`... and types an SSO login URL`, () => {
-    owen_brA.scrollToBottom(); // just speeds the test up slightly
-    owen_brA.adminArea.settings.login.typeSsoUrl(ssoUrl);
+  it(`... and types an SSO login URL`, async () => {
+    await owen_brA.scrollToBottom(); // just speeds the test up slightly
+    await owen_brA.adminArea.settings.login.typeSsoUrl(ssoUrl);
   });
 
-  it(`... and enables SSO`, () => {
-    owen_brA.adminArea.settings.login.setEnableSso(true);
+  it(`... and enables SSO`, async () => {
+    await owen_brA.adminArea.settings.login.setEnableSso(true);
   });
 
-  it(`... types a Logout Redir URL`, () => {
-    owen_brA.adminArea.settings.login.setSsoLogoutUrl(ssoLogoutUrl);
+  it(`... types a Logout Redir URL`, async () => {
+    await owen_brA.adminArea.settings.login.setSsoLogoutUrl(ssoLogoutUrl);
   });
 
-  it(`... generates a PASETO v2.local shared secret`, () => {
-    owen_brA.adminArea.settings.login.generatePasetoV2LocalSecret();
+  it(`... generates a PASETO v2.local shared secret`, async () => {
+    await owen_brA.adminArea.settings.login.generatePasetoV2LocalSecret();
   });
 
-  it(`... copies the secret`, () => {
-    pasetoV2LocalSecret = owen_brA.adminArea.settings.login.copyPasetoV2LocalSecret();
+  it(`... copies the secret`, async () => {
+    pasetoV2LocalSecret = await owen_brA.adminArea.settings.login.copyPasetoV2LocalSecret();
   });
 
-  it(`... and saves the new settings`, () => {
-    owen_brA.adminArea.settings.clickSaveAll();
+  it(`... and saves the new settings`, async () => {
+    await owen_brA.adminArea.settings.clickSaveAll();
   });
 
-  it(`There are external SSO login pages`, () => {
+  it(`There are external SSO login pages`, async () => {
     u.createSingleSignOnPagesInHtmlDir();
   });
 
@@ -183,7 +180,7 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
 
   let selinasToken: St | U;
 
-  it(`An external server converts the symmetric secret to bytes`, () => {
+  it(`An external server converts the symmetric secret to bytes`, async () => {
     const pasetoV2LocalSecretNoHexPrefix = pasetoV2LocalSecret.replace(/^hex:/, '');
     sharedSecretKeyBytes = Buffer.from(
             pasetoV2LocalSecretNoHexPrefix, 'hex');
@@ -298,7 +295,7 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
 
 
 
-  it(`There's a website with embedding pages`, () => {
+  it(`There's a website with embedding pages`, async () => {
     const dir = 'target';
     fs.writeFileSync(`${dir}/so-as-selina.html`, makeHtml('aaa', '#050', selinasToken));
     fs.writeFileSync(`${dir}/so-as-maria.html`, makeHtml('aaa', '#005', mariasToken));
@@ -318,80 +315,80 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
 
   // ----- Good token
 
-  it(`Selina opens embedding page aaa`, () => {
-    selina_brB.go2(embeddingOrigin + '/so-as-selina.html');
+  it(`Selina opens embedding page aaa`, async () => {
+    await selina_brB.go2(embeddingOrigin + '/so-as-selina.html');
   });
 
-  it(`... can reply directly, auto logged in via PASETO token`, () => {
-    selina_brB.complex.replyToEmbeddingBlogPost("I got logged_in_via_a_PASETO_token");
+  it(`... can reply directly, auto logged in via PASETO token`, async () => {
+    await selina_brB.complex.replyToEmbeddingBlogPost("I got logged_in_via_a_PASETO_token");
   });
 
   it(`There's no logout button — not included, when auto logged in via token,
           then, the embedd*ing* page manages login/out
-          by including/excluding a PASETO token   UNIMPL   [hide_authn_btns]`, () => {
-    // assert.not(selina_brB.metabar.isLogoutBtnDisplayed());
+          by including/excluding a PASETO token   UNIMPL   [hide_authn_btns]`, async () => {
+    // assert.not(await selina_brB.metabar.isLogoutBtnDisplayed());
   });
-  it(`... and no login button  (already logged in)`, () => {
-    assert.not(selina_brB.metabar.isLoginButtonDisplayed());
+  it(`... and no login button  (already logged in)`, async () => {
+    assert.not(await selina_brB.metabar.isLoginButtonDisplayed());
   });
 
 
 
   // ----- No token
 
-  it(`Selina goes to a page without any token`, () => {
-    selina_brB.go2('/so-no-token.html');
-    selina_brB.switchToEmbeddedCommentsIrame();
-    selina_brB.metabar.waitForDisplayed();
+  it(`Selina goes to a page without any token`, async () => {
+    await selina_brB.go2('/so-no-token.html');
+    await selina_brB.switchToEmbeddedCommentsIrame();
+    await selina_brB.metabar.waitForDisplayed();
   });
 
   it(`... she's NOT logged in, because auto token sessions are NOT remembered
-        across page reloads`, () => {
+        across page reloads`, async () => {
     // ttt  [.648927]
-    selina_brB.complex.waitForNotLoggedInInEmbeddedCommentsIframe({
+    await selina_brB.complex.waitForNotLoggedInInEmbeddedCommentsIframe({
           willBeLoginBtn: false });
-    selina_brB.switchToEmbeddedCommentsIrame();
-    assert.not(selina_brB.metabar.isMyUsernameVisible());
+    await selina_brB.switchToEmbeddedCommentsIrame();
+    assert.not(await selina_brB.metabar.isMyUsernameVisible());
   });
 
-  it(`... there's a Login button`, () => {
-    assert.ok(selina_brB.metabar.isLoginButtonDisplayed());
+  it(`... there's a Login button`, async () => {
+    assert.ok(await selina_brB.metabar.isLoginButtonDisplayed());
   });
-  it(`... no logout button  UNIMPL   [hide_authn_btns]`, () => {
-    //assert.not(selina_brB.metabar.isLogoutBtnDisplayed());
+  it(`... no logout button  UNIMPL   [hide_authn_btns]`, async () => {
+    //assert.not(await selina_brB.metabar.isLogoutBtnDisplayed());
   });
 
 
   /*  [hide_authn_btns]
-  it(`Owen hides emb comments authn buttons — using PASETO tokens instead`, () => {
-    owen_brA.adminArea.settings.login.setShowEmbAuthnBtns(false);
+  it(`Owen hides emb comments authn buttons — using PASETO tokens instead`, async () => {
+    await owen_brA.adminArea.settings.login.setShowEmbAuthnBtns(false);
   });
-  it(`... saves`, () => {
-    owen_brA.adminArea.settings.clickSaveAll();
+  it(`... saves`, async () => {
+    await owen_brA.adminArea.settings.clickSaveAll();
   });
   */
 
 
-  it(`Selina reloads the page`, () => {
-    selina_brB.refresh2();
-    selina_brB.switchToEmbeddedCommentsIrame();
-    selina_brB.metabar.waitForDisplayed();
+  it(`Selina reloads the page`, async () => {
+    await selina_brB.refresh2();
+    await selina_brB.switchToEmbeddedCommentsIrame();
+    await selina_brB.metabar.waitForDisplayed();
   });
-  it(`... still not logged in ...`, () => {
+  it(`... still not logged in ...`, async () => {
     // test code tested above  [.648927]
-    selina_brB.complex.waitForNotLoggedInInEmbeddedCommentsIframe({
+    await selina_brB.complex.waitForNotLoggedInInEmbeddedCommentsIframe({
           willBeLoginBtn: false });
-    selina_brB.switchToEmbeddedCommentsIrame();
-    assert.not(selina_brB.metabar.isMyUsernameVisible());
+    await selina_brB.switchToEmbeddedCommentsIrame();
+    assert.not(await selina_brB.metabar.isMyUsernameVisible());
   });
-  it(`... and now, no login or logout buttons  UNIMPL  [hide_authn_btns]`, () => {
-    //assert.not(selina_brB.metabar.isLoginButtonDisplayed());
-    assert.not(selina_brB.metabar.isLogoutBtnDisplayed());
+  it(`... and now, no login or logout buttons  UNIMPL  [hide_authn_btns]`, async () => {
+    //assert.not(await selina_brB.metabar.isLoginButtonDisplayed());
+    assert.not(await selina_brB.metabar.isLogoutBtnDisplayed());
   });
 
 
-  it(`Now a reply notf email has arrived to Owen`, () => {
-    server.waitUntilLastEmailMatches(site.id, owen.emailAddress,
+  it(`Now a reply notf email has arrived to Owen`, async () => {
+    await server.waitUntilLastEmailMatches(site.id, owen.emailAddress,
           [selinaExtUser.username, "logged_in_via_a_PASETO_token"]);
   });
 
@@ -399,63 +396,63 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
 
   // ----- Bad tokens
 
-  it(`Selina goes to a page but The Token is Bad!`, () => {
-    selina_brB.go2(embeddingOrigin + '/so-bad-token.html');
+  it(`Selina goes to a page but The Token is Bad!`, async () => {
+    await selina_brB.go2(embeddingOrigin + '/so-bad-token.html');
   });
-  it(`... there's a server error dialog`, () => {
-    selina_brB.switchToEmbCommentsIframeIfNeeded();
-    selina_brB.serverErrorDialog.waitAndAssertTextMatches('TyEPASSECEX_');
+  it(`... there's a server error dialog`, async () => {
+    await selina_brB.switchToEmbCommentsIframeIfNeeded();
+    await selina_brB.serverErrorDialog.waitAndAssertTextMatches('TyEPASSECEX_');
   });
 
-  it(`Selina goes to a page with an ok token, but no 'user' field`, () => {
-    selina_brB.go2(embeddingOrigin + '/so-no-user.html');
+  it(`Selina goes to a page with an ok token, but no 'user' field`, async () => {
+    await selina_brB.go2(embeddingOrigin + '/so-no-user.html');
   });
-  it(`... there's a server error dialog`, () => {
-    selina_brB.switchToEmbCommentsIframeIfNeeded();
-    selina_brB.serverErrorDialog.waitAndAssertTextMatches(
+  it(`... there's a server error dialog`, async () => {
+    await selina_brB.switchToEmbCommentsIframeIfNeeded();
+    await selina_brB.serverErrorDialog.waitAndAssertTextMatches(
           'TyEPARMAP0MAP_.*TyEPASCLAIMS_');
   });
 
-  it(`Selina goes to a page with an ok token, but no 'ssoId' field`, () => {
-    selina_brB.go2(embeddingOrigin + '/so-no-ssoid.html');
+  it(`Selina goes to a page with an ok token, but no 'ssoId' field`, async () => {
+    await selina_brB.go2(embeddingOrigin + '/so-no-ssoid.html');
   });
-  it(`... there's a server error dialog`, () => {
-    selina_brB.switchToEmbCommentsIframeIfNeeded();
-    selina_brB.serverErrorDialog.waitAndAssertTextMatches('TyEPARMAP0ST_.*TyEPASCLAIMS_');
+  it(`... there's a server error dialog`, async () => {
+    await selina_brB.switchToEmbCommentsIframeIfNeeded();
+    await selina_brB.serverErrorDialog.waitAndAssertTextMatches('TyEPARMAP0ST_.*TyEPASCLAIMS_');
   });
 
-  it(`Selina goes to a page with a token with her id, but Maria's email`, () => {
-    selina_brB.go2(embeddingOrigin + '/so-wrong-email.html');
+  it(`Selina goes to a page with a token with her id, but Maria's email`, async () => {
+    await selina_brB.go2(embeddingOrigin + '/so-wrong-email.html');
   });
   it(`... Selena gets logged in as Selena. Talkyard in this case ignores the email
           — it's used only during the first upsert (i.e. insert).
           To change the user after that, the external user database should instead
-          call  /-/v0/upsert-user`, () => {
-    selina_brB.switchToEmbCommentsIframeIfNeeded();
-    selina_brB.me.waitUntilLoggedIn();
-    assert.eq(selina_brB.metabar.getMyUsernameInclAt(), '@' + selinaExtUser.username);
+          call  /-/v0/upsert-user`, async () => {
+    await selina_brB.switchToEmbCommentsIframeIfNeeded();
+    await selina_brB.me.waitUntilLoggedIn();
+    assert.eq(await selina_brB.metabar.getMyUsernameInclAt(), '@' + selinaExtUser.username);
   });
-  it(`... she replies`, () => {
-    selina_brB.complex.replyToEmbeddingBlogPost(`My id but_wrong_email`);
+  it(`... she replies`, async () => {
+    await selina_brB.complex.replyToEmbeddingBlogPost(`My id but_wrong_email`);
   });
-  it(`... her name, 'Selena', not 'Maria', is shown as the author`, () => {
-    assert.eq(selina_brB.topic.getPostAuthorUsernameInclAt(c.FirstReplyNr),
+  it(`... her name, 'Selena', not 'Maria', is shown as the author`, async () => {
+    assert.eq(await selina_brB.topic.getPostAuthorUsernameInclAt(c.FirstReplyNr),
           '@' + selinaExtUser.username);
   });
-  it(`... Owen gets notified via email — from Selena not Maria`, () => {
-    server.waitUntilLastEmailMatches(site.id, owen.emailAddress,
+  it(`... Owen gets notified via email — from Selena not Maria`, async () => {
+    await server.waitUntilLastEmailMatches(site.id, owen.emailAddress,
           [selinaExtUser.username, "but_wrong_email"]);
   });
 
 
 
 
-  it(`Selina returns to embedding page so-as-selina.html, with her token`, () => {
-    selina_brB.go2(embeddingOrigin + '/so-as-selina.html');
+  it(`Selina returns to embedding page so-as-selina.html, with her token`, async () => {
+    await selina_brB.go2(embeddingOrigin + '/so-as-selina.html');
   });
 
-  it(`... she's logged in, can reply, just like before`, () => {
-    selina_brB.complex.replyToEmbeddingBlogPost("Logged in via a PASETO token, msg 3");
+  it(`... she's logged in, can reply, just like before`, async () => {
+    await selina_brB.complex.replyToEmbeddingBlogPost("Logged in via a PASETO token, msg 3");
   });
 
 
@@ -463,17 +460,17 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
   // ----- View one's profile, via authn token login
 
 
-  it(`Selina clicks her username in the pagebar`, () => {
-    selina_brB.metabar.openMyProfilePageInNewTab();
+  it(`Selina clicks her username in the pagebar`, async () => {
+    await selina_brB.metabar.openMyProfilePageInNewTab();
   });
 
-  it(`... a new tab opens; she switches to it`, () => {
-    assert.eq(selina_brB.origin(), embeddingOrigin);
-    selina_brB.swithToOtherTabOrWindow();
+  it(`... a new tab opens; she switches to it`, async () => {
+    assert.eq(await selina_brB.origin(), embeddingOrigin);
+    await selina_brB.swithToOtherTabOrWindow();
   });
 
-  it(`... she's now at the Talkyard server  (but not the embedding site)`, () => {
-    assert.eq(selina_brB.origin(), site.origin);
+  it(`... she's now at the Talkyard server  (but not the embedding site)`, async () => {
+    assert.eq(await selina_brB.origin(), site.origin);
   });
 
 
@@ -493,17 +490,17 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
   // Instead, currently, an extra Log In button click, is needed.
   //
   let urlPath = '';
-  it(`Selina logs in (extra topbar Log In click currently needed)`, () => {
-    selinasProfilePageUrl = selina_brB.getUrl();
-    selina_brB.rememberCurrentUrl();
-    urlPath = selina_brB.urlPath();
+  it(`Selina logs in (extra topbar Log In click currently needed)`, async () => {
+    selinasProfilePageUrl = await selina_brB.getUrl();
+    await selina_brB.rememberCurrentUrl();
+    urlPath = await selina_brB.urlPath();
     assert.eq(urlPath, '/-/users/selina_un/activity/posts');  // ttt
-    selina_brB.topbar.clickLogin();
+    await selina_brB.topbar.clickLogin();
   });
 
-  it(`... gets to the dummy external login page, at localhost:8080`, () => {
-    selina_brB.waitForNewUrl();
-    const urlNow = selina_brB.getUrl();
+  it(`... gets to the dummy external login page, at localhost:8080`, async () => {
+    await selina_brB.waitForNewUrl();
+    const urlNow = await selina_brB.getUrl();
     assert.eq(urlNow, ssoUrlVarsReplaced(urlPath));
 
     // http://localhost:8080/sso-dummy-login.html?returnPath=/-/users/selina_un/activity/posts
@@ -511,98 +508,98 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
 
   let oneTimeLoginSecret: St;
 
-  it(`The remote server upserts Selina`, () => {
-    oneTimeLoginSecret = server.apiV0.upsertUserGetLoginSecret({
+  it(`The remote server upserts Selina`, async () => {
+    oneTimeLoginSecret = await server.apiV0.upsertUserGetLoginSecret({
           origin: site.origin, apiRequesterId: c.SysbotUserId,
           apiSecret: apiSecret.secretKey, externalUser: selinaExtUser });
   });
 
-  it(`... gets back a one time login secret`, () => {
+  it(`... gets back a one time login secret`, async () => {
     console.log(`Got back login secret: ${oneTimeLoginSecret}`);
     assert.ok(oneTimeLoginSecret);
   });
 
-  it(`... redirects Selina back to Talkyard`, () => {
-    selina_brB.rememberCurrentUrl();
-    selina_brB.apiV0.loginWithSecret({
+  it(`... redirects Selina back to Talkyard`, async () => {
+    await selina_brB.rememberCurrentUrl();
+    await selina_brB.apiV0.loginWithSecret({
             origin: site.origin, oneTimeSecret: oneTimeLoginSecret,
             thenGoTo: selinasProfilePageUrl });
-    selina_brB.waitForNewUrl();
-    assert.eq(selina_brB.origin(), site.origin);
+    await selina_brB.waitForNewUrl();
+    assert.eq(await selina_brB.origin(), site.origin);
   });
 
-  it(`... now Selina is logged in`, () => {
-    selina_brB.complex.waitUntilLoggedIn();
+  it(`... now Selina is logged in`, async () => {
+    await selina_brB.complex.waitUntilLoggedIn();
   });
 
-  it(`... as ${selinaExtUser.username} herself`, () => {
-    const username = selina_brB.userProfilePage.waitAndGetUsername();
+  it(`... as ${selinaExtUser.username} herself`, async () => {
+    const username = await selina_brB.userProfilePage.waitAndGetUsername();
     assert.eq(username, selinaExtUser.username + "(you)");
   });
 
-  it(`... and can access her private stuff`, () => {
-    selina_brB.userProfilePage.goToPreferences();
-    selina_brB.userProfilePage.preferences.switchToEmailsLogins();
+  it(`... and can access her private stuff`, async () => {
+    await selina_brB.userProfilePage.goToPreferences();
+    await selina_brB.userProfilePage.preferences.switchToEmailsLogins();
   });
 
-  it(`... sees her email: ${selinaExtUser.primaryEmailAddress}, verified`, () => {
-    selina_brB.userProfilePage.preferences.emailsLogins.waitUntilEmailAddressListed(
+  it(`... sees her email: ${selinaExtUser.primaryEmailAddress}, verified`, async () => {
+    await selina_brB.userProfilePage.preferences.emailsLogins.waitUntilEmailAddressListed(
           selinaExtUser.primaryEmailAddress, { shallBeVerified: true });
   });
 
-  it(`Selina clicks Log Out`, () => {
-    selina_brB.rememberCurrentUrl();
-    selina_brB.topbar.clickLogout({ waitForLoginButton: false });
-    selina_brB.waitForNewUrl();
+  it(`Selina clicks Log Out`, async () => {
+    await selina_brB.rememberCurrentUrl();
+    await selina_brB.topbar.clickLogout({ waitForLoginButton: false });
+    await selina_brB.waitForNewUrl();
   });
 
-  it(`... gets redirected to the Logout URL  TyTSSOLGO002`, () => {
-    assert.eq(selina_brB.getUrl(), ssoLogoutUrl);
-    assert.includes(selina_brB.getPageSource(), 'LGO_RDR_TST_865033_');
-  });
-
-
-
-  it(`At the no-token page, she isn't logged in`, () => {
-    brB.go2(embeddingOrigin + '/so-no-token.html');
-    brB.switchToEmbCommentsIframeIfNeeded();
-    brB.metabar.waitUntilNotLoggedIn();
-  });
-  it(`... whilst at the yes-token, she *is* logged in`, () => {
-    selina_brB.go2(embeddingOrigin + '/so-as-selina.html');
-    selina_brB.switchToEmbCommentsIframeIfNeeded();
-    selina_brB.metabar.waitUntilLoggedIn();
-  });
-  it(`... as Selina of course`, () => {
-    assert.eq(selina_brB.metabar.getMyUsernameInclAt(), '@' + selinaExtUser.username);
-  });
-
-  it(`Selina clicks Log Out, this time in the embedded comments iframe`, () => {
-    selina_brB.rememberCurrentUrl();
-    selina_brB.metabar.clickLogout({ waitForLoginButton: false });
-    selina_brB.waitForNewUrl();
-  });
-
-  it(`... gets redirected to the Logout URL  TyTSSOLGO002`, () => {
-    assert.eq(selina_brB.getUrl(), ssoLogoutUrl);
-    assert.includes(selina_brB.getPageSource(), 'LGO_RDR_TST_865033_');
+  it(`... gets redirected to the Logout URL  TyTSSOLGO002`, async () => {
+    assert.eq(await selina_brB.getUrl(), ssoLogoutUrl);
+    assert.includes(await selina_brB.getPageSource(), 'LGO_RDR_TST_865033_');
   });
 
 
 
-
-  it(`Owen removes the Logout Redir URL  TyTSSOLGO002`, () => {
-    owen_brA.adminArea.settings.login.setSsoLogoutUrl('');
+  it(`At the no-token page, she isn't logged in`, async () => {
+    await brB.go2(embeddingOrigin + '/so-no-token.html');
+    await brB.switchToEmbCommentsIframeIfNeeded();
+    await brB.metabar.waitUntilNotLoggedIn();
   });
-  it(`... and saves the new settings`, () => {
-    owen_brA.adminArea.settings.clickSaveAll();
+  it(`... whilst at the yes-token, she *is* logged in`, async () => {
+    await selina_brB.go2(embeddingOrigin + '/so-as-selina.html');
+    await selina_brB.switchToEmbCommentsIframeIfNeeded();
+    await selina_brB.metabar.waitUntilLoggedIn();
+  });
+  it(`... as Selina of course`, async () => {
+    assert.eq(await selina_brB.metabar.getMyUsernameInclAt(), '@' + selinaExtUser.username);
   });
 
-  it(`Selina is back`, () => {
-    selina_brB.go2(embeddingOrigin + '/so-as-selina.html');
-    selina_brB.switchToEmbCommentsIframeIfNeeded();
-    selina_brB.metabar.waitUntilLoggedIn();
-    assert.eq(selina_brB.metabar.getMyUsernameInclAt(), '@' + selinaExtUser.username);
+  it(`Selina clicks Log Out, this time in the embedded comments iframe`, async () => {
+    await selina_brB.rememberCurrentUrl();
+    await selina_brB.metabar.clickLogout({ waitForLoginButton: false });
+    await selina_brB.waitForNewUrl();
+  });
+
+  it(`... gets redirected to the Logout URL  TyTSSOLGO002`, async () => {
+    assert.eq(await selina_brB.getUrl(), ssoLogoutUrl);
+    assert.includes(await selina_brB.getPageSource(), 'LGO_RDR_TST_865033_');
+  });
+
+
+
+
+  it(`Owen removes the Logout Redir URL  TyTSSOLGO002`, async () => {
+    await owen_brA.adminArea.settings.login.setSsoLogoutUrl('');
+  });
+  it(`... and saves the new settings`, async () => {
+    await owen_brA.adminArea.settings.clickSaveAll();
+  });
+
+  it(`Selina is back`, async () => {
+    await selina_brB.go2(embeddingOrigin + '/so-as-selina.html');
+    await selina_brB.switchToEmbCommentsIframeIfNeeded();
+    await selina_brB.metabar.waitUntilLoggedIn();
+    assert.eq(await selina_brB.metabar.getMyUsernameInclAt(), '@' + selinaExtUser.username);
   });
 
   // Now there shouldn't be any logout button? Because login is managed
@@ -613,46 +610,46 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
   //
   // ----------------
   // For now only, it's there, just reloads the iframe:  (thereafter, still logged in.)
-  it(`... clicks Log Out again`, () => {
-    selina_brB.metabar.clickLogout({ waitForLoginButton: false });
+  it(`... clicks Log Out again`, async () => {
+    await selina_brB.metabar.clickLogout({ waitForLoginButton: false });
   });
   it(`... doesn't work, she's still logged in afterwards:
-            the embedding site still includes the PASETO authn token`, () => {
-    selina_brB.refresh2();
-    selina_brB.switchToEmbCommentsIframeIfNeeded();
-    selina_brB.metabar.waitUntilLoggedIn();
+            the embedding site still includes the PASETO authn token`, async () => {
+    await selina_brB.refresh2();
+    await selina_brB.switchToEmbCommentsIframeIfNeeded();
+    await selina_brB.metabar.waitUntilLoggedIn();
   });
   // ----------------
   // Later:
   it(`Now there's no logout button — Selena will need to use the embedding site's
             login and logout buttons instead,
             since just logging out from Ty wouldn't have any effect; the embedding
-            page would still include the authn token  UNIMPL  [hide_authn_btns]`, () => {
-    //assert.not(selina_brB.metabar.isLogoutBtnDisplayed());
+            page would still include the authn token  UNIMPL  [hide_authn_btns]`, async () => {
+    //assert.not(await selina_brB.metabar.isLogoutBtnDisplayed());
     // ttt:
-    assert.not(selina_brB.metabar.isLoginButtonDisplayed());
+    assert.not(await selina_brB.metabar.isLoginButtonDisplayed());
   });
   // ----------------
 
 
 
-  it(`Selina leaves, Maria logs in`, () => {
-    brB.go2(embeddingOrigin + '/so-as-maria.html');
+  it(`Selina leaves, Maria logs in`, async () => {
+    await brB.go2(embeddingOrigin + '/so-as-maria.html');
   });
 
-  it(`Maria's token is embedded in the HTML`, () => {
-    maria_brB.switchToEmbCommentsIframeIfNeeded();
-    maria_brB.metabar.waitUntilLoggedIn();
+  it(`Maria's token is embedded in the HTML`, async () => {
+    await maria_brB.switchToEmbCommentsIframeIfNeeded();
+    await maria_brB.metabar.waitUntilLoggedIn();
   });
-  it(`... Maria not Selina is logged in   [.lookup_by_ssoid]`, () => {
-    assert.eq(maria_brB.metabar.getMyUsernameInclAt(), '@' + maria.username);
+  it(`... Maria not Selina is logged in   [.lookup_by_ssoid]`, async () => {
+    assert.eq(await maria_brB.metabar.getMyUsernameInclAt(), '@' + maria.username);
   });
 
 
-  it(`At the no-token page, no one is logged in`, () => {
-    brB.go2(embeddingOrigin + '/so-no-token.html');
-    brB.switchToEmbCommentsIframeIfNeeded();
-    brB.metabar.waitUntilNotLoggedIn();
+  it(`At the no-token page, no one is logged in`, async () => {
+    await brB.go2(embeddingOrigin + '/so-no-token.html');
+    await brB.switchToEmbCommentsIframeIfNeeded();
+    await brB.metabar.waitUntilNotLoggedIn();
   });
 
 

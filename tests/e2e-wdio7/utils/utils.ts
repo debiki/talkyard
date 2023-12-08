@@ -4,7 +4,7 @@ import * as _ from 'lodash';
 import assert from './ty-assert';
 import * as fs from 'fs';
 import { execSync } from 'child_process';
-import { j2s, logMessage, logUnusual, logError, dieIf } from './log-and-die';
+import { j2s, logMessage, logBoring, logUnusual, logError, dieIf, logWarning } from './log-and-die';
 import settings from './settings';
 import c from '../test-constants';
 import * as utils from './utils';
@@ -220,7 +220,29 @@ export async function ssoLogin(ps: { member: Member, ssoId, browser,
         oneTimeSecret: oneTimeLoginSecret,
         thenGoTo: ps.thenGoTo || '/' });
     logMessage(`SSO: Done`);
-  }
+}
+
+
+/// For blog comments SSO.
+///
+/// Used to use this Javascript lib:
+/// import * as Paseto from 'paseto.js';
+/// But, crypto problem, see:
+///     ./embcom.sso.token-in-cookie.2br.test.ts--e2e-crypto-probl.txt
+///
+export function encryptLocalPasetoV2Token(sharedSecret: St, msgObj: any): St {
+  const messageAsSt = JSON.stringify(msgObj);
+  const secretNoHexPrefix = sharedSecret.replace(/^hex:/, '');
+  const cmd = '../../modules/paseto-cmd/target/debug/paseto-cmd ' +
+                `'${secretNoHexPrefix}' ` +
+                `'${messageAsSt}'`;
+  const token = execSync(cmd, { encoding: 'utf8' }).trim();
+  const username: St | U = msgObj?.data?.user?.username;
+  const logMsg = `Generated PASETO token for ${username}:  ${token}`;
+  if (username) logBoring(logMsg);
+  else logWarning(logMsg + ` BUT username missing in token data? User missing?`);
+  return 'paseto:' + token;
+}
 
 
 export function makeExternalUserFor(member: Member, opts: {
