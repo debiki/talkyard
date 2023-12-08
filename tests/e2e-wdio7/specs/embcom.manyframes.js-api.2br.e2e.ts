@@ -36,6 +36,32 @@ const mariasReply1_disc222 = 'mariasReply1_disc222';
 const mariasReply2_disc222 = 'mariasReply2_disc222';
 const mariasReply3_disc111 = 'mariasReply3_disc111';
 
+const selinaExtUser: ExternalUser = {
+  ssoId: 'selina-soid',
+  username: 'selina_un',
+  fullName: 'Selina Full Name',
+  primaryEmailAddress: 'e2e-test-selina@x.co',
+  isEmailAddressVerified: true,
+}
+
+const selinaAutnhMsg = {
+  //sub: 'ject',
+  //exp: '2021-05-01T00:00:00Z',
+  //iat: '2021-05-01T00:00:00Z',
+  data: {
+    //ifExists: 'DoNothing', // or 'Update'
+    //lookupKey: 'soid:selina_sign_on_id',
+    user: {
+      ...selinaExtUser,
+    },
+  },
+};
+
+const ssoUrl =
+    `http://localhost:8080/${utils.ssoLoginPageSlug}?returnPath=\${talkyardPathQueryEscHash}`;
+
+let pasetoV2LocalSecret = '';
+
 
 describe(`embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI`, () => {
 
@@ -49,6 +75,14 @@ describe(`embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI`, () => {
 
     builder.getSite().meta.localHostname = localHostname;
     builder.getSite().settings.allowEmbeddingFrom = embeddingOrigin;
+
+    builder.settings({
+      numFirstPostsToApprove: 0,
+      numFirstPostsToReview: 0,
+      enableApi: true,
+    });
+
+    //builder.getSite().apiSecrets = [apiSecret];
 
 
     everyonesBrowsers = new TyE2eTestBrowser(allWdioBrowsers, 'brAll');
@@ -73,6 +107,43 @@ describe(`embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI`, () => {
   });
 
 
+  it(`Owen logs in to admin area, ... `, async () => {
+    await owen_brA.adminArea.settings.login.goHere(site.origin, { loginAs: owen });
+  });
+
+  it(`... and types an SSO login URL`, async () => {
+    await owen_brA.scrollToBottom(); // just speeds the test up slightly
+    await owen_brA.adminArea.settings.login.typeSsoUrl(ssoUrl);
+  });
+
+  it(`... and enables SSO`, async () => {
+    await owen_brA.adminArea.settings.login.setEnableSso(true);
+  });
+
+  it(`... types a Logout Redir URL`, async () => {
+    //await owen_brA.adminArea.settings.login.setSsoLogoutUrl(ssoLogoutUrl);
+  });
+
+  it(`... generates a PASETO v2.local shared secret`, async () => {
+    await owen_brA.adminArea.settings.login.generatePasetoV2LocalSecret();
+  });
+
+  it(`... copies the secret`, async () => {
+    pasetoV2LocalSecret = await owen_brA.adminArea.settings.login.copyPasetoV2LocalSecret();
+  });
+
+  it(`... and saves the new settings`, async () => {
+    await owen_brA.adminArea.settings.clickSaveAll();
+  });
+
+
+
+  let selinasToken: St | U;
+
+  it(`The external server generates a login token for Selina`, async () => {
+    selinasToken = utils.encryptLocalPasetoV2Token(pasetoV2LocalSecret, selinaAutnhMsg);
+  });
+
 
   it(`Creates an embedding page`, async () => {
     fs.writeFileSync('target' + embPage1SlashSlug, makeHtml('manyfr-1', ['111'], '#500'));
@@ -81,15 +152,16 @@ describe(`embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI`, () => {
 
     function makeHtml(pageName: St, discussionIds: St[], bgColor: St): St {
       return utils.makeManyEmbeddedCommentsHtml({
-              pageName, discussionIds, localHostname, bgColor});
+              pageName, discussionIds, localHostname, bgColor, authnToken: selinasToken });
     }
   });
 
-  it(`Maria opens embedding page aaa`, async () => {
+  it(`Maria opens embedding page ${embPage1SlashSlug}`, async () => {
     await maria_brB.go2(embeddingOrigin + embPage1SlashSlug);
   });
 
   it(`The embedding web app calls Ty's js API: `, async () => {
+await maria_brB.d();
     await maria_brB.execute(function() {
       window['talkyardAddCommentsIframe']({
             appendInside: '#comment_iframes', discussionId: '222' });
@@ -97,33 +169,40 @@ describe(`embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI`, () => {
   });
 
   it(`Maria logs in`, async () => {
+await maria_brB.d();
     await maria_brB.switchToEmbeddedCommentsIrame({ discId: '222' });
     await maria_brB.complex.loginIfNeededViaMetabar(maria);
   });
 
   it(`... posts a comment in disc 222`, async () => {
+await maria_brB.d();
     await maria_brB.complex.replyToEmbeddingBlogPost(mariasReply1_disc222)
   });
 
   it(`Maria goes to page 1 2 3`, async () => {
+await maria_brB.d();
     await maria_brB.go2(embeddingOrigin + embPage123SlashSlug);
   });
   it(`... disc 222 with her comment is there`, async () => {
+await maria_brB.d();
     await maria_brB.switchToEmbeddedCommentsIrame({ discId: '222' });
     await maria_brB.topic.waitForPostAssertTextMatches(
             c.FirstReplyNr, mariasReply1_disc222);
   });
 
   it(`Maria posts another reply in 222`, async () => {
+await maria_brB.d();
     await maria_brB.complex.replyToEmbeddingBlogPost(mariasReply2_disc222);
   });
   it(`... and one in 111`, async () => {
+await maria_brB.d();
     await maria_brB.switchToEmbeddedCommentsIrame({ discId: '111' });
     await maria_brB.complex.replyToEmbeddingBlogPost(mariasReply3_disc111);
   });
 
 
   it(`Maria goes to page none`, async () => {
+await maria_brB.d();
     await maria_brB.go2(embeddingOrigin + embPageNoneSlashSlug, {
             willBeWhere: IsWhere.EmbeddingPage });
   });
@@ -144,6 +223,7 @@ describe(`embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI`, () => {
   }
 
   it(`The embedding web app calls Ty's js API, creates discs 333, 222, 111`, async () => {
+await maria_brB.d();
     // TyTAPNDIFR283
     await maria_brB.execute(function() {
       window['talkyardAddCommentsIframe']({
@@ -197,11 +277,13 @@ describe(`embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI`, () => {
     await waitForNumIframes(maria_brB, 2 + 3);  // session, editor, 3 discussions
   });
   it(`The embedding web app removes an iframe`, async () => {
+await maria_brB.d();
     await maria_brB.execute(function() {
       document.querySelector('iframe[name=edComments-2]').remove();
     });
   });
   it(`... tells Talkyard about it`, async () => {
+await maria_brB.d();
     await maria_brB.execute(function() {
       window['talkyardForgetRemovedCommentIframes']();
     });
@@ -218,6 +300,7 @@ describe(`embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI`, () => {
 
 
   it(`The embedding web app adds back the removed discussion, 222`, async () => {
+await maria_brB.d();
     await maria_brB.execute(function() {
       window['talkyardAddCommentsIframe']({
             appendInside: '#comment_iframes', discussionId: '222' });
