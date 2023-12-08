@@ -101,7 +101,12 @@ const logE = makeTalkyardLogFn(true, console.error);
 logM(`Starting ${TalkyardVersion} ... ` +
       `(disable logging by setting talkyardLogLevel = 'warn')`);
 
+// Add another error check:
+/*
+since most JavaScript code isn't written to be executed multiple times. For example, it may attach the same event handlers multiple tim
 
+https://stackoverflow.com/questions/70564723/what-happens-when-a-script-source-is-loaded-multiple-times
+*/
 
 const d = { i: debiki.internal };
 const serverOrigin = d.i.commentsServerOrigin;
