@@ -333,6 +333,7 @@ GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock
 POST /-/add-admin-notice        controllers.DebugTestController.addAdminNotice
 GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(siteId: Int, sentTo)
 GET  /-/num-e2e-test-emails-sent controllers.DebugTestController.numE2eTestEmailSent(siteId: Int)
+GET  /-/last-errors             controllers.DebugTestController.showLastErrors
 GET  /-/log-test-error          controllers.DebugTestController.logTestError(metrApiKey: Option[String])
 GET  /-/log-funny-messages      controllers.DebugTestController.logFunnyLogMessages()
 GET  /-/page-top-score          controllers.DebugTestController.showPagePopularityStats(pageId, scoreAlg: Option[Int])
