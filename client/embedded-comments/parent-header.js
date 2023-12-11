@@ -42,8 +42,7 @@ window['_loadingTalkyardScript'] = true;
 
 
 
-window.eds = {};  // CLEAN_UP REMOVE  not needed here any more?
-window.debiki = { internal: {}, v0: { util: {} } };
+window.debiki = { internal: {} };
 
 // Finds the server origin, by extracting origin of the embedded comments script url.
 // We need it when loading the <iframe>s with embedded comments and the editor.
