@@ -67,21 +67,26 @@ interface WindowWithTalkyardProps {
 // For now, instead:
 const windowWithTalkyardProps: WindowWithTalkyardProps = <any> window;
 
-// Talkyard's log levels:
-// off, fatal, error, warn, info, config, debug, trace, annoying
-//   0,    10,    20,   30,   40,     50,    60,    70,       80
+
+// Talkyard's log levels:  [ty_log_levels]
+// off, fatal, partly-fatal, error, warn, info, config, debug, trace, annoying
+//   0,   1–9,           1x,    2x,   3x,   4x,     5x,    6x,    7x,       8x
 const winLogLvl = windowWithTalkyardProps.talkyardLogLevel;
-const winDbg = windowWithTalkyardProps.talkyardDebug;
-const talkyardLogLevel: Nr | St = (typeof winLogLvl !== 'undefined') ? winLogLvl : (
-    winDbg === false || winDbg === 0 ? 'warn' : 'trace');
+const winDbg = windowWithTalkyardProps.talkyardDebug; // deprecated
+const urlLogLvl = new URLSearchParams(location.hash.substring(1)).get('talkyardLogLevel');
+const talkyardLogLevel: Nr | St =
+        urlLogLvl || (
+        (typeof winLogLvl !== 'undefined') ? winLogLvl : (
+            winDbg === false || winDbg === 0 ? 'warn' : 'trace'));
 
 // Default to logging debug messages, for now, because people send screenshots of the
 // console when sth is amiss, and nice to get the log messages then.
-function makeTalkyardLogFn(isWarnOrErr: Bo, consoleLogFn: (...data: Ay[]) => Vo) {
-  // For now, so at least 'warn' works, as per the "disable logging by ..."
+function makeTalkyardLogFn(forLevel: Nr, consoleLogFn: (...data: Ay[]) => Vo) {
+  // For now, so at least 'warn' and 'info' works, as per the "disable logging by ..."
   // comment below.
-  const skipDebug = !talkyardLogLevel || talkyardLogLevel === 'warn';
-  if (skipDebug && !isWarnOrErr || !window.console)
+  const skipInfo  = !talkyardLogLevel || talkyardLogLevel === 'warn';
+  const skipDebug = !talkyardLogLevel || talkyardLogLevel === 'info';
+  if (skipInfo && forLevel >= 40 || skipDebug && forLevel >= 50 || !window.console)
     return function() {};
 
   return function logFn(..._arguments) {
@@ -98,15 +103,15 @@ function makeTalkyardLogFn(isWarnOrErr: Bo, consoleLogFn: (...data: Ay[]) => Vo)
 }
 
 // const logT =
-const logD = makeTalkyardLogFn(false, console.debug);
-const logM = makeTalkyardLogFn(false, console.log);
-const logW = makeTalkyardLogFn(true, console.warn);
-const logE = makeTalkyardLogFn(true, console.error);
+const logD = makeTalkyardLogFn(65, console.debug);
+const logM = makeTalkyardLogFn(45, console.log);
+const logW = makeTalkyardLogFn(35, console.warn);
+const logE = makeTalkyardLogFn(25, console.error);
 
 // const j2s = JSON.stringify;
 
 logM(`Starting ${TalkyardVersion} ... ` +
-      `(disable logging by setting talkyardLogLevel = 'warn')`);
+      `(disable logging by setting talkyardLogLevel = 'warn' or 'info')`);
 
 
 const d = { i: debiki.internal };
@@ -162,7 +167,7 @@ if (authnTokenInCookie) {
 const differentTokens =
         authnTokenInVar && authnTokenInCookie && authnTokenInVar !== authnTokenInCookie;
 if (differentTokens) {
-  logW(`Authn token in var and cookie differs, ignoring both`);
+  logW(`Authn token in var and cookie differs, ignoring both [TyEAUTKNDIF]`);
 }
 
 const autnToken: StV = differentTokens ? null : authnTokenInVar || authnTokenInCookie;
@@ -384,7 +389,7 @@ function addCommentsIframe(ps: { appendInside: HElm | St, discussionId: St }): H
   const appendIn: HElm = typeof ps.appendInside === 'string' ?
           document.querySelector(ps.appendInside) : ps.appendInside;
   if (!appendIn) {
-    logW(`No elem to append in: ${ps.appendInside}`);
+    logE(`No elem to append in: ${ps.appendInside} [TyE0ELM2APND_]`);
     return;
   }
 
@@ -489,7 +494,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
       if (i >= 1) {
         logW(`Only one query param supported, but talkyardConsiderQueryParams is: ${
               JSON.stringify(considerQueryParams)} — ignoring all but ${
-              considerQueryParams[0]}`);
+              considerQueryParams[0]} [TyEMANYQPS]`);
         break;;
       }
       embeddingUrl += i === 0 ? '?' : '&';
@@ -892,7 +897,7 @@ function onMessage(event) {
           return;
       }
 
-      logM(`All comment iframes inited — continuing ...`);
+      logM(`All comment iframes inited.`);
 
       // Any comment to scroll into view?
       //
@@ -967,7 +972,13 @@ function onMessage(event) {
       }
       authnTried = true;
 
+      // (But not authenticated, yet (happens asynchronically in the iframes). Only
+      // public comments visible, until then.)
+      // Callback e2e test:
+      //    - embcom.log-levels-on-loaded.1br.ec  TyTECLOGSCLBKS.TyTCOMTSCLBK
+      callIfExists('onTalkyardCommentsLoaded');
       break;
+
     case 'setIframeSize':
       //logT(`setIframeSize ${j2s(eventData)}`);
 
@@ -988,17 +999,20 @@ function onMessage(event) {
         loadingElms[iframeNr] = undefined;
       }
       break;
+
     case 'scrollToPostNr':
       // The comments iframe will calculate the rectangle to scroll into view,
       // and then reply with a 'scrollComments' message, because the actual scrolling
       // needs to happen here in the parent frame.
       sendToComments(event.data);
       break;
+
     case 'scrollComments':   // RENAME to 'scrollCommentsIframe'?
       var rectToScrollIntoView = eventData[0];
       var options = eventData[1];
       scrollComments(rectToScrollIntoView, options);
       break;
+
       /* CLEAN_UP remove this
     case 'startUtterscrolling':
       debiki.Utterscroll.startScrolling(eventData);
@@ -1086,6 +1100,7 @@ function onMessage(event) {
         location.assign(eventData.goTo);
       }
       break;
+
     // Maybe remove this one, and use only 'showEditsPreviewInPage' instead, renamed to
     // 'showEditorAndPreview'?
     case 'onEditorOpen':
@@ -1489,5 +1504,18 @@ windowWithTalkyardProps.talkyardForgetRemovedCommentIframes = forgetRemovedComme
 // @ifdef DEBUG
 windowWithTalkyardProps['e2e_getNumEmbDiscs'] = () => numDiscussions;
 // @endif
+
+
+
+function callIfExists(functionName: St) {
+  const fn = windowWithTalkyardProps[functionName];
+  if ((typeof fn) === 'function') {
+    fn();
+  }
+}
+
+// Callback e2e test:
+//    - embcom.log-levels-on-loaded.1br.ec  TyTECLOGSCLBKS.TyTSCRIPTCLBK
+callIfExists('onTalkyardScriptLoaded');
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
