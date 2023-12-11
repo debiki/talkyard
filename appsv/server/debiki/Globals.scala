@@ -29,6 +29,7 @@ import com.zaxxer.hikari.HikariDataSource
 import debiki.EdHttp._
 import talkyard.server.spam.{SpamCheckActor, SpamChecker}
 import debiki.dao._
+import talkyard.server.logging.LastErrsActor
 import talkyard.server.migrations.ScalaBasedMigrations
 import talkyard.server.search.SearchEngineIndexer
 import talkyard.server.notf.NotifierActor
@@ -219,7 +220,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     _state match {
       case Good(state) => state
       case Bad(anyException) =>
-        logger.warn("Accessing state before it's been created. I'm still trying to start.")
+        logger.error(o"""Accessing state before it's been created.
+                I'm still trying to start. [TyE0STATEYET]""")
         throw anyException getOrElse StillConnectingException
     }
   }
@@ -339,6 +341,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     }
   }
 
+  def lastErrsActorRef: ActorRef = state.lastErrsActorRef
+
   def endToEndTestMailer: ActorRef = state.mailerActorRef
   def spamCheckActor: Option[ActorRef] = state.spamCheckActorRef
 
@@ -414,6 +418,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
   val securityComplaintsEmailAddress: Option[String] =
     getStringNoneIfBlank("talkyard.securityComplaintsEmailAddress")
 
+  val onCallEmailAddresses = None
 
   /** Either exactly all sites uses HTTPS, or all of them use HTTP.
     * A mixed configuration makes little sense I think:
@@ -1047,10 +1052,11 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
   private def tryCreateStateUntilKilled(): Unit = {
     logger.info("Creating state.... [EdMCREATESTATE]")
     _state = Bad(None)
-    var firsAttempt = true
+    var attemptNr = 1
 
     while (_state.isBad && !killed && !shallStopStuff) {
-      if (!firsAttempt) {
+      if (attemptNr >= 2) {
+        logger.info(s"Create state attempt nr $attemptNr [TyMSTATEAGAIN]")
         // Don't attempt to connect to everything too quickly, because then 100 MB log data
         // with "Error connecting to database ..." are quickly generated.
         Thread.sleep(4000)
@@ -1060,7 +1066,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
           return
         }
       }
-      firsAttempt = false
+      attemptNr += 1
       val cache = makeCache
       try {
         reloadAppSecret()
@@ -1119,6 +1125,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
       return
     }
 
+    talkyard.server.logging.setLastErrsActorRef(state.lastErrsActorRef)
+
     // The render engines might be needed by some Java (Scala) evolutions.
     // Let's create them in this parallel thread rather than blocking the whole server.
     // (Takes 2? 5? seconds.)
@@ -1154,6 +1162,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
       val (name, future) = stopPlease(state.notifierActorRef)
       Await.result(future, ShutdownTimeout)
 
+      talkyard.server.logging.clearLastErrsActorRef()
+
       // Shutdown in parallel.
       logger.info(s"Stopping remaining actors ...")
       val futureShutdownResults = Seq(
@@ -1162,7 +1172,11 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
             stopPlease(state.indexerActorRef),
             stopPlease(state.spamCheckActorRef),
             stopPlease(state.janitorActorRef),
-            stopPlease(state.pubSubActorRef))
+            stopPlease(state.pubSubActorRef),
+            // (COULD wait a bit with shutting down this one, & the mailerActorRef,
+            // so they can email admins any errors that happen during shutdown.)
+            stopPlease(state.lastErrsActorRef),
+            )
 
       state.elasticSearchClient.close()
       state.redisClient.quit()
@@ -1324,6 +1338,9 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
             jn.InetAddress.getByName(elasticSearchHost), 9300))
 
     setStartupStep("Done migrating database. Starting background jobs... [TyMSTART5BGJOBS]")
+
+    // Start first, so it'll start receiving errors sooner.
+    val lastErrsActorRef: ActorRef = LastErrsActor.startNewActor(outer)
 
     val siteDaoFactory = new SiteDaoFactory(
       edContext, dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient, config)

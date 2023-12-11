@@ -23,6 +23,7 @@ import debiki.Globals
 import play.api.libs.json._
 import play.api.{MarkerContext => p_MarkerContext}
 import java.util.concurrent.atomic.{AtomicInteger => j_AtomicInteger}
+import akka.actor.ActorRef
 
 
 trait NumSince {
@@ -56,6 +57,16 @@ package object logging {
   def numErrors: NumSince = _numErrors
   def numWarnings: NumSince = _numWarnings
 
+  // For now
+  @volatile
+  var _anyLastErrsActorRef: Opt[ActorRef] = None
+
+  def setLastErrsActorRef(ref: ActorRef): U =
+    _anyLastErrsActorRef = Some(ref)
+
+  def clearLastErrsActorRef(): U =
+    _anyLastErrsActorRef = None
+
 
   // "tysvapp":  "ty" = Talkyard, "sv" = server, "app" = application.
   // (Later, more logging?:  tysvweb = web server logs,
@@ -72,6 +83,8 @@ package object logging {
       if (isWarnEnabled) {
         increment(_numWarnings)
         super.warn(msg)(mc)
+        // 35? See:  [ty_log_levels]
+        _anyLastErrsActorRef.foreach(_ ! LastErrsActor.RememberLogMsg(LogMsg(msg, 35)))
       }
     }
 
@@ -79,6 +92,7 @@ package object logging {
       if (isWarnEnabled) {
         increment(_numWarnings)
         super.warn(msg, err)(mc)
+        _anyLastErrsActorRef.foreach(_ ! LastErrsActor.RememberLogMsg(LogMsg(msg, 35)))
       }
     }
 
@@ -86,6 +100,8 @@ package object logging {
       if (isErrorEnabled) {
         increment(_numErrors)
         super.error(msg)(mc)
+        // 25? See:  [ty_log_levels]
+        _anyLastErrsActorRef.foreach(_ ! LastErrsActor.RememberLogMsg(LogMsg(msg, 25)))
       }
     }
 
@@ -93,6 +109,7 @@ package object logging {
       if (isErrorEnabled) {
         increment(_numErrors)
         super.error(msg, err)(mc)
+        _anyLastErrsActorRef.foreach(_ ! LastErrsActor.RememberLogMsg(LogMsg(msg, 25)))
       }
     }
   }
