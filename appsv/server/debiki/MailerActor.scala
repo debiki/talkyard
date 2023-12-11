@@ -273,12 +273,14 @@ class MailerActor(
             not sending: $email""")
       }
       else {
-        if (numEmailsSent > MaxEmails / 2) {
-          logger.warn(o"""Soon reaching the max emails money attack limit:
-              $numEmailsSent / $MaxEmails [TyMMANYEMLS]""")
-        }
-        else if (numEmailsSent % 100 == 0) {
-          logger.info(s"Has sent $numEmailsSent emails since server started. [TyMNUMEMLS]")
+        if (numEmailsSent % 100 == 0) {
+          if (numEmailsSent > MaxEmails / 2) {
+            logger.warn(o"""Soon reaching the max emails money attack limit:
+                $numEmailsSent / $MaxEmails [TyMMANYEMLS]""")
+          }
+          else {
+            logger.info(s"Has sent $numEmailsSent emails since server started. [TyMNUMEMLS]")
+          }
         }
 
         sendEmail(email, siteId)
