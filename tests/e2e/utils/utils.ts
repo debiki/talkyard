@@ -248,6 +248,7 @@ authnTokenScript + `
     }
 
     let resultHtmlStr = `
+<!DOCTYPE html>
 <html>
 <head>
 <title>Embedded comments many iframes E2E test</title>

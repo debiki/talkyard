@@ -118,6 +118,11 @@ if (browserNameAndOpts.browserName === 'chrome'
   }
 
   browserNameAndOpts['goog:chromeOptions'] = opts;
+
+  // Makes getLogs() return messages with all log levels, otherwise only 'SEVERE'.
+  // See: https://github.com/webdriverio/webdriverio/issues/5318  [getLogs_all_lvls]
+  browserNameAndOpts['goog:loggingPrefs'] = { browser: "ALL" };
+
   // If the Talkyard server runs https: (the --secure flag [E2EHTTPS])
   browserNameAndOpts.acceptInsecureCerts = true;
 }
