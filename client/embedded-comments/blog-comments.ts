@@ -60,7 +60,7 @@ interface WindowWithTalkyardProps {
 // For now, instead:
 const windowWithTalkyardProps: WindowWithTalkyardProps = <any> window;
 
-// Talkyard's log levels:
+// Talkyard's log levels:  [ty_log_levels]
 // off, fatal, error, warn, info, config, debug, trace, annoying
 //   0,    10,    20,   30,   40,     50,    60,    70,       80
 const winLogLvl = windowWithTalkyardProps.talkyardLogLevel;
@@ -1481,5 +1481,11 @@ windowWithTalkyardProps.talkyardForgetRemovedCommentIframes = forgetRemovedComme
 // @ifdef DEBUG
 windowWithTalkyardProps['e2e_getNumEmbDiscs'] = () => numDiscussions;
 // @endif
+
+
+const onLoaded = windowWithTalkyardProps['onTalkyardCommentsScriptLoaded'];
+if ((typeof onLoaded) === 'function') {
+  onLoaded();
+}
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
