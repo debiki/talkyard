@@ -12,7 +12,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package controllers
@@ -127,8 +127,8 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyConte
     val nowMins_i64 = nowMillis / MillisPerMinute
     val nowMins = castToInt32(nowMins_i64, IfBadDie)
 
-    val numErrs = talkyard.server.numErrors
-    val numWarns = talkyard.server.numWarnings
+    val numErrs = talkyard.server.logging.numErrors
+    val numWarns = talkyard.server.logging.numWarnings
     val lastErrAtMin: Opt[i32] = numErrs.lastAtUnixMinute()
     val lastErrMinsAgo: Opt[i32] = lastErrAtMin.map(nowMins - _)
 
