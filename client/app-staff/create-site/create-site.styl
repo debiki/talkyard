@@ -48,8 +48,11 @@
   form
     max-width: 580px;
 
-  .form-group
-    margin-bottom: 45px;
+  .n_InpSec
+    margin-bottom: 40px;
+    &:has(.s_PatInp_Err)
+      // The error occupies some space, so less margin needed.
+      margin-bottom: 30px;
 
   #dwLocalHostname
     display: inline;

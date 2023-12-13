@@ -398,10 +398,12 @@ export var CreateForumPanel = createComponent({
           topicListPreviewImgSrc = prefix + 'topic-list-titles-only.jpg';
           imgWidth = 621;
           break;
+        /* This isn't so user friendly — let's remove for now,  [0_same_line_layout]
+        // at least here when creating a new site.
         case TopicListLayout.TitleExcerptSameLine:
           topicListPreviewImgSrc = prefix + 'topic-list-title-excerpt-same-line.jpg';
           imgWidth = 664;
-          break;
+          break; */
         case TopicListLayout.ExcerptBelowTitle:
           topicListPreviewImgSrc = prefix + 'topic-list-excerpt-below-title.jpg';
           imgWidth = 700;
@@ -429,9 +431,11 @@ export var CreateForumPanel = createComponent({
               Input({ type: 'radio', label: "Titles only",
                 checked: style === TopicListLayout.TitleOnly,
                 onChange: setTopicsStyle(TopicListLayout.TitleOnly) }),
+              /* [0_same_line_layout]
               Input({ type: 'radio', label: "Titles and excerpt, same line",
                 checked: style === TopicListLayout.TitleExcerptSameLine,
                 onChange: setTopicsStyle(TopicListLayout.TitleExcerptSameLine) }),
+                */
               Input({ type: 'radio', label: "Excerpt in separate paragraph",
                 checked: style === TopicListLayout.ExcerptBelowTitle,
                 onChange: setTopicsStyle(TopicListLayout.ExcerptBelowTitle),

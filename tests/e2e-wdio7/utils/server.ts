@@ -386,7 +386,7 @@ async function getLastEmailSenTo(siteId: SiteId, email: St, dontWait?: 'DontWait
       const lastEmail = lastEmails[lastEmails.length - 1];
       return lastEmail;
     }
-    // Internal functions can pass false, if they pause themselves.
+    // Internal functions can specify 'DontWait', if they pause themselves.
     if (dontWait !== 'DontWait') {
       await wdioBrowserA.pause(500 - 100); // 100 ms for a request, perhaps?
     }

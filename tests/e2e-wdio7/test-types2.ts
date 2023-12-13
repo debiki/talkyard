@@ -166,6 +166,7 @@ interface NewSiteDataSharedFields {
 interface NewSiteDataForForum extends NewSiteDataSharedFields {
   siteType: SiteType.Forum;
   embeddingUrl?: undefined;
+  makePrivate?: true;
 }
 
 

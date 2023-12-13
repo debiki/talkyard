@@ -930,9 +930,9 @@ function loadJQuery(callback?) {
 } */
 
 
-export function createSite(localHostname: string,
-    anyEmbeddingSiteAddress: string, organizationName: string,
-    doneCallback: (string) => void) {
+export function createSite(ps: { localHostname: St,
+    anyEmbeddingSiteAddress: St, organizationName: St, makePublic: Bo,
+    onOk: (nextUrl: St) => V }) {
   const params = new URLSearchParams(window.location.search);
   // The server will [remove_not_allowed_feature_flags].
   const featureFlags = params.get('featureFlags');
@@ -941,14 +941,15 @@ export function createSite(localHostname: string,
   postJson('/-/create-site', {
     data: {
       acceptTermsAndPrivacy: true,
-      localHostname,
-      embeddingSiteAddress: anyEmbeddingSiteAddress,
-      organizationName,
+      localHostname: ps.localHostname,
+      embeddingSiteAddress: ps.anyEmbeddingSiteAddress,
+      organizationName: ps.organizationName,
+      makePublic: ps.makePublic,
       featureFlags,
       testSiteOkDelete,
     },
     success: (response) => {
-      doneCallback(response.nextUrl);
+      ps.onOk(response.nextUrl);
     }
   });
 }

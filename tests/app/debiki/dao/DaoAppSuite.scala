@@ -160,13 +160,13 @@ class DaoAppSuite(
     val siteName = "site-" + hostname.replaceAllLiterally(".", "")
     val pubId = s"e2epubid${siteName.replaceAllLiterally("-", "")}"
     val site = globals.systemDao.createAdditionalSite(
-      anySiteId = None,
-      pubId = pubId, name = siteName, status = SiteStatus.Active,
-      hostname = Some(hostname), featureFlags = "",
-      embeddingSiteUrl = None, organizationName = s"Site $hostname Organization Name",
-      creatorId = UnknownUserId, browserIdData,
-      isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,
-      createdFromSiteId = None)
+          anySiteId = None,
+          pubId = pubId, name = siteName, status = SiteStatus.Active,
+          hostname = Some(hostname), featureFlags = "",
+          embeddingSiteUrl = None, organizationName = s"Site $hostname Organization Name",
+          makePublic = None, creatorId = UnknownUserId, browserIdData,
+          isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,
+          createdFromSiteId = None)
     val dao = globals.siteDao(site.id)
     if (settings != SettingsToSave()) {
       dao.readWriteTransaction { tx =>

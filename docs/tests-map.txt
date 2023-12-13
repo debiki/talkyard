@@ -65,7 +65,12 @@ job queue, job_queue_t:
 
 create site & forum -
   via api: [.create_site_via_api]
-  create:  create-site-all-logins
+  create forum:  
+            - create-site-*  — many tests
+            - create-site-all-logins
+    private forum:  
+            - create-private-site-password.2br.f  TyTCRSITPRIVPW
+            - create-private-site-gmail-invite-only.2br.f  TyTCRSITPRIVGMAIL
   not too many per ip / email:
   not too many in total:
   reserved subdomain:
@@ -526,6 +531,8 @@ invites -
   expires:
   invite to groups:
           - invite-to-groups.2browsers.test.ts  TyT7WKTJ40ZT22
+  invite-only:
+            - create-private-site-gmail-invite-only.2br.f  TyTCRSITPRIVGMAIL.TyTINVONLY
 
 
 emails -
@@ -1170,6 +1177,7 @@ site settings:
     approve members:
             - settings-approve-members.2browsers.test.ts  [TyT2HUWX8]
             - admin-user-approve-reject.2browsers.test.ts [TyT5KHEWQ2]
+            - create-private-site-password.2br.f  TyTCRSITPRIVPW.TyTUSRAPPREQ
     expire idle session:
             - login-expire-idle-after.2browsers.test.ts  TyT7RBKTJ25
     allow signup:
@@ -1207,7 +1215,10 @@ intro tours:
   forum section, blog comments, admin tour:
           - embedded-comments-forum-intro-tour.test.ts  TyT6AKBR2044
   exit tour:
-            - embcom.create-site-req-verif-email-exit-tours.2br TyTE2ECREMBCOM1.Ty7ABKR024
+    directly:
+            - embcom.create-site-req-verif-email-exit-tours.2br TyTE2ECREMBCOM1.TyTTOUREXIT
+    after a step:
+            - create-private-site-password.2br.f  TyTCRSITPRIVPW.TyTTOUREXIT
   restart tour:  [TyT2ABKRT05]
 
 

@@ -274,7 +274,15 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
     val authenticationRequired = siteSettings.userMustBeAuthenticated ||
       siteSettings.userMustBeApproved
 
-    if (authenticationRequired) {
+    val showAuthnDiag = authenticationRequired &&
+          // But if we're creating the site, and it's private — then, before
+          // the first admin has been created, we're not done with creating the site.
+          // Then, skip the authn dialog, instead, show the [create_something_here_page],
+          // which will ask pat to sign up as owner.
+          // (Note: If the site status is > NoAdmin, it [cannot_be_changed_back_to_NoAdmin].)
+          request.site.status != SiteStatus.NoAdmin
+
+    if (showAuthnDiag) {
       if (!user.exists(_.isAuthenticated)) {
         // If SSO enabled and siteSettings.ssoLoginRequiredLogoutUrl defined, then
         // could redirect here directly to the SSO url. However, then we'd need
@@ -328,7 +336,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
         throwIndistinguishableNotFound()
       }
 
-      // Show a create-something-here page (see TemplateRenderer).
+      // Show a [create_something_here_page] (see TemplateRenderer).
       val pageRequest = makeEmptyPageRequest(
           request, pageId = EmptyPageId, showId = false, pageRole = PageType.WebPage, globals.now())
       val json = dao.jsonMaker.emptySiteJson(pageRequest).toString()
