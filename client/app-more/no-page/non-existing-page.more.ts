@@ -352,6 +352,8 @@ export var CreateForumPanel = createComponent({
       thisChoiceDone = false;
     }
 
+    // ! Private or Public
+
     /*  [NODEFCATS]
     if (nextChoice >= 2) {
       useCategoriesChoice = Input({ type: 'checkbox',
