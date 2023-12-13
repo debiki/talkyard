@@ -424,6 +424,11 @@ const enum TopicListLayout {
   Default = 0,  // currently same as title only [topicListLayout_getName]
   TitleOnly = 1,
   TitleExcerptSameLine = 2,
+  // This isn't so user friendly: Clicking a title opens  [0_same_line_layout]
+  // that page, but if clicking the same-line-brief-excerpt, then instead the
+  // excerpt expands — however, if the excerpt is really short
+  // so there's not-much to expand, then it can seem as if nothing happens,
+  // which has confused me, a few times.
   ExcerptBelowTitle = 3,
   ThumbnailLeft = 4,
   ThumbnailsBelowTitle = 5,

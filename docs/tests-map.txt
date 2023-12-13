@@ -65,7 +65,11 @@ job queue, job_queue_t:
 
 create site & forum -
   via api: [.create_site_via_api]
-  create:  create-site-all-logins
+  create forum:  
+            - create-site-*  — many tests
+            - create-site-all-logins
+    private forum:  
+            - create-private-site-password.2br.f  TyTCRSITPRIVPW
   not too many per ip / email:
   not too many in total:
   reserved subdomain:
@@ -1203,7 +1207,10 @@ intro tours:
   forum section, blog comments, admin tour:
           - embedded-comments-forum-intro-tour.test.ts  TyT6AKBR2044
   exit tour:
-            - embcom.create-site-req-verif-email-exit-tours.2br TyTE2ECREMBCOM1.Ty7ABKR024
+    directly:
+            - embcom.create-site-req-verif-email-exit-tours.2br TyTE2ECREMBCOM1.TyTTOUREXIT
+    after a step:
+            - create-private-site-password.2br.f  TyTCRSITPRIVPW.TyTTOUREXIT
   restart tour:  [TyT2ABKRT05]
 
 

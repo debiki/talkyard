@@ -3034,14 +3034,30 @@ export class TyE2eTestBrowser {
     createSite = {
       fillInFieldsAndSubmit: async (data: NewSiteData) => {
         if (data.embeddingUrl) {
+          logMessage(`Typing embedding URL...`);
           await this.waitAndSetValue('#e_EmbeddingUrl', data.embeddingUrl);
         }
         else {
+          logMessage(`Typing forum local hostname...`);
           await this.waitAndSetValue('#dwLocalHostname', data.localHostname);
         }
+
         await this.waitAndClick('#e2eNext3');
+        logMessage(`Typing org name...`);
         await this.waitAndSetValue('#e2eOrgName', data.orgName || data.localHostname);
+
+        await this.waitAndClick('#e_Next4');
+        if (data.makePrivate) {
+          logMessage(`Selecting Private forum (not public)...`);
+          await this.waitAndClick('#e_MkPriv');
+        }
+
+        logMessage(`Submitting, to create site...`);
         await this.waitAndClick('input[type=submit]');
+
+        // We should see the [create_something_here_page], also if makePrivate.
+        // It'll ask pat to sign up as owner.
+        logMessage(`Clicking owner signup buton ...`);
         await this.waitForVisible('#t_OwnerSignupB');
         assert.equal(data.origin, await this.origin());
       },

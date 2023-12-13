@@ -379,20 +379,21 @@ class SystemDao(
     * The first site is instead created by [[createFirstSite()]] above.
     */
   def createAdditionalSite(
-    anySiteId: Option[SiteId],
+    anySiteId: Opt[SiteId],
     pubId: PubSiteId,
-    name: String,
+    name: St,
     status: SiteStatus,
-    hostname: Option[String],
+    hostname: Opt[St],
     featureFlags: St,
-    embeddingSiteUrl: Option[String],
-    organizationName: String,
+    embeddingSiteUrl: Opt[St],
+    organizationName: St,
+    makePublic: Opt[Bo],
     creatorId: UserId,   // change to Option, present iff createdFromSiteId ?
     browserIdData: BrowserIdData,
     isTestSiteOkayToDelete: Boolean,
-    skipMaxSitesCheck: Boolean,
-    createdFromSiteId: Option[SiteId],
-    anySysTx: Option[SystemTransaction] = None): Site = {
+    skipMaxSitesCheck: Bo,
+    createdFromSiteId: Opt[SiteId],
+    anySysTx: Opt[SysTx] = None): Site = {
 
     Site.findNameProblem(name) foreach { problem =>
       throwForbidden("EsE7UZF2_", s"Bad site name: '$name', problem: $problem")
@@ -468,9 +469,15 @@ class SystemDao(
       // Or change the settings to Ints? 0 = never, 1 = embedded comments only, 2 = always.
       val notIfEmbedded = if (embeddingSiteUrl.isDefined) Some(Some(false)) else None
       val yesIfEmbedded = if (embeddingSiteUrl.isDefined) Some(Some(true)) else None
+      val makePrivate = makePublic is false
 
       newSiteTx.upsertSiteSettings(SettingsToSave(
         allowEmbeddingFrom = Some(embeddingSiteUrl),
+
+        userMustBeAuthenticated = if (makePrivate) Some(Some(true)) else None,
+        userMustBeApproved = if (makePrivate) Some(Some(true)) else None,
+        //inviteOnly = if (makePrivate) Some(Some(true)) else None,
+        //allowSignup = if (makePrivate) Some(Some(false)) else None,
 
         // Features are disabled, for embedded blog comments sites, here instead: [493MRP1].
         // The below login settings should be moved to there too? So will take effect
@@ -483,13 +490,15 @@ class SystemDao(
         requireVerifiedEmail = notIfEmbedded,
         mayComposeBeforeSignup = yesIfEmbedded,
         mayPostBeforeEmailVerified = yesIfEmbedded,
+        // Tags usually aren't needed, for blog comments? Instead, the blog article
+        // itself would be tagged?
+        enableTags = notIfEmbedded,
 
         // People who create new sites via a hosted service, might not be technical
-        // people; to keep things simple for them, disable API and tags, initially. [DEFFEAT]
+        // people; to keep things simple for them, disable API, initially. [DEFFEAT]
         // (This is not the very first site on this server, so the person creating this site,
         // is apparently not doing a self hosted installation.)
         enableApi = Some(Some(false)),
-        enableTags = Some(Some(false)),
         orgFullName = Some(Some(organizationName))))
 
       val newSiteHost = hostname.map(Hostname(_, Hostname.RoleCanonical))

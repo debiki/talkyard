@@ -296,6 +296,9 @@ function runAllE2eTests {
   $r s/wdio-7 --only create-site-admin-guide.2br.d --cd -i $args
   $r s/wdio --only gmail-fb-join-login.extidp.1br $args
 
+  $r s/wdio-7 --only create-private-site-password.2br.f --cd -i $args
+  $r s/wdio-7 --only create-private-site-gmail.1br.d --cd -i $args
+
   # Needs HTTPS (dummy localhost cert is ok).
   $r s/wdio-7 --only oidc-azure-login-required.2br.extidp --cd -i $args
   $r s/wdio-7 --only oidc-azure-pub-site.2br.extidp --cd -i $args
