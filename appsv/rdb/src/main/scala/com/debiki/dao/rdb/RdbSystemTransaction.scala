@@ -430,7 +430,9 @@ class RdbSystemTransaction(
            log_lims_mult_c = ?,
            create_lims_mult_c = ?,
            feature_flags_c = ?
-       where id = ? """
+       where id = ?
+         -- The site status [cannot_be_changed_back_to_NoAdmin].
+         and not (status > ${SiteStatus.NoAdmin.toInt} and ? = ${SiteStatus.NoAdmin.toInt}) """
 
       val siteId = patch.siteId
       values.append(
@@ -442,9 +444,11 @@ class RdbSystemTransaction(
             patch.logLimitsMultiplier.orNullFloat,
             patch.createLimitsMultiplier.orNullFloat,
             patch.featureFlags.trimNullVarcharIfBlank,
-            siteId.asAnyRef)
+            siteId.asAnyRef,
+            patch.newStatus.toInt.asAnyRef)
       val num = runUpdate(statement, values.toList)
-      dieIf(num != 1, "EsE24KF90", s"s$siteId: num = $num when changing site status")
+      dieIf(num != 1, "TyE24KF90", s"""s$siteId: num = $num when changing site status. (You
+            didn't try to change the site status back to NoAdmin? Or, the wrong id?)""")
   }
 
 

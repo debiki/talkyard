@@ -60,6 +60,14 @@ const CreateSomethingComponent = createReactClass({
 });
 
 
+interface CreateSiteState {
+  isForEmbeddedComments;
+  makePublic: Bo;
+  okayStatuses: { [name: St]: Bo };
+  showAddress?: Bo;
+  showOrgNameInp?: Bo;
+  showPrivPubl?: Bo;
+}
 
 const CreateWebsiteComponent = createFactory<any, any>({
   displayName: 'CreateWebsiteComponent',
@@ -72,54 +80,61 @@ const CreateWebsiteComponent = createFactory<any, any>({
         address: false,
         orgName: false,
       },
-      embeddingOrigin: '',
-    };
+      // embeddingOrigin: '', // not in use?
+      makePublic: true,
+    } satisfies CreateSiteState;
   },
 
-  componentDidUpdate: function(prevProps, prevState) {
-    if (this.state.showAddress && !prevState.showAddress) {
+  componentDidUpdate: function(prevProps, prevState: CreateSiteState) {
+    const state: CreateSiteState = this.state;
+    if (state.showAddress && !prevState.showAddress) {
       (this.refs.embeddingOrigin || this.refs.localHostname).focus();
     }
-    if (this.state.showRemaining && !prevState.showRemaining) {
+    if (state.showOrgNameInp && !prevState.showOrgNameInp) {
       this.refs.organizationName.focus();
     }
   },
 
   handleSubmit: function(event) {
+    const state: CreateSiteState = this.state;
     const testSitePrefix = // dupl code [5UKF03]
       location.pathname.indexOf('create-test-site') !== -1 ? 'test--' : '';
-    const isComments = this.state.isForEmbeddedComments;
+    const isComments = state.isForEmbeddedComments;
     const localHostname = isComments ? null : testSitePrefix + this.refs.localHostname.getValue();
     const embeddingOrigin = !isComments ? null : this.refs.embeddingOrigin.getValue();
 
     event.preventDefault();
-    Server.createSite(
+    Server.createSite({
         localHostname,
-        embeddingOrigin,
-        this.refs.organizationName.getValue(),
-        (nextUrl) => {
+        anyEmbeddingSiteAddress: embeddingOrigin,
+        organizationName: this.refs.organizationName.getValue(),
+        makePublic: state.makePublic,
+        onOk: (nextUrl: St) => {
           window.location.assign(nextUrl);
-        });
+        }});
   },
 
-  reportOkay: function(what, isOk) {
-    const okayStatuses = this.state.okayStatuses;
+  reportOkay: function(what: St, isOk) {
+    const state: CreateSiteState = this.state;
+    const okayStatuses = { ...state.okayStatuses };
     okayStatuses[what] = isOk;
-    this.setState({ okayStatuses: okayStatuses });
+    this.setState({ okayStatuses });
   },
 
   render: function() {
-    const state = this.state;
+    const state: CreateSiteState = this.state;
     const okayStatuses = state.okayStatuses;
     const disableSubmit = _.includes(_.values(okayStatuses), false);
-    const isComments = this.state.isForEmbeddedComments;
+    const isComments = state.isForEmbeddedComments;
     const embeddingOriginOrLocalHostname = isComments
       ? EmbeddingAddressInput({
+          tabIndex: 10,
           onChangeValueOk: (value, isOk) => {
             this.setState({ embeddingOrigin: value });
             this.reportOkay('address', isOk)
           } })
       : LocalHostnameInput({ label: "Site Address:", placeholder: 'your-forum-name',
+            tabIndex: 10,
             help: "The address of your new site. You can change this later,  " +
                 "e.g. to a custom domain.",
             ref: 'localHostname',
@@ -129,35 +144,68 @@ const CreateWebsiteComponent = createFactory<any, any>({
       r.div({},
         r.h1({}, isComments ? "Create Embedded Comments" : "Create Forum"),
         r.form({ className: 'esCreateSite', onSubmit: this.handleSubmit },
-          embeddingOriginOrLocalHostname,
+          r.div({ className: 'n_InpSec' },
+              embeddingOriginOrLocalHostname),
 
-          NextStepButton({ onShowNextStep: () => this.setState({ showRemaining: true }),
-              showThisStep: okayStatuses.address && !state.showRemaining, id: 'e2eNext3' },
+          NextStepButton({ onShowNextStep: () => this.setState({ showOrgNameInp: true }),
+              showThisStep: okayStatuses.address && !state.showOrgNameInp,
+              id: 'e2eNext3', tabIndex: 15 },
             "Next"),
 
-          PatternInput({ label: "Organization name:", placeholder: "Your Organization Name",
-              style: { display: state.showRemaining ? 'block' : 'none' },
-              help: "The name of your organization, if any. Otherwise, you " +
-                "can use your own name. Will be used in your Terms of Use " +
+          !state.showOrgNameInp ? null :
+            PatternInput({ label: "Organization name:", placeholder: "Your Organization Name",
+              tabIndex: 20, wrapperClassName: 'n_InpSec',
+              help: "The name of your organization, if any.  Otherwise, you " +
+                "can use your own name.  Will be used in your Terms of Use " +
                 "and Privacy Policy documents. " +
                 "— You can change the name later (in your site's admin settings).",
               ref: 'organizationName', id: 'e2eOrgName',
               regex: /\S/, message: "Name required",
               onChangeValueOk: (value, isOk) => this.reportOkay('orgName', isOk) }),
 
-          r.div({ style: { display: state.showRemaining ? 'block' : 'none' }},
-            InputTypeSubmit({ value: "Create Site", disabled: disableSubmit })))));
+          isComments ? null :
+          NextStepButton({ onShowNextStep: () => this.setState({ showPrivPubl: true }),
+              showThisStep: okayStatuses.orgName && !state.showPrivPubl,
+              id: 'e_Next4', tabIndex: 25 },
+            "Next"),
+
+          !state.showPrivPubl || isComments ? null :
+            r.div({ className: 'n_InpSec' },
+              r.p({}, r.b({}, "Public or private?")),
+              r.p({},
+                  "Shall people on the Internet see the discussions in the forum? ",
+                  r.small({}, "(For example, an online community, or customer support.)")),
+              r.p({},
+                  "Or shall everything be private, not visible unless logged in? " +
+                  r.small({}, "(For example, only for your coworkers.)")),
+              Input({ type: 'radio', name: 'pubPriv', id: 'e_MkPub', tabIndex: 30,
+                  label: rFr({}, "Public   (except for private categories)"),
+                  checked: state.makePublic,
+                  onChange: () => this.setState({ makePublic: true }),
+                  }),
+              Input({ type: 'radio', name: 'pubPriv', id: 'e_MkPriv', 
+                  // (tabIndex: 30 — doesn't matter. All radio buttons with the same 'name:'
+                  // get the same index, and one navigates using the up-down arrow keys.)
+                  label: "Everything private",
+                  checked: !state.makePublic,
+                  onChange: () => this.setState({ makePublic: false }),
+                  })),
+
+          !state.showPrivPubl && !(isComments && state.showOrgNameInp) ? null :
+            InputTypeSubmit({ value: "Create Site", disabled: disableSubmit, tabIndex: 40 }))));
   }
 });
 
 
-function NextStepButton(props, text) {
+function NextStepButton(props: { id: St, onShowNextStep: () => V, showThisStep?: Bo,
+      tabIndex: Nr }, text: RElm | St) {
   // Listen to onFocus, so the next field will appear directly when one tabs
   // away from the previous field. onFocus apparently works with mouse & touch too.
   // However, onFocus apparently does *not* work in Safari, so listen to onClick too.
   return (
       PrimaryButton({ onClick: props.onShowNextStep, onFocus: props.onShowNextStep,
-          style: { display: props.showThisStep ? 'block' : 'none' }, id: props.id },
+          style: { display: props.showThisStep ? 'block' : 'none' }, id: props.id,
+          tabIndex: props.tabIndex },
         text));
 }
 
@@ -166,6 +214,7 @@ function NextStepButton(props, text) {
 export function EmbeddingAddressInput(props) {
   return (
     PatternInput({ label: props.label || "Embedding site:",
+      tabIndex: props.tabIndex,
       id: 'e_EmbeddingUrl', className: '',
       style: props.style,
       placeholder: 'https://your.website.com',
@@ -277,6 +326,7 @@ const LocalHostnameInput = createClassAndFactory({
         r.br(),
         r.kbd({}, location.protocol + '//' + testSitePrefix),
         r.input({ type: 'text', id: 'dwLocalHostname', className: 'form-control',
+            tabIndex: this.props.tabIndex,
             placeholder: this.props.placeholder, ref: 'input', onChange: this.onChange,
             value: value, onFocus: this.showErrors }),
         r.kbd({}, '.' + eds.baseDomain),

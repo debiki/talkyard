@@ -623,8 +623,9 @@ const LoginDialogContent = createClassAndFactory({
         );
     }
 
+    const isWhatClass = isSignUp ? 'e_IsSgU' : (isLogin ? 'e_IsLgI' : '');
     return (
-      r.div({ className: 'c_AuD' },
+      r.div({ className: 'c_AuD ' + isWhatClass},
         notHttpsErr,
         notFoundInstructions,
         content));

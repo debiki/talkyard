@@ -406,7 +406,8 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
         anySiteId = None,
         pubId = "dummy56205", name = "site-two-name", status = SiteStatus.Active,
         hostname = Some("site-two"), featureFlags = "",
-        embeddingSiteUrl = None, organizationName = "Test Org Name", creatorId = user.id,
+        embeddingSiteUrl = None, organizationName = "Test Org Name",
+        makePublic = None, creatorId = user.id,
         browserIdData, isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,
         createdFromSiteId = None)
 

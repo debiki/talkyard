@@ -1281,6 +1281,7 @@ case class SitePatcher(globals: debiki.Globals) {
         // Any embedding url and org name get updated below (0296537).
         embeddingSiteUrl = None,
         organizationName = "Organization name missing [TyM8YKWP3]",
+        makePublic = None,
         creatorId = SystemUserId,
         browserIdData = browserIdData,
         isTestSiteOkayToDelete = siteData.isTestSiteOkDelete,
