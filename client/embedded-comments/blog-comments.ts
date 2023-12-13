@@ -68,6 +68,8 @@ interface WindowWithTalkyardProps {
 // For now, instead:
 const windowWithTalkyardProps: WindowWithTalkyardProps = <any> window;
 
+// URL PARAM
+
 // Talkyard's log levels:  [ty_log_levels]
 // off, fatal, error, warn, info, config, debug, trace, annoying
 //   0,    10,    20,   30,   40,     50,    60,    70,       80
