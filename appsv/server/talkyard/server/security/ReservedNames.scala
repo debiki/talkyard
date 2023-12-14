@@ -392,6 +392,7 @@ my
 mysql
 name
 named
+names
 nan
 navi
 navigation
@@ -912,26 +913,34 @@ isatap
 git
 gist
 every
-everyone everybody
-anyone anybody
-someone somebody
-noone nobody
+everyone everybody everything
+anyone anybody anything
+someone somebody something
+noone nobody nothing
+unknown
 n00b
 noob
 anonymous anon anonym
+person
+pseudonymous pseudo pseudonym
 whoever whatever whichever
-something nothing
 identity
 role roles
 type types
 class classes
 trait traits
-he she it is hen hens who whom whos whose which that
+they their them
+he she it is who whom whos whose which that what why
+yes no not maybe option
+
 rubot
 robot
 robots
 sysbot
 sysbots
+chatgpt
+copilot
+ai  # just two letters, so not really needed
 
 super
 superuser
@@ -1039,7 +1048,12 @@ protected
 with
 for
 while
+until
 done
+then
+else
+otherwise
+and
 
 ta1kyard
 talkyard
@@ -1056,6 +1070,7 @@ efficientdiscussions
 debiki
 kle
 
+slack
 discourse
 flarum
 nodebb
@@ -1067,11 +1082,15 @@ disqus
 livefyre
 wordpress
 
+amazon
+apple
+facebook
 google
 googlemail
+github
 gmail
-apple
 microsoft
+netflix
 outlook
 yahoo
 

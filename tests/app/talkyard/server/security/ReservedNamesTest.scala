@@ -58,7 +58,7 @@ class ReservedNamesTest extends AnyFreeSpec with must.Matchers {
       ReservedNames.isUsernameReserved("he") mustBe true
       ReservedNames.isUsernameReserved("she") mustBe true
       ReservedNames.isUsernameReserved("it") mustBe true
-      ReservedNames.isUsernameReserved("hen") mustBe true
+      ReservedNames.isUsernameReserved("whom") mustBe true
     }
 
     "allow names that start with numers" in {
