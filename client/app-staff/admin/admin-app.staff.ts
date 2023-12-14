@@ -1870,6 +1870,7 @@ const EmbeddedCommentsSettings = createFactory({
     const enableForum = valueOf(s => s.enableForum);
 
     const urlSeemsValid = /https?:\/\/.+/.test(embeddingUrl);   // 'http://localhost' is ok
+    const disabledClass = !urlSeemsValid ? ' n_Disb' : '';
 
     const selectedBlog = this.state.selectedBlog;
 
@@ -1884,8 +1885,10 @@ const EmbeddedCommentsSettings = createFactory({
         } });
     }
 
-    const whichBlogQuestion= !urlSeemsValid ? null :
-        r.div({ className: 's_A_Ss_S-WhichBlog col-sm-offset-3 col-sm-9' },
+    // Show this, dimmedout, also if pat hasn't typed a URL to their blog yet  [_dim_or_hide]
+    // — otherwise, they can get confused and wonder "Where are the blog comments settings?"
+    const whichBlogQuestion=
+        r.div({ className: 's_A_Ss_S-WhichBlog col-sm-offset-3 col-sm-9' + disabledClass },
           r.h2({}, "Which blog do you use? Or static site generator?"),
           r.div({},
             makeWhichBlogInput("Ghost", 'e_GhostB'),
@@ -1936,6 +1939,12 @@ const EmbeddedCommentsSettings = createFactory({
         stepByStepInstructions = SomethingElseInstructions(blogInstrProps);
     }
 
+    // Could dim this out, instead of hiding until has typed a URL.  [_dim_or_hide]
+    // But then the Save button might not be visible on-screen, because this section
+    // is a bit tall. So maybe better hide it — the dimmed out "Which blog ...?"
+    // buttons above, is enough for people to understand that they are at the right
+    // place, that they need to type a URL before they can proceed?
+    //
     const anyInstructions = !urlSeemsValid || !selectedBlog ? null :
         r.div({ className: 's_A_Ss_EmbCmts col-sm-offset-3 col-sm-9' },
           r.h2({}, "Instructions for ", r.b({}, selectedBlog), ':'),
