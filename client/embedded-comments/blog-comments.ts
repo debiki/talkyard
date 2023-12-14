@@ -40,7 +40,6 @@ interface WindowWithTalkyardProps {
   talkyardLogLevel?: Nr;
   talkyardDebug: boolean | number | undefined; // deprecated 2020-06-16
   talkyardAuthnToken?: St | Ay;
-  talkyardManyCommentIframes?: Bo;
   talkyardConsiderQueryParams?: St[];
   edRemoveCommentsAndEditor: () => void;
   edReloadCommentsAndEditor: () => void;
@@ -380,8 +379,6 @@ function loadRemainingCommentIframes() {
  *   talkyardAddCommentsIframe({ appendInside: document.body, discussionId: 'abc123' });
  */
 function addCommentsIframe(ps: { appendInside: HElm | St, discussionId: St }): HElm {
-  if (!windowWithTalkyardProps.talkyardManyCommentIframes)
-    throw Error(`Set  talkyardManyCommentIframes = true  to allow many comments iframes`);
 
   // Tests: TyTEMANYEMBDISAPI.TyTAPNDIFR283
   const appendIn: HElm = typeof ps.appendInside === 'string' ?
@@ -408,7 +405,7 @@ function addCommentsIframe(ps: { appendInside: HElm | St, discussionId: St }): H
 
   Bliss.inside(wrapperDiv, appendIn);
   const commentIframeNr = iframeElms.length - 1;
-  intCommentIframe(wrapperDiv, commentIframeNr, numDiscussions >= 2);
+  intCommentIframe(wrapperDiv, commentIframeNr, numDiscussions > 1);
   return wrapperDiv;
 }
 
@@ -436,10 +433,11 @@ function forgetRemovedCommentIframes() {
 function loadNewCommentIframes(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   const newCommentElems = document.querySelectorAll('.talkyard-comments:not(.ty_IfrCr)');
   const numOld = commentsElems.length;
+  const numTotal = numOld + newCommentElems.length;
   for (let i = 0; i < newCommentElems.length; ++i) {
     const iframeNr = numOld + i + FirstCommentsIframeNr;
     intCommentIframe(
-          newCommentElems[i], iframeNr, i > 1);
+          newCommentElems[i], iframeNr, numTotal > 1);
   }
 }  */
 
@@ -450,7 +448,8 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   if (existingIframe)
     return;
 
-  logD(`intCommentIframe(..., iframeNr = ${iframeNr}, ...)`);
+  logD(`intCommentIframe(..., iframeNr = ${iframeNr}, manyCommentsIframes = ${
+          manyCommentsIframes})`);
 
   // Tests:  embcom.ignore-query-params.2br  TyTEEMCIGQPRMS
 
@@ -519,22 +518,29 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   if (/[\t\r\n]/.test(discussionId)) {
     var errorMessage = "Bad discussion id: " + discussionId + ' [TyEEMDIID]';
     logW(errorMessage);
-    if (manyCommentsIframes) return false;  // other iframes might work
+    if (manyCommentsIframes) return false;  // _other_iframes_might_work
     else throw Error(errorMessage);
   }
   var discIdParam = discussionId ? `discussionId=${discussionId}&` : '';
 
-  if (windowWithTalkyardProps.talkyardManyCommentIframes && !discussionId) {
-    // Without a discussion id, how could we know which (if any) of the
-    // iframe discussion should be associated with just the URL or URL path?
-    // Or if there's a discussion with no id, associated with the URL,
-    // and then a 2nd discussion iframe is added, with an id
-    // — the Ty server won't know if this is supposed to be a separate discussion,
-    // or if the blog admin just wants to add the id, to the already existing discussion.
-    const errMsg =
-          `iframe nr ${iframeNr}: Attribute 'data-discussion-id=...' missing — ` +
-          `it's required if many comment iframes allowed [TyEMANYIFRID]`;
-    throw Error(errMsg);
+  // If many iframes on the same page:  Without a discussion id, how could we know
+  // which (if any) of the iframe discussion should be associated with just
+  // the URL or URL path?  Or if there's a discussion with no id,
+  // associated with the URL, and then a 2nd discussion iframe is added, with an id
+  // — the Ty server won't know if this is supposed to be a separate discussion,
+  // or if the blog admin just wants to add the id, to the already existing discussion.
+  //
+  // If there's just one comments iframe, *maybe* it ought to have a discussion
+  // id — if more comment iframes will soon appear. But we don't know, and it's
+  // an extremely rare use case, so, don't log the warning, unless there are
+  // *already* >= 2 iframes.
+  //
+  if (manyCommentsIframes && !discussionId) {
+    const warning =
+          `iframe nr ${iframeNr}: Attribute 'data-discussion-id=...' missing: ` +
+          `Each comments iframe should have a discussion id, when many ` +
+          `iframes are shown at the same time, or same URL [TyEMANYIFRID]`;
+    logW(warning);
   }
 
   // To place the lazy-created embedded discussion pages in a specific
@@ -543,7 +549,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   if (/[\t\r\n]/.test(categoryRef)) {
     var errorMessage = `Bad category ref: ${categoryRef} [TyEEMCATRFCL]`;
     logW(errorMessage);
-    if (manyCommentsIframes) return false;
+    if (manyCommentsIframes) return false;  // _other_iframes_might_work
     else throw Error(errorMessage);
   }
   const catRefParam = categoryRef ? `category=${categoryRef}&` : '';
