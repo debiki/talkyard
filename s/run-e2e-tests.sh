@@ -705,6 +705,7 @@ function runAllE2eTests {
 
   # Single-Page Applications (SPA)
   $r s/wdio-7     --only embcom.dont-load-script-twice.2br.ec --cd -i $args
+  $r s/wdio-7     --only embcom.log-level.1br.ec --cd -i $args
 
   # Stealing an embedded session id
   $r s/wdio-7     --only embcom.sessions-emb-sess-cannot-moderate.3br --cd -i $args

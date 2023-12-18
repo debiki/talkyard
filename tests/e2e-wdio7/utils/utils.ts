@@ -275,7 +275,7 @@ export function makeEmbeddedCommentsHtml(ps: { pageName: string, discussionId?: 
       localHostname?: string, color?: string, bgColor: string, htmlToPaste?: string,
       talkyardConsiderQueryParams?: St[],
       authnToken?: St | Ay, authnTokenCookie?: St | Ay,
-      appendExtraHtml?:  St  }): St {
+      talkyardLogLevel?: St | Nr, appendExtraHtml?:  St  }): St {
     // Dupl code [046KWESJJLI3].
     dieIf(!!ps.localHostname && !!ps.htmlToPaste, 'TyE502PK562');
     dieIf(!ps.localHostname && !ps.htmlToPaste, 'TyE7FHQJ45X');
@@ -289,6 +289,8 @@ export function makeEmbeddedCommentsHtml(ps: { pageName: string, discussionId?: 
         ` data-discussion-id=""`, ` data-discussion-id="${ps.discussionId}"`);
     }
 
+    const talkyardLogLevel = _.isUndefined(ps.talkyardLogLevel) ? '' :
+            `talkyardLogLevel=${ps.talkyardLogLevel}`;
     const ignQueryParams = !ps.talkyardConsiderQueryParams ? '' :
             `talkyardConsiderQueryParams = ${JSON.stringify(ps.talkyardConsiderQueryParams)};`;
 
@@ -306,6 +308,7 @@ talkyardAuthnToken = ${JSON.stringify(ps.authnToken)};
     const ieEmpty = !ps.discussionId ? ', i.e. <b>no</b> id' : '';
 
     let resultHtmlStr = `
+<!DOCTYPE html>
 <html>
 <head><title>Embedded comments E2E test</title></head>
 <body style="background: ${ps.bgColor || 'black'}; color: ${ps.color || '#ccc'}; font-family: monospace; font-weight: bold;">
@@ -320,6 +323,7 @@ authnTokenCookieScript +
 authnTokenScript + `
 <script>
 talkyardServerUrl='${settings.scheme}://${ps.localHostname}.localhost';
+${talkyardLogLevel}
 ${ignQueryParams}
 </script>
 <script async defer src="${settings.scheme}://${ps.localHostname}.localhost/-/talkyard-comments.js"></script>

@@ -309,6 +309,9 @@ export class TyE2eTestBrowser {
   /// Also:
   /// https://github.com/SeleniumHQ/selenium/wiki/JsonWireProtocol#sessionsessionidlog
   ///  ——> https://www.selenium.dev/documentation/legacy/json_wire_protocol/#log-type
+  ///
+  /// ??? Only returns 'SEVERE' messages ??? [getLogs_all_lvls]
+  ///
   async getLogs_worksInChrome(type: 'browser' | 'driver'): Pr<[{ message: St, level: St, source: St, timestamt: Nr }]> {
     // This logs:  ["browser","driver"]  as of 2023-12-17.
     // logUnusual(j2s(await this.#br.getLogTypes()));

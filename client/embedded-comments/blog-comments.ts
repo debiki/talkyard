@@ -73,9 +73,12 @@ const windowWithTalkyardProps: WindowWithTalkyardProps = <any> window;
 // off, fatal, error, warn, info, config, debug, trace, annoying
 //   0,    10,    20,   30,   40,     50,    60,    70,       80
 const winLogLvl = windowWithTalkyardProps.talkyardLogLevel;
-const winDbg = windowWithTalkyardProps.talkyardDebug;
-const talkyardLogLevel: Nr | St = (typeof winLogLvl !== 'undefined') ? winLogLvl : (
-    winDbg === false || winDbg === 0 ? 'warn' : 'trace');
+const winDbg = windowWithTalkyardProps.talkyardDebug; // deprecated
+const urlLogLvl = new URLSearchParams(location.hash.substring(1)).get('talkyardLogLevel');
+const talkyardLogLevel: Nr | St =
+        urlLogLvl || (
+        (typeof winLogLvl !== 'undefined') ? winLogLvl : (
+            winDbg === false || winDbg === 0 ? 'warn' : 'trace'));
 
 // Default to logging debug messages, for now, because people send screenshots of the
 // console when sth is amiss, and nice to get the log messages then.
@@ -164,7 +167,7 @@ if (authnTokenInCookie) {
 const differentTokens =
         authnTokenInVar && authnTokenInCookie && authnTokenInVar !== authnTokenInCookie;
 if (differentTokens) {
-  logW(`Authn token in var and cookie differs, ignoring both`);
+  logW(`Authn token in var and cookie differs, ignoring both [TyEAUTKNDIF]`);
 }
 
 const autnToken: StV = differentTokens ? null : authnTokenInVar || authnTokenInCookie;
@@ -386,7 +389,7 @@ function addCommentsIframe(ps: { appendInside: HElm | St, discussionId: St }): H
   const appendIn: HElm = typeof ps.appendInside === 'string' ?
           document.querySelector(ps.appendInside) : ps.appendInside;
   if (!appendIn) {
-    logW(`No elem to append in: ${ps.appendInside}`);
+    logE(`No elem to append in: ${ps.appendInside} [TyE0ELM2APND_]`);
     return;
   }
 
@@ -491,7 +494,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
       if (i >= 1) {
         logW(`Only one query param supported, but talkyardConsiderQueryParams is: ${
               JSON.stringify(considerQueryParams)} — ignoring all but ${
-              considerQueryParams[0]}`);
+              considerQueryParams[0]} [TyEMANYQPS]`);
         break;;
       }
       embeddingUrl += i === 0 ? '?' : '&';
@@ -894,7 +897,7 @@ function onMessage(event) {
           return;
       }
 
-      logM(`All comment iframes inited — continuing ...`);
+      logM(`All comment iframes inited.`);
 
       // Any comment to scroll into view?
       //
