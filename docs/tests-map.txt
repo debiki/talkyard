@@ -70,6 +70,7 @@ create site & forum -
             - create-site-all-logins
     private forum:  
             - create-private-site-password.2br.f  TyTCRSITPRIVPW
+            - create-private-site-gmail-invite-only.2br.f  TyTCRSITPRIVGMAIL
   not too many per ip / email:
   not too many in total:
   reserved subdomain:
@@ -529,6 +530,8 @@ invites -
   expires:
   invite to groups:
           - invite-to-groups.2browsers.test.ts  TyT7WKTJ40ZT22
+  invite-only:
+            - create-private-site-gmail-invite-only.2br.f  TyTCRSITPRIVGMAIL.TyTINVONLY
 
 
 emails -

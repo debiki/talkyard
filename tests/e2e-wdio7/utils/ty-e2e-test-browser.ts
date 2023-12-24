@@ -4022,6 +4022,19 @@ export class TyE2eTestBrowser {
         await this.waitForVisible('#e2ePassword');
       },
 
+      isSignUpDialog: async (ps: { withNameEmailInputs?: Bo } = {}): Pr<Bo> => {
+        const isSignup = await this.isDisplayed('.e_IsSgU');
+        if (ps.withNameEmailInputs) {
+          await this.waitForVisible('#e2eUsername');
+          await this.waitForVisible('#e2ePassword');
+        }
+        else if (ps.withNameEmailInputs === false) {
+          await this.waitForGone('#e2eUsername');
+          tyAssert.not(await this.isDisplayed('#e2ePassword'));
+        }
+        return isSignup;
+      },
+
       // RENAME to switchToLoginIfNeeded() ?
       switchToLoginIfIsSignup: async () => {
         // Switch to login form, if we're currently showing the signup form.
@@ -4049,7 +4062,7 @@ export class TyE2eTestBrowser {
             await this.waitAndClick('.c_AuD_2SgU .c_AuD_SwitchB');
             // Loop another lap.
           }
-          else if (await this.isVisible('.esCreateUser')) {
+          else if (await this.isVisible('.e_IsSgU')) {
             if (switched) logBoring(`... done switching to signup form`);
             // The create account form is shown, fine.
             return true;
@@ -8656,6 +8669,10 @@ export class TyE2eTestBrowser {
 
           setLoginRequired: async (isRequired: Bo) => {
             await this.setCheckbox('#e2eLoginRequiredCB', isRequired);
+          },
+
+          setAllowLocalSignup: async (isAllowed: Bo) => {
+            await this.setCheckbox('.e_A_Ss_S-AllowLoalSignupCB input', isAllowed);
           },
 
           setApproveUsers: async (isRequired: Bo) => {
