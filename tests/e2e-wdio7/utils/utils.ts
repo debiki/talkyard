@@ -236,6 +236,11 @@ export function encryptLocalPasetoV2Token(sharedSecret: St, msgObj: any): St {
   const cmd = '../../modules/paseto-cmd/target/debug/paseto-cmd ' +
                 `'${secretNoHexPrefix}' ` +
                 `'${messageAsSt}'`;
+  const currDir = execSync('pwd', { encoding: 'utf8' }).trim();
+  console.log(`Cur dir: ${currDir}`);
+ERROR:
+  // Ooops, cur dir är repo-root via:  s/tyd e7   (funkar ej)
+  // men  tests/e2e-wdio7/   via s/wdio-7   (funkar)
   const token = execSync(cmd, { encoding: 'utf8' }).trim();
   const username: St | U = msgObj?.data?.user?.username;
   const logMsg = `Generated PASETO token for ${username}:  ${token}`;

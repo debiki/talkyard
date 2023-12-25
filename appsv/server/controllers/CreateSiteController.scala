@@ -117,7 +117,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
     val anyLocalHostname = parseOptSt(body, "localHostname").trimNoneIfBlank
     val anyEmbeddingSiteAddress = parseOptSt(body, "embeddingSiteAddress").trimNoneIfBlank
     val organizationName = parseSt(body, "organizationName").trim
-    val makePublic = parseBo(body, "makePublic")
+    val makePublic = parseOptBo(body, "makePublic")
     val okForbiddenPassword = hasOkForbiddenPassword(request)
     val okE2ePassword = hasOkE2eTestPassword(request.request)
 
@@ -242,7 +242,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
             creatorId = request.user.map(_.id) getOrElse UnknownUserId,
             browserIdData = request.theBrowserIdData,
             organizationName = organizationName,
-            makePublic = Some(makePublic),
+            makePublic = makePublic,
             isTestSiteOkayToDelete = isTestSiteOkayToDelete,
             skipMaxSitesCheck = okE2ePassword || okForbiddenPassword,
             createdFromSiteId = Some(request.siteId),
