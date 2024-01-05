@@ -32,7 +32,7 @@
 //   - embcom.dont-load-script-twice.1br.ec  TyTECLOADTWICE
 //
 if (window['_loadingTalkyardScript']) {
-  throw Error(`Talkyard comments script loaded twice [TyEEMBJSLD2]`);
+  throw Error("Talkyard comments script loaded twice [TyEEMBJSLD2]");
   // Does this make sense to incl in the error text, or is it just confusing, if the
   // problem is sth else (e.g. just accidentally adding two <script> tags):
   //   `Can you use talkyardAddCommentsIframe() or talkyardLoadNewCommentIframes() instead?`

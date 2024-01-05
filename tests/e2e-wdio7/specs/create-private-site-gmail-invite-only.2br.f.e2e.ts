@@ -24,6 +24,11 @@ let siteId: SiteId;
 
 describe(`create-private-site-gmail-invite-only.2br.f  TyTCRSITPRIVGMAIL`, () => {
 
+  if (!settings.include3rdPartyDependentTests) {
+    console.log("Skipping this spec; no 3rd party login credentials specified.");
+    return;
+  }
+
   it(`initialize`, async () => {
     owen_brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
     jane_brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
