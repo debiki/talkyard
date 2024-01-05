@@ -190,6 +190,12 @@ class SystemDao(
           // cache, for this site. (Don't think this can happen in prod mode though.)
           sitesToClear.add(patch.siteId)
         case Some(siteInDb) =>
+          // The site status [cannot_be_changed_back_to_NoAdmin] — that would show the
+          // [create_something_here_page] again, where one gets to sign up as owner, but
+          // that's no good, if the site has contents already.
+          throwForbiddenIf(siteInDb.status != SiteStatus.NoAdmin &&
+                patch.newStatus == SiteStatus.NoAdmin,
+                "TyE8PMW27GJXW", "Can't set site status back to NoAdmin")
           throwForbiddenIf(siteInDb.isPurged && !patch.newStatus.isPurged,
                 "TyE503MREG2R5", s"Site already purged, cannot undo")
           throwForbiddenIf(patch.siteId == globals.defaultSiteId &&
@@ -374,20 +380,21 @@ class SystemDao(
     * The first site is instead created by [[createFirstSite()]] above.
     */
   def createAdditionalSite(
-    anySiteId: Option[SiteId],
+    anySiteId: Opt[SiteId],
     pubId: PubSiteId,
-    name: String,
+    name: St,
     status: SiteStatus,
-    hostname: Option[String],
+    hostname: Opt[St],
     featureFlags: St,
-    embeddingSiteUrl: Option[String],
-    organizationName: String,
+    embeddingSiteUrl: Opt[St],
+    organizationName: St,
+    makePublic: Opt[Bo],
     creatorId: UserId,   // change to Option, present iff createdFromSiteId ?
     browserIdData: BrowserIdData,
-    isTestSiteOkayToDelete: Boolean,
-    skipMaxSitesCheck: Boolean,
-    createdFromSiteId: Option[SiteId],
-    anySysTx: Option[SystemTransaction] = None): Site = {
+    isTestSiteOkayToDelete: Bo,
+    skipMaxSitesCheck: Bo,
+    createdFromSiteId: Opt[SiteId],
+    anySysTx: Opt[SysTx] = None): Site = {
 
     Site.findNameProblem(name) foreach { problem =>
       throwForbidden("EsE7UZF2_", s"Bad site name: '$name', problem: $problem")
@@ -463,9 +470,15 @@ class SystemDao(
       // Or change the settings to Ints? 0 = never, 1 = embedded comments only, 2 = always.
       val notIfEmbedded = if (embeddingSiteUrl.isDefined) Some(Some(false)) else None
       val yesIfEmbedded = if (embeddingSiteUrl.isDefined) Some(Some(true)) else None
+      val makePrivate = makePublic is false
 
       newSiteTx.upsertSiteSettings(SettingsToSave(
         allowEmbeddingFrom = Some(embeddingSiteUrl),
+
+        userMustBeAuthenticated = if (makePrivate) Some(Some(true)) else None,
+        userMustBeApproved = if (makePrivate) Some(Some(true)) else None,
+        //inviteOnly = if (makePrivate) Some(Some(true)) else None,
+        //allowSignup = if (makePrivate) Some(Some(false)) else None,
 
         // Features are disabled, for embedded blog comments sites, here instead: [493MRP1].
         // The below login settings should be moved to there too? So will take effect
@@ -479,12 +492,15 @@ class SystemDao(
         mayComposeBeforeSignup = yesIfEmbedded,
         mayPostBeforeEmailVerified = yesIfEmbedded,
 
+        // Tags aren't needed, for blog comments? Instead, one would typically tag
+        // the blog *article* (via the blog software e.g. WordPress), not the Ty *comments*.
+        enableTags = notIfEmbedded,
+
         // People who create new sites via a hosted service, might not be technical
-        // people; to keep things simple for them, disable API and tags, initially. [DEFFEAT]
+        // people; to keep things simple for them, disable API, initially. [DEFFEAT]
         // (This is not the very first site on this server, so the person creating this site,
         // is apparently not doing a self hosted installation.)
         enableApi = Some(Some(false)),
-        enableTags = Some(Some(false)),
         orgFullName = Some(Some(organizationName))))
 
       val newSiteHost = hostname.map(Hostname(_, Hostname.RoleCanonical))

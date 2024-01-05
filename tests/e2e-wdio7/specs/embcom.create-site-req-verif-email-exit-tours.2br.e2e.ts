@@ -83,7 +83,7 @@ describe(`embcom.create-site-req-verif-email-exit-tours.2br  TyTE2ECREMBCOM1`, (
   });
 
 
-  it("Owen exits the intro tour  Ty7ABKR024", async () => {
+  it("Owen exits the intro tour  TyTTOUREXIT", async () => {
     await owen_brA.tour.exitTour();
   });
 

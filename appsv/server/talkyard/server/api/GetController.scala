@@ -20,13 +20,16 @@ package talkyard.server.api
 import com.debiki.core._
 import controllers.OkApiJson
 import debiki.RateLimits
+import debiki.dao.PagesCanSee
+import talkyard.server.api.ThingsFoundJson.PageFoundStuff
 import talkyard.server.http._
 import talkyard.server.authz.MayMaybe
+import talkyard.server.parser.JsonConf
 import debiki.EdHttp._
 import Prelude._
 import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
-import play.api.libs.json.{JsValue, JsArray, Json}
+import play.api.libs.json.{JsValue, JsArray, JsObject, Json}
 import play.api.mvc.{Action, ControllerComponents, Result}
 import org.scalactic.{Bad, Good, Or}
 
@@ -99,7 +102,7 @@ class GetController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     dieIf(pageRefs.length > 50, "TyE4MREJ703")
 
-    def notFoundMsg(embUrl: St, pageId: PageId = NoPageId): St = {
+    def notFoundMsg(embUrl: St, pageId: PageId = NoPageId): ErrMsg = {
       s"No page with that embedding url or discussion id: $embUrl"
     }
 
@@ -117,20 +120,22 @@ class GetController @Inject()(cc: ControllerComponents, edContext: TyContext)
       }
     }
 
-    val topicsOrErrs = refsAndIds map { refAndIdOrErr =>
+    val topicsOrErrs: Seq[PagePathAndMeta Or ErrMsg]  = refsAndIds map { refAndIdOrErr =>
       refAndIdOrErr flatMap {
         case (rawRef: St, pageId) => dao.getPagePathAndMeta(pageId) match {
           case Some(page: PagePathAndMeta) =>
             COULD_OPTIMIZE // will typically always be same cat, for emb cmts.
             val categories = dao.getAncestorCategoriesRootLast(page.categoryId)
-            val may = talkyard.server.authz.Authz.maySeePage(
+            val may = talkyard.server.authz.Authz.maySeePage(  // _access_control
                   page.meta,
                   user = authzCtx.requester,
                   groupIds = authzCtx.groupIdsUserIdFirst,
                   pageMembers = Set.empty, // getAnyPrivateGroupTalkMembers(page.meta),
                   catsRootLast = categories,
                   tooManyPermissions = authzCtx.tooManyPermissions,
-                  // Embedded discussion topics are typically unlisted.
+                  // Embedded discussion topics are typically unlisted, so need to
+                  // allow see-unlisted, for embedded comment counts to work.
+                  // Also, getting by precise page ids, is not listing things.
                   maySeeUnlisted = true)
            if (may == MayMaybe.Yes) Good(page)
            else Bad(notFoundMsg(rawRef))  // or if dev/test: s"Cannot find page $pageId"
@@ -143,12 +148,25 @@ class GetController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // Default:  extId, title, author, excerpt, orig post   ?
     // But currently the emb comments get and need only the below (num likes & votes), hmm.
 
-    // Later, reuse?:
-    // ThingsFoundJson.makePagesFoundListResponse(topicsOrErrs, dao, pretty)
+    // If the request is via an API secret, then, the requester typically wants
+    // lots of details about the page  (but not just vote counts, like when displaying
+    // embedded comment votes).  If so, let's construct more detailed page json:
+    val pagesJs: Seq[(PageFoundStuff, JsObject)] =
+          if (!request.isViaApiSecret) Nil
+          else {
+            val pages: Seq[PagePathAndMeta] = topicsOrErrs collect { case Good(p) => p }
+            ThingsFoundJson.makePagesJsArr(
+                  // Already done _access_control.
+                  PagesCanSee(pages.to[Vec]), dao, JsonConf.v0_1(), authzCtx)
+          }
+
+    val pageJsIter = pagesJs.iterator
+    var cur: Opt[(PageFoundStuff, JsObject)] = None
+
     val thingsOrErrsJson = JsArray(
             topicsOrErrs.map({
               case Good(pagePathAndMeta) =>
-                Json.obj(
+                val jOb = Json.obj(
                     // NOTE: if adding anything more here, don't include that in
                     // responses to public API requests. But these are ok,
                     // for blog comments:
@@ -157,6 +175,24 @@ class GetController @Inject()(cc: ControllerComponents, edContext: TyContext)
                     "numOpDoNotVotes" -> pagePathAndMeta.meta.numOrigPostDoNotVotes,
                     "numOpLikeVotes" -> pagePathAndMeta.meta.numOrigPostLikeVotes,
                     "numTotRepliesVisible" -> pagePathAndMeta.meta.numRepliesVisible)
+                // A bit messy, oh well. Can refactor later when know more.
+                if (cur.isEmpty && pageJsIter.hasNext) {
+                  cur = Some(pageJsIter.next())
+                }
+                cur match {
+                  case None =>
+                    jOb
+                  case Some(stuffAndPageJs) =>
+                    if (stuffAndPageJs._1.pageId != pagePathAndMeta.pageId) {
+                      // Can't happen? The map() loop we're in, and `pageJsIter`, both
+                      // traverse topicsOrErrs in the same way & order.
+                      dieIf(!context.globals.isProd, "TyE4FWMJC60G")
+                      jOb
+                    } else {
+                      cur = None
+                      jOb ++ stuffAndPageJs._2
+                    }
+                }
               case Bad(errMsg) =>
                 Json.obj("errMsg" -> errMsg, "errCode" -> "TyEPGNF")
             }))

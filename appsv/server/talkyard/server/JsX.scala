@@ -279,6 +279,7 @@ object JsX {   RENAME // to JsonPaSe
   // A bit dupl code. [dupl_pat_json_apiv0]
   def JsUserApiV0(pat: Pat, brief: Bo, authzCtx: AuthzCtxOnPats): JsObject = {
     unimplIf(!brief, "TyE306RE5")
+    // Later, excl name, if is private.  [private_pats]
     var json = Json.obj(
         "id" -> JsNumber(pat.id),
         "username" -> JsStringOrNull(pat.anyUsername),

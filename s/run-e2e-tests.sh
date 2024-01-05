@@ -296,6 +296,9 @@ function runAllE2eTests {
   $r s/wdio-7 --only create-site-admin-guide.2br.d --cd -i $args
   $r s/wdio --only gmail-fb-join-login.extidp.1br $args
 
+  $r s/wdio-7 --only create-private-site-password.2br.f --cd -i $args
+  $r s/wdio-7 --only create-private-site-gmail-invite-only.2br.f --cd -i $args
+
   # Needs HTTPS (dummy localhost cert is ok).
   $r s/wdio-7 --only oidc-azure-login-required.2br.extidp --cd -i $args
   $r s/wdio-7 --only oidc-azure-pub-site.2br.extidp --cd -i $args
@@ -327,6 +330,7 @@ function runAllE2eTests {
 
   $r s/wdio-7 --only link-previews-internal-may-see.2br.d --cd -i $args
   $r s/wdio-7 --only link-previews-internal-not-see-cat.2br.d --cd -i $args
+  $r s/wdio-7 --only link-previews-internal-to-cats-not-see.2br.d --cd -i $args
   $r s/wdio-7 --only link-previews-http-to-https.1br.d --cd -i $args
   $r s/wdio-7 --only link-previews-images-mp4-youtube.1br.d.extln --cd -i $args
   $r s/wdio-7 --only link-previews-twitter-max-editor.1br.d.extln --cd -i $args
@@ -568,6 +572,8 @@ function runAllE2eTests {
 
   $r s/wdio-7 --only plan-maintenance.2br.d --cd -i $args
 
+  $r s/wdio-7 --only site-api-secrets-not-global.2br.f --cd -i $args
+
   # ! countdownUndoTimeout  slooow if mod task list is long.
 
 
@@ -691,16 +697,20 @@ function runAllE2eTests {
   $r s/wdio       --only embcom.comment-counts.2br.cors $args
 
   # Single Sign-On, embedded comments:
-  # Crypto problem! SHOULD fix, TESTS_MISSING [paseto_broken], See:
-  #   ../tests/e2e/specs/embcom.sso.token-in-cookie.2br.test.ts--e2e-crypto-probl.txt
-  #$r s/wdio       --only embcom.sso.token-direct-w-logout-url.2br $args
-  #$r s/wdio       --only embcom.sso.token-in-cookie.2br $args
+  $r s/wdio-7     --only embcom.sso.token-direct-w-logout-url.2br.ec --cd -i $args
+  $r s/wdio-7     --only embcom.sso.token-in-cookie.2br.ec --cd -i $args
 
   # Many comments iframes:
   $r s/wdio-7     --only embcom.manyframes.basic.2br --cd -i $args
   $r s/wdio-7     --only embcom.manyframes.drafts-repl-to.2br --cd -i $args
-  $r s/wdio-7     --only embcom.manyframes.js-api.2br --cd -i $args
+  $r s/wdio-7     --only embcom.manyframes.js-api.2br.ec --cd -i $args
+  $r s/wdio-7     --only embcom.manyframes.js-api.sso.2br.ec --cd -i $args
   $r s/wdio-7     --only embcom.manyframes.comment-counts.2br.cors --cd -i $args
+
+  # Single-Page Applications (SPA)
+  $r s/wdio-7     --only embcom.dont-load-script-twice.1br.ec --cd -i $args
+
+  $r s/wdio-7     --only embcom.log-levels-on-loaded.1br.ec --cd -i $args
 
   # Stealing an embedded session id
   $r s/wdio-7     --only embcom.sessions-emb-sess-cannot-moderate.3br --cd -i $args

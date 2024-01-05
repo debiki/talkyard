@@ -49,7 +49,7 @@ import scala.concurrent.ExecutionContext
   */
 object SearchEngineIndexer extends TyLogging {
 
-  def startNewActor(indexerBatchSize: Int, intervalSeconds: Int,
+  def startNewActor(indexerBatchSize: Int, initialDelaySecs: i32, intervalSeconds: Int,
         executionContext: ExecutionContext,
         elasticSearchClient: es.client.Client, actorSystem: ActorSystem, systemDao: SystemDao)
         : ActorRef = {
@@ -57,7 +57,7 @@ object SearchEngineIndexer extends TyLogging {
     val actorRef = actorSystem.actorOf(Props(
       new IndexingActor(indexerBatchSize, elasticSearchClient, systemDao)), name = s"IndexingActor")
     actorSystem.scheduler.scheduleWithFixedDelay(
-        initialDelay = intervalSeconds seconds, intervalSeconds seconds, actorRef, IndexStuff)
+        initialDelay = initialDelaySecs seconds, intervalSeconds seconds, actorRef, IndexStuff)
     actorRef
   }
 

@@ -890,7 +890,8 @@ case class SitePatcher(globals: debiki.Globals) {
 
         lazy val pageAltIds = pageAltIdsByTempImpIds.getOrElse(pageInPatch.pageId, Set.empty)
 
-        val anyPageInDb = pageInPatch.extImpId.flatMap(pagesInDbByExtId.get) orElse {
+        val anyPageInDb: Opt[PageMeta] = pageInPatch.extImpId.flatMap(pagesInDbByExtId.get)
+              .orElse {
           val pagesInDbWithMatchingAltIds = pageAltIds.flatMap(pagesInDbByAltId.get)
           // We've already checked this, above, when remapping page ids.
           dieIf(pagesInDbWithMatchingAltIds.map(_.pageId).size > 1, "TyE05HKR3WH8")
@@ -940,9 +941,11 @@ case class SitePatcher(globals: debiki.Globals) {
         // Update page stats, e.g. num posts.
         if (pageIdsWithBadStats.contains(realPageId)) {
           dieIf(!wroteToDatabase, "TyE0KSGF45")
+          // Bit dupl code. [dupl_upd_pg_stats]
 
           val pageDao = dao.newPageDao(pageWrongStats.pageId, tx) // (0926575)
           val pageMeta = pageWrongStats.copyWithUpdatedStats(pageDao) // bumps version [306MDH26]
+          pageIdsWithBadStats.remove(realPageId)
 
           dao.updatePagePopularity(pageDao.parts, tx)
           tx.updatePageMeta(pageMeta, oldMeta = pageWrongStats, markSectionPageStale = true)
@@ -961,6 +964,16 @@ case class SitePatcher(globals: debiki.Globals) {
         */
       }
 
+      // If we added new replies, but no new pages, then, we haven't yet updated the
+      // reply counts, for the pages affected.  [ups_po_upd_stats]
+      pageIdsWithBadStats foreach { pageId =>
+        // Bit dupl code. [dupl_upd_pg_stats]
+        val pageMetaBef = tx.loadThePageMeta(pageId)
+        val pageDao = dao.newPageDao(pageId, tx)
+        val pageMetaAft = pageMetaBef.copyWithUpdatedStats(pageDao) // bumps version [306MDH26]
+        dao.updatePagePopularity(pageDao.parts, tx)
+        tx.updatePageMeta(pageMetaAft, oldMeta = pageMetaBef, markSectionPageStale = true)
+      }
 
       // ----- Page paths
 
@@ -1268,6 +1281,7 @@ case class SitePatcher(globals: debiki.Globals) {
         // Any embedding url and org name get updated below (0296537).
         embeddingSiteUrl = None,
         organizationName = "Organization name missing [TyM8YKWP3]",
+        makePublic = None,
         creatorId = SystemUserId,
         browserIdData = browserIdData,
         isTestSiteOkayToDelete = siteData.isTestSiteOkDelete,

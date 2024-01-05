@@ -34,6 +34,7 @@ import scala.collection.{mutable => mut}
 import debiki.RateLimits.TrackReadingActivity
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
+import talkyard.server.security.WhatApiSecret
 import javax.inject.Inject
 import org.scalactic.{Bad, Good}
 import talkyard.server.JsX
@@ -1000,8 +1001,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def apiv0_showApiSecretInfo: Action[U] = ApiSecretGetJsonAction(RateLimits.ReadsFromCache) {
-        req: GetRequest =>
+  def apiv0_showApiSecretInfo: Action[U] = ApiSecretGetJsonAction(
+        WhatApiSecret.SiteSecret, RateLimits.ReadsFromCache) { req: GetRequest =>
     // For now, only sysbot can do API requests, and sysbot can do anything.
     val authzCtx = req.dao.getAuthzContextOnPats(req.requester)
     OkApiJson(Json.obj(

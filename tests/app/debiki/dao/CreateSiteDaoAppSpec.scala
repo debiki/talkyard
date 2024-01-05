@@ -38,13 +38,14 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
     val theIdCookie = if (browserIdCookie eq null) s"$thePrefix-cookie" else browserIdCookie
     val theIp = if (ip eq null) s"$prefix.0.0.$number" else ip
     globals.systemDao.createAdditionalSite(
-      anySiteId = None, pubId = thePubId,
-      name = name getOrElse theLocalHostname, status = SiteStatus.Active,
-      hostname = Some(theHostname), featureFlags = "",
-      embeddingSiteUrl = None, organizationName = s"Org Name $thePrefix", creatorId = user.id,
-      BrowserIdData(ip = theIp, idCookie = Some(theIdCookie), fingerprint = theFingerprint),
-      isTestSiteOkayToDelete = isTestSite, skipMaxSitesCheck = false,
-      createdFromSiteId = Some(FirstSiteId))
+          anySiteId = None, pubId = thePubId,
+          name = name getOrElse theLocalHostname, status = SiteStatus.Active,
+          hostname = Some(theHostname), featureFlags = "",
+          embeddingSiteUrl = None, organizationName = s"Org Name $thePrefix",
+          makePublic = None, creatorId = user.id,
+          BrowserIdData(ip = theIp, idCookie = Some(theIdCookie), fingerprint = theFingerprint),
+          isTestSiteOkayToDelete = isTestSite, skipMaxSitesCheck = false,
+          createdFromSiteId = Some(FirstSiteId))
   }
 
   var siteOneowner: User = _

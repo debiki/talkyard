@@ -399,7 +399,7 @@ class JsonMaker(dao: SiteDao) {
                   limit = ForumController.NumTopicsToList)
         RACE // got an 1 version old page stuff. So, now looking up by id *and version*,
         // instead.
-        val topics: Vec[PagePathAndMeta] = topicsCanSee.pages
+        val topics: ImmSeq[PagePathAndMeta] = topicsCanSee.pages
         val pageStuffById = dao.getPageStuffsByIdVersion(topics.map(_.idAndVersion))
 
         pageStuffById.values.foreach(_.addVisiblePatIdsTo(userIdsToLoad))

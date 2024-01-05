@@ -14,7 +14,7 @@ Webdriver.io writes: (https://webdriver.io/docs/organizingsuites.html)
 
 > In general, try to test a only a single feature per spec file. Try to not have too many or too few tests in one file. (However, there is no golden rule here.)
 
-(ABC123) means see-elsewhere-in-this-file = search for ABC123 in this file.
+_abc123 (and '(ABC123)') means see-elsewhere-in-this-file = search for _abc123 in this file.
 [ABC123] = search all files everywhere
 
 Run all tests in different resolutions? Desktop, laptop, tablet, mobile.
@@ -65,7 +65,12 @@ job queue, job_queue_t:
 
 create site & forum -
   via api: [.create_site_via_api]
-  create:  create-site-all-logins
+  create forum:  
+            - create-site-*  — many tests
+            - create-site-all-logins
+    private forum:  
+            - create-private-site-password.2br.f  TyTCRSITPRIVPW
+            - create-private-site-gmail-invite-only.2br.f  TyTCRSITPRIVGMAIL
   not too many per ip / email:
   not too many in total:
   reserved subdomain:
@@ -243,14 +248,14 @@ single-sign-on:  (3093533)
           - sso-all-ways-to-login.2browsers.test.ts  TyT7FKRTTSR024
           - sso-access-denied-login.2browsers.test.ts  TyT4AKT02DKJ41
           - api-w-sso-upsert-pages.2browsers.test.ts  TyT60KRJXT4X3
-          - [.embcom_sso]
+          - [_embcom_sso]
   one-time login secret abuse:
           - sso-one-time-key-errors.2browsers.test.ts  TyT5025BDUJQP4R
   login required ty-only logout url:
           - sso-login-required-w-logout-url.2browsers  TyTE2ESSOLGOURL.TyTE2ELGOURL
   logout redir url:
           - sso.logout-url.2br  TyTE2ESSOLGOURL2.TyTSSOLGO002
-          - embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1.TyTSSOLGO002
+          - embcom.sso.token-direct-w-logout-url.2br.ec  TyTE2EEMBSSO1.TyTSSOLGO002
   unusual names:
           - sso-login-new-members.2browsers  TyT306FKRDJ5.TyT603KTMM653
   email conflict:
@@ -260,11 +265,12 @@ single-sign-on:  (3093533)
   update sso user's email, username etc:
           - api-update-user-and-sso-user.2br   TyTE2E05MRR9
 
-sso, embedded comments, [.embcom_sso],
+sso, embedded comments, [_embcom_sso],
 embedded comments sso,
 blog comments sso:
             - embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1
-            - embcom.sso.token-in-cookie.2br.test.ts  TyTE2EEMBSSO2
+            - embcom.sso.token-in-cookie.2br.ec  TyTE2EEMBSSO2
+            - embcom.manyframes.js-api.sso.2br.ec  TyTEMANYEMBDISAPISSO
 
 impersonate:
           - impersonate-post-as-other.2browsers  TyT502KNG24
@@ -481,6 +487,8 @@ security:
             - SEC_TEST_MISSING
     is excluded from one's activity list also for oneself:
             - SEC_TEST_MISSING  TyT0SEEOWNPAGE
+  admins can't use sysbot secrets for the wrong things:
+            - site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB
 
 deleted users:  [.del_susp_usr]
             - SEC_TEST_MISSING
@@ -523,6 +531,8 @@ invites -
   expires:
   invite to groups:
           - invite-to-groups.2browsers.test.ts  TyT7WKTJ40ZT22
+  invite-only:
+            - create-private-site-gmail-invite-only.2br.f  TyTCRSITPRIVGMAIL.TyTINVONLY
 
 
 emails -
@@ -537,9 +547,12 @@ emails -
   add email address, send verification email:
             - user-profile-change-email.test.ts  TyT305MHPJ25
   activity summary emails:
-          - summary-emails.2br.mtime  TyTE2E06AJG256
+            - summary-emails.2br.mtime  TyTE2E06AJG256
     new members' topics excluded until reviewed by staff:
-          - TESTS_MISSING
+            - TESTS_MISSING
+  api,
+  emails in:
+            - site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB.TyTEMLWEBHSECR
 
 getting started guide -
   guide present:
@@ -639,7 +652,8 @@ categories:
             - category-perms.2br.d  TyTE2ECATPREMS01
             - cats-perf-many.2br.d  TyTECATPREFMNY.TyTPRIVCATS
             - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
-            - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyT0ACSPG043
+            - link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837.TyT0ACSPG043
+            - link-previews-internal-to-cats-not-see.2br.f  TyTE2ELN2CAT
     topics on cats list page:
             - category-perms.2br.d  TyTE2ECATPREMS01.TyTSEECATTOPS
             - cats-perf-many.2br.d  TyTECATPREFMNY.TyTSEECATTOPS
@@ -647,11 +661,13 @@ categories:
             - category-perms.2br.d  TyTE2ECATPREMS01.TyTCATLOCK
     sub cats:
             - category-perms.2br.d  TyTE2ECATPREMS01.TyTPRIVSUBCA
-            - TESTS_MISSING  link to access-denied sub category,  TyTE2ELNSUBCAT
+    link previews:
+            - link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837.TyTE2ELNSUBCAT
+            - link-previews-internal-to-cats-not-see.2br.d  TyTE2ELN2CAT.TyTE2ELNSUBCAT
   upsert categories:  (upscats)
   move topic to new category:
-          - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyTMVPG2OTRCAT
-          - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS.TyTMVPG2CAT
+            - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyTMVPG2OTRCAT
+            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS.TyTMVPG2CAT
 
   sub categories:
     create,
@@ -886,6 +902,8 @@ internal links:  # (687295)
           - link-previews-internal-not-see-cat.2br TyTE2ELNPVIN4837.TyT60T6SRTR3
   inline, just title:
           - TESTS_MISSING
+  to category:
+            - link-previews-internal-to-cats-not-see.2br.d  TyTE2ELN2CAT
 
 discussion -
   users on page:
@@ -1056,8 +1074,15 @@ embedded comments:
             - embcom.manyframes.basic.2br  TyTEMANYCOMIFR01
             - embcom.manyframes.drafts-repl-to.2br  TyTEMANYCOMIFR02
             - embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI
+            - embcom.manyframes.js-api.sso.2br.ec  TyTEMANYEMBDISAPISSO
             - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
-  sso: see [.embcom.sso]
+  installation mistakes:
+    don't load js script twice:
+            - embcom.dont-load-script-twice.1br.ec  TyTECLOADTWICE
+  log levels,
+  on-load callbacks:
+            - embcom.log-levels-on-loaded.1br.ec  TyTECLOGSCLBKS
+  sso: see [_embcom_sso]
 
 upload links,
 uploads -  (7KFC2)
@@ -1152,6 +1177,7 @@ site settings:
     approve members:
             - settings-approve-members.2browsers.test.ts  [TyT2HUWX8]
             - admin-user-approve-reject.2browsers.test.ts [TyT5KHEWQ2]
+            - create-private-site-password.2br.f  TyTCRSITPRIVPW.TyTUSRAPPREQ
     expire idle session:
             - login-expire-idle-after.2browsers.test.ts  TyT7RBKTJ25
     allow signup:
@@ -1189,7 +1215,10 @@ intro tours:
   forum section, blog comments, admin tour:
           - embedded-comments-forum-intro-tour.test.ts  TyT6AKBR2044
   exit tour:
-            - embcom.create-site-req-verif-email-exit-tours.2br TyTE2ECREMBCOM1.Ty7ABKR024
+    directly:
+            - embcom.create-site-req-verif-email-exit-tours.2br TyTE2ECREMBCOM1.TyTTOUREXIT
+    after a step:
+            - create-private-site-password.2br.f  TyTCRSITPRIVPW.TyTTOUREXIT
   restart tour:  [TyT2ABKRT05]
 
 
@@ -1675,6 +1704,7 @@ api:
   create site via api: [.create_site_via_api]
             - dir.create-site-via-api.2br  TyTE2ECREASITAPI
             - embcom.create-site-via-api.2br  TyTE2ECREAEMBSITAPI
+            - site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB.TyTCREASITSECR
   enable API:
             - embedded-comments-create-site-import-disqus.2br.test.ts  TyT5KFG0P75.TyTENAAPI
             - dir.create-site-imp-json.2br  TyTEIMPJSON01.TyTENAAPI
@@ -1686,6 +1716,8 @@ api:
     extid:_ for users and pages,
     username:_, pagepath:_
             - do-api-like-and-subscribe.2br  TyTEAPILIKESUBS.TyTREFTYPES01
+    tyid:_:
+            - api-upsert-posts.2br.d  TyT60RKNJF24C
   upsert categories:  (upscats)
           - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
   upsert pages:
@@ -1702,6 +1734,8 @@ api:
             - do-api-upvote-ideas-sort-by-votes.2br.d  TyTDOAPI_UPVOTE_IDEAS
     gets sanitized:
           - api-upsert-posts.2br.d   TyT60RKNJF24C: TyT0RKDL5MW
+    notifications yes/no:
+            - api-upsert-posts.2br.d   TyT60RKNJF24C.TyTUPSNTF825
   private chat:
           - api-private-chat-two-pps-sso-extid.2browsers.test.ts   TyT603WKVJW336
           - api-private-chat-two-pps-list-use-usernames.2browsers.test.ts  TYT6924VBNF962
@@ -1722,7 +1756,7 @@ api:
   upsert user:
           - api-update-user-and-sso-user.2br   TyTE2E05MRR9
   import user with ssoid:
-            - embcom.sso.token-direct-w-logout-url.2br.test.ts TyTE2EEMBSSO1.TyTIMPWSSOID
+            - embcom.sso.token-direct-w-logout-url.2br.ec TyTE2EEMBSSO1.TyTIMPWSSOID
   list usernames:
           - TyT05RKVJF68
   list topics:
@@ -1756,6 +1790,7 @@ api for comments,
 comments api,
 embedded comments api:
             - embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI
+            - embcom.manyframes.js-api.sso.2br.ec  TyTEMANYEMBDISAPISSO
 
 url api,
 frag action api,
@@ -1821,6 +1856,8 @@ maintenance mode:
             - plan-maintenance.2br.d  TyTPLANMAINT01
   Ty becomes read-only:
             - TESTS_MISSING (add to the above?)
+  Sysbot secrets won't work for enabling:
+            - site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB.TyTMAINTSECR
 
 
 limits,

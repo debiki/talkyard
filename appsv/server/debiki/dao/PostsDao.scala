@@ -2959,6 +2959,10 @@ trait PostsDao {
                 // the comment being moved, so move the page to the top of the activity list:
                 newBumpedAt = Some(tx.now))(tx)
 
+          BUG; SHOULD // update popularity stats, for from & to pages?  See: [dupl_upd_pg_stats]
+          // dao.updatePagePopularity(... fromPage ..., tx)
+          // dao.updatePagePopularity(... toPage ..., tx)
+
           postAfter
         }
 

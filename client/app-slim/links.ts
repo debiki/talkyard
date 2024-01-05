@@ -303,6 +303,7 @@ export function rememberBackUrl(url?: string) {
 /**
  * The page that the user viewed before s/he entered the admin or
  * about-user area, or to the homepage ('/') if there's no previous page.
+ * COULD use store.settings.forumMainView instead of '/' as fallback? [what_rootPathView]
  */
 export function linkBackToSite(): string {
   return getFromSessionStorage('returnToSiteUrl') || '/';

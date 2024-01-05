@@ -262,7 +262,8 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
   private val ImStartingError = {
     Results.InternalServerError(i"""500 Internal Server Error
       |
-      |Talkyard's application server is starting ...
+      |The server is starting:
+      |    ${globals.startupStep}
       |
       |Please wait a few seconds, then reload this page. [TyEIMSTARTING]
       |""")

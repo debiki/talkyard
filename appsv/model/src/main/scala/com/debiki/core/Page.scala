@@ -249,7 +249,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   // already. And copying/syncing settings between cats, would be simpler to implement
   // and give all (?) of the benefits with 0) 1) 2) 3) anyway (?).
   pageId: String,
-  extImpId: Option[ExtId] = None,  // RENAME to extId
+  extImpId: Option[ExtId] = None,  // RENAME to extId, no, to  refId
   pageType: PageType,
   version: PageVersion,
   createdAt: ju.Date,
@@ -376,6 +376,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   require(numOrigPostUnwantedVotes <= numUnwanteds,
     s"Fail: $numOrigPostUnwantedVotes <= $numUnwanteds [EdE4GKY8] $wp")
   require(numOrigPostRepliesVisible >= 0, s"[DwE0GY42] $wp")
+  BUG //  Fail: 0 <= -1 if deleting meta message
   require(numOrigPostRepliesVisible <= numRepliesVisible,
     s"Fail: $numOrigPostRepliesVisible <= $numRepliesVisible [EsE0GY42B] $wp")
   //require(numRepliesVisible >= 0, "DwE6KPE78") - bug in PostsDao.changePostStatus()?

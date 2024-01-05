@@ -51,28 +51,35 @@ const majasUiTopic = {
   type: c.TestPageRole.Problem,
 };
 
-const michaelsReplyToMajasApiTopic = {
-  extId: 'michaelsReplyToMajasApiTopic extId',
+const michaelsApiReplyToMajasApiTopic = {
+  extId: 'michaelsApiReplyToMajasApiTopic extId',
   postType: c.TestPostType.Normal,
   parentNr: c.BodyNr,
   pageRef: `extid:${majasApiTopicUpsData.extId}`,
   authorRef: `username:michael`,
-  body: 'michaelsReplyToMajasApiTopic hello Maja',
+  body: 'michaelsApiReplyToMajasApiTopic hello Maja',
 };
 
-const michaelsProgrReplyToMajasUiTopic_lineOne =
-    'michaelsProgrReplyToMajasUiTopic progr note text';
+const michaelsApiProgrReplyToMajasUiTopic_lineOne =
+    'michaelsApiProgrReplyToMajasUiTopic progr note text';
 
 const danger = 'danger';
 const link_text_01 = 'link_text_01';
 const link_text_02 = 'link_text_02';
 
-const michaelsProgrReplyToMajasUiTopic = {
-  ...michaelsReplyToMajasApiTopic,
+const michaelsApiNormalReplyToMajasUiTopic = {
+  ...michaelsApiReplyToMajasApiTopic,
+  extId: 'michaelsApiNormalReplyToMajasUiTopic refId',
+  pageRef: '', // filled in later (3909682)
+  body: 'michaelsApiNormalReplyToMajasUiTopic',
+};
+
+const michaelsApiProgrReplyToMajasUiTopic = {
+  ...michaelsApiReplyToMajasApiTopic,
   extId: 'michaelsProgrReplyToMajasUiTopic extId',
   pageRef: '', // filled in later (3909682)
   postType: c.TestPostType.BottomComment,
-  body: michaelsProgrReplyToMajasUiTopic_lineOne + '\n' +
+  body: michaelsApiProgrReplyToMajasUiTopic_lineOne + '\n' +
         'o "ddqq"  \'ssqq\'  question: ?   and: &  hash: # o\n' +
         'o less than: <  greater than: > o\n' +
         `<a href="#" onclick="alert('${danger}')">${link_text_01}</a>\n` +
@@ -82,18 +89,18 @@ const michaelsProgrReplyToMajasUiTopic = {
 };
 
 const majasApiReplyToMichael = {
-  ...michaelsReplyToMajasApiTopic,
+  ...michaelsApiReplyToMajasApiTopic,
   extId: 'majasApiReplyToMichael extId',
   parentNr: c.FirstReplyNr,  // that's Michael's post
   authorRef: `username:maja`,
   body: 'majasApiReplyToMichael hello Michael',
 };
 
-const majasReplyMentionsMaria = {
-  ...michaelsReplyToMajasApiTopic,
-  extId: 'majasReplyMentionsMaria extId',
+const majasApiReplyMentionsMaria = {
+  ...michaelsApiReplyToMajasApiTopic,
+  extId: 'majasApiReplyMentionsMaria extId',
   authorRef: `username:maja`,
-  body: 'majasReplyMentionsMaria hello @maria',
+  body: 'majasApiReplyMentionsMaria hello @maria',
 };
 
 const majasReplyTextToMichaelOnUiCreatedPage = 'majasReplyTextToMichaelOnUiCreatedPage';
@@ -220,15 +227,30 @@ describe(`api-upsert-posts.2br.d  TyT60RKNJF24C`, () => {
   });
 
 
-  // ----- Upsert posts, page autor gets notified
+  // ----- Upsert reply,  w/o notifications (tested implicitly below  TyTUPSNTF825)
 
-  it("Michael API upserts a ProgressNote to Maja's UI created topic", async () => {
-    michaelsProgrReplyToMajasUiTopic.pageRef = `tyid:${majasUiTopicId}`;  // (3909682)   e2e map +=
+  it(`Michael API replies to Maja's UI created topic, no notfs  (& Owen will delete later)`,
+          async () => {
+    michaelsApiNormalReplyToMajasUiTopic.pageRef = `tyid:${majasUiTopicId}`;  // (3909682)
     upsertResponse = await server.apiV0.upsertSimple({
       ...upsSimpleParams,
       data: {
-        upsertOptions: { sendNotifications: true },
-        posts: [michaelsProgrReplyToMajasUiTopic],
+        upsertOptions: { sendNotifications: false },
+        posts: [michaelsApiNormalReplyToMajasUiTopic],
+      },
+    });
+  });
+
+
+  // ----- Upsert posts, page autor gets notified
+
+  it("Michael API upserts a ProgressNote to Maja's UI created topic", async () => {
+    michaelsApiProgrReplyToMajasUiTopic.pageRef = `tyid:${majasUiTopicId}`;  // (3909682)
+    upsertResponse = await server.apiV0.upsertSimple({
+      ...upsSimpleParams,
+      data: {
+        upsertOptions: { sendNotifications: true }, // TyTUPSNTF825
+        posts: [michaelsApiProgrReplyToMajasUiTopic],
       },
     });
     numNotfEmailsSent += 1;
@@ -237,10 +259,11 @@ describe(`api-upsert-posts.2br.d  TyT60RKNJF24C`, () => {
   let majasUiTopicNotfEmail: EmailSubjectBody;
 
   it("... Maja gets notified", async () => {
+    // But not about the `sendNotifications: false` comment.  TyTUPSNTF825
     majasUiTopicNotfEmail = (await server.waitUntilLastEmailMatches(
         siteIdAddress.id, maja.emailAddress,
         // Line 2 contains magic regex chars, won't match.
-        [maja.username, michaelsProgrReplyToMajasUiTopic_lineOne])).matchedEmail;
+        [maja.username, michaelsApiProgrReplyToMajasUiTopic_lineOne])).matchedEmail;
   });
 
   let bodyHtmlText: string;
@@ -262,8 +285,8 @@ describe(`api-upsert-posts.2br.d  TyT60RKNJF24C`, () => {
 
   it("... script tags not in email  TyT0RKDL5MW", async () => {
     // Test the tests:
-    assert.includes(michaelsProgrReplyToMajasUiTopic.body, c.ScriptTagName);
-    assert.includes(michaelsProgrReplyToMajasUiTopic.body, danger);
+    assert.includes(michaelsApiProgrReplyToMajasUiTopic.body, c.ScriptTagName);
+    assert.includes(michaelsApiProgrReplyToMajasUiTopic.body, danger);
     // Real tests:
     assert.excludes(bodyHtmlText, c.ScriptTagName);
     assert.excludes(bodyHtmlText, danger);
@@ -280,7 +303,7 @@ describe(`api-upsert-posts.2br.d  TyT60RKNJF24C`, () => {
       ...upsSimpleParams,
       data: {
         upsertOptions: { sendNotifications: true },
-        posts: [michaelsReplyToMajasApiTopic],
+        posts: [michaelsApiReplyToMajasApiTopic],
       },
     });
     numNotfEmailsSent += 1;
@@ -289,7 +312,7 @@ describe(`api-upsert-posts.2br.d  TyT60RKNJF24C`, () => {
   it("... Maja gets notified", async () => {
     await server.waitUntilLastEmailMatches(
         siteIdAddress.id, maja.emailAddress,
-        [maja.username, michaelsReplyToMajasApiTopic.body]);
+        [maja.username, michaelsApiReplyToMajasApiTopic.body]);
   });
 
   it("But no one else  (2 emails sent in total)", async () => {
@@ -330,7 +353,7 @@ describe(`api-upsert-posts.2br.d  TyT60RKNJF24C`, () => {
       ...upsSimpleParams,
       data: {
         upsertOptions: { sendNotifications: true },
-        posts: [majasReplyMentionsMaria],
+        posts: [majasApiReplyMentionsMaria],
       },
     });
     numNotfEmailsSent += 1;
@@ -339,7 +362,7 @@ describe(`api-upsert-posts.2br.d  TyT60RKNJF24C`, () => {
   it("... Maria gets notified", async () => {
     await server.waitUntilLastEmailMatches(
         siteIdAddress.id, maria.emailAddress,
-        [maria.username, majasReplyMentionsMaria.body]);
+        [maria.username, majasApiReplyMentionsMaria.body]);
   });
 
   it("But no one else  (4 emails sent in total)", async () => {
@@ -366,17 +389,17 @@ describe(`api-upsert-posts.2br.d  TyT60RKNJF24C`, () => {
     await maja_brA.go2(replyNotfLink);
   });
 
-  it("... sees Michael's reply", async () => {
+  it(`... sees Michael's 2nd reply`, async () => {
     await maja_brA.topic.waitForPostAssertTextMatches(
-        c.FirstReplyNr, michaelsProgrReplyToMajasUiTopic_lineOne);
+        c.SecondReplyNr, michaelsApiProgrReplyToMajasUiTopic_lineOne);
   });
 
   it("... it's been sanitized: script tags gone  TyT0RKDL5MW", async () => {
-    const bodyHtmlText = await maja_brA.topic.getPostHtml(c.FirstReplyNr);
+    const bodyHtmlText = await maja_brA.topic.getPostHtml(c.SecondReplyNr);
 
     // Test the test:
-    assert.includes(michaelsProgrReplyToMajasUiTopic.body, link_text_02);
-    assert.includes(michaelsProgrReplyToMajasUiTopic.body, danger);
+    assert.includes(michaelsApiProgrReplyToMajasUiTopic.body, link_text_02);
+    assert.includes(michaelsApiProgrReplyToMajasUiTopic.body, danger);
 
     // Real tests:
     // Dupl match list. (69723056)
@@ -413,11 +436,30 @@ describe(`api-upsert-posts.2br.d  TyT60RKNJF24C`, () => {
   });
 
 
-  // ----- The upserted posts work: Can reply via the UI
+  // ----- The upserted posts work 1/3: Can delete it
 
-  it("Maja post a reply to Michael's reply", async () => {
+  // There was once a bug, this update-statistics code was missing: [ups_po_upd_stats].
+
+  it(`Owen goes to the UI page,  logs in`, async () => {
+    await owen_brB.go2('/-' + majasUiTopicId);
+    await owen_brB.complex.loginWithPasswordViaTopbar(owen);
+  });
+
+  it("... sees Michael's first reply: 'michaelsApiNormalReplyToMajasUiTopic'", async () => {
+    await owen_brB.topic.waitForPostAssertTextMatches(
+        c.FirstReplyNr, 'michaelsApiNormalReplyToMajasUiTopic');
+  });
+
+  it(`... deletes it  (it's an upsert-API reply to a via-the-UI created page)`, async () => {
+    await owen_brB.topic.deletePost(c.FirstReplyNr);
+  });
+
+
+  // ----- The upserted posts work 2/3: Can reply via the UI
+
+  it("Maja post a reply to Michael's 2nd reply  (which Owen hasn't deleted)", async () => {
     await maja_brA.complex.replyToPostNr(
-        c.FirstReplyNr, majasReplyTextToMichaelOnUiCreatedPage);
+        c.SecondReplyNr, majasReplyTextToMichaelOnUiCreatedPage);
     numNotfEmailsSent += 1;
   });
 
@@ -444,27 +486,23 @@ describe(`api-upsert-posts.2br.d  TyT60RKNJF24C`, () => {
         upsertOptions: { sendNotifications: true },
         posts: [
           // One, two, 3, 4, 5, many — too many.  [SOMNYPSTS]
-          { ...michaelsReplyToMajasApiTopic, extId: 'oone', },
-          { ...michaelsReplyToMajasApiTopic, extId: 'twoo', },
-          { ...michaelsReplyToMajasApiTopic, extId: 'thr33', },
-          { ...michaelsReplyToMajasApiTopic, extId: 'f4r', },
-          { ...michaelsReplyToMajasApiTopic, extId: '5ive', },
-          { ...michaelsReplyToMajasApiTopic, extId: 'manyy', }],
+          { ...michaelsApiReplyToMajasApiTopic, extId: 'oone', },
+          { ...michaelsApiReplyToMajasApiTopic, extId: 'twoo', },
+          { ...michaelsApiReplyToMajasApiTopic, extId: 'thr33', },
+          { ...michaelsApiReplyToMajasApiTopic, extId: 'f4r', },
+          { ...michaelsApiReplyToMajasApiTopic, extId: '5ive', },
+          { ...michaelsApiReplyToMajasApiTopic, extId: 'manyy', }],
       },
     });
     assert.includes(responseText, 'TyEUPSMNYNTFS_');
   });
 
 
-  // ----- The upserted posts work: Can move to other page
+  // ----- The upserted posts work 3/3: Can move to other page
 
-  it(`Owen logs in`, async () => {
-    await owen_brB.go2(siteIdAddress.origin + '/-' + majasUiTopicId);
-    await owen_brB.complex.loginWithPasswordViaTopbar(owen);
-  });
-
-  it(`Owen moves the API upserted reply on the UI page to another page`, async () => {
-    await owen_brB.topic.openMoveDialogForPostNr(c.FirstReplyNr);
+  it(`Owen moves Michael's 2nd API reply on the UI page to another page`, async () => {
+    await owen_brB.refresh2();
+    await owen_brB.topic.openMoveDialogForPostNr(c.SecondReplyNr);
     await owen_brB.movePostDialog.typePostLinkMoveToThere(michaelsTopicIdUrl);
   });
 
@@ -483,7 +521,7 @@ describe(`api-upsert-posts.2br.d  TyT60RKNJF24C`, () => {
   });
 
   it(`Now Michael's page has four comments
-        — because the replies to the replies were moved too`, async () => {
+        — because the replies to the replies were moved too (one by Maja)`, async () => {
     await owen_brB.topic.assertNumCommentsVisible(4);
   });
 

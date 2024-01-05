@@ -1218,6 +1218,7 @@ type ActionType =
   'CreatePage' |
   'CreateComment' |
   // 'CreateMetaComment' |
+  'DeletePosts' |
   'SetVote' |
   'SetNotfLevel';
   // Distant future:
@@ -1308,6 +1309,18 @@ interface CreateMetaPostAction extends Action {
     bodyFmt: 'CommonMark';
   }
 } */
+
+
+interface DeletePostsAction extends Action {
+  doWhat: 'DeletePosts';
+  doHow: DeletePostsParams;
+}
+
+interface DeletePostsParams {
+  whatPost?: PostRef;
+  postsCreatedBy?: PatRef;
+  postsCreatedAfter?: WhenMs;
+}
 
 
 

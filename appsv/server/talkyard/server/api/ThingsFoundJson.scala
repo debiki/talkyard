@@ -34,26 +34,35 @@ import talkyard.server.JsX._
 
 object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
 
+  def makePagesJsArr(pagesCanSee: PagesCanSee, dao: SiteDao,
+          jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): Seq[(PageFoundStuff, JsObject)] = {
+    _makePagesJs(pagesCanSee.pages, anySearchResults = Nil, dao, jsonConf, authzCtx)
+  }
+
 
   def makePagesFoundListResponse(pagesCanSee: PagesCanSee, dao: SiteDao,
         jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): p_Result = {
-    _makePagesFoundResponseImpl(
+    val pagesJs = _makePagesJs(
           pagesCanSee.pages, anySearchResults = Nil, dao, jsonConf, authzCtx)
+    _makeThingsFoundResp(dao.theSiteIdsOrigins(), pagesJs.map(_._2), jsonConf)
   }
 
 
   def makePagesFoundSearchResponse(searchResults: SearchResultsCanSee, dao: SiteDao,
         jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): p_Result = {
-    _makePagesFoundResponseImpl(
+    val pagesJs = _makePagesJs(
           anyPagePathsMetas = Nil, searchResults.pagesAndHits, dao, jsonConf, authzCtx)
+    _makeThingsFoundResp(dao.theSiteIdsOrigins(), pagesJs.map(_._2), jsonConf)
   }
 
 
-  // Vaguely similar code: ForumController.makeTopicsResponse()  [406RKD2JB]
+  // Vaguely similar code: ForumController.makeTopicsResponse()  and
+  // EventsParSer.makeEventsListJson().  [406RKD2JB]
   //
-  private def _makePagesFoundResponseImpl(
+  private def _makePagesJs(
       anyPagePathsMetas: Seq[PagePathAndMeta], anySearchResults: Seq[PageAndHits],
-      dao: SiteDao, jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): p_Result = {
+      dao: SiteDao, jsonConf: JsonConf, authzCtx: AuthzCtxOnPats
+      ): Seq[(PageFoundStuff, JsObject)] = {
 
     dieIf(anyPagePathsMetas.nonEmpty && anySearchResults.nonEmpty, "TyE40RKUPJR2")
 
@@ -103,6 +112,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
     // --- Load authors
 
     COULD // also [incl_assignees], not just authors.
+    // But exclude private users or fields e.g. name.  [private_pats]
 
     val pageAuthorIds = pageFoundStuffs.map(_.pageStuff.authorUserId).toSet
 
@@ -125,16 +135,22 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
 
     // --- The result
 
-    val jsPagesFound: Seq[JsObject] = pageFoundStuffs map { stuff =>
+    val result: Seq[(PageFoundStuff, JsObject)] = pageFoundStuffs map { stuff =>
       val anyCategory = stuff.pageMeta.categoryId.flatMap(categoriesById.get)
-      JsPageFound(
+      stuff -> JsPageFound(
             stuff, authorIdsByPostId, authorsById,
             avatarUrlPrefix = avatarUrlPrefix, anyCategory, jsonConf, authzCtx)
     }
 
+    result
+  }
+
+
+  def _makeThingsFoundResp(origins: SiteIdOrigins, jsPagesFound: Seq[JsObject],
+          jsonConf: JsonConf): p_Result = {
     // Typescript: SearchQueryResults, and ListQueryResults
     OkApiJson(Json.obj(
-      "origin" -> siteIdsOrigins.siteOrigin,
+      "origin" -> origins.siteOrigin,
       "thingsFound" -> jsPagesFound), jsonConf.pretty)
   }
 
@@ -145,6 +161,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
     val pageStuff: PageStuff,
     val pageAndSearchHits: Option[PageAndHits]) {
     def pageMeta: PageMeta = pageStuff.pageMeta
+    def pageId: PageId = pagePath.pageId
   }
 
 
@@ -171,7 +188,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
       "excerpt" -> JsStringOrNull(pageStuff.bodyExcerpt),
       "author" -> JsPatFoundOrNull(anyPageAuthor, Some(avatarUrlPrefix), jsonConf, authzCtx),
       // For now, only the leaf category — but later, SHOULD incl ancestor categories
-      // too — so this is an array.
+      // the the requester can see, too — so this is an array.  [incl_anc_cats]
       "categoriesMainFirst" -> Json.arr(JsCategoryFoundOrNull(anyCategory, jsonConf, authzCtx)),
       "pageType" -> PageParSer.pageTypeSt_apiV0(pageMeta.pageType),
       "answerPostId" -> JsNum32OrNull(pageMeta.answerPostId),
@@ -185,7 +202,10 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
     }
 
     if (authzCtx.maySeeExtIds) {
-      pageMeta.extImpId foreach { json += "extId" -> JsString(_) }
+      pageMeta.extImpId foreach { rid =>
+        json += "extId" -> JsString(rid)
+        json += "refId" -> JsString(rid)  // renaming to refId
+      }
     }
 
     // If this is a SearchQuery for posts, include those posts.
@@ -215,6 +235,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
 
     if (authzCtx.maySeeExtIds) {
       category.extImpId foreach { res += "extId" -> JsString(_) }
+      category.extImpId foreach { res += "refId" -> JsString(_) }  // renaming to refId
     }
 
     if (jsonConf.inclOldCategoryIdField) {
@@ -252,6 +273,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
       }
     }
 
+    // Later, excl e.g. name, if is private.  [private_pats]
     pat.anyUsername.foreach(json += "username" -> JsString(_))
     pat.anyName.foreach(json += "fullName" -> JsString(_))
 

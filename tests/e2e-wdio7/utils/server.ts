@@ -50,7 +50,7 @@ function initOrExit(theSettings) {
     const name = nameAndValue[0];
     const value = nameAndValue[1];
     cookieString += nameValueStr + '; ';
-    if (name == 'XSRF-TOKEN') {
+    if (name == 'TyCoXsrf') {
       xsrfToken = value;
     }
   });
@@ -67,7 +67,7 @@ function initOrExit(theSettings) {
 }
 
 
-function postOrDie(
+export function postOrDie(
       url: St,
       data: Object,
       opts: {
@@ -269,20 +269,21 @@ function showResponseBodyJson(body) {
 
 
 function createSiteViaPubApi(ps: { data: any,
-        wrongApiSecret?: true }): { newSite: { origin: St, id: SiteId }} {
+        wrongApiSecret?: true, apiRequester?: St, apiSecret?: St, origin?: St }): { newSite: { origin: St, id: SiteId }} {
   // See CreateSiteController.apiV0_createSite.
-  const url = settings.mainSiteOrigin + '/-/v0/create-site';
+  const url = (ps.origin || settings.mainSiteOrigin) + '/-/v0/create-site';
   const data = {
     ...ps.data,
   };
-  const apiSecret = ps.wrongApiSecret ? 'wrongCreateSiteApiSecret' :
-          'publicCreateSiteApiTestSecret';
-  const resp = postOrDie(url, data, { apiRequester: 'createsite', apiSecret,
-        fail: !!ps.wrongApiSecret,
+  const apiRequester = ps.apiRequester || 'createsite';
+  const apiSecret = ps.apiSecret || (
+          ps.wrongApiSecret ? 'wrongCreateSiteApiSecret' : 'publicCreateSiteApiTestSecret');
+  const fail = !!ps.wrongApiSecret;
+  const resp = postOrDie(url, data, { apiRequester, apiSecret, fail,
         hintIfErr:
           `You need this in conf/my.conf:\n\n` +
           'talkyard.createSiteApiSecret="publicCreateSiteApiTestSecret"' });
-  const respJson = resp.bodyJson();
+  const respJson = fail ? resp.bodyText : resp.bodyJson();
   logServerResponse(respJson);
   return respJson;
 }
@@ -385,7 +386,7 @@ async function getLastEmailSenTo(siteId: SiteId, email: St, dontWait?: 'DontWait
       const lastEmail = lastEmails[lastEmails.length - 1];
       return lastEmail;
     }
-    // Internal functions can pass false, if they pause themselves.
+    // Internal functions can specify 'DontWait', if they pause themselves.
     if (dontWait !== 'DontWait') {
       await wdioBrowserA.pause(500 - 100); // 100 ms for a request, perhaps?
     }
@@ -618,9 +619,10 @@ async function lastEmailMatches(siteId: SiteId, emailAddress: St,
 
 
 async function sendIncomingEmailWebhook(ps: { to: St, toAddrHasNeeded?: Bo,
-        body: St, format: 'Postmarkapp', wrongApiSecret?: true }) {
+        body: St, format: 'Postmarkapp',
+        origin?: St, apiRequester?: St, apiSecret?: St, wrongApiSecret?: true }) {
   // See EmailsInController.parseIncomingEmail [pars_em_in].
-  const url = settings.mainSiteOrigin + '/-/handle-email';
+  const url = (ps.origin || settings.mainSiteOrigin) + '/-/handle-email';
   const mailboxHash = getHashOrDie(ps.to, 'TyE70MWEP52', ps.toAddrHasNeeded);
   const data = {
     MessageID: 'MessageID',
@@ -635,13 +637,19 @@ async function sendIncomingEmailWebhook(ps: { to: St, toAddrHasNeeded?: Bo,
     StrippedTextReply: 'StrippedTextReply',
     Headers: [{ Name: 'HeaderName', Value: 'HeaderValue' }],
   };
-  const apiSecret = ps.wrongApiSecret ? 'wrongApiSecret' :
-          'publicEmailWebhooksApiTestSecret';
-  await postOrDie(url, data, { apiRequester: 'emailwebhooks', apiSecret,
-        fail: !!ps.wrongApiSecret,
+  const apiRequester = ps.apiRequester || 'emailwebhooks';
+  const apiSecret = ps.apiSecret || (
+          ps.wrongApiSecret ? 'wrongApiSecret' : 'publicEmailWebhooksApiTestSecret');
+  const fail = !!ps.wrongApiSecret;
+  const resp = await postOrDie(url, data, { apiRequester, apiSecret, fail,
         hintIfErr:
           `You need this in conf/my.conf:\n\n` +
           'talkyard.emailWebhooksApiSecret="publicEmailWebhooksApiTestSecret"' });
+  // Always sends back text (the callers don't care anyway, they don't know what
+  // Talkyard is or does; they just send webhooks.)
+  const respTxt = resp.bodyText;
+  logServerResponse(respTxt);
+  return respTxt;
 }
 
 
@@ -813,6 +821,7 @@ async function do_(ps: { origin: St, apiRequesterId: UserId, apiSecret: St, fail
 
 function planMaintenance(ps: { origin: St, basicAuthUsername: St, apiSecret: St, fail?: Bo,
       data: { maintenanceUntilUnixSecs?: Nr, maintWordsHtml?: St, maintMessageHtml?: St }}): St {
+  // See SuperAdminController.apiV0_planMaintenance().
   const url = ps.origin + '/-/v0/plan-maintenance';
   const response = postOrDie(
       url, ps.data, {

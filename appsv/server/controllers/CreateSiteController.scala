@@ -22,7 +22,9 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
 import talkyard.server.{TyContext, TyController}
+import talkyard.server.api
 import talkyard.server.http._
+import talkyard.server.security.WhatApiSecret.ServerSecretFor
 import javax.inject.Inject
 import org.owasp.encoder.Encode
 import play.api.libs.json._
@@ -88,8 +90,8 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
   }
 
 
-  def apiV0_createSite: Action[JsValue] = PostJsonAction(RateLimits.CreateSite, maxBytes = 500) {
-        req =>
+  def apiV0_createSite: Action[JsValue] = ApiSecretPostJsonAction(
+        ServerSecretFor("createsite"), RateLimits.CreateSite, maxBytes = 500) { req =>
     createSiteImpl(req, isPubApi = true)
   }
 
@@ -115,8 +117,17 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
     val anyLocalHostname = parseOptSt(body, "localHostname").trimNoneIfBlank
     val anyEmbeddingSiteAddress = parseOptSt(body, "embeddingSiteAddress").trimNoneIfBlank
     val organizationName = parseSt(body, "organizationName").trim
+    val makePublic = parseOptBo(body, "makePublic")
     val okForbiddenPassword = hasOkForbiddenPassword(request)
     val okE2ePassword = hasOkE2eTestPassword(request.request)
+
+    // Let's [remove_not_allowed_feature_flags], rather than replying Error. Otherwise,
+    // a typo in create-site external code, could totally prevent creation of new sites.
+    // (Allowing any feature flags, might let hackers configure [sites they create]
+    // in funny ways.)
+    val anyFeatureFlagsMaybeBad: Opt[St] = parseOptSt(body, "featureFlags")
+    val featureFlagsOk: St =
+          anyFeatureFlagsMaybeBad.map(api.FeatureFlags.removeBadNewSiteFlags) getOrElse ""
 
     val (
         ownerUsername,
@@ -225,12 +236,13 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
             pubId = Site.newPubId(),
             name = localHostname,
             SiteStatus.NoAdmin,
-            featureFlags = "",
+            featureFlags = featureFlagsOk,
             hostname = Some(hostname),
             embeddingSiteUrl = anyEmbeddingSiteAddress,
             creatorId = request.user.map(_.id) getOrElse UnknownUserId,
             browserIdData = request.theBrowserIdData,
             organizationName = organizationName,
+            makePublic = makePublic,
             isTestSiteOkayToDelete = isTestSiteOkayToDelete,
             skipMaxSitesCheck = okE2ePassword || okForbiddenPassword,
             createdFromSiteId = Some(request.siteId),

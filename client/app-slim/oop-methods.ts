@@ -876,7 +876,7 @@ export function store_curPage(store: Store): Page | U {
 
 
 export function store_mainSiteSection(store: Store): SiteSection {
-  // Currently there's always just one sub site, namely the forum.
+  // Currently there's always just one sub site, namely the forum. [subcomms]
   // Edit: Actually, there're some old sites, with many sub sites — they
   // got created, before the sub site feature got disabled. In such a case,
   // use the sub site with the lowest root category id, because that one was

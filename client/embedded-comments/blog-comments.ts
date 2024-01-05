@@ -28,14 +28,21 @@ declare const Bliss: any | undefined;
 declare function smoothScroll(elem: Element, x: number, y: number,
     durationMs?: number, onDone?: () => void);
 
+// Why do we prefix everything with `talkyard` instead of placing in a `talkyard: {...}`
+// object?  It's for developer & support friendliness:
+// - If websearching for any of these functions, one will find Talkyard's docs
+//   & discussions, and no off-topic things from unrelated software.
+// - Someone A who helps sbd else B with getting blog comments working, can know
+//   that B is indeed talking about a Talkyard function, and not something B
+//   has created themselves (which could have been slightly unclear if B
+//   said e.g. "authnToken" instead of "talkyardAuthnToken").
 interface WindowWithTalkyardProps {
   talkyardLogLevel?: Nr;
   talkyardDebug: boolean | number | undefined; // deprecated 2020-06-16
   talkyardAuthnToken?: St | Ay;
-  talkyardManyCommentIframes?: Bo;
   talkyardConsiderQueryParams?: St[];
-  edRemoveCommentsAndEditor: () => void;
-  edReloadCommentsAndEditor: () => void;
+  edRemoveCommentsAndEditor: () => void;  // deprecated
+  edReloadCommentsAndEditor: () => void;  //
   talkyardRemoveCommentsAndEditor: () => void;
   talkyardReloadCommentsAndEditor: () => void;
   talkyardAddCommentsIframe: (ps: { appendInside: HElm, discussionId: St }) => HElm;
@@ -60,21 +67,26 @@ interface WindowWithTalkyardProps {
 // For now, instead:
 const windowWithTalkyardProps: WindowWithTalkyardProps = <any> window;
 
-// Talkyard's log levels:
-// off, fatal, error, warn, info, config, debug, trace, annoying
-//   0,    10,    20,   30,   40,     50,    60,    70,       80
+
+// Talkyard's log levels:  [ty_log_levels]
+// off, fatal, partly-fatal, error, warn, info, config, debug, trace, annoying
+//   0,   1–9,           1x,    2x,   3x,   4x,     5x,    6x,    7x,       8x
 const winLogLvl = windowWithTalkyardProps.talkyardLogLevel;
-const winDbg = windowWithTalkyardProps.talkyardDebug;
-const talkyardLogLevel: Nr | St = (typeof winLogLvl !== 'undefined') ? winLogLvl : (
-    winDbg === false || winDbg === 0 ? 'warn' : 'trace');
+const winDbg = windowWithTalkyardProps.talkyardDebug; // deprecated
+const urlLogLvl = new URLSearchParams(location.hash.substring(1)).get('talkyardLogLevel');
+const talkyardLogLevel: Nr | St =
+        urlLogLvl || (
+        (typeof winLogLvl !== 'undefined') ? winLogLvl : (
+            winDbg === false || winDbg === 0 ? 'warn' : 'trace'));
 
 // Default to logging debug messages, for now, because people send screenshots of the
 // console when sth is amiss, and nice to get the log messages then.
-function makeTalkyardLogFn(isWarnOrErr: Bo, consoleLogFn: (...data: Ay[]) => Vo) {
-  // For now, so at least 'warn' works, as per the "disable logging by ..."
+function makeTalkyardLogFn(forLevel: Nr, consoleLogFn: (...data: Ay[]) => Vo) {
+  // For now, so at least 'warn' and 'info' works, as per the "disable logging by ..."
   // comment below.
-  const skipDebug = !talkyardLogLevel || talkyardLogLevel === 'warn';
-  if (skipDebug && !isWarnOrErr || !window.console)
+  const skipInfo  = !talkyardLogLevel || talkyardLogLevel === 'warn';
+  const skipDebug = !talkyardLogLevel || talkyardLogLevel === 'info';
+  if (skipInfo && forLevel >= 40 || skipDebug && forLevel >= 50 || !window.console)
     return function() {};
 
   return function logFn(..._arguments) {
@@ -91,16 +103,15 @@ function makeTalkyardLogFn(isWarnOrErr: Bo, consoleLogFn: (...data: Ay[]) => Vo)
 }
 
 // const logT =
-const logD = makeTalkyardLogFn(false, console.debug);
-const logM = makeTalkyardLogFn(false, console.log);
-const logW = makeTalkyardLogFn(true, console.warn);
-const logE = makeTalkyardLogFn(true, console.error);
+const logD = makeTalkyardLogFn(65, console.debug);
+const logM = makeTalkyardLogFn(45, console.log);
+const logW = makeTalkyardLogFn(35, console.warn);
+const logE = makeTalkyardLogFn(25, console.error);
 
 // const j2s = JSON.stringify;
 
 logM(`Starting ${TalkyardVersion} ... ` +
-      `(disable logging by setting talkyardLogLevel = 'warn')`);
-
+      `(disable logging by setting talkyardLogLevel = 'warn' or 'info')`);
 
 
 const d = { i: debiki.internal };
@@ -156,7 +167,7 @@ if (authnTokenInCookie) {
 const differentTokens =
         authnTokenInVar && authnTokenInCookie && authnTokenInVar !== authnTokenInCookie;
 if (differentTokens) {
-  logW(`Authn token in var and cookie differs, ignoring both`);
+  logW(`Authn token in var and cookie differs, ignoring both [TyEAUTKNDIF]`);
 }
 
 const autnToken: StV = differentTokens ? null : authnTokenInVar || authnTokenInCookie;
@@ -373,14 +384,12 @@ function loadRemainingCommentIframes() {
  *   talkyardAddCommentsIframe({ appendInside: document.body, discussionId: 'abc123' });
  */
 function addCommentsIframe(ps: { appendInside: HElm | St, discussionId: St }): HElm {
-  if (!windowWithTalkyardProps.talkyardManyCommentIframes)
-    throw Error(`Set  talkyardManyCommentIframes = true  to allow many comments iframes`);
 
   // Tests: TyTEMANYEMBDISAPI.TyTAPNDIFR283
   const appendIn: HElm = typeof ps.appendInside === 'string' ?
           document.querySelector(ps.appendInside) : ps.appendInside;
   if (!appendIn) {
-    logW(`No elem to append in: ${ps.appendInside}`);
+    logE(`No elem to append in: ${ps.appendInside} [TyE0ELM2APND_]`);
     return;
   }
 
@@ -401,7 +410,7 @@ function addCommentsIframe(ps: { appendInside: HElm | St, discussionId: St }): H
 
   Bliss.inside(wrapperDiv, appendIn);
   const commentIframeNr = iframeElms.length - 1;
-  intCommentIframe(wrapperDiv, commentIframeNr, numDiscussions >= 2);
+  intCommentIframe(wrapperDiv, commentIframeNr, numDiscussions > 1);
   return wrapperDiv;
 }
 
@@ -429,10 +438,11 @@ function forgetRemovedCommentIframes() {
 function loadNewCommentIframes(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   const newCommentElems = document.querySelectorAll('.talkyard-comments:not(.ty_IfrCr)');
   const numOld = commentsElems.length;
+  const numTotal = numOld + newCommentElems.length;
   for (let i = 0; i < newCommentElems.length; ++i) {
     const iframeNr = numOld + i + FirstCommentsIframeNr;
     intCommentIframe(
-          newCommentElems[i], iframeNr, i > 1);
+          newCommentElems[i], iframeNr, numTotal > 1);
   }
 }  */
 
@@ -443,7 +453,8 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   if (existingIframe)
     return;
 
-  logD(`intCommentIframe(..., iframeNr = ${iframeNr}, ...)`);
+  logD(`intCommentIframe(..., iframeNr = ${iframeNr}, manyCommentsIframes = ${
+          manyCommentsIframes})`);
 
   // Tests:  embcom.ignore-query-params.2br  TyTEEMCIGQPRMS
 
@@ -483,7 +494,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
       if (i >= 1) {
         logW(`Only one query param supported, but talkyardConsiderQueryParams is: ${
               JSON.stringify(considerQueryParams)} — ignoring all but ${
-              considerQueryParams[0]}`);
+              considerQueryParams[0]} [TyEMANYQPS]`);
         break;;
       }
       embeddingUrl += i === 0 ? '?' : '&';
@@ -512,22 +523,29 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   if (/[\t\r\n]/.test(discussionId)) {
     var errorMessage = "Bad discussion id: " + discussionId + ' [TyEEMDIID]';
     logW(errorMessage);
-    if (manyCommentsIframes) return false;  // other iframes might work
+    if (manyCommentsIframes) return false;  // _other_iframes_might_work
     else throw Error(errorMessage);
   }
   var discIdParam = discussionId ? `discussionId=${discussionId}&` : '';
 
-  if (windowWithTalkyardProps.talkyardManyCommentIframes && !discussionId) {
-    // Without a discussion id, how could we know which (if any) of the
-    // iframe discussion should be associated with just the URL or URL path?
-    // Or if there's a discussion with no id, associated with the URL,
-    // and then a 2nd discussion iframe is added, with an id
-    // — the Ty server won't know if this is supposed to be a separate discussion,
-    // or if the blog admin just wants to add the id, to the already existing discussion.
-    const errMsg =
-          `iframe nr ${iframeNr}: Attribute 'data-discussion-id=...' missing — ` +
-          `it's required if many comment iframes allowed [TyEMANYIFRID]`;
-    throw Error(errMsg);
+  // If many iframes on the same page:  Without a discussion id, how could we know
+  // which (if any) of the iframe discussion should be associated with just
+  // the URL or URL path?  Or if there's a discussion with no id,
+  // associated with the URL, and then a 2nd discussion iframe is added, with an id
+  // — the Ty server won't know if this is supposed to be a separate discussion,
+  // or if the blog admin just wants to add the id, to the already existing discussion.
+  //
+  // If there's just one comments iframe, *maybe* it ought to have a discussion
+  // id — if more comment iframes will soon appear. But we don't know, and it's
+  // an extremely rare use case, so, don't log the warning, unless there are
+  // *already* >= 2 iframes.
+  //
+  if (manyCommentsIframes && !discussionId) {
+    const warning =
+          `iframe nr ${iframeNr}: Attribute 'data-discussion-id=...' missing: ` +
+          `Each comments iframe should have a discussion id, when many ` +
+          `iframes are shown at the same time, or same URL [TyEMANYIFRID]`;
+    logW(warning);
   }
 
   // To place the lazy-created embedded discussion pages in a specific
@@ -536,7 +554,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   if (/[\t\r\n]/.test(categoryRef)) {
     var errorMessage = `Bad category ref: ${categoryRef} [TyEEMCATRFCL]`;
     logW(errorMessage);
-    if (manyCommentsIframes) return false;
+    if (manyCommentsIframes) return false;  // _other_iframes_might_work
     else throw Error(errorMessage);
   }
   const catRefParam = categoryRef ? `category=${categoryRef}&` : '';
@@ -879,7 +897,7 @@ function onMessage(event) {
           return;
       }
 
-      logM(`All comment iframes inited — continuing ...`);
+      logM(`All comment iframes inited.`);
 
       // Any comment to scroll into view?
       //
@@ -954,7 +972,13 @@ function onMessage(event) {
       }
       authnTried = true;
 
+      // (But not authenticated, yet (happens asynchronically in the iframes). Only
+      // public comments visible, until then.)
+      // Callback e2e test:
+      //    - embcom.log-levels-on-loaded.1br.ec  TyTECLOGSCLBKS.TyTCOMTSCLBK
+      callIfExists('onTalkyardCommentsLoaded');
       break;
+
     case 'setIframeSize':
       //logT(`setIframeSize ${j2s(eventData)}`);
 
@@ -975,17 +999,20 @@ function onMessage(event) {
         loadingElms[iframeNr] = undefined;
       }
       break;
+
     case 'scrollToPostNr':
       // The comments iframe will calculate the rectangle to scroll into view,
       // and then reply with a 'scrollComments' message, because the actual scrolling
       // needs to happen here in the parent frame.
       sendToComments(event.data);
       break;
+
     case 'scrollComments':   // RENAME to 'scrollCommentsIframe'?
       var rectToScrollIntoView = eventData[0];
       var options = eventData[1];
       scrollComments(rectToScrollIntoView, options);
       break;
+
       /* CLEAN_UP remove this
     case 'startUtterscrolling':
       debiki.Utterscroll.startScrolling(eventData);
@@ -1073,6 +1100,7 @@ function onMessage(event) {
         location.assign(eventData.goTo);
       }
       break;
+
     // Maybe remove this one, and use only 'showEditsPreviewInPage' instead, renamed to
     // 'showEditorAndPreview'?
     case 'onEditorOpen':
@@ -1476,5 +1504,18 @@ windowWithTalkyardProps.talkyardForgetRemovedCommentIframes = forgetRemovedComme
 // @ifdef DEBUG
 windowWithTalkyardProps['e2e_getNumEmbDiscs'] = () => numDiscussions;
 // @endif
+
+
+
+function callIfExists(functionName: St) {
+  const fn = windowWithTalkyardProps[functionName];
+  if ((typeof fn) === 'function') {
+    fn();
+  }
+}
+
+// Callback e2e test:
+//    - embcom.log-levels-on-loaded.1br.ec  TyTECLOGSCLBKS.TyTSCRIPTCLBK
+callIfExists('onTalkyardScriptLoaded');
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

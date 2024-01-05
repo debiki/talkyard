@@ -12,7 +12,7 @@ const newMembersTopicTitle = 'newMembersTopicTitle';
 const newMembersTopicText = 'newMembersTopicText';
 
 
-describe('create-site-password  @createsite @login @password  TyT7BAWFPK9', () => {
+describe('create-site-password-run-admin-intro-tours.1br.d  @createsite @login @password  TyT7BAWFPK9', () => {
 
   it('initialize', async () => {
     browser = new TyE2eTestBrowser(wdioBrowserA, 'brA');
@@ -24,7 +24,13 @@ describe('create-site-password  @createsite @login @password  TyT7BAWFPK9', () =
     // Something timed out in here, twice. [E2EBUG]
     // Break up into smaller steps then? To find out what.
     data = utils.generateNewSiteData();
-    await browser.go2(utils.makeCreateSiteWithFakeIpUrl());
+    await browser.go2(utils.makeCreateSiteWithFakeIpUrl() +
+            // For manual testing of new site feature flags:  TyTNEWSITEFFS
+            '&featureFlags=ff4Nfp+ff4Edu+ff4Biz+ff4EmCo+ff4EmFo+' +
+            'ffPrP+ffPrP0+ffPrP1+ffPrP4+' +
+            'ffPrP0123456789+' +
+            'ffPrP01234567890123+' +
+            'ffBad+ff4NfpffBad+ffBadff4Nfp+alsoBad+ff4Nfp5+++ff+ff4+gg4Edu+kittens');
     await browser.disableRateLimits();
     await browser.createSite.fillInFieldsAndSubmit(data);
     // New site; disable rate limits here too.

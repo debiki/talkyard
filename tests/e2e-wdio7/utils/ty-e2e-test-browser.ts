@@ -297,6 +297,32 @@ export class TyE2eTestBrowser {
     await this.go2(whereToday);
   }
 
+  /// Returns browser console log messages.
+  ///
+  /// Message format is:  <script url> <line>:<col> <the actual message>
+  /// The actual message can be e.g.:
+  ///   o"""Uncaught Error: Talkyard comments script is being loaded
+  ///       twice. Ca…ame() or talkyardLoadNewCommentIframes() instead?'))"""
+  /// `source` is 'javascript', `level` is e.g. 'SEVERE', `timestamp` e.g. 1702810449536.
+  ///
+  /// See:
+  /// https://webdriver.io/docs/api/chromium/#getlogs
+  /// But, deprecated!  "Use the "devtools" instead to get logs!"
+  /// — how do that? From here
+  ///
+  /// Also:
+  /// https://github.com/SeleniumHQ/selenium/wiki/JsonWireProtocol#sessionsessionidlog
+  ///  ——> https://www.selenium.dev/documentation/legacy/json_wire_protocol/#log-type
+  ///
+  /// By default, only returns 'SEVERE' messages, unless this extra config: [getLogs_all_lvls].
+  ///
+  async getLogs_worksInChrome(type: 'browser' | 'driver'): Pr<[{
+          message: St, level: St, source: St, timestamp: Nr }]> {
+    // This logs:  ["browser","driver"]  as of 2023-12-17:
+    //    logUnusual(j2s(await this.#br.getLogTypes()));
+    return await this.#br.getLogs(type);
+  }
+
   // The global $ might be for the wrong this.#br somehow, so:
 
   async $(selector: St | Function | object): Pr<WElm> {
@@ -2938,6 +2964,9 @@ export class TyE2eTestBrowser {
           okNotFoundReason = /-TyEM0CR0SEE_-TyMMBYSEE_/.test(source);
         }
         else if (ps.whyNot === 'MayNotSeeCat') {
+          // This is for a page in a category one cannot see.
+          // But what about accesing the category directly, not a page in it?
+          // Then:  [0see_page_in_cat_or_cat]
           okNotFoundReason = /-TyEM0SEE_-TyMMBYSEE_/.test(source);
         }
         else if (ps.whyNot === 'PageDeleted') {
@@ -3013,14 +3042,35 @@ export class TyE2eTestBrowser {
     createSite = {
       fillInFieldsAndSubmit: async (data: NewSiteData) => {
         if (data.embeddingUrl) {
+          logMessage(`Typing embedding URL...`);
           await this.waitAndSetValue('#e_EmbeddingUrl', data.embeddingUrl);
         }
         else {
+          logMessage(`Typing forum local hostname...`);
           await this.waitAndSetValue('#dwLocalHostname', data.localHostname);
         }
+
         await this.waitAndClick('#e2eNext3');
+        logMessage(`Typing org name...`);
         await this.waitAndSetValue('#e2eOrgName', data.orgName || data.localHostname);
+
+        if (data.embeddingUrl) {
+          // Then, public by default (or comments not visible).
+        }
+        else {
+          await this.waitAndClick('#e_Next4');
+          if (data.makePrivate) {
+            logMessage(`Selecting Private forum (not public)...`);
+            await this.waitAndClick('#e_MkPriv');
+          }
+        }
+
+        logMessage(`Submitting, to create site...`);
         await this.waitAndClick('input[type=submit]');
+
+        // Now the [create_something_here_page] should appear (also if makePrivate).
+        // It'll ask pat to sign up as owner.
+        logMessage(`Clicking owner signup buton ...`);
         await this.waitForVisible('#t_OwnerSignupB');
         assert.equal(data.origin, await this.origin());
       },
@@ -3985,6 +4035,19 @@ export class TyE2eTestBrowser {
         await this.waitForVisible('#e2ePassword');
       },
 
+      isSignUpDialog: async (ps: { withNameEmailInputs?: Bo } = {}): Pr<Bo> => {
+        const isSignup = await this.isDisplayed('.e_IsSgU');
+        if (ps.withNameEmailInputs) {
+          await this.waitForVisible('#e2eUsername');
+          await this.waitForVisible('#e2ePassword');
+        }
+        else if (ps.withNameEmailInputs === false) {
+          await this.waitForGone('#e2eUsername');
+          tyAssert.not(await this.isDisplayed('#e2ePassword'));
+        }
+        return isSignup;
+      },
+
       // RENAME to switchToLoginIfNeeded() ?
       switchToLoginIfIsSignup: async () => {
         // Switch to login form, if we're currently showing the signup form.
@@ -4012,7 +4075,7 @@ export class TyE2eTestBrowser {
             await this.waitAndClick('.c_AuD_2SgU .c_AuD_SwitchB');
             // Loop another lap.
           }
-          else if (await this.isVisible('.esCreateUser')) {
+          else if (await this.isVisible('.e_IsSgU')) {
             if (switched) logBoring(`... done switching to signup form`);
             // The create account form is shown, fine.
             return true;
@@ -8619,6 +8682,10 @@ export class TyE2eTestBrowser {
 
           setLoginRequired: async (isRequired: Bo) => {
             await this.setCheckbox('#e2eLoginRequiredCB', isRequired);
+          },
+
+          setAllowLocalSignup: async (isAllowed: Bo) => {
+            await this.setCheckbox('.e_A_Ss_S-AllowLoalSignupCB input', isAllowed);
           },
 
           setApproveUsers: async (isRequired: Bo) => {

@@ -29,6 +29,7 @@ import com.zaxxer.hikari.HikariDataSource
 import debiki.EdHttp._
 import talkyard.server.spam.{SpamCheckActor, SpamChecker}
 import debiki.dao._
+import talkyard.server.logging.LastErrsActor
 import talkyard.server.migrations.ScalaBasedMigrations
 import talkyard.server.search.SearchEngineIndexer
 import talkyard.server.notf.NotifierActor
@@ -203,6 +204,14 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
   @volatile private var _state: State Or Option[Exception] = _
 
+  def startupStep: St = _startupStep
+  @volatile private var _startupStep: St = "I just started starting ... [TyMSTART0]"
+
+  def setStartupStep(step: St): U = {
+    _startupStep = step
+    logger.info(step)
+  }
+
   private def state: State = {
     if (_state eq null) {
       throw new NoStateError()
@@ -211,7 +220,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     _state match {
       case Good(state) => state
       case Bad(anyException) =>
-        logger.warn("Accessing state before it's been created. I'm still trying to start.")
+        logger.error(o"""Accessing state before it's been created.
+                I'm still trying to start. [TyE0STATEYET]""")
         throw anyException getOrElse StillConnectingException
     }
   }
@@ -331,6 +341,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     }
   }
 
+  def lastErrsActorRef: ActorRef = state.lastErrsActorRef
+
   def endToEndTestMailer: ActorRef = state.mailerActorRef
   def spamCheckActor: Option[ActorRef] = state.spamCheckActorRef
 
@@ -406,6 +418,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
   val securityComplaintsEmailAddress: Option[String] =
     getStringNoneIfBlank("talkyard.securityComplaintsEmailAddress")
 
+  val onCallEmailAddresses = None
 
   /** Either exactly all sites uses HTTPS, or all of them use HTTP.
     * A mixed configuration makes little sense I think:
@@ -1039,10 +1052,11 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
   private def tryCreateStateUntilKilled(): Unit = {
     logger.info("Creating state.... [EdMCREATESTATE]")
     _state = Bad(None)
-    var firsAttempt = true
+    var attemptNr = 1
 
     while (_state.isBad && !killed && !shallStopStuff) {
-      if (!firsAttempt) {
+      if (attemptNr >= 2) {
+        logger.info(s"Create state attempt nr $attemptNr [TyMSTATEAGAIN]")
         // Don't attempt to connect to everything too quickly, because then 100 MB log data
         // with "Error connecting to database ..." are quickly generated.
         Thread.sleep(4000)
@@ -1052,14 +1066,15 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
           return
         }
       }
-      firsAttempt = false
+      attemptNr += 1
       val cache = makeCache
       try {
         reloadAppSecret()
         if (isProd && _appSecret == AppSecretDefVal)
           throw AppSecretNotChangedException
 
-        logger.info("Connecting to database... [EsM200CONNDB]")
+        setStartupStep("Connecting to database... [TyMSTART1CON2DB]")
+
         val readOnlyDataSource = Debiki.createPostgresHikariDataSource(readOnly = true, conf, isOrWasTest)
         val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false, conf, isOrWasTest)
         val rdb = new Rdb(readOnlyDataSource, readWriteDataSource)
@@ -1068,7 +1083,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
         // Create any missing database tables before `new State`, otherwise State
         // creates background threads that might attempt to access the tables.
-        logger.info("Running database migrations... [EsM200MIGRDB]")
+        setStartupStep("Running database migrations...  (might take a while) [TyMSTART2MIGRDB]")
+
         val sysDao = new SystemDao(dbDaoFactory, cache, this)
 
         sysDao.applyEvolutions()
@@ -1076,16 +1092,18 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         val sysSettings = sysDao.readTx(_.loadSystemSettings)
         updateSystemSettings(sysSettings)
 
-        logger.info("Done migrating database. Connecting to other services... [EsM200CONNOTR]")
+        setStartupStep(
+              "Done migrating database. Connecting to other services... [TyMSTART3CONOTR]")
+
         val newState = new State(dbDaoFactory, cache)
 
         if (isOrWasTest && conf.getOptional[Boolean]("isTestShallEmptyDatabase").contains(true)) {
-          logger.info("Emptying database... [EsM200EMPTYDB]")
+          setStartupStep("Emptying database... [TyMSTART8EMPTYDB]")
           newState.systemDao.emptyDatabase()
         }
 
         _state = Good(newState)
-        logger.info("Done creating state [EsMSTATEOK]")
+        setStartupStep("Done creating state [TyMSTART9DONE]")
       }
       catch {
         case ex: com.zaxxer.hikari.pool.HikariPool.PoolInitializationException =>
@@ -1106,6 +1124,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
       logger.info("Aborting create-state loop [EsMSTOPSTATE2]")
       return
     }
+
+    talkyard.server.logging.setLastErrsActorRef(state.lastErrsActorRef)
 
     // The render engines might be needed by some Java (Scala) evolutions.
     // Let's create them in this parallel thread rather than blocking the whole server.
@@ -1142,6 +1162,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
       val (name, future) = stopPlease(state.notifierActorRef)
       Await.result(future, ShutdownTimeout)
 
+      talkyard.server.logging.clearLastErrsActorRef()
+
       // Shutdown in parallel.
       logger.info(s"Stopping remaining actors ...")
       val futureShutdownResults = Seq(
@@ -1150,7 +1172,11 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
             stopPlease(state.indexerActorRef),
             stopPlease(state.spamCheckActorRef),
             stopPlease(state.janitorActorRef),
-            stopPlease(state.pubSubActorRef))
+            stopPlease(state.pubSubActorRef),
+            // (COULD wait a bit with shutting down this one, & the mailerActorRef,
+            // so they can email admins any errors that happen during shutdown.)
+            stopPlease(state.lastErrsActorRef),
+            )
 
       state.elasticSearchClient.close()
       state.redisClient.quit()
@@ -1302,16 +1328,25 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     //
     val elasticSearchHost = "search"
 
+    setStartupStep(
+          "Done migrating database. Connecting to search engine... [TyMSTART4CONSEARCH]")
+
     val elasticSearchClient: es.client.transport.TransportClient =
       new es.transport.client.PreBuiltTransportClient(es.common.settings.Settings.EMPTY)
         .addTransportAddress(
           new es.common.transport.TransportAddress(
             jn.InetAddress.getByName(elasticSearchHost), 9300))
 
+    setStartupStep("Done migrating database. Starting background jobs... [TyMSTART5BGJOBS]")
+
+    // Start first, so it'll start receiving errors sooner.
+    val lastErrsActorRef: ActorRef = LastErrsActor.startNewActor(outer)
+
     val siteDaoFactory = new SiteDaoFactory(
       edContext, dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient, config)
 
-    val mailerActorRef: ActorRef = MailerActor.startNewActor(actorSystem, siteDaoFactory, conf, now, isProd)
+    val mailerActorRef: ActorRef = MailerActor.startNewActor(
+          actorSystem, siteDaoFactory, conf, now, isProd)
 
     val notifierActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None
@@ -1328,12 +1363,18 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
           // couldn't verify that the indexer indexes posts in the expected order.
           // [dont_index_too_fast_if_testing] [indexer_batch_size_is_20]
           else 20)
+    def indexerDelaySecs: Int = getIntOrDefault("talkyard.search.indexer.initialDelaySeconds", 30)
     def indexerIntervalSeconds: Int = getIntOrDefault("talkyard.search.indexer.intervalSeconds", 1)
 
+    BUG // Don't start the indexer, before Nashorn has been warmed up — that can cause
+    STARVATION // if the server has just 2 CPUs, 2 threads in total: the indexer might
+    // use those CPUs 100%, never letting Nashorn finish warming up & creating engines.
+    // However!? This problem will disappear, later when using Deno instead?
     val indexerActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None
       else Some(SearchEngineIndexer.startNewActor(
-          indexerBatchSize, indexerIntervalSeconds, executionContext,
+          indexerBatchSize, initialDelaySecs = indexerDelaySecs,
+          intervalSeconds = indexerIntervalSeconds, executionContext,
           elasticSearchClient, actorSystem, systemDao))
 
     def spamCheckBatchSize: Int = getIntOrDefault("talkyard.spamcheck.batchSize", 20)

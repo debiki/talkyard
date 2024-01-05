@@ -1,4 +1,3 @@
-// CR_MISSING
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
@@ -7,26 +6,21 @@ import * as fs from 'fs';
 import server from '../utils/server';
 import * as utils from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/ty-e2e-test-browser';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import c from '../test-constants';
 import { IsWhere } from '../test-types';
 
 
-let everyonesBrowsers: TyAllE2eTestBrowsers;
 let brA: TyE2eTestBrowser;
 let brB: TyE2eTestBrowser;
 let owen: Member;
 let owen_brA: TyE2eTestBrowser;
 let maria: Member;
 let maria_brB: TyE2eTestBrowser;
-let memah: Member;
-let memah_brB: TyE2eTestBrowser;
 let stranger_brB: TyE2eTestBrowser;
 
 let site: IdAddress;
 let forum: TwoCatsTestForum;
-const localHostname = 'comments-for-e2e-test-manyifrapi-localhost-8080';
-const embeddingOrigin = 'http://e2e-test-manyifrapi.localhost:8080';
 
 const embPage1SlashSlug = '/many-embcom-ifr-api-1.html';
 const embPage123SlashSlug = '/many-embcom-ifr-api-123.html';
@@ -37,21 +31,59 @@ const mariasReply2_disc222 = 'mariasReply2_disc222';
 const mariasReply3_disc111 = 'mariasReply3_disc111';
 
 
-describe(`embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI`, () => {
+// ----- For SSO: -------
+const selinaExtUser: ExternalUser = {
+  ssoId: 'selina-soid',
+  username: 'selina_un',
+  fullName: 'Selina Full Name',
+  primaryEmailAddress: 'e2e-test-selina@x.co',
+  isEmailAddressVerified: true,
+}
+
+const selinaAutnhMsg = {
+  data: {
+    user: {
+      ...selinaExtUser,
+    },
+  },
+};
+
+const ssoUrl =
+    `http://localhost:8080/${utils.ssoLoginPageSlug}?returnPath=\${talkyardPathQueryEscHash}`;
+
+let pasetoV2LocalSsoSecret: St | U;
+
+let selinasSsoToken: St | U;
+// ----------------------
+
+
+
+export function addEmbComManyFramesTests(ps: {
+  usingSingleSignOn: Bo,
+  localHostname: St,
+  embeddingOrigin: St,
+}) {
+  const who = ps.usingSingleSignOn ? "Selina" : "Maria";
+  const username = ps.usingSingleSignOn ? selinaExtUser.username : "maria";
 
   it(`construct site`, async () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({
       title: "Many Comment Iframes API",
-      members: undefined, // default = everyone
-        // ['mons', 'modya', 'regina', 'corax', 'memah', 'maria', 'michael', 'mallory']
+      members: ['maria']
     });
 
-    builder.getSite().meta.localHostname = localHostname;
-    builder.getSite().settings.allowEmbeddingFrom = embeddingOrigin;
+    builder.getSite().meta.localHostname = ps.localHostname;
+    builder.getSite().settings.allowEmbeddingFrom = ps.embeddingOrigin;
 
+    if (ps.usingSingleSignOn) {
+      builder.settings({
+        numFirstPostsToApprove: 0,
+        numFirstPostsToReview: 0,
+        enableApi: true,
+      });
+    }
 
-    everyonesBrowsers = new TyE2eTestBrowser(allWdioBrowsers, 'brAll');
     brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
     brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
@@ -60,61 +92,108 @@ describe(`embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI`, () => {
 
     maria = forum.members.maria;
     maria_brB = brB;
-    memah = forum.members.memah;
-    memah_brB = brB;
     stranger_brB = brB;
 
     assert.refEq(builder.getSite(), forum.siteData);
   });
 
-  it(`import site`, async () => {
-    site = server.importSiteData(forum.siteData);
-    server.skipRateLimits(site.id);
+  it(`Import site`, async () => {
+    site = await server.importSiteData(forum.siteData);
+    await server.skipRateLimits(site.id);
   });
 
 
+  if (ps.usingSingleSignOn) {
+    it(`Owen logs in to admin area, ... `, async () => {
+      await owen_brA.adminArea.settings.login.goHere(site.origin, { loginAs: owen });
+    });
 
-  it(`Creates an embedding page`, async () => {
+    it(`... types an SSO login URL`, async () => {
+      await owen_brA.scrollToBottom(); // just speeds the test up slightly
+      await owen_brA.adminArea.settings.login.typeSsoUrl(ssoUrl);
+    });
+
+    it(`... enables SSO`, async () => {
+      await owen_brA.adminArea.settings.login.setEnableSso(true);
+    });
+
+    it(`... generates a PASETO v2.local shared secret`, async () => {
+      await owen_brA.adminArea.settings.login.generatePasetoV2LocalSecret();
+    });
+
+    it(`... copies the secret`, async () => {
+      pasetoV2LocalSsoSecret =
+            await owen_brA.adminArea.settings.login.copyPasetoV2LocalSecret();
+    });
+
+    it(`... saves the settings`, async () => {
+      await owen_brA.adminArea.settings.clickSaveAll();
+    });
+
+
+    it(`An external server generates a SSO token for Selina`, async () => {
+      selinasSsoToken = utils.encryptLocalPasetoV2Token(pasetoV2LocalSsoSecret, selinaAutnhMsg);
+    });
+  }
+
+
+  it(`Add embedding page${ ps.usingSingleSignOn ? ` with the SSO token` : ''}`, async () => {
     fs.writeFileSync('target' + embPage1SlashSlug, makeHtml('manyfr-1', ['111'], '#500'));
     fs.writeFileSync('target' + embPage123SlashSlug, makeHtml('manyfr-123', ['111', '222', '333'], '#005'));
     fs.writeFileSync('target' + embPageNoneSlashSlug, makeHtml('manyfr-none', [], '#000'));
 
     function makeHtml(pageName: St, discussionIds: St[], bgColor: St): St {
       return utils.makeManyEmbeddedCommentsHtml({
-              pageName, discussionIds, localHostname, bgColor});
+              pageName, discussionIds, localHostname: ps.localHostname,
+              bgColor, authnToken: selinasSsoToken });
     }
   });
 
-  it(`Maria opens embedding page aaa`, async () => {
-    await maria_brB.go2(embeddingOrigin + embPage1SlashSlug);
+  it(`${who} opens embedding page ${embPage1SlashSlug}`, async () => {
+    await maria_brB.go2(ps.embeddingOrigin + embPage1SlashSlug);
   });
 
-  it(`The embedding web app calls Ty's js API: `, async () => {
+  it(`The embedding web app calls Ty's js API: Adds discussion 222`, async () => {
     await maria_brB.execute(function() {
       window['talkyardAddCommentsIframe']({
             appendInside: '#comment_iframes', discussionId: '222' });
     })
   });
 
-  it(`Maria logs in`, async () => {
-    await maria_brB.switchToEmbeddedCommentsIrame({ discId: '222' });
-    await maria_brB.complex.loginIfNeededViaMetabar(maria);
-  });
+  if (ps.usingSingleSignOn) {
+    it(`Selina is logged in automatically, via the SSO token`, async () => {
+      await maria_brB.switchToEmbeddedCommentsIrame({ discId: '222' });
+      assert.eq(await maria_brB.metabar.getMyUsernameInclAt(), '@' + username);
+    });
+  }
+  else {
+    it(`Maria logs in`, async () => {
+      await maria_brB.switchToEmbeddedCommentsIrame({ discId: '222' });
+      await maria_brB.complex.loginIfNeededViaMetabar(maria);
+    });
+  }
 
-  it(`... posts a comment in disc 222`, async () => {
+  it(`${who} posts a comment in disc 222`, async () => {
+    await maria_brB.switchToEmbeddedCommentsIrame({ discId: '222' });
     await maria_brB.complex.replyToEmbeddingBlogPost(mariasReply1_disc222)
   });
 
-  it(`Maria goes to page 1 2 3`, async () => {
-    await maria_brB.go2(embeddingOrigin + embPage123SlashSlug);
+  it(`${who} goes to page 1 2 3`, async () => {
+    await maria_brB.go2(ps.embeddingOrigin + embPage123SlashSlug);
   });
+
+  it(`... disc 333 is there, and ${who} is logged in`, async () => {
+      await maria_brB.switchToEmbeddedCommentsIrame({ discId: '333' });
+      assert.eq(await maria_brB.metabar.getMyUsernameInclAt(), '@' + username);
+  });
+
   it(`... disc 222 with her comment is there`, async () => {
     await maria_brB.switchToEmbeddedCommentsIrame({ discId: '222' });
     await maria_brB.topic.waitForPostAssertTextMatches(
             c.FirstReplyNr, mariasReply1_disc222);
   });
 
-  it(`Maria posts another reply in 222`, async () => {
+  it(`${who} posts another reply in 222`, async () => {
     await maria_brB.complex.replyToEmbeddingBlogPost(mariasReply2_disc222);
   });
   it(`... and one in 111`, async () => {
@@ -123,18 +202,18 @@ describe(`embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI`, () => {
   });
 
 
-  it(`Maria goes to page none`, async () => {
-    await maria_brB.go2(embeddingOrigin + embPageNoneSlashSlug, {
+  it(`${who} goes to page none`, async () => {
+    await maria_brB.go2(ps.embeddingOrigin + embPageNoneSlashSlug, {
             willBeWhere: IsWhere.EmbeddingPage });
   });
-  it(`There are no comments frames at all`, async () => {
+  it(`There are no comments frames at all — only the session & editor iframes`, async () => {
     await waitForNumIframes(maria_brB, 2);
   });
 
-  async function waitForNumIframes(br, n: Nr) {
+  async function waitForNumIframes(brX, n: Nr) {
     let numNow = 0;
-    await maria_brB.waitUntil(async (): Pr<Bo> => {
-      numNow = await maria_brB.execute(function() {
+    await brX.waitUntil(async (): Pr<Bo> => {
+      numNow = await brX.execute(function() {
         return document.querySelectorAll('iframe').length;
       });
       return numNow === n;  // session + editor, no discussions
@@ -164,7 +243,7 @@ describe(`embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI`, () => {
     await waitForNumIframes(maria_brB, 2 + 3);
   });
 
-  it(`The comments are theree, in 222`, async () => {
+  it(`The comments are there, in 222`, async () => {
     await maria_brB.switchToEmbeddedCommentsIrame({ discId: '222' });
     await maria_brB.topic.waitForPostAssertTextMatches(
             c.FirstReplyNr, mariasReply1_disc222);
@@ -223,7 +302,7 @@ describe(`embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI`, () => {
             appendInside: '#comment_iframes', discussionId: '222' });
     });
   });
-  it(`The comments are theree again`, async () => {
+  it(`The comments are there again`, async () => {
     await maria_brB.switchToEmbeddedCommentsIrame({ discId: '222' });
     await maria_brB.topic.waitForPostAssertTextMatches(
             c.FirstReplyNr, mariasReply1_disc222);
@@ -244,4 +323,4 @@ describe(`embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI`, () => {
     await waitForNumIframes(maria_brB, 2 + 3);  // session, editor, 3 discussions
   });
 
-});
+}

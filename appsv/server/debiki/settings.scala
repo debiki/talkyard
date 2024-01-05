@@ -136,7 +136,7 @@ trait AllSettings extends DiscProps {
   // UX settings (could add a UserId column so people can override
   // some (not all) of these?), see:  [disc_props_view_stats]
   // -----------------------------
-  def forumMainView: String
+  def forumMainView: St ; TESTS_MISSING // (this and some more UI settings)
   def forumTopicsSortButtons: String
   def forumCategoryLinks: String
   def forumTopicsLayout: TopicListLayout

@@ -12,7 +12,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package controllers
@@ -45,6 +45,15 @@ import talkyard.server.JsX._
 import talkyard.server.authn.MinAuthnStrength
 
 
+import akka.actor._
+import akka.pattern.ask
+import akka.util.Timeout
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
+import scala.language.postfixOps
+import scala.util.{Success, Failure}
+
+
 /** Intended for troubleshooting, via the browser, and helps running End-to-End tests.
   */
 class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyContext)
@@ -53,6 +62,34 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyConte
   import context.globals
   import context.safeActions.ExceptionAction
 
+
+
+  /** Waits until all pending index requests have been completed.
+    * Intended for test suite code only.
+    */
+  def showLastErrors(): Action[U] = AsyncSuperAdminGetAction { req =>
+
+    // Now this is for superadmins only, instead.
+    // throwForbiddenIfBadMetricsKey(metrApiKey)  // change to ...LogMsgKey?
+
+    import talkyard.server.logging.LastErrsActor
+
+    val lastErrsFuture: Future[Any] =
+          ask(globals.lastErrsActorRef, LastErrsActor.GetRecentMsgs)(Timeout(5 seconds))
+
+    lastErrsFuture map {
+      case LastErrsActor.RecentMsgs(msgs) =>
+        // Can make this look nice, later
+        Ok(msgs.mkString("Any last errors & warnings:\n\n", "\n\n", "\n")) as TEXT
+      case x =>
+        die("TyE6P02RM5", s"Weird response from lastErrsActorRef, got a: ${classNameOf(x)}")
+    } recover {
+      case exception: ResultException =>
+        exception.result
+      case thr: Throwable =>
+        InternalErrorResult("TyE6WG24MR7", thr.toString)
+    }
+  }
 
   /** If a JS error happens in the browser, it'll post the error message to this
     * endpoint, which logs it, so we'll get to know about client side errors.
@@ -127,8 +164,8 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyConte
     val nowMins_i64 = nowMillis / MillisPerMinute
     val nowMins = castToInt32(nowMins_i64, IfBadDie)
 
-    val numErrs = talkyard.server.numErrors
-    val numWarns = talkyard.server.numWarnings
+    val numErrs = talkyard.server.logging.numErrors
+    val numWarns = talkyard.server.logging.numWarnings
     val lastErrAtMin: Opt[i32] = numErrs.lastAtUnixMinute()
     val lastErrMinsAgo: Opt[i32] = lastErrAtMin.map(nowMins - _)
 

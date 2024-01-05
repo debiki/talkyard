@@ -314,6 +314,9 @@ case object Participant {
 
   /** If a superadmin logs in and does something.  COULD start using, instead of System? [SYS0LGI] */
   val SuperAdminId_later = 3  // no, 4? or 49?  see below  [better_ids]
+  // No,  -1  instead?
+  // And SuperBot  is  -2 ?
+
 
   /** Maintenance tasks by bot(s) that supervise all sites. */
   // val SuperStaffId = 4  ?
@@ -353,6 +356,7 @@ case object Participant {
   val LowestTalkToMemberId: Int = Group.EveryoneId  // or 9, same as anonymous users?
   assert(LowestTalkToMemberId == 10)
 
+  // NO!  This will instead be  SuperBot?
   // ?? val UnknownBotId = -2  // bots that accesses any public api endpoints, no api secret
 
   /** A user that did something, e.g. voted on a comment, but was not logged in. */
@@ -360,11 +364,13 @@ case object Participant {
   val UnknownUserName = "Unknown"
   val UnknownUserBrowserId = "UU"
 
+
   /** Guests with custom name and email, but not guests with magic ids like the Unknown user. */
   // Change to <= -1001?  [UID1001]
   val MaxCustomGuestId: UserId = -10
   val MaxAnonId: PatId = MaxCustomGuestId
 
+  // Change to  -3?  If  -1 and  -2  are  SuperAdmin and SuperBot?
   val MaxGuestId: UserId = -1
   //assert(MaxGuestId == AnonymousUserId)
   assert(UnknownUserId.toInt <= MaxGuestId)
@@ -2209,6 +2215,7 @@ object BrowserIdData {
   val System = BrowserIdData("127.0.0.1", None, NoFingerprint)
   // [better_ids]  Change Sysbot to  .2  and Forgotten  to ... maybe .9?
   val Sysbot = BrowserIdData("127.0.0.4", None, NoFingerprint)
+  // Superadmin = .3,  or  .10?  and Superbot = .4  or .20 ?
   val Forgotten = BrowserIdData("127.0.0.2", None, NoFingerprint)
 }
 

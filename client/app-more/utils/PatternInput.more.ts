@@ -169,7 +169,7 @@ export const PatternInput = createClassAndFactory({
       anyError = r.div({ className: 's_PatInp_Err' }, anyError);
     }
     return (
-      r.div({ style: this.props.style },
+      r.div({ style: this.props.style, className: this.props.wrapperClassName },
         Input({ type: 'text', id: this.props.id, className: this.props.className, ref: 'theInput',
           // wrapperClassName: anyError ? ' has-error' : '', — no don't, makes the input lose focus
           label: this.props.label,

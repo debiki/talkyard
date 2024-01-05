@@ -36,7 +36,7 @@ import talkyard.server.authz.AuthzCtxOnForum
   * Not thread safe.
   */
 case class PagesCanSee(   // [Scala_3] opaque type with extension methods?
-  pages: Vec[PagePathAndMeta]) {
+  pages: ImmSeq[PagePathAndMeta]) {
 
   private var _pagesByCatId: Map[CatId, ImmSeq[PagePathAndMeta]] = _
 
@@ -108,6 +108,10 @@ case class CatsCanSee(
   def sectionPageId: PageId = rootCategory.sectionPageId
   def defaultCategoryId: CategoryId = rootCategory.defaultSubCatId getOrDie "TyE306RD57"
 
+  def containsCatId(catId: CatId): Bo = {
+    val cats: Vec[CatStuff] = catsInSubTree(subTreeRootId = None)
+    cats.exists(_.category.id == catId)
+  }
 
   def catIds(inSubTree: Opt[CatId]): Vec[CatId] = {
     catsInSubTree(inSubTree).map(_.category.id)
@@ -396,6 +400,15 @@ trait CategoriesDao {
 
   def getCatsBySlugs(catNames: Iterable[St]): imm.Seq[Opt[Cat]] = {
     catNames.to[Vec] map getCategoryBySlug
+  }
+
+
+  def maySeeCat(cat: Cat, inclDeleted: Bo, authzCtx: AuthzCtxOnForum): Bo = {
+    COULD_OPTIMIZE // Could start at `cat` and check the path up to and incl the
+    // site section root cat, instead of looking at the whole cat tree.
+    val catsCanSee: Opt[CatsCanSee] =
+          listMaySeeCategoriesInSection(cat.sectionPageId, inclDeleted = inclDeleted, authzCtx)
+    catsCanSee.exists(_.containsCatId(cat.id))
   }
 
 

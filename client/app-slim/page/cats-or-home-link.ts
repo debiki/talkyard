@@ -46,6 +46,10 @@ export function CatsOrHomeLink(page: Page, store: Store, forTopbar?: Bo): RElm |
           !isUnlistedSoHideCats &&
           settings_showCategories(store.settings, me);
 
+  // Dupl lines. [what_rootPathView]
+  const siteSection: SiteSection = store_mainSiteSection(store);
+  const rootPathView: St = siteSection.path + (store.settings.forumMainView || RoutePathLatest);
+
   let catsOrHomeLink: RElm | Nl = null;
 
   if (showCategories) {
@@ -53,6 +57,7 @@ export function CatsOrHomeLink(page: Page, store: Store, forTopbar?: Bo): RElm |
         // RENAME  esTopbar_ancestors  and  s_Tb_Pg_Cs
         r.ol({ className: 'esTopbar_ancestors s_Tb_Pg_Cs' },
           page.ancestorsRootFirst.map((ancestor: Ancestor) => {
+            const isRoot = ancestor.categoryId === siteSection.rootCategoryId;
             const deletedClass = ancestor.isDeleted ? ' s_Tb_Pg_Cs_C-Dd' : '';
             const catIcon = category_iconClass(ancestor.categoryId, store);  // [4JKKQS20]
             const key = ancestor.categoryId;
@@ -60,9 +65,9 @@ export function CatsOrHomeLink(page: Page, store: Store, forTopbar?: Bo): RElm |
                 r.li({ key, className: 's_Tb_Pg_Cs_C' + deletedClass },
                   // RENAME esTopbar_ancestors_link to just s_AncCs_Ln?
                   Link({ className: catIcon + 'esTopbar_ancestors_link btn',
-                      // The path is from here, server side: [anc_cat_path].
-                      to: ancestor.path },
-                  ancestor.title)));
+                      // `ancestor.path` is from here, server side: [anc_cat_path].
+                      to: isRoot ? rootPathView : ancestor.path },
+                  isRoot ? t.Home : ancestor.title)));
           }));
   }
   else if (page_isInfoPage(page.pageRole) && !forTopbar) {
@@ -73,12 +78,10 @@ export function CatsOrHomeLink(page: Page, store: Store, forTopbar?: Bo): RElm |
   }
   else {
     // Show a Home link, so there's somewhere to return to. Dupl code [HOMELN495]
-    const mainSiteSection: SiteSection = store_mainSiteSection(store);
-    const homePath = mainSiteSection.path;
     catsOrHomeLink =
         r.ol({ className: 'esTopbar_ancestors s_Tb_Pg_Cs' },
           r.li({ key: 'h' },
-            Link({ className: 'esTopbar_ancestors_link btn', to: homePath }, t.Home)));
+            Link({ className: 'esTopbar_ancestors_link btn', to: rootPathView }, t.Home)));
   }
 
   return catsOrHomeLink;

@@ -306,11 +306,11 @@ That repo, squashed, is in this repo.
 License
 -----------------------------
 
-Copyright (c) 2010-2023 Kaj Magnus Lindberg and contributors.
+Copyright (c) 2010-2024 Kaj Magnus Lindberg and contributors.
 
 Talkyard is multi licensed under 1) AGPLv3 or later, see LICENSE.txt, and
 2) Business Source License v1.1, with change license GPLv2 or later, and
-change date 2028-01-01 (we bump the change date yearly,
+change date 2029-01-01 (we bump the change date yearly,
 so it's between 4 and 5 years into the future) — see LICENSE-BUSLv1.1.txt.
 And 3) possibly other licenses.
 

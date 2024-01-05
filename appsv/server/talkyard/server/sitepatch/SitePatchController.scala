@@ -23,6 +23,7 @@ import debiki._
 import debiki.EdHttp._
 import talkyard.server._
 import talkyard.server.http.DebikiRequest
+import talkyard.server.security.WhatApiSecret
 import javax.inject.Inject
 import play.api._
 import play.api.libs.json._
@@ -85,7 +86,8 @@ class SitePatchController @Inject()(cc: ControllerComponents, edContext: TyConte
 
 
   def upsertSimpleJson: Action[JsValue] = ApiSecretPostJsonAction(
-          RateLimits.UpsertFew, maxBytes = maxImportDumpBytes) { request =>
+          WhatApiSecret.SiteSecret, RateLimits.UpsertFew, maxBytes = maxImportDumpBytes,
+          ) { request =>
     throwIfMayNot(request, "TyEM0UPSSIMPL")
 
     // This parses JSON, and converts the simple patch contents to a "complete" patch
@@ -101,7 +103,8 @@ class SitePatchController @Inject()(cc: ControllerComponents, edContext: TyConte
 
 
   def upsertPatchJson(): Action[JsValue] = ApiSecretPostJsonAction(
-          RateLimits.UpsertDump, maxBytes = maxImportDumpBytes) { request =>
+          WhatApiSecret.SiteSecret, RateLimits.UpsertDump, maxBytes = maxImportDumpBytes,
+          ) { request =>
     throwIfMayNot(request, "TyEM0UPSPATCH")
 
     val sitePatch = SitePatchParser(context).parseDumpJsonMaybeThrowBadRequest(
