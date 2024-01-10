@@ -176,8 +176,8 @@ const CreateWebsiteComponent = createFactory<any, any>({
                   "Shall people on the Internet see the discussions in the forum? ",
                   r.small({}, "(For example, an online community, or customer support.)")),
               r.p({},
-                  "Or shall everything be private, not visible unless logged in? " +
-                  r.small({}, "(For example, only for your coworkers.)")),
+                  "Or shall everything be private, not visible unless logged in? ",
+                  r.small({}, "(For example, a company internal forum.)")),
               Input({ type: 'radio', name: 'pubPriv', id: 'e_MkPub', tabIndex: 30,
                   label: rFr({}, "Public   (except for private categories)"),
                   checked: state.makePublic,
