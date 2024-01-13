@@ -719,7 +719,7 @@ export const Editor = createFactory<any, EditorState>({
     //
     dieIf(files.length != 1, 'EsE5GPY82');
 
-    const headers = { 'X-XSRF-TOKEN': getSetCookie('TyCoXsrf') };
+    const headers = { 'X-XSRF-TOKEN': getXsrfCookie() };
     // For embedded comments, need to incl the session id in a header,
     // since browsers block cookies (tracking prevention features).
     Server.addAnyNoCookieHeaders(headers);

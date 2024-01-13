@@ -230,7 +230,7 @@ if (_showAdmGuide || (!_narrow && _cbOpen === 'true' &&
 }
 
 // EffectiveDiscussions Static data = 'eds', RENAME to 'tys' (Talkyard static)
-// is included in the initial response from the server.
+// is included in the initial response from the server, see [server_static_vars].
 // Add an entry in server-vars.d.ts whenever adding sth here. [5JWKA27]
 // CLEAN_UP REFACTOR: Move everything that affects server side rendering to the store instead; [7AKBQ2]
 // having it here is a bit error prone: need to init when rendering server side too, dupl code.

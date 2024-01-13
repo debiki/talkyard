@@ -321,7 +321,8 @@ describe(`category-perms.2br.d  TyTE2ECATPREMS01`, () => {
   });
 
   it(`... won't work — base cat now access restricted`, async () => {
-    await memah_brB.assertNotFoundError({ whyNot: 'MayNotCreateTopicsOrSeeCat' });
+    await memah_brB.assertNotFoundError({
+            whyNot: 'MayNotCreateTopicsOrSeeCat', shouldBeErrorDialog: true });
   });
 
 

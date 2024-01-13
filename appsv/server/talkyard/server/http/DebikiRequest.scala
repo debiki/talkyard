@@ -232,7 +232,11 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   def headers: Headers = request.headers
 
-  def cookies: Cookies = request.cookies
+  def getHostCookie(name: St): Opt[Cookie] =
+    request.cookies.get(if (context.globals.secure) "__Host-" + name else name)
+
+  def getHostCookieVal(name: St): Opt[St] =
+    getHostCookie(name).map(_.value)
 
   /** This might classify a bit too many devices as mobile. That's pretty harmless — the mobile
     * layout looks okay also on tablets I think. However, accidentally using the wide screen layout,

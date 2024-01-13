@@ -193,6 +193,7 @@ class SiteTpi protected (
       else "StartPage"
     }
 
+    // Some more [server_static_vars] are derived, browser side.
     var safeStaticJson = Json.obj(
           "doWhat" -> doWhat,
           "siteId" -> siteId,

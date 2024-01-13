@@ -198,7 +198,7 @@ class TyController(cc: ControllerComponents, val context: TyContext)
 
 
   def originOf(request: DebikiRequest[_]): St =
-    globals.originOf(request.underlying)
+    globals.originOf(request.request)
 
   def originOf(request: RequestHeader): St =
     globals.originOf(request)

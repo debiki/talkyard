@@ -183,7 +183,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
     val newXsrfToken: Option[String] =
       if (hasXsrfTokenAlready) None
       else {
-        Some(security.createXsrfToken().value)
+        Some(security.createXsrfToken(siteId = request.site.id).value)
       }
 
     val futureResponse = ViewPageController.addVolatileJsonAndPreventClickjacking(

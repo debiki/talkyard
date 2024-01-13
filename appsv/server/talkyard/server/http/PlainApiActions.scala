@@ -414,7 +414,13 @@ class PlainApiActions(
       // so we know, here, that we should avoid setting any cookies.  [NOCOOKIES]
       // And, for subsequent requests — to *other* endpoints — the browser Javascript code sets
       // the AvoidCookiesHeaderName header, so we won't forget that we should avoid cookies here.
-      val hasCookiesAlready = request.cookies.exists(_.name != "esCoE2eTestPassword")
+
+      val hasCookiesAlready = request.cookies.exists(c =>
+            // This cookie doesn't count, it's just for tests — don't want it to affect
+            // how the server behaves.
+            c.name != globals.cookiePrefix + "esCoE2eTestPassword"
+                                && c.name != "esCoE2eTestPassword")
+
       val maySetCookies = hasCookiesAlready || {   // TODO
         val shallAvoid = avoidCookies || {
           val avoidCookiesHeaderValue = request.headers.get(AvoidCookiesHeaderName)

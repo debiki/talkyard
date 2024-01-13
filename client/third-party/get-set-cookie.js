@@ -56,7 +56,11 @@
  * @author Klaus Hartl/klaus.hartl@stilbuero.de
  */
 //  COULD_OPTIMIZE  SMALLER_BUNDLE  this getSetCookie is over-fancy.
-window.getSetCookie = function(name, value, options) {
+//  COULD_OPTIMIZE  Do just once, and remember all cookies?
+// RENAME to getHostCookie() and setHostCookie() ?
+window.getSetCookie = function(nameWoPrefix, value, options) {
+    const name = (eds.secure ? '__Host-' : '') + nameWoPrefix;
+    
     if (typeof value != 'undefined') { // name and value given, set cookie
         options = options || {};
         if (value === null) {

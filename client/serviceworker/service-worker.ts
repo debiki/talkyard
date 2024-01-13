@@ -355,7 +355,8 @@ function connectWebSocket(browserUserId: UserId, xsrfToken: string) {
 
   wsConnection.onerror = function(event: Event) {
     // Which one of toString() or stringify? Try both.
-    const errorText = event.toString?.() || JSON.stringify(event);
+    // Hmm, but `event.toString()` —> '[object Object]', so let's use stringify().
+    const errorText = JSON.stringify(event);
     console.warn(`SW: WebSocket error:  ${errorText}  [TyMSWERR]`);
 
     // Do nothing — let's clear variables from the onclose() event, and also notify
