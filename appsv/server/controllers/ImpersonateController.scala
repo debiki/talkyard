@@ -168,8 +168,8 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: TyCon
       currentUserId: UserId) = {
     val randomString = nextRandomString()
     val unixSeconds = globals.now().numSeconds
-    val cookieValue = concatAndHash(currentUserId, viewAsGroupOnly = viewAsGroupOnly,
-      unixSeconds, randomString)
+    val cookieValue = concatAndHash(siteId = siteId, userId = currentUserId,
+          viewAsGroupOnly = viewAsGroupOnly, unixSecs = unixSeconds, randomString)
     val impersonatingCookie = SecureCookie(name = ImpersonationCookieName,
       value = cookieValue, maxAgeSeconds = Some(MaxBecomeOldUserSeconds))
     impersonatingCookie
@@ -186,7 +186,7 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: TyCon
               wasImpersonating = true)
       case Some(cookieValue) =>
         val response =
-          checkHashElseGetAgeAndUserId(cookieValue) match {
+          checkHashElseGetAgeAndUserId(cookieValue, mustBeSiteId = request.siteId) match {
             case Bad(r) => r
             case Good((secondsAgo, oldUserId)) =>
                 // Ignore old impersonation cookies, in case they're leaked somehow.
@@ -207,35 +207,42 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: TyCon
   }
 
 
-  private def concatAndHash(userId: UserId, viewAsGroupOnly: Boolean, unixSeconds: Long,
-        randomString: String) = {
+  private def concatAndHash(siteId: SiteId, userId: UserId, viewAsGroupOnly: Bo, unixSecs: i64,
+        randomString: St) = {
     val CFS = FieldSeparator
     val viewOnlyString = viewAsGroupOnly ? ViewAsGroupOnly | ImpersonateRealUser
-    val toHash = s"$userId$CFS$viewOnlyString$CFS$unixSeconds$CFS$randomString"
+    val toHash = s"$siteId$CFS$userId$CFS$viewOnlyString$CFS$unixSecs$CFS$randomString"
     val theHash = hashSha1Base64UrlSafe(toHash + CFS + globals.applicationSecret)
     s"$toHash$CFS$theHash"
   }
 
 
-  private def checkHashElseGetAgeAndUserId(value: String): (Long, UserId) Or mvc.Result = {
+  private def checkHashElseGetAgeAndUserId(value: St, mustBeSiteId: SiteId)
+          : (i64, UserId) Or mvc.Result = {
     val parts = value.split(FieldSeparator)
-    if (parts.length != 5)
+    if (parts.length != 6)
       return Bad(ForbiddenResult(
-        "EsE4YK82", s"Bad $ImpersonationCookieName cookie: ${parts.length} parts, not 4"))
+        "EsE4YK82", s"Bad $ImpersonationCookieName cookie: ${parts.length} parts, not 5"))
 
-    val oldUserId = parts(0).toIntOrThrow("EsE8IKPW2", "Old user id is not a number")
-    val viewAsGroupOnly = parts(1) match {
+    val siteId = parts(0).toIntOrThrow("TyE8IKPG1", "Site id is not a number")
+    if (siteId != mustBeSiteId) {
+      AUDIT_LOG // This'd be suspicious.
+      return Bad(ForbiddenResult("TyEIMPSITID", s"Bad cookie value"))
+    }
+    val oldUserId = parts(1).toIntOrThrow("EsE8IKPW2", "Old user id is not a number")
+    val viewAsGroupOnly = parts(2) match {
       case ViewAsGroupOnly => true
       case ImpersonateRealUser => false
       case bad => return Bad(ForbiddenResult("EdE2WK6PX", s"Bad view-only field"))
     }
-    val unixSeconds = parts(2).toLongOrThrow("EsE4YK0W2", "Unix seconds is not a number")
-    val randomString = parts(3)
-    val correctCookieValue = concatAndHash(oldUserId, viewAsGroupOnly, unixSeconds, randomString)
+    val unixSecs = parts(3).toLongOrThrow("EsE4YK0W2", "Unix seconds is not a number")
+    val randomString = parts(4)
+    val correctCookieValue = concatAndHash(
+          siteId = mustBeSiteId, oldUserId, viewAsGroupOnly, unixSecs, randomString)
     if (value != correctCookieValue)
       return Bad(ForbiddenResult("TyE6YKP2JW3", s"Bad hash"))
 
-    val ageSeconds = globals.now().numSeconds - unixSeconds
+    val ageSeconds = globals.now().numSeconds - unixSecs
     Good((ageSeconds, oldUserId))
   }
 
