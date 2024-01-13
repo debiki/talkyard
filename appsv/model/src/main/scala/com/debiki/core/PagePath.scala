@@ -407,7 +407,14 @@ object PagePath {
       case _PageGuidRegex(guid) => (guid, "")  // can result in an empty guid
       case _PageSlugRegex(name) => ("", name)
       case _PageIdHyphenSlugRegex(id, slug) =>
-        return Parsed.Corrected(PagePath(siteId, folder = folder, Some(id), showId = true, slug).value)
+        val okPath = try PagePath(siteId, folder = folder, Some(id), showId = true, slug).value
+        catch {
+          // An invalid slug can throw this. See: _BadPunctSlug  Bit dupl code, _see_here_too.
+          case ex: PagePathException =>
+            return Parsed.Bad(ex.getMessage)
+        }
+        return Parsed.Corrected(okPath)
+
       case idSlugSlash if idSlugSlash.endsWith("/") =>
         return Parsed.Corrected(s"$folder${idSlugSlash dropRight 1}")
       case _BadIdPerhapsOkSlug(id) => return Parsed.Bad("Bad page id: "+ id)
@@ -433,8 +440,15 @@ object PagePath {
     if (folder.intersect(_BadPunctFolder).nonEmpty)
       return Parsed.Bad("Bad characters in page folder")
 
-    val pagePath = PagePath(siteId, folder = folder,
-      pageId = pageId, showId = showId, pageSlug = pageSlug)
+    val pagePath =
+          try PagePath(siteId, folder = folder,
+                  pageId = pageId, showId = showId, pageSlug = pageSlug)
+          catch {
+            // Bit dupl code, _see_here_too.
+            case ex: PagePathException =>
+              return Parsed.Bad(ex.getMessage)
+          }
+
     Parsed.Good(pagePath)
   }
 
