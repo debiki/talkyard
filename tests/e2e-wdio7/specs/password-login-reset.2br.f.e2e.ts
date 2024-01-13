@@ -1,138 +1,185 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
-import { TyE2eTestBrowser, MemberBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import make = require('../utils/make');
-import logAndDie = require('../utils/log-and-die');
+import tyAssert from '../utils/ty-assert';
+import server from '../utils/server';
+import * as utils from '../utils/utils';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import * as make from '../utils/make';
 
-
-let everyone;
-let owen: MemberBrowser;
-let michael: MemberBrowser;
+let everyone_brAll;
+let brA: TyE2eTestBrowser;
+let brB: TyE2eTestBrowser;
+let owen: Member;
+let owen_brA: TyE2eTestBrowser;
+let michael: Member;
+let michael_brA: TyE2eTestBrowser;
+let michael_brB: TyE2eTestBrowser;
 
 let idAddress;
 const forumTitle = "Reset Pwd Test Forum";
 
 
-describe("password-login-reset  TyT5KAES20W", function() {
+describe("password-login-reset.2br.f  TyT5KAES20W", function() {
 
-  it("initialize people", function() {
-    everyone = new TyE2eTestBrowser(wdioBrowser);
-    owen = _.assign(new TyE2eTestBrowser(browserA), make.memberOwenOwner());
-    michael = _.assign(new TyE2eTestBrowser(browserB), make.memberMichael());
+  it("initialize people", async () => {
+    everyone_brAll = new TyE2eTestBrowser(allWdioBrowsers, 'brAll');
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
+
+    owen_brA = brA;
+    owen = make.memberOwenOwner();
+
+    michael_brA = brA;  // he once logs in to two
+    michael_brB = brB;  // browsers at the same time
+    michael = make.memberMichael();
   });
 
-  it("import a site", function() {
+  it("import a site", async () => {
     const site: SiteData = make.forumOwnedByOwen('reset-pwd', { title: forumTitle });
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;
-    site.members.push(make.memberMichael());
-    _.assign(michael, make.memberMichael());
-    _.assign(owen, make.memberOwenOwner());
-    idAddress = server.importSiteData(site);
+    site.members.push(michael);
+    idAddress = await server.importSiteData(site);
   });
 
-  it("Owen and Michael go to the homepage", function() {
-    everyone.go(idAddress.origin);
-    owen.assertPageTitleMatches(forumTitle);
-    michael.assertPageTitleMatches(forumTitle);
+  it("Owen and Michael go to the homepage", async () => {
+    await everyone_brAll.go2(idAddress.origin);
+    await owen_brA.assertPageTitleMatches(forumTitle);
+    await michael_brB.assertPageTitleMatches(forumTitle);
     // There'll be lots of login attempts.
-    everyone.disableRateLimits();
+    await everyone_brAll.disableRateLimits();
   });
 
-  it("Owen logs in with password", function() {
-    owen.complex.loginWithPasswordViaTopbar(owen);
+
+  // ----- Passwords work  ttt
+
+  it("Owen logs in with password", async () => {
+    await owen_brA.complex.loginWithPasswordViaTopbar(owen);
   });
 
-  it("... Michael too", function() {
-    michael.complex.loginWithPasswordViaTopbar(michael);
+  it("... Michael too", async () => {
+    await michael_brB.complex.loginWithPasswordViaTopbar(michael);
   });
 
-  it("... and can logout", function() {
+  it("... and can logout", async () => {
     //everyone.topbar.clickLogout(); [EVRYBUG]
-    owen.topbar.clickLogout();
-    michael.topbar.clickLogout();
+    await owen_brA.topbar.clickLogout();
+    await michael_brB.topbar.clickLogout();
   });
 
-  it("But they cannot login with the wrong password (they forgot the real ones)", () => {
+
+  // ----- Passwords protect
+
+  it("But they cannot login with the wrong password (they forgot the real ones)", async () => {
     //everyone.topbar.clickLogin(); [EVRYBUG]
-    owen.topbar.clickLogin();
-    michael.topbar.clickLogin();
+    await owen_brA.topbar.clickLogin();
+    await michael_brB.topbar.clickLogin();
   });
 
-  it("... Owen cannot", function() {
-    owen.loginDialog.loginButBadPassword(owen.username, 'wrong-password');
+  it("... Owen cannot", async () => {
+    await owen_brA.loginDialog.loginButBadPassword(owen.username, 'wrong-password');
   });
 
-  it("... Michael cannot", function() {
-    michael.loginDialog.loginButBadPassword(michael.username, 'even-more-wrong');
+  it("... Michael cannot", async () => {
+    await michael_brB.loginDialog.loginButBadPassword(michael.username, 'even-more-wrong');
   });
 
-  it("... and cannot login with the wrong username", function() {
+  it("... and cannot login with the wrong username", async () => {
     // Don't: everyone.loginDialog.reopenToClearAnyError();  because [4JBKF20]
-    owen.loginDialog.reopenToClearAnyError();
-    owen.loginDialog.loginButBadPassword('not_owen', owen.password);
-    michael.loginDialog.reopenToClearAnyError();
-    michael.loginDialog.loginButBadPassword('not_michael', michael.password);
+    await owen_brA.loginDialog.reopenToClearAnyError();
+    await owen_brA.loginDialog.loginButBadPassword('not_owen', owen.password);
+    await michael_brB.loginDialog.reopenToClearAnyError();
+    await michael_brB.loginDialog.loginButBadPassword('not_michael', michael.password);
   });
 
-  it("... and cannot login with each other's passwords", function() {
-    owen.loginDialog.reopenToClearAnyError();
-    owen.loginDialog.loginButBadPassword(owen.username, michael.password);
-    michael.loginDialog.reopenToClearAnyError();
-    michael.loginDialog.loginButBadPassword(michael.username, owen.password);
+  it("... and cannot login with each other's passwords", async () => {
+    await owen_brA.loginDialog.reopenToClearAnyError();
+    await owen_brA.loginDialog.loginButBadPassword(owen.username, michael.password);
+    await michael_brB.loginDialog.reopenToClearAnyError();
+    await michael_brB.loginDialog.loginButBadPassword(michael.username, owen.password);
   });
 
-  it("Michael clicks Forgot Password", function() {
-    michael.loginDialog.clickResetPasswordCloseDialogSwitchTab();
+
+  // ----- Log in elsewhere
+
+  it(`Michael gones to the kitchen, where his parrot is — it tells him his password!
+          So, now Michael logs in! On his *other* laptop, in the kitchen`, async () => {
+    await michael_brA.loginDialog.reopenToClearAnyError();  // note: brA
+    await michael_brA.loginDialog.loginWithPassword(michael);
   });
 
-  it("... submits his email address", function() {
-    michael.resetPasswordPage.submitAccountOwnerEmailAddress(michael.emailAddress);
+  it(`... he sees his username.  And says Thanks! to the clever parrot (who is, b.t.w.,
+                green and likes worms, not as friends but as food).  The parrot
+                tells him his password again.`, async () => {
+    await michael_brA.topbar.assertMyUsernameMatches(michael.username);
+  });
+
+
+  // ----- Reset password
+
+  it(`Back in the living room, Michael has forgotten the password. He clicks  Reset Password`,
+          async () => {
+    await michael_brB.loginDialog.clickResetPasswordCloseDialogSwitchTab(); // note: brB
+  });
+
+  it("... submits his email address", async () => {
+    await michael_brB.resetPasswordPage.submitAccountOwnerEmailAddress(michael.emailAddress);
   });
 
   let resetPwdPageLink;
 
-  it("... he gets a reset-pwd email with a choose-new-password page link", function() {
-    const email = server.getLastEmailSenTo(idAddress.id, michael.emailAddress, wdioBrowserA);
+  it("... he gets a reset-pwd email with a choose-new-password page link", async () => {
+    const email = await server.getLastEmailSenTo(idAddress.id, michael.emailAddress);
     resetPwdPageLink = utils.findFirstLinkToUrlIn(
       idAddress.origin + '/-/reset-password/choose-password/', email.bodyHtmlText);
   });
 
-  it("... he goes to that page", function() {
-    michael.rememberCurrentUrl();
-    michael.go(resetPwdPageLink);
-    michael.waitForNewUrl();
+  it("... he goes to that page", async () => {
+    await michael_brB.rememberCurrentUrl();
+    await michael_brB.go(resetPwdPageLink);
+    await michael_brB.waitForNewUrl();
   });
 
   const newPassword = "new_password";
 
-  it("... types a new password", function() {
-    michael.chooseNewPasswordPage.typeAndSaveNewPassword(newPassword);
+  it("... types a new password", async () => {
+    await michael_brB.chooseNewPasswordPage.typeAndSaveNewPassword(newPassword);
   });
 
-  it("... he can login with the new password", function() {
-    michael.goAndWaitForNewUrl(idAddress.origin);
-    michael.topbar.clickLogout();
-    michael.complex.loginWithPasswordViaTopbar(michael.username, newPassword);
+
+  // ----- Logged out everywhere  TyT_PWDRST_LGOUT
+
+  it(`He goes to the kitchen, to post a message to parrots in the world.
+            But he is logged out!  He got logged out everywhere, when he reset his password`,
+        async () => {
+    await michael_brA.refresh2();
+    await michael_brA.topbar.waitUntilLoginButtonVisible();
   });
 
-  it("... but not with the old password", function() {
-    michael.topbar.clickLogout();
-    michael.topbar.clickLogin();
-    michael.loginDialog.loginButBadPassword(michael.username, michael.password);
+
+  // ----- New password works
+
+  it("... he can login with the new password", async () => {
+    await michael_brB.goAndWaitForNewUrl(idAddress.origin);
+    await michael_brB.topbar.clickLogout();
+    await michael_brB.complex.loginWithPasswordViaTopbar(michael.username, newPassword);
   });
 
-  it("Owen cannot login with Michael's new password", function() {
-    owen.loginDialog.loginButBadPassword(owen.username, newPassword);
+  it("... but not with the old password", async () => {
+    await michael_brA.topbar.clickLogin();
+    await michael_brA.loginDialog.loginButBadPassword(michael.username, michael.password);
   });
 
-  it("... but with his own, when he remembers it", function() {
-    owen.loginDialog.loginWithPassword(owen.username, owen.password);
+
+
+  it("Owen cannot login with Michael's new password", async () => {
+    await owen_brA.loginDialog.reopenToClearAnyError();
+    await owen_brA.loginDialog.loginButBadPassword(owen.username, newPassword);
+  });
+
+  it("... but with his own, when he remembers it", async () => {
+    await owen_brA.loginDialog.loginWithPassword(owen.username, owen.password);
   });
 
 });

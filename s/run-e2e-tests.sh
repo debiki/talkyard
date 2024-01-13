@@ -405,11 +405,11 @@ function runAllE2eTests {
 
   $r s/wdio --only admin-move-hostname.2browsers $args
 
-  $r s/wdio --only password-login-reset.2browsers $args
+  $r s/wdio-7 --only password-login-reset.2br.f --cd -i $args   # pretty ...
   $r s/wdio --only user-profile-access $args
   $r s/wdio --only user-profile-change-username $args
   $r s/wdio --only user-profile-change-email.2browsers $args
-  $r s/wdio --only user-profile-change-password.2br.mtime $args
+  $r s/wdio --only user-profile-change-password.2br.mtime $args  # ... similar
   $r s/wdio --only user-profile-cannot-delete-idp-email.1br.extidp $args
   $r s/wdio --only user-profile-activity-private.2browsers $args
   $r s/wdio --only user-self-delete-upd-groups.2browsers $args

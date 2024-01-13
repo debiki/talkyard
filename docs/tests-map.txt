@@ -103,7 +103,7 @@ authn:
           - embedded-comments-no-cookies-verif-gmail.test.ts  TyT795KB61368
           - embedded-comments-no-cookies-unverif-gmail.test.ts  TyT6224BKA253
   password:
-          - password-login-reset.2browsers.test.ts  TyT5KAES20W
+          - password-login-reset.2br.f  TyT5KAES20W
     via email verif email:
           - unsubscribe.2browsers.test.ts  [TyT2ABK5I0]
     owner resets, before first login:
@@ -115,7 +115,9 @@ authn:
             - TESTS_MISSING
   forgot password -
     reset it:
-          - password-login-reset.2browsers.test.ts  TyT5KAES20W
+          - password-login-reset.2br.f  TyT5KAES20W
+      logged out everywhere on reset:
+          - password-login-reset.2br.f  TyT5KAES20W.TyT_PWDRST_LGOUT
     forgot email address:
   mixed case OpenAuth email and username:
           - create-site-github-oauth-uppercase-email  TyT5AKR2Z95

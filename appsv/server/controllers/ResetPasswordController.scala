@@ -203,18 +203,38 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: TyC
   def handleNewPasswordForm(anyResetPasswordEmailId: String): Action[JsonOrFormDataBody] =
         JsonOrFormDataPostAction(RateLimits.ChangePassword, maxBytes = 200,
           allowAnyone = true) { request =>
+    import request.dao
     val newPassword = request.body.getOrThrowBadReq("newPassword")
 
     val loginGrant = loginByEmailOrThrow(anyResetPasswordEmailId, request,
-      // So someone who might e.g. see the reset-pwd url in some old log file or wherever,
-      // will be unable to reuse it:
-      mayLoginAgain = false)
-    request.dao.changePasswordCheckStrongEnough(loginGrant.user.id, newPassword)
+          // So someone who might e.g. see the reset-pwd url in some old log file or wherever,
+          // will be unable to reuse it:
+          mayLoginAgain = false)
+    dao.changePasswordCheckStrongEnough(loginGrant.user.id, newPassword)
+
+    // Expire all old sessions, so in case pat is resetting hans password
+    // because han suspects a hacker has logged in to hans account elsewhere,
+    // any such hacker is kicked out.
+    //
+    // Tests:
+    //  - password-login-reset.2br.f  TyT5KAES20W.TyT_PWDRST_LGOUT
+    //
+    UX; COULD // Ask the user if they want to terminate old sessions — because if han
+    // just forgot hans password, han migh *not* want to get logged out everywhere.
+    // If han doesn't reply in 20? seconds, then terminate all sessions in any case?
+    // So, there needs to be a do-later task saved in the db, in case pat disconnects
+    // abruptly.
+    //
+    val terminatedSessions = dao.terminateSessions(forPatId = loginGrant.user.id, all = true)
+
+    UX; COULD // reply: """Done. You're now logged out from  ${terminatedSessions.length - 1 ?}
+    // other sessions."""  (-1 depends on if logged in on the current device or not.)
 
     // Log the user in and show password changed message.
-    request.dao.pubSub.userIsActive(request.siteId, loginGrant.user, request.theBrowserIdData)
+    dao.pubSub.userIsActive(request.siteId, loginGrant.user, request.theBrowserIdData)
     val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request, loginGrant.user.id)
     val newSessionCookies = sidAndXsrfCookies
+
     CSP_MISSING
     Ok(views.html.resetpassword.passwordHasBeenChanged(SiteTpi(request)))
           .withCookies(newSessionCookies: _*)
