@@ -142,6 +142,7 @@ export const DropdownModal = createComponent({
     const props: DropdownProps = this.props;
       if (!props.show || !this.refs.content || this.isGone)
         return;
+
       const content = this.refs.content;
       const rect = cloneRect(content.getBoundingClientRect());
 
@@ -279,8 +280,9 @@ export const DropdownModal = createComponent({
 
     const dialogClassName = props.dialogClassName2 ? ' ' + props.dialogClassName2 : '';
     const notTooWideClass = props.allowFullWidth ? '' : ' esDropModal-NotTooWide';
+    const onHide = props.closeOnClickOutside !== false ? props.onHide : undefined;
     return (
-      rb.Modal({ show: props.show, onHide: props.onHide,
+      rb.Modal({ show: props.show, onHide,
           onShow: () => this.setState({ hideBackdrop: false }),
           dialogClassName: 'esDropModal' + notTooWideClass + dialogClassName,
           backdropStyle: backdropStyle },

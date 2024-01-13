@@ -17,6 +17,7 @@
 
 /// <reference path="../prelude.ts" />
 /// <reference path="../widgets.ts" />
+/// <reference path="../utils/utils.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2 {
@@ -57,7 +58,12 @@ export function Tag(ps: { tag?: Tag, tagType: TagType,
 
   return (
       linkFn({ className: 'c_Tag c_TagL_Tag' + patOrPostClass,
-            href, onClick, to },
+            href, onClick, to,
+            onKeyDown: (event) => {
+              // Without this, only Enter (not Space) triggers onClick (in Chrome, my laptop).
+              if (onClick && event_isSpace(event)) onClick(event);
+            }
+           },
         r.span({ className: 'c_Tag_Name' },
           tagName),
         anyColon,

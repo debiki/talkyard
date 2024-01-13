@@ -2467,6 +2467,7 @@ interface ExplainingTitleTextSelected extends ExplainingTitleText {
 interface ExplainingListItemProps extends ExplainingTitleText {
   id?: St;
   className?: St;
+  tabIndex?: Nr;
   // Either:
   // (Both onNav and linkTo are ok together — then, onNav happens on click, but
   // if middle-mouse or ctrl-clicking, then, the browser typically opens the linkTo
@@ -2501,10 +2502,11 @@ interface DropdownProps extends SharedDiagParams {
   showCloseButton?: true;
   //bottomCloseButton?: true; — not yet impl
   onHide: () => Vo;
-  closeOnClickOutside?: Bo; // default true
+  closeOnClickOutside?: false; // default true
   onContentClick?: (event: MouseEvent) => Vo;
   atX?: Nr;
   atY?: Nr;
+  // inMiddle?: true; // see [dropdown_in_middle]
   windowWidth?: Nr; // needed iff atRect
 }
 

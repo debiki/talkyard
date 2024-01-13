@@ -79,6 +79,16 @@
 // onKeyPress, onKeyDown and event_isCtrlEnter  — see  onKeyPressOrKeyDown [5KU8W2].
 //
 
+// Missing:
+//   c   Create topic
+//   at  Add tag?
+//   ft  Focus tags?  or 'tt' — like in Vim:  't' jumps to sth (later on the same line, in Vim)
+//   fo  Focus the Original Post?  or  'to'
+//   u   Up one level — to the parent category
+//   b   Back (partly works already?)
+//   #   Delete page / comment?
+//   z   Undelete / undo?
+
 
 //------------------------------------------------------------------------------
    namespace debiki2.KeyboardShortcuts {

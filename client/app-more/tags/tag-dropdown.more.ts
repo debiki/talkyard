@@ -44,18 +44,21 @@ export function openTagDropdown(atRect, ps: {  // I18N tag menu
           title: `View tag`,
           linkTo: UrlPaths.Tags + slugOrId,
           text: `Read about this tag`,
+          tabIndex: 100,
           onNav: closeDiag,
           }),
       ExplainingListItem({
           title: rFr({}, `Search for tag`),
           linkTo: UrlPaths.SearchQ + `tags:${slugOrId}`,
           text: `List posts with this tag`,
+          tabIndex: 100,
           onNav: closeDiag,
           }),
       !imStaff || !(tagType.wantsValue >= NeverAlways.Allowed) ? null : ExplainingListItem({
           title: isVal(ps.anyValue) ? `Edit tag value` : `Set tag value`,
           text: !isVal(ps.anyValue) ? null :
                     rFr({}, `Current value: `, r.samp({}, ps.anyValue)),
+          tabIndex: 100,
           onSelect: () => {
             morekit.openProxyDiag({ atRect }, closeDiag => {
               return TagValEditor({
@@ -65,9 +68,12 @@ export function openTagDropdown(atRect, ps: {  // I18N tag menu
       !imStaff ? null : ExplainingListItem({
           title: "Remove tag",
           text: null,
+          tabIndex: 100,
           onSelect: () => {
             morekit.openProxyDiag({ atRect, closeOnButtonClick: true }, () => rFr({},
                 r.p({}, "Remove tag?"),
+                // UX BUG: Doesn't update forum topic list page, in all topic lists.
+                // then, need to reload to see changes.  [edit_tags_via_topic_list]
                 r.div({ className: 'c_DlgBtns' },
                     Button({}, "No, cancel"),
                     PrimaryButton({ onClick: () => {

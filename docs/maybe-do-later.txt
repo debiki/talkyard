@@ -25,6 +25,10 @@ Popularity calcs sometimes ignore the very latest comment / chat msg?
 
 [timeline_comts] Maybe. Rename "progress posts" to "timeline comments"?
 
+[purp_dep_text]
+Help texts that are different, depending on the purpose of the forum. E.g. calls people
+"employees" and "customers",  or if it's for education: "teachers", "students".
+
 [ty_themes]
 Primary button colors, secondary, background, arrows, fonts,
 and embedded widgets, e.g. Twitter's oEmbed has a 'link_color: #223344' attr,

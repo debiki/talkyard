@@ -86,6 +86,7 @@ export const ListGroupsComponent = React.createFactory<RouteChildProps>(function
       // This text is maybe not so easy to understand — UX_TESTING_MISSING — but better
       // than nothing I hope?
       r.p({ className: 's_GP_Expl' },
+        // [purp_dep_text]
         "You can create custom groups. Examples: A group for your employees, " +
         "another for your customers. Or different groups for your teachers and students? " +
         "Volunteers, board members, donors?"),

@@ -359,9 +359,15 @@ export function event_isEnter(event): boolean {
   return code === KeyCodeEnter || code === KeyCodeLineFeed;
 }
 
+export function event_isSpace(event): Bo {
+  const code = event.which || event.charCode || event.keyCode;
+  return code === KeyCodeSpace;
+}
+
 const KeyCodeEnter = 13;
 const KeyCodeLineFeed = 10;
 const KeyCodeEscape = 27;
+const KeyCodeSpace = 32;
 
 
 //------------------------------------------------------------------------------
