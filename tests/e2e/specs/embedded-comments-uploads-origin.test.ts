@@ -30,7 +30,7 @@ const uplFileLinkTwo = (origin: string, sitePubId: string) =>
   `${origin}/-/u/${sitePubId ? sitePubId + '/' : ''}dummyfilepathtwo.pdf`;
 
 const extImgHttp  = 'http://elsewhere.example.com/ext-img.jpg'
-const extImgHttps  = extImgHttp.replace('http:', 'https');
+const extImgHttps  = extImgHttp.replace('http:', 'https:');
 const extImgHttpsMaybe = settings.secure ? extImgHttps : extImgHttp; // https iff server https
 const extFileLink = 'https://elsewhere.example.com/document.pdf';
 const extFile2Link = 'https://galaxytwo.example.com/doctwo.odf';
