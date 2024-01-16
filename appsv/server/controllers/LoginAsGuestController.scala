@@ -39,7 +39,7 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: TyCo
 
 
   def loginGuest: Action[JsValue] = AsyncPostJsonAction(
-        RateLimits.Login, maxBytes = 1000, avoidCookies = true) { request =>
+        RateLimits.Login, maxBytes = 1000, isGuestLogin = true, avoidCookies = true) { request =>
     import request.dao
 
     val json = request.body.as[JsObject]
@@ -71,6 +71,7 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: TyCo
       "TyEBADEMLDMN_-GST", "You cannot sign up using that email address")
 
     // A browser id should be set, at the start of all POST requests. [5JKWQ21]
+    // (If there's not yet any, then we use the [xsrf_token_as_browser_id].)
     val theBrowserId: String = request.theBrowserIdData.idCookie getOrElse throwForbidden(
       "TyE0BRIDGST", "Browser id missing when logging in as guest")
 

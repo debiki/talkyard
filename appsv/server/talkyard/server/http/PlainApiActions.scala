@@ -55,6 +55,7 @@ class PlainApiActions(
         rateLimits: RateLimits,
         minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
         allowAnyone: Bo = false,
+        isGuestLogin: Bo = false,
         isLogin: Bo = false,
         authnUsersOnly: Bo = false,
         avoidCookies: Bo = false,
@@ -62,8 +63,8 @@ class PlainApiActions(
         ): ActionBuilder[ApiRequest, B] =
     PlainApiActionImpl(parser, rateLimits, minAuthnStrength = minAuthnStrength,
         authnUsersOnly = authnUsersOnly,
-        allowAnyone = allowAnyone, isLogin = isLogin, avoidCookies = avoidCookies,
-        skipXsrfCheck = skipXsrfCheck)
+        allowAnyone = allowAnyone, isLogin = isLogin, isGuestLogin = isGuestLogin,
+        avoidCookies = avoidCookies, skipXsrfCheck = skipXsrfCheck)
 
   def PlainApiActionStaffOnly[B](
           rateLimits: RateLimits,
@@ -105,11 +106,15 @@ class PlainApiActions(
         authnUsersOnly: Bo = false,
         allowAnyone: Boolean = false,  // try to delete 'allowAnyone'? REFACTOR
         avoidCookies: Boolean = false,
-        isLogin: Boolean = false,
+        isGuestLogin: Bo = false,
+        isLogin: Bo = false,
         superAdminOnly: Boolean = false,
         viaApiSecretOnly: Opt[WhatApiSecret] = None,
         skipXsrfCheck: Bo = false): ActionBuilder[ApiRequest, B] =
       new ActionBuilder[ApiRequest, B] {
+
+    val isUserLogin = isLogin // rename later
+    dieIf(isGuestLogin && isUserLogin, "TyE306RJU243")
 
     override def parser: BodyParser[B] =
       aParser
@@ -456,8 +461,8 @@ class PlainApiActions(
           dieIf(ci.isCrossOrigin, "TyEJ2503TKHJ")
           security.checkSidAndXsrfToken(
                 request, anyRequestBody = Some(request.body), site, dao,
-                expireIdleAfterMins, maySetCookies = maySetCookies,
-                skipXsrfCheck = skipXsrfCheck)
+                expireIdleAfterMins, isGuestLogin = isGuestLogin,
+                maySetCookies = maySetCookies, skipXsrfCheck = skipXsrfCheck)
       }
 
       // Ignore and delete any broken or expired session id cookie.
@@ -467,12 +472,14 @@ class PlainApiActions(
 
       val (anyBrowserId, newBrowserIdCookie) =  // [5JKWQ21]
         if (maySetCookies) {
-          security.getBrowserIdCreateCookieIfMissing(request, isLogin = isLogin)
+          security.getBrowserIdCreateCookieIfMissing(
+                request, isLogin = isUserLogin || isGuestLogin)
         }
         else {
           // Then use any xsrf token, if present. It stays the same until page reload,
           // and has the same format as any id cookie anyway, see timeDotRandomDotHash() [2AB85F2].
           // The token can be missing (empty) for GET requests [2WKA40].
+          // And for POST to "log in" as guest — then, we use the [xsrf_token_as_browser_id].
           if (xsrfOk.value.nonEmpty)
             (Some(BrowserId(xsrfOk.value, isNew = false)), Nil)
           else
@@ -581,10 +588,10 @@ class PlainApiActions(
         case SiteStatus.NoAdmin | SiteStatus.Active | SiteStatus.ReadAndCleanOnly =>
           // Fine
         case SiteStatus.HiddenUnlessStaff =>
-          if (!anyUser.exists(_.isStaff) && !isLogin)
+          if (!anyUser.exists(_.isStaff) && !isUserLogin)
             throwLoginAsStaff(request)
         case SiteStatus.HiddenUnlessAdmin =>
-          if (!anyUser.exists(_.isAdmin) && !isLogin)
+          if (!anyUser.exists(_.isAdmin) && !isUserLogin)
             throwLoginAsAdmin(request)
         case SiteStatus.Deleted | SiteStatus.Purged =>
           throwSiteNotFound(
@@ -592,10 +599,10 @@ class PlainApiActions(
             debugCode = s"SITEGONE-${site.status.toString.toUpperCase}")
       }
 
-      if (staffOnly && !anyUser.exists(_.isStaff) && !isLogin)
+      if (staffOnly && !anyUser.exists(_.isStaff) && !isUserLogin)
         throwLoginAsStaff(request)
 
-      if (adminOnly && !anyUser.exists(_.isAdmin) && !isLogin)
+      if (adminOnly && !anyUser.exists(_.isAdmin) && !isUserLogin)
         throwLoginAsAdmin(request)
 
       // Some staffOnly endpoints are okay with an embedded session — namely
@@ -699,7 +706,7 @@ class PlainApiActions(
         // isn't about a specific site but the server in general
         // (and the requester has an API username & secret, so, fine).
       }
-      else if (!allowAnyone && !isLogin) {
+      else if (!allowAnyone && !isUserLogin) {
         // ViewPageController has allow-anyone = true.
         val isXhr = isAjax(request)
         val isInternalApi = isXhr  // TODO

@@ -402,7 +402,7 @@ class EdSecurity(globals: Globals) {
    */
   def checkSidAndXsrfToken[A](request: RequestHeader, anyRequestBody: Option[A],
         site: SiteBrief, dao: SessionSiteDaoMixin,
-        expireIdleAfterMins: i64, maySetCookies: Bo, skipXsrfCheck: Bo)
+        expireIdleAfterMins: i64, isGuestLogin: Bo, maySetCookies: Bo, skipXsrfCheck: Bo)
         : CheckSidAndXsrfResult = {
 
 
@@ -452,6 +452,11 @@ class EdSecurity(globals: Globals) {
     val upgrToFancySidCookies = checkSidResult.createCookies
     val deleteFancySidCookies = checkSidResult.discardCookies  // rename? deleteFancySidCookies
 
+    // This: `isGuestLogin && sessionIdStatus != SidAbsent` is actually possible —
+    // for example, if logged in as an ordinary member, but visits the admin area
+    // — then, a login-as-an-admin-user dialog appears, although one is already
+    // logged in. (Although it'd be odd to try to log in as guest to the admin area,
+    // don't think it's possible to try even, actually.)
 
     // ----- Check xsrf token
 
@@ -508,11 +513,16 @@ class EdSecurity(globals: Globals) {
               "TyE_REQUEST_METHOD__HEAD__NOT_ALLOWED", details)
         throwForbidden( "TyE_REQUEST_METHOD_NOT_ALLOWED", details)
       }
-      else if (isPost && definitelyNoCreds) {
+      else if (isPost && definitelyNoCreds
+            // If pat is "logging in" as guest, then we want a xsrf token anyway
+            // because of the side effects (namely a new guest account).
+            // (If logging in as a real user, a password is needed.)
+            && !isGuestLogin) {
         // This might be from a backend server, fetching publicly available data.
         // Example: An Electron or iOS app, calling /-/v0/search, to show
         // in-app help.
-        // No credentials are included in the request, so there's no xsrf risk.
+        // No credentials or create-account/log-in info are included in the request,
+        // so there's no xsrf risk.
         dieIf(sessionIdStatus != SidAbsent, "TyE502MWEG")
         (XsrfOk(""), Nil)
       }
