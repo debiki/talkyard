@@ -2093,6 +2093,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           globals.sendEmail(email, dao.siteId)
         }
 
+        // Also see: [old_users_verif_email]
         if (emailVerifiedAt.isDefined || siteSettings.mayPostBeforeEmailVerified) {
           createCookiesAndFinishLogin(request, request.siteId, loginGrant.user,
                 authnState)

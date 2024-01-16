@@ -38,19 +38,25 @@ trait LoginSiteDaoMixin extends SiteTransaction {
   self: RdbSiteTransaction with UserSiteDaoMixin =>
 
 
-  override def tryLoginAsMember(loginAttempt: MemberLoginAttempt, requireVerifiedEmail: Boolean)
+  override def tryLoginAsMember(loginAttempt: MemberLoginAttempt, requireVerifiedEmail: Bo)
         : Hopefully[MemberLoginGrant] = {
     CLEAN_UP; REFACTOR // Later: Have the fns below return a Hopefully, instead of throwing.
     // And remove the try-catch here.
     val loginGrant: MemberLoginGrant = try { loginAttempt match {
-      case x: PasswordLoginAttempt => loginWithPassword(x, requireVerifiedEmail)
-      case x: EmailLoginAttempt => loginWithEmailId(x)
-      case x: OpenAuthLoginAttempt => loginOpenAuth(x)  // SHOULD check requireVerifiedEmail
+      case x: PasswordLoginAttempt => _loginWithPassword(x, requireVerifiedEmail)
+      case x: EmailLoginAttempt => _loginWithEmailId(x)
+      case x: OpenAuthLoginAttempt => _loginOpenAuth(x, requireVerifiedEmail)
     }}
     catch {
       case ex: Exception =>
         return Bad(Problem(ex, siteId))  // ([6036KEJ5] either excepiton, or Good below.)
     }
+
+    dieIf(loginGrant.user.isDeleted, "TyE502RKGJL4")
+
+    // Skip for now. [old_users_verif_email]
+    // dieIf(loginGrant.user.emailVerifiedAt.isEmpty && requireVerifiedEmail, "TyE5WKG3U8")
+
     Good(loginGrant)
   }
 
@@ -125,7 +131,7 @@ trait LoginSiteDaoMixin extends SiteTransaction {
   }
 
 
-  private def loginWithPassword(loginAttempt: PasswordLoginAttempt, requireVerifiedEmail: Boolean)
+  private def _loginWithPassword(loginAttempt: PasswordLoginAttempt, requireVerifiedEmail: Bo)
         : MemberLoginGrant = {
     val anyUser = loadUserByPrimaryEmailOrUsername(loginAttempt.emailOrUsername)
     val user = anyUser getOrElse {
@@ -134,12 +140,21 @@ trait LoginSiteDaoMixin extends SiteTransaction {
     if (user.isDeleted) {
       throw DbDao.UserDeletedException
     }
-    // Don't let anyone login by specifying an email address that hasn't been verified — we
-    // wouldn't know if two different people typed the same email address, maybe to hack
-    // the other person's account, or a typo. [2PSK5W0R]
-    if (user.emailVerifiedAt.isEmpty && (requireVerifiedEmail || loginAttempt.isByEmail)) {
-      throw DbDao.EmailNotVerifiedException
+
+    if (user.emailVerifiedAt.isEmpty) {
+      // But what if require-verified-emails turned on later, when unverified users might
+      // already be using the site? Could add conf val, see: [old_users_verif_email].
+      var problem = requireVerifiedEmail
+
+      // Don't let anyone login by specifying an email address that hasn't been verified — we
+      // wouldn't know if two different people typed the same email address, maybe to hack
+      // the other person's account, or a typo. [2PSK5W0R]
+      problem ||= loginAttempt.isByEmail
+
+      if (problem)
+        throw DbDao.EmailNotVerifiedException
     }
+
     val correctHash = user.passwordHash getOrElse {
       throw MemberHasNoPasswordException
     }
@@ -153,7 +168,7 @@ trait LoginSiteDaoMixin extends SiteTransaction {
 
   REFACTOR; MOVE // to talkyard.server, and call  UserDao.loadEmailBySecretOrId(). [clean_up_emails]
   REMOVE //  use  emails_out_t.secret_value_c  instead. [clean_up_emails]
-  private def loginWithEmailId(loginAttempt: EmailLoginAttempt): MemberLoginGrant = {
+  private def _loginWithEmailId(loginAttempt: EmailLoginAttempt): MemberLoginGrant = {
     val emailId = loginAttempt.emailId
     val email: Email = loadEmailBySecretOrId(emailId) getOrElse {
       throw EmailNotFoundException(emailId)
@@ -188,6 +203,14 @@ trait LoginSiteDaoMixin extends SiteTransaction {
            when logging in with email id `$emailId'.""")
     }
 
+    // What if han is suspended? [email_lgi_susp] Then, here, maybe better to allow this,
+    // so also suspended users can reset their passwords and get logged out everywhere.
+    if (user.isDeleted) {
+      // Tests:
+      //  - user-self-delete-upd-groups.2br.f.e2e.ts  TyT6DMSNW3560.TyT_DELACT_RSTPW
+      throw DbDao.UserDeletedException
+    }
+
     if (user.email != email.sentTo)
       throw EmailAddressChangedException(email, user)
 
@@ -200,12 +223,8 @@ trait LoginSiteDaoMixin extends SiteTransaction {
   }
 
 
-  private def loginOpenAuth(loginAttempt: OpenAuthLoginAttempt): MemberLoginGrant = {
-    loginOpenAuthImpl(loginAttempt)
-  }
-
-
-  private def loginOpenAuthImpl(loginAttempt: OpenAuthLoginAttempt): MemberLoginGrant = {
+  private def _loginOpenAuth(loginAttempt: OpenAuthLoginAttempt, requireVerifiedEmail: Bo)
+        : MemberLoginGrant = {
 
     val identityInDb = loadOpenAuthIdentity(loginAttempt.profileProviderAndKey) getOrElse {
       throw IdentityNotFoundException
@@ -216,6 +235,15 @@ trait LoginSiteDaoMixin extends SiteTransaction {
       die(o"""s$siteId: User ${identityInDb.userId} missing for OpenAuth
           identity ${identityInDb.id}""", "TyE4WKBQR")
     }
+
+    if (user.isDeleted)
+      throw DbDao.UserDeletedException
+
+    // Could add config option, for old accounts w unverified email. [old_users_verif_email]
+    /*
+    if (user.emailVerifiedAt.isEmpty && requireVerifiedEmail)
+      throw DbDao.EmailNotVerifiedException
+    */
 
     val identity =
       if (loginAttempt.openAuthDetails == identityInDb.openAuthDetails) identityInDb

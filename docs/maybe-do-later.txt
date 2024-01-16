@@ -303,6 +303,13 @@ And when logging in via email, one gets to choose which account to login to.
 Refactor a bit.
 Search for:  [4KDPREU2], break out fn.
 
+[old_users_verif_email]
+Add a setting that says if already active accounts w unverified email addrs,
+need to verify their addrs to continue using them — or if the requireVerifiedEmail
+setting applies only to *new* signups.  If old users need to verify too, then,
+add a button to send all of them an email addr verification email?
+(Maybe not actually send all emails exactly at once though.)
+
 [save_email]
 Save invitation emails sent (and other types I forgot?), & any SMTP erors.
 

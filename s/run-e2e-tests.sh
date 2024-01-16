@@ -412,7 +412,7 @@ function runAllE2eTests {
   $r s/wdio --only user-profile-change-password.2br.mtime $args  # ... similar
   $r s/wdio --only user-profile-cannot-delete-idp-email.1br.extidp $args
   $r s/wdio --only user-profile-activity-private.2browsers $args
-  $r s/wdio --only user-self-delete-upd-groups.2browsers $args
+  $r s/wdio-7 --only user-self-delete-upd-groups.2br.f.e2e.ts --cd -i $args
 
   $r s/wdio --only group-profile-change-things.2browsers $args
 

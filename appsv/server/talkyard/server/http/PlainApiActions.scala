@@ -547,6 +547,7 @@ class PlainApiActions(
           anyTySession: Opt[TySession], sidStatus: SidStatus,
           xsrfOk: XsrfOk, browserId: Option[BrowserId], block: ApiRequest[A] => Future[Result])
           : Future[Result] = {
+      val siteId = site.id
 
       if (anyUserMaybeSuspended.exists(_.isAnon)) {
         // Client side bug?
@@ -554,11 +555,14 @@ class PlainApiActions(
               ForbiddenResult("TyEUSRANON", "Anonyms cannot call the server themselves"))
       }
 
+      def theUserId: PatId = anyUserMaybeSuspended.get.id
+
       // Maybe the user was logged in in two different browsers, and deleted hens account
       // in one browser and got logged out, when this request was going on already?
       if (anyUserMaybeSuspended.exists(_.isDeleted)) {
         // A race. Any session already deleted by UserDao [end_sess],
-        dieIf(dao.listPatsSessions(anyUserMaybeSuspended.get.id).nonEmpty, "TyESTILLSID01")
+        bugWarnIf(dao.listPatsSessions(theUserId).nonEmpty, "TyESTILLSID01",
+              s"s$siteId: User $theUserId is deleted but there's still a session.")
         return Future.successful(
               ForbiddenResult("TyEUSRDLD", "That account has been deleted")
                   .discardingCookies(DiscardingSessionCookies: _*))
@@ -568,7 +572,8 @@ class PlainApiActions(
 
       if (isSuspended && request.method != "GET") {
         // A race. Any session already deleted by UserDao [end_sess],
-        dieIf(dao.listPatsSessions(anyUserMaybeSuspended.get.id).nonEmpty, "TyESTILLSID02")
+        bugWarnIf(dao.listPatsSessions(theUserId).nonEmpty, "TyESTILLSID02",
+              s"s$siteId: User $theUserId is suspended, but there's still a session.")
         return Future.successful(
               ForbiddenResult("TyESUSPENDED_", "Your account has been suspended")
                   .discardingCookies(DiscardingSessionCookies: _*))
@@ -578,6 +583,7 @@ class PlainApiActions(
             if (!isSuspended) anyUserMaybeSuspended
             else {
               // If suspended, one can still see publicly visible things. [susp_see_pub]
+              // And reset ones password. [email_lgi_susp]
               None
             }
 
@@ -775,7 +781,7 @@ class PlainApiActions(
         case ex: ResultException =>
           // This is fine, probably just a 403 Forbidden exception or 404 Not Found, whatever.
           logger.debug(
-            s"API request result exception [EsE4K2J2]: $ex, $requestUriAndIp")
+                s"s$siteId: API request result exception [EsE4K2J2]: $ex, $requestUriAndIp")
           throw ex
         case ex: play.api.libs.json.JsResultException =>
           // A bug in Talkyard's JSON parsing, or the client sent bad JSON?
@@ -798,8 +804,8 @@ class PlainApiActions(
         case Failure(exception) =>
           // exception –> case ProblemException ?  [ADMERRLOG]
           //            case ex: ResultException ?
-          logger.debug(
-            s"API request exception: ${classNameOf(exception)} [DwE4P7], $requestUriAndIp")
+          logger.debug(s"s$siteId: API request exception: ${
+                classNameOf(exception)} [DwE4P7], $requestUriAndIp")
       })(executionContext)
 
       if (isSuspended) {

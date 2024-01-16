@@ -122,11 +122,15 @@ authn:
             - dir.create-site-via-api.2br  TyTE2ECREASITAPI.TyTERSTWRONGEML
     email chars, '+' is ok, test for both guests and real users:
             - TESTS_MISSING
+    suspended user resets password:
+            - TESTS_MISSING  [email_lgi_susp]
   forgot password -
     reset it:
           - password-login-reset.2br.f  TyT5KAES20W
       logged out everywhere on reset:
           - password-login-reset.2br.f  TyT5KAES20W.TyT_PWDRST_LGOUT
+      reset link invalid after user deleted:
+          - user-self-delete-upd-groups.2br.f.e2e.ts  TyT6DMSNW3560.TyT_DELACT_RSTPW
     forgot email address:
   mixed case OpenAuth email and username:
           - create-site-github-oauth-uppercase-email  TyT5AKR2Z95
@@ -245,6 +249,8 @@ custom idps:
           Ty acct, email verified:
           Ty acct, email not verified:
             - TESTS_MISSING  TyTE2E60RTE24.TyTE2EIDPTYEMLUNVER
+  require-verified-emails turned on later, when already unverified users:
+            - TESTS_MISSING  [old_users_verif_email]
 
 
 sso,
@@ -408,7 +414,7 @@ profile page, user:
     delete user:
     delete group:
     self delete, gdpr:
-          - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
+          - user-self-delete-upd-groups.2br.f.e2e.ts  TyT6DMSNW3560
 
 
 profile page, a group:
@@ -421,7 +427,7 @@ profile page, a group:
   add/remove group members:
           - notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24
           - group-mentions-custom-group.2browsers.test.ts  TyT5BMRP2058
-          - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
+          - user-self-delete-upd-groups.2br.f.e2e.ts  TyT6DMSNW3560
           - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46
   see permission settings:
             - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyT0ACCESSPERMS04
@@ -439,13 +445,13 @@ groups:
 
   add/remove members:
           - notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24
-          - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
+          - user-self-delete-upd-groups.2br.f.e2e.ts  TyT6DMSNW3560
           - invite-to-groups.2browsers.test.ts  TyT7WKTJ40ZT22
     when many:
           - many-users-mention-list-join-group.2browsers.test.ts  TyT602857SKR
 
   update when user deleted:
-          - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
+          - user-self-delete-upd-groups.2br.f.e2e.ts  TyT6DMSNW3560
   @mention:
           - group-mentions-built-in-groups.2browsers.test.ts  TyT4AWJL208R
           - group-mentions-custom-group.2browsers.test.ts  TyT5BMRP2058
@@ -564,6 +570,9 @@ emails -
   api,
   emails in:
             - site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB.TyTEMLWEBHSECR
+
+  require-verified-emails turned on later, when already unverified users:
+            - TESTS_MISSING  [old_users_verif_email]
 
 getting started guide -
   guide present:
@@ -1202,11 +1211,14 @@ site settings:
       cannot disable if admin uses fb login henself:
     disable github:
     disable twitter:
-  moderation -
+  require verified emails:
+    turned on later, when already users w/o verified emails:
+            - TESTS_MISSING  [old_users_verif_email]
+  moderation:
     num to review,
     num to approve,
     num to allow:
-          - admin-review-cascade-approval.2browsers.test.ts  TyT0SKDE24
+            - admin-review-cascade-approval.2browsers.test.ts  TyT0SKDE24
 
 tips,
 announcements:

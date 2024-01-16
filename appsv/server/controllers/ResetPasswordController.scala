@@ -53,9 +53,12 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: TyC
   }
 
 
+  /** If not logged in,  e.g. forgot password.
+    */
   def handleResetPasswordForm: Action[JsonOrFormDataBody] =
         JsonOrFormDataPostAction(RateLimits.ResetPassword,
         maxBytes = 200, allowAnyone = true) { request =>
+
     import request.dao
     val emailOrUsername = request.body.getOrThrowBadReq("email") // WOULD rename 'email' param
     val anyUser = request.dao.loadMemberByEmailOrUsername(emailOrUsername)
@@ -81,15 +84,28 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: TyC
               user.theUsername.toLowerCase != emailOrUnLower,
               "TyE0F21J4", o"""s$siteId: Specified email or username: '$emailOrUsername',
               actual: '${user.email}' and '${user.username}', user id ${user.id}""")
+        var skip = false
         var isCreating = false
-        if (user.passwordHash.isDefined) {
+        if (user.isDeleted) {
+          // Don't think this can happen? When deleted, one's email is deleted as well,
+          // so the user instead won't be found (when looking up by email above).
+          logger.warn(s"s$siteId: Not sending any password reset email to deleted user ${
+                toWho(user)} — isn't this dead code? [TyE5MWKJ30]")
+          // But if suspended — then it's ok to reset one's password? If nothing else,
+          // only to log out everywhere.
+          skip = true
+        }
+        else if (user.passwordHash.isDefined) {
           logger.info(s"s$siteId: Sending password reset email ${toWho(user)} [TyM2AKEG5]")
         }
         else {
           logger.info(s"s$siteId: Sending create password email ${toWho(user)} [TyM6WKBA20]")
           isCreating = true
         }
-        sendChangePasswordEmailTo(user, request, isCreating = isCreating)
+        if (!skip) {
+          sendChangePasswordEmailTo(user, request, isCreating = isCreating)
+        }
+
       case None =>
         if (isEmailAddress) {
           // Don't tell the user that this email address doesn't exist; that'd be a
@@ -116,6 +132,8 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: TyC
     s"to ${member.usernameHashId}, addr: ${member.primaryEmailAddress}"
 
 
+  /** If already logged in  (then, one's account is not deleted or suspended).
+    */
   def sendResetPasswordEmail: Action[JsValue] = PostJsonAction(RateLimits.ResetPassword, maxBytes = 100) {
         request =>
     import request.{dao, siteId, theRequester => requester}
@@ -152,9 +170,10 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: TyC
   }
 
 
-  private def sendChangePasswordEmailTo(user: User, request: ApiRequest[_], isCreating: Boolean): Unit = {
-    import request.dao
+  private def sendChangePasswordEmailTo(user: User, req: ApiRequest[_], isCreating: Bo): U = {
+    import req.dao
 
+    dieIf(user.isDeleted, "TyE7U3SRKJLF4")
     val subject = if (isCreating) "Choose a Password" else "Reset Password"  // I18N
 
     val lang = dao.getWholeSiteSettings().languageCode
@@ -170,7 +189,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: TyC
         emailTexts.resetPasswordEmail(
               userName = user.theUsername,
               secret = secret,
-              siteAddress = request.host,
+              siteAddress = req.host,
               expiresInMinutes = EmailType.ResetPassword.secretsExpireHours * 60,
               globals = globals)
       })
@@ -260,6 +279,9 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: TyC
       problem.anyException.get match {
         case _: DbDao.EmailNotFoundException =>
           throwForbidden("DwE7PWE7", "Email not found")
+        case DbDao.UserDeletedException =>
+          // But not if is only suspended. [susp_see_pub]
+          throwForbidden("TyEUSRDLD02_", "User deleted")
         case ex: QuickMessageException =>
           logger.warn(s"Deprecated exception [TyEQMSGEX01]", ex)
           throwForbidden("TyEQMSGEX01", ex.getMessage)
