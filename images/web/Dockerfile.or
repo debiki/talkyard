@@ -7,11 +7,7 @@
 
 # COULD_OPTIMIZE smaller image: Copy just what's needed from openresty_build
 # (and would need to 'apk add' some things too, to the final image).
-FROM alpine:3.13 AS openresty_build
-# No:
-# FROM alpine:3.14 AS openresty_build
-# results in an error "make: uname: Operation not permitted"
-# when building Lua and Make does:   HOST_SYS:= $(shell uname -s)
+FROM alpine:3.19 AS openresty_build
 
 
 # '--virtual .build_deps' lets one uninstall all these build dependencies,
@@ -115,6 +111,9 @@ ARG CONFIG="\
   # there'd be runtime errors. See [63DRN3M75] in ./old/.
   # Or maybe works now with OpenResty?
   --with-http_v2_module \
+  \
+  # Let's wait? DO_AFTER 2024-07-01:
+  # --with-http_v3_module \
   \
   # --with-ipv6 \
   # --with-mail \
@@ -497,3 +496,14 @@ EXPOSE 80 443
 
 
 CMD /etc/nginx/run-envsubst-gen-keys.sh && nginx
+
+
+# Tell Docker to send SIGQUIT instead of default SIGTERM, when stopping this container
+# gracefully — then Nginx will drain requests, instead of terminating all immediately.
+# See https://github.com/openresty/docker-openresty/blob/master/README.md#tips--pitfalls
+#
+# But let's wait — what if there's some long running request that makes Nginx then take
+# long to restart?  It can be enough to upgrade to OpenResty 1.25 for now.
+# DO_AFTER 2024-07-01 try enabling this.
+# STOPSIGNAL SIGQUIT
+

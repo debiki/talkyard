@@ -686,10 +686,10 @@ _print_push_git_tag_command:
 
 
 # [bash2deno]
-push-tag-to-git:
+push_tag_to_dev_rel_branch:
 	@echo
-	@echo "Publishing to GitHub, version tag: $(tag)"
-	@echo "                   release branch: $(DEV_RELEASE_CHANNEL)..."
+	@echo "Publishing version tag:  $(tag)"
+	@echo "     to release branch:  $(DEV_RELEASE_CHANNEL)  ..."
 	@echo
 
 	@$(call die_unless_tag_specified, Push)
@@ -706,10 +706,19 @@ push-tag-to-git:
 	  git add version-tags.log  ;\
 	  git commit -m "Release $(tag), channel $(DEV_RELEASE_CHANNEL)."  ;\
 	  git push origin $(DEV_RELEASE_CHANNEL)
-
+	
 	@# Later, this message instead:
 	@# git commit -m "Release tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX)."
 	
+	@echo "Look, the dev release branch, now afterwards:"
+	@cd relchans/$(DEV_RELEASE_CHANNEL)/  ;\
+	  set -x  ;\
+	  pwd  ;\
+	  git log --oneline -n5  ;\
+	  tail -n5 version-tags.log
+
+
+push_tag_to_dev_repo:
 	@# Note that this version might not be included in all release channels.
 	@# Example: If this new version includes some not-well-tested things — then,
 	@# we'd want to push it only to tyse-v0-dev, fix bugs, and later, push a more
@@ -723,21 +732,15 @@ push-tag-to-git:
 	@# same version nr and Git revision hash, but different -dev/-regular suffix.
 	@#
 	@echo ""
-	@echo "Tagging main repo with: tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX) ..."
-	@git tag tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX)
-	@git push origin tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX)
+	@echo "Pushing tag: tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX)"
+	@echo "    to repo: $(repo)  ..."
+	@git tag tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX) ;\
+		git push $(repo) tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX)
 	
-	@echo "Look, the dev channel, now afterwards:"
-	@cd relchans/$(DEV_RELEASE_CHANNEL)/  ;\
-	  set -x  ;\
-	  pwd  ;\
-	  git log --oneline -n5  ;\
-	  tail -n5 version-tags.log
-
 	@echo ""
 	@echo "Done. Now, push 'release' and bump the version number:"
 	@echo ""
-	@echo "    git push origin release"
+	@echo "    git push $(repo) release"
 	@echo "    git checkout -B main"
 	@echo "    s/bump-versions.sh"
 	@echo "    git add version.txt relchans/tyse-v0-dev"

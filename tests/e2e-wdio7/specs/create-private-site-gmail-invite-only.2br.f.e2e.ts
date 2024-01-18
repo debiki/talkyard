@@ -5,6 +5,7 @@ import assert from '../utils/ty-assert';
 import * as utils from '../utils/utils';
 import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import { NewSiteOwnerType } from '../test-constants';
+import settings from '../utils/settings';
 
 let owen_brA: TyE2eTestBrowser;
 let jane_brB: TyE2eTestBrowser;
