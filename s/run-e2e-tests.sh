@@ -330,7 +330,7 @@ function runAllE2eTests {
 
   $r s/wdio-7 --only link-previews-internal-may-see.2br.d --cd -i $args
   $r s/wdio-7 --only link-previews-internal-not-see-cat.2br.d --cd -i $args
-  $r s/wdio-7 --only link-previews-internal-to-cats-not-see.2br.d --cd -i $args
+  $r s/wdio-7 --only link-previews-internal-to-cats-not-see.2br.f --cd -i $args
   $r s/wdio-7 --only link-previews-http-to-https.1br.d --cd -i $args
   $r s/wdio-7 --only link-previews-images-mp4-youtube.1br.d.extln --cd -i $args
   $r s/wdio-7 --only link-previews-twitter-max-editor.1br.d.extln --cd -i $args

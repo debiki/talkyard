@@ -227,9 +227,9 @@ echo ""
 echo "    make  tag-and-push-latest-images  tag=$version_tag"
 echo "    make  push_tag_to_dev_rel_branch  tag=$version_tag"
 echo
-echo "And push a version tag to the development repo:"
+echo "And push a version tag to the development Git repo:"
 echo
-echo "    make  push_tag_to_dev_repo  repo=$REPO  tag=$version_tag"
+echo "    make  push_tag_to_dev_repo  repo=origin  tag=$version_tag"
 echo
 echo "Lastly:"
 echo "    s/bump-versions.sh"
