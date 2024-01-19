@@ -74,7 +74,7 @@ var SearchPageContentComponent = createReactClass(<any> {
     this.searchUseUrlQuery(urlQueryParams);
     if (urlQueryParams.advanced) {
       this.tagsLoaded = true;
-      Server.loadCatsAndTagsPatchStore();  // [search_page_cats_tags]
+      Server.loadCatsAndTagsPatchStore();  // [search_page_cats_tags] [bug_only_priv_cats]
     }
   },
 
@@ -158,6 +158,9 @@ var SearchPageContentComponent = createReactClass(<any> {
     else {
       if (!this.tagsLoaded) {
         this.tagsLoaded = true;
+        // UX BUG [bug_only_priv_cats]: Empties store.publicCategories and places all cats
+        // in restrictedCategories, so the padlock symbol incorrectly appears in front of
+        // all cats in the results list.
         Server.loadCatsAndTagsPatchStore();
       }
       queryStringObj.advanced = 'true';
@@ -228,7 +231,8 @@ var SearchPageContentComponent = createReactClass(<any> {
     else {
       let pagesAndHits: PageAndHits[] = searchResults.pagesAndHits;
       resultsList = pagesAndHits.map((pageAndHits: PageAndHits) =>
-          SearchResultListItem({ pageAndHits: pageAndHits, key: pageAndHits.pageId }));
+          SearchResultListItem({ pageAndHits: pageAndHits, key: pageAndHits.pageId,
+                store }));
     }
 
     let resultsForText = !this.state.lastRawQuery ? null :
@@ -335,7 +339,7 @@ function makeTagLabelValues(tagsStuff: TagsStuff) {
 
 
 
-function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: string | number }) {
+function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: St | Nr, store: Store }) {
   let pageAndHits: PageAndHits = props.pageAndHits;
   let hits = pageAndHits.hits.map(hit =>
       SearchResultHit({ hit: hit, urlPath: pageAndHits.urlPath, key: hit.postNr }));
@@ -343,6 +347,10 @@ function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: string | 
     r.li({ className: 's_SR', key: props.key },
       r.h3({ className: 'esSERP_Hit_PageTitle' },
         r.a({ href: pageAndHits.urlPath }, pageAndHits.pageTitle)),
+        r.span({ className: 'c_F_TsL_T_Cat_Expl' }, t.ft.inC, ' '), 
+        page.CatsOrHomeLink({ page: pageAndHits, store: props.store, skipHome: true }),
+        // Tags in-place editable?  [edit_tags_via_topic_list]
+        TagList({ store: props.store, tags: pageAndHits.pubTags }),
       r.ol({}, hits)));
 }
 

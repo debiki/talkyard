@@ -56,6 +56,13 @@ full text search:
             - TESTS_MISSING  adv search UI incomplete, can only select cats
   username fuzzy search:
             - TESTS_MISSING  and not implemented
+  cats & tags shown properly on SERP:
+            - TESTS_MISSING
+    private tags not shown:  [priv_tags]
+            - TESTS_MISSING  and private tags not implemented
+    private users not shown:  [private_pats]  # assignees, authors
+            - TESTS_MISSING  and private users not implemented
+            
 
 indexing,
 job queue, job_queue_t:

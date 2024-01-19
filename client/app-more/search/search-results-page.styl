@@ -49,7 +49,30 @@
   margin-left: 0;
 
 .esSERP_Hit_PageTitle
-  margin-bottom: 10px;
+  margin: 25px 0 5px;
+  a
+    // The title text is only 16px in topic list, but here it works a bit as a header,
+    // for all hits on that page.
+    font-size: 18px;
+    font-weight: bold;    // forum topic list titles are bold too
+    color: hsl(0 0% 23%); // or blue link color — then, too many colors
+
+// Page categories. Bit more compact, ususally not so interesting on a SERP.
+.s_SR .s_Tb_Pg_Cs
+  display: inline;
+  position: static;
+  padding: 0;
+  margin-right: 7px;
+  font-size: 14px;
+  opacity: 0.9;
+
+// Padding around category names in:  Base Cat —> Sub Cat —> Sub Sub.
+.s_SR .esTopbar_ancestors_link.btn
+  padding: 0 3px;
+
+// The arrow in: Some Cat —> Sub Cat.
+.s_Tb_Pg_Cs > li:not(:last-child)::after
+  top: -3px;  // if -1px, then too far down, but -3 is in the middle. Hmm
 
 .esSERP_Hit_In
   font-style: italic;

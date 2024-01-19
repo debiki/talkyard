@@ -289,7 +289,7 @@ export const TopBar = createComponent({
     // Before we've scrolled down, the title and categories are visible
     // in the page contents instead.
     const catsOrHomeLink: Ay | Nl = !isBitDown ? false :
-            debiki2.page.CatsOrHomeLink(page, store, /* forTopbar = */ true);
+            debiki2.page.CatsOrHomeLink({ page, store, forTopbar: true });
 
     const anyUnsafeTitleSource: St | U = page.postsByNr[TitleNr]?.unsafeSource;
     const showTitle = isBitDown && anyUnsafeTitleSource;

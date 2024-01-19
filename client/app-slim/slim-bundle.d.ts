@@ -533,6 +533,8 @@ declare namespace debiki2 {
 
   namespace page {
     var Post;
+    function CatsOrHomeLink(ps: { page: PageTypeAncestors,
+          store: Store, forTopbar?: Bo, skipHome?: true }): RElm | N;
     namespace Hacks {
       function navigateTo(path: St): V;
       function processPosts(startElemId?: string);

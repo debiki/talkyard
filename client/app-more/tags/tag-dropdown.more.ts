@@ -57,6 +57,8 @@ export function openTagDropdown(atRect, ps: {  // I18N tag menu
       !imStaff || !(tagType.wantsValue >= NeverAlways.Allowed) ? null : ExplainingListItem({
           title: isVal(ps.anyValue) ? `Edit tag value` : `Set tag value`,
           text: !isVal(ps.anyValue) ? null :
+          // UX WOULD: For non-staff, maybe a "Copy value" + showing the value, could be nice?
+          // Not important — it's visible in the tag list: "tag-name: value".
                     rFr({}, `Current value: `, r.samp({}, ps.anyValue)),
           tabIndex: 100,
           onSelect: () => {

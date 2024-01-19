@@ -1011,6 +1011,12 @@ interface PageDiscPropsSource extends DiscPropsSource {
 }
 
 
+interface PageTypeAncestors {
+  pageRole: PageType; // RENAME to pageType
+  ancestorsRootFirst?: Ancestor[];
+}
+
+
 // A page with real user written content, e.g. a discussion, chat, info page or homepage.
 // (Should Page instead extend PageMeta? There's lots of dupl fields!
 // Or should Page have a PageMeta field (delegation)? Let's wait.)
@@ -1020,7 +1026,7 @@ interface Page
     // So we can see from where a setting comes — is it from some ancestor category
     // or group? Or the whole forum? Otherwise, hard to troubleshoot unexpected
     // effective settings.
-    extends TopicInterfaceSettings, PageDiscPropsSource {
+    extends TopicInterfaceSettings, PageDiscPropsSource, PageTypeAncestors {
   dbgSrc: string;
   pageId: PageId;
   pageVersion: PageVersion;
@@ -1897,17 +1903,18 @@ interface SearchQuery {
 }
 
 
-interface SearchResults {
+interface SearchResults extends HasStorePatch {
   thisIsAll: boolean;
   pagesAndHits: PageAndHits[];
   warnings: ErrMsgCode[];
 }
 
 
-interface PageAndHits {
+interface PageAndHits extends PageTypeAncestors {
   pageId: PageId;
   pageTitle: string;
-  pageType: PageRole;
+  pubTags: Tag[];
+  authorId: UserId;
   urlPath: string;
   hits: SearchHit[];
 }
@@ -1921,6 +1928,10 @@ interface SearchHit {
   currentRevisionNr: number;
 }
 
+
+interface HasStorePatch {
+  storePatch: StorePatch;
+}
 
 /**
  * Describes how to update parts of the store. Can be e.g. a new chat message and the author.

@@ -596,14 +596,14 @@ type OnErrorFn = (xhr: XMLHttpRequest) => any;
 ///
 function postAndPatchStore(
         urlPath: St,
-        onOk: (response: StorePatch) => Vo,
+        onOk: (resp: HasStorePatch | StorePatch) => V,
         data: JsonData | OnErrorFn,
         onErr?: JsonData | OnErrorFn,
         opts?: { showLoadingOverlay?: Bo },  // default true
         ) {
-  postJsonSuccess(urlPath, response => {
-    ReactActions.patchTheStore(response);
-    onOk(response);
+  postJsonSuccess(urlPath, resp => {
+    ReactActions.patchTheStore(resp.storePatch || resp);
+    onOk(resp);
   }, data, onErr, opts);
 }
 
@@ -2403,9 +2403,9 @@ export function deleteApiSecrets(secretNrs: ApiSecretNr[], onOk: () => void) {
 }
 
 
-export function search(rawQuery: string, success: (results: SearchResults) => void,
-    onError?: () => void, opts?: { showLoadingOverlay?: false }) {
-  postJsonSuccess('/-/search', success, { rawQuery: rawQuery }, onError, opts);
+export function search(rawQuery: St, onOk: (results: SearchResults) => V,
+        onErr?: () => V, opts?: { showLoadingOverlay?: false }) {
+  postAndPatchStore('/-/search', onOk, { rawQuery }, onErr, opts);
 }
 
 

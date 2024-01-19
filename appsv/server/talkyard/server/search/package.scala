@@ -145,7 +145,17 @@ package object search {
   case class SearchResultsCanSee(
     pagesAndHits: Seq[PageAndHits],
     // catsCanSeeById: Map[..]  //  [search_results_extra_cat_lookup]  ?
-    )
+    ) {
+
+    def tagTypeIds: Set[TagTypeId] = {
+      val ids = mut.HashSet.empty[TagTypeId]
+      UX; SHOULD // incl tags on comments too, not just the page?
+      for (pageAndHits <- pagesAndHits; tag <- pageAndHits.pageStuff.pageTags) {
+        ids.add(tag.tagTypeId)
+      }
+      ids.to[imm.Set]
+    }
+  }
 
 
   def makeElasticSearchJsonDocFor(siteId: SiteId, pageMeta: PageMeta,
