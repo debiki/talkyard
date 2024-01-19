@@ -94,6 +94,7 @@ val appDependencies = Seq(
   Dependencies.Libs.logbackClassic,
   Dependencies.Libs.logbackCore,
   Dependencies.Libs.logstashLogbackEncoder,
+  Dependencies.Libs.log4jCore, // ElasticSearch uses Log4j
 
   // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
   // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
