@@ -1913,6 +1913,7 @@ interface SearchResults extends HasStorePatch {
 interface PageAndHits extends PageTypeAncestors {
   pageId: PageId;
   pageTitle: string;
+  pageType: PageType; // remove, once renamed in PageTypeAncestors.
   pubTags: Tag[];
   authorId: UserId;
   urlPath: string;

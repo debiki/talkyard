@@ -19,12 +19,12 @@ package controllers
 
 import com.debiki.core._
 import debiki.{RateLimits, SiteTpi}
+import debiki.JsonUtils.{parseOptInt32}
 import talkyard.server.search._
 import talkyard.server.http._
 import talkyard.server.authz.AuthzCtxOnForum
 import debiki.EdHttp._
 import scala.collection.immutable.Seq
-import Prelude._
 import debiki.dao.SiteDao
 import talkyard.{server => tysv}
 import talkyard.server.JsX.{JsErrMsgCode, JsNumberOrNull, JsTag, JsTagTypeArray}
@@ -60,15 +60,18 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
     import request.dao
 
     val rawQuery = (request.body \ "rawQuery").as[String]
+    val anyOffset = parseOptInt32(request.body, "offset")
     val searchQuery = SearchQueryParser.parseRawSearchQueryString(rawQuery, dao.readOnly)
 
     dao.fullTextSearch(searchQuery, anyRootPageId = None, request.authzContext,
-          addMarkTagClasses = true) map { results: SearchResultsCanSee =>
+            anyOffset = anyOffset, addMarkTagClasses = true) map {
+          results: SearchResultsCanSee =>
       import play.api.libs.json._
       val tagTypeIds: Set[TagTypeId] = results.tagTypeIds
       val tagTypes = dao.getTagTypesForIds(tagTypeIds)
       val jsonMaker = new debiki.JsonMaker(dao)
       OkSafeJson(Json.obj(
+          "thisIsAll" -> JsBoolean(results.pagesAndHits.size < BatchSize),
           "warnings" -> JsArray(searchQuery.warnings.map(JsErrMsgCode)),
           "storePatch" -> Json.obj(
             // Later, excl private-visibility tags here. [priv_tags]
@@ -156,7 +159,7 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // that is, don't:  <mark class="...">  — so people cannot write code that
     // relies on those classes.
     dao.fullTextSearch(searchQuery, anyRootPageId = None, authzCtx,
-          addMarkTagClasses = false) map { results: SearchResultsCanSee =>
+          anyOffset = None, addMarkTagClasses = false) map { results: SearchResultsCanSee =>
 
       // We're using the authz ctx below not to filter pages and comments, but to
       // know if names of other users should be included — in the future, some

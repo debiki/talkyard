@@ -79,6 +79,8 @@ import talkyard.server.JsX._
   */
 package object search {
 
+  val BatchSize = 50
+
   /** These are the languages ElasticSearch can index. See:
     *   https://www.elastic.co/guide/en/elasticsearch/reference/master/analysis-lang-analyzer.html
     *       #_configuring_language_analyzers

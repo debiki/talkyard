@@ -2403,9 +2403,9 @@ export function deleteApiSecrets(secretNrs: ApiSecretNr[], onOk: () => void) {
 }
 
 
-export function search(rawQuery: St, onOk: (results: SearchResults) => V,
+export function search(ps: { rawQuery: St, offset?: Nr }, onOk: (results: SearchResults) => V,
         onErr?: () => V, opts?: { showLoadingOverlay?: false }) {
-  postAndPatchStore('/-/search', onOk, { rawQuery }, onErr, opts);
+  postAndPatchStore('/-/search', onOk, ps, onErr, opts);
 }
 
 

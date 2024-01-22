@@ -54,6 +54,8 @@ full text search:
             - search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT
   advanced search page:
             - TESTS_MISSING  adv search UI incomplete, can only select cats
+  load more, result offset:
+            - TESTS_MISSING  TyTSERPLOADMORE
   username fuzzy search:
             - TESTS_MISSING  and not implemented
   cats & tags shown properly on SERP:

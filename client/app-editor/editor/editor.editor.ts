@@ -1619,7 +1619,7 @@ export const Editor = createFactory<any, EditorState>({
       return;
     }
 
-    Server.search(state.title, (searchResults: SearchResults) => {
+    Server.search({ rawQuery: state.title }, (searchResults: SearchResults) => {
       const state: EditorState = this.state;
       if (this.isGone || !state.visible)
         return;
