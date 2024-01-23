@@ -5774,6 +5774,12 @@ export class TyE2eTestBrowser {
         await this.switchToEmbEditorIframeIfNeeded();
         await this.editor.clickSave();
         await this.waitUntilLoadingOverlayGone();
+        // E2EBUG [refresh_race] Sometimes we get to here, although the post hasn't been
+        // saved yet. How's that possible? Maybe the loading overlay has not *appeared* yet?
+        // What can happen then, if the page is refreshed afterwards, is that the
+        // unsaved comment becomes a *draft* and the current test breaks.
+        // (Currently all? such loations work around this (see [refresh_race]), not
+        // a problem for now.)
       },
 
       clickSave: async () => {

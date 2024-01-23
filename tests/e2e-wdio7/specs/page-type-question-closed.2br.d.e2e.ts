@@ -52,12 +52,12 @@ describe(`page-type-question-closed.2br.d  TyTPATYQUESTCLOSD`, () => {
     site.members.push(michael);
     idAddress = await server.importSiteData(site);
     siteId = idAddress.id;
+    await server.skipLimits(siteId, { rateLimits: true });
   });
 
   it("Maria logs in", async () => {
     await mariasBrowser.go2(idAddress.origin);
     await mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
-    await mariasBrowser.disableRateLimits();
   });
 
   it("She posts a question", async () => {
@@ -79,11 +79,11 @@ describe(`page-type-question-closed.2br.d  TyTPATYQUESTCLOSD`, () => {
   it("... posts two answers", async () => {
     await michaelsBrowser.complex.replyToOrigPost("Yes, a cat");     // becomes post nr 2
     await michaelsBrowser.complex.replyToOrigPost("Yes, an otter");  // becomes post nr 3
+    await michaelsBrowser.topic.waitForPostNrVisible(otterAnserNr);  // avoids [refresh_race]
   });
 
   it("... attempts to select an answer, but cannot (not his question)", async () => {
     await michaelsBrowser.topic.refreshUntilPostNrAppears(otterAnserNr);
-    await michaelsBrowser.topic.waitForPostNrVisible(catAnserNr);  // can remove
     assert.not(await michaelsBrowser.topic.canSelectAnswer());  // (2PR5PH)
   });
 

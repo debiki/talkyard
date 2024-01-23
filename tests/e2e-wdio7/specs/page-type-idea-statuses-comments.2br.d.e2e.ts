@@ -56,12 +56,12 @@ describe("page-type-idea-statuses-comments.2br.d  TyTPATYIDEA", () => {
     site.members.push(corax);
     idAddress = await server.importSiteData(site);
     siteId = idAddress.id;
+    await server.skipLimits(siteId, { rateLimits: true });
   });
 
   it("Maria logs in", async () => {
     await mariasBrowser.go2(idAddress.origin);
     await mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
-    await mariasBrowser.disableRateLimits();
   });
 
   it("She posts a topic, type Idea", async () => {
@@ -138,14 +138,16 @@ describe("page-type-idea-statuses-comments.2br.d  TyTPATYIDEA", () => {
     await mariasBrowser.complex.addProgressReply(bottomCommentTwoText);  // #post-10
   });
 
+  it("The progress reply has the correct contents", async () => {
+    // Post 9 is a meta post, not yet visible.  This step needed because: [refresh_race]
+    await mariasBrowser.topic.waitForPostAssertTextMatches(10, bottomCommentTwoText);
+  });
+
   it("Refresh page", async () => {
     // currently needed, so event posts will appear [2PKRRSZ0]
     await mariasBrowser.topic.refreshUntilPostNrAppears(9, { isMetaPost: true });
+    // Also takes a while for the server to refresh its cache? [refresh_race]
     await mariasBrowser.topic.refreshUntilPostNrAppears(10);
-  });
-
-  it("The progress reply has the correct contents", async () => {
-    await mariasBrowser.topic.waitForPostAssertTextMatches(10, bottomCommentTwoText);
   });
 
   it("... the meta post too", async () => {

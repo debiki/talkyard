@@ -105,6 +105,7 @@ describe("link-previews-images-mp4-youtube.1br.extln  TyTE2E2G3MAWKT4", () => {
     site.settings.requireVerifiedEmail = false;
     site.members.push(maria);
     idAddress = await server.importSiteData(site);
+    await server.skipLimits(idAddress.id, { rateLimits: true });
   });
 
   it("Owen goes to the homepage and logs in", async () => {
@@ -172,7 +173,6 @@ describe("link-previews-images-mp4-youtube.1br.extln  TyTE2E2G3MAWKT4", () => {
   it("Owen leaves; Maria logs in", async () => {
     await owensBrowser.topbar.clickLogout();
     await mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
-    await mariasBrowser.disableRateLimits();
   });
 
   it("She can also post image urls, which get converted to preview <img> tags", async () => {
