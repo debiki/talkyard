@@ -14,28 +14,35 @@ import { j2s, logMessage, logWarning, logErrorNoTrace, logServerRequest, die, di
 declare function require(path: string): any;
 const syncRequest = require('sync-request');
 
-let xsrfTokenAndCookies;
+// [XSRF token, cookie-string] by site origin.
+let xsrfTokenAndCookies = {};
 
 let settings: TestSettings;
+
+
+function initOrExit(theSettings) {
+  settings = theSettings;
+  fetchXsrfTokenOrExit(settings.mainSiteOrigin);
+}
+
 
 /// Exits on failure — otherwise wdio prints a 100+ lines long help text,
 /// so people wouldn't see any error messages logged below.
 /// (Any e2e tests cannot run anyway, if this won't work.)
 ///
-function initOrExit(theSettings) {
-  settings = theSettings;
+function fetchXsrfTokenOrExit(apiOrigin: St) {
   let response;
   try {
-    response = syncRequest('GET', settings.mainSiteOrigin);
+    response = syncRequest('GET', apiOrigin);
   }
   catch (ex) {
-    logErrorNoTrace(`Error talking with:  ${settings.mainSiteOrigin}\n` +
+    logErrorNoTrace(`Error talking with:  ${apiOrigin}\n` +
         `Is the server not running?  [TyEE2ESRVOFF]\n\n`, ex);
     process.exit(1);
   }
 
   if (response.statusCode !== 200) {
-    logErrorNoTrace(`Error response from:  ${settings.mainSiteOrigin}  ` +
+    logErrorNoTrace(`Error response from:  ${apiOrigin}  ` +
         `when requesting xsrf token and cookies [TyEE2ESRVSTS]\n`);
     logErrorNoTrace(showResponse(response));
     process.exit(1);
@@ -58,13 +65,13 @@ function initOrExit(theSettings) {
 
   if (!xsrfToken) {
     logErrorNoTrace(
-        `Got no xsrf token from:  ${settings.mainSiteOrigin}   [TyEE2ESRVXSRF]\n` +
+        `Got no xsrf token from:  ${apiOrigin}   [TyEE2ESRVXSRF]\n` +
         `Cookie headers:\n` +
         `    ${j2s(cookies)}\n`);
     process.exit(1);
   }
 
-  xsrfTokenAndCookies = [xsrfToken, cookieString];
+  xsrfTokenAndCookies[apiOrigin] = [xsrfToken, cookieString];
 }
 
 
@@ -75,6 +82,12 @@ function postOrDie(url, data, opts: { apiRequesterId?: number, apiSecret?: strin
   dieIf(!settings.e2eTestPassword, "No E2E test password specified [EsE2WKG4]");
   dieIf(!!opts.apiRequesterId !== !!opts.apiSecret,
         "API user id or secret missing [TyE450KST]");
+
+  // Some _dupl_xsrf_code.
+  const originMatch = url.match(/^https?:\/\/([^/])+.*$/);
+  dieIf(!originMatch, 'TyE503MSKH');
+  const origin = originMatch[0];
+  const xsrfTokenAndCookie = xsrfTokenAndCookies[origin];
 
   const passwordParam =
       (url.indexOf('?') === -1 ? '?' : '&') + 'e2eTestPassword=' + settings.e2eTestPassword;
@@ -87,9 +100,9 @@ function postOrDie(url, data, opts: { apiRequesterId?: number, apiSecret?: strin
         'Authorization': 'Basic ' +
             utils.encodeInBase64(`talkyardId=${opts.apiRequesterId}:${opts.apiSecret}`)
       }
-    : (!xsrfTokenAndCookies ? {} : {
-        'X-XSRF-TOKEN': xsrfTokenAndCookies[0],
-        'Cookie': xsrfTokenAndCookies[1]
+    : (!xsrfTokenAndCookie ? {} : {
+        'X-XSRF-TOKEN': xsrfTokenAndCookie[0],
+        'Cookie': xsrfTokenAndCookie[1]
       });
 
   logServerRequest(`POST ${url}, headers: ${j2s(headers)} ... [TyME2EPOST]`);
@@ -131,7 +144,7 @@ function postOrDie(url, data, opts: { apiRequesterId?: number, apiSecret?: strin
     logMessage("Getting a new xsrf token; the old one has expired ...");
 
     // If this won't work, the tests won't work anyway, feels ok to exit?
-    initOrExit(settings);
+    fetchXsrfTokenOrExit(origin);
 
     logMessage("... Done getting new xsrf token.");
     return postOrDie(url, data, { ...opts, retryIfXsrfTokenExpired: false });
@@ -175,9 +188,15 @@ function getOrDie(url) {
   const passwordParam =
       (url.indexOf('?') === -1 ? '?' : '&') + 'e2eTestPassword=' + settings.e2eTestPassword;
 
-  const headers = !xsrfTokenAndCookies ? {} : {
-    'X-XSRF-TOKEN': xsrfTokenAndCookies[0],
-    'Cookie': xsrfTokenAndCookies[1]
+  // Some _dupl_xsrf_code.
+  const originMatch = url.match(/^https?:\/\/([^/])+.*$/);
+  dieIf(!originMatch, 'TyE503MSKH');
+  const origin = originMatch[0];
+  const xsrfTokenAndCookie = xsrfTokenAndCookies[origin];
+
+  const headers = !xsrfTokenAndCookie ? {} : {
+    'X-XSRF-TOKEN': xsrfTokenAndCookie[0],
+    'Cookie': xsrfTokenAndCookie[1]
   };
 
   const response = syncRequest('GET', url + passwordParam, { headers: headers });
@@ -227,6 +246,9 @@ function importRealSiteData(siteData: SiteData2): IdAddress {
   const idAddr = postOrDie(url, { ...siteData, isTestSiteOkDelete: true }).bodyJson();
   dieIf(!idAddr.id, "No site id in import-site response [TyE4STJ2]",
       showResponseBodyJson(idAddr));
+
+  fetchXsrfTokenOrExit(idAddr.origin);
+
   return idAddr;
 }
 
@@ -242,6 +264,9 @@ function importTestSiteData(siteData: SiteData): IdAddress {
   const idAddr = postOrDie(url, { ...siteData, isTestSiteOkDelete: true }).bodyJson();
   dieIf(!idAddr.id, "No site id in import-site response [TyE7UGK2]",
       showResponseBodyJson(idAddr));
+
+  fetchXsrfTokenOrExit(idAddr.origin);
+
   return idAddr;
 }
 

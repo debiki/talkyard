@@ -821,7 +821,7 @@ class EdSecurity(globals: Globals) {
           return XsrfBad
         }
         if (siteIdInToken != mustBeSiteId) {
-          return XsrfBad
+          return XsrfBad // +  "Wrong site id: $siteIdInToken"
         }
 
         // Check isn't too old.
