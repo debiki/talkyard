@@ -59,7 +59,7 @@
 //  COULD_OPTIMIZE  Do just once, and remember all cookies?
 // RENAME to getHostCookie() and setHostCookie() ?
 window.getSetCookie = function(nameWoPrefix, value, options) {
-    const name = (eds.secure ? '__Host-' : '') + nameWoPrefix;
+    var name = (eds.secure ? '__Host-' : '') + nameWoPrefix;
     
     if (typeof value != 'undefined') { // name and value given, set cookie
         options = options || {};
