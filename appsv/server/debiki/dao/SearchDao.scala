@@ -38,7 +38,7 @@ trait SearchDao {
     *   <mark class="esHL1">text hit</mark> should be included or not.
     */
   def fullTextSearch(searchQuery: SearchQuery, anyRootPageId: Opt[PageId],
-          authzCtx: AuthzCtxOnForum, addMarkTagClasses: Bo)
+          authzCtx: AuthzCtxOnForum, anyOffset: Opt[i32], addMarkTagClasses: Bo)
           : Future[SearchResultsCanSee] = {
     COULD_OPTIMIZE // cache the most recent N search results for M minutes?
     // And refresh whenever anything changes anywhere, e.g. gets edited /
@@ -46,7 +46,8 @@ trait SearchDao {
     // But! Bug risk! What if takes 1 second until ElasticSearch is done indexing —
     // and we cached sth 0.5 before. Stale search results cache!
     searchEngine.search(searchQuery, anyRootPageId, user = authzCtx.requester,
-          addMarkTagClasses = addMarkTagClasses) map { hits: Seq[SearchHit] =>
+          anyOffset = anyOffset, addMarkTagClasses = addMarkTagClasses) map {
+              hits: Seq[SearchHit] =>
       groupByPageAccessCheck(hits, authzCtx)
     }
   }

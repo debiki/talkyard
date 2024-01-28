@@ -45,6 +45,19 @@ declare function smoothScroll(elem: Element, x: number, y: number,
 // Defined in client/third-party/get-set-cookie.js.
 declare function getSetCookie(cookieName: St, value?: St, options?: Ay): St | Nl;
 
+function getCookie(name, altName) {
+  let val = getSetCookie(name);
+  if (val === null) {
+    val = getSetCookie(altName);
+  }
+  return val;
+}
+
+function getXsrfCookie() {
+  // Backw compat, see [old_xsrf_cookie_name] in the Scala code.
+  return getCookie('TyCoXsrf', 'XSRF-TOKEN');
+}
+
 
 // backw compat, later, do once per file instead (don't want a global 'r').
 //

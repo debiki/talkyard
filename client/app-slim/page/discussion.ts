@@ -312,7 +312,7 @@ export const TitleBodyComments = createComponent({
     const skipTitle = skipCats || pageRole === PageRole.About;
 
     const anyTitle = skipTitle ? null : Title({ store });
-    const catsOrHomeLink = skipCats ? null : CatsOrHomeLink(page, store);
+    const catsOrHomeLink = skipCats ? null : CatsOrHomeLink({ page, store });
 
     let anyPostHeader = null;
     //let anySocialLinks = null;

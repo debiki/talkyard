@@ -41,7 +41,11 @@ declare const rFragment: any;  // soo long! CLEAN_UP REMOVE
 declare const rFr: any;      // better
 
 declare function doNextFrameOrNow(x);
+
 declare function getSetCookie(cookieName: string, value?: string, options?: any): string | null;
+declare function getCookie(cookieName: St): St | N
+declare function getXsrfCookie(): St | N
+
 declare const parseQueryString: (s: St) => UrlParamsMap;
 declare const stringifyQueryString: (s: UrlParamsMap) => St;
 
@@ -332,6 +336,7 @@ declare namespace debiki2 {
   function event_isCmdShiftClick(event): Bo;
   function event_isCtrlEnter(event): boolean;
   function event_isEscape(event): boolean;
+  function event_isSpace(event): Bo;
   function page_isOpenChat(pageRole: PageRole): Bo;
   function page_isChat(pageRole: PageRole): boolean;
   function page_isPrivateGroup(pageRole: PageRole): boolean;
@@ -528,6 +533,8 @@ declare namespace debiki2 {
 
   namespace page {
     var Post;
+    function CatsOrHomeLink(ps: { page: PageTypeAncestors,
+          store: Store, forTopbar?: Bo, skipHome?: true }): RElm | N;
     namespace Hacks {
       function navigateTo(path: St): V;
       function processPosts(startElemId?: string);

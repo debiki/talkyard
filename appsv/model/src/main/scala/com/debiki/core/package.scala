@@ -2149,6 +2149,7 @@ package object core {
   def REMINDER = ()       // Sth to get reminded about at (or after) a certain date.
   def FIX_AFTER = ()      // Bug to fix after a certain date.
   def REMOVE = ()
+  def REMOVE_AFTER = ()
   def CLEAN_UP = ()       // Unused stuff that should be deleted after a grace period, or when
                           // the developers are less short of time.
   def USE_StaleStuff_INSTEAD = ()

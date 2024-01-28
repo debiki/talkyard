@@ -144,10 +144,13 @@ const considerQueryParams = windowWithTalkyardProps.talkyardConsiderQueryParams;
 // For automatic Single Sign-On with PASETO authn tokens, either in a variable,
 // or a cookie (cookie better? So not incl in html, although encrypted).
 const authnTokenInVar = windowWithTalkyardProps.talkyardAuthnToken;
-const authnTokenCookieMatches: St[] | Nl =
+const authnTokenCookieMatches: St[] | Nl = (
         document.cookie.match(
             // (There're no spaces in PASETO tokens.)
-            /(^|;)\s*TalkyardAuthnToken\s*=\s*([^\s;]+)/);
+            /(^|;)\s*__Host-TalkyardAuthnToken\s*=\s*([^\s;]+)/) ||
+        // Backw compat. Remove later? [ty_v1]
+        document.cookie.match(
+                   /(^|;)\s*TalkyardAuthnToken\s*=\s*([^\s;]+)/));
 const authnTokenInCookie: StV = authnTokenCookieMatches ? authnTokenCookieMatches[2] : null;
 
 if (authnTokenInCookie) {

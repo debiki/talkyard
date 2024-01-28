@@ -119,7 +119,13 @@ CMD rm -f /opt/talkyard/app/RUNNING_PID && exec /opt/talkyard/app/bin/talkyard-s
   # log4j2 problem, disable this:
   -Dlog4j2.formatMsgNoLookups=true \
   #
-  -Dlogger.file=/opt/talkyard/app/conf/logback-prod.xml \
+  # Has no effect? Is this only for dev mode?
+  # https://www.playframework.com/documentation/2.8.x/SettingsLogger#Custom-configuration
+  #-Dlogger.file=/opt/talkyard/app/conf/logback-prod.xml \
+  # This works instead?
+  # Docs: https://logback.qos.ch/manual/configuration.html
+  -Dlogback.configurationFile=/opt/talkyard/app/conf/logback-prod.xml \
+  #
   -Dconfig.file=${CONFIG_FILE}
 
 # and?

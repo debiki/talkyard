@@ -36,7 +36,7 @@
  *
  * ...But still a bit needed, for any non-React links in the custom-html-top-header.
  */
-export function navigateTo(path: St): Vo {
+export function navigateTo(path: St): V | true {
   doNavigate(path);
 }
 
@@ -48,7 +48,7 @@ export const ExtReactRootNavComponent = createReactClass({
   displayName: 'ExtReactRootNavComponent',
 
   UNSAFE_componentWillMount: function() {
-    doNavigate = (url: string) => {
+    doNavigate = (url: St): V | true => {
       // this.props.location is made available by ReactRouter — we should be
       // wrapped in a Router(..., Routes( ... )) component.
       const loc = this.props.location;
@@ -73,6 +73,7 @@ export const ExtReactRootNavComponent = createReactClass({
 
       // We can single-page-navigate without any page reload.
       this.props.history.push(localPath);
+      return true;
 
       // (Now, ReactRouter will mount new routes and components — and they'll
       // typically fetch json from the server.)

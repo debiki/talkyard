@@ -19,7 +19,7 @@
      - Commit cdbd41fa "Remove ed-logging, to simplify build" in this repo.
     So don't use ed.stackdriver.StackdriverLayout, in dev-test mode. Instead: -->
     <encoder>
-      <pattern>%date{HH:mm:ss.SSS} %-3level %logger{15} %message%n%xException{50}</pattern>
+      <pattern>%date{YYMMDD HH:mm:ss.SSS} %-5level %logger{15}  %message%n%xException{50}</pattern>
     </encoder>
   </appender>
 
@@ -34,22 +34,23 @@
     </rollingPolicy>
     <!-- Don't use ed.stackdriver.StackdriverLayout [2ABKR05]  -->
     <encoder>
-      <pattern>%date{HH:mm:ss.SSS} %-3level %logger{15} - %message%n%xException{50}</pattern>
+      <pattern>%date{YYMMDD HH:mm:ss.SSS} %-5level %logger{15}  %message%n%xException{50}</pattern>
     </encoder>
   </appender>
 
-  <logger name="play" level="INFO" />
-  <logger name="play.shaded" level="INFO" />
   <logger name="application" level="TRACE" />
   <logger name="tysvapp" level="TRACE" />
-  <logger name="tysvapp.MemCache" level="TRACE" />
+  <logger name="tysvapp.MemCache" level="DEBUG" />
+  <!-- [ty_v1] Remove.  -->
+  <logger name="ed.server" level="TRACE" />
+
+  <!-- Nice to have here, if changing <root> level to, say, DEBUG. -->
+  <logger name="play" level="INFO" />
+  <logger name="play.shaded" level="INFO" />
   <logger name="org.elasticsearch" level="INFO" />
   <logger name="com.zaxxer.hikari" level="INFO" />
   <logger name="org.flywaydb" level="INFO" />
   <logger name="application-akka.actor" level="INFO" />
-
-  <!-- [ty_v1] Remove.  -->
-  <logger name="ed.server" level="TRACE" />
 
   <root level="INFO">
     <appender-ref ref="STDOUT" />

@@ -37,9 +37,21 @@ class SearchEngine(
   private val siteId: SiteId,
   private val elasticSearchClient: Client) extends TyLogging {
 
-  def search(searchQuery: SearchQuery, anyRootPageId: Option[String], user: Option[Participant],
-        addMarkTagClasses: Boolean)
+  /**
+    *
+    * @param searchQuery
+    * @param anyRootPageId
+    * @param user
+    * @param anyOffset — Later, use some kind of cursor instead, so no results
+    *   gets accidentally skipped. (Which, although unlikely, could happen if
+    *   something gets edited in between an offset 0 and offset N query.)
+    * @param addMarkTagClasses
+    */
+  def search(searchQuery: SearchQuery, anyRootPageId: Opt[St], user: Opt[Pat],
+        anyOffset: Opt[i32], addMarkTagClasses: Bo)
         : Future[immutable.Seq[SearchHit]] = {
+    // Tests:
+    // - TESTS_MISSING  TyTSERPLOADMORE
 
     if (searchQuery.isEmpty)
       return Future.successful(Nil)
@@ -249,8 +261,8 @@ class SearchEngine(
       // Skip: .setSearchType(SearchType.QUERY_AND_FETCH)
       .setQuery(boolQuery)
       .highlighter(highlighter)
-      .setFrom(0)        // offset
-      .setSize(60)       // num hits to return
+      .setFrom(anyOffset getOrElse 0) // Later, [use_search_results_cursor] instead.
+      .setSize(BatchSize)       // num hits to return
       .setExplain(true)  // includes hit ranking
       .setRouting(siteId.toString)  // all data for this site is routed by siteId [4YK7CS2]
 

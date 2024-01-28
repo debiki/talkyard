@@ -27,6 +27,9 @@
 // (Could move to more-bundle.js — but it's nice to be able to create the menu
 // items inline, directly in slim-bundle.js.)
 
+/// <reference path="../utils/utils.ts" />
+/// <reference path="../page/hacks.ts" />
+
 //------------------------------------------------------------------------------
    namespace debiki2.util {
 //------------------------------------------------------------------------------
@@ -52,11 +55,15 @@ export var ExplainingListItem = createComponent({
   render: function() {
     const props: ExplainingListItemProps = this.props;
     const entry: ExplainingTitleText = this.props;
-    // @ifdef DEBUG
     // (Both onNav and linkTo are ok together — see the ExplainingListItemProps interface docs.)
-    dieIf((props.onClick || props.onSelect) && (props.onNav || props.linkTo), 'TyEDBLACTN0356');
+    const isLink = props.onNav || props.linkTo;
+    const isButton = props.onClick || props.onSelect;
+
+    // @ifdef DEBUG
+    dieIf(isButton && isLink, 'TyEDBLACTN0356');
     dieIf(!props.onClick && !props.onSelect && !props.linkTo, 'TyE0ACTN03825');
     // @endif
+
     const activeClass =
         props.active || _.isUndefined(props.active) && (
           props.onSelect && !isUndef(props.eventKey) &&
@@ -72,12 +79,23 @@ export var ExplainingListItem = createComponent({
 
     const linkTo = props.disabled ? undefined : props.linkTo;
 
-    const elemFn = props.linkTo ? LinkUnstyled : r.a;
+    const elemFn = isButton ? r.button : (props.linkTo ? LinkUnstyled : r.a);
 
     return (
-      r.li({ className: 'esExplDrp_entry' + activeClass + disabledClass},
+      r.li({ className: 'esExplDrp_entry' + activeClass + disabledClass },
         elemFn.apply(this, [
-            { onClick, to: linkTo, id: props.id, className: props.className },
+            { onClick, to: linkTo, id: props.id, className: props.className,
+                onKeyDown: (event) => {
+                  // Without this, only Enter (not Space) follows links (in Chrome, my laptop).
+                  if (isLink && event_isSpace(event)) {
+                    if (props.onNav) {
+                      props.onNav(event);
+                    }
+                    page.Hacks.navigateTo(props.linkTo);
+                  }
+                },
+                tabIndex: props.tabIndex || 1000,
+            },
             r.div({ className: 'esExplDrp_entry_title' }, entry.title),
             r.div({ className: 'esExplDrp_entry_expl' }, entry.text)]),
         subStuff));

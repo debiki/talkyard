@@ -330,7 +330,7 @@ function runAllE2eTests {
 
   $r s/wdio-7 --only link-previews-internal-may-see.2br.d --cd -i $args
   $r s/wdio-7 --only link-previews-internal-not-see-cat.2br.d --cd -i $args
-  $r s/wdio-7 --only link-previews-internal-to-cats-not-see.2br.d --cd -i $args
+  $r s/wdio-7 --only link-previews-internal-to-cats-not-see.2br.f --cd -i $args
   $r s/wdio-7 --only link-previews-http-to-https.1br.d --cd -i $args
   $r s/wdio-7 --only link-previews-images-mp4-youtube.1br.d.extln --cd -i $args
   $r s/wdio-7 --only link-previews-twitter-max-editor.1br.d.extln --cd -i $args
@@ -405,14 +405,14 @@ function runAllE2eTests {
 
   $r s/wdio --only admin-move-hostname.2browsers $args
 
-  $r s/wdio --only password-login-reset.2browsers $args
+  $r s/wdio-7 --only password-login-reset.2br.f --cd -i $args   # pretty ...
   $r s/wdio --only user-profile-access $args
   $r s/wdio --only user-profile-change-username $args
   $r s/wdio --only user-profile-change-email.2browsers $args
-  $r s/wdio --only user-profile-change-password.2br.mtime $args
+  $r s/wdio --only user-profile-change-password.2br.mtime $args  # ... similar
   $r s/wdio --only user-profile-cannot-delete-idp-email.1br.extidp $args
   $r s/wdio --only user-profile-activity-private.2browsers $args
-  $r s/wdio --only user-self-delete-upd-groups.2browsers $args
+  $r s/wdio-7 --only user-self-delete-upd-groups.2br.f.e2e.ts --cd -i $args
 
   $r s/wdio --only group-profile-change-things.2browsers $args
 

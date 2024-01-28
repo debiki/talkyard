@@ -173,15 +173,18 @@ trait TagsDao {
 
 
   def getTagTypesForTags(tags: Seq[Tag]): Seq[TagType] = {
-    // This should be faster than constructing a Set to get O(num-tags).
-    // Is O(num-types * num-tags). [On2]. WOULD_OPTIMIZE
+    getTagTypesForIds(tags.map(_.tagTypeId).toSet)
+  }
+
+
+  def getTagTypesForIds(tagIds: Set[TagTypeId]): Seq[TagType] = {
     val tagTypes = getAllTagTypesSeq()
     /* Could:
     if (tags.length * tagTypes.length > 2000) {
       val tagTypeIds = tags.map(_.tagTypeId).toSet
       tagTypes.filter(tt => tagTypeIds contains  tt.id)
     } */
-    tagTypes.filter(tt => tags.exists(_.tagTypeId == tt.id))
+    tagTypes.filter(tt => tagIds.contains(tt.id))
   }
 
 

@@ -19,10 +19,19 @@
     </encoder>
   </appender>
 
-  <logger name="play" level="INFO" />
   <logger name="application" level="TRACE" />
   <logger name="tysvapp" level="TRACE" />
+  <logger name="tysvapp.MemCache" level="DEBUG" />
+  <!-- [ty_v1] Remove.  -->
+  <logger name="ed.server" level="TRACE" />
+
+  <!-- Nice to have here, if changing <root> level to, say, DEBUG. -->
+  <logger name="play" level="INFO" />
+  <logger name="play.shaded" level="INFO" />
   <logger name="org.elasticsearch" level="INFO" />
+  <logger name="com.zaxxer.hikari" level="INFO" />
+  <logger name="org.flywaydb" level="INFO" />
+  <logger name="application-akka.actor" level="INFO" />
 
   <root level="INFO">
     <appender-ref ref="STDOUT" />

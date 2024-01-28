@@ -60,7 +60,7 @@ export const ChatMessages = createComponent({
         : JoinChatButton({});
     return (
       r.div({ className: 'esChatPage dw-page', id: 't_PageContent' },
-        CatsOrHomeLink(page, store),
+        CatsOrHomeLink({ page, store }),
         TitleAndLastChatMessages({ store: store, ref: 'titleAndMessages' }),
         FixedAtBottom({ ref: 'fixedAtBottom' },
           editorOrJoinButton)));

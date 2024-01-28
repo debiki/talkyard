@@ -19,7 +19,6 @@ package talkyard.server.sess
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.EdHttp.urlDecodeCookie
 import debiki.dao.{MemCacheKey, MemCacheValueIgnoreVersion, SiteDao}
 import talkyard.server.dao.StaleStuff
 import org.apache.commons.codec.{binary => acb}
@@ -28,6 +27,8 @@ import org.apache.commons.codec.{binary => acb}
 
 trait SessionSiteDaoMixin {
   self: SiteDao =>
+
+  import self.context.security.urlDecodeCookie
 
 
   def listPatsSessions(patId: PatId): ImmSeq[TySessionInDbMaybeBad] = {

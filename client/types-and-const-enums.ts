@@ -781,6 +781,11 @@ const enum StorageKeys {
 }
 
 
+const enum WidthsPx {
+  DropModalDefWidth = 560,  // see CSS: [dropdown_width]
+}
+
+
 const enum WinDims {
   // UX: As narrow as 640 works fine (!), with sidebars closed. But then currently
   // Ty tries to use only the full screen editor.

@@ -445,6 +445,10 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
       true
     }
 
+  // A Talkyard site needs one domain only, so all cookies can be tied to that one domain.
+  // (Otherwise another site on a multitenant server might set cookies on the base
+  // domain, to overwrite cookies on another site that share the same base domain.)
+  val cookiePrefix = if (secure) "__Host-" else ""
 
   lazy val (anyLoginOrigin, loginOriginConfigErrorMessage): (Option[String], Option[String]) =
     if (isOrWasTest) {

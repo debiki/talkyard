@@ -142,6 +142,10 @@ trait AuthnSiteTxMixin extends SiteTransaction {
   }
 
 
+  /** Updates an external identity, e.g. Gmail user, with more recent data
+    * (e.g. the user changed hens name) from the OAuth authentication process
+    * the caller would be handling.
+    */
   private[rdb] def updateOpenAuthIdentity(identity: OpenAuthIdentity) {
     // About idpId, idpUserId:
     // They should have been used when looking up this user identity

@@ -41,9 +41,6 @@ import c from '../test-constants';
 //        File 'tests/e2e/test-types.ts' is not a module.
 //import IsWhere = require('../test-types');
 
-
-//  RENAME  this file to ty-e2e-test-browser.ts but wait a bit,
-//           I'll want to code review the wdio v4 —> v6 upgr first?
 //  RENAME  waitAndGetSth, waitAndClick... to just getSth, click, etc,
 //          and fns that don't wait, call them  getSthNow  and clickNow  instead,
 //          since almost all fns wait until ok to procceed, so that's the 95% normal
@@ -130,6 +127,11 @@ interface WaitAndClickPs extends WaitPs {
 
 type WaitForClickableResult = 'Clickable' | 'NotClickable';
 type ClickResult = 'Clicked' | 'CouldNotClick';
+
+
+const CookiePrefix = settings.secure ? '__Host-' : '';
+
+interface Cookie { name: St, value: St }
 
 interface SidFieldsParts {
   sidFieldParts12Maybe3?: St;
@@ -437,7 +439,7 @@ export class TyE2eTestBrowser {
     }
 
     async deleteCookie(cookieName: string) {
-      await this.#br.deleteCookie(cookieName);
+      await this.#br.deleteCookie(CookiePrefix + cookieName);
     }
 
     async deleteAllCookies() {
@@ -633,17 +635,18 @@ export class TyE2eTestBrowser {
     async disableRateLimits() {
       // Old, before I added the no-3rd-party-cookies tests.
       // Maybe instead always: server.skipRateLimits(siteId)  ?
-      await this.#br.execute(function(pwd) {
+      await this.#br.execute(function(pwd, CookiePrefix) {
         var value =
-            "esCoE2eTestPassword=" + pwd +
+            CookiePrefix + "esCoE2eTestPassword=" + pwd +
             "; expires=Fri, 31 Dec 9999 23:59:59 GMT";
         if (location.protocol === 'https:') {
           value +=
               "; Secure" +
-              "; SameSite=None";  // [SAMESITE]
+              "; SameSite=None" +  // [SAMESITE]
+              "; Path=/";  // otherwise, setting __Host- cookies has no effect
         }
         document.cookie = value;
-      }, settings.e2eTestPassword || '');
+      }, settings.e2eTestPassword || '', CookiePrefix);
     }
 
 
@@ -2942,14 +2945,24 @@ export class TyE2eTestBrowser {
 
     async assertNotFoundError(ps: {
             whyNot?: 'CategroyDeleted' | 'MayNotCreateTopicsOrSeeCat' |
-                'MayNotSeeCat' | 'PageDeleted' } = {}) {
+                'MayNotSeeCat' | 'PageDeleted', shouldBeErrorDialog?: true } = {}) {
+      let source: St | U;
+      const showSource = () => '\n\n' +
+              `-----------------------------------------------------------\n` +
+              source + '\n' +
+              `-----------------------------------------------------------\n`;
       for (let i = 0; i < 20; ++i) {
-        let source = await this.#br.getPageSource();
+        source = await this.#br.getPageSource();
         // The //s regex modifier makes '.' match newlines. But it's not available before ES2018.
-        let is404 = /404 Not Found.+TyE404_/s.test(source);
+        let is404 = /404.+Not [Ff]ound.+TyE404_/s.test(source);
+        // If ps.shouldBeErrorDialog, could alternatively look in the serverErrorDialog:
+        // const text = await (await this.$('.s_SED_Msg')).getHTML();
+
         if (!is404) {
           await this.#br.pause(250);
-          await this.#br.refresh();
+          if (!ps.shouldBeErrorDialog) {
+            await this.#br.refresh();
+          }
           continue;
         }
 
@@ -2974,14 +2987,10 @@ export class TyE2eTestBrowser {
         }
         tyAssert.ok(okNotFoundReason,
               `Wrong 404 Not Found reason, should have been: ${ps.whyNot
-                    } but source is: \n` +
-              `-----------------------------------------------------------\n` +
-              source + '\n' +
-              `-----------------------------------------------------------\n`);
-
+                    } but source is:` + showSource());
         return;
       }
-      die('EdE5FKW2', "404 Not Found never appears");
+      tyAssert.fail(`404 Not Found never appears. [TyE5FKW2]  Page source:` + showSource());
     }
 
 
@@ -5765,6 +5774,12 @@ export class TyE2eTestBrowser {
         await this.switchToEmbEditorIframeIfNeeded();
         await this.editor.clickSave();
         await this.waitUntilLoadingOverlayGone();
+        // E2EBUG [refresh_race] Sometimes we get to here, although the post hasn't been
+        // saved yet. How's that possible? Maybe the loading overlay has not *appeared* yet?
+        // What can happen then, if the page is refreshed afterwards, is that the
+        // unsaved comment becomes a *draft* and the current test breaks.
+        // (Currently all? such loations work around this (see [refresh_race]), not
+        // a problem for now.)
       },
 
       clickSave: async () => {
@@ -10585,6 +10600,11 @@ export class TyE2eTestBrowser {
   /// For hacking into Talkyard, doing weird things.
   ///
   hackServer = {
+    getHostCookies: async (names: St[]): Pr<Cookie[]> => {
+      const namesWithPrefix = names.map(n => CookiePrefix + n);
+      return await this.#br.getCookies(namesWithPrefix);
+    },
+
     setSidPart12ViaJs: async (value: St, ps: { inCookie?: true, inField?: true }): Pr<V> => {
       await this.execute(function(value, ps) {
         if (ps.inCookie) {
@@ -10638,13 +10658,13 @@ export class TyE2eTestBrowser {
 
     getSids: async (): Pr<SidParts> => {
       const result: SidParts = await this.hackServer.getSidPart12Maybe3ViaJs({ inField: true });
-      const sidCookies = await this.#br.getCookies(
+      const sidCookies = await this.hackServer.getHostCookies(
               ['TyCoSid123', 'TyCoSid4', 'TyCoSid5']);
       for (const cookie of sidCookies) {
         const resultFieldName =
-                cookie.name === 'TyCoSid123' ? 'sidCookiePart123' : (
-                cookie.name === 'TyCoSid4' ? 'sidCookiePart4' : (
-                cookie.name === 'TyCoSid5' ? 'sidCookiePart5' : die('TyE503MEGE2')));
+            cookie.name === CookiePrefix + 'TyCoSid123' ? 'sidCookiePart123' : (
+            cookie.name === CookiePrefix + 'TyCoSid4' ? 'sidCookiePart4' : (
+            cookie.name === CookiePrefix + 'TyCoSid5' ? 'sidCookiePart5' : die('TyE503MEGE2')));
         result[resultFieldName] = cookie.value;
       }
       return result;

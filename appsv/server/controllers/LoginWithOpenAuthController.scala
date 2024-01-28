@@ -1492,8 +1492,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     val mayCreateNewUser = authnState.mayCreateUser && {
       // This not needed? Already incl in authnState for all code paths, right.
-      val mayCreateNewUserCookie = request.cookies.get(MayCreateUserCookieName)
-      !mayCreateNewUserCookie.map(_.value).contains("false")
+      val mayCreateNewUserVal = request.getHostCookieVal(MayCreateUserCookieName)
+      mayCreateNewUserVal isNot "false"
     }
 
     // COULD let tryLogin() return a LoginResult and use pattern matching, not exceptions.
@@ -1661,7 +1661,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         // However, we've remembered already, in a 1st party cookie (in the login popup?),
         // if 3rd party iframe cookies not work.
         maybeCannotUseCookies ||=
-          request.cookies.get(AvoidCookiesCookieName).map(_.value) is EdSecurity.Avoid
+          request.getHostCookieVal(AvoidCookiesCookieName) is EdSecurity.Avoid
 
         CSP_MISSING
         def handleResultInWinOpener: p_Result =
@@ -1926,7 +1926,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     val nextNonce = nextRandomString()
     authnStateCache.put(nextNonce, authnState.copy(nextStep = "create_user"))
 
-    val anyIsInLoginWindowCookieValue = request.cookies.get(IsInLoginWindowCookieName).map(_.value)
+    val anyIsInLoginWindowCookieValue = request.getHostCookieVal(IsInLoginWindowCookieName)
 
     val result = if (anyIsInLoginWindowCookieValue.isDefined) {
       // Continue running in the login window, by returning a complete HTML page that
@@ -2093,6 +2093,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           globals.sendEmail(email, dao.siteId)
         }
 
+        // Also see: [old_users_verif_email]
         if (emailVerifiedAt.isDefined || siteSettings.mayPostBeforeEmailVerified) {
           createCookiesAndFinishLogin(request, request.siteId, loginGrant.user,
                 authnState)
@@ -2153,7 +2154,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // the Talkyard developers and ask what's wrong. Only to avoid these support requests,
     // let's make parallel login work, by including xsrf tokens from all such ongoing logins,
     // in the cookie value. [PRLGIN]
-    val anyCookie = request.cookies.get(ReturnToThisSiteXsrfTokenCookieName)
+    val anyCookie = request.cookies.get(globals.cookiePrefix + ReturnToThisSiteXsrfTokenCookieName)
     val oldTokens: Opt[St] = anyCookie.map(_.value)
 
     val newXsrfToken = nextRandomString()
@@ -2213,15 +2214,15 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // oauthDetailsCacheKey might be a cache key Mallory generated, when starting a login
     // flow on his laptop — and now he might have made the current requester click a link
     // with that cache key, in the url. So, we also check an xsrf token here.
-    val anyXsrfTokenInSession = request.cookies.get(ReturnToThisSiteXsrfTokenCookieName)
+    val anyXsrfTokenInSession = request.getHostCookieVal(ReturnToThisSiteXsrfTokenCookieName)
     anyXsrfTokenInSession match {
-      case Some(xsrfCookie) =>
+      case Some(xsrfCookieVal) =>
         // There might be many tokens, if, surprisingly, the user clicks Login in different
         // browser tabs in parallel. [PRLGIN]  ... Oh this doesn't work anyway, because
         // Silhouette stores and overwrites a Silhouette xsrf token in a single cookie.
         // Keep this anyway — maybe Silhouette fixes that issue, and then this Talkyard code here
         // already works properly.
-        val tokens: Seq[St] = xsrfCookie.value.split(Separator)
+        val tokens: Seq[St] = xsrfCookieVal.split(Separator)
         val okToken = tokens.contains(xsrfToken)
         throwForbiddenIf(!okToken,
               "TyEOAUXSRFTKN", o"""Bad XSRF token, not included in the

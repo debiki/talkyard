@@ -719,7 +719,7 @@ export const Editor = createFactory<any, EditorState>({
     //
     dieIf(files.length != 1, 'EsE5GPY82');
 
-    const headers = { 'X-XSRF-TOKEN': getSetCookie('TyCoXsrf') };
+    const headers = { 'X-XSRF-TOKEN': getXsrfCookie() };
     // For embedded comments, need to incl the session id in a header,
     // since browsers block cookies (tracking prevention features).
     Server.addAnyNoCookieHeaders(headers);
@@ -1619,7 +1619,7 @@ export const Editor = createFactory<any, EditorState>({
       return;
     }
 
-    Server.search(state.title, (searchResults: SearchResults) => {
+    Server.search({ rawQuery: state.title }, (searchResults: SearchResults) => {
       const state: EditorState = this.state;
       if (this.isGone || !state.visible)
         return;

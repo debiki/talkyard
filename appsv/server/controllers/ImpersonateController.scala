@@ -110,7 +110,7 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: TyCon
     if (siteId != request.siteId)
       throwForbidden("EsE8YKW3", s"Wrong site id: ${request.siteId}, should go to site $siteId")
 
-    // ? mark as online ?
+    // (Do _not_mark_as_online.)
     val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request, userId)
     Redirect("/").withCookies(sidAndXsrfCookies: _*)
   }
@@ -156,14 +156,20 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: TyCon
 
     request.dao.pubSub.unsubscribeUser(request.siteId, request.theRequester)
 
-    // But don't subscribe to events for the user we'll be viewing the site as. Real
-    // time events isn't the purpose of view-site-as.  The client should resubscribe
-    // the requester to hens *own* notfs, once done impersonating, though.
+    // But do _not_mark_as_online or subscribe to events for the user we'll be viewing
+    // the site as. Real time events isn't the purpose of view-site-as.  The client
+    // should resubscribe the requester to hens *own* notfs, once done impersonating,
+    // though.
 
     Ok.withCookies(newCookies: _*).discardingCookies(logoutCookies: _*)
   }
 
 
+  SECURITY // Would be better to remember the admin's *session* rather than hans user id,
+  // so that if the admin logs out from everywhere, han also gets logged out from
+  // the current device — where han is still logged in, via the impersonation cookie.
+  // Maybe there should then be a HttpOnly impersonation cookie too, just like
+  // there is, for the real session id?
   private def makeImpersonationCookie(siteId: SiteId, viewAsGroupOnly: Boolean,
       currentUserId: UserId) = {
     val randomString = nextRandomString()
@@ -177,7 +183,7 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: TyCon
 
 
   def stopImpersonating: Action[Unit] = GetActionAllowAnyone { request =>
-    urlDecodeCookie(ImpersonationCookieName, request.underlying) match {
+    edContext.security.urlDecodeCookie(ImpersonationCookieName, request.request) match {
       case None =>
         // What's this? Clicking Stop Impersonating, but no such cookie?
         // Maybe clicking twice in different tabs? Anyway, feels
@@ -202,13 +208,13 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: TyCon
                 }
           }
         response.discardingCookies(
-            mvc.DiscardingCookie(ImpersonationCookieName))
+            mvc.DiscardingCookie(globals.cookiePrefix + ImpersonationCookieName))
     }
   }
 
 
   private def concatAndHash(siteId: SiteId, userId: UserId, viewAsGroupOnly: Bo, unixSecs: i64,
-        randomString: St) = {
+        randomString: St): St = {
     val CFS = FieldSeparator
     val viewOnlyString = viewAsGroupOnly ? ViewAsGroupOnly | ImpersonateRealUser
     val toHash = s"$siteId$CFS$userId$CFS$viewOnlyString$CFS$unixSecs$CFS$randomString"

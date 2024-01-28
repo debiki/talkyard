@@ -37,12 +37,8 @@ sealed abstract class XsrfStatus { def isOk = false }
 case object XsrfExpired extends XsrfStatus
 case object XsrfBad extends XsrfStatus
 case object XsrfBadEmpty extends XsrfStatus
-case class XsrfOk(value: String) extends XsrfStatus {
+case class XsrfOk(value: St) extends XsrfStatus {
   override def isOk = true
-  def unixSeconds: Long = {
-    dieIf(!value.contains('.'), "TyE2ABK49Z3", value)
-    value.takeWhile(_ != '.').toLong
-  }
 }
 
 
@@ -173,9 +169,10 @@ object EdSecurity {
     * this cookie to the HTTP header just above.
     * See: http://docs.angularjs.org/api/ng.$http, search for "XSRF-TOKEN".
     *
-    * REMOVE after 2024-03-01, not using Angular any more, and this cookie
+    * REMOVE_AFTER 2025-03-01, not using Angular any more, and this cookie
     * caused collissoins with someone's custom javascript that set a cookie
     * with the same name on Ty's domain  (but with an unexpected value).
+    * [old_xsrf_cookie_name]
     */
   private val OldXsrfCookieName = "XSRF-TOKEN"
 
@@ -227,6 +224,8 @@ class EdSecurity(globals: Globals) {
   import EdHttp._
 
   private val logger = TyLogger("TySecurity")
+
+  private val CookiePrefix = globals.cookiePrefix
 
   private val XsrfTokenInputName = "dw-fi-xsrf"
 
@@ -403,7 +402,7 @@ class EdSecurity(globals: Globals) {
    */
   def checkSidAndXsrfToken[A](request: RequestHeader, anyRequestBody: Option[A],
         site: SiteBrief, dao: SessionSiteDaoMixin,
-        expireIdleAfterMins: i64, maySetCookies: Bo, skipXsrfCheck: Bo)
+        expireIdleAfterMins: i64, isGuestLogin: Bo, maySetCookies: Bo, skipXsrfCheck: Bo)
         : CheckSidAndXsrfResult = {
 
 
@@ -453,6 +452,11 @@ class EdSecurity(globals: Globals) {
     val upgrToFancySidCookies = checkSidResult.createCookies
     val deleteFancySidCookies = checkSidResult.discardCookies  // rename? deleteFancySidCookies
 
+    // This: `isGuestLogin && sessionIdStatus != SidAbsent` is actually possible —
+    // for example, if logged in as an ordinary member, but visits the admin area
+    // — then, a login-as-an-admin-user dialog appears, although one is already
+    // logged in. (Although it'd be odd to try to log in as guest to the admin area,
+    // don't think it's possible to try even, actually.)
 
     // ----- Check xsrf token
 
@@ -491,7 +495,7 @@ class EdSecurity(globals: Globals) {
             (XsrfOk(""), Nil)
           }
           else {
-            val newXsrfOk = createXsrfToken()
+            val newXsrfOk = createXsrfToken(siteId = site.id)
             val cookie = urlEncodeCookie(XsrfCookieName, newXsrfOk.value)
             (newXsrfOk, List(cookie))
           }
@@ -509,11 +513,16 @@ class EdSecurity(globals: Globals) {
               "TyE_REQUEST_METHOD__HEAD__NOT_ALLOWED", details)
         throwForbidden( "TyE_REQUEST_METHOD_NOT_ALLOWED", details)
       }
-      else if (isPost && definitelyNoCreds) {
+      else if (isPost && definitelyNoCreds
+            // If pat is "logging in" as guest, then we want a xsrf token anyway
+            // because of the side effects (namely a new guest account).
+            // (If logging in as a real user, a password is needed.)
+            && !isGuestLogin) {
         // This might be from a backend server, fetching publicly available data.
         // Example: An Electron or iOS app, calling /-/v0/search, to show
         // in-app help.
-        // No credentials are included in the request, so there's no xsrf risk.
+        // No credentials or create-account/log-in info are included in the request,
+        // so there's no xsrf risk.
         dieIf(sessionIdStatus != SidAbsent, "TyE502MWEG")
         (XsrfOk(""), Nil)
       }
@@ -547,11 +556,18 @@ class EdSecurity(globals: Globals) {
               anyFancySidPart5.isDefined
 
         val xsrfOk = {
+          // Developer friendly _xsrf_error_messages:
+          throwForbiddenIf(xsrfTokenInHdrOrBdy == "null",
+                "TyEXSRFNULL", "xsrf token is 'null'")
+          throwForbiddenIf(xsrfTokenInHdrOrBdy == "undefined",
+                "TyEXSRFUNDF", "xsrf token is 'undefined'")
+
           val xsrfStatus =
                 checkXsrfToken(
                     xsrfTokenInHdrOrBdy, anyXsrfCookieValue,
                     thereIsASidCookie = gotAnyCookie,
-                    now, expireIdleAfterMillis = expireIdleAfterMillis)
+                    now, expireIdleAfterMillis = expireIdleAfterMillis,
+                    mustBeSiteId = site.id)
 
           def helpText(theProblem: String, nowHaveOrWillGet: String): String = i"""
             |Security issue: $theProblem. Please try again:
@@ -562,23 +578,26 @@ class EdSecurity(globals: Globals) {
             |If you reload the page, copy-paste any unsaved text to a text editor,
             |or it'll be lost on reload.
             |
-            |(You $nowHaveOrWillGet a new XSRF token.)
-            """
+            |(You $nowHaveOrWillGet a new XSRF token.)  """
 
-          if (!xsrfStatus.isOk && !maySetCookies) {
-            // This can happen if the same browser window is open so long, so that the
-            // xsrfTokenIfNoCookies expires.
+          if (xsrfStatus.isOk) {
+            // Fine, don't abort.
+          }
+          else if (!maySetCookies) {
+            // XSRF error, when using the signed token pattern.
+            // More developer friendly _xsrf_error_messages:
             val (theProblem, errorCode)  =
+              // If a browser window is open for very long, `typs.xsrfTokenIfNoCookies`
+              // (in the session iframe) might expire.
               if (xsrfStatus == XsrfExpired) ("xsrf token expired", "TyEXSRFEXP1")
               else if (xsrfStatus == XsrfBadEmpty) ("xsrf token empty", "TyEXSRFEMPTY1")
-              else if (xsrfTokenInHdrOrBdy == "null") ("xsrf token is 'null'", "TyEXSRFNULL")
-              else if (xsrfTokenInHdrOrBdy == "undefined") ("xsrf token is 'undefined'", "TyEXSRFUNDF")
               else ("bad xsrf token", "TyEXSRFBAD1")
 
             throwForbidden(
                 errorCode, helpText(theProblem, "will get"))
           }
-          else if (!xsrfStatus.isOk) {
+          else {
+            // XSRF error, when using a _Double_Submit_Cookie.
             // Can happen for example if the xsrf token expires. Or if the server restarts,
             // with a new app secret.
 
@@ -588,7 +607,7 @@ class EdSecurity(globals: Globals) {
             // in other browser tabs, and then check the new SID cookie and
             // refresh XSRF tokens in any <form>s.)
             val newXsrfCookie =
-              urlEncodeCookie(XsrfCookieName, createXsrfToken().value)
+                  urlEncodeCookie(XsrfCookieName, createXsrfToken(siteId = site.id).value)
 
             // If this request is indeed part of one of Mallory's XSRF attacks,
             // the cookie still won't be sent to Mallory's web page, so creating
@@ -603,10 +622,15 @@ class EdSecurity(globals: Globals) {
             // are very old) and then it's a good thing that a new valid
             // token be created here. (?)
 
+            // See _xsrf_error_messages above — that's if cookies don't work (they typically
+            // don't, if Talkyard is embedded in an iframe), while this (below) is
+            // if cookies do work.
             val (theProblem, errorCode) =
               if (xsrfStatus == XsrfExpired) ("xsrf token expired", "TyEXSRFEXP_")
               else if (xsrfStatus == XsrfBadEmpty) ("xsrf token empty", "TyEXSRFEMPTY2")
               else if (anyXsrfCookieValue.isEmpty) ("no xsrf double submit cookie", "TyE0XSRFCO")
+              else if (anyXsrfCookieValue is "null") ("xsrf cookie is 'null'", "TyEXSRFNULL2")
+              else if (anyXsrfCookieValue is "undefined") ("xsrf cookie is 'undefined'", "TyEXSRFUNDF2")
               else ("xsrf token doesn't match double submit cookie", "TyEXSRFCOMISM")
 
             throw ResultException(ForbiddenResult(
@@ -720,7 +744,8 @@ class EdSecurity(globals: Globals) {
 
 
   private def checkXsrfToken(xsrfTokenInHdrOrBdy: St, anyXsrfCookieValue: Opt[St],
-        thereIsASidCookie: Bo, now: When, expireIdleAfterMillis: i64): XsrfStatus = {
+        thereIsASidCookie: Bo, now: When, expireIdleAfterMillis: i64,
+        mustBeSiteId: SiteId): XsrfStatus = {
     SECURITY; TESTS_MISSING // that tests if the wrong hashes are rejected
 
     val xsrfToken = xsrfTokenInHdrOrBdy
@@ -754,6 +779,8 @@ class EdSecurity(globals: Globals) {
     dieIf(Globals.isDevOrTest && thereIsASidCookie && anyXsrfCookieValue.isEmpty,
           "TyESID0XTKN", "Got a sid cookie but no xsrf cookie, weird")
 
+    SECURITY; AUDIT_LOG // any suspicious xsrf tokens?
+
     val xsrfOk: XsrfOk = {
         // The _Encrypted_Token_Pattern, usually also the Custom Request Header pattern.
         //
@@ -765,8 +792,8 @@ class EdSecurity(globals: Globals) {
         // Do this check anyway, also if !thereIsASidCookie  (can be used for
         // rate limiting, if nothing else?).
         //
-        // The format is "time dot random dot hash": "12345.randomChars.123def",
-        // see timeDotRandomDotHash(). The hash length is always the same, but maybe
+        // The format is "siteId . time . random . hash": "123.12345.randomChars.123def",
+        // see siteIdTimeRandomHash(). The hash length is always the same, but maybe
         // we'll sometimes change the number of random chars, so let's find the start
         // of the hash by counting from the end:
         val hashIndex: Int = xsrfToken.length - HashLength
@@ -775,20 +802,39 @@ class EdSecurity(globals: Globals) {
         }
         val value = xsrfToken.take(hashIndex - 1) // '-1' drops the dot between value and hash
         val actualHash = xsrfToken.drop(hashIndex)
-        // Same as in timeDotRandomDotHash():
+
+        val xsrfParts: Array[St] = value.split('.')
+        if (xsrfParts.length != 3)
+          return XsrfBad
+
+        // Same as in siteIdTimeRandomHash():
         val correctHashFullLength = hashSha1Base64UrlSafe(value + secretSalt)
         val correctHash = correctHashFullLength take HashLength
         if (correctHash != actualHash) {
           return XsrfBad
         }
+
+        // Check it's for this site (it is, since we're using __Host-cookies, but
+        // it's nice to double check).
+        val siteIdStr: St = xsrfParts(0)
+        val siteIdInToken = siteIdStr.toInt64Option getOrElse {
+          return XsrfBad
+        }
+        if (siteIdInToken != mustBeSiteId) {
+          return XsrfBad // +  "Wrong site id: $siteIdInToken"
+        }
+
+        // Check isn't too old.
+        val timeStr = xsrfParts(1)
+        val unixSeconds: i64 = timeStr.toInt64Option getOrElse {
+          return XsrfBad
+        }
+        val millisAgo = now.millisSince(When.fromMillis(unixSeconds * MillisPerSecond))
+        if (millisAgo > expireIdleAfterMillis + XsrfAliveExtraSeconds * MillisPerSecond)
+          return XsrfExpired
+
         XsrfOk(value)
     }
-
-    // Check isn't too old.
-    val unixSeconds: Long = xsrfOk.unixSeconds
-    val millisAgo = now.millisSince(When.fromMillis(unixSeconds * MillisPerSecond))
-    if (millisAgo > expireIdleAfterMillis + XsrfAliveExtraSeconds * MillisPerSecond)
-      return XsrfExpired
 
     xsrfOk
   }
@@ -802,11 +848,15 @@ class EdSecurity(globals: Globals) {
    * (The token is not based on the SID, because when a user loads his/her
    * very first page and logins for the first time, no SID is available.)
    */
-  def createXsrfToken(): XsrfOk = {
+  def createXsrfToken(siteId: SiteId): XsrfOk = {
     // Could skip the secure hash, when using the _Double_Submit_Cookie pattern
     // — but don't, because now year 2023, OWASP recommends signed double submit cookies,
     // see:  https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#signed-double-submit-cookie
-    XsrfOk(timeDotRandomDotHash())  // [2AB85F2]
+
+    SECURITY; COULD // include any user id in the value, so it's bound to one user only.
+    // Not needed, since we use __Host-cookies, but would be nice to double-verify.
+
+    XsrfOk(siteIdTimeRandomHash(siteId))  // [2AB85F2]
   }
 
 
@@ -827,7 +877,7 @@ class EdSecurity(globals: Globals) {
     val settings = dao.getWholeSiteSettings()
     val expireIdleAfterSecs = settings.expireIdleAfterMins * 60
 
-    val xsrfOk = createXsrfToken()
+    val xsrfOk = createXsrfToken(siteId = site.id)
     val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value,
           maxAgeSecs = Some(expireIdleAfterSecs + XsrfAliveExtraSeconds))
 
@@ -1206,12 +1256,15 @@ class EdSecurity(globals: Globals) {
 
   // ----- Secure cookies
 
+  RENAME // to HostCookie
+  // (Also rename DiscardingSecureCookie to DiscardingHostCookie.)
   def SecureCookie(name: St, value: St, maxAgeSeconds: Opt[i32] = None,
         httpOnly: Bo = false): Cookie =
     Cookie(
-      name,
+      CookiePrefix + name,
       value,
       maxAge = maxAgeSeconds,
+      path = "/",
       secure = globals.secure,
       httpOnly = httpOnly,
       sameSite = anySameSiteCookieValue())
@@ -1241,8 +1294,10 @@ class EdSecurity(globals: Globals) {
   }
 
 
+  RENAME // to DiscardingHostCookie, and never use DiscardingCookie directly anywhere.
+  // (Also rename SecureCookie to HostCookie.)
   def DiscardingSecureCookie(name: String) =
-    DiscardingCookie(name, secure = globals.secure)
+    DiscardingCookie(CookiePrefix + name, secure = globals.secure)
 
   def DiscardingSessionCookies: List[DiscardingCookie] =
     List(DiscardingSecureCookie(SessionIdCookieName),
@@ -1280,7 +1335,7 @@ class EdSecurity(globals: Globals) {
   private def urlEncodeCookie(name: St, value: St, maxAgeSecs: Opt[i32] = None,
         httpOnly: Bo = false, sameSiteStrict: Bo = false) =
     Cookie(
-      name = name,
+      name = CookiePrefix + name,
       value = urlEncode(convertEvil(value)),  // see comment above
       maxAge = maxAgeSecs,
       path = "/",
@@ -1295,6 +1350,10 @@ class EdSecurity(globals: Globals) {
             if (sameSiteStrict) Some(Cookie.SameSite.Strict)
             else anySameSiteCookieValue(),
       httpOnly = httpOnly)
+
+
+  def urlDecodeCookie(name: St, reqHdr: RequestHeader): Opt[St] =
+    reqHdr.cookies.get(CookiePrefix + name).map(cookie => urlDecode(cookie.value))
 
 
   /** Extracts any browser id cookie from the request, or creates it if absent
@@ -1327,30 +1386,30 @@ class EdSecurity(globals: Globals) {
   }
 
   def getAnyBrowserId(request: RequestHeader): Option[BrowserId] =
-    request.cookies.get(BrowserIdCookieName) map { cookie =>
+    request.cookies.get(CookiePrefix + BrowserIdCookieName) map { cookie =>
       BrowserId(cookie.value, isNew = false)
     }
 
 
   private def createBrowserIdCookie(): (Some[BrowserId], List[Cookie]) = {
-    val cookieValue = timeDotRandomDotHash()  // [2AB85F2]
+    val cookieValue = siteIdTimeRandomHash(siteId = NoSiteId)  // [2AB85F2]
     val newCookie = SecureCookie(
-      name = BrowserIdCookieName,
-      value = cookieValue,
-      maxAgeSeconds = Some(3600 * 24 * 365 * 5),
-      httpOnly = true)
+          name = BrowserIdCookieName,
+          value = cookieValue,
+          maxAgeSeconds = Some(3600 * 24 * 365 * 5),
+          httpOnly = true)
     (Some(BrowserId(cookieValue, isNew = true)), List(newCookie))
   }
 
 
-  /** Returns something like:  12345.randomChars.123def — the first part, is the unix time,
-    * in seconds. The second part is random chars. The last is a dot and
-    * a crypto hash of the two first parts + the app secret.
+  /** Returns something like:  123.12345.randomChars.123def — the first part,
+    * is the site id, the second is the unix time in seconds. The third part is
+    * random chars. The last is a crypto hash of [the first parts + the app secret].
     */
-  private def timeDotRandomDotHash(): String = {
-    val timeDotRandom = globals.now().seconds + "." + nextRandomString().take(12)
-    val hash = hashSha1Base64UrlSafe(timeDotRandom + secretSalt).take(HashLength)
-    s"$timeDotRandom.$hash"  // does *not* incl the secretSalt
+  private def siteIdTimeRandomHash(siteId: SiteId): St = {
+    val idDotTimeDotRandom = s"$siteId.${globals.now().seconds}.${nextRandomString().take(12)}"
+    val hash = hashSha1Base64UrlSafe(idDotTimeDotRandom + secretSalt).take(HashLength)
+    s"$idDotTimeDotRandom.$hash"  // does *not* incl the secretSalt
   }
 
   // ----- Secure Not-fond and No-may-not
@@ -1388,7 +1447,7 @@ class EdSecurity(globals: Globals) {
   def realOrFakeIpOf(request: RequestHeader): String = {
     val fakeIpQueryParam = request.queryString.get("fakeIp").flatMap(_.headOption)
     val fakeIp = fakeIpQueryParam.orElse(
-      request.cookies.get("dwCoFakeIp").map(_.value))  getOrElse {
+      request.cookies.get(CookiePrefix + "dwCoFakeIp").map(_.value))  getOrElse {
       return request.headers.get("X-Real-IP") getOrElse request.remoteAddress
     }
 
@@ -1415,8 +1474,8 @@ class EdSecurity(globals: Globals) {
 
   def getE2eTestPassword(request: RequestHeader): Option[String] =
     request.queryString.get("e2eTestPassword").flatMap(_.headOption).orElse(
-      request.cookies.get("dwCoE2eTestPassword").map(_.value)).orElse( // dwXxx obsolete. esXxx now
-      request.cookies.get("esCoE2eTestPassword").map(_.value))
+      request.cookies.get(CookiePrefix + "dwCoE2eTestPassword").map(_.value)).orElse( // dwXxx obsolete. esXxx now
+      request.cookies.get(CookiePrefix + "esCoE2eTestPassword").map(_.value))
 
 
   def hasOkE2eTestPassword(request: RequestHeader): Boolean = {
@@ -1435,11 +1494,11 @@ class EdSecurity(globals: Globals) {
 
   def getForbiddenPassword(request: RequestHeader): Option[String] =
     request.queryString.get("forbiddenPassword").flatMap(_.headOption).orElse(
-      request.cookies.get("esCoForbiddenPassword").map(_.value))
+      request.cookies.get(CookiePrefix + "esCoForbiddenPassword").map(_.value))
 
 
   def hasOkForbiddenPassword(request: DebikiRequest[_]): Boolean =
-    hasOkForbiddenPassword(request.underlying)
+    hasOkForbiddenPassword(request.request)
 
 
   def hasOkForbiddenPassword(request: RequestHeader): Boolean = {

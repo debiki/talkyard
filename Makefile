@@ -681,7 +681,8 @@ push-tagged-images:
 _print_push_git_tag_command:
 	@echo "Next:"
 	@echo ""
-	@echo "    make push-tag-to-git tag=$(tag)"
+	@echo "    make  push_tag_to_dev_rel_branch  tag=$version_tag"
+	@echo "    make  push_tag_to_dev_repo  repo=$REPO  tag=$version_tag"
 	@echo ""
 
 

@@ -74,7 +74,7 @@ var SearchPageContentComponent = createReactClass(<any> {
     this.searchUseUrlQuery(urlQueryParams);
     if (urlQueryParams.advanced) {
       this.tagsLoaded = true;
-      Server.loadCatsAndTagsPatchStore();  // [search_page_cats_tags]
+      Server.loadCatsAndTagsPatchStore();  // [search_page_cats_tags] [bug_only_priv_cats]
     }
   },
 
@@ -126,28 +126,43 @@ var SearchPageContentComponent = createReactClass(<any> {
     }
     // Do search, also if has searched for the same thing — because maybe new content was just added.
     this.ignoreUrlChange = true;
-    this.search(query);
+    this.search(query, false);
   },
 
-  search: function(query: SearchQuery) {
+  search: function(query: SearchQuery, toLoadMore: Bo) {
     if (this.searchingFor === query.rawQuery)
       return;
     this.searchingFor = query.rawQuery;
-    this.setState({ isSearching: true });
-    Server.search(query.rawQuery, (results: SearchResults) => {
+    this.setState({ isSearching: true, toLoadMore });
+    const prevResults: SearchResults | U = this.state.searchResults;
+    // Later, could [use_search_results_cursor] instead, to avoid races.
+    const offset = !toLoadMore ? 0 : prevResults.pagesAndHits.length;
+    Server.search({ rawQuery: query.rawQuery, offset }, (results: SearchResults) => {
       this.searchingFor = null;
       if (this.isGone) return;
+      let searchResults = results;
+      if (toLoadMore && this.state.lastQuery.rawQuery === query.rawQuery) {
+        // TESTS_MISSING  TyTSERPLOADMORE
+        searchResults = {
+          ...prevResults,
+          thisIsAll: results.thisIsAll,
+          pagesAndHits: prevResults.pagesAndHits.concat(results.pagesAndHits),
+          // UX BUG, harmless: I think this results in duplicated warnings? Oh well,
+          // will disappear later if we [use_search_results_cursor].
+          warnings: prevResults.warnings.concat(results.warnings),
+        }
+      }
       this.setState({
         isSearching: false,
-        searchResults: results,
-        lastRawQuery: query.rawQuery,
+        searchResults,
+        lastQuery: query,
       });
     });
   },
 
   onQueryTextEdited: function(event) {
-    let query = parseSearchQueryInputText(event.target.value);
-    this.setState({ query: query });
+    const query: SearchQuery = parseSearchQueryInputText(event.target.value);
+    this.setState({ query });
   },
 
   toggleAdvanced: function() {
@@ -158,6 +173,9 @@ var SearchPageContentComponent = createReactClass(<any> {
     else {
       if (!this.tagsLoaded) {
         this.tagsLoaded = true;
+        // UX BUG [bug_only_priv_cats]: Empties store.publicCategories and places all cats
+        // in restrictedCategories, so the padlock symbol incorrectly appears in front of
+        // all cats in the results list.
         Server.loadCatsAndTagsPatchStore();
       }
       queryStringObj.advanced = 'true';
@@ -228,18 +246,28 @@ var SearchPageContentComponent = createReactClass(<any> {
     else {
       let pagesAndHits: PageAndHits[] = searchResults.pagesAndHits;
       resultsList = pagesAndHits.map((pageAndHits: PageAndHits) =>
-          SearchResultListItem({ pageAndHits: pageAndHits, key: pageAndHits.pageId }));
+          SearchResultListItem({ pageAndHits: pageAndHits, key: pageAndHits.pageId,
+                store }));
     }
 
-    let resultsForText = !this.state.lastRawQuery ? null :
+    let resultsForText = !this.state.lastQuery ? null :
       r.p({ className: 's_SP_SearchedFor' },
-        "Results for ",
-          r.b({}, r.samp({ id: 'e2eSERP_SearchedFor' }, `"${this.state.lastRawQuery}"`)));
+        "Results for ", r.b({},
+          r.samp({ id: 'e2eSERP_SearchedFor' }, `"${this.state.lastQuery.rawQuery}"`)), ':');
 
     const anyWarningsList = searchResults && searchResults.warnings.map(err =>
         r.li({},
           r.span({ className: 'n_Err_Msg' }, err.errMsg),
           r.span({ className: 'n_Err_Code' }, err.errCode)));
+
+    // This'll load more of the *last query* results, also if the query text has been
+    // edited in between. Which is what makes sense? If one wants to run the edited
+    // query, one would click Search up at the search query input field,
+    // instead of Load-more at the bottom.
+    const loadMoreBtn = !searchResults || searchResults.thisIsAll ? null :
+            Button({ className: 'e_SP_MoreB',
+                onClick: () => this.search(this.state.lastQuery, true /* toLoadMore */) },
+                "Load more ...");
 
     return (
       r.div({ className: 's_SP container' },
@@ -260,7 +288,9 @@ var SearchPageContentComponent = createReactClass(<any> {
         anyNothingFoundText,
         r.div({ className: 's_SP_SRs' },
           r.ol({},
-            resultsList)))));
+            resultsList)),
+        loadMoreBtn,
+        )));
   }
 });
 
@@ -335,7 +365,7 @@ function makeTagLabelValues(tagsStuff: TagsStuff) {
 
 
 
-function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: string | number }) {
+function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: St | Nr, store: Store }) {
   let pageAndHits: PageAndHits = props.pageAndHits;
   let hits = pageAndHits.hits.map(hit =>
       SearchResultHit({ hit: hit, urlPath: pageAndHits.urlPath, key: hit.postNr }));
@@ -343,6 +373,10 @@ function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: string | 
     r.li({ className: 's_SR', key: props.key },
       r.h3({ className: 'esSERP_Hit_PageTitle' },
         r.a({ href: pageAndHits.urlPath }, pageAndHits.pageTitle)),
+        r.span({ className: 'c_F_TsL_T_Cat_Expl' }, t.ft.inC, ' '), 
+        page.CatsOrHomeLink({ page: pageAndHits, store: props.store, skipHome: true }),
+        // Tags in-place editable?  [edit_tags_via_topic_list]
+        TagList({ store: props.store, tags: pageAndHits.pubTags }),
       r.ol({}, hits)));
 }
 

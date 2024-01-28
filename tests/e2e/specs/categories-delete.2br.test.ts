@@ -171,7 +171,7 @@ describe(`categories-delete.2br   TyTE2ECATDEL01`, () => {
   });
 
   it(`... won't work — category deleted`, () => {
-    michael_brB.assertNotFoundError({ whyNot: 'CategroyDeleted' });
+    michael_brB.assertNotFoundError({ whyNot: 'CategroyDeleted', shouldBeErrorDialog: true });
   });
 
   it(`He can no longer list topics in the category`, () => {

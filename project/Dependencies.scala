@@ -114,6 +114,11 @@ object Dependencies {
     val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.4"
     //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
 
+    // The ElasticSearch client uses Log4j. log4j-api already included, but not -core.
+    // (Versions <= 2.17.0 are vulnerable.)
+    //  log4jApi  = "org.apache.logging.log4j" % "log4j-api" % "2.17.1"   // not needed
+    val log4jCore = "org.apache.logging.log4j" % "log4j-core" % "2.17.1"  // missing
+
 
     // ----- Metrics, tracing
 
@@ -124,6 +129,7 @@ object Dependencies {
     val jaegertracing = "io.jaegertracing" % "jaeger-client" % "0.35.5"   // scala-steward:off
 
     val metrics4Scala = "nl.grons" %% "metrics4-scala" % "4.2.9"
+
 
     // ----- Decoding JWT:s
 

@@ -53,7 +53,7 @@ function initOrExit(theSettings) {
     const name = nameAndValue[0];
     const value = nameAndValue[1];
     cookieString += nameValueStr + '; ';
-    if (name == 'TyCoXsrf') {
+    if (name == 'TyCoXsrf' || name == '__Host-TyCoXsrf') {
       xsrfToken = value;
     }
   });

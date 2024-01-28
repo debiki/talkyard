@@ -131,7 +131,8 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, tyC
     val category = dao.getCategoryBySlug(categorySlug).getOrThrowBadArgument(
       "EsE0FYK42", s"No category with slug: $categorySlug")
 
-    val topicIdsToSkip: Set[PageId] = urlDecodeCookie("edCoUtxSkip", request.underlying) match {
+    val topicIdsToSkip: Set[PageId] =
+          tyCtx.security.urlDecodeCookie("edCoUtxSkip", request.request) match {
       case None => Set.empty
       case Some(pageIdCommaList) =>
         val pageIds = pageIdCommaList.split(",")  // split() excludes trailing empty strings
@@ -256,7 +257,7 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, tyC
     }
 
     TemporaryRedirect(s"/nothing-more-to-do")
-        .discardingCookies(DiscardingCookie("edCoUtxSkip"))
+        .discardingCookies(DiscardingCookie(tyCtx.globals.cookiePrefix + "edCoUtxSkip"))
   }
 
 }

@@ -55,6 +55,7 @@ class PlainApiActions(
         rateLimits: RateLimits,
         minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
         allowAnyone: Bo = false,
+        isGuestLogin: Bo = false,
         isLogin: Bo = false,
         authnUsersOnly: Bo = false,
         avoidCookies: Bo = false,
@@ -62,8 +63,8 @@ class PlainApiActions(
         ): ActionBuilder[ApiRequest, B] =
     PlainApiActionImpl(parser, rateLimits, minAuthnStrength = minAuthnStrength,
         authnUsersOnly = authnUsersOnly,
-        allowAnyone = allowAnyone, isLogin = isLogin, avoidCookies = avoidCookies,
-        skipXsrfCheck = skipXsrfCheck)
+        allowAnyone = allowAnyone, isLogin = isLogin, isGuestLogin = isGuestLogin,
+        avoidCookies = avoidCookies, skipXsrfCheck = skipXsrfCheck)
 
   def PlainApiActionStaffOnly[B](
           rateLimits: RateLimits,
@@ -105,11 +106,15 @@ class PlainApiActions(
         authnUsersOnly: Bo = false,
         allowAnyone: Boolean = false,  // try to delete 'allowAnyone'? REFACTOR
         avoidCookies: Boolean = false,
-        isLogin: Boolean = false,
+        isGuestLogin: Bo = false,
+        isLogin: Bo = false,
         superAdminOnly: Boolean = false,
         viaApiSecretOnly: Opt[WhatApiSecret] = None,
         skipXsrfCheck: Bo = false): ActionBuilder[ApiRequest, B] =
       new ActionBuilder[ApiRequest, B] {
+
+    val isUserLogin = isLogin // rename later
+    dieIf(isGuestLogin && isUserLogin, "TyE306RJU243")
 
     override def parser: BodyParser[B] =
       aParser
@@ -414,7 +419,13 @@ class PlainApiActions(
       // so we know, here, that we should avoid setting any cookies.  [NOCOOKIES]
       // And, for subsequent requests — to *other* endpoints — the browser Javascript code sets
       // the AvoidCookiesHeaderName header, so we won't forget that we should avoid cookies here.
-      val hasCookiesAlready = request.cookies.exists(_.name != "esCoE2eTestPassword")
+
+      val hasCookiesAlready = request.cookies.exists(c =>
+            // This cookie doesn't count, it's just for tests — don't want it to affect
+            // how the server behaves.
+            c.name != globals.cookiePrefix + "esCoE2eTestPassword"
+                                && c.name != "esCoE2eTestPassword")
+
       val maySetCookies = hasCookiesAlready || {   // TODO
         val shallAvoid = avoidCookies || {
           val avoidCookiesHeaderValue = request.headers.get(AvoidCookiesHeaderName)
@@ -450,8 +461,8 @@ class PlainApiActions(
           dieIf(ci.isCrossOrigin, "TyEJ2503TKHJ")
           security.checkSidAndXsrfToken(
                 request, anyRequestBody = Some(request.body), site, dao,
-                expireIdleAfterMins, maySetCookies = maySetCookies,
-                skipXsrfCheck = skipXsrfCheck)
+                expireIdleAfterMins, isGuestLogin = isGuestLogin,
+                maySetCookies = maySetCookies, skipXsrfCheck = skipXsrfCheck)
       }
 
       // Ignore and delete any broken or expired session id cookie.
@@ -461,12 +472,14 @@ class PlainApiActions(
 
       val (anyBrowserId, newBrowserIdCookie) =  // [5JKWQ21]
         if (maySetCookies) {
-          security.getBrowserIdCreateCookieIfMissing(request, isLogin = isLogin)
+          security.getBrowserIdCreateCookieIfMissing(
+                request, isLogin = isUserLogin || isGuestLogin)
         }
         else {
           // Then use any xsrf token, if present. It stays the same until page reload,
           // and has the same format as any id cookie anyway, see timeDotRandomDotHash() [2AB85F2].
           // The token can be missing (empty) for GET requests [2WKA40].
+          // And for POST to "log in" as guest — then, we use the [xsrf_token_as_browser_id].
           if (xsrfOk.value.nonEmpty)
             (Some(BrowserId(xsrfOk.value, isNew = false)), Nil)
           else
@@ -534,6 +547,7 @@ class PlainApiActions(
           anyTySession: Opt[TySession], sidStatus: SidStatus,
           xsrfOk: XsrfOk, browserId: Option[BrowserId], block: ApiRequest[A] => Future[Result])
           : Future[Result] = {
+      val siteId = site.id
 
       if (anyUserMaybeSuspended.exists(_.isAnon)) {
         // Client side bug?
@@ -541,11 +555,14 @@ class PlainApiActions(
               ForbiddenResult("TyEUSRANON", "Anonyms cannot call the server themselves"))
       }
 
+      def theUserId: PatId = anyUserMaybeSuspended.get.id
+
       // Maybe the user was logged in in two different browsers, and deleted hens account
       // in one browser and got logged out, when this request was going on already?
       if (anyUserMaybeSuspended.exists(_.isDeleted)) {
         // A race. Any session already deleted by UserDao [end_sess],
-        dieIf(dao.listPatsSessions(anyUserMaybeSuspended.get.id).nonEmpty, "TyESTILLSID01")
+        bugWarnIf(dao.listPatsSessions(theUserId).nonEmpty, "TyESTILLSID01",
+              s"s$siteId: User $theUserId is deleted but there's still a session.")
         return Future.successful(
               ForbiddenResult("TyEUSRDLD", "That account has been deleted")
                   .discardingCookies(DiscardingSessionCookies: _*))
@@ -555,7 +572,8 @@ class PlainApiActions(
 
       if (isSuspended && request.method != "GET") {
         // A race. Any session already deleted by UserDao [end_sess],
-        dieIf(dao.listPatsSessions(anyUserMaybeSuspended.get.id).nonEmpty, "TyESTILLSID02")
+        bugWarnIf(dao.listPatsSessions(theUserId).nonEmpty, "TyESTILLSID02",
+              s"s$siteId: User $theUserId is suspended, but there's still a session.")
         return Future.successful(
               ForbiddenResult("TyESUSPENDED_", "Your account has been suspended")
                   .discardingCookies(DiscardingSessionCookies: _*))
@@ -565,6 +583,7 @@ class PlainApiActions(
             if (!isSuspended) anyUserMaybeSuspended
             else {
               // If suspended, one can still see publicly visible things. [susp_see_pub]
+              // And reset ones password. [email_lgi_susp]
               None
             }
 
@@ -575,10 +594,10 @@ class PlainApiActions(
         case SiteStatus.NoAdmin | SiteStatus.Active | SiteStatus.ReadAndCleanOnly =>
           // Fine
         case SiteStatus.HiddenUnlessStaff =>
-          if (!anyUser.exists(_.isStaff) && !isLogin)
+          if (!anyUser.exists(_.isStaff) && !isUserLogin)
             throwLoginAsStaff(request)
         case SiteStatus.HiddenUnlessAdmin =>
-          if (!anyUser.exists(_.isAdmin) && !isLogin)
+          if (!anyUser.exists(_.isAdmin) && !isUserLogin)
             throwLoginAsAdmin(request)
         case SiteStatus.Deleted | SiteStatus.Purged =>
           throwSiteNotFound(
@@ -586,10 +605,10 @@ class PlainApiActions(
             debugCode = s"SITEGONE-${site.status.toString.toUpperCase}")
       }
 
-      if (staffOnly && !anyUser.exists(_.isStaff) && !isLogin)
+      if (staffOnly && !anyUser.exists(_.isStaff) && !isUserLogin)
         throwLoginAsStaff(request)
 
-      if (adminOnly && !anyUser.exists(_.isAdmin) && !isLogin)
+      if (adminOnly && !anyUser.exists(_.isAdmin) && !isUserLogin)
         throwLoginAsAdmin(request)
 
       // Some staffOnly endpoints are okay with an embedded session — namely
@@ -693,7 +712,7 @@ class PlainApiActions(
         // isn't about a specific site but the server in general
         // (and the requester has an API username & secret, so, fine).
       }
-      else if (!allowAnyone && !isLogin) {
+      else if (!allowAnyone && !isUserLogin) {
         // ViewPageController has allow-anyone = true.
         val isXhr = isAjax(request)
         val isInternalApi = isXhr  // TODO
@@ -762,7 +781,7 @@ class PlainApiActions(
         case ex: ResultException =>
           // This is fine, probably just a 403 Forbidden exception or 404 Not Found, whatever.
           logger.debug(
-            s"API request result exception [EsE4K2J2]: $ex, $requestUriAndIp")
+                s"s$siteId: API request result exception [EsE4K2J2]: $ex, $requestUriAndIp")
           throw ex
         case ex: play.api.libs.json.JsResultException =>
           // A bug in Talkyard's JSON parsing, or the client sent bad JSON?
@@ -785,8 +804,8 @@ class PlainApiActions(
         case Failure(exception) =>
           // exception –> case ProblemException ?  [ADMERRLOG]
           //            case ex: ResultException ?
-          logger.debug(
-            s"API request exception: ${classNameOf(exception)} [DwE4P7], $requestUriAndIp")
+          logger.debug(s"s$siteId: API request exception: ${
+                classNameOf(exception)} [DwE4P7], $requestUriAndIp")
       })(executionContext)
 
       if (isSuspended) {

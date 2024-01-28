@@ -190,6 +190,18 @@ A help text explaining why this user or group cannot be @mentioned or DM:d,
 and who to contact instead.
 $_$;
 
+------------------------------------------------------------------------
+comment on column  users3.mod_conf_c  is $_$
+Moderation settings for this group (or user), e.g. max posts per week
+before they get a "You're creating a lot of posts" soft warning.
+$_$;
+
+------------------------------------------------------------------------
+comment on column  users3.may_set_rel_follow_c  is $_$
+If this group (or user) can set rel=follow for all links (even if not in
+settings_t.follow_links_to_c).
+$_$;
+
 
 --======================================================================
 --  pat_rels_t
@@ -648,6 +660,26 @@ $_$;
 comment on column  posts3.doing_status_c  is $_$
 
 1: Planned, 2: Started, 3: Paused, 4: Done.
+$_$;
+
+
+--======================================================================
+--  settings_t
+--======================================================================
+
+------------------------------------------------------------------------
+comment on column  settings3.ai_conf_c  is $_$
+AI configuration. Can be long, if includes custom prompts.
+$_$;
+
+------------------------------------------------------------------------
+comment on column  settings3.enable_online_status_c  is $_$
+If there should be any sidebar users-online list.
+$_$;
+
+------------------------------------------------------------------------
+comment on column  settings3.follow_links_to_c  is $_$
+List of domains for which links should be rel=follow.
 $_$;
 
 

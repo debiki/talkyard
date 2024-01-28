@@ -105,11 +105,12 @@ class TyController(cc: ControllerComponents, val context: TyContext)
           rateLimits, allowAnyone = allowAnyone, isLogin = isLogin,
           skipXsrfCheck = skipXsrfCheck)(f)
 
-  def AsyncPostJsonAction(rateLimits: RateLimits, maxBytes: Int,
-        allowAnyone: Boolean = false, avoidCookies: Boolean = false)(
+  def AsyncPostJsonAction(rateLimits: RateLimits, maxBytes: i32,
+        allowAnyone: Bo = false, isGuestLogin: Bo = false, avoidCookies: Bo = false)(
         f: JsonPostRequest => Future[Result]): Action[JsValue] =
     PlainApiAction(cc.parsers.json(maxLength = maxBytes),
-      rateLimits, allowAnyone = allowAnyone, avoidCookies = avoidCookies).async(f)
+          rateLimits, allowAnyone = allowAnyone, isGuestLogin = isGuestLogin,
+          avoidCookies = avoidCookies).async(f)
 
   def PostJsonAction(rateLimits: RateLimits,
         minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
@@ -198,7 +199,7 @@ class TyController(cc: ControllerComponents, val context: TyContext)
 
 
   def originOf(request: DebikiRequest[_]): St =
-    globals.originOf(request.underlying)
+    globals.originOf(request.request)
 
   def originOf(request: RequestHeader): St =
     globals.originOf(request)

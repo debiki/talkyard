@@ -29,7 +29,9 @@
 //------------------------------------------------------------------------------
 
 
-export function CatsOrHomeLink(page: Page, store: Store, forTopbar?: Bo): RElm | Nl {
+export function CatsOrHomeLink(ps: { page: PageTypeAncestors,
+          store: Store, forTopbar?: Bo, skipHome?: true }): RElm | N {
+  const { page, store, forTopbar } = ps;
   // Section pages have no ancestors — instead, they list topics,
   // categores, sub cats. And they're "home" already.
   const isSectionPage = isSection(page.pageRole);
@@ -58,6 +60,7 @@ export function CatsOrHomeLink(page: Page, store: Store, forTopbar?: Bo): RElm |
         r.ol({ className: 'esTopbar_ancestors s_Tb_Pg_Cs' },
           page.ancestorsRootFirst.map((ancestor: Ancestor) => {
             const isRoot = ancestor.categoryId === siteSection.rootCategoryId;
+            if (isRoot && ps.skipHome) return null;
             const deletedClass = ancestor.isDeleted ? ' s_Tb_Pg_Cs_C-Dd' : '';
             const catIcon = category_iconClass(ancestor.categoryId, store);  // [4JKKQS20]
             const key = ancestor.categoryId;

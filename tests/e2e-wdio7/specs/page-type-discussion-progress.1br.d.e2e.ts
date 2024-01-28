@@ -45,12 +45,12 @@ describe("page-type-discussion-progress.1br.d  TyTPATYDISC", () => {
     site.members.push(michael);
     idAddress = await server.importSiteData(site);
     siteId = idAddress.id;
+    await server.skipLimits(siteId, { rateLimits: true });
   });
 
   it("Maria logs in", async () => {
     await mariasBrowser.go2(idAddress.origin);
     await mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
-    await mariasBrowser.disableRateLimits();
   });
 
   it("She posts a topic, type Discussion", async () => {
@@ -107,13 +107,20 @@ describe("page-type-discussion-progress.1br.d  TyTPATYDISC", () => {
     await mariasBrowser.complex.addProgressReply(bottomCommentTwoText);  // #post-9
   });
 
+  it("... it appears", async () => {
+    // Post 8 is a meta post, not yet visible.
+    // If this isn't done before refreshUntilPostNrAppears() below,  [refresh_race]
+    // then the reload might happen to soon, somehow leaving the comment
+    // in draft status (and breaking the test).
+    await mariasBrowser.topic.waitForPostAssertTextMatches(9, bottomCommentTwoText);
+  });
+
   it("The posts has the correct contents", async () => {
     // currently needed, so event posts will appear [2PKRRSZ0]
     await mariasBrowser.topic.refreshUntilPostNrAppears(8, { isMetaPost: true });
-    // Also takes a while for the server to refresh its cache:
+    // Also takes a while for the server to refresh its cache: [refresh_race]
     await mariasBrowser.topic.refreshUntilPostNrAppears(9);
 
-    await mariasBrowser.topic.waitForPostAssertTextMatches(9, bottomCommentTwoText);
     await mariasBrowser.topic.assertMetaPostTextMatches(8, 'reopened');
   });
 

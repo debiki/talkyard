@@ -320,9 +320,6 @@ object EdHttp {  // REFACTOR move to  talkyard.server.http object methods?
   private def throwLoginAsTo(as: String, to: String): Nothing =
     throwTemporaryRedirect(routes.LoginController.showLoginPage(as = Some(as), to = Some(to)).url)
 
-  def urlDecodeCookie(name: String, request: RequestHeader): Option[String] =
-    request.cookies.get(name).map(cookie => urlDecode(cookie.value))
-
   def urlEncode(in: String): String = {
     // java.net.URLEncoder unfortunately converts ' ' to '+', so change '+' to
     // a percent encoded ' ', because the browsers seem to decode '+' to '+'

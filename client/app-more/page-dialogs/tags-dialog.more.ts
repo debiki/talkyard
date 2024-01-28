@@ -268,6 +268,7 @@ const TagsDialog = createComponent({
                 : "the person's name, in posts by him/her."));
 
       const tagListInput =
+          // UX: Any way to make the <select> taller, if many tags?
           Input({ type: 'custom', label: `Add existing ${whatShort}s:` },
             rb.ReactSelect({ multi: true, disabled: isForGroup, className: 'e_AdTg',
                 value: makeTagLabelValues(state.curTags, state.tagTypes),
@@ -305,7 +306,14 @@ const TagsDialog = createComponent({
     }
 
     return (
-      Modal({ show: !!content, onHide: this.close, dialogClassName: 'esTsD' },
+      utils.DropdownModal({ show: !!content, onHide: this.close,
+            dialogClassName2: 'esTsD', showCloseButton: true,
+            // It's so annoying if [all tags one is adding] disappears if accidentally
+            // clicking outside the dialog.
+            closeOnClickOutside: false,
+            // Center the dialog. [dropdown_in_middle]
+            atX: window.innerWidth / 2 - WidthsPx.DropModalDefWidth / 2, pullLeft: true,
+            atY: window.scrollY + 150 },
         ModalHeader({}, ModalTitle({}, title)),
         ModalBody({}, content),
         ModalFooter({},

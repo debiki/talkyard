@@ -142,8 +142,8 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: TyContext)
     val CheckSidAndXsrfResult(anyTySession, sessionId, xsrfOk, newCookies, delFancySidCookies) =
           security.checkSidAndXsrfToken(
                 request, anyRequestBody = None, site, dao,
-                expireIdleAfterMins = expireIdleAfterMins, maySetCookies = false,
-                skipXsrfCheck = false)
+                expireIdleAfterMins = expireIdleAfterMins, isGuestLogin = false,
+                maySetCookies = false, skipXsrfCheck = false)
 
     COULD // delete any delFancySidCookies.
 

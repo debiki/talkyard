@@ -128,6 +128,10 @@ type WaitForClickableResult = 'Clickable' | 'NotClickable';
 type ClickResult = 'Clicked' | 'CouldNotClick';
 
 
+const CookiePrefix = settings.secure ? '__Host-' : '';
+
+
+
 function isBlank(x: string): boolean {
   return _.isEmpty(x) || !x.trim();
 }
@@ -391,7 +395,7 @@ export class TyE2eTestBrowser {
     }
 
     deleteCookie(cookieName: string) {
-      this.#br.deleteCookie(cookieName);
+      this.#br.deleteCookie(CookiePrefix + cookieName);
     }
 
     deleteAllCookies() {
@@ -574,17 +578,18 @@ export class TyE2eTestBrowser {
     disableRateLimits() {
       // Old, before I added the no-3rd-party-cookies tests.
       // Maybe instead always: server.skipRateLimits(siteId)  ?
-      this.#br.execute(function(pwd) {
+      this.#br.execute(function(pwd, CookiePrefix) {
         var value =
-            "esCoE2eTestPassword=" + pwd +
+            CookiePrefix + "esCoE2eTestPassword=" + pwd +
             "; expires=Fri, 31 Dec 9999 23:59:59 GMT";
         if (location.protocol === 'https:') {
           value +=
               "; Secure" +
-              "; SameSite=None";  // [SAMESITE]
+              "; SameSite=None" +  // [SAMESITE]
+              "; Path=/";  // otherwise, setting __Host- cookies has no effect
         }
         document.cookie = value;
-      }, settings.e2eTestPassword || '');
+      }, settings.e2eTestPassword || '', CookiePrefix);
     }
 
 
@@ -2649,14 +2654,16 @@ export class TyE2eTestBrowser {
 
     assertNotFoundError(ps: {
             whyNot?: 'CategroyDeleted' | 'MayNotCreateTopicsOrSeeCat' |
-                'MayNotSeeCat' | 'PageDeleted' } = {}) {
+                'MayNotSeeCat' | 'PageDeleted', shouldBeErrorDialog?: true } = {}) {
       for (let i = 0; i < 20; ++i) {
         let source = this.#br.getPageSource();
         // The //s regex modifier makes '.' match newlines. But it's not available before ES2018.
-        let is404 = /404 Not Found.+TyE404_/s.test(source);
+        let is404 = /404.+Not [Ff]ound.+TyE404_/s.test(source);
         if (!is404) {
           this.#br.pause(250);
-          this.#br.refresh();
+          if (!ps.shouldBeErrorDialog) {
+            this.#br.refresh();
+          }
           continue;
         }
 

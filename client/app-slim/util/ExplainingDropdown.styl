@@ -37,9 +37,14 @@ $sideSpace = 20px;
   a
     display: block;
     text-decoration: none;
+  a, button
     padding: 9px $sideSpace;
     @media (max-width: 500px)
       padding-right: 0; // the DropModal has padding-right itself already [5YKF20]
+  button
+    text-align: left; // else center
+    border: none;
+    background: none;
 
   &:hover&:not(.c_Dis)
     background: hsl($uiHue, 100%, 97%);

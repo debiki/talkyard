@@ -26,9 +26,6 @@ let mariasTopicUrl: string;
 const mariasOpReply = 'mariasOpReply';
 const mariasOpReplyReply = 'mariasOpReplyReply';
 
-const bottomCommentOneText = 'bottomCommentOneText';
-const bottomCommentTwoText = 'bottomCommentTwoText';
-
 // .Last_status_change post nr will be 5, and the first answer will be 5 + 1:
 const okaySolutionPostNr = 6;
 const optimalSolutionPostNr = 7;

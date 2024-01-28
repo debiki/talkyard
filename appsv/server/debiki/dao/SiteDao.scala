@@ -770,6 +770,24 @@ class SiteDao(
               email.tyype} [TyEEMLTYPE]")
       }
 
+      email.toUserId foreach { id =>
+        this.getUser(id) match {
+          case None =>
+            // Would be a bug? Users aren't currently hard deleted.
+            val msg = s"No user with id $id [TyE30^MR3]"
+            logger.warn(msg)
+            return Bad(msg)
+          case Some(user) =>
+            TESTS_MISSING // See: TyT_DELACT_RSTPW
+            if (user.isDeleted)
+              return Bad("Account deactivated or deleted")
+            // In the future, maybe sometimes allow? [email_lgi_susp]
+            // Not needed here, now, though.
+            if (user.isSuspendedAt(this.now()))
+              return Bad("Account suspended")
+        }
+      }
+
       Good(email)
     }
   }

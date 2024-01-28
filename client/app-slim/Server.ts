@@ -72,7 +72,7 @@ function postJson(urlPath: string, requestData: RequestData) {
     'X-Requested-With': 'XMLHttpRequest',
   };
 
-  headers[XsrfTokenHeaderName] = getSetCookie('TyCoXsrf');
+  headers[XsrfTokenHeaderName] = getXsrfCookie();
 
   addAnyNoCookieHeaders(headers);
 
@@ -395,7 +395,7 @@ function corsPost(ps) {
 export function uploadFiles(endpoint: string, files: any[], onDone, onError) {  // [FETCHEX]
   dieIf(files.length !== 1,  `${files.length} files [TyE06WKTDN23]`);
   const headers = {};
-  headers[XsrfTokenHeaderName] = getSetCookie('TyCoXsrf');
+  headers[XsrfTokenHeaderName] = getXsrfCookie();
   fetch(endpoint, {
     method: 'POST',
     body: files[0],
@@ -461,7 +461,7 @@ function trySendBeacon(url, data) {
   // 1. Don't call variable `sendBeacon`, that results in an invalid-invokation error.
   // 2. sendBeacon() apparently always posts text/plain;charset=UTF-8.
   // 3. There's no way to add a xsrf header — so include a xsrf token in the request body.
-  let xsrfTokenLine = getSetCookie('TyCoXsrf') + '\n';  // [7GKW20TD]
+  let xsrfTokenLine = getXsrfCookie() + '\n';  // [7GKW20TD]
   let json = JSON.stringify(data);
   (<any> navigator).sendBeacon(url + '-text', xsrfTokenLine + json);
 }
@@ -596,14 +596,14 @@ type OnErrorFn = (xhr: XMLHttpRequest) => any;
 ///
 function postAndPatchStore(
         urlPath: St,
-        onOk: (response: StorePatch) => Vo,
+        onOk: (resp: HasStorePatch | StorePatch) => V,
         data: JsonData | OnErrorFn,
         onErr?: JsonData | OnErrorFn,
         opts?: { showLoadingOverlay?: Bo },  // default true
         ) {
-  postJsonSuccess(urlPath, response => {
-    ReactActions.patchTheStore(response);
-    onOk(response);
+  postJsonSuccess(urlPath, resp => {
+    ReactActions.patchTheStore(resp.storePatch || resp);
+    onOk(resp);
   }, data, onErr, opts);
 }
 
@@ -2403,9 +2403,9 @@ export function deleteApiSecrets(secretNrs: ApiSecretNr[], onOk: () => void) {
 }
 
 
-export function search(rawQuery: string, success: (results: SearchResults) => void,
-    onError?: () => void, opts?: { showLoadingOverlay?: false }) {
-  postJsonSuccess('/-/search', success, { rawQuery: rawQuery }, onError, opts);
+export function search(ps: { rawQuery: St, offset?: Nr }, onOk: (results: SearchResults) => V,
+        onErr?: () => V, opts?: { showLoadingOverlay?: false }) {
+  postAndPatchStore('/-/search', onOk, ps, onErr, opts);
 }
 
 

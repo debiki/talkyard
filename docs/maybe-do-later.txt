@@ -25,6 +25,10 @@ Popularity calcs sometimes ignore the very latest comment / chat msg?
 
 [timeline_comts] Maybe. Rename "progress posts" to "timeline comments"?
 
+[purp_dep_text]
+Help texts that are different, depending on the purpose of the forum. E.g. calls people
+"employees" and "customers",  or if it's for education: "teachers", "students".
+
 [ty_themes]
 Primary button colors, secondary, background, arrows, fonts,
 and embedded widgets, e.g. Twitter's oEmbed has a 'link_color: #223344' attr,
@@ -298,6 +302,13 @@ And when logging in via email, one gets to choose which account to login to.
 [clean_up_emails]
 Refactor a bit.
 Search for:  [4KDPREU2], break out fn.
+
+[old_users_verif_email]
+Add a setting that says if already active accounts w unverified email addrs,
+need to verify their addrs to continue using them — or if the requireVerifiedEmail
+setting applies only to *new* signups.  If old users need to verify too, then,
+add a button to send all of them an email addr verification email?
+(Maybe not actually send all emails exactly at once though.)
 
 [save_email]
 Save invitation emails sent (and other types I forgot?), & any SMTP erors.
