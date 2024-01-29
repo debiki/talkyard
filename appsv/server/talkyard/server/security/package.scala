@@ -163,23 +163,18 @@ object EdSecurity {
   val SessionIdPart4HttpOnlyCookieName = "TyCoSid4"
   val SessionIdPart5StrictCookieName = "TyCoSid5"
 
+  /** Used to be named XSRF-TOKEN back when Talkyard used Angularjs. But it's
+    * better to use a Talkyard name (TyCo...), also reduces the risk for name clashes
+    * with cookies from 3rd party oddly-behaving javascript.
+    */
   val XsrfCookieName = "TyCoXsrf"
 
-  /** Don't rename. Is used by AngularJS: AngularJS copies the value of
-    * this cookie to the HTTP header just above.
-    * See: http://docs.angularjs.org/api/ng.$http, search for "XSRF-TOKEN".
+  /** A HTTP header in which the browser sends any XSRF token, in POSTS requests.
     *
-    * REMOVE_AFTER 2025-03-01, not using Angular any more, and this cookie
-    * caused collissoins with someone's custom javascript that set a cookie
-    * with the same name on Ty's domain  (but with an unexpected value).
-    * [old_xsrf_cookie_name]
-    */
-  private val OldXsrfCookieName = "XSRF-TOKEN"
-
-  /** A HTTP header in which the browser sends any XSRF token, together with
-    * POSTS requests.
+    * Could rename to X-Ty-Xsrf?  The current name is from years ago when Talkyard
+    * was using Angular, which uses this header (and cookie name, see:
+    * http://docs.angularjs.org/api/ng.$http, search for "XSRF-TOKEN").
     *
-    * Could rename to X-Ty-Xsrf?  The current name is from when Angular was in use.
     * But maybe might as well continue using this name — what if proxies have
     * been configured to remove any unexpected headers? But since this header
     * is pretty commonly used (AngularJS uses it), it's less likely to get removed?
@@ -462,8 +457,7 @@ class EdSecurity(globals: Globals) {
 
     // On GET requests, simply accept the value of the xsrf cookie.
     // (On POST requests, however, we check the xsrf form input value)
-    val anyXsrfCookieValue = urlDecodeCookie(XsrfCookieName, request).orElse(
-            urlDecodeCookie(OldXsrfCookieName, request))
+    val anyXsrfCookieValue = urlDecodeCookie(XsrfCookieName, request)
 
     val isGet = request.method == "GET"
     val isPost = request.method == "POST"
@@ -770,7 +764,7 @@ class EdSecurity(globals: Globals) {
       //
       // And seems it's good to do this — also rejects accidentally malformed & possibly
       // less safe tokens:  There was some third party Javascript an admin added to
-      // their own Talkyard site, which set a XSRF-TOKEN cookie to something unexpected
+      // their own Talkyard site, which set a XSRF cookie to something unexpected
       // which made Talkyard error out in the XSRF check, back when Talkyard used that
       // cookie name.
     }
