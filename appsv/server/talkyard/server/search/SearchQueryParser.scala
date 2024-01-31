@@ -25,7 +25,37 @@ import scala.collection.{immutable => imm}
 import scala.util.matching.Regex
 
 
-
+/**
+  * GitHub uses:
+  *    label:"bug","wip"        — for OR
+  *    label:"bug" label:"wip"  — for AND
+  * Talkyard uses:
+  *    tag:bug,wip       — for OR
+  *    tag:bug  tag:wip  — for AND, but not yet impl.
+  * Talkyard's tags can have values, e.g.:
+  *        tag:priority:desc>=3
+  *    finds topic tagged with "priority" and priority values >= 3, sorts descending.
+  *
+  * GitHub uses "state", "type", "is":
+  *    state:open/closed
+  *    type:issue/discussion
+  *    is:closed reason:completed   is:closed reason:"not planned"   is:draft
+  * Talkyard at least for now uses "is" for all those: (simpler? always "is")
+  *    is:question/idea/...  is:planned/started/done   is:solved  is:open/closed
+  *
+  * GitHub uses "review", review-requested::
+  *    review:none/required/approved/changes_requested
+  *    review-requested:octocat
+  * Talkyard will use  "assigned-to"? maybe sth like "review-requested" later too?
+  * or is that too specific, maybe should be some custome tag type instead?
+  *
+  * GitHub & Google etc:  '-' before filters out, e.g.:  -author:octocat
+  * Talkyard: Mostly not implemented, only for tags ("-tag:...").
+  *
+  * Tests:
+  *   - talkyard.server.search.SearchQueryParserSpec
+  *   - indirectly via lots of e2e tests
+  */
 object SearchQueryParser {
 
   SECURITY // COULD these regexes be DoS attacked?
@@ -41,11 +71,12 @@ object SearchQueryParser {
   // See:  https://stackoverflow.com/questions/50524/what-is-a-regex-independent-non-capturing-group
   // `(?:abc|a)` is a capture group that backtracks and retries with just 'a', if
   // 'abc' matched but turned out not to work with what comes after the group.
-  private val TagNamesRegex =        """^(?:.*? )?tags?:([^ ]*) *(?>.*)$""".r
-  private val NotTagNamesRegex =     """^(?:.*? )?-tags?:([^ ]*) *(?>.*)$""".r
-  private val CatSlugsRegex =        """^(?:.*? )?categor(?>y|ies):([^ ]*) *(?>.*)$""".r
-  private val SortRegex =            """^(?:.*? )?sort(?>-by)?:([^ ]*) *(?>.*)$""".r
-  private val AuthorsRegex =         """^(?:.*? )?by:([^ ]*) *(?>.*)$""".r
+  private val TagNamesRegex =        """^(?:.*? )?(tags?):([^ ]*) *(?>.*)$""".r
+  private val NotTagNamesRegex =     """^(?:.*? )?(-tags?):([^ ]*) *(?>.*)$""".r
+  private val CatSlugsRegex =        """^(?:.*? )?(categor(?>y|ies)):([^ ]*) *(?>.*)$""".r
+  private val SortRegex =            """^(?:.*? )?(sort(?>-by)?):([^ ]*) *(?>.*)$""".r
+  private val AuthorsRegex =         """^(?:.*? )?(by):([^ ]*) *(?>.*)$""".r
+  private val IsRegex =              """^(?:.*? )?(is):([^ ]*) *(?>.*)$""".r
 
   // Would  tags:"Tag-With Spaces=Value with Spaces,more-tags,maybe-value=123" work,
   // to support spaces? This regex:  [search_q_param_space]
@@ -99,17 +130,18 @@ object SearchQueryParser {
 
     // Look for and replace "-tags" first, before "tags" (which would otherwise also match "-tags").
     val (remainingQuery2, notTagNames) =
-          _parsePart(rawQuery, "-tag", "-tags", NotTagNamesRegex, warnings)
+          _parsePart(rawQuery, NotTagNamesRegex, warnings)
     val notTagIds =
           _parseNamesToIds("tag", notTagNames, dao.getTagTypesByNamesOrSlugs, warnings)
 
     // If tagNamesVals (below) is like:  some-tag=123  other-tag>=100,  we'll split on
     // '=', '>=' etc, and remember the tag and if its value should be = or >= etc something.
     val (remainingQuery3, tagNamesVals) =
-          _parsePart(remainingQuery2, "tag", "tags", TagNamesRegex, warnings)
+          _parsePart(remainingQuery2, TagNamesRegex, warnings)
     val (tagTypeIds, tagValComps, sortByTags) =
           _parseTagsOrBadges("tag", tagNamesVals, dao.getTagTypesByNamesOrSlugs, warnings)
 
+    // [search_hmm]
     UX; BUG // Continue & _find_all "tags:..."?  The regexps above handle just one, right?
     // This:  "tag:some-tag  tag:other-tag"  finds posts with *both* tags,
     // whilst this:  "tags:some-tag,other-tag"  finds posts with *any* of those tags
@@ -126,25 +158,31 @@ object SearchQueryParser {
     // And cat slugs need to be unique only in their own sub com?
     //
     val (remainingQuery4, catNames) =
-          _parsePart(remainingQuery3, "category", "categories", CatSlugsRegex, warnings)
+          _parsePart(remainingQuery3, CatSlugsRegex, warnings)
     val catIds =
           _parseNamesToIds("category", catNames, dao.getCatsBySlugs, warnings)
 
     val (remainingQuery5, authorUsernames) =
-          _parsePart(remainingQuery4, "by", "", AuthorsRegex, warnings)
+          _parsePart(remainingQuery4, AuthorsRegex, warnings)
     val authorIds =
           _parseNamesToIds("username", authorUsernames, dao.getMembersByUsernames, warnings)
+
+    // This also won't _find_all. Need a loop
+    val (remainingQuery6, isWhatStrs) =
+          _parsePart(remainingQuery5, IsRegex, warnings)
+    val isWhat: IsWhat =
+          _parseIsWhat(isWhatStrs, warnings)
 
     // Format:  sort:[by-what][:opt-tag-name]:asc/desc ?
     //   e.g.:  sort:tagval:published-year:asc   // 'published-year' is a tag
     //     or:  sort:created-at:desc          // no value needed
-    val (remainingQuery6, sortOrderStrs) =
-          _parsePart(remainingQuery5, "sort", "sort-by", SortRegex, warnings)
+    val (remainingQuery7, sortOrderStrs) =
+          _parsePart(remainingQuery6, SortRegex, warnings)
     val sortOrders: Vec[SortHitsBy] =
           sortOrderStrs.flatMap(s => parseSortPart(s, dao, warnings))
 
     // BUG Doesn't this find just one unrecognized parameter? Should _find_all.
-    UnknownParamRegex.findGroupIn(remainingQuery6) match {
+    UnknownParamRegex.findGroupIn(remainingQuery7) match {
       case Some(unkParam: St) =>
         // The query string includes some  "... param:value ..." that we don't recognize.
         // Pass it as is to ElasticSearch, maybe the user copy-pasted sth and just didn't
@@ -162,7 +200,8 @@ object SearchQueryParser {
 
     SearchQuery(
           fullTextQuery = rawQuery.trim, // ignore weird unicode blanks for now
-          queryWithoutParams = remainingQuery6.trim,
+          queryWithoutParams = remainingQuery7.trim,
+          isWhat = isWhat,
           tagTypeNames = tagNamesVals.toSet,
           tagTypeIds = tagTypeIds.toSet,
           tagValComps = tagValComps,
@@ -182,23 +221,21 @@ object SearchQueryParser {
 
   /** Returns:  (Remaining-query, Name-Comparison-operator-Value strings)
     */
-  private def _parsePart(query: St, partName: St, altPartName: St, regex: Regex,
-          warnings: MutArrBuf[ErrMsgCode],
+  private def _parsePart(query: St, regex: Regex, warnings: MutArrBuf[ErrMsgCode],
           ): (St, Vec[St]) = {
 
-    regex.findGroupIn(query) match {
+    // These regexs have two groups separated by ':', like:  "what:something,more,evenmore"
+    regex.findTwoGroupsIn(query) match {
       case None =>
         (query, Vec.empty)
-      case Some(commaSepNames: St) =>
+      case Some((partName: St, commaSepNames: St)) =>
         // `commaSepNames` is like:  "tag-name,other-tag=111,third-tag>100"
         //            or e.g. like:  "category-name,other-category",
         // that is, names, with optional comparison operators and values.
-        // Only tags can have comparison operators and values (categories
+        // Currently, only tags can have comparison operators and values (categories
         // and usernames cannot).
-        var remainingQuery = query.replaceAllLiterally(s"$partName:$commaSepNames", "")
-        if (altPartName.nonEmpty) {
-          remainingQuery = remainingQuery.replaceAllLiterally(s"$altPartName:$commaSepNames", "")
-        }
+        val remainingQuery = query.replaceAllLiterally(s"$partName:$commaSepNames", "")
+
         // Each `nameCompValStrs` item will be like:
         //         "tag-name",  or with a value:  "some-tag=123"  or  "some-tag<100".
         // Or like "user_name"  or  "category-slug"  without any `<=>123` comparison.
@@ -211,6 +248,37 @@ object SearchQueryParser {
         }
         (remainingQuery, nameCompValStrs)
     }
+  }
+
+
+  private def _parseIsWhat(isWhatList: Vec[St], warnings: MutArrBuf[ErrMsgCode]): IsWhat = {
+    // Might as well use  "is:something"  for all these?  Seems there won't be any
+    // collision (ambiguous word).
+    var isWhat = IsWhat.empty
+    for (word <- isWhatList) word match {
+      case "idea" => isWhat = isWhat.copy(pageType = Some(PageType.Idea))
+      case "problem" => isWhat = isWhat.copy(pageType = Some(PageType.Problem))
+      case "question" => isWhat = isWhat.copy(pageType = Some(PageType.Question))
+      case "discussion" => isWhat = isWhat.copy(pageType = Some(PageType.Discussion))
+      case "comments" => isWhat = isWhat.copy(pageType = Some(PageType.EmbeddedComments))
+
+      // Is "undecided" really the right word? Oh well, for now.
+      case "undecided" => isWhat = isWhat.copy(pageDoingStatus = Some(PageDoingStatus.Discussing))
+      case "planned" => isWhat = isWhat.copy(pageDoingStatus = Some(PageDoingStatus.Planned))
+      case "started" => isWhat = isWhat.copy(pageDoingStatus = Some(PageDoingStatus.Started))
+      case "done" => isWhat = isWhat.copy(pageDoingStatus = Some(PageDoingStatus.Done))
+
+      // For "not answered", can use:  "is:question is:open"
+      case "answered" | "solved" => isWhat = isWhat.copy(pageSolved = Some(true))
+
+      case "open" => isWhat = isWhat.copy(pageOpen = Some(true))
+      case "closed" => isWhat = isWhat.copy(pageOpen = Some(false))
+
+      case x =>
+        warnings.append(ErrMsgCode(
+              s"""Unsupported 'is:' value:   "$x",   ignoring""", "TyESEINVISVAL"))
+    }
+    isWhat
   }
 
 

@@ -6502,8 +6502,8 @@ export class TyE2eTestBrowser {
         this.searchResultsPage.waitForResults(phrase);
         // oops, search-search-loop needed ...
         // for now:
-        this.waitForAtLeast(numPages, '.esSERP_Hit_PageTitle');
-        this.assertExactly(numPages, '.esSERP_Hit_PageTitle');
+        this.waitForAtLeast(numPages, '.c_SR_Ttl');
+        this.assertExactly(numPages, '.c_SR_Ttl');
       },
 
       searchForWaitForResults: (phrase: string) => {
@@ -6540,19 +6540,19 @@ export class TyE2eTestBrowser {
       },
 
       countNumPagesFound_1: (): number =>
-        this.$$('.esSERP_Hit_PageTitle').length,
+        this.$$('.c_SR_Ttl').length,
 
       assertResultPageTitlePresent: (title: string) => {
-        this.waitAndGetElemWithText('.esSERP_Hit_PageTitle', title, { timeoutMs: 1 });
+        this.waitAndGetElemWithText('.c_SR_Ttl', title, { timeoutMs: 1 });
       },
 
       goToSearchResult: (linkText?: string) => {
         this.repeatUntilAtNewUrl(() => {
           if (!linkText) {
-            this.waitAndClick('.esSERP_Hit_PageTitle a');
+            this.waitAndClick('.c_SR_Ttl a');
           }
           else {
-            this.waitForThenClickText('.esSERP_Hit_PageTitle a', linkText);
+            this.waitForThenClickText('.c_SR_Ttl a', linkText);
           }
         });
       },

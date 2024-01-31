@@ -181,7 +181,8 @@ class SiteDao(
 
   lazy val redisCache = new RedisCache(siteId, redisClient, context.globals.now)
 
-  protected lazy val searchEngine = new SearchEngine(siteId, elasticSearchClient)
+  protected lazy val searchEngine = new SearchEngine(siteId, elasticSearchClient,
+        ffIxMapping2 = theSite().isFeatureEnabled("ffIxMapping2", globals.config.featureFlags))
 
   def readOnly: ReadOnlySiteDao = this.asInstanceOf[ReadOnlySiteDao]
 

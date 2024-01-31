@@ -18,14 +18,18 @@ let stranger_brA: TyE2eTestBrowser;
 let stranger_brB: TyE2eTestBrowser;
 
 const _10001 = '10001';
-const _10021 = '10021';
 const _10031 = '10031';
+const _10047 = '10047';
 const _10061 = '10061';
 
 
 /// This test breaks if the indexer is "too fast", because this test tries to
 /// verify that the posts are indexed in the expected order — but if they're all
 /// done instantly, then, some tests herein fails. [dont_index_too_fast_if_testing]
+///
+/// That's one reason there are so many pages — about 50 + 60: then the indexer
+/// needs more time. (The other reason is that we want to test many time-ranges-
+/// -to-post-ids "expansions", see SystemDao.addPendingPostsFromTimeRanges().)
 ///
 describe(`reindex-sites.2br.f  TyTREINDEX3`, () => {
 
@@ -49,10 +53,10 @@ describe(`reindex-sites.2br.f  TyTREINDEX3`, () => {
     skipComments: true,
   });
 
-  const forum32 = addTestsForConstructingLoadTestSiteAndLoggingIn({
-    siteName: "Forum-32 Reindex Test",
-    hostnameSuffix: '-f32',
-    numPages: 32,
+  const forum48 = addTestsForConstructingLoadTestSiteAndLoggingIn({
+    siteName: "Forum-48 Reindex Test",
+    hostnameSuffix: '-f48',
+    numPages: 48,
     numUsers: 6,
     halfPagesTrustedOnly: false,
     logInAsTrillianAndMaja: false,
@@ -82,8 +86,8 @@ describe(`reindex-sites.2br.f  TyTREINDEX3`, () => {
   });
 
 
-  it(`Someone searches for page 10001 in Forum-32`, async () => {
-    await stranger_brB.go2(forum32.site.origin);
+  it(`Someone searches for page 10001 in Forum-48`, async () => {
+    await stranger_brB.go2(forum48.site.origin);
     await stranger_brB.topbar.searchFor(_10001);
   });
   it(`... finds nothing`, async () => {
@@ -116,28 +120,33 @@ describe(`reindex-sites.2br.f  TyTREINDEX3`, () => {
   });
 
 
-  it(`The server starts indexing Forum-62 and -32 ...`, async () => {
-    await server.reindexSites([forum62.site.id, forum32.site.id]);
+  it(`The server starts indexing Forum-62 and -48 ...`, async () => {
+    await server.reindexSites([forum62.site.id, forum48.site.id]);
   });
 
-  it(`Pages 10031 get indexed first in Forum-32 — the most recent posts first`, async () => {
-    await stranger_brB.searchResultsPage.searchForUntilNumPagesFound(_10031, 1);
-  });
-  it(`... and page 10061 in Forum-62`, async () => {
-    await owen_brA.searchResultsPage.searchForUntilNumPagesFound(_10061, 1);
+  it(`Pages 10047 get indexed first in Forum-48 — the most recent posts first`, async () => {
+    await stranger_brB.searchResultsPage.searchForUntilNumPagesFound(_10047, 1);
   });
 
-  it(`But page 10001 hasn't yet been indexed, not in Forum-32 ...`, async () => {
+  it(`But page 10001 hasn't yet been indexed in Forum-48 ...`, async () => {
+    // RACE: If the UI tests are runs too slowly, the server will already
+    // be done indexing, and page 10001 _is_ found, and this test breaks. But
+    // in dev/test mode, the server slows down indexing, so, currently works fine
+    // (it's disabled in prod mode).
     await stranger_brB.searchResultsPage.searchForWaitForResults(_10001);
     await stranger_brB.searchResultsPage.assertResultLinksAre([]);
   });
-  it(`... and not in Forum-62`, async () => {
+
+  it(`Page 10061 gets indexed first in Forum-62`, async () => {
+    await owen_brA.searchResultsPage.searchForUntilNumPagesFound(_10061, 1);
+  });
+  it(`... but not page 10001`, async () => {
     await owen_brA.searchResultsPage.searchForWaitForResults(_10001);
     await owen_brA.searchResultsPage.assertResultLinksAre([]);
   });
 
-  it(`... Page 21 also hasn't, in Forum-62  (because pages 22...61 are first)`, async () => {
-    await owen_brA.searchResultsPage.searchForWaitForResults(_10021);
+  it(`... Page 31 also hasn't, in Forum-62  (because pages 32...61 are first)`, async () => {
+    await owen_brA.searchResultsPage.searchForWaitForResults(_10031);
     await owen_brA.searchResultsPage.assertResultLinksAre([]);
   });
   it(`... until after a while`, async () => {
@@ -148,7 +157,7 @@ describe(`reindex-sites.2br.f  TyTREINDEX3`, () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([]);
   });
 
-  it(`Page 10001 gets indexed in Forum-32`, async () => {
+  it(`Page 10001 gets indexed in Forum-48`, async () => {
     await stranger_brB.searchResultsPage.searchForUntilNumPagesFound(_10001, 1);
   });
   it(`... and in Forum-62, eventually`, async () => {
@@ -199,8 +208,10 @@ describe(`reindex-sites.2br.f  TyTREINDEX3`, () => {
     const pageNameNr = 10000 + nr;
     it(`... Soon page ${pageNameNr} is searchable in Forum-24`, async () => {
       const expected = [  // already sorted
-            `/-${pageNameNr}/pub#post-0`,  // page title
-            `/-${pageNameNr}/pub#post-1`]; // page body
+            `/-${pageNameNr}/pub`]  // page title
+            // No longer included: (if only the title or orig-post matches, then
+            // one link is enough)
+            // `/-${pageNameNr}/pub#post-1`]; // page body
       let actual: St[] | U;
       await stranger_brB.searchResultsPage.searchForUntilNumPagesFound('' + pageNameNr, 1);
       await stranger_brB.waitUntil(async () => {

@@ -286,12 +286,9 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     request.dao.writeTx { (tx, staleStuff) =>  // COULD wrap everything in this transaction
                                                 // and move it to PagesDao? [.ed_pg_1_tx]
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+
       if (addsNewDoingStatusMetaPost) {
         dao.addMetaMessage(requester, s" marked this topic as ${newMeta.doingStatus}", pageId, tx)
-      }
-
-      if (newMeta.categoryId != oldMeta.categoryId) {
-        tx.indexAllPostsOnPage(pageId)
       }
 
       // If moved to new category, with maybe different access permissions
@@ -309,7 +306,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
         // Page version bumped above.
         staleStuff.addPageId(pageId, memCacheOnly = true)
       }
-      // Should: Update audit log
+      AUDIT_LOG
     }
 
     // Update URL path (folder, slug, show/hide page id).

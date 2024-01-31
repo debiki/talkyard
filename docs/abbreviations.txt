@@ -178,6 +178,7 @@ Nm  = name
 Nf  = notification,  e.g. e_NfEm_NwTp = notification email, about a new topic
 Nv  = navigation, e.g. NvLs_Ln = Navigation-List Link
 Nw  = new
+Op  = Original post
 Ord = order
 Pat = participant
 Pb  = pagebar

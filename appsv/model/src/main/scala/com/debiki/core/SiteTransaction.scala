@@ -349,13 +349,27 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def insertPageMetaMarkSectionPageStale(newMeta: PageMeta, isImporting: Bo = false)(
         mab: MessAborter): U
 
-  final def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean): Unit = {
+
+  final def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Bo,
+               maybeReindex: Bo = true): U = {
     dieIf(newMeta.pageType != oldMeta.pageType && !oldMeta.pageType.mayChangeRole, "EsE4KU0W2")
     dieIf(newMeta.version < oldMeta.version, "EsE6JKU0D4")
     updatePageMetaImpl(newMeta, oldMeta = oldMeta, markSectionPageStale)
+
+    // Update search index, if needed. But what about chat pages with maybe 10 000
+    // messages? Can't keep reindex all that, if the page is toggled open/closed
+    // and moved back & forth between some categories?  How handle that?  [ix_big_pgs]
+    if (newMeta.numRepliesVisible > 1000) {  // ReindexLimit — oops not accessible here
+      // Skip for now. [do_not_index]
+    }
+    else if (maybeReindex && newMeta.shouldReindexAfterChanges(oldMeta)) {
+      indexAllPostsOnPage(newMeta.pageId)
+    }
   }
+
   protected def updatePageMetaImpl(newMeta: PageMeta, oldMeta: PageMeta,
         markSectionPageStale: Boolean): Unit
+
 
   def markPagesHtmlStaleIfVisiblePostsBy(patId: PatId): i32
   def markPagesHtmlStale(pageIds: Set[PageId]): Unit

@@ -35,7 +35,8 @@ import talkyard.server.TyLogging
 
 class SearchEngine(
   private val siteId: SiteId,
-  private val elasticSearchClient: Client) extends TyLogging {
+  private val elasticSearchClient: Client,
+  private val ffIxMapping2: Bo) extends TyLogging {
 
   /**
     *
@@ -76,6 +77,21 @@ class SearchEngine(
         QueryBuilders.matchQuery(
                   PostDocFields.ApprovedPlainText, searchQuery.queryWithoutParams))
     }
+    else {
+      // Then maybe we're searching for tags, categories, is:idea/closed/solved/etc
+      // — let's return only orig posts and titles. We don't want 100 comments on a,
+      // say, Idea page to generate 100 hits, if searching for "is:idea".
+      // But for this to work, we need to reindex the whole site. Otherwise, only
+      // recently indexed topics will be found. For now, let's set a feature flag
+      // for such reindexed sites — still trying this out.
+      if (ffIxMapping2) {
+        boolQuery.filter(
+              QueryBuilders.termQuery(PostDocFields.PostType, OrigPostType))
+      }
+      else {
+        // Haven't yet reindexed.
+      }
+    }
 
     // ----- Special
 
@@ -91,6 +107,32 @@ class SearchEngine(
       boolQuery.mustNot(
             QueryBuilders.termQuery(
                   PostDocFields.PostType, PostType.CompletedForm.toInt))
+    }
+
+    // ----- Is:Something
+
+    // For now,  "is:aa,bb,cc"  means only pages matching all of  aa, bb, cc   are found,
+    // rather than any of   aa, bb or cc  — which is how  "tags:aa,bb,cc"  works though!
+    // Change / fix later?  [search_hmm]
+
+    searchQuery.isWhat.pageType foreach { pageType =>
+      val q = QueryBuilders.termQuery(PostDocFields.PageType, pageType.toInt)
+      boolQuery.filter(q)
+    }
+
+    searchQuery.isWhat.pageOpen foreach { isOpen =>
+      val q = QueryBuilders.termQuery(PostDocFields.PageOpen, isOpen)
+      boolQuery.filter(q)
+    }
+
+    searchQuery.isWhat.pageSolved foreach { isSolved =>
+      val q = QueryBuilders.termQuery(PostDocFields.PageSolved, isSolved)
+      boolQuery.filter(q)
+    }
+
+    searchQuery.isWhat.pageDoingStatus foreach { status =>
+      val q = QueryBuilders.termQuery(PostDocFields.PageDoingStatus, status.toInt)
+      boolQuery.filter(q)
     }
 
     // ----- Tags
@@ -129,6 +171,8 @@ class SearchEngine(
 
     // ----- Category
 
+    BUG; SHOULD // This looks only at one exact cat, ignores sub & sub sub cats.
+    // Probably should do a must-or query that lists all sub cats?  [search_hmm]
     if (searchQuery.catIds.nonEmpty) {
       // (Each page is in only one category, so it's pointless to use a must() query.)
       boolQuery.filter(

@@ -560,7 +560,7 @@ function addSearchPageTests(searchPhrase, numPagesToHit?: number) {
 
   it(`Found nothing`, () => {
     const numPagesFound = usersBrowser.searchResultsPage.countNumPagesFound_1();
-    assert(numPagesFound === 0, `Found ${numPagesFound} pages, should have found none`);
+    tyAssert.eq(numPagesFound, 0, `Found ${numPagesFound} pages, should have found none`);
   });
 
   // The "white rabbit" page hasn't been created, if the user is a stranger (not a member).
@@ -574,12 +574,12 @@ function addSearchPageTests(searchPhrase, numPagesToHit?: number) {
 
   it(`Found correct number of pages`, () => {
     const numPagesFound = usersBrowser.searchResultsPage.countNumPagesFound_1();
-    assert(numPagesFound === 1, `Found wrong number of pages: ${numPagesFound}, should have found 1`);
+    tyAssert.eq(numPagesFound, 1, `Found wrong number of pages: ${numPagesFound}, should have found 1`);
   });
 
   it(`Found correct search phrase`, () => {
-    const text = usersBrowser.$('.esSERP_Hit_Text').getText();
-    assert(text === newTopicText, `Found text: "${text}", should have been: "${newTopicText}"`);
+    const text = usersBrowser.$('.c_SR_Hit-Op .esSERP_Hit_Text').getText();
+    tyAssert.eq(text, newTopicText, `Found text: "${text}", should have been: "${newTopicText}"`);
   });
 }
 

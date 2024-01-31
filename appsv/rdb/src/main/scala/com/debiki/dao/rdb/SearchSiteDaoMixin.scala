@@ -38,7 +38,7 @@ object SearchSiteDaoMixin {
       //   lang_codes_c      = array_cat(lang_codes_c,       excluded.lang_codes_c),
       //   search_eng_vers_c = array_cat(dsearch_eng_vers_c, exclude.search_eng_vers_c)
 
-  val PostShouldBeIndexedTests = o"""
+  val PostShouldBeIndexedTests = /* [do_not_index] */ o"""
     posts3.approved_rev_nr is not null and
     posts3.deleted_status = ${DeletedStatus.NotDeleted.toInt} and
     posts3.hidden_at is null

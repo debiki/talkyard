@@ -30,7 +30,8 @@ class TyAppLoader extends ApplicationLoader {
     val isProd = context.environment.mode == play.api.Mode.Prod
     Globals.setIsProdForever(isProd)
 
-    logger.info(s"Starting Talkyard $talkyardVersion at ${systemNowIsoNoT()} ... [TyMHELLO]")
+    logger.info(s"Starting Talkyard $talkyardVersion at ${systemNowIsoNoT()}, ${
+          if (isProd) "prod" else "dev/test"} mode ... [TyMHELLO]")
     val app = new TyAppComponents(context).application
     logger.info("Started. [TyMSTARTED]")
     app

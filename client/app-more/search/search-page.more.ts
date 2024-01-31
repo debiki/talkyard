@@ -252,8 +252,9 @@ var SearchPageContentComponent = createReactClass(<any> {
 
     let resultsForText = !this.state.lastQuery ? null :
       r.p({ className: 's_SP_SearchedFor' },
-        "Results for ", r.b({},
-          r.samp({ id: 'e2eSERP_SearchedFor' }, `"${this.state.lastQuery.rawQuery}"`)), ':');
+        `Results for "`, r.b({},
+          r.samp({ id: 'e2eSERP_SearchedFor' },
+            this.state.lastQuery.rawQuery.trim())), `":`);
 
     const anyWarningsList = searchResults && searchResults.warnings.map(err =>
         r.li({},
@@ -286,9 +287,8 @@ var SearchPageContentComponent = createReactClass(<any> {
         anyInfoText,
         resultsForText,
         anyNothingFoundText,
-        r.div({ className: 's_SP_SRs' },
-          r.ol({},
-            resultsList)),
+        r.ol({ className: 'c_SRs' },  // 'SR' = Search Results
+          resultsList),
         loadMoreBtn,
         )));
   }
@@ -366,18 +366,51 @@ function makeTagLabelValues(tagsStuff: TagsStuff) {
 
 
 function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: St | Nr, store: Store }) {
-  let pageAndHits: PageAndHits = props.pageAndHits;
-  let hits = pageAndHits.hits.map(hit =>
-      SearchResultHit({ hit: hit, urlPath: pageAndHits.urlPath, key: hit.postNr }));
+  const pageAndHits: PageAndHits = props.pageAndHits;
+  const hitsNotTitle = [];
+  let titleHit: SearchHit | U;
+  let bodyHit: Bo | U;
+
+  for (let hit of pageAndHits.hits) {
+    if (hit.postNr === TitleNr) {
+      titleHit = hit;
+    }
+    else {
+      bodyHit = bodyHit || hit.postNr === BodyNr;
+      // If the OP (orig post) is among the hits, place it first, even if some comments
+      // got scored higher by the search engine. It's simpler to interpret the search
+      // results, with the OP first (if present)? Also, we no longer prefix any orig
+      // post hit with "_in_the_page_text", so now it "must" be first.
+      const res = SearchResultHit({ hit, urlPath: pageAndHits.urlPath, key: hit.postNr });
+      hit.postNr === BodyNr ?
+          hitsNotTitle.unshift(res) : hitsNotTitle.push(res);
+    }
+  }
+
+  // If the title matched, show the matches inline in the <h3> as the title
+  // itself, instead of showing the title again in the results list.
+  const titleHitClass = !titleHit ? '' : ' c_SR_Ttl-HitTtl';
+  const bodyHitClass  = !bodyHit  ? '' : ' c_SR_Ttl-HitOp';
+  let titleText = pageAndHits.pageTitle;
+  if (titleHit) {
+    // (I wonder if any title is long enough to be split by ElasticSearch into two parts?
+    // There's a max length: PageParts.MaxTitleLength in Scala.)
+    const safeHtml = titleHit.approvedTextWithHighlightsHtml.join(" <b>...</b> ");
+    titleText = r.span({ className: 'esSERP_Hit_Text',
+          dangerouslySetInnerHTML: { __html: safeHtml }});
+  }
+
   return (
     r.li({ className: 's_SR', key: props.key },
-      r.h3({ className: 'esSERP_Hit_PageTitle' },
-        r.a({ href: pageAndHits.urlPath }, pageAndHits.pageTitle)),
-        r.span({ className: 'c_F_TsL_T_Cat_Expl' }, t.ft.inC, ' '), 
+      r.h3({ className: 'c_SR_Ttl' + titleHitClass + bodyHitClass },
+        r.a({ href: pageAndHits.urlPath }, titleText)),
+        // Looks ugly. People will mostly understand anyway? And if not,
+        // barely matters? Or they'll discover by clicking?
+        // r.span({ className: 'c_F_TsL_T_Cat_Expl' }, t.ft.inC, ' '), 
         page.CatsOrHomeLink({ page: pageAndHits, store: props.store, skipHome: true }),
         // Tags in-place editable?  [edit_tags_via_topic_list]
         TagList({ store: props.store, tags: pageAndHits.pubTags }),
-      r.ol({}, hits)));
+      r.ol({}, hitsNotTitle)));
 }
 
 
@@ -386,13 +419,18 @@ function SearchResultHit(props: { hit: any, urlPath: string, key?: string | numb
   let hit: SearchHit = props.hit;
   // Any html stuff was escaped here: [7YK24W].
   let safeHtml = hit.approvedTextWithHighlightsHtml.join(" <b>...</b> ");
+  const hitOp = hit.postNr === BodyNr ? ' c_SR_Hit-Op' : '';
   return (
-    r.li({ className: 's_SR_Hit', key: props.key },
-      r.span({ className: 'esSERP_Hit_In' },
-        "In ", r.a({ href: `${props.urlPath}#post-${hit.postNr}`,   // I18N
+    r.li({ className: 's_SR_Hit' + hitOp, key: props.key },
+      // Maybe it's pretty clear that the text just below the title is the original
+      // post? Let's skip "_in_the_page_text" — let's show only "In a comment:"
+      // (for comments).
+      hit.postNr === TitleNr || hit.postNr === BodyNr ? null :
+        r.span({ className: 'esSERP_Hit_In' },
+              "In ", r.a({ href: `${props.urlPath}#post-${hit.postNr}`,   // I18N
                   className: 'esSERP_Hit_In_Where' },
-          foundWhere(hit)), ':'),
-      r.p({ className: 'esSERP_Hit_Text',
+                foundWhere(hit)), ': '),
+      r.span({ className: 'esSERP_Hit_Text',
           dangerouslySetInnerHTML: { __html: safeHtml }})));
 }
 

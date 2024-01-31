@@ -862,10 +862,19 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   implicit class RegexToFindGroup(regex: scala.util.matching.Regex) {
     def findGroupInAny(anyText: Opt[St]): Opt[St] =
       anyText flatMap findGroupIn
-    def findGroupIn(text: String): Option[String] =
+
+    def findGroupIn(text: St): Opt[St] =
       text match {
         case regex(firstGroup) =>
           Option(firstGroup)
+        case _ =>
+          None
+      }
+
+    def findTwoGroupsIn(text: St): Opt[(St, St)] =
+      text match {
+        case regex(firstGroup, secondGroup) =>
+          Some((firstGroup, secondGroup))
         case _ =>
           None
       }

@@ -1,5 +1,6 @@
 // SERP means search engine result page (standard abbreviation)
 
+$tagCatCol = hsl(0 0% 41%);
 
 .s_SP
   margin-top: 30px;
@@ -43,19 +44,29 @@
 .s_SP_SearchedFor
   margin-top: 25px;
 
+.s_SR li.s_SR_Hit,
+.s_SR .esSERP_Hit_Text
+  margin-bottom: 0.45em;
+  line-height: 1.3;
+  color: hsl(0 0% 23%);
+
 .s_SR,
 .s_SR_Hit
   list-style: none;
   margin-left: 0;
 
-.esSERP_Hit_PageTitle
-  margin: 25px 0 5px;
+// A bit more space below the orig post, if included — looks more like the OP then.
+.c_SR_Hit-Op + .s_SR_Hit
+  margin-top: 0.8em;
+
+.c_SR_Ttl
+  margin: 29px 0 2px;
   a
     // The title text is only 16px in topic list, but here it works a bit as a header,
     // for all hits on that page.
-    font-size: 18px;
+    font-size: 17px;
     font-weight: bold;    // forum topic list titles are bold too
-    color: hsl(0 0% 23%); // or blue link color — then, too many colors
+    color: hsl(0 0% 20%); // or blue link color — then, too many colors
 
 // Page categories. Bit more compact, ususally not so interesting on a SERP.
 .s_SR .s_Tb_Pg_Cs
@@ -63,19 +74,48 @@
   position: static;
   padding: 0;
   margin-right: 7px;
-  font-size: 14px;
-  opacity: 0.9;
+  font-size: 13px;
+// "In:" before the categories — but now removed.
+//.s_SR .c_F_TsL_T_Cat_Expl
+//  font-size: 13px;  // instead of 14
+
+// Don't indent the 1st cat.
+.s_SR .s_Tb_Pg_Cs .btn:first-child
+  min-width: auto;  // else 40px —> empty space to the left, if short name.
+.s_SR .s_Tb_Pg_Cs
+  margin-left: -1px;  // left aligns. There's 1px padding left-right (just below).
 
 // Padding around category names in:  Base Cat —> Sub Cat —> Sub Sub.
 .s_SR .esTopbar_ancestors_link.btn
-  padding: 0 3px;
+  padding: 0 1px;
+  color: $tagCatCol;
 
 // The arrow in: Some Cat —> Sub Cat.
 .s_Tb_Pg_Cs > li:not(:last-child)::after
-  top: -3px;  // if -1px, then too far down, but -3 is in the middle. Hmm
+  // if -1px, then too far down, but -2 is in the middle. Hmm
+  // (Or -3 if font size is 14 not 13.)
+  top: -2px;
+
+// Make the tags a bit smaller — not the main thing, on the SERP page?
+.s_SR .c_Tag,
+.s_SR .c_Tag:link,
+.s_SR .c_Tag:visited
+  padding: 1px 5px 2px;
+  box-shadow: 0.4px 0.5px 3px hsl(0deg 0% 70%);
+  color: $tagCatCol;
+  // Vertical-align the tags. Can't get any vertical-align value "working", so:
+  top: 1px;
+  position: relative;
+
+// Font size 13 for tags too.
+.s_SR .c_Tag_Name,
+.s_SR .c_Tag_Col,
+.s_SR .c_Tag_Val
+  font-size: 13px;
 
 .esSERP_Hit_In
   font-style: italic;
+  margin-right: 0.5ex;
 
 .esSERP_Hit_In_Where
   color: hsl($uiHue, 100%, 47%);
