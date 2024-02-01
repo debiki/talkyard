@@ -249,6 +249,11 @@ class SystemDao(
   }
 
 
+  def listCoworkersAllSites(): Map[SiteId, immutable.Seq[Coworker]] = {
+    readTx(_.listCoworkersAllSites())
+  }
+
+
   private def createFirstSite(): Site = {
     val pubId =
           if (globals.isOrWasTest) Site.FirstSiteTestPublicId

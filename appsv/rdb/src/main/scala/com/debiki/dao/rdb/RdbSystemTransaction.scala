@@ -520,6 +520,100 @@ class RdbSystemTransaction(
   }
 
 
+  def listCoworkersAllSites(): Map[SiteId, immutable.Seq[Coworker]] = {
+    val query = s""" -- listCoworkersAllSites
+      select
+          h.host,
+          u.site_id,
+          u.user_id,
+          u.is_owner,
+          u.is_admin,
+          u.is_moderator,
+          u.trust_level,
+          u.locked_trust_level,
+          -- Names and email addresses to site owners and admins.  [coworkers_query]
+          case when  u.is_admin or u.is_owner  then  u.username   else null end  as  username,
+          case when  u.is_admin or u.is_owner  then  u.full_name  else null end  as  full_name,
+          case when  u.is_admin or u.is_owner  then  u.primary_email_addr  else
+              -- Otherwise only email domain: 'company.com'  (not 'someones-name@company.com')
+              substring(u.primary_email_addr, position('@' in u.primary_email_addr) + 1)
+          end  email_adr_or_domain,
+          u.is_approved,
+          u.created_at,
+          u.email_verified_at,
+          s.last_seen_at,
+          s.last_posted_at,
+          s.last_emailed_at,
+          u.suspended_till,
+          u.deactivated_at,
+          u.deleted_at
+      from  hosts3 h  inner join  users3 u
+        on  h.site_id   = u.site_id
+        and h.canonical = 'C'
+        and u.user_id  >= 100 -- no built-in users or guests
+        and not u.is_group
+        and (
+           u.is_admin  or  u.is_owner
+           -- Core members
+           or  (u.trust_level >= 6  and  u.locked_trust_level is null)
+           or  u.locked_trust_level >= 6
+           -- Users with the same email domain as the Talkyard forum domain,
+           -- but not any names or emails, only id and last-seen-at, is-deleted etc,
+           -- so can estimate how many coworkers are active in that forum.
+           or  (
+             -- Extract user email domain: "local-part@some.domain.co" -> "some.domain.co"
+             substring(u.primary_email_addr, position('@' in u.primary_email_addr) + 1)
+             -- Extract the registered domain:
+             --   In 'abc.regd.com',  that'd be: 'regd.com'  and
+             --   in 'abc.regd.co.uk' that'd be: 'regd.co.uk'.
+             --   Note that compound TLDs like 'co.uk' or 'gov.in' all seem to follow
+             --   the pattern  'xx(x).cc'  where 'xx(x)' is 'co', 'gov' or 'org' etc,
+             --   and 'cc' is a country code — which we use in a regex below.
+             -- Check if the email domain is under the registered domain (above),
+             -- because then the user has the same email domain as the main website
+             -- of the organization, or at least is on the same email domain as
+             -- the Talkyard forum.
+             -- Tiny BUG: Email addresses like sbd@abcd.ex.co would match cd.ex.com?
+             -- Should either be equal-to, or match '.' + registered domain.
+             ilike
+                 '%' || substring(h.host from
+                 -- regd  .  compound TLD    or  TLD
+                 -- For example:
+                 --  domain .  org   .  uk
+                 --  domain .                    com
+                 '([^.]+\\.([^.]{2,3}\\.[^.]{2}|[^.]+))$$')))
+         -- Last seen at, last posted at
+         left outer join  user_stats3 s
+             on  s.site_id = u.site_id  and  s.user_id = u.user_id
+         order by  h.host, u.user_id
+         limit  10100  """
+
+
+    runQueryBuildMultiMap(query, Nil, rs => {
+      val siteId = getInt32(rs, "site_id")
+      siteId -> Coworker(
+            userId = getInt32(rs, "user_id"),
+            isOwner = getOptBool(rs, "is_owner").getOrElse(false),
+            isAdmin = getOptBool(rs, "is_admin").getOrElse(false),
+            isModerator = getOptBool(rs, "is_moderator").getOrElse(false),
+            trustLevel = TrustLevel.fromInt(getInt32(rs, "trust_level")).getOrDie("TyE5GTMJ7"),
+            lockedTrustLevel = TrustLevel.fromOptInt(getOptInt(rs, "locked_trust_level")),
+            username = getOptString(rs, "username"),
+            fullName = getOptString(rs, "full_name"),
+            emailAdrOrDomain = getOptString(rs, "email_adr_or_domain"),
+            isApproved = getOptBool(rs, "is_approved"),
+            createdAt = getOptWhen(rs, "created_at").getOrDie("TyE2FM6SKW"),
+            emailVerifiedAt = getOptWhen(rs, "email_verified_at"),
+            lastSeenAt = getOptWhen(rs, "last_seen_at"),
+            lastPostedAt = getOptWhen(rs, "last_posted_at"),
+            lastEmailedAt = getOptWhen(rs, "last_emailed_at"),
+            suspendedTill = getOptWhen(rs, "suspended_till"),
+            deactivatedAt = getOptWhen(rs, "deactivated_at"),
+            deletedAt = getOptWhen(rs, "deleted_at"))
+    })
+  }
+
+
   def loadStatsForUsersToMaybeEmailSummariesTo(now: When, limit: Int)
         : Map[SiteId, immutable.Seq[UserStats]] = {
     COULD_OPTIMIZE // if there are many sites, might load just one summary email, per site, for
