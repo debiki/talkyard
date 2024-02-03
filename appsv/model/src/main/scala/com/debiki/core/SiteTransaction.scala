@@ -111,7 +111,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   /** Useful for chats — then, we want to show the chat description, which is
     * in the orig post. And the most recent chat messsages, to show.  */
   def loadOrigPostAndLatestPosts(pageId: PageId, limit: Int): Seq[Post]
-  def loadPostsOnPage(pageId: PageId): Vec[Post]
+  def loadPostsOnPage(pageId: PageId, activeOnly: Bo = false): Vec[Post]
   def loadPostsByNrs(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]
   /** The result is shorter, if some posts weren't found. */
   def loadPostsByIdKeepOrder(postIds: Iterable[PostId]): ImmSeq[Post]

@@ -4,7 +4,11 @@ which you can search for across the whole code base, to find some-of / all-of
 the relevant source code places to change.
 
 [emburl_emgurl] [prefix_diid]
+"emburl" is likely interpreted as "embedded url", but in the API it means the
+embedd*ing* url, and I used to "always" get confused by what I had meant when
+I saw "emburl". What about "emg" for "embedding"? So:
 Change from emburl:.. to emgurl:..  no, to  emgurllax:.. and emgurlexact:...  ?
+Hmm or  emgurl:  and emgurlexact:  maybe is better — "lax" can be the default?
 And prefix w 'diid:' in alt_page_ids3. Rename to page_(lookup)_keys_t?
 
 

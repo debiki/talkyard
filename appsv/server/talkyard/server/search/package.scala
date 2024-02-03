@@ -116,6 +116,12 @@ package object search {
     s"$siteId:$postId"
 
 
+  /** The search hits can be a bit out-of-date, and up-to-date stuff should be
+    * fetched from the main db (Postgres) instead, when generating a search response
+    * based on search hits.  E.g. double checking with the main db if a post
+    * is really still accessible (mabye it got deleted, or authors &
+    * assignees changed, and there's an entry in job_queue_t to reindex it).
+    */
   case class SearchHit(
     siteId: SiteId,
     pageId: PageId,
@@ -127,6 +133,7 @@ package object search {
     unapprovedSource: Option[String])(
     private val underlying: es.search.SearchHit) {
 
+    /** How good this hit is, compared to the other hits. Computed by ElasticSearch. */
     def score: Float = underlying.getScore
   }
 

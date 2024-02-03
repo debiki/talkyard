@@ -74,6 +74,18 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     }
   }
 
+  def devDieIf(test: => Bo, errorCode: St, details: St = ""): U = {
+    if (!isProd && test) {
+      devDie(errorCode, details)
+    }
+  }
+
+  def devDie(errorCode: St, details: St = ""): U = {
+    if (!isProd) {
+      warnDevDie(errorCode, details)
+    }
+  }
+
   def warnDevDieUnless(test: => Bo, errorCode: St, details: St = ""): U = {
     if (!test) {
       warnDbgDie(errorCode, details)

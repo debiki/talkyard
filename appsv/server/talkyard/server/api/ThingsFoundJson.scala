@@ -18,10 +18,10 @@
 package talkyard.server.api
 
 import com.debiki.core._
-import debiki.dao.PagesCanSee  // MOVE to core?
+import debiki.dao.{PagePartsDao, PageStuff, PagesCanSee, SiteDao}
 import controllers.OkApiJson
 import Prelude._
-import debiki.dao.{PageStuff, SiteDao}
+import talkyard.server.api.PostsListFoundJson.JsPostListFound
 import talkyard.server.authz.{AuthzCtx, AuthzCtxOnPats}
 import talkyard.server.parser.{JsonConf, PageParSer}
 import talkyard.server.search.{PageAndHits, SearchHit, SearchResultsCanSee}
@@ -30,45 +30,58 @@ import play.api.libs.json.JsArray
 import play.api.mvc.{Result => p_Result}
 import talkyard.server.JsX._
 
+import scala.collection.{immutable => imm}
 
 
+/** The Get, List and Search APIs use this to render pages to json.
+  * (See: GetController, ListController, SearchController.)
+  */
 object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
 
   def makePagesJsArr(pagesCanSee: PagesCanSee, dao: SiteDao,
-          jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): Seq[(PageFoundStuff, JsObject)] = {
-    _makePagesJs(pagesCanSee.pages, anySearchResults = Nil, dao, jsonConf, authzCtx)
+          inclFields: InclPageFields, jsonConf: JsonConf, authzCtx: AuthzCtxOnPats,
+          ): Seq[(PageFoundStuff, JsObject)] = {
+    _makePagesJs(
+          pagesCanSee.pages, anySearchResults = Nil, dao, inclFields, jsonConf, authzCtx)
   }
 
 
   def makePagesFoundListResponse(pagesCanSee: PagesCanSee, dao: SiteDao,
-        jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): p_Result = {
+        inclFields: InclPageFields, jsonConf: JsonConf, authzCtx: AuthzCtxOnPats,
+        ): p_Result = {
     val pagesJs = _makePagesJs(
-          pagesCanSee.pages, anySearchResults = Nil, dao, jsonConf, authzCtx)
+          pagesCanSee.pages, anySearchResults = Nil, dao, inclFields, jsonConf, authzCtx)
     _makeThingsFoundResp(dao.theSiteIdsOrigins(), pagesJs.map(_._2), jsonConf)
   }
 
 
   def makePagesFoundSearchResponse(searchResults: SearchResultsCanSee, dao: SiteDao,
-        jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): p_Result = {
+         jsonConf: JsonConf, authzCtx: AuthzCtxOnPats,
+         ): p_Result = {
     val pagesJs = _makePagesJs(
-          anyPagePathsMetas = Nil, searchResults.pagesAndHits, dao, jsonConf, authzCtx)
+          anyPagePathsMetas = Nil, searchResults.pagesAndHits, dao,
+          InclPageFields.Default, jsonConf, authzCtx)
     _makeThingsFoundResp(dao.theSiteIdsOrigins(), pagesJs.map(_._2), jsonConf)
   }
 
 
   // Vaguely similar code: ForumController.makeTopicsResponse()  and
   // EventsParSer.makeEventsListJson().  [406RKD2JB]
+  // GetController & ListController & SearchController already use this, fortunately :-)
   //
   private def _makePagesJs(
       anyPagePathsMetas: Seq[PagePathAndMeta], anySearchResults: Seq[PageAndHits],
-      dao: SiteDao, jsonConf: JsonConf, authzCtx: AuthzCtxOnPats
+      dao: SiteDao, inclFields: InclPageFields, jsonConf: JsonConf, authzCtx: AuthzCtxOnPats
       ): Seq[(PageFoundStuff, JsObject)] = {
 
     dieIf(anyPagePathsMetas.nonEmpty && anySearchResults.nonEmpty, "TyE40RKUPJR2")
+    val settings = dao.getWholeSiteSettings()
 
     val pageIds = (
       if (anyPagePathsMetas.nonEmpty) anyPagePathsMetas.map(_.pageId)
       else anySearchResults.map(_.pageId)).toSet
+
+    // --- Posts or search hits
 
     // Stuff needed for creating the json — except for authors and categories.
     // Depending on if this is a ListQuery or a SearchQuery, we have different
@@ -76,6 +89,34 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
     val pageFoundStuffs: Seq[PageFoundStuff] =
       if (anyPagePathsMetas.nonEmpty) {
         val pageStuffById = dao.getPageStuffById(pageIds)
+
+        // --- Posts
+
+        val postsByPageId: Map[PageId, Vec[Post]] =
+              if (!inclFields.posts) Map.empty
+              else dao.readTx { tx =>
+          // Don't use mapValues() — it does things lazily, but then tx has already ended.
+          pageStuffById transform { (pageId, stuff: PageStuff) =>
+            // If many comments, then look at:
+            //   loadPopularPostsByPageExclAggs
+            // however it won't load the title or OP.
+            if (stuff.pageMeta.numRepliesVisible > 25) {
+              // Later: Load any accepted solutions & the most interesting comments?
+              // For now, just skip — just trying all this out, for AI LLM integrations.
+              Vec.empty
+            }
+            else {
+              val pageParts = PagePartsDao(pageId = stuff.pageId, settings, tx, Some(dao))
+              COULD_OPTIMIZE // Load all at once, look at:  loadPopularPostsByPageExclAggs
+              // — however, we want tags & assignees too?
+              // Or, if combined with say top N posts per page & their ancestors, would need
+              // some fancy recursive SQL query?
+              // Later, when there are [priv_comts], excl those.
+              pageParts.activePosts
+            }
+          }
+        }
+
         anyPagePathsMetas flatMap { pagePathMeta: PagePathAndMeta =>
           pageStuffById.get(pagePathMeta.pageId) map { pageStuff =>
              new PageFoundStuff(
@@ -83,15 +124,19 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
                      // I hope it's the canonical path? If not, barely matters.
                      canonical =  true),
                    pageStuff = pageStuff,
+                   posts = postsByPageId.get(pageStuff.pageId).getOrElse(Nil),
                    pageAndSearchHits = None)
           }
         }
       }
       else {
+        // --- Search hits
+
         anySearchResults map { pageAndHits =>
           new PageFoundStuff(
                 pagePath = pageAndHits.pagePath,
                 pageStuff = pageAndHits.pageStuff,
+                posts = Nil,
                 pageAndSearchHits = Some(pageAndHits))
         }
       }
@@ -114,7 +159,8 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
     COULD // also [incl_assignees], not just authors.
     // But exclude private users or fields e.g. name.  [private_pats]
 
-    val pageAuthorIds = pageFoundStuffs.map(_.pageStuff.authorUserId).toSet
+    val someAuthorIds = pageFoundStuffs.map(_.pageStuff.authorUserId).toSet ++
+                        pageFoundStuffs.flatMap(_.posts.map(_.createdById))
 
     val postIdsFound: Set[PostId] =
           anySearchResults.flatMap(_.hitsByScoreDesc.map(_.postId)).toSet
@@ -122,7 +168,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
     COULD_OPTIMIZE // cache authors by post id?
     val authorIdsByPostId: Map[PostId, UserId] = dao.loadAuthorIdsByPostId(postIdsFound)
 
-    val allAuthorIds: Set[UserId] = pageAuthorIds ++ authorIdsByPostId.values
+    val allAuthorIds: Set[UserId] = someAuthorIds ++ authorIdsByPostId.values
 
     val authorsById = dao.getParticipantsAsMap(allAuthorIds)
 
@@ -133,20 +179,21 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
           siteIdsOrigins.uploadsOrigin +
            talkyard.server.UploadsUrlBasePath + siteIdsOrigins.pubId + '/'
 
-    // --- The result
+    // --- Generate JSON
 
     val result: Seq[(PageFoundStuff, JsObject)] = pageFoundStuffs map { stuff =>
       val anyCategory = stuff.pageMeta.categoryId.flatMap(categoriesById.get)
       stuff -> JsPageFound(
             stuff, authorIdsByPostId, authorsById,
-            avatarUrlPrefix = avatarUrlPrefix, anyCategory, jsonConf, authzCtx)
+            avatarUrlPrefix = avatarUrlPrefix, anyCategory,
+            inclFields, jsonConf, authzCtx)
     }
 
     result
   }
 
 
-  def _makeThingsFoundResp(origins: SiteIdOrigins, jsPagesFound: Seq[JsObject],
+  private def _makeThingsFoundResp(origins: SiteIdOrigins, jsPagesFound: Seq[JsObject],
           jsonConf: JsonConf): p_Result = {
     // Typescript: SearchQueryResults, and ListQueryResults
     OkApiJson(Json.obj(
@@ -159,7 +206,8 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
   class PageFoundStuff(
     val pagePath: PagePathWithId,
     val pageStuff: PageStuff,
-    val pageAndSearchHits: Option[PageAndHits]) {
+    val pageAndSearchHits: Option[PageAndHits],
+    val posts: imm.Seq[Post]) {
     def pageMeta: PageMeta = pageStuff.pageMeta
     def pageId: PageId = pagePath.pageId
   }
@@ -173,6 +221,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
         authorsById: Map[PatId, Pat],
         avatarUrlPrefix: St,
         anyCategory: Opt[Cat],
+        inclFields: InclPageFields,
         jsonConf: JsonConf,
         authzCtx: AuthzCtxOnPats): JsObject = {
 
@@ -180,41 +229,81 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
     val anyPageAuthor = authorsById.get(pageStuff.authorUserId)
     val pageMeta = pageStuff.pageMeta
 
-    var json = Json.obj(
-      "id" -> pageStuff.pageId,
-      "title" -> pageStuff.title,
+    // [def_pg_fields]
+    var json = Json.obj()
+
+    if (inclFields.id)
+      json += "id" -> JsString(pageStuff.pageId)
+
+    if (inclFields.title)
+      json += "title" -> JsString(pageStuff.title)
+
+    if (inclFields.urlPath)
       // Unnecessary to include the origin everywhere.
-      "urlPath" -> pageFoundStuff.pagePath.value,
-      "excerpt" -> JsStringOrNull(pageStuff.bodyExcerpt),
-      "author" -> JsPatFoundOrNull(anyPageAuthor, Some(avatarUrlPrefix), jsonConf, authzCtx),
-      // For now, only the leaf category — but later, SHOULD incl ancestor categories
-      // the the requester can see, too — so this is an array.  [incl_anc_cats]
-      "categoriesMainFirst" -> Json.arr(JsCategoryFoundOrNull(anyCategory, jsonConf, authzCtx)),
-      "pageType" -> PageParSer.pageTypeSt_apiV0(pageMeta.pageType),
-      "answerPostId" -> JsNum32OrNull(pageMeta.answerPostId),
-      "doingStatus" -> PageParSer.pageDoingStatusSt_apiV0(pageMeta.doingStatus),
-      "closedStatus" -> PageParSer.pageClosedStatusSt_apiV0(pageMeta),
-      "deletedStatus" -> PageParSer.pageDeletedStatusSt_apiV0(pageMeta),
-      )
+      json += "urlPath" -> JsString(pageFoundStuff.pagePath.value)
 
-    if (jsonConf.inclOldPageIdField) {
+    if (inclFields.excerpt)
+      json += "excerpt" -> JsStringOrNull(pageStuff.bodyExcerpt)
+
+    if (inclFields.author)
+      json += "author" ->
+                JsPatFoundOrNull(anyPageAuthor, Some(avatarUrlPrefix), jsonConf, authzCtx)
+
+    // For now, only the leaf category — but later, SHOULD incl ancestor categories
+    // the the requester can see, too — so this is an array.  [incl_anc_cats]
+    if (inclFields.categoriesMainFirst)
+      json += "categoriesMainFirst" ->
+                Json.arr(JsCategoryFoundOrNull(anyCategory, jsonConf, authzCtx))
+
+    if (inclFields.pageType)
+      json += "pageType" -> JsString(PageParSer.pageTypeSt_apiV0(pageMeta.pageType))
+
+    if (inclFields.answerPostId)
+      json += "answerPostId" -> JsNum32OrNull(pageMeta.answerPostId)
+
+    if (inclFields.doingStatus)
+      PageParSer.pageDoingStatusSt_apiV0(pageMeta.doingStatus).foreach(st =>
+            json += "doingStatus" -> JsString(st))
+
+    if (inclFields.closedStatus)
+      PageParSer.pageClosedStatusSt_apiV0(pageMeta).foreach(st =>
+            json += "closedStatus" -> JsString(st))
+
+    if (inclFields.deletedStatus)
+      PageParSer.pageDeletedStatusSt_apiV0(pageMeta).foreach(st =>
+            json += "deletedStatus" -> JsString(st))
+
+    if (inclFields.id && jsonConf.inclOldPageIdField)
       json += "pageId" -> JsString(pageStuff.pageId)
-    }
 
-    if (authzCtx.maySeeExtIds) {
+    if (inclFields.refId && authzCtx.maySeeExtIds) {
       pageMeta.extImpId foreach { rid =>
         json += "extId" -> JsString(rid)
         json += "refId" -> JsString(rid)  // renaming to refId
       }
     }
 
-    // If this is a SearchQuery for posts, include those posts.
+    // If this is a SearchQuery for posts, include those posts (always, no inclFields needed).
     pageFoundStuff.pageAndSearchHits.foreach { pageAndHits: PageAndHits =>
       json += "postsFound" -> JsArray(pageAndHits.hitsByScoreDesc map { hit =>
         val anyAuthor: Option[Participant] =
               authorIdsByPostId.get(hit.postId) flatMap authorsById.get
         JsPostFound(hit, anyAuthor, avatarUrlPrefix, jsonConf, authzCtx)
       })
+    }
+
+    // Else, if we're including all posts (or the top post, or just the orig post):
+    if (inclFields.posts) {
+      devDieIf(pageFoundStuff.posts.isEmpty, "TyE0POST402", "Really no posts on the whole page?")
+      json += "posts" -> JsArray(pageFoundStuff.posts map { post: Post =>
+        JsPostListFound(
+              post, pageStuff, anyCat = None /* in pageJson already */,
+              authorsById, avatarUrlPrefix = avatarUrlPrefix,
+              jsonConf, authzCtx, isWrappedInPage = true)
+      })
+    }
+    else {
+      devDieIf(pageFoundStuff.posts.nonEmpty, "TyEPOSTS6205", "Loaded posts but needs none?")
     }
 
     json
@@ -246,7 +335,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
   }
 
 
-  // Typescript: PostFound
+  // Typescript: PostFound. Maybe RENAME to PostSearchFound?
   def JsPostFound(hit: SearchHit, anyAuthor: Opt[Pat], avatarUrlPrefix: St,
         jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): JsObject = {
     Json.obj(
@@ -267,6 +356,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
 
     if (authzCtx.maySeeExtIds) {
       pat.extId.foreach(json += "extId" -> JsString(_))
+      pat.extId.foreach(json += "refId" -> JsString(_))  // renaming to refId
       pat match {
         case user: UserBase => user.ssoId.foreach(json += "ssoId" -> JsString(_))
         case _ => ()

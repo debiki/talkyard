@@ -28,7 +28,8 @@ import talkyard.server.parser.JsonConf
 object GetPatsImpl {
 
 
-  def getPats(req: JsonPostRequest, getQueryJson: JsObject, rawRefs: Seq[RawRef])
+  def getPats(req: JsonPostRequest, getQueryJson: JsObject, rawRefs: Seq[RawRef],
+        inclFieldsJs_unused: Opt[JsObject])
         : JsArray Or ErrMsg = {
     import req.{dao, reqer}
 
