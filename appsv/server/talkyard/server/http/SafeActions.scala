@@ -155,7 +155,9 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
         case ResultException(result) =>
           Future.successful(result)
         case ex: play.api.libs.json.JsResultException =>
-          Future.successful(Results.BadRequest(s"Bad JSON: $ex [DwE70KX3]"))
+          Future.successful(Results.BadRequest(s"Bad JSON: $ex [TyEPARSEJSN1]"))
+        case ex: debiki.JsonUtils.BadJsonException =>
+          Future.successful(Results.BadRequest(s"Bad JSON: $ex [TyEPARSEJSN2]"))
         case Globals.AppSecretNotChangedException =>
           Future.successful(BadAppSecretError)
         case Globals.StillConnectingException =>
@@ -189,7 +191,9 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
           Results.NotImplemented(ex.getMessage)
         case ResultException(result) => result
         case ex: play.api.libs.json.JsResultException =>
-          Results.BadRequest(s"Bad JSON: $ex [error DwE6PK30]")
+          Results.BadRequest(s"Bad JSON: $ex [TyEPARSEJSN3]")
+        case ex: debiki.JsonUtils.BadJsonException =>
+          Results.BadRequest(s"Bad JSON: $ex [TyEPARSEJSN4]")
         case Globals.AppSecretNotChangedException =>
           BadAppSecretError
         case Globals.StillConnectingException =>
@@ -317,6 +321,7 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
       if (globals.isProd)
         ("", "")
       else if (roleMissing || badPassword || dbMissing) (
+        // STALE_DOCS: Not using Make for *running* Ty any more, only for *building*, right.
         "", i"""You can create a PostgreSQL user and database like so:
         |
         |    make dead-app  # stop the app server

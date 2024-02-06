@@ -51,6 +51,8 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
   // an extra param: inclStackTraceInErrors: Bo = false.
   // If no stack trace, throw BadInpDataEx.
   // Otherwise, throw BadDataEx *with* a stack trace.
+  // Or, better: Split into:  BadUserJsonEx  and  BadInternalJsonEx,
+  // the former not logging any warning or error, the latter an error?
   class BadJsonException(message: String) extends IllegalArgumentException(message)
 
 
