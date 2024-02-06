@@ -2063,17 +2063,19 @@ export const Editor = createFactory<any, EditorState>({
     }
 
     // Haven't updated the tests — many would fail, if "That's a short ..." dialogs pop up.
-    const isAutoTest = isAutoTestSite();
+    // Also, skip for staff users (if they write something short, it's probably ok)
+    // — later, this'll be per group settings; see pats_t.mod_conf_c.
+    const skipProbl = isAutoTestSite() || user_isStaffOrCoreMember(state.store.me);
 
     const titleLen = state.title.trim().length;
     const textLen = state.text.trim().length;
-    const longTitle = !isAutoTest && titleErrorMessage && titleLen > 130;
-    const shortTitle = !isAutoTest && titleErrorMessage && titleLen < (
+    const longTitle = !skipProbl && titleErrorMessage && titleLen > 130;
+    const shortTitle = !skipProbl && titleErrorMessage && titleLen < (
             // Chats often have short titles, e.g. "dev" or "support" or "ux" 2 letters :- )
             page_isChat(state.newPageRole) ? 2 : 15);
     // Orig posts generally need a bit more details than comments (replies).
-    const shortOrigPost = !isAutoTest && textErrorMessage && state.newPageRole && textLen < 90;
-    const shortComment = !isAutoTest && textErrorMessage && !state.newPageRole && textLen < 30;
+    const shortOrigPost = !skipProbl && textErrorMessage && state.newPageRole && textLen < 90;
+    const shortComment = !skipProbl && textErrorMessage && !state.newPageRole && textLen < 30;
     const moreMargin = (text: St) => r.span({ className: 'n_MoreMargin' }, text)
     const problemText =   // I18N
         // Show title errors first — the title input field is above  [.title_errs_1st].
