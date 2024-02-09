@@ -6,8 +6,8 @@ Compile / dependencyOverrides ++= {
     Seq.empty
   } else {
     Seq(
-      "ch.qos.logback" % "logback-classic" % "1.3.11",
-      "ch.qos.logback" % "logback-core" % "1.3.11",
+      "ch.qos.logback" % "logback-classic" % "1.4.11",
+      "ch.qos.logback" % "logback-core" % "1.4.11",
       "com.auth0" % "java-jwt" % "4.4.0",
       "com.carrotsearch" % "hppc" % "0.7.1",
       "com.fasterxml.jackson.core" % "jackson-annotations" % "2.15.2",
