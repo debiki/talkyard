@@ -948,7 +948,8 @@ case class SitePatcher(globals: debiki.Globals) {
           pageIdsWithBadStats.remove(realPageId)
 
           dao.updatePagePopularity(pageDao.parts, tx)
-          tx.updatePageMeta(pageMeta, oldMeta = pageWrongStats, markSectionPageStale = true)
+          tx.updatePageMeta(pageMeta, oldMeta = pageWrongStats, markSectionPageStale = true,
+                maybeReindex = false)
           upsertedPages.append(pageMeta)
         }
 
@@ -972,7 +973,8 @@ case class SitePatcher(globals: debiki.Globals) {
         val pageDao = dao.newPageDao(pageId, tx)
         val pageMetaAft = pageMetaBef.copyWithUpdatedStats(pageDao) // bumps version [306MDH26]
         dao.updatePagePopularity(pageDao.parts, tx)
-        tx.updatePageMeta(pageMetaAft, oldMeta = pageMetaBef, markSectionPageStale = true)
+        tx.updatePageMeta(pageMetaAft, oldMeta = pageMetaBef, markSectionPageStale = true,
+              maybeReindex = false)
       }
 
       // ----- Page paths
@@ -1498,7 +1500,8 @@ case class SitePatcher(globals: debiki.Globals) {
           numRepliesVisible = pagePartsDao.numRepliesVisible,
           numRepliesTotal = pagePartsDao.numRepliesTotal,
           numPostsTotal = pagePartsDao.numPostsTotal)
-        tx.updatePageMeta(correctMeta, oldMeta = pageMeta, markSectionPageStale = true)
+        tx.updatePageMeta(correctMeta, oldMeta = pageMeta, markSectionPageStale = true,
+              maybeReindex = false)
       }
 
       siteData.reviewTasks foreach { reviewTask: ReviewTask =>

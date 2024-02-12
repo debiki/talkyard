@@ -323,6 +323,7 @@ class PlainApiActions(
           // Later, maybe there will be some way to look up in OS env,
           // or some external secrets service. But for now, just the config file:
           val anyCorrectSecret: Opt[St] = username match {
+            case "ams" => globals.config.amsApiSecret
             case "emailwebhooks" => globals.config.emailWebhooksApiSecret
             case "createsite" => globals.config.createSiteApiSecret
             case "sysmaint" => globals.config.systemMaintenanceApiSecret

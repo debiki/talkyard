@@ -35,12 +35,22 @@ set -e
 pushd .
 cd relchans/$promote_from_branch
   git fetch origin $promote_from_branch
+  git checkout $promote_from_branch
   git merge --ff-only origin/$promote_from_branch
   old_versions=$(cat $versions_file)
   release_version_tag=$(echo "$old_versions" | tail -n1)
 popd
 next_version=$(cat version.txt)
 
+pushd .
+cd relchans/$promote_to_branch
+  # If a release has been made from another computer, we need to _fast_forward.
+  git fetch origin $promote_to_branch
+  git checkout $promote_to_branch
+  git merge --ff-only origin/$promote_to_branch
+  old_rel_versions=$(cat $versions_file)
+  prev_rel_ver_tag=$(echo "$old_rel_versions" | tail -n1)
+popd
 
 # Sanity check version numbers
 
@@ -50,10 +60,12 @@ next_version=$(cat version.txt)
 
 versions_sorted=$(echo \
 "$next_version
-$release_version_tag" | sort -V)
+$release_version_tag
+$prev_rel_ver_tag" | sort -V)
 
 versions_expected=\
-"$release_version_tag
+"$prev_rel_ver_tag
+$release_version_tag
 $next_version"
 
 if [ "$versions_sorted" != "$versions_expected" ]; then
@@ -73,7 +85,9 @@ fi
 echo "  Do you want to promote:  $release_version_tag"
 echo "     from release branch:  $promote_from_branch"
 echo "       to release branch:  $promote_to_branch"
-echo "  (Upcoming next version:  $next_version)"
+echo
+echo "  (Last released version:  $prev_rel_ver_tag,"
+echo "   upcoming next version:  $next_version)"
 echo
 
 # dupl code [bashutils]
@@ -124,9 +138,7 @@ cd relchans/$promote_to_branch
   echo
 
   set -x
-  git fetch origin $promote_to_branch
-  git checkout $promote_to_branch
-  git merge --ff-only origin/$promote_to_branch
+  # We've already _fast_forward-ed.
   echo "$release_version_tag" >> $versions_file
   # The tag: edition (tyse), version and channel (regular).  [.must_be_dev_regular]
   release_version_tag_w_branch="tyse-$release_version_tag-regular"

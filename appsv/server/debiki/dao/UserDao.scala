@@ -1562,10 +1562,13 @@ trait UserDao {
     // for chat topics, in the forum topic list? (because # comments in a chat channel is
     // rather pointless, instead, # new comments per time unit matters more, but then it's
     // simpler to instead show # users?)
-    //
-    COULD_OPTIMIZE // only if (anyChange) ..
-    tx.updatePageMeta(pageMeta, oldMeta = pageMeta, markSectionPageStale = false)
-    (pageMeta, anyChange)
+    var pageMetaAfter = pageMeta
+    if (anyChange) {
+      pageMetaAfter = pageMeta.copyWithNewVersion
+      tx.updatePageMeta(pageMetaAfter, oldMeta = pageMeta, markSectionPageStale = false)
+    }
+
+    (pageMetaAfter, anyChange)
   }
 
 

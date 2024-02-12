@@ -89,6 +89,8 @@ object TrustLevel {
   val ModeratorDummyLevel = 7
   val AdminDummyLevel = 8
 
+  def fromOptInt(value: Opt[i32]): Opt[TrustLevel] = value.flatMap(fromInt)
+
   def fromInt(value: Int): Option[TrustLevel] = Some(value match {
     case TrustLevel.Stranger.IntVal => TrustLevel.Stranger
     case TrustLevel.NewMember.IntVal => TrustLevel.NewMember

@@ -227,6 +227,59 @@ class SearchQueryParserSpec extends AnyFreeSpec with must.Matchers {
         query.warnings.head.message must include("funn")  // either "funny:" or "funnier:"
       }
 
+      "parse is:..." - {
+        "parse is:something" in {
+          var query = parseRawSearchQueryString(s"is:idea", dao)
+          query.isWhat.pageType mustBe Some(PageType.Idea)
+          query = parseRawSearchQueryString(s"is:question", dao)
+          query.isWhat.pageType mustBe Some(PageType.Question)
+          query = parseRawSearchQueryString(s"is:problem", dao)
+          query.isWhat.pageType mustBe Some(PageType.Problem)
+          query = parseRawSearchQueryString(s"is:discussion", dao)
+          query.isWhat.pageType mustBe Some(PageType.Discussion)
+          query = parseRawSearchQueryString(s"is:comments", dao)
+          query.isWhat.pageType mustBe Some(PageType.EmbeddedComments)
+
+          query = parseRawSearchQueryString(s"is:open", dao)
+          query.isWhat.pageOpen mustBe Some(true)
+
+          query = parseRawSearchQueryString(s"is:closed", dao)
+          query.isWhat.pageOpen mustBe Some(false)
+
+          query = parseRawSearchQueryString(s"is:answered", dao)
+          query.isWhat.pageSolved mustBe Some(true)
+
+          query = parseRawSearchQueryString(s"is:solved", dao)
+          query.isWhat.pageSolved mustBe Some(true)
+
+          query = parseRawSearchQueryString(s"is:undecided", dao)
+          query.isWhat.pageDoingStatus mustBe Some(PageDoingStatus.Discussing)
+          query = parseRawSearchQueryString(s"is:planned", dao)
+          query.isWhat.pageDoingStatus mustBe Some(PageDoingStatus.Planned)
+          query = parseRawSearchQueryString(s"is:started", dao)
+          query.isWhat.pageDoingStatus mustBe Some(PageDoingStatus.Started)
+          query = parseRawSearchQueryString(s"is:done", dao)
+          query.isWhat.pageDoingStatus mustBe Some(PageDoingStatus.Done)
+        }
+
+        "parse is:many,things" in {
+          var query = parseRawSearchQueryString("is:question,answered", dao)
+          query.isWhat.pageType mustBe Some(PageType.Question)
+          query.isWhat.pageSolved mustBe Some(true)
+
+          query = parseRawSearchQueryString("is:idea,started", dao)
+          query.isWhat.pageType mustBe Some(PageType.Idea)
+          query.isWhat.pageDoingStatus mustBe Some(PageDoingStatus.Started)
+        }
+
+        "parse  is:...  plus text" in {
+          val query = parseRawSearchQueryString("aa is:discussion,open zz", dao)
+          query.queryWithoutParams mustBe "aa  zz"
+          query.isWhat.pageType mustBe Some(PageType.Discussion)
+          query.isWhat.pageOpen mustBe Some(true)
+        }
+      }
+
       "parse tags" in {
         var query = parseRawSearchQueryString(s"$tags:", dao)
         query.isEmpty mustBe true

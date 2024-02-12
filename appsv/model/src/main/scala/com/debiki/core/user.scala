@@ -2469,3 +2469,25 @@ case class PeopleFilter(
   onlyThreats: Boolean = false) {
   forbid(onlyApproved && onlyPendingApproval, "TyEZKJ3BG59")
 }
+
+
+case class Coworker(
+  userId: UserId,
+  isOwner: Bo,
+  isAdmin: Bo,
+  isModerator: Bo,
+  trustLevel: TrustLevel,
+  lockedTrustLevel: Opt[TrustLevel],
+  username: Opt[St],
+  fullName: Opt[St],
+  emailAdrOrDomain: Opt[St],
+  isApproved: Opt[Bo],
+  createdAt: When,
+  emailVerifiedAt: Opt[When],
+  lastSeenAt: Opt[When],
+  lastPostedAt: Opt[When],
+  lastEmailedAt: Opt[When],
+  suspendedTill: Opt[When],
+  deactivatedAt: Opt[When],
+  deletedAt: Opt[When],
+)

@@ -29,7 +29,7 @@ object WhatApiSecret {
   case class ServerSecretFor(basicAuthUsername: St) extends WhatApiSecret {
     // Bit dupl constants, for now, just to catch bugs. [Scala_3] Have the type system
     // verify this instead, at compile time, somehow?
-    assert(Seq("emailwebhooks", "createsite", "sysmaint") contains basicAuthUsername,
+    assert(Seq("ams", "emailwebhooks", "createsite", "sysmaint") contains basicAuthUsername,
           "TyE502MMJS4")
 
     override def isServerSecret: Bo = true

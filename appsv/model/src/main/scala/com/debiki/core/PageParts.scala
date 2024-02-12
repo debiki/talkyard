@@ -299,6 +299,7 @@ abstract class PageParts {
   }
 
   def allPosts: Vec[Post]
+  def activePosts: Vec[Post] = allPosts.filter(_.isVisible)
 
   def postByNr(postNr: PostNr): Option[Post] = postsByNr.get(postNr)
   def postByNr(postNr: Option[PostNr]): Option[Post] = postNr.flatMap(postsByNr.get)

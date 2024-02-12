@@ -98,7 +98,7 @@ describe("search-public-basic.2br  TyTSEARCHPUBBASIC", () => {
 
   it(`Maria searches for '${wordMagicMonsters}', finds that reply (only)`, () => {
     maria.searchResultsPage.searchForUntilNumPagesFound(wordMagicMonsters, 1);
-    maria.assertTextMatches('.esSERP_Hit_PageTitle', qwertyAbcTitle);
+    maria.assertTextMatches('.c_SR_Ttl', qwertyAbcTitle);
     maria.assertNoTextMatches('.esSERP_Hit_Text', wordQwertyTitle);
     maria.assertNoTextMatches('.esSERP_Hit_Text', wordQwertyBody);
     maria.assertNoTextMatches('.esSERP_Hit_Text', wordQwertyReply);
@@ -110,25 +110,25 @@ describe("search-public-basic.2br  TyTSEARCHPUBBASIC", () => {
 
   it(`... she searches for '${wordQwertyTitle}' and finds the page title`, () => {
     maria.searchResultsPage.searchForUntilNumPagesFound(wordQwertyTitle, 1);
-    maria.assertTextMatches('.esSERP_Hit_PageTitle', qwertyAbcTitle);
-    maria.assertTextMatches('.esSERP_Hit_In', "title");
+    maria.assertTextMatches('.c_SR_Ttl-HitTtl', qwertyAbcTitle);
     maria.assertTextMatches('.esSERP_Hit_Text', wordQwertyTitle);
-    maria.assertExactly(1, '.esSERP_Hit_In');
+    assert.ok(!maria.isVisible('.esSERP_Hit_In'));
     maria.assertExactly(1, '.esSERP_Hit_Text');
   });
 
   it(`... she searches for '${wordQwertyBody}', finds the page body`, () => {
     maria.searchResultsPage.searchForWaitForResults(wordQwertyBody);
-    maria.assertTextMatches('.esSERP_Hit_PageTitle', qwertyAbcTitle);
-    maria.assertTextMatches('.esSERP_Hit_In', "page text");
+    maria.assertTextMatches('.c_SR_Ttl-HitOp', qwertyAbcTitle);
+    //maria.assertTextMatches('.esSERP_Hit_In', "page text");
     maria.assertTextMatches('.esSERP_Hit_Text', wordQwertyBody);
-    maria.assertExactly(1, '.esSERP_Hit_In');
+    //maria.assertExactly(1, '.esSERP_Hit_In');
+    assert.ok(!maria.isVisible('.esSERP_Hit_In'));
     maria.assertExactly(1, '.esSERP_Hit_Text');
   });
 
   it(`... she searches for '${wordQwertyReply}', finds the reply`, () => {
     maria.searchResultsPage.searchForWaitForResults(wordQwertyReply);
-    maria.assertTextMatches('.esSERP_Hit_PageTitle', qwertyAbcTitle);
+    maria.assertTextMatches('.c_SR_Ttl', qwertyAbcTitle);
     maria.assertTextMatches('.esSERP_Hit_In', /comment|reply/);
     maria.assertTextMatches('.esSERP_Hit_Text', wordQwertyReply);
     maria.assertExactly(1, '.esSERP_Hit_In');
@@ -138,12 +138,12 @@ describe("search-public-basic.2br  TyTSEARCHPUBBASIC", () => {
   it(`... she searches for '${wordAbcdef}', finds title, body, one reply`, () => {
     maria.searchResultsPage.searchForWaitForResults(wordAbcdef);
     assert(maria.searchResultsPage.countNumPagesFound_1() === 1);
-    maria.assertTextMatches('.esSERP_Hit_PageTitle', qwertyAbcTitle);
+    maria.assertTextMatches('.c_SR_Ttl-HitTtl', qwertyAbcTitle);
     maria.assertAnyTextMatches('.esSERP_Hit_Text', qwertyAbcTitle); // wordQwertyTitle);
     maria.assertAnyTextMatches('.esSERP_Hit_Text', qwertyAbcBody); // wordQwertyBody);
     maria.assertAnyTextMatches('.esSERP_Hit_Text', qwertyAbcReply); // wordQwertyReply);
     maria.assertNoTextMatches('.esSERP_Hit_Text', wordMagicMonsters);
-    maria.assertExactly(3, '.esSERP_Hit_In');
+    maria.assertExactly(1, '.esSERP_Hit_In'); // only for the reply
     maria.assertExactly(3, '.esSERP_Hit_Text');
   });
 
@@ -160,11 +160,11 @@ describe("search-public-basic.2br  TyTSEARCHPUBBASIC", () => {
   function assertFoundTwoQwertyBodies(someone) {
     // xyz should be first, because its page body matches the search phrase exactly,
     // but the qwerty page also includes the text "abcdef" = less good match?
-    someone.assertNthTextMatches('.esSERP_Hit_PageTitle', 1, xyzTitle);
-    someone.assertNthTextMatches('.esSERP_Hit_PageTitle', 2, qwertyAbcTitle);
+    someone.assertNthTextMatches('.c_SR_Ttl', 1, xyzTitle);
+    someone.assertNthTextMatches('.c_SR_Ttl', 2, qwertyAbcTitle);
     someone.assertNthTextMatches('.esSERP_Hit_Text', 1, wordQwertyBody);
     someone.assertNthTextMatches('.esSERP_Hit_Text', 2, qwertyAbcBody);
-    someone.assertExactly(2, '.esSERP_Hit_In');
+    someone.assertExactly(0, '.esSERP_Hit_In'); // only for comments, not the orig-post
     someone.assertExactly(2, '.esSERP_Hit_Text');
   }
 

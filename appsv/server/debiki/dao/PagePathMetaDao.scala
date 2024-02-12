@@ -259,6 +259,9 @@ trait PagePathMetaDao {
   }
 
 
+  REMOVE // ? One always (?) wants at least a PageMeta, for access control.
+  // Often a PageStuff.  So, it's better with 2 fns: one that looks up PageMeta,
+  // another that looks up PageStuff ?
   def getRealPageIdByDiidOrEmbUrl(parsedRef: ParsedRef): Opt[PageId] = {
     parsedRef match {
       case ParsedRef.EmbeddingUrl(url, lax) =>
@@ -270,6 +273,10 @@ trait PagePathMetaDao {
         controllers.EmbeddedTopicsController.getAnyRealPageId(
               tyPageId = None, discussionId = Some(id), embeddingUrl = "",
               categoryRef = None, dao = this)
+      case ParsedRef.TalkyardId(value) =>
+        Some(value)
+      case ParsedRef.PageId(value) =>
+        Some(value)
       case _ =>
         die("TyE206MSEJ4", s"Not a discussion id or embedding url: ${parsedRef}")
     }

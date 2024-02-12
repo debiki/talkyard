@@ -146,6 +146,8 @@ sealed abstract class PostType(
 
 
 // REFACTOR. See harmless bug below. Should change to a bit field, or split into separate fields.
+// The title should be it's own type. Maybe title and OP will be -1 and 1?
+// And comments 2, meta posts 3?
 //
 @deprecated  // [depr_post_type]
 object PostType {

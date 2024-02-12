@@ -7462,8 +7462,8 @@ export class TyE2eTestBrowser {
         await this.searchResultsPage.waitForResults(phrase);
         // oops, search-search-loop needed ...
         // for now:
-        await this.waitForAtLeast(numPages, '.esSERP_Hit_PageTitle');
-        await this.assertExactly(numPages, '.esSERP_Hit_PageTitle');
+        await this.waitForAtLeast(numPages, '.c_SR_Ttl');
+        await this.assertExactly(numPages, '.c_SR_Ttl');
       },
 
       searchForWaitForResults: async (phrase: St) => {
@@ -7507,14 +7507,15 @@ export class TyE2eTestBrowser {
       },
 
       countNumPagesFound_1: async (): Pr<Nr> =>
-        (await this.$$('.esSERP_Hit_PageTitle')).length,
+        (await this.$$('.c_SR_Ttl')).length,
 
       assertResultPageTitlePresent: async (title: St) => {
-        await this.waitAndGetElemWithText('.esSERP_Hit_PageTitle', title, { timeoutMs: 1 });
+        await this.waitAndGetElemWithText('.c_SR_Ttl', title, { timeoutMs: 1 });
       },
 
       getHitLinks: async (): Pr<(St | U)[]> => {
-        return await this.waitAndGetListLinks('.s_SR .esSERP_Hit_In a');
+        return await this.waitAndGetListLinks(
+              '.esSERP_Hit_In a, .c_SR_Ttl-HitTtl a, .c_SR_Ttl-HitOp a');
       },
 
       assertResultLinksAre: async (expected: St[], ps: { anyOrder: Bo } = {}) => {
@@ -7547,10 +7548,10 @@ export class TyE2eTestBrowser {
       goToSearchResult: async (linkText?: St) => {
         await this.repeatUntilAtNewUrl(async () => {
           if (!linkText) {
-            await this.waitAndClick('.esSERP_Hit_PageTitle a');
+            await this.waitAndClick('.c_SR_Ttl a');
           }
           else {
-            await this.waitForThenClickText('.esSERP_Hit_PageTitle a', linkText);
+            await this.waitForThenClickText('.c_SR_Ttl a', linkText);
           }
         });
       },

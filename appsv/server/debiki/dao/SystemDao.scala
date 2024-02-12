@@ -249,6 +249,11 @@ class SystemDao(
   }
 
 
+  def listCoworkersAllSites(): Map[SiteId, immutable.Seq[Coworker]] = {
+    readTx(_.listCoworkersAllSites())
+  }
+
+
   private def createFirstSite(): Site = {
     val pubId =
           if (globals.isOrWasTest) Site.FirstSiteTestPublicId
@@ -777,6 +782,8 @@ class SystemDao(
         siteTx)
 
       siteTx.updatePost(postAfter)
+      // Currently doesn't make a difference, but better avoid sleeping bugs. [ix_hidden]
+      siteTx.indexPostsSoon(postAfter)
 
       // Add a review task, so a human will check this out. When hen has
       // done that, we'll hide or show the post, if needed, and, if the human

@@ -51,6 +51,8 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
   // an extra param: inclStackTraceInErrors: Bo = false.
   // If no stack trace, throw BadInpDataEx.
   // Otherwise, throw BadDataEx *with* a stack trace.
+  // Or, better: Split into:  BadUserJsonEx  and  BadInternalJsonEx,
+  // the former not logging any warning or error, the latter an error?
   class BadJsonException(message: String) extends IllegalArgumentException(message)
 
 
@@ -557,12 +559,17 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
   def parseBoDef(json: JsValue, fieldName: St, default: Bo): Bo =
     readOptBool(json, fieldName) getOrElse default
 
+  def parseOrFalse(json: JsValue, fieldName: St, altName: St = ""): Bo =
+    parseOptBo(json, fieldName, altName = altName) getOrElse false
+
   def readBoolean(json: JsValue, fieldName: String): Boolean =
     readOptBool(json, fieldName) getOrElse throwMissing("EsE4GUY8", fieldName)
 
-
-  def parseOptBo(json: JsValue, fieldName: St): Opt[Bo] =
-    readOptBool(json, fieldName)
+  def parseOptBo(json: JsValue, fieldName: St, altName: St = ""): Opt[Bo] = {
+    var result = readOptBool(json, fieldName)
+    if (altName.isEmpty) result
+    else result.orElse(readOptBool(json, altName))
+  }
 
   def readOptBool(json: JsValue, fieldName: String): Option[Boolean] =
     (json \ fieldName).validateOpt[Boolean] match {

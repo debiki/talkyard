@@ -347,14 +347,14 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... he finds ${MaxPagesHit_Owen} pages — kittens, so popular`, async () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([
-          '/page-aa11#post-1',
-          '/page-bb22#post-1',
-          '/page-bb33#post-1',
-          '/page-bb44#post-1',
-          '/page-ss66#post-1',
-          '/page-tt77#post-1',
-          '/page-tt88#post-1',
-          '/page-tt99#post-1',
+          '/page-aa11',
+          '/page-bb22',
+          '/page-bb33',
+          '/page-bb44',
+          '/page-ss66',
+          '/page-tt77',
+          '/page-tt88',
+          '/page-tt99',
           ], { anyOrder: true });
   });
 
@@ -368,10 +368,10 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... finds the public pages only`, async () => {
     await maja_brB.searchResultsPage.assertResultLinksAre([
-          '/page-aa11#post-1',
-          '/page-bb22#post-1',
-          '/page-bb33#post-1',
-          '/page-bb44#post-1',
+          '/page-aa11',
+          '/page-bb22',
+          '/page-bb33',
+          '/page-bb44',
           ], { anyOrder: true });
   });
 
@@ -380,39 +380,39 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... he finds some pages`, async () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([
-        //'/page-aa11#post-1',  // kittens  0.0
-        //'/page-bb22#post-1',  // kittens  1.22
-          '/page-bb33#post-1',  // kittens  1.33
-          '/page-bb44#post-1',  // kittens  1.44
-        //'/page-ss66#post-1',  // kittens -1.66
-          '/page-tt77#post-1',  // kittens  1.33
-          '/page-tt88#post-1',  // kittens  1.33
-          '/page-tt99#post-1',  // kittens  1.33
+        //'/page-aa11',  // kittens  0.0
+        //'/page-bb22',  // kittens  1.22
+          '/page-bb33',  // kittens  1.33
+          '/page-bb44',  // kittens  1.44
+        //'/page-ss66',  // kittens -1.66
+          '/page-tt77',  // kittens  1.33
+          '/page-tt88',  // kittens  1.33
+          '/page-tt99',  // kittens  1.33
           ], { anyOrder: true });
   });
 
   it(`Maja likes more kittens too, also searches for  >=1.33`, async () => {
     await maja_brB.searchResultsPage.searchForWaitForResults("tag:kittens>=1.33");
     await maja_brB.searchResultsPage.assertResultLinksAre([
-        //'/page-aa11#post-1',  // kittens  0.0
-        //'/page-bb22#post-1',  // kittens  1.22
-          '/page-bb33#post-1',  // kittens  1.33
-          '/page-bb44#post-1',  // kittens  1.44
+        //'/page-aa11',  // kittens  0.0
+        //'/page-bb22',  // kittens  1.22
+          '/page-bb33',  // kittens  1.33
+          '/page-bb44',  // kittens  1.44
           ], { anyOrder: true });
   });
 
   it(`If  >1.33,  they find just one page`, async () => {
     await owen_brA.searchResultsPage.searchForWaitForResults("tag:kittens>1.33");
     await owen_brA.searchResultsPage.assertResultLinksAre([
-          '/page-bb44#post-1',  // kittens  1.44
+          '/page-bb44',  // kittens  1.44
           ]);
   });
 
   it(`Negative numbers work`, async () => {
     await owen_brA.searchResultsPage.searchForWaitForResults("tag:kittens<0.5");
     await owen_brA.searchResultsPage.assertResultLinksAre([
-          '/page-aa11#post-1',  // kittens  0.0
-          '/page-ss66#post-1',  // kittens -1.66
+          '/page-aa11',  // kittens  0.0
+          '/page-ss66',  // kittens -1.66
           ], { anyOrder: true });
   });
 
@@ -420,14 +420,14 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
     // When we added the tag, we set it to 0.0, but since are numbers, 0.000 is the same.
     await owen_brA.searchResultsPage.searchForWaitForResults("tag:kittens=0.00000");
     await owen_brA.searchResultsPage.assertResultLinksAre([
-          '/page-aa11#post-1',  // kittens  0.0
+          '/page-aa11',  // kittens  0.0
           ]);
   });
 
   it(`... also for negative numbers`, async () => {
     await owen_brA.searchResultsPage.searchForWaitForResults("tag:kittens=-1.66000");
     await owen_brA.searchResultsPage.assertResultLinksAre([
-          '/page-ss66#post-1',  // kittens -1.66
+          '/page-ss66',  // kittens -1.66
           ]);
   });
 
@@ -441,7 +441,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... he finds page TT77`, async () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([
-          '/page-tt77#post-1',
+          '/page-tt77',
           ]);
   });
 
@@ -455,7 +455,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... finds BB22, a public topic`, async () => {
     await maja_brB.searchResultsPage.assertResultLinksAre([
-          '/page-bb22#post-1',
+          '/page-bb22',
           ]);
   });
 
@@ -464,14 +464,14 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... finds pages 44, 66, 77, 88, 99`, async () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([
-        //'/page-aa11#post-1',
-        //'/page-bb22#post-1',
-        //'/page-bb33#post-1',
-          '/page-bb44#post-1',
-          '/page-ss66#post-1',
-          '/page-tt77#post-1',
-          '/page-tt88#post-1',
-          '/page-tt99#post-1',
+        //'/page-aa11',
+        //'/page-bb22',
+        //'/page-bb33',
+          '/page-bb44',
+          '/page-ss66',
+          '/page-tt77',
+          '/page-tt88',
+          '/page-tt99',
           ], { anyOrder: true });
   });
 
@@ -480,7 +480,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... she finds only page BB44`, async () => {
     await maja_brB.searchResultsPage.assertResultLinksAre([
-          '/page-bb44#post-1',
+          '/page-bb44',
           ]);
   });
 
@@ -495,9 +495,9 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... finds page BB22, BB33, BB44`, async () => {
     await maja_brB.searchResultsPage.assertResultLinksAre([
-          '/page-bb22#post-1',
-          '/page-bb33#post-1',
-          '/page-bb44#post-1',
+          '/page-bb22',
+          '/page-bb33',
+          '/page-bb44',
           ], { anyOrder: true });
   });
 
@@ -511,7 +511,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... and finds the staff-only page`, async () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([
-          '/page-ss66#post-1',
+          '/page-ss66',
           ]);
   });
 
@@ -520,14 +520,14 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`Owen finds all pages except for AA11`, async () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([
-        //'/page-aa11#post-1',
-          '/page-bb22#post-1',
-          '/page-bb33#post-1',
-          '/page-bb44#post-1',
-          '/page-ss66#post-1',
-          '/page-tt77#post-1',
-          '/page-tt88#post-1',
-          '/page-tt99#post-1',
+        //'/page-aa11',
+          '/page-bb22',
+          '/page-bb33',
+          '/page-bb44',
+          '/page-ss66',
+          '/page-tt77',
+          '/page-tt88',
+          '/page-tt99',
           ], { anyOrder: true });
   });
 
@@ -536,9 +536,9 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... finds only BB22, BB33, BB44`, async () => {
     await maja_brB.searchResultsPage.assertResultLinksAre([
-          '/page-bb22#post-1',
-          '/page-bb33#post-1',
-          '/page-bb44#post-1',
+          '/page-bb22',
+          '/page-bb33',
+          '/page-bb44',
           ], { anyOrder: true });
   });
 
@@ -553,14 +553,14 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... finds page AA11, BB44, BB33, BB22 ...`, async () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([
-          '/page-aa11#post-1',
-          '/page-bb44#post-1',
-          '/page-bb33#post-1',
-          '/page-bb22#post-1',
-          '/page-ss66#post-1',
-          '/page-tt99#post-1',
-          '/page-tt88#post-1',
-          '/page-tt77#post-1',
+          '/page-aa11',
+          '/page-bb44',
+          '/page-bb33',
+          '/page-bb22',
+          '/page-ss66',
+          '/page-tt99',
+          '/page-tt88',
+          '/page-tt77',
           ]);
   });
 
@@ -570,14 +570,14 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... finds page AA11, BB22, BB33, BB44 ...`, async () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([
-          '/page-aa11#post-1',
-          '/page-bb22#post-1',
-          '/page-bb33#post-1',
-          '/page-bb44#post-1',
-          '/page-ss66#post-1',
-          '/page-tt77#post-1',
-          '/page-tt88#post-1',
-          '/page-tt99#post-1',
+          '/page-aa11',
+          '/page-bb22',
+          '/page-bb33',
+          '/page-bb44',
+          '/page-ss66',
+          '/page-tt77',
+          '/page-tt88',
+          '/page-tt99',
           ]);
   });
 
@@ -592,14 +592,14 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... finds page SS66, AA11, BB22, ...`, async () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([
-          '/page-ss66#post-1',  // kittens -1.66
-          '/page-aa11#post-1',  // kittens  0.0
-          '/page-bb22#post-1',  // kittens  1.22
-          '/page-tt99#post-1',  // kittens  1.33
-          '/page-tt88#post-1',  // kittens  1.33
-          '/page-tt77#post-1',  // kittens  1.33
-          '/page-bb33#post-1',  // kittens  1.33
-          '/page-bb44#post-1',  // kittens  1.44
+          '/page-ss66',  // kittens -1.66
+          '/page-aa11',  // kittens  0.0
+          '/page-bb22',  // kittens  1.22
+          '/page-tt99',  // kittens  1.33
+          '/page-tt88',  // kittens  1.33
+          '/page-tt77',  // kittens  1.33
+          '/page-bb33',  // kittens  1.33
+          '/page-bb44',  // kittens  1.44
           ]);
   });
 
@@ -616,14 +616,14 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... finds page BB44, BB33, TT77, TT88...`, async () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([
-          '/page-bb44#post-1',  // kittens  1.44
-          '/page-bb33#post-1',  // kittens  1.33
-          '/page-tt77#post-1',  // kittens  1.33
-          '/page-tt88#post-1',  // kittens  1.33
-          '/page-tt99#post-1',  // kittens  1.33
-          '/page-bb22#post-1',  // kittens  1.22
-          '/page-aa11#post-1',  // kittens  0.0
-          '/page-ss66#post-1',  // kittens -1.66
+          '/page-bb44',  // kittens  1.44
+          '/page-bb33',  // kittens  1.33
+          '/page-tt77',  // kittens  1.33
+          '/page-tt88',  // kittens  1.33
+          '/page-tt99',  // kittens  1.33
+          '/page-bb22',  // kittens  1.22
+          '/page-aa11',  // kittens  0.0
+          '/page-ss66',  // kittens -1.66
           ]);
   });
 
@@ -638,14 +638,14 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... finds page BB44, BB33, TT77, but not TT88, ...`, async () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([
-          '/page-bb44#post-1',  // kittens  1.44
-          '/page-bb33#post-1',  // kittens  1.33
-          '/page-tt77#post-1',  // kittens  1.33
-          '/page-tt88#post-1',  // kittens  1.33
-        //'/page-tt99#post-1',  // kittens  1.33  'nr' isn't <89
-          '/page-bb22#post-1',  // kittens  1.22
-          '/page-aa11#post-1',  // kittens  0.0
-        //'/page-ss66#post-1',  // kittens -1.66  'kittens' isn't >-0.5
+          '/page-bb44',  // kittens  1.44
+          '/page-bb33',  // kittens  1.33
+          '/page-tt77',  // kittens  1.33
+          '/page-tt88',  // kittens  1.33
+        //'/page-tt99',  // kittens  1.33  'nr' isn't <89
+          '/page-bb22',  // kittens  1.22
+          '/page-aa11',  // kittens  0.0
+        //'/page-ss66',  // kittens -1.66  'kittens' isn't >-0.5
           ]);
   });
 
@@ -663,10 +663,10 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   it(`... finds the AA and BB pages`, async () => {
     // TESTS_MISSING It'd be nice if cat_B_members_only. (Then would find only AA11 here.)
     await stranger_brB.searchResultsPage.assertResultLinksAre([
-          '/page-bb44#post-1',
-          '/page-bb33#post-1',
-          '/page-bb22#post-1',
-          '/page-aa11#post-1',
+          '/page-bb44',
+          '/page-bb33',
+          '/page-bb22',
+          '/page-aa11',
           ]);
   });
 
@@ -680,13 +680,13 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... she finds the TT pages too, but not the staff page`, async () => {
     await trillian_brB.searchResultsPage.assertResultLinksAre([
-          '/page-tt99#post-1',
-          '/page-tt88#post-1',
-          '/page-tt77#post-1',
-          '/page-bb44#post-1',
-          '/page-bb33#post-1',
-          '/page-bb22#post-1',
-          '/page-aa11#post-1',
+          '/page-tt99',
+          '/page-tt88',
+          '/page-tt77',
+          '/page-bb44',
+          '/page-bb33',
+          '/page-bb22',
+          '/page-aa11',
           ]);
   });
 
@@ -701,13 +701,13 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... she finds only pangolin pages, except for the staff page`, async () => {
     await trillian_brB.searchResultsPage.assertResultLinksAre([
-          '/page-bb44#post-1',  // kittens  1.44
-          '/page-bb33#post-1',  // kittens  1.33
-          '/page-tt77#post-1',  // kittens  1.33
-        //'/page-tt88#post-1',  // kittens  1.33 — no pangolins here
-          '/page-tt99#post-1',  // kittens  1.33
-          '/page-bb22#post-1',  // kittens  1.22
-        //'/page-aa11#post-1',  // kittens  0.0  — where are the pangolins? Not here
+          '/page-bb44',  // kittens  1.44
+          '/page-bb33',  // kittens  1.33
+          '/page-tt77',  // kittens  1.33
+        //'/page-tt88',  // kittens  1.33 — no pangolins here
+          '/page-tt99',  // kittens  1.33
+          '/page-bb22',  // kittens  1.22
+        //'/page-aa11',  // kittens  0.0  — where are the pangolins? Not here
           ]);
   });
 
@@ -718,14 +718,14 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   });
   it(`... finds also the staff page`, async () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([
-        //'/page-bb44#post-1',  // kittens  1.44
-          '/page-bb33#post-1',  // kittens  1.33
-          '/page-tt77#post-1',  // kittens  1.33
-        //'/page-tt88#post-1',  // kittens  1.33 — no pangolins
-          '/page-tt99#post-1',  // kittens  1.33
-          '/page-bb22#post-1',  // kittens  1.22
-        //'/page-aa11#post-1',  // kittens  0.0  — totally zero pangolins
-          '/page-ss66#post-1',  // kittens -1.66
+        //'/page-bb44',  // kittens  1.44
+          '/page-bb33',  // kittens  1.33
+          '/page-tt77',  // kittens  1.33
+        //'/page-tt88',  // kittens  1.33 — no pangolins
+          '/page-tt99',  // kittens  1.33
+          '/page-bb22',  // kittens  1.22
+        //'/page-aa11',  // kittens  0.0  — totally zero pangolins
+          '/page-ss66',  // kittens -1.66
           ]);
   });
 

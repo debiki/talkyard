@@ -41,8 +41,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     loadPostsOnPageImpl(pageId, postNr = Some(postNr)).headOption
 
 
-  override def loadPostsOnPage(pageId: PageId): Vec[Post] =
-    loadPostsOnPageImpl(pageId, postNr = None)
+  override def loadPostsOnPage(pageId: PageId, activeOnly: Bo = false): Vec[Post] =
+    loadPostsOnPageImpl(pageId, postNr = None, activeOnly = activeOnly)
 
   private def select__posts_po__someJoin__patPostRels_pa(someJoin: St): St = s"""
         select po.*,
@@ -80,7 +80,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
   private val and__po_approved_at__is_not_null = "and po.approved_at is not null"
 
-  private def loadPostsOnPageImpl(pageId: PageId, postNr: Opt[PostNr]): Vec[Post] = {
+  private def loadPostsOnPageImpl(pageId: PageId, postNr: Opt[PostNr], activeOnly: Bo = false)
+          : Vec[Post] = {
     // Similar to:  loadPostsByNrs(_: Iterable[PagePostNr])
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef, pageId)
     val andPostNrEq = postNr map { id =>
@@ -88,11 +89,17 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       "and po.post_nr = ?"
     } getOrElse ""
 
-    val query = s"""
+    val andActiveOnly = if (!activeOnly) "" else
+            s"""$and__po_approved_at__is_not_null
+                and  po.hidden_at  is null
+                and  po.deleted_status = ${DeletedStatus.NotDeleted.toInt} """
+
+    val query = s""" -- loadPostsOnPageImpl
           $select__posts_po__leftJoin__patPostRels_pa
           where po.site_id = ? and
                 po.page_id = ?
                 $andPostNrEq
+                $andActiveOnly
           $groupBy_orderBy__siteId_postId """
 
     runQueryFindMany(query, values.toList, rs => {
@@ -410,7 +417,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
             select__posts_po__leftJoin__patPostRels_pa
           }
 
-    val sqlQuery = s"""
+    val sqlQuery = s""" -- loadPostsByQuery
           $select__posts_po__theJoin__patPostRels_pa
           where po.site_id = ?
               $andAuthorEq  -- pat_node_rels_t [AuthorOf]  needs new sub query?
@@ -467,7 +474,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
              and  t.tagtype_id_c =  ?
           where  po.site_id =  ?
             and  (po.type is null  or  po.type between 1 and 12)  -- [depr_post_type]
-            and  po.deleted_at is null
+            and  po.deleted_status = ${DeletedStatus.NotDeleted.toInt}
             and  po.hidden_at is null
             $andSomeVersionApproved
           $groupBy__siteId_postId
@@ -478,6 +485,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
+  RENAME // to loadEmbeddedCommentsActiveOnly? or add an activeOnly: Bo param
   def loadEmbeddedCommentsApprovedNotDeleted(limit: Int, orderBy: OrderBy): immutable.Seq[Post] = {
     dieIf(orderBy != OrderBy.MostRecentFirst, "TyE60RKTJF4", "Unimpl")
     COULD_OPTIMIZE // It would be better to inner-join posts3 and pages3 first, before
@@ -490,7 +498,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         and po.post_nr <> $TitleNr
         and po.post_nr <> $BodyNr
         and (po.type is null or po.type = ${PostType.Normal.toInt})
-        and po.deleted_at is null
+        and po.deleted_status = ${DeletedStatus.NotDeleted.toInt}
         and po.hidden_at is null
         and po.approved_at is not null
       $groupBy__siteId_postId
@@ -641,7 +649,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   override def nextPostId(): PostId = {
-    val query = """
+    val query = """ -- nextPostId
       select max(unique_post_id) max_id from posts3 where site_id = ?
       """
     runQuery(query, List(siteId.asAnyRef), rs => {
@@ -653,7 +661,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   override def insertPost(post: Post) {
-    val statement = """
+    val statement = """ -- insertPost
       insert into posts3(
         site_id,
         unique_post_id,
@@ -792,7 +800,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   def updatePost(post: Post) {
-    val statement = """
+    val statement = """ -- updatePost
       update posts3 set
         page_id = ?,
         post_nr = ?,
@@ -1014,7 +1022,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     if (postIds.isEmpty)
       return Map.empty
 
-    val query = s"""
+    val query = s""" -- loadAuthorIdsByPostId
       select unique_post_id, created_by_id
       from posts3    -- + pat_node_rels_t [AuthorOf]
       -- select__posts_po__leftJoin__patPostRels_pa
@@ -1035,7 +1043,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId)
         : Boolean = {
     REFACTOR // Break out fn, merge w deletePatNodeRels() below?
-    val statement = """
+    val statement = """ -- deleteVote
       delete from post_actions3
       where site_id = ? and page_id = ? and post_nr = ? and rel_type_c = ? and from_pat_id_c = ?
       """
@@ -1049,7 +1057,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
   def loadVoterIds(postId: PostId, voteType: PostVoteType): Seq[UserId] = {
     TESTS_MISSING
-    val query = """
+    val query = """ -- loadVoterIds
       select distinct from_pat_id_c
       from post_actions3
       where site_id = ? and to_post_id_c = ? and rel_type_c = ?
@@ -1175,7 +1183,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   def loadActionsDoneToPost(pageId: PageId, postNr: PostNr): immutable.Seq[PostAction] = {
-    val query = """
+    val query = """ -- loadActionsDoneToPost
       select distinct  to_post_id_c, rel_type_c, created_at, from_pat_id_c
       from  post_actions3
       where  site_id = ?
@@ -1200,7 +1208,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     if (pagePostNrs.isEmpty)
       return Nil
 
-    val queryBuilder = new StringBuilder(256, s"""
+    val queryBuilder = new StringBuilder(256, s""" -- loadFlagsFor
       select to_post_id_c, page_id, post_nr, rel_type_c, created_at, from_pat_id_c
       from post_actions3
       where site_id = ?
@@ -1237,7 +1245,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
   def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId) {
     // Only soft-delete the flags. Might need later, for auditing purposes?
-    val statement = s"""
+    val statement = s""" -- clearFlags
       update post_actions3
       set deleted_at = now_utc(), deleted_by_id = ?, updated_at = now_utc()
       where site_id = ? and
@@ -1294,7 +1302,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   def deletePatNodeRels(fromPatIds: Set[PatId], toPostId: PostId,
         relTypes: Set[PatNodeRelType]): i32 = {
     if (fromPatIds.isEmpty || relTypes.isEmpty) return 0
-    val statement = s"""
+    val statement = s""" -- deletePatNodeRels
           delete from post_actions3
           where site_id = ? and
                 to_post_id_c = ? and
@@ -1318,7 +1326,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   private def loadPostRevisionImpl(postId: PostId, revisionNr: Int): Option[PostRevision] = {
-    var query = s"""
+    var query = s""" -- loadPostRevisionImpl
       select
         revision_nr, previous_nr, source_patch, full_source, title,
         composed_at, composed_by_id,
@@ -1362,7 +1370,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   def insertPostRevision(revision: PostRevision) {
-    val statement = """
+    val statement = """ -- insertPostRevision
           insert into post_revisions3(
             site_id, post_id,
             revision_nr, previous_nr,
@@ -1386,7 +1394,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
   def updatePostRevision(revision: PostRevision) {
     UNTESTED
-    val statement = """
+    val statement = """ -- updatePostRevision
       update post_revisions3 set
         source_patch = ?, full_source = ?, title = ?,
         composed_at = ?, combosed_by_id = ?,

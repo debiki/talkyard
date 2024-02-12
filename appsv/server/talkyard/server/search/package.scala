@@ -20,6 +20,7 @@ package talkyard.server
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.PageStuff
+import debiki.dao.PageStuffDao.ExcerptLength
 import org.{elasticsearch => es}
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
@@ -81,6 +82,11 @@ package object search {
 
   val BatchSize = 50
 
+  /** For now, if a page has more than this number of comments, we won't reindex it.
+    * It'd typically be a chat page. See [ix_big_pgs].
+    */
+  val ReindexLimit = 1000
+
   /** These are the languages ElasticSearch can index. See:
     *   https://www.elastic.co/guide/en/elasticsearch/reference/master/analysis-lang-analyzer.html
     *       #_configuring_language_analyzers
@@ -108,6 +114,12 @@ package object search {
   // Created using ES version 6.8.23.  Always English, for now.  [es_wrong_lang]
   val IndexName = "posts_es6_v2_english"
 
+  // ?? Later, there might be more indexes, e.g. one for deleted posts (which can be
+  // good to be able to search, but isn't usually done, no need for high performance). ??
+  // [deleted_posts_ix]
+  // ActivePostsIxName   = "posts_active_es6_v3_english"    // normal
+  // HiddenPostsIxName   = "posts_inactive_es6_v3_english"  // e.g. not approved or flagged ??
+  // DeletedPostsIxName  = "posts_deleted_es6_v3_english"
 
   def makeElasticSearchIdFor(siteId: SiteId, post: Post): String =
     makeElasticSearchIdFor(siteId, postId = post.id)
@@ -116,6 +128,12 @@ package object search {
     s"$siteId:$postId"
 
 
+  /** The search hits can be a bit out-of-date, and up-to-date stuff should be
+    * fetched from the main db (Postgres) instead, when generating a search response
+    * based on search hits.  E.g. double checking with the main db if a post
+    * is really still accessible (mabye it got deleted, or authors &
+    * assignees changed, and there's an entry in job_queue_t to reindex it).
+    */
   case class SearchHit(
     siteId: SiteId,
     pageId: PageId,
@@ -127,6 +145,7 @@ package object search {
     unapprovedSource: Option[String])(
     private val underlying: es.search.SearchHit) {
 
+    /** How good this hit is, compared to the other hits. Computed by ElasticSearch. */
     def score: Float = underlying.getScore
   }
 
@@ -163,16 +182,23 @@ package object search {
   def makeElasticSearchJsonDocFor(siteId: SiteId, pageMeta: PageMeta,
           post: Post, tags: imm.Seq[Tag], tags_old: Set[TagLabel])
           : JsObject = {
+    // Sync with needs-reindex-or-not [ix_fields].
     val Fields = PostDocFields
+    // Might be absent — unapproved posts are indexed too, for mods.  [ix_unappr]
     val approvedPlainText = post.approvedHtmlSanitized.map(org.jsoup.Jsoup.parse(_).text())
     var json = Json.obj(
       Fields.SiteId -> siteId,
       Fields.PageId -> post.pageId,
       Fields.PageType -> pageMeta.pageType.toInt,
+      Fields.PageOpen -> pageMeta.isOpen,
       // JsonKeys.SectionPageId -> forum or blog page id,
       Fields.PostId -> post.id,
       Fields.PostNr -> post.nr,
-      Fields.PostType -> post.tyype.toInt,
+      Fields.PostType -> (
+          // Let's reuse postType to know what's a title, orig post or comment. [depr_post_type]
+          if (post.isTitle) TitlePostType
+          else if (post.isOrigPost) OrigPostType
+          else post.tyype.toInt),
       Fields.ApprovedRevisionNr -> post.approvedRevisionNr,
       Fields.ApprovedPlainText -> JsStringOrNull(approvedPlainText),
       Fields.CurrentRevisionNr -> post.currentRevisionNr,
@@ -180,7 +206,7 @@ package object search {
         if (post.isCurrentVersionApproved) JsNull else JsString(post.currentSource)),
 
       Fields.ParentCatId -> JsNumberOrNull(pageMeta.categoryId),
-      // Fields.AncCatIds_notInUse -> JsArray(ancestorCatIds),
+      // Fields.AncCatIds_unused -> JsArray(ancestorCatIds),
       //          — needs to reindex if moving to other cat, ok? If throttling reindexing,
       //          & maybe doing with a bit lower prio, than indexing new stuff?
 
@@ -201,11 +227,20 @@ package object search {
       // Fields.PageTagValues — "multiplied" by all comments!? Bad idea I suppose?
       )
 
-    /* Wait with this? [es_dont_ix_now]   Maybe better to index the whole embedding url,
-    // for example. Or indexing the nesting depth, instead of orig-post y/n?
-    if (post.isOrigPost) {
-      json += Fields.IsOp -> JsTrue
+    // Or is  PageSolved: false  totally uninteresting, can use  'is:open'  instead?
+    // And add  PageSolved  only if is solved?
+    if (pageMeta.pageType.canBeSolved) {
+      json += Fields.PageSolved -> JsBoolean(pageMeta.answeredAt.isDefined)
     }
+
+    // For all comments on the page, too. [page_statuses]
+    // Later, maybe a per-comment doing-status too, for comments-that-are-tasks. [comment_tasks]
+    if (pageMeta.pageType.hasDoingStatus) {
+      json += Fields.PageDoingStatus -> JsNumber(pageMeta.doingStatus.toInt)
+    }
+
+    /* Wait with this? [es_dont_ix_now]   Maybe better to index the whole embedding url,
+    // for example.
     if (pageMeta.embeddingPageUrl.isDefined) {
       json += Fields.IsEmbedded -> JsTrue
     }
@@ -254,11 +289,21 @@ package object search {
     val json = play.api.libs.json.Json.parse(jsonString)
     val approvedTextWithHighligtsHtml = {
       hit.getHighlightFields.get(Fields.ApprovedPlainText) match {
+        // If we searched for tags or categories, but no text, then, there's nothing
+        // to highlight. Then we'll use the plain text of the post whose tags or category
+        // matched.
         case null =>
-          // Why no highlights? Oh well, just return the plain text then.
           val textUnsafe = (json \ Fields.ApprovedPlainText).as[String]
+          // If the text is long, not much point in returning all of it. Then it's better
+          // to visit the page, and see the real thing instead of a long long plain text line.
+          val excerptUnsafe =
+                if (textUnsafe.length <= ExcerptLength + 10) textUnsafe
+                else textUnsafe.take(ExcerptLength) + "..."
+
           SECURITY; TESTS_MISSING  // Hmm. Use Jsoup to sanitize too just in case?
-          Vector(org.owasp.encoder.Encode.forHtmlContent(textUnsafe))
+          Vector(org.owasp.encoder.Encode.forHtmlContent(excerptUnsafe))
+
+        // But if we searched for "some words", then, they'd be highlighted.
         case highlightField: HighlightField =>
           // Html already escaped. [7YK24W]
           val fragments = Option(highlightField.getFragments).map(_.toVector) getOrElse Nil
@@ -288,16 +333,37 @@ package object search {
     }
   }
 
+  // Could alternatively index nesting depth, instead of post type, hmm. Maybe just 0 (title), 1 (op),
+  // and 2 or nothing for everything else.
+  val TitlePostType = -1
+  val OrigPostType = -2
 
   object PostDocFields {
     val SiteId = "siteId"
     val PageId = "pageId"
+
     val PageType = "pageType"
+    val PageOpen = "pageOpen"  // true/false  (false if any of:  closed, locked, frozen)
+    val PageSolved = "pageSolved"  // true/false, for Questions and Problems
+    val PageDoingStatus = "pageDoingStatus" // new -> planned -> started -> done
+
+    // If a comment is a solution to a question/problem.
+    // 1 = yes, the accepted solution. 2 = yes, a secondary also good solution (can be many).
+    // Absent means it's not currently marked as a solution.
+    val SolutionStatus_unused = "solutionStatus"
+
+    /* Maybe later? When comments can be tasks? [comment_tasks]
+       The tree would be the comment and its descendants. And such a sub tree might
+       have been done, or not yet done,  regardless of if the page itself is
+       done or not, or maybe not even a task.
+    val TreeOpen = "treeOpen"  // true/false  (false if any of:  closed, locked, frozen)
+    val TreeDoingStatus = "treeDoingStatus"
+     */
+
     val PostId = "postId"
     val PostNr = "postNr"
-    val PostType = "postType"
+    val PostType = "postType" // currently can be stale [ix_post_type]
     /* Wait. [es_dont_ix_now]
-    val IsOp = "isOp"
     val IsEmbedded = "isEmb"
     val HasAttachment = "hasAttachment"
     */
@@ -306,6 +372,7 @@ package object search {
     val CurrentRevisionNr = "currentRevNr"
     val UnapprovedSource = "unapprovedSrc"
     val CreatedAt = "createdAt"  // stored as type: date, so no Ms or Sec suffix needed.
+    val IsDeleted_unused = "isDeleted"  // true/false
 
     val AuthorIds = "authorIds"
     val AssigneeIds = "assigneeIds"
@@ -325,7 +392,15 @@ package object search {
       * Or skip? Is it better to send category ids for the whole sub tree of the
       * category one searches in?  In most cases I'd think so?  Unless *very* many?
       */
-    val AncCatIds_notInUse = "ancCatIds"
+    val AncCatIds_unused = "ancCatIds"
+
+    // -1 downranks the page. Useful if someone asked a question, there was a long
+    // discussion and eventually a solution. Then a concise documentation page
+    // with all the relevant things is written. Now, it can be helpful to downrank
+    // the long discussion, so people find the much better documentation page, first.
+    // Or maybe -2 or -3 if it's something really off-topic. Maybe an off-topic field
+    // would be better? Or, rankTweak can be a catch-all reasons?
+    val RankTweak_unused = "rankTweak"
   }
 
 
@@ -378,6 +453,7 @@ package object search {
     // See: https://www.elastic.co/guide/en/elasticsearch/reference/8.9/number.html
     val typeText = """"type": "text""""
     val typeBool = """"type": "boolean""""
+    val typeByte = """"type": "byte""""
     val typeShort = """"type": "short""""
     val typeInteger = """"type": "integer""""
     val typeLong = """"type": "long""""
@@ -424,32 +500,39 @@ package object search {
     /** Why nested docs, to store tag values?  See:
       * https://www.elastic.co/blog/great-mapping-refactoring#_nested_fields_for_each_data_type
       *
-      * Why are ids mapped as keywords, not integers? — Because we don't do range
-      * queries on ids, instead, we look up using term queries, and then, the
+      * Why are ids mapped as keywords, not integers? [ids_as_kwd] — Because we don't do
+      * range queries on ids, instead, we look up using term queries, and then, the
       * keyword type is faster. See:
       * https://www.elastic.co/guide/en/elasticsearch/reference/current/tune-for-search-speed.html#map-ids-as-keyword
       * But why aren't all ids mapped as keywords? Because I didn't know that was better,
       * back at that time (or maybe it wasn't, back at that time?).
+      *
+      * We store (most) enums as type keyword too, and as numbers. This takes little
+      * storage space, and gives quick term queries. We typically don't currently do
+      * ranqe queries on any enums. [enum_as_kwd]
       */
     private def postMappingJsonStringContent: St = i"""
-      |    "$SiteId":                { $typeKeyword, $indexed },
+      |    "$SiteId":                { $typeKeyword, $indexed ${/* [ids_as_kwd] */""}},
       |    "$PageId":                { $typeKeyword, $indexed },
-      |    "$PageType":              { $typeKeyword, $indexed },
-      |    "$PostId":                { $typeKeyword, $notIndexed /* in doc id already */},
-      |    "$PostNr":                { $typeInteger, $notIndexed /* or kwd? */ },
+      |    "$PageType":              { $typeKeyword, $indexed ${/* [enum_as_kwd] */""}},
+      |    "$PageOpen":              { $typeBool,    $indexed },
+      |    "$PageSolved":            { $typeBool,    $indexed },
+      |    "$PageDoingStatus":       { $typeKeyword, $indexed },
+      |    "$PostId":                { $typeKeyword, $notIndexed ${/* in doc id already */""}},
+      |    "$PostNr":                { $typeInteger, $notIndexed ${/* or kwd? */""} },
       |    "$PostType":              { $typeKeyword, $indexed },${""/*
       |    // Let's wait with this. Maybe better to index the embedded url as type keyword,
       |    // and can then prefix-search for embedding pages, e.g. type:
       |    // "website/blog/2022/..." and find all embedded comments from 2022 (if the
       |    // website uses that format).  [es_dont_ix_now]
-      |    "$IsOp":                  { $typeBool,    $indexed },
       |    "$IsEmbedded":            { $typeBool,    $indexed },
       |    "$HasAttachment":         { $typeBool,    $indexed }, */}
       |    "$ApprovedRevisionNr":    { $typeInteger, $notIndexed },
       |    "$ApprovedPlainText":     { $typeText,    $indexed, $analyzerLanguage },
       |    "$CurrentRevisionNr":     { $typeInteger, $notIndexed },
       |    "$UnapprovedSource":      { $typeText,    $indexed, $analyzerLanguage },
-      |    "$AuthorIds":             { $typeKeyword, $indexed },
+      |    "$IsDeleted_unused":      { $typeBool,    $indexed },
+      |    "$AuthorIds":             { $typeKeyword, $indexed ${/* [ids_as_kwd] */""}},
       |    "$AssigneeIds":           { $typeKeyword, $indexed },
       |    "$TagTypeIds":            { $typeKeyword, $indexed },
       |    "$TagValsNested": {
@@ -503,14 +586,15 @@ package object search {
       |     Or is it too bad for performance to repeat all page tag values,
       |     for *every comment* (!) on the page? — Maybe it'd be better to
       |     add an  [allPageText]  field to the OriginalPost?
-      |     Let's wait:
+      |     Let's wait:  [how_ix_page_tags]
       |    "$PageAuthorIds":         { $typeKeyword, $indexed },
       |    "$PageTagTypeIds":        { $typeKeyword, $indexed },
       |    "$PageTagValues":         { $typeNested,  $indexed },
       |     */}
-      |    "$ParentCatId":           { $typeKeyword, $indexed /*
-      |    "$AncCatIds_notInUse":    { $typeKeyword, $indexed }, */},
-      |    "$CreatedAt":             { $typeDate,    $indexed,  $formatEpochSeconds }
+      |    "$ParentCatId":           { $typeKeyword, $indexed },${/*
+      |    "$AncCatIds_unused":      { $typeKeyword, $indexed }, */""}
+      |    "$CreatedAt":             { $typeDate,    $indexed,  $formatEpochSeconds },
+      |    "$RankTweak_unused":      { $typeByte,    $indexed }
       |"""
   }
 

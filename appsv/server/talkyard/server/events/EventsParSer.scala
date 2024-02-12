@@ -19,6 +19,7 @@ package talkyard.server.events
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import talkyard.server.api
 import talkyard.server.api.ThingsFoundJson
 import talkyard.server.api.PostsListFoundJson.JsPostListFound
 import talkyard.server.authz.{AuthzCtxOnForum, AuthzCtxOnPats}
@@ -40,7 +41,7 @@ object EventsParSer {
 
 
   // Vaguely similar code: ForumController.makeTopicsResponse()  and
-  // ThingsFoundJson._makePagesFoundResponseImpl()  [406RKD2JB]
+  // ThingsFoundJson._makePagesJs()  [406RKD2JB]
   //
   def makeEventsListJson(events: ImmSeq[Event], dao: SiteDao, reqer: Opt[Pat],
           avatarUrlPrefix: St, authzCtx: AuthzCtxOnForum): ImmSeq[EventAndJson] = {
@@ -220,6 +221,7 @@ object EventsParSer {
               // Since there's no other path, this should be the canonical path.
               canonical = true)),
           pageStuff = page,
+          posts = Nil,
           pageAndSearchHits = None)
 
     var pageJson = ThingsFoundJson.JsPageFound(
@@ -228,6 +230,7 @@ object EventsParSer {
           authorsById = authorsById,
           avatarUrlPrefix = avatarUrlPrefix,
           anyCategory = anyCat,
+          api.InclPageFields.Default,
           JsonConf.v0_1(), authzCtx)
 
     anyOrigPost foreach { origPost =>

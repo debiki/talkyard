@@ -370,6 +370,8 @@ trait PostsDao {
 
     addUserStats(stats)(tx)
     tx.insertPost(newPost)
+    // Index post, also if not yet approved [ix_unappr] — can be nice for mods to be able to
+    // search & find such posts too? We _reindexed_if_approved_later.
     tx.indexPostsSoon(newPost)
     tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = shallApprove)
     if (shallApprove) {
@@ -1345,6 +1347,7 @@ trait PostsDao {
         targetPatTrueId = anyOtherAuthor.map(_.trueId2))
 
       tx.updatePost(editedPost)
+      // Pointless, if edits not approved? We only index the approved plain text? [ix_unappr]
       tx.indexPostsSoon(editedPost)
       anySpamCheckTask.foreach(tx.insertSpamCheckTask)
       newRevision.foreach(tx.insertPostRevision)
@@ -1853,10 +1856,14 @@ trait PostsDao {
               decision)(tx, staleStuff)
       }
 
-      // (Don't reindex)
       tx.updatePost(postAfter)
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = false)
+      // Currently usually not needed — currently the post type field is only used for
+      // finding the title or orig post. But better avoid sleeping bugs.  [ix_post_type]
+      tx.indexPostsSoon(postAfter)
+
       insertAuditLogEntry(auditLogEntry, tx)
+
       // COULD generate some notification? E.g. "Your post was made wiki-editable."
     }
 
@@ -2223,7 +2230,7 @@ trait PostsDao {
       bodyHiddenReason = None)
 
     tx.updatePost(postAfter)
-    tx.indexPostsSoon(postAfter)
+    tx.indexPostsSoon(postAfter)  // _reindexed_if_approved_later
 
     if (postBefore.isDeleted) {
       UNTESTED  // [4MT05MKRT]
@@ -3224,6 +3231,10 @@ trait PostsDao {
         bodyHiddenReason = Some(reason))
 
       tx.updatePost(postAfter)
+
+      // Let's reindex, although currently is/not-hidden isn't searchable,  [ix_hidden]
+      // but better avoid sleeping bugs.
+      tx.indexPostsSoon(postAfter)
     }
 
     lazy val page = newPageDao(pageId, tx)
@@ -3480,7 +3491,7 @@ trait PostsDao {
       numOrigPostUnwantedVotes = pageMetaBefore.numOrigPostUnwantedVotes + numNewOpUnwanteds,
       version = pageMetaBefore.version + 1)
 
-    // (Don't reindex)
+    // (No need to reindex the post (or page) — currently num likes and replies aren't indexed.)
     tx.updatePost(postAfter)
     tx.updatePageMeta(pageMetaAfter, oldMeta = pageMetaBefore, markSectionPageStale = true)
 

@@ -2081,6 +2081,7 @@ package object core {
   def TESTS_MISSING = ()  // It'd be nice with unit/integration/whatever tests.
   def SEC_TESTS_MISSING = ()
   def ADD_TO_DOCS = ()
+  def STALE_DOCS = ()
   def SHOULD_CODE_REVIEW = ()
   def CR_DONE = ()
   def FASTER_E2E_TESTS = () // An opportunity to speed up the e2e tests (maybe just marginally)

@@ -872,7 +872,7 @@ trait PagesDao {
 
       tx.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
       tx.insertAuditLogEntry(auditLogEntry)
-      tx.indexAllPostsOnPage(pageId)
+
       // (Keep in top-topics table, so staff can list popular-but-deleted topics.)
 
       // Refresh backlinks — this page now deleted.

@@ -4,7 +4,11 @@ which you can search for across the whole code base, to find some-of / all-of
 the relevant source code places to change.
 
 [emburl_emgurl] [prefix_diid]
+"emburl" is likely interpreted as "embedded url", but in the API it means the
+embedd*ing* url, and I used to "always" get confused by what I had meant when
+I saw "emburl". What about "emg" for "embedding"? So:
 Change from emburl:.. to emgurl:..  no, to  emgurllax:.. and emgurlexact:...  ?
+Hmm or  emgurl:  and emgurlexact:  maybe is better — "lax" can be the default?
 And prefix w 'diid:' in alt_page_ids3. Rename to page_(lookup)_keys_t?
 
 
@@ -34,7 +38,7 @@ Primary button colors, secondary, background, arrows, fonts,
 and embedded widgets, e.g. Twitter's oEmbed has a 'link_color: #223344' attr,
                             and  theme=light/dark.
 
-[post_owners] posts_t.owners_id_c — if ownership of a post has been transferred.
+[post_owners] posts_t.owners_id_c — if ownership of a post has been transferred.
 The new owner can, but the original author can't, edit it and delete it etc.
 
 [post_authors] if many authors, or different from the creator.
@@ -595,6 +599,10 @@ If listing assignees, should any badges of theirs be shown too? (Currently aren'
 [can_see_assigned_c]
 New permission.
 
+[comment_tasks]
+Later, comments can be tasks with their own DoingStatus, and marked done or closed.
+(The db is prepared for this, but not implemented UX wise.)
+
 [priv_comts] Private comments:
 (Aka "whispers" in Discourse and "private items" in Basecamp long ago, and "private comments"
 in other software.)
@@ -672,7 +680,7 @@ Maybe let  0@username generate a link, but no (zero) notification? or ...
             And maybe:
         ++@username  could *assign* the page to that user. (Would assign
            the user to the closest ancestor post that is a *task* — in the future,
-           also comments can be tasks (mini tasks).)
+           also comments can be tasks (mini tasks)  [comment_tasks].)
 
            Would  --@username  un-assign, then?
            What would  -@username do? Doesn't make sense to unsubscribe sbd else from notfs?
@@ -1033,6 +1041,36 @@ Blake3 is ~ 10x faster than SHA2:
 Wait until there's a well tested Java lib available?
 Then use Blake3 instead e.g. to hash long Redis keys (and just delete the old
 cached things, it's a cache).
+
+[ix_big_pgs][do_not_index]
+Should big pages with 1000? 10 000? comments — typically chat channels — be reindexed
+if e.g. opened/closed,  or moved to a different category?
+Elsewhere: In 1) Slack, 2) Teams, 3) Mattermost and 4) Zulip, there aren't forum categories,
+    and you cannot label/tag chat channels. There's a feature request in Zulip about
+    tagging individual messages: https://github.com/zulip/zulip/issues/1901.
+    In 5) Discourse, it seems one can't search chat channels: (as of Feb -24)
+    https://meta.discourse.org/t/ability-to-search-messages-in-chat/240803/19.
+    In 6) RocketChat, Omnichannel conversations can be tagged — but they're typically shorter
+    one-to-one conversations?
+    So, none of those needs to think about this.
+In Ty, alt 1) Chat channels cannot be moved to other categories, if they're
+too long? Instead one creates a new chat?. Which can make sense, because if there are
+1000 messages, it can be risky to move it to a category with possibly different
+access permissions? (Maybe there's something private in the 1000 previous messages?)
+And maybe chat messages shouldn't be found via "is:open/closed",
+only the chat itself? And a chat cannot be tagged itself, only individual messages in
+the chat? Alt 2) There could be a message that it'll take an hour
+until the chat has been reindexed? Combined with extra debounce / rate limiting?
+Alt 3) A combination of 1 & 2. Alt 4) ?
+
+[ix_unappr]
+Index plain text for these too, nice for mods to search & find?  In an [inactive_index]?
+
+[search_hmm]
+Surprising search behavior:
+  - Only exact category matches (ignores sub cats).
+  - Only exact tag matches too [how_ix_page_tags]  (not comments on a tagged page).
+  - "is:aa,bb,cc" is incorrectly interpreted as  "is:aa is:bb is:cc".
 
 [rebuild_reindex_posts]
 A background job that regenerates html (CommonMark –> html) and

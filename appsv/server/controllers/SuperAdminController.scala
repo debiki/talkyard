@@ -54,7 +54,13 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
 
   // (Rename to getDashboardData() ?)
   def listSites(): Action[Unit] = SuperAdminGetAction { request =>
-    listSitesImpl()
+    listSitesImpl(inclStaff = true)
+  }
+
+
+  def listSites_amsV0(): Action[U] = ApiSecretGetJsonAction(
+          ServerSecretFor("ams"), RateLimits.ExpensiveGetRequest) { _ =>
+    listSitesImpl(inclStaff = false)
   }
 
 
@@ -86,7 +92,7 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
             featureFlags = featureFlags)
     })
     globals.systemDao.updateSites(patches)
-    listSitesImpl()
+    listSitesImpl(inclStaff = true)
   }
 
 
@@ -103,7 +109,7 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
     for ((siteId: SiteId, days) <- siteIdDays) {
       globals.systemDao.schedulePurgeSite(siteId = siteId, afterDays = days)
     }
-    listSitesImpl()
+    listSitesImpl(inclStaff = true)
   }
 
 
@@ -129,7 +135,7 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
   }
 
 
-  private def listSitesImpl(): p.mvc.Result = {
+  private def listSitesImpl(inclStaff: Bo): p.mvc.Result = {
     val siteStuff: Seq[SASiteStuff] = globals.systemDao.loadSitesInclDetailsAndStaff()
     // Sort recent first.
     val sitesNewFirst = siteStuff.sortBy(-_.site.createdAt.toUnixMillis)
@@ -145,13 +151,13 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
         "autoPurgeDelayDays" -> JsFloat64OrNull(globals.config.autoPurgeDelayDays),
         "totReindexRanges" -> jobSumStat._1,
         "totReindexQueueLen" -> jobSumStat._2,
-        "sites" -> sitesNewFirst.map(_siteToJson))))
+        "sites" -> sitesNewFirst.map(s => _siteToJson(s, inclStaff = inclStaff)))))
   }
 
 
-  private def _siteToJson(siteStuff: SASiteStuff) = {
+  private def _siteToJson(siteStuff: SASiteStuff, inclStaff: Bo) = {
     val site = siteStuff.site
-    Json.obj(  // ts: SASite
+    var json = Json.obj(  // ts: SASite
       "id" -> site.id,
       "pubId" -> site.pubId,
       "status" -> site.status.toInt,
@@ -168,10 +174,6 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
       "logLimsMult" -> JsFloatOrNull(site.logLimitsMultiplier),
       "createLimsMult" -> JsFloatOrNull(site.createLimitsMultiplier),
       "stats" -> JsSiteStats(site.stats),
-      "staffUsers" -> JsArray(siteStuff.staff.map { staffUser =>
-        JsUserInclDetails(
-              staffUser, usersById = Map.empty, groups = Nil, callerIsAdmin = true)
-      }),
       "reindexRangeMs" -> (siteStuff.reindexRange match {
         case None => JsNull
         case Some(range) => Json.arr(
@@ -182,6 +184,55 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
       }),
       "reindexQueueLen" -> siteStuff.reindexQueueLen,
       )
+
+    if (inclStaff) {
+      json += "staffUsers" -> JsArray(siteStuff.staff.map { staffUser =>
+        JsUserInclDetails(
+          staffUser, usersById = Map.empty, groups = Nil, callerIsAdmin = true)
+      })
+    }
+    json
+  }
+
+
+  def listCoworkersAllSites_amsV0: Action[Unit] = ApiSecretGetJsonAction(
+          ServerSecretFor("ams"), RateLimits.ExpensiveGetRequest) { apiReq =>
+    val coworkersBySite = apiReq.systemDao.listCoworkersAllSites()
+    val json = JsObject(coworkersBySite.map(x => {
+      val (siteId, cows) = x
+      siteId.toString -> JsArray(cows.map((cow: Coworker) => {
+        var jOb = Json.obj(
+              "id" -> cow.userId,
+              "trustLevel" -> cow.trustLevel.toInt,
+              "createdAtMin" -> JsWhenMins(cow.createdAt))
+
+        if (cow.isOwner) jOb += "isOwner" -> JsTrue
+        if (cow.isAdmin) jOb += "isAdmin" -> JsTrue
+        if (cow.isModerator) jOb += "isModerator" -> JsTrue
+
+        cow.lockedTrustLevel.foreach(tl => jOb += "lockedTrustLevel" -> JsNumber(tl.toInt))
+
+        // Only for site owners and admins.  (The [coworkers_query] loads this
+        // only for admins & owners.) — Or let's skip completely?
+        // cow.username.foreach(un => jOb += "username" -> JsString(un))
+        // cow.fullName.foreach(fn => jOb += "fullName" -> JsString(fn))
+
+        // Full email addresses only to owners and admins.
+        cow.emailAdrOrDomain.foreach(em => jOb += "emailAdrOrDomain" -> JsString(em))
+
+        cow.isApproved.foreach(isApr => jOb += "isApproved" -> JsBoolean(isApr))
+        cow.emailVerifiedAt.foreach(at => jOb += "emailVerifiedAtMin" -> JsWhenMins(at))
+        cow.lastSeenAt.foreach(at => jOb += "lastSeenAt" -> JsWhenMins(at))
+        cow.lastPostedAt.foreach(at => jOb += "lastPostedAt" -> JsWhenMins(at))
+        cow.lastEmailedAt.foreach(at => jOb += "lastEmailedAt" -> JsWhenMins(at))
+        cow.suspendedTill.foreach(till => jOb += "suspendedTill" -> JsWhenMins(till))
+        cow.deactivatedAt.foreach(at => jOb += "deactivatedAt" -> JsWhenMins(at))
+        cow.deletedAt.foreach(at => jOb += "deletedAt" -> JsWhenMins(at))
+        jOb
+      }))
+    }))
+
+    OkSafeJson(json)
   }
 
 

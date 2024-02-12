@@ -403,7 +403,8 @@ object ForumController {
   }
 
 
-  // Vaguely similar code: ThingsFoundJson._makePagesFoundResponseImpl()  [406RKD2JB]
+  // Vaguely similar code: ThingsFoundJson._makePagesJs()
+  // and EventsParSer.makeEventsListJson().  [406RKD2JB]
   //
   def makeTopicsResponse(topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
     val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))

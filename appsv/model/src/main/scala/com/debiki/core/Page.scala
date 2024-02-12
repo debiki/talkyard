@@ -431,10 +431,38 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
     if (doneAt.isDefined) PageDoingStatus.Done
     else if (startedAt.isDefined) PageDoingStatus.Started
     else if (plannedAt.isDefined) PageDoingStatus.Planned
-    else PageDoingStatus.Discussing  // no, instead:
+    else PageDoingStatus.Discussing  // hmm, or, instead?: (probably not)
     // else if (numRepliesTotal > 0 || anything-else?) PageDoingStatus.Discussing
     // else PageDoingStatus.New
   }
+
+
+  def shouldReindexAfterChanges(oldMeta: PageMeta): Bo = {
+    // Sync with [ix_fields].
+    val catChanged = this.categoryId != oldMeta.categoryId
+    val typeChanged = this.pageType != oldMeta.pageType
+    // This is only to know if it's solved at all — not the exact post id.
+    // Later, there could be an  "is:solution"  query clause, which would look at
+    // the `answerPostId` *value*? — See SolutionStatus_unused. But let's wait.
+    val solvedChanged = this.answerPostId.isDefined != oldMeta.answerPostId.isDefined
+    val doingChanged = this.doingStatus != oldMeta.doingStatus
+    val closedChanged = this.isOpen != oldMeta.isOpen
+
+    // This'll index posts on a page that was previously deleted. However,
+    // won't un-index a page that got deleted? See this [do_not_index] SQL filter.
+    COULD_OPTIMIZE // Since deleted pages can't currently be searched for anyway,
+    // might as well delete them from the index (they're filtered out here: [se_acs_chk]).
+    // Or move to a [deleted_posts_ix].
+    val deletedChanged = this.isDeleted != oldMeta.isDeleted
+    // Hmm what about isHidden? Currently ignored. [ix_hidden]
+
+    // Ignore tags though — only exact posts are found via tag search
+    // (but not comments on a tagged page), *for now*. [how_ix_page_tags]
+
+    return catChanged || typeChanged || solvedChanged || doingChanged ||
+              closedChanged || deletedChanged;
+  }
+
 
   def bumpedOrPublishedOrCreatedAt: ju.Date = bumpedAt orElse publishedAt getOrElse createdAt
 

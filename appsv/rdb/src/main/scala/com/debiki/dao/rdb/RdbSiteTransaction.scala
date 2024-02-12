@@ -18,6 +18,7 @@
 package com.debiki.dao.rdb
 
 import com.debiki.core._
+import com.debiki.core.isDevOrTest // why isn't core._ enough?
 import com.debiki.core.Prelude._
 import _root_.java.{util => ju}
 import java.{sql => js}
@@ -563,7 +564,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def updatePageMetaImpl(meta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean) {
+  def updatePageMetaImpl(meta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Bo) {
+    if (meta == oldMeta && !markSectionPageStale)
+      return
     transactionCheckQuota { transaction =>
       if (markSectionPageStale) {
         oldMeta.categoryId.foreach(markSectionPageContentHtmlAsStale)

@@ -141,7 +141,8 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val authzCtx = dao.getForumAuthzContext(requester)
 
     def nothingFound = ThingsFoundJson.makePagesFoundListResponse(
-          PagesCanSee.empty, dao, JsonConf.v0_0(pretty = pretty), authzCtx)
+          PagesCanSee.empty, dao, InclPageFields.Default,
+          JsonConf.v0_0(pretty = pretty), authzCtx)
 
     val anyCategory: Option[Category] = anyCategoryRef map { catRef =>
       val parsedRef = parseRef(catRef, allowPatRef = false) getOrIfBad { problem =>
@@ -252,7 +253,8 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
         }
 
         ThingsFoundJson.makePagesFoundListResponse(
-              topicsFiltered, dao, JsonConf.v0_0(pretty = pretty), authzCtx)
+              topicsFiltered, dao, InclPageFields.Default,
+              JsonConf.v0_0(pretty = pretty), authzCtx)
 
       case Posts =>
         val result: LoadPostsResult = dao.loadPostsMaySeeByQuery(PostQuery.AllPosts(

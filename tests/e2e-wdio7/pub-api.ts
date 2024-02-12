@@ -368,6 +368,7 @@ interface PostListed extends PostFoundOrListed {
 }
 
 // Page id not needed, since is in a page {} obj.
+// RENAME to PostInPage? ("Wrapped in" is a bit long?)
 interface PostWrappedInPage extends PostFoundOrListed {
   id: Nr;
   nr: Nr;
@@ -575,6 +576,25 @@ interface EventPageData {
 }
 
 
+
+// Include which fields?
+// -------------------------
+
+// When getting back things (pages, comments, users) from the server, then, which
+// fields should the server include? Blog comments, for example, might need only
+// Like counts, while an AI LLM integration wants lots of things (the orig post,
+// best comments, any accepted answer, for example).
+
+interface InclFields {
+  // id & refId — maybe shared by almost everything?
+}
+
+
+interface InclEventFields extends InclFields {
+  // ... later
+}
+
+
 // A  Get Query request
 // -------------------------
 
@@ -604,20 +624,26 @@ interface GetQueryApiTask extends ApiTask {
 interface GetQuery {
   getWhat: FindWhat;
   getRefs: Ref[];
-  inclFields: Object;
+  inclFields?: InclFields;
 }
 
 
 interface GetPagesQuery extends GetQuery {
   getWhat: 'Pages',
   getRefs: PageRef[];
-  inclFields: {
-    tyId?: Bo;   // unimpl
-    extId?: Bo;  // unimpl
+  inclFields?: InclPageFields;
+ }
+ 
+
+interface InclPageFields extends InclFields {
+    id?: Bo;
+    refId?: Bo;
 
     // Only the orig post:
     //numOpRepliesVisible?: Bo;
     numOpLikeVotes?: Bo;
+    numOpDoItVotes?: Bo;
+    numOpDoNotVotes?: Bo;
 
     // Whole page:
     numTotRepliesVisible?: Bo;
@@ -626,7 +652,8 @@ interface GetPagesQuery extends GetQuery {
     title?: Bo;
     origPost?: Bo;  // unimpl
 
-    /* Later — and this would be the same as some render page UX settings?  [get_what_fields]
+    /* Later — and this would be the same as some render page UX settings?
+       Edit: See  appsv/server/talkyard/server/api/InclFields.scala  (instead?).
     replies?: {  — maybe not
       numTop?: Nr;
       numFirst?: Nr;
@@ -643,22 +670,24 @@ interface GetPagesQuery extends GetQuery {
       asPerAlg: St;  // algorithm name and version, e.g. 'TopReplies/v0.1'
       algParams: Object;
     */
-  };
 }
 
 
 interface GetPatsQuery extends GetQuery {   // not impl
   getWhat: 'Pats',
   getRefs: PatRef[];
-  inclFields: {   // Later.  [get_what_fields]
-    tyId?: Bo;
-    extId?: Bo;
-    ssoId?: Bo;
+  inclFields: InclPatFields;
+}
 
-    fullName?: Bo;
-    username?: Bo;
-    isGuest?: Bo;
-  };
+
+interface InclPatFields extends InclFields {  // parser not impl (see InclFieldsParSer)
+  id?: Bo;
+  refId?: Bo;
+  ssoId?: Bo;
+
+  fullName?: Bo;
+  username?: Bo;
+  isGuest?: Bo;
 }
 
 
@@ -681,9 +710,9 @@ interface GetQueryResults<T extends ThingFound> {
 //    getQuery: {
 //      getWhat: 'Pages',
 //      getRefs: [
-//        'emburl:https://blog/a-blog-post',
-//        'emburl:https://blog/another',
-//        'emburl:https://blog/a-third',
+//        'emgurl:https://blog/a-blog-post',
+//        'emgurl:https://blog/another',
+//        'emgurl:https://blog/a-third',
 //      ],
 //      inclFields: {
 //        numOpLikeVotes: true,
@@ -724,6 +753,29 @@ interface GetQueryResults<T extends ThingFound> {
 //   }
 // }
 //
+//
+// Or, to fetch whole pages: (or the orig post + top comments, if too many comments)
+//
+//  /-/v0/get {
+//    getQuery: {
+//      getWhat: 'Pages',
+//      getRefs: [
+//        'pageid:111',
+//        'pageid:222',
+//        'refid:something',
+//      ],
+//      inclFields: {
+//        title: true,
+//        numOpLikeVotes: true,
+//        numTotRepliesVisible: true,
+//        posts: true,   // later, maybe sth like:
+//                       //   { origPost: true, numTopComments: 20 }
+//                       // — see  InclPosts  in  InclFields.scala.
+//      },
+//    }
+//  }
+//
+
 
 
 
@@ -758,6 +810,7 @@ interface ListQuery {
   // — something, but you don't remember precisely what —
   // then use a BatchQuery composed of many ListQuery:s ?
   listWhat: FindWhat;
+  inclFields?: InclFields;
 
   // E.g. username prefix.
   exactPrefix?: St;
@@ -773,6 +826,7 @@ type QueryFilter = PageFilter;  // for now
 
 interface ListPagesQuery extends ListQuery {
   listWhat: 'Pages';
+  inclFields?: InclPageFields;
   lookWhere?: { inCategories: CategoryRef[] };
   filter?: PageFilter;
   sortOrder?: PageSortOrder;
@@ -797,6 +851,7 @@ interface PageFilter {
 
 interface ListEventsQuery extends ListQuery {
   listWhat: 'Events';
+  inclFields_unimpl?: InclEventFields;
   sortOrder?: EventSortOrder;
 }
 
@@ -1025,6 +1080,9 @@ interface SinglSearchQuery {
 
   findWhat?: FindWhat,
   lookWhere?: LookWhere;
+
+  // Maybe some day:
+  // inclFields?: SearchHitFields;
 };
 
 
@@ -1205,7 +1263,7 @@ type DoActionsApiResponse = ApiResponse<ManyResults>;
 type ActionGraph = Unimplemented;
 
 interface Action {
-  asWho: St; // 'sysbot' | 'tyid:_' | 'extid:_' | 'ssoid:_' | 'username:_';
+  asWho: St; // 'sysbot' | 'tyid:_' | 'extid:_' no 'rid:_' | 'ssoid:_' | 'username:_';
   doWhat: ActionType,
   //doWhen?: 'YYYY-MM-DDTHH:MI:SSZ';
   //doIf?;
@@ -1328,7 +1386,7 @@ interface DeletePostsParams {
 //
 //  /-/v0/do  {
 //    doActions: [{
-//      asWho: 'sysbot' | 'tyid:_' | 'extid:_' | 'ssoid:_' | 'username:_',
+//      asWho: 'sysbot' | 'tyid:_' | 'extid:_' no 'rid:_' | 'ssoid:_' | 'username:_',
 //      doWhat: 'SetVote'
 //      doHow: {
 //        voteType: 'Like',
@@ -1432,7 +1490,7 @@ interface DeletePostsParams {
 //
 //  /-/v0/do  {
 //    doActions: [{
-//      asWho: 'sysbot' | 'tyid:_' | 'extid:_' | 'ssoid:_' | 'username:_',
+//      asWho: 'sysbot' | 'tyid:_' | 'extid:_' no 'rid:_' | 'ssoid:_' | 'username:_',
 //      doWhat: 'custom-action:unique-name',  // hmm
 //      doHow: {
 //        voteType: 'Like',

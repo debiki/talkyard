@@ -368,8 +368,11 @@ POST  /-/sa/update-sites         controllers.SuperAdminController.updateSites
 POST  /-/test-reindex-sites      controllers.SuperAdminController.testIndexSites
 POST  /-/sa/reindex-sites        controllers.SuperAdminController.reindexSites
 POST  /-/sa/schedule-purge-sites controllers.SuperAdminController.schedulePurgeSites
+
 POST  /-/v0/plan-maintenance     controllers.SuperAdminController.apiV0_planMaintenance
 
+GET   /-/ams0/list-sites         controllers.SuperAdminController.listSites_amsV0
+GET   /-/ams0/list-coworkers     controllers.SuperAdminController.listCoworkersAllSites_amsV0
 
 
 # ----- API

@@ -200,8 +200,10 @@ class IndexingActor(
 
 
   private def _indexPost(post: Post, siteId: SiteId, postsToIndex: PostsToIndex): Unit = {
+    val pagePostNr = s"page ${post.pageId} nr ${post.nr}"
     val pageMeta = postsToIndex.page(siteId, post.pageId) getOrElse {
-      logger.warn(s"Not indexing s:$siteId/p:${post.id} — page gone, was just deleted?")
+      logger.warn(s"Not indexing siteid:postid $siteId:${post.id
+            }, $pagePostNr — page gone, deleted?")
       return
     }
     val tags = postsToIndex.tags(siteId, post.id)
@@ -221,7 +223,7 @@ class IndexingActor(
 
     requestBuilder.execute(new ActionListener[IndexResponse] {
       def onResponse(response: IndexResponse): Unit = {
-        logger.debug("Indexed site:post " + docId)
+        logger.debug(s"Indexed site:post $docId, $pagePostNr")
         // This isn't the actor's thread. This is some thread controlled by ElasticSearch.
         // So don't call systemDao.deleteFromIndexQueue(post, siteId) from here
         // — because then the index queue apparently gets updated by many threads
@@ -231,7 +233,7 @@ class IndexingActor(
       }
 
       def onFailure(ex: Exception): Unit = {
-        logger.error(i"Error when indexing siteId:postId: $docId", ex)
+        logger.error(i"Error when indexing siteId:postId $docId, $pagePostNr:", ex)
       }
     })
   }

@@ -24,6 +24,7 @@ import com.debiki.core.Prelude._
 case class SearchQuery(
   fullTextQuery: St, // RENAME to rawQuery
   queryWithoutParams: St,
+  isWhat: IsWhat,
   tagTypeNames: Set[St],
   tagTypeIds: Set[TagTypeId],
   tagValComps: Seq[(TagType, CompOpVal)],
@@ -51,12 +52,33 @@ case class SearchQuery(
 
   def isEmpty: Bo =
     queryWithoutParams.isEmpty && catIds.isEmpty &&
-         tagTypeIds.isEmpty && tagValComps.isEmpty && authorIds.isEmpty
+         tagTypeIds.isEmpty && tagValComps.isEmpty && authorIds.isEmpty &&
+         isWhat.nothingSpecified
 
   /** For now, quick fix, for tests — they still expects a tag type id, not a tag type. */
   def typeIdComps: Seq[(TagTypeId, CompOpVal)] = tagValComps map { case (tagType, compOpVal) =>
     tagType.id -> compOpVal
   }
+}
+
+
+case class IsWhat(
+  pageType: Opt[PageType],
+  pageOpen: Opt[Bo],
+  pageSolved: Opt[Bo],
+  pageDoingStatus: Opt[PageDoingStatus],
+  ) {
+
+  /** Says if no "is:..." search params specified. "isEmpty" would have sounded
+    * as if the *page* is empty? (rather than the query?)
+    */
+  def nothingSpecified: Bo =
+    pageType.isEmpty && pageOpen.isEmpty &&
+      pageSolved.isEmpty && pageDoingStatus.isEmpty
+}
+
+object IsWhat {
+  def empty: IsWhat = IsWhat(None, None, None, None)
 }
 
 

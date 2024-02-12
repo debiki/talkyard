@@ -1505,6 +1505,9 @@ class Config(conf: play.api.Configuration) extends TyLogging {
     conf.getOptional[String]("talkyard.akismet.apiKey").noneIfBlank orElse  // old name
       conf.getOptional[String]("talkyard.akismetApiKey").noneIfBlank
 
+  val amsApiSecret: Opt[St] =
+    conf.getOptional[St]("talkyard.amsApiSecret").noneIfBlank
+
   // FOR NOW
   val emailWebhooksApiSecret: Opt[St] =
     conf.getOptional[St]("talkyard.emailWebhooksApiSecret").noneIfBlank

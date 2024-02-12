@@ -72,19 +72,19 @@ https://www.elastic.co/guide/en/elasticsearch/reference/6.2/disk-allocator.html
 
 List indexes, & create:
 d/c exec search curl http://localhost:9200/_aliases?pretty
-d/c exec search curl -X PUT 'localhost:9200/all_english_v1?pretty'
+d/c exec search curl -X PUT 'localhost:9200/posts_es6_v2_english?pretty'
 
 List everything:  
 http://localhost:9200/_search?pretty&size=9999
 
 List posts in site 3:  (note: routing=3)
-http://localhost:9200/all_english_v1/post/_search?pretty&routing=3&size=9999
+http://localhost:9200/posts_es6_v2_english/_doc/_search?pretty&routing=3&size=9999
 
 Get post 110, site -12, by id: (note that the id must be "quoted")
-curl 'http://localhost:9200/all_english_v1/post/_search?pretty&q=_id:"-12:110"'
+curl 'http://localhost:9200/posts_es6_v2_english/_doc/_search?pretty&q=_id:"-12:110"'
 
 Show mappings:
-curl http://localhost:9200/all_english_v1/_mapping
+curl http://localhost:9200/posts_es6_v2_english/_mapping
 
 Search:  
 http://localhost:9200/_search?pretty&q=approvedText:zzwwqq2
@@ -111,7 +111,7 @@ curl -X POST -H 'Content-Type: application/json' 'http://localhost:9200/_search'
 Reindex everything: (might take long: minutes/hours/weeks, depending on db size)
 
 ```
-curl -XDELETE 'http://localhost:9200/all_english_v1/'
+curl -XDELETE 'http://localhost:9200/posts_es6_v2_english/'
 docker-compose restart web app
 ```
 
