@@ -608,7 +608,7 @@ class MailerActor(
 }
 
 
-/** Doesn't overwrite the Message-ID header.
+/** Doesn't overwrite the Message-ID header.  [msg_id_overwritten]
   */
 class SensibleHtmlEmail(val anySmtpMsgId: Opt[St]) extends acm.HtmlEmail {
   import javax.mail.internet.{ MimeMessage => jm_MimeMessage }
