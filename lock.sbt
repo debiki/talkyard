@@ -177,7 +177,7 @@ Compile / dependencyOverrides ++= {
       "org.scala-lang.modules" % "scala-parser-combinators_2.12" % "1.1.2",
       "org.scala-lang.modules" % "scala-xml_2.12" % "1.3.1",
       "org.scala-stm" % "scala-stm_2.12" % "0.9.1",
-      "org.scalactic" % "scalactic_2.12" % "3.2.17",
+      "org.scalactic" % "scalactic_2.12" % "3.2.18",
       "org.slf4j" % "jcl-over-slf4j" % "1.7.36",
       "org.slf4j" % "jul-to-slf4j" % "1.7.36",
       "org.slf4j" % "slf4j-api" % "2.0.7",
