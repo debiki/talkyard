@@ -27,7 +27,7 @@ Compile / dependencyOverrides ++= {
       "commons-digester" % "commons-digester" % "2.1",
       "commons-io" % "commons-io" % "2.13.0",
       "commons-logging" % "commons-logging" % "1.2",
-      "commons-validator" % "commons-validator" % "1.7",
+      "commons-validator" % "commons-validator" % "1.8.0",
       "javax.activation" % "activation" % "1.1",
       "nu.validator.htmlparser" % "htmlparser" % "1.4",
       "org.apache.commons" % "commons-email" % "1.5",
