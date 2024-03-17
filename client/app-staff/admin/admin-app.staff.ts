@@ -1468,6 +1468,23 @@ const GroupsAndPermissionLinks = function() {
   const allMembersPrefsPath = '/-/groups/all_members/preferences/notifications';
   const categoriesPath = '/categories';
   return r.div({ className: 'c_AA_Ss_Perms' },
+
+      // (UX: Explain category permissions first — it's short & quick to read, and hopefully
+      // people will then continue reading about group permissions too, further below.
+      // But if starting with the much longer group permissions section, then, someone
+      // started reading, but got confused when they didn't see many settings on
+      // the per-group permission pages, and got stuck (asked in the forum) — instead of
+      // reading a bit more further below here (then they'd found the answer:
+      // this cat perms section, which, back at the time, was at the end of this page).)
+      //
+      r.h3({}, "Category permissions"),
+
+      r.p({}, "To change which user groups can see or post to a category, " +
+        "go to the categories list: ",
+        ExtVerbLink(categoriesPath),
+        ". Click a category, then click ", r.b({}, "Edit Category"),
+        ", and then the ", r.b({}, "Security"), " tab."),
+
       r.h3({}, "Group permissions and settings"),
 
       r.p({},
@@ -1486,17 +1503,7 @@ const GroupsAndPermissionLinks = function() {
         "Group members can configure their own preferences which then take precedence."),
       r.p({},
         "Click your username in the upper right corner, then ",
-        r.b({}, "View groups"), ", to see all groups."),
-
-      r.h3({}, "Category permissions"),
-
-      r.p({}, "To edit category permissions, e.g. who can see or post to a category, " +
-        "go to the categories list: ",
-        ExtVerbLink(categoriesPath),
-        ". Click a category, then click ",
-        r.b({}, "Edit Category"),
-        ", and then the ",
-        r.b({}, "Security"), " tab."));
+        r.b({}, "View groups"), ", to see all groups."));
 };
 
 
