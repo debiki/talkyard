@@ -9,6 +9,11 @@
 --  Misc new domains?
 --=============================================================================
 
+-- BUG: Oooops,  in the domain  http_url_d,  the pattern 'https?:...' doesn't
+-- start & end with  ^  and   $.  Write an update stmt that removes
+-- any not-allowed stuff?
+
+
 -- *_u: For unused columns, just sketching the future:
 create domain i16_u smallint;
 create domain i32_u int;
