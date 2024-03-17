@@ -741,6 +741,8 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     */
   }
 
+  /* Hmm, old stuff. REMOVE?
+
   // This isn't really a secret salt. A secret salt should be kept secret
   // in the database, fetched via Dao.secretSalt and specified via useSalt().
   // I think the salt better be fairly long, otherwise it'd be possible to
@@ -762,6 +764,7 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
 
   def saltAndHashEmail: St => St = saltAndHash(hashLengthEmail) _
   def saltAndHashIp: St => St = saltAndHash(hashLengthIp) _
+  */
 
   SECURITY; COULD_OPTIMIZE // use BLAKE3 instead.
   private def mdSha1: js.MessageDigest = js.MessageDigest.getInstance("SHA-1") // not thread safe
