@@ -165,7 +165,7 @@ package object api {
   }
 
 
-  /** A few well-known feature flags. Don't rename, are part of the API. */
+  /** A few well-known feature flags. Don't rename, are part of the API. [price_flags]*/
   object FeatureFlags {
 
     /** This site is for a nonprofit (e.g. a tax-exempt charity). */
@@ -191,7 +191,7 @@ package object api {
 
     /** Price plan NN (names might change) maybe incl some bit flags with externally
       * defined meanings. */
-    val ffPrPNNRegex: scala.util.matching.Regex = "ffPrP[0-9]{1,10}".r
+    val ffPrPNNRegex: scala.util.matching.Regex = "ffPrP[0-9a-zA-Z_]{1,10}".r
 
     private val allowedNewSiteExactFlags = Vec(ff4Nnp, ff4Nfp, ff4Edu, ff4Biz, ff4EmCo)
 
