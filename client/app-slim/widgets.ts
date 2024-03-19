@@ -464,12 +464,18 @@ export function TagList(ps: TagListProps): RElm | U {
     const tagsSorted = [...anyTags].sort(tags_mkSortFn(tagTypesById));
     tagElms = tagsSorted.map((tag: Tag) => {
       const tagType = tagTypesById[tag.tagTypeId];
+
+      // @ifdef DEBUG
+      //dieIf(!!ps.isBookmarks !== !!tagType.isBookmark, 'TyE4MGD2RUJ7');
+      // @endif
+
       return (
           r.li({ key: tag.id },
             Tag({ tag, tagType,
                 // The /-/tags/* page and dropdown currently doesn't make sense for /
                 // isn't meant for badges.
                 onClickDropdown: !isForPat,
+                isBookmark: ps.isBookmarks, // for now
                 isForPat, me })));
     });
   }

@@ -244,6 +244,10 @@ object PostType {
     */
   case object Flag_later extends PostType(-1)   // probably not 51
 
+  // Probably not. Instead, it's nice with different bookmark types, e.g. a Reply-to
+  // bookmark, a  Read-later  bookmark,  a References bookmark (if you've read it already).
+  // Then, tags with values is simpler, for now. The tag type is the bookmark type,
+  // and optional tag value is a bookmark description.
   /** Later: Bookmarks.
     *
     * A tree of bookmarks would be nicely stored as posts? Posts form a tree already,

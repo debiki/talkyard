@@ -2407,6 +2407,8 @@ interface TagListProps {
   forPost?: Post;
   forPat?: Pat;
   canEditTags?: Bo;
+  // Bookmarks are implemented as tags, with a bit different look and functionality.
+  isBookmarks?: Bo;
  }
 
 

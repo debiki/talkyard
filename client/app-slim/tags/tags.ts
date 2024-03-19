@@ -27,10 +27,12 @@ const r = ReactDOMFactories;
 
 
 export function Tag(ps: { tag?: Tag, tagType: TagType,
-      onClickDropdown?: Bo, isForPat?: Bo, me: Me }): RElm {
+      onClickDropdown?: Bo, isBookmark?: Bo, isForPat?: Bo, me: Me }): RElm {
   const tag: Tag | U = ps.tag;
   const tagType = ps.tagType;
   const patOrPostClass = ps.isForPat ? ' c_Tag-Pat' : ' c_Tag-Po';
+  const bookmarkTagClass = ps.isBookmark ? ' c_Tag-Bo' : '';
+  const bookmarkIconClass = ps.isBookmark ? ' icon-bookmark' : '';
   const tagName = tagType.dispName ||
             // In case there's some bug so the tag type wasn't found.
             `tag_id: ${tag.id} tag_type: ${tag.tagTypeId}`;
@@ -57,14 +59,14 @@ export function Tag(ps: { tag?: Tag, tagType: TagType,
   if (!onClick) href = undefined;
 
   return (
-      linkFn({ className: 'c_Tag c_TagL_Tag' + patOrPostClass,
+      linkFn({ className: 'c_Tag c_TagL_Tag' + patOrPostClass + bookmarkTagClass,
             href, onClick, to,
             onKeyDown: (event) => {
               // Without this, only Enter (not Space) triggers onClick (in Chrome, my laptop).
               if (onClick && event_isSpace(event)) onClick(event);
             }
            },
-        r.span({ className: 'c_Tag_Name' },
+        r.span({ className: 'c_Tag_Name' + bookmarkIconClass},
           tagName),
         anyColon,
         anyValue));

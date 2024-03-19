@@ -1737,14 +1737,15 @@ export const PostHeader = createComponent({
       }
     }
 
-    let bookmark; /*
+    // Skip? Use: bookmarksList  instead? see below
+    let bookmark;
     if (true) { // me.bookmarks[post.uniqueId]) {
       let starClass = ' icon-bookmark-empty';
       bookmark =
         // The outer -click makes the click area larger, because the marks are small.
         r.span({ className: 's_P_H_Bm dw-p-mark-click', onClick: this.props.onMarkClick },
           r.span({ className: 'dw-p-mark icon-bookmark' + starClass }));
-    } */
+    }
 
     const unreadMark = !me.isLoggedIn || me_hasRead(me, post) ? null :
         r.span({ className: 's_P_H_Unr icon-circle' });
@@ -1787,6 +1788,10 @@ export const PostHeader = createComponent({
             TagList({ className: 'n_TagL-Pat', forPat: author, store });
     const postTagList: RElm | U =
             TagListLive({ className: 'n_TagL-Po', forPost: post, store, live: props.live });
+    // Just testing.
+    const bookmarksList: RElm | U =
+            TagList({ className: 'n_TagL-Po-Bo', forPost: post, store,
+                canEditTags: props.live, isBookmarks: true });
 
     const timeClass = 'esP_H_At';
 
@@ -1810,6 +1815,7 @@ export const PostHeader = createComponent({
           toggleCollapsedButton,
           bookmark,
           unreadMark,
+          bookmarksList,
           this.props.stuffToAppend,
           ),
         postTagList,

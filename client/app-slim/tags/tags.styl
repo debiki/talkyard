@@ -35,6 +35,10 @@
     box-shadow: 1px 1px 3.3px hsl($uiHue 100% 40%);
     color: black;
 
+// Tags have a border, make use of all their padding. Things can look a bit cramped,
+// without some margin to the left. (But bookmarks don't have a border, so, excluding them.)
+ul.c_TagL.n_TagL-Po:not(.n_TagL-Bo)
+  margin-left: 8px;
 
 .c_TagL_AddB
   vertical-align: baseline;
@@ -98,3 +102,31 @@
   h2
     margin-bottom: 2.5ex;
     font-size: 22px;
+
+
+// Bookmark list
+
+.c_Tag-Po.c_Tag-Bo {
+  box-shadow: none !important;
+  border: none;
+  background: none !important;
+}
+
+.c_Tag_Name.icon-bookmark:before {
+  color: hsl(207, 95%, 50%);
+  font-size: 122%;
+  vertical-align: top;
+}
+
+// Bookmark button
+
+span.s_P_H_Bm.dw-p-mark-click
+  padding: 5px;
+  margin-right: 4px;
+
+// A bookmark icon <span> — maybe skip, and add class to the wrapping <span> instead?
+.dw-p-mark.icon-bookmark
+  margin: 0;
+  &:before
+    font-size: 122%;
+
