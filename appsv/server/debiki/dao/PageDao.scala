@@ -31,7 +31,8 @@ import debiki.AllSettings
   */
 // REFACTOR  combine PageDao and PagePartsDao into the same class, "PageDao". [ONEPAGEDAO]
 case class PageDao(override val id: PageId, settings: AllSettings,
-      transaction: SiteTransaction, anyDao: Opt[SiteDao])
+      transaction: SiteTransaction, anyDao: Opt[SiteDao],
+      whichPosts: WhichPostsOnPage = WhichPostsOnPage.OnlyPublic(activeOnly = false))
   extends Page {
 
   assert(id ne null)
@@ -40,7 +41,7 @@ case class PageDao(override val id: PageId, settings: AllSettings,
 
   var _path: Option[PagePathWithId] = null
 
-  val parts = PagePartsDao(id, settings, transaction, anyDao)
+  val parts = PagePartsDao(id, settings, transaction, anyDao, whichPosts)
 
   override def siteId: SiteId = transaction.siteId
 
@@ -99,6 +100,8 @@ case class PagePartsDao(
   transaction: SiteTx,
   // COULD_OPTIMIZE Use any dao instead of the tx always if possible?
   anyDao: Opt[SiteDao] = None,
+  // Public (not bookmarks or priv comts) is the default.
+  whichPosts: WhichPostsOnPage = WhichPostsOnPage.OnlyPublic(activeOnly = false),
   ) extends PageParts {
 
   assert(pageId ne null)
@@ -174,29 +177,10 @@ case class PagePartsDao(
   }
 
   private var _allPosts: Vec[Post] = _
-  private var _activePosts: Vec[Post] = _
 
   def loadAllPosts(): Unit = {
     if (_allPosts eq null) {
-      WOULD_OPTIMIZE // If _activePosts ne null, load only *in*active?
-      // We're in the same tx, so should usually be fine — however, what if a
-      // previously inactive post has been made active, in this tx?
-      // Then, if calling this.activePosts and then this.allPosts, allPosts
-      // would be incomplete — I think that is _surprising_behavior?
-      // Maybe load inactive posts, only if the tx is read-only?
-      // For now, always:
-      _allPosts = transaction.loadPostsOnPage(pageId)
-    }
-  }
-
-  def loadActivePostsOnly(): U = {
-    if (_activePosts eq null) {
-      // If _allPosts have been loaded already, and a new post created afterwards,
-      // then, that new post wouldn't be included here. I think that's
-      // pretty *un*_surprising_behavior? so maybe can be ok?
-      _activePosts =
-            if (_allPosts ne null) _allPosts.filter(_.isVisible)
-            else transaction.loadPostsOnPage(pageId, activeOnly = true)
+      _allPosts = transaction.loadPostsOnPage(pageId, whichPosts)
     }
   }
 
@@ -205,13 +189,6 @@ case class PagePartsDao(
       loadAllPosts()
     }
     _allPosts
-  }
-
-  override def activePosts: Vec[Post] = {
-    if (_activePosts eq null) {
-      loadActivePostsOnly()
-    }
-    _activePosts
   }
 
 

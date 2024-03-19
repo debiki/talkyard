@@ -604,6 +604,14 @@ export function obj_isDeepEqIgnUndef(a: Object, b: Object): Bo {
 }
 
 
+/// Create this if needed at many more places:
+///
+/// Adds an item to a field that is an array. Creates the array if needed.
+///
+export function obj_addArrayItem_inPl__unimp<T>(obj: T, field: keyof T, item: Nr | St) {
+}
+
+
 /** Like _.groupBy but keeps just one value per key.
     RENAME to arr_groupByKeepOne ?
   */
@@ -726,6 +734,14 @@ export function url_getHost(url: St): St {
   if (!url) return '';
   const parts = url.split('/');
   return parts && parts.length >= 3 ? parts[2] : '';
+}
+
+
+/// Always returns an array — empty if `a` and `b` are nullish.
+export function arr_concat<V>(a: V[] | NU, b: V[] | NU): V[] {
+  if (!a) return b || [];
+  if (!b) return a || [];
+  return a.concat(b);
 }
 
 

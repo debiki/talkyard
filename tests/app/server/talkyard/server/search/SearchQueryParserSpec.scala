@@ -239,6 +239,8 @@ class SearchQueryParserSpec extends AnyFreeSpec with must.Matchers {
           query.isWhat.pageType mustBe Some(PageType.Discussion)
           query = parseRawSearchQueryString(s"is:comments", dao)
           query.isWhat.pageType mustBe Some(PageType.EmbeddedComments)
+          //query = parseRawSearchQueryString(s"is:bookmark", dao)  [is_bokm]
+          //query.isWhat.pageType mustBe Some(PageType.Bookmark)
 
           query = parseRawSearchQueryString(s"is:open", dao)
           query.isWhat.pageOpen mustBe Some(true)

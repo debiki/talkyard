@@ -140,6 +140,8 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
   private def getPageAsJsonImpl(path: String, request: GetRequest): Future[Result] = {
     // Similar to loadPost and getPageAsHtmlImpl, keep in sync. [7PKW0YZ2]
 
+    // [to_paginate]
+
     // If the URL needs to be corrected, the client can do that via the browser history api,
     // so don't throw any redirect or sth like that.
     val specifiedPagePath: PagePath = PagePath.fromUrlPath(request.siteId, request.request.path) match {

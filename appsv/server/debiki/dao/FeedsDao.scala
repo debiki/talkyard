@@ -74,7 +74,7 @@ trait FeedsDao {
 
   private def loadAtomFeedXml(reqrInf: ReqrInf, onlyEmbComments: Boolean)
         : xml.Node = {
-    val LoadPostsResult(postsOneMaySee, pageStuffById) =
+    val LoadPostsResult(postsOneMaySee, pageStuffById, _) =
           loadPostsMaySeeByQuery(PostQuery.AllPosts(
                 reqrInf, orderBy = OrderBy.MostRecentFirst, limit = 25,
                 inclAnonPosts = true, // true authors not shown [list_anon_posts]

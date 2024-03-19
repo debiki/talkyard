@@ -18,6 +18,8 @@
 // There's probably some cruft here that can be removed. Previously, the sidebar
 // was *a lot* more complicated and I might not have cleaned up all old styles.
 
+.c_Dragging  // move to where?
+  opacity: 0.6;
 
 // RENAME 'sidebar' to 'contextbar'.
 
@@ -170,6 +172,15 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
     flex: 1;
     overflow-y: scroll;
 
+
+    // Don't want blue text just because some posts are links to other pages (e.g. a
+    // bookmark to another page).
+    a, a:visited
+      color: inherit;
+    a:hover, a:focus
+      text-decoration: inherit;
+
+
     @media (max-height: 500px)
       padding-top: 7px;
 
@@ -182,12 +193,25 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
     p
       margin-top: 8px;
 
-    .dw-p
+    // This is a link — padding & margin won't work, unless:
+    .c_BmPo
+      display: block;
 
-      cursor: pointer;
-      margin: 0;
+    // Border between recent comments, and to-do items
+    &.c_Cb_P-ToDos .c_BmPo,
+    &.c_Cb_P-Recent .dw-p
       border-top: 1px solid #eee;
       padding: 4px 0 1px;
+
+    &.c_Cb_P-ToDos .c_BmPo
+      padding: 5px 0 2px;
+      .c_BmPo_Bm
+        font-style: italic;
+        margin-bottom: 3px;
+
+    .dw-p
+      cursor: pointer;
+      margin: 0;
 
       &:hover
         .dw-p-hd,

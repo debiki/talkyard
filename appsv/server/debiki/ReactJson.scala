@@ -42,7 +42,8 @@ case class PostExcerpt(text: String, firstImageUrls: imm.Seq[String])
 
 
 private case class RendererWithSettings(
-  renderer: PostRenderer, settings: PostRendererSettings, site: SiteIdHostnames) {
+  renderer: PostRenderer, settings: PostRendererSettings, site: SiteIdHostnames,
+  inclPageId: Bo = false) {
 
   def renderAndSanitize(post: Post, ifCached: IfCached): String = {
     renderer.renderAndSanitize(post, settings, ifCached, site)
@@ -109,7 +110,22 @@ case class PageToJsonResult(
   version: CachedPageVersion,
   pageTitleUnsafe: Option[String],
   customHeadTags: FindHeadTagsResult,
+
+  //------
   unapprovedPostAuthorIds: Set[UserId],
+  // Later:  [remember_if_bookmarks_or_priv_comts]
+  // hasBookmarksPatIds: Set[UserId], — or, could be part of unapprovedPostAuthorIds
+  //      and maybe rename  patIdsWithUnapprovedPostsInclBoookmarks  hmm
+  //      Maybe better to switch to "node" vs "post" terminology, then just:  [its_a_node]
+  //       [patIdsWithOwnNodes],
+  //          and an "own node" includes:  bookmarks,  drafts,  unapproved posts.
+  // thereArePrivateComments: Bo,
+  // BUT there's no need to cache this in the *database*. Aren't rendered server side
+  // since not visible to everyone, only to a few specific peolpe, e.g. the bookmarker
+  // or private thread members.
+  // Maybe remember in  PageStuff?  It's in the mem cache already.
+  //------
+
   anonsByRealId: Map[PatId, Seq[Anonym]])
 
 case class FindHeadTagsResult(
@@ -574,6 +590,12 @@ class JsonMaker(dao: SiteDao) {
       storeJsonHash = hashSha1Base64UrlSafe(reactStoreJsonString))
 
     COULD_OPTIMIZE // cache unapproved posts too?
+    //
+    // And which users have bookmarks,  [remember_if_bookmarks_or_priv_comts]
+    // and if there are any rivate comments.
+    // But then `page` needs to include private posts too, and we need to be careful
+    // to not include any of them when rendering the public & cached version of the page.
+    //
     val unapprovedPosts = posts.filter(!_.isSomeVersionApproved)
     val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet
 
@@ -704,8 +726,9 @@ class JsonMaker(dao: SiteDao) {
         tagsAndBadges: Opt[TagsAndBadges] = None, includeUnapproved: Bo = false,
         showHidden: Bo = false, maySquash: Bo): (JsObject, PageVersion) = {
     dao.readTx { tx =>
-      // COULD optimize: don't load the whole page, load only postNr and the author and last editor.
-      val page = dao.newPageDao(pageId, tx, useMemCache = true)
+      COULD_OPTIMIZE // Load only postNr, author and last editor — not the whole page.
+      val page = dao.newPageDao(pageId, tx, WhichPostsOnPage.thoseMaybeRelatedTo(postNr),
+                        useMemCache = true)
       val post = page.parts.thePostByNr(postNr)
       val theTagsAndBadges = tagsAndBadges.getOrElse(
             tx.loadPostTagsAndAuthorBadges(Seq(post.id)))
@@ -845,10 +868,11 @@ class JsonMaker(dao: SiteDao) {
 
 
   def postToJsonOutsidePage(post: Post, pageRole: PageType, showHidden: Bo,
-          includeUnapproved: Bo, tagsAndBadges: TagsAndBadges): JsObject = {
+          includeUnapproved: Bo, tagsAndBadges: TagsAndBadges,
+          inclPageId: Bo): JsObject = {
     val postRenderSettings = dao.makePostRenderSettings(pageRole)
     val renderer = RendererWithSettings(
-          dao.context.postRenderer, postRenderSettings, dao.theSite())
+          dao.context.postRenderer, postRenderSettings, dao.theSite(), inclPageId = inclPageId)
 
     postToJsonNoDbAccess(post, showHidden = showHidden,
           includeUnapproved = includeUnapproved, tagsAndBadges,
@@ -973,6 +997,9 @@ class JsonMaker(dao: SiteDao) {
     val restrictedTopics: Seq[JsValue] = restrTopicsCatsLinks.topicsJson
     val restrictedTopicsUsers: Seq[JsObject] = restrTopicsCatsLinks.topicParticipantsJson
 
+    COULD_OPTIMIZE // If [its_a_node], then, can remember in the  PageToJsonResult
+    // which users have any drafts?  [remember_if_bookmarks_or_priv_comts]
+    // Then, wouldn't need this sql query.
     val draftsOnThisPage: imm.Seq[Draft] =
       anyPageId.map(tx.loadDraftsByUserOnPage(requester.id, _)).getOrElse(Nil)
 
@@ -1002,13 +1029,20 @@ class JsonMaker(dao: SiteDao) {
     val (pageNotfPrefs: Seq[PageNotfPref],
          ownVotesJson,
          ownAnonVoters: ImmSeq[Anonym],
-         unapprovedPostsJson,
+         unapprovedPostsJson, // includes any bookmarks
          unapprovedAuthorsJson) =
       anyPageId map { pageId =>
         COULD_OPTIMIZE // load cat prefs together with page notf prefs here?
         val pageNotfPrefs = tx.loadNotfPrefsForMemberAboutPage(pageId, ownIdAndGroupIds)
         SECURITY // minor: filter out prefs for cats one may not access...  [7RKBGW02]
         SECURITY // Ensure done when generating notfs.
+
+        // Later, load [priv_comts] here, & filter may-see? (looking at user & group ids)
+        // But, COULD_OPTIMIZE, only if there actually *are* private comments — we can
+        // remember in:  [remember_if_bookmarks_or_priv_comts]
+        // loadPostsOnPage(pageId, WhichPostsOnPage.OnlyPrivate(... ? ...,
+        //        activeOnly = true, mustBeApproved = Some(false))
+        // } getOrElse Nil
 
         // The requester's own votes, and any anonyms han's used when voting.
         val (ownVotesJson, voterIds) = mkVotesJson(requester.id, pageId, tx)
@@ -1082,7 +1116,7 @@ class JsonMaker(dao: SiteDao) {
             "votesByPostNr" -> ownVotesJson,
             "internalBacklinks" -> restrTopicsCatsLinks.internalBacklinksJson,
             // later: "flags" -> JsArray(...) [7KW20WY1]
-            "unapprovedPosts" -> unapprovedPostsJson,
+            "unapprovedPosts" -> unapprovedPostsJson, // includes bookmarks
             "unapprovedPostAuthors" -> unapprovedAuthorsJson,  // should remove [5WKW219] + search for elsewhere
             "knownAnons" -> JsArray(ownAnons map JsKnownAnonym),
             // later: JsArray(real-anon-authors.map(a => JsUser(a))), if is staff.
@@ -1312,23 +1346,23 @@ class JsonMaker(dao: SiteDao) {
   private def unapprovedPostsAndAuthorsJson(reqer: Pat, pageId: PageId,
         unapprovedPostAuthorIds: Set[UserId], tx: SiteTx): UnapprovedPostsAndAuthors = {
 
-    var posts: Seq[Post] =
-      if (unapprovedPostAuthorIds.isEmpty) {
-        // This is usually the case, and lets us avoid a db query.
-        Nil
-      }
-      else if (reqer.isStaff) {
-        // Mods & admins can see and apporve unapproved posts.
-        tx.loadAllUnapprovedPosts(pageId, limit = 999)
-      }
-      else if (unapprovedPostAuthorIds.contains(reqer.id)) {
-        // The requester henself can see and edit hens own unapproved posts.
-        tx.loadUnapprovedPosts(pageId, by = reqer.id, limit = 999)
+    // This loads bookmarks too (they're unapproved, and private: nrs < PageParts.MaxPrivateNr).
+    var posts: Seq[Post] = {
+      COULD_OPTIMIZE // [remember_if_bookmarks_or_priv_comts]
+      // We currently don't know if there're [priv_comts] or bookmarks on this page,
+      // so, if the user is logged in, we need to run a database query.
+      // Later:
+      // if (no unapproved posts & no bookmarks & no private comments  this user can see)
+      //     Nil
+      // else
+      if (reqer.isAuthenticated) {
+        tx.loadUnapprovedPosts(pageId, ownBy = reqer.id, allPublic = reqer.isStaff, limit = 999)
       }
       else {
         // Others cannot see unapproved posts. Except for category mods? [cat_mods]
         Nil
       }
+    }
 
     COULD // load form replies also if user is page author?
     if (reqer.isAdmin) {
@@ -1520,7 +1554,13 @@ class JsonMaker(dao: SiteDao) {
       postsByPageId.toSeq.map(pageIdPosts => {
         val pageId = pageIdPosts._1
         val posts = pageIdPosts._2
-        val page = dao.newPageDao(pageId, tx, useMemCache = false)  // later: cache
+        val page = dao.newPageDao(  // WOULD_OPTIMIZE: reuse from earlier in the same tx?
+              pageId, tx, useMemCache = false,
+              whichPosts =
+                  // If it's private, we need also public posts, since private posts
+                  // comment about or bookmark public posts.
+                  if (posts.exists(_.isPrivate)) WhichPostsOnPage.AllByAnyone()
+                  else WhichPostsOnPage.OnlyPublic() )
         val postsJson = posts map { p =>
           // We're in a tx, and postToJsonImpl renders CommonMark, slightly bad. [nashorn_in_tx]
           postToJsonImpl(p, page, tagsAndBadges,
@@ -2215,12 +2255,21 @@ object JsonMaker {
       "pinnedPosition" -> JsNumberOrNull(post.pinnedPosition),
       "branchSideways" -> JsNumberOrNull(post.branchSideways.map(_.toInt)),
       "likeScore" -> JsNumber(decimal(post.likeScore)),
-      "childNrsSorted" -> JsArray(howRender.childrenSorted.map(reply => JsNumber(reply.nr))),
+      "childNrsSorted" -> JsArray( // [derive_client_side_instead]?  [bookmarks_filtered_out]
+            howRender.childrenSorted.flatMap(reply =>
+                if (reply.tyype == PostType.Bookmark) None else Some(JsNumber(reply.nr)))),
       "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml),
       "pubTags" -> JsArray(postTags map JsTag),
       )
 
-    if (post.isBodyHidden) fields :+= "isBodyHidden" -> JsTrue
+    if (howRender.childrenSorted.exists(_.tyype == PostType.Bookmark))
+      fields :+= "bookmarkNrs" ->  // [derive_client_side_instead]?  [bookmarks_filtered_out]
+            JsArray(howRender.childrenSorted.flatMap(reply =>
+                  if (reply.tyype != PostType.Bookmark) None
+                  else Some(JsNumber(reply.nr))))
+
+    if (post.isBodyHidden)
+      fields :+= "isBodyHidden" -> JsTrue
 
     if (!isApproved) {
       // Then need to know which revision nr we'll approve, if clicking
@@ -2230,8 +2279,14 @@ object JsonMaker {
       fields :+= "approvedRevNr" -> JsNumberOrNull(post.approvedRevisionNr)
     }
 
+    if (renderer.inclPageId)
+      fields :+= "pageId" -> JsString(post.pageId)
+
     // For now. So can edit the title without extra loading the title post's source. [5S02MR4]
-    if (post.isTitle) fields :+= "unsafeSource" -> JsStringOrNull(unsafeSource)
+    // Bookmarks use the current source  [dont_format_bookmarks],  need not be approved
+    // (others can't see them).
+    if (post.isTitle || post.tyype == PostType.Bookmark)
+      fields :+= "unsafeSource" -> JsStringOrNull(unsafeSource)
 
     // Later: Don't incl any private members. [private_pats]
     if (post.authorIds.nonEmpty)
@@ -2268,13 +2323,18 @@ object JsonMaker {
 
 
   /** Creates a dummy root post, needed when rendering React elements. */
-  def embeddedCommentsDummyRootPost(parentlessReplyNrsSorted: imm.Seq[JsNumber]): JsObject =
+  def embeddedCommentsDummyRootPost(parentlessReplyNrsSorted: imm.Seq[JsNumber]): JsObject = {
+    val badNrs = parentlessReplyNrsSorted.filter(_.value < PageParts.MinPublicNr)
+    dieIf(badNrs.nonEmpty,  // [bookmarks_filtered_out]
+          "TyEPRIVCOMTNR", s"Non-public nr among dummy root reply nrs: $badNrs")
+
     Json.obj(
       "nr" -> JsNumber(PageParts.BodyNr),
       "isApproved" -> JsTrue,
       // COULD link to embedding article, change text to: "Discussion of the text at https://...."
       "sanitizedHtml" -> JsString("(Embedded comments dummy root post [EdM2PWKV06]"),
       "childNrsSorted" -> parentlessReplyNrsSorted)
+  }
 
 
   case class ToTextResult(text: String, isSingleParagraph: Boolean)

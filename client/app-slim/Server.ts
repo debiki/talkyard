@@ -678,13 +678,64 @@ interface GetOptions {
   suppressErrorDialog?: boolean;
   showLoadingOverlay?: true;  // default false, for GET requests
   notFoundAs404?: true
+  canCache?: true | ((resp: any) => any);
+}
+
+
+interface CachedResp<T> {
+  cachedAt: WhenMs
+  response: T
+}
+
+let _queryCache: { [url: St]: CachedResp<LoadPostsResponse> } = {};
+
+
+/// Call if creating / editing bookmarks, or bookmarked posts. Better call it too often
+/// than too rarely. — Not really needed, we do reload() after logout anyway: [reload_on_logout]
+export function clearQueryCache() {
+  _queryCache = {};
 }
 
 
 function getAndPatchStore(uri: string, onOk?: GetSuccessFn,
       onErr?: GetErrorFn, opts?: GetOptions): OngoingRequest {
-  return get(uri, function(response) {
+  let reqrIdBef: PatId | U;
+
+  if (opts?.canCache) {
+    reqrIdBef = ReactStore.getMe().id;
+    const anyCachedResp = _queryCache[uri];
+    if (anyCachedResp) {
+      // Make this configurable? [cache_how_long]  & feature switch in case of bugs.
+      // And, if disconnected, do use the cached response anyway?
+      const tooOld = anyCachedResp.cachedAt > Date.now() - 10 * Time.OneMinuteInMillis;
+      if (!tooOld) {
+        onOk(anyCachedResp.response);
+        return;
+      }
+    }
+  }
+
+  return get(uri, function(respRaw) {
+    // `response` is optionally preprocessed, before caching (so need do just once),
+    // while `respRaw` is the json directly from the server.
+    let response = respRaw;
+    if (opts?.canCache) {
+      if (_.isFunction(opts.canCache)) {
+        response = opts.canCache(response);
+      }
+      const reqrIdAft = ReactStore.getMe().id;
+      if (reqrIdBef === reqrIdAft) {
+        _queryCache[uri] = { cachedAt: Date.now(), response };
+      }
+      else {
+        // While the request was in-flight, the human at the computer has logged in, or is
+        // logging out. Then, don't cache — it'd be for the wrong person, or might include
+        // too little data (if sent when logged out, response arrived when logged in).
+      }
+    }
+
     ReactActions.patchTheStore(response);
+
     if (onOk) {
       onOk(response);
     }
@@ -1325,6 +1376,7 @@ export function deleteTempSessId() {  // [ts_authn_modl]
 
 
 export function logoutServerAndClientSide() {
+  Server.clearQueryCache(); // [clear_q_cache]
   const currentUrlPath = location.pathname.toString();
   postJsonSuccess(`/-/logout?currentUrlPath=${currentUrlPath}`, (response) => {
     const goTo = response.goToUrl !== currentUrlPath ? response.goToUrl : '';
@@ -1951,7 +2003,7 @@ export function loadVoters(postId: PostId, voteType: PostVoteType,
 export function saveEdits(editorsPageId: PageId, postNr: PostNr, text: St,
       deleteDraftNr: DraftNr, doAsAnon: MaybeAnon, onOK: () => Vo,
       sendToWhichFrame?: MainWin) {
-  postJson('/-/edit', {
+  postJson('/-/edit', {  // 4greping:  edit-post
     data: {
       pageId: editorsPageId ||
           // Old (as of Jan 2020), keep for a while?:
@@ -2030,7 +2082,7 @@ export function unpinPage(success: () => void) {
 export function saveReply(editorsPageId: PageId, postNrs: PostNr[], text: string,
       anyPostType: number, deleteDraftNr: DraftNr | undefined, doAsAnon: MaybeAnon,
       success: (storePatch: StorePatch) => void) {
-  postJson('/-/reply', {
+  postJson('/-/reply', {  // 4greping:  insert-post  save-post  create-post
     data: {
       pageId: editorsPageId ||
           // Old (as of Jan 2020), keep for a while?:
@@ -2203,13 +2255,19 @@ export function loadPostByNr(postNr: PostNr, success: (patch: StorePatch) => voi
 }
 
 
-export function loadPostsByAuthor(authorId: UserId, showWhat: 'Tasks' | U,
-          onlyOpen: Bo, onOk: (posts: PostWithPage[]) => Vo) {
-  const showWhatParam = showWhat ? `&relType=${PatPostRelType.AssignedTo}` : '';
+/// Can't `showWhat` be 'Posts' too?  That works fine currently anyway.  [or_load_bokms]
+export function loadPostsByAuthor(authorId: UserId, showWhat: 'Tasks' | 'Bookmarks' | U,
+          onlyOpen: Bo, onOk: (posts: PostWithPage[], bookmarks: Post[]) => V) {
+  const showWhatParam =
+          showWhat === 'Bookmarks' ? '&postType=' + PostType.Bookmark : (
+            showWhat === 'Tasks' ? `&relType=${PatPostRelType.AssignedTo}` :
+            '');
   const onlyOpenParam = onlyOpen ? '&which=678321' : '';  // for now.
   // RENAME 'authorId' to 'relToPatId'?
   const url = `/-/list-posts?authorId=${authorId}${showWhatParam}${onlyOpenParam}`
-  getAndPatchStore(url, (r: LoadPostsResponse) => onOk(r.posts));
+  // But don't want to cache recent activity for too long?! [cache_how_long]
+  getAndPatchStore(url, (r: LoadPostsResponse) => onOk(r.posts, r.bookmarks),
+        undefined, { canCache: true });
 }
 
 
@@ -2383,14 +2441,22 @@ export function listCategoriesAllSections(onOk: (cats: Cat[]) => Vo)  {
 }
 
 
-export function createPage(data, success: (newPageId: string) => void) {
+export interface CreatePageData {
+  categoryId?: CatId
+  pageRole: PageType
+  pageStatus: 'Draft' | 'Published' | 'Deleted'
+  folder?: St
+  pageSlug?: St
+  pageTitle: St
+  pageBody: St
+  showId?: Bo
+  deleteDraftNr?: DraftNr,
+  doAsAnon?: { sameAnonId?: PatId, newAnonStatus?: AnonStatus }
+}
+
+export function createPage(data: CreatePageData, onOk: (newPageId: St) => V) {
   // [DRAFTS_BUG] This doesn't delete the draft? (if any)
-  postJson('/-/create-page', {
-    data: data,
-    success: (response) => {
-      success(response.newPageId);
-    }
-  });
+  postJsonSuccess('/-/create-page', (resp) => onOk(resp.newPageId), data);
 }
 
 

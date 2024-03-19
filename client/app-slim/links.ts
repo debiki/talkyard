@@ -62,6 +62,11 @@ export function linkToPostNr(pageId: PageId, postNr: PostNr): string {
 }
 
 
+export function linkToPost(post: PostWithPageId): St {
+  return linkToPageId(post.pageId) + '#post-' + post.nr;
+}
+
+
 export function linkToType(type: TagType): St {
   return origin() + UrlPaths.Tags + (type.urlSlug || type.id);
 }

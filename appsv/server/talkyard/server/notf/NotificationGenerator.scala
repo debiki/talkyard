@@ -135,6 +135,7 @@ case class NotificationGenerator(
     require(postAuthor.forall(_.id == newPost.createdById),
           o"""s$siteId: Wrong postAuthor id: ${postAuthor.map(_.id)}, but
           newPost.createdById is ${newPost.createdById}) [TyEAUTID69256]""")
+    _abortIfBadPost(newPost)
 
     if (newPost.isTitle)
       return generatedNotifications  // [no_title_notfs]
@@ -326,6 +327,8 @@ case class NotificationGenerator(
   // COULD_OPTIMIZE: Use just a PageMeta, .no_PageDao.
   private def _genWatchingSomethingNotfs(notfType: NotfType, pageMeta: PageMeta,
           about: Post, pageMemberIds: Set[UserId], sentFrom: Pat): U = {
+
+    _abortIfBadPost(about)
 
     val newPost = about
 
@@ -771,6 +774,8 @@ case class NotificationGenerator(
         memberIdsHandled: MutSet[PatId], wantSilencePatIds: MutSet[PatId],
         sentFrom: Pat): U = {
 
+    _abortIfBadPost(aboutPost)
+
     val membersById = tx.loadParticipantsAsMap(notfPrefs.map(_.peopleId))
     val memberIdsHandlingNow = mutable.HashSet[MemberId]()
     val wantSilenceHereafterPatIds = mutable.HashSet[MemberId]()
@@ -910,6 +915,8 @@ case class NotificationGenerator(
         anyNewSourceAndHtml: Opt[SourceAndHtml])
         : Notifications = {
 
+    _abortIfBadPost(oldPost)
+
     anyAuthor = Some(editor)
     BUG // Harmless: Don't notify the approver. [dont_notify]
 
@@ -1045,6 +1052,8 @@ case class NotificationGenerator(
 
   def generateForLikeVote(post: Post, upvotedPostAuthor: Participant,
           voter: Participant, inCategoryId: Option[CategoryId]): Notifications = {
+    _abortIfBadPost(post)
+
     if (upvotedPostAuthor.isGone || upvotedPostAuthor.isBuiltIn)
       return generatedNotifications
 
@@ -1063,6 +1072,7 @@ case class NotificationGenerator(
 
 
   def generateForTags(post: Post, postAuthor: Pat, tagsAdded: Set[TagLabel]): Notifications = {
+    _abortIfBadPost(post)
     val userIdsWatching = tx.listUsersWatchingTags(tagsAdded)
     val userIdsNotified = tx.listUsersNotifiedAboutPost(post.id)
     val userIdsToNotify = userIdsWatching -- userIdsNotified
@@ -1092,6 +1102,7 @@ case class NotificationGenerator(
   def generateForAssignees(
           assigneesAdded: Iterable[Pat], assigneesRemoved: Iterable[Pat], postBef: Post,
           changedBy: Pat): Notifications = {
+    _abortIfBadPost(postBef)
 
     val pageMeta = tx.loadThePageMeta(postBef.pageId)
     val postAuthor = tx.loadTheParticipant(postBef.createdById) // [post_authors]
@@ -1142,6 +1153,9 @@ case class NotificationGenerator(
         isAboutModTask: Bo = false,
         isPrivMsgFromStaff: Bo = false, // fix later
         ): U = {
+
+    // If forgotten elsewhere.
+    _abortIfBadPost(about)
 
     val aboutPost = about
     val toPat = to
@@ -1218,6 +1232,16 @@ case class NotificationGenerator(
         nextNotfId = Some(id + 1)
     }
     nextNotfId getOrDie "EsE5GUY2"
+  }
+
+
+  private def _abortIfBadPost(post: Post): U = {
+    require(post.tyype != PostType.Bookmark,  // [0_bokm_notfs]
+          "Can't generate notifications about bookmarks [TyEBOKMNOTF]")
+    require(post.tyype != PostType.MetaMessage,
+          "Shouldn't generate notifications for meta posts?  [TyEMETAPONOTF]")
+    unimplIf(post.tyype == PostType.Flag_later, "Notifications about PostType.Flag_later")
+    unimplIf(post.isPrivate, "Notifications about private comments") // [priv_comts]
   }
 
 }

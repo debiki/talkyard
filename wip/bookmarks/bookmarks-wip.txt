@@ -1,2 +1,99 @@
+In this file: Bookmarks todos.  [bookmarks_wip]
 
-[dont_list_bookmarkers]
+Also see: ../../docs/design-docs/bookmarks.dd.adoc
+
+Disabled in prod,
+      until there are auto tests,  see ^bookmarks in ../../docs/tests-map.txt,
+      and the below todos fixed.
+
+TODO:
+  - Maybe create new fns:  ReactActions.createBookmark() and editBookmark(),
+    instead of reusing  ReactActions.saveReply()  etc.
+    And server enpoints too — the one's for replying & editing do too many off-topic things?
+
+  - Review editPostIfAuth & create-post & changePostStatusImpl() again,
+    so doesn't do weird things w bookmarks:
+              (Better to instead created a dedicated edit-bookmark? see just above)
+      No upload refs
+      No links
+      Not approved
+      No review
+      No spam check tasks
+      No stats updated (except for posts seen maybe) [0_stats_for_priv_posts]  [0_ln_from_priv]
+      No notfs  [0_bokm_notfs]
+  - Done: Websocket, check not bookmark.
+  - Bug: Add/remove tag to bookmarked post. Bookmark igon gets un-highlighted, as if bookm gone
+          (but it's there after reload).
+
+  - BUG: Bookmarks list not auto updated, when editing or deleting bookmark.
+    See  [bookmark_edits_and_updates]  in ../../client/app-slim/sidebar/sidebar.ts.
+    (Need to rewrite to a function component, and use useStoreEvent()?)
+    Delete & add bookark —> listed twice, until reload (since adding, but not deleting, works)
+
+  - Ugly error diag if trying to bookmark sth twice
+
+  - Write e2e tests
+
+
+
+Skip?:
+  - Shouldn't ids too, not only nrs, be < 0?
+    Or all ids should be random, but that's an a bit big change now?
+
+
+Later:
+
+[how_load_bookmarks]
+Currently we just load all bookmarks (up to 999), works fine, the feature is new, there
+aren't many.  Later, load bookmarks ordered by:
+    - Current page, visible posts first,
+          then by time recent first.
+    - Whole forum, recent first.
+
+[bookmark_search_sort]
+Index bookmarks. Private, per user — maybe a dediated index?. Search & sort fields,
+when listing bookmarks.  And search one's bookmarks only: [is_bokm].
+
+[order_bokms]
+Make it possible to drag-and-drop reorder todos (bookmarks, drafts, tasks) in one's sidebar,
+and change sort order, e.g. by order, recent first, (oldest first?), or by search query.
+Use nodes_t / posts3.order_c?
+
+[bookmark_tasks]
+First make it possible to let ordinary comments be tasks. [comment_tasks]
+Then, expose a make-task & doing UI for bookmarks too?
+
+
+
+Much later:
+
+[bookmark_shapes_colors]
+Different shapes and colors would be nice? It's pretty useful in Gmail.
+
+[tagd_bokms]
+Make it possible to tag one's bookmarks? Let's say you use Ty for work for days & years,
+and end up with 1000 bookmarks — could be nice with some structure?
+
+  Compare tags:
+    tag:year:desc>1990  
+    tag:priority:desc>=3
+
+  Then, bookmarks with tags?:
+    bookmarks:asc<=3             # sorts by  posts3.order_c, ascending, up to 3.0 ?
+    bookmarks:due-at:asc<=MM-DD  # finds bookmarks tagged  due-at  and due before MM-DD ?
+
+  What was I thinking? A dot '.' not ':' like elsewhere?:   Aha, a '.' dot is a field, ':' for tags?
+    bookmark:to-do.due-at:asc>=now&.open
+    bookmark:to-do priority:desc>=3
+
+  has:priority:desc>=3
+
+  priority:desc>=3   // finds tag:priority  and  bookmarks.priority   and  badge:proirity
+
+  task:priority>=3   // finds posts (incl bookmarks) with doing status New/Planned/Doing/Done  ?
+    is:open          // and not Closed (e.g. becuase Done)
+
+
+  Create one's own tag types & bookmark types? E.g. "Reply-to", "Read-later", "To-do", "Reference",
+    and filter on, say, "Reply-to" & "To-do", to find out what you should
+    probably do next.

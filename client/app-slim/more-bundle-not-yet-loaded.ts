@@ -37,6 +37,13 @@ export function openTagDropdown(atRect, ps: {
 }
 
 
+export function openBookmarkDropdown(atRect, ps) {
+  Server.loadMoreScriptsBundle(() => {
+    tags.openBookmarkDropdown(atRect, ps);
+  });
+}
+
+
 export function openDropdown(ps: ProxyDiagParams, childrenFn: (close: () => V) => RElm) {
   Server.loadMoreScriptsBundle(() => {
     morekit.openProxyDiag(ps, childrenFn);
@@ -248,7 +255,7 @@ var LazyMoreBundleComponent = createComponent({
     return { bundleLoaded: false };
   },
 
-  UNSAFE_componentWillMount: function() {
+  componentDidMount: function() {
     Server.loadMoreScriptsBundle(() => {
       if (this.isGone) return;
       this.setState({ bundleLoaded: true });
@@ -267,6 +274,15 @@ var LazyMoreBundleComponent = createComponent({
   }
 });
 
+
+
+export function ToDos(props) { //: ToDosProps
+  return LazyMoreBundleComponent({
+    lazyContent: function() {
+      return debiki2.todos.ToDos(props)
+    }
+  });
+}
 
 
 export function TitleEditor(editorProps) {

@@ -106,6 +106,7 @@ trait LinksSiteTxMixin extends SiteTransaction {
 
 
   override def upsertLink(link: Link): Boolean = {   QUOTA
+    // We don't create links from bookmarks or private comments, see: [0_ln_from_priv].
     val upsertStatement = s"""
           insert into links_t (
               site_id_c,

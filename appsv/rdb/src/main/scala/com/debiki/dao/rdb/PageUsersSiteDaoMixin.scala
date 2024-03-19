@@ -157,13 +157,23 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
   }
 
 
-  override def loadPageIdsWithVisiblePostsBy(patIds: Set[PatId], limit: i32): Set[PageId] = {
+  /** Returns pages that need to be rerendered if a person changes hans username
+    * — that is, pages with public (not private comments or bookmarks) and active
+    * (not hidden/deleted/unapproved) posts by that person.
+    *
+    * Would correspond to: public & active = `WhichPostsOnPage.OnlyPublic(activeOnly = true)`
+    * if using WhichPostsOnPage as param, some day, instead.
+    */
+  override def loadPageIdsWithPublicActivePostsBy(patIds: Set[PatId], limit: i32): Set[PageId] = {
     if (patIds.isEmpty) return Set.empty
+    // Dupl code, keep this. [page_ids_with_authors]
     val query = s"""
           select distinct page_id
           from posts3
           where site_id = ?
-            and created_by_id in (${ makeInListFor(patIds) })   -- + pat_node_rels_t [AuthorOf] !
+            and created_by_id in (${ makeInListFor(patIds) })   -- + pat_node_rels_t [AuthorOf]
+            -- Exclude bookmarks and private comments.
+            and post_nr >= ${PageParts.MinPublicNr}
             and approved_at is not null
             and deleted_status = 0
             and hidden_at is null

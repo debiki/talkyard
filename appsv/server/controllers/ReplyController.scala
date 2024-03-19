@@ -43,6 +43,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
 
 
+  RENAME // to createPost?  Also handles bookmarks.
   def handleReply: Action[JsValue] = PostJsonAction(RateLimits.PostReply,
         MinAuthnStrength.EmbeddingStorageSid12, maxBytes = MaxPostSize, canUseAlias = true) {
         request: JsonPostRequest =>
@@ -64,6 +65,8 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     throwBadRequestIf(text.isEmpty, "EdE85FK03", "Empty post")
     throwForbiddenIf(requester.isGroup, "EdE4GKRSR1", "Groups may not reply")
+    throwBadReqIf(asAlias.isDefined && postType.isPrivate, // [both_anon_priv]
+            "TyEANONPRIVPO", "Cannot post bookmarks or private comments anonymously")
 
     DISCUSSION_QUALITY; COULD // require that the user has spent a reasonable time reading
     // the topic, in comparison to # posts in the topic, before allowing hen to post a reply.
@@ -73,14 +76,14 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
           anyEmbeddingUrl = anyEmbeddingUrl, lazyCreatePageInCatId = lazyCreatePageInCatId,
           request)
 
-    REMOVE // these 3 vals, once we're using dao.insertReplyIfAuZ() instead of
+    REMOVE // these 4 vals, once we're using dao.insertReplyIfAuZ() instead of
     // doing authz here in this fn.
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE5FKW20")
     val pageAuthor =
           if (pageMeta.authorId == requester.id) requester
           else dao.getTheParticipant(pageMeta.authorId)
-    val replyToPosts = dao.loadPostsAllOrError(pageId, replyToPostNrs) getOrIfBad { missingPostNr =>
-      throwNotFound(s"Post nr $missingPostNr not found", "EdEW3HPY08")
+    val replyToPosts = dao.loadPostsAllOrError(pageId, replyToPostNrs) getOrIfBad { missingNr =>
+      throwIndistinguishableNotFound("TyEPOST0FND1", isAboutPostNr = Some(missingNr.loneElement))
     }
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
@@ -99,6 +102,8 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // val authzContext = dao.getPageAuthzContext(requester, pageMeta)
     // throwNoUnless(Authz.mayPostReply(authzContext, postType, "EdEZBXK3M2")
 
+    COULD_OPTIMIZE // Don't commonmark-format bookmarks — they're just plain text
+    // anyway. [dont_format_bookmarks]
     // For now, don't follow links in replies. COULD rel=follow if all authors + editors = trusted.
     // (Here, and at other calls to forBodyOrComment(), is a better place to remember
     // whom to mention — so the author will know for sure; compare with: [filter_mentions].)

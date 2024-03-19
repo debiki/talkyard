@@ -26,11 +26,19 @@ import com.debiki.core.Prelude._
   * For example, for a tag, its type tells you the name of the tag, e.g. "Priority",
   * and if the tag can have any values and of what type, e.g. TypeValueType.Int32,
   * and then you can tag your posts with Priority: 123.
+  *
+  * @param scopedToPatId If a person or group want to create and use its own tag types,
+  *     then the tag primary key starts with this pat id, so there'll be no
+  *     conflicts with other tags. — Later, moderators might want to make
+  *     the tag type an official tag type (after talking with the ones who created it).
+  *     So, [bottom_up_tags] that can be promoted to official tags?
+  *     Not implemented, except for this field and a bunch of db constraints.
   */
 case class TagType(
   id: TagTypeId,
   refId: Opt[RefId],
-  canTagWhat: i32,
+  scopedToPatId: Opt[PatId] = None,
+  canTagWhat: i32,  // CHANGE to ThingKind.Tag|Badge ?
   urlSlug: Opt[St],
   dispName: St,
   createdById: PatId,
@@ -73,11 +81,29 @@ object TypeValueType {
   // Sync w db constr: value_type_d_c_lt3000_for_now.
   // Sync w db constr: value_type_d_c_gtem3_nz
   // Sync w Typescript enum TypeValueType.
-  // case object BoolTrue extends TypeValueType(-2)
-  // case object BoolFalse extends TypeValueType(-1)
+
+  // Booleans: No need to store both a type and a value — can instead use
+  // "types" true & false, and skip the value.
+  // case object BoolTrue extends TypeValueType(-1)
+  // case object BoolFalse extends TypeValueType(-2)
+  // (case object None/Null/Undefined? — Can just leave the value empty instead?)
+
   case object Int32 extends TypeValueType(1)
   case object Flt64 extends TypeValueType(5)
   case object StrKwd extends TypeValueType(17)
+  // Tags with longer text. Indexed as type: text in ElasticSearch, not type: keyword.
+  // case object StrTxt extends TypeValueType(18)
+
+  //* What was I thinking here? */
+  //case object Task extends TypeValueType(?)
+
+  //* A tag that links to a post. F.ex. a Depends-On relationship?  */
+  //case object PostLink extends TypeValueType(?)
+
+  //* A tag that links to a person or group.
+  //* Can be used for custom Reviewer (who's to review a blog post before it gets
+  //* published, f.ex.)?
+  //case object PatLink  extends TypeValueType(?)
 
   def fromInt(value: i32): Opt[TypeValueType] = Some(value match {
     case Int32.IntVal => Int32

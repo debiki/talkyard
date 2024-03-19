@@ -25,6 +25,7 @@
 /// <reference path="metabar.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../rules.ts" />
+/// <reference path="../tags/tags.ts" />
 /// <reference path="../widgets.ts" />
 /// <reference path="../page-dialogs/open-share-popup.ts" />
 /// <reference path="../login/login-if-needed.ts" />
@@ -1203,6 +1204,11 @@ const Thread = createComponent({
           return null;
         if (child.postType === PostType.Flat)
           return null;
+        if (child.postType === PostType.Bookmark) {
+          // Can this happen — aren't they in  bookmarkNrs?
+          debugger;
+          return null;
+        }
         isSquashingChildren = false;
 
         let childIndentationDepth = this.props.indentationDepth;
@@ -1440,7 +1446,7 @@ export const Post = createComponent({
     // debiki2.ReactActions.markPostAsRead(this.props.post.nr, true);
   },
 
-  onMarkClick: function(event) {
+  onMarkClick: function(event) {  // [bookmark_shapes_colors]
     // Try to avoid selecting text:
     event.stopPropagation();
     event.preventDefault();
@@ -1449,11 +1455,12 @@ export const Post = createComponent({
 
   render: function() {
     const store: Store = this.props.store;
-    const page: Page = store.currentPage;
     const post: Post = this.props.post;
-    const me: Myself = store.me;
     if (!post)
       return r.p({}, '(Post missing [TyE0POST])');
+
+    const page: Page = store_pageWith(store, post);
+    const me: Myself = store.me;
 
     let pendingApprovalElem;
     let headerElem;
@@ -1592,10 +1599,11 @@ const ReplyReceivers = createComponent({
   displayName: 'ReplyReceivers',
 
   render: function() {
-    const store: Store = this.props.store;
-    const page: Page = store.currentPage;
-    let multireplyClass = ' dw-mrrs'; // mrrs = multi reply receivers
+    const store: DiscStore = this.props.store;
     const thisPost: Post = this.props.post;
+    const page: Page = store_pageWith(store, thisPost);
+
+    let multireplyClass = ' dw-mrrs'; // mrrs = multi reply receivers
     let repliedToPostNrs = thisPost.multireplyPostNrs;
     if (!repliedToPostNrs || !repliedToPostNrs.length) {
       multireplyClass = '';
@@ -1671,13 +1679,13 @@ export const PostHeader = createComponent({
   render: function() {
     const props = this.props;
     const store: Store = this.props.store;
-    const page: Page = store.currentPage;
-    const me: Myself = store.me;
     const post: Post = this.props.post;
-    const abbreviate = this.props.abbreviate;
-
     if (!post)
       return r.p({}, '(Post missing [DwE7IKW2])');
+
+    const page: Page = store_pageWith(store, post);
+    const me: Myself = store.me;
+    const abbreviate = this.props.abbreviate;
 
     const assignees = (capitalizeClass: St = '') => !post.assigneeIds ? null :
         r.span({ className: 'n_Asgd2' },
@@ -1742,14 +1750,31 @@ export const PostHeader = createComponent({
       }
     }
 
-    let bookmark; /*
-    if (true) { // me.bookmarks[post.uniqueId]) {
-      let starClass = ' icon-bookmark-empty';
-      bookmark =
+    // Show a bookmark icon-button, filled, if the post is bookmarked.  [render_bookms]
+    // (But not if we're in the todo list in the right sidebar — then a bookmark icon and
+    // bookmark description are shown instead, above the bookmarked post.)
+    let bookmarkBtn: RElm | U;
+    if (me.isAuthenticated && !post.isForDraftNr && !post.isPreview) {
+      const postsByNr: { [postNr: number]: Post; } = page.postsByNr;
+      // WOULD_OPTIMIZE: Can stop the search when nr >= PostNrs.MinPublicNr.
+      const bookmarkPosts: Post[] = _.flatMap(post.bookmarkNrs || post.childNrsSorted, (childNr) => {
+        const child = postsByNr[childNr];
+        return child && child.postType === PostType.Bookmark && !child.isPostDeleted ?
+                  [child] : [];
+      });
+
+      // Are the -p-mark clases below needed today?
+      const iconClass = bookmarkPosts.length ? 'icon-bookmark' : 'icon-bookmark-empty';
+      bookmarkBtn =
         // The outer -click makes the click area larger, because the marks are small.
-        r.span({ className: 's_P_H_Bm dw-p-mark-click', onClick: this.props.onMarkClick },
-          r.span({ className: 'dw-p-mark icon-bookmark' + starClass }));
-    } */
+        r.span({ className: 's_P_H_Bm dw-p-mark-click',   // onClick: this.props.onMarkClick
+              onClick: (event: MouseEvent) => {
+                const atRect = cloneEventTargetRect(event);
+                morebundle.openBookmarkDropdown(atRect, {
+                            me, post, page, bookmarks: bookmarkPosts });
+              }},
+          r.span({ className: 'dw-p-mark ' + iconClass }));
+    }
 
     const unreadMark = !me.isLoggedIn || me_hasRead(me, post) ? null :
         r.span({ className: 's_P_H_Unr icon-circle' });
@@ -1791,7 +1816,8 @@ export const PostHeader = createComponent({
     const patTagList: RElm | U =
             TagList({ className: 'n_TagL-Pat', forPat: author, store });
     const postTagList: RElm | U =
-            TagListLive({ className: 'n_TagL-Po', forPost: post, store, live: props.live });
+            TagListLive({ className: 'n_TagL-Po', forPost: post, store,
+                  live: props.inTodoList ? false : props.live });
 
     const timeClass = 'esP_H_At';
 
@@ -1813,9 +1839,9 @@ export const PostHeader = createComponent({
           inReplyTo,
           assignees(),
           toggleCollapsedButton,
-          bookmark,
           unreadMark,
-          this.props.stuffToAppend,
+          bookmarkBtn,
+          props.stuffToAppend,
           ),
         postTagList,
         ));

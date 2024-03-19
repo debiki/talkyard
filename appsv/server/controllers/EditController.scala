@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.dao.SiteDao
 import debiki.EdHttp._
-import debiki.JsonUtils.asJsObject
+import debiki.JsonUtils._
 import talkyard.server.linkpreviews.{LinkPreviewRenderer, PreviewResult, LinkPreviewProblem}
 import talkyard.server.http._
 import talkyard.server.{TyContext, TyController}
@@ -196,11 +196,11 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
         request: JsonPostRequest =>
     import request.{dao, theRequester => requester}
     val body = asJsObject(request.body, "request body")
-    val pageId = (body \ "pageId").as[PageId]
-    val postNr = (body \ "postNr").as[PostNr] ; SHOULD // change to id, in case moved to other page [idnotnr]
-    val anyPostId: Option[PostId] = (body \ "postId").asOpt[PostId]
-    val newText = (body \ "text").as[String]
-    val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
+    val pageId: PageId = parseSt(body, "pageId")
+    val postNr: PostNr = parseInt32(body, "postNr") ; SHOULD // change to id, in case moved to other page [idnotnr]
+    val anyPostId: Opt[PostId] = parseOptInt32(body, "postId")
+    val newText: St = parseSt(body, "text")
+    val deleteDraftNr: Opt[DraftNr] = parseOptInt32(body, "deleteDraftNr")
 
     TESTS_MISSING // Do as anon  TyTANONEDIT
     val asAlias: Opt[WhichAliasPat] =
@@ -225,6 +225,9 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
         val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdEBKWRWY9")
         (pageMeta, post)
     }
+
+    throwBadReqIf(asAlias.isDefined && post.isPrivate, // [both_anon_priv]
+          "TyEANONPRIVED1", "Cannot edit bookmarks or private comments anonymously")
 
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
@@ -380,9 +383,9 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
         MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 5000, canUseAlias = true) { req =>
     import req.dao
     val body = asJsObject(req.body, "Delete post request body")
-    val pageId = (body \ "pageId").as[PageId]
-    val postNr = (body \ "postNr").as[PostNr]
-    val repliesToo = (body \ "repliesToo").asOpt[Boolean] getOrElse false
+    val pageId: PageId = parseSt(body, "pageId")
+    val postNr: PostNr = parseInt32(body, "postNr")
+    val repliesToo = parseOptBo(body, "repliesToo") getOrElse false
 
     val action =
       if (repliesToo) PostStatusAction.DeleteTree

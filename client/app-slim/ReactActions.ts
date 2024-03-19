@@ -163,6 +163,7 @@ export function logout() {
 
 export function logoutClientSideOnly(ps: { goTo?: St, skipSend?: Bo, msg?: St } = {}) {
   Server.deleteTempSessId();  // [is_logging_out]
+  Server.clearQueryCache();   // [clear_q_cache] here to, in case of races
 
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.Logout
@@ -184,6 +185,7 @@ export function logoutClientSideOnly(ps: { goTo?: St, skipSend?: Bo, msg?: St } 
   // logged out: (we reload() below — but the service-worker might stay connected)
   pubsub.disconnectWebSocket();
 
+  // Make sure we reload() to forget all state, at least for now. [reload_on_logout]
   if (ps.goTo) {
     if (eds.isInIframe) {
       // Then we'll redirect the parent window instead. [sso_redir_par_win]

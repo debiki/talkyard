@@ -751,6 +751,8 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
+  /** For finding out which people to notify about new comments.
+    */
   def loadPageRepliers(pageId: PageId, usersOnly: Bo): Seq[User] = {
     unimplIf(!usersOnly, "Must be usersOnly [TyE7AMT05MRKT]")
     val sql = s"""
@@ -758,6 +760,10 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
           from posts3 p inner join users3 u  -- + pat_node_rels_t [AuthorOf]
             on p.site_id = u.site_id
             and p.created_by_id = u.user_id
+            -- Include authors of private comments  [priv_comts], so we can notify them.
+            -- But not bookmarks.
+            and (p.type  is null  or  p.type  not in (
+                  ${PostType.Bookmark.toInt}, ${PostType.CompletedForm.toInt}))
             and not u.is_group
             and u.user_id >= $LowestTalkToMemberId
           where p.site_id = ? and p.page_id = ?
@@ -1228,7 +1234,6 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   // NameAndUsername,  but that's too little — need privacy prefs and trust level too
   // (but now we load too much, instead).
   def listUsernamesOnPage(pageId: PageId): ImmSeq[UserBr] = {
-    // Later, once bookmarks impl: [dont_list_bookmarkers] and don't list [priv_comts] authors.
     /* Was, but not enough:
       select distinct
           u.user_id,
@@ -1243,12 +1248,18 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
       from posts3 p inner join users3 u    -- + pat_node_rels_t [AuthorOf]
          on p.SITE_ID = u.SITE_ID
         and p.CREATED_BY_ID = u.USER_ID
+        -- Exclude [priv_comts] and [dont_list_bookmarkers].  (Later, could include
+        -- authors of private comments the requester may see. [incl_priv_authors])
+        and p.post_nr >= ${PageParts.MinPublicNr}
+        and p.type not in (${PostType.CompletedForm.toInt})
+        and p.deleted_status = ${DeletedStatus.NotDeleted}
+        and p.hidden_at is null  -- or maybe allow, if is staff?
         and u.USERNAME is not null
       where p.SITE_ID = ? and p.PAGE_ID = ?"""
     val values = List(siteId.asAnyRef, pageId)
     runQueryFindMany(sql, values, getUser)
 
-    /* Was: rs => {
+    /* Was, when returning a `NameAndUsername` instead of a `UserBr`:   rs => {
       val userId = rs.getInt("user_id")
       val fullName = Option(rs.getString("full_name")) getOrElse ""
       val username = rs.getString("USERNAME")

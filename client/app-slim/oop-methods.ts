@@ -564,6 +564,10 @@ export function post_isWiki(post: Post): boolean {
   return post.postType === PostType.CommunityWiki;
 }
 
+export function post_isPrivate(post: Post): Bo {  // [priv_comts]
+  return post.nr <= PostNrs.MaxPrivateNr;
+}
+
 export function post_isDeleted(post: Post): boolean {   // dupl code [2PKQSB5]
   return post.isPostDeleted || post.isTreeDeleted;
 }
@@ -950,6 +954,14 @@ export function store_curPage(store: Store): Page | U {
 }
 
 
+/// Returns the page that includes `post`. If page not yet loaded, then, creates
+/// a dummy page with its id being `post.pageId`.
+export function store_pageWith(store: DiscStore, post: Post): Page {
+  const page: Page | U = !post.pageId ? store.currentPage : store.pagesById[post.pageId];
+  return page || makeAutoPage(post.pageId);
+}
+
+
 export function store_mainSiteSection(store: Store): SiteSection {
   // Currently there's always just one sub site, namely the forum. [subcomms]
   // Edit: Actually, there're some old sites, with many sub sites — they
@@ -1073,6 +1085,9 @@ export function store_mayIReply(store: Store, post: Post): boolean {
   // Or "I won't approve this comment. It's off-topic because ...".
   if (post_isDeletedOrCollapsed(post) || !post.isApproved)
     return false;
+
+  // Later: If posting a private comment [priv_comts],  that's ok if one can
+  // see the page (even if one may not reply publicly).
 
   // ----- Page member?
 
@@ -1954,6 +1969,12 @@ function deriveLayoutImpl(page: PageDiscPropsSource, cat: Cat, store: DiscStore,
   };
 
   return result as DiscPropsDerived;
+}
+
+
+export function page_unsafeTitle(page: Page): St | U {
+  const titlePost: Post = page.postsByNr[TitleNr];
+  return titlePost?.unsafeSource;
 }
 
 

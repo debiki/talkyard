@@ -1255,6 +1255,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   def loadNotifications(userId: UserId, upToWhenMs: Long): Action[Unit] =
         GetActionRateLimited(RateLimits.ExpensiveGetRequest) { request =>
+    // [to_paginate]
     loadNotificationsImpl(userId, upToWhen = None, request)
   }
 
@@ -1483,9 +1484,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
           RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddingStorageSid12) { request =>
     import request.{dao, requester, requesterOrUnknown}
 
-    SECURITY // Later: skip authors of hidden / deleted / private comments.  [priv_comts]
-    // & bookmarks, once implemented. [dont_list_bookmarkers]
-    // Or if some time in the future there will be "hidden" accounts  [private_pats]
+    // If some time in the future there will be "hidden" accounts  [private_pats]
     // — someone who don't want strangers and new members to see hens profile —
     // then, would need to exclude those accounts here.
 
@@ -1514,6 +1513,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
               prefix, caseSensitive = false, limit = _ListUsersLimit, requesterOrUnknown)
       }
       else {
+        // This skips authors of hidden / deleted / private comments,  [priv_comts]
+        // and bookmarks. [dont_list_bookmarkers]
         val users: ImmSeq[UserBr] = dao.listUsernamesOnPage(pageId = pageId)
 
         // Reqr may see page, so can see all users there anyway.

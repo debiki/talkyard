@@ -1413,13 +1413,21 @@ class EdSecurity(globals: Globals) {
 
   /** Use this if page not found, or the page is private and we don't want strangers
     * to find out that it exists. [7C2KF24]
+    *
+    * If the person may see the page, then, use isAboutPostNr to get a better
+    * (but still indistinguishable) error message. (E.g. if sbd tries to reply
+    * to a private comment han may not see, on a page han *can* see.)
     */
   def throwIndistinguishableNotFound(devModeErrCode: St = "",
-         devModeMsg: St = "", showErrCodeAnyway: Bo = false): Nothing = {
+          devModeMsg: St = "", showErrCodeAnyway: Bo = false, isAboutPostNr: Opt[PostNr] = None,
+          ): Nothing = {
     val suffix =
-      if (showErrCodeAnyway || !globals.isProd && devModeErrCode.nonEmpty) s"-$devModeErrCode"
-      else ""
-    val msg = if (!globals.isProd && devModeMsg.nonEmpty) devModeMsg else "Not found"
+          if (showErrCodeAnyway || !globals.isProd && devModeErrCode.nonEmpty) s"-$devModeErrCode"
+          else ""
+    val prodMsg = isAboutPostNr.map(nr => s"Post nr $nr not found") getOrElse "Not found"
+    val msg =
+          if (globals.isProd || devModeMsg.isEmpty) prodMsg
+          else devModeMsg + s"\n\nProd msg: $prodMsg"
     throwNotFound("TyE404_" + suffix, msg)
   }
 

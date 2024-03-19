@@ -106,13 +106,14 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
               Vec.empty
             }
             else {
-              val pageParts = PagePartsDao(pageId = stuff.pageId, settings, tx, Some(dao))
+              val pageParts = PagePartsDao(pageId = stuff.pageId, settings, tx, Some(dao),
+                      WhichPostsOnPage.OnlyPublic(activeOnly = true))
               COULD_OPTIMIZE // Load all at once, look at:  loadPopularPostsByPageExclAggs
               // — however, we want tags & assignees too?
               // Or, if combined with say top N posts per page & their ancestors, would need
               // some fancy recursive SQL query?
               // Later, when there are [priv_comts], excl those.
-              pageParts.activePosts
+              pageParts.allPosts // note: activeOnly above
             }
           }
         }

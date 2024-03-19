@@ -38,11 +38,11 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   override def loadPost(pageId: PageId, postNr: PostNr): Option[Post] =
-    loadPostsOnPageImpl(pageId, postNr = Some(postNr)).headOption
+    loadPostsOnPageImpl(pageId, postNr = Some(postNr), None).headOption
 
 
-  override def loadPostsOnPage(pageId: PageId, activeOnly: Bo = false): Vec[Post] =
-    loadPostsOnPageImpl(pageId, postNr = None, activeOnly = activeOnly)
+  override def loadPostsOnPage(pageId: PageId, which: WhichPostsOnPage): Vec[Post] =
+    loadPostsOnPageImpl(pageId, postNr = None, Some(which))
 
   private def select__posts_po__someJoin__patPostRels_pa(someJoin: St): St = s"""
         select po.*,
@@ -80,18 +80,55 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
   private val and__po_approved_at__is_not_null = "and po.approved_at is not null"
 
-  private def loadPostsOnPageImpl(pageId: PageId, postNr: Opt[PostNr], activeOnly: Bo = false)
-          : Vec[Post] = {
+
+  private def loadPostsOnPageImpl(pageId: PageId, postNr: Opt[PostNr],
+          which: Opt[WhichPostsOnPage]): Vec[Post] = {
     // Similar to:  loadPostsByNrs(_: Iterable[PagePostNr])
+
+    dieIf(postNr.isDefined && which.isDefined, "TyE7SGJ3Q", "Both post nr & which")
+
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef, pageId)
+
     val andPostNrEq = postNr map { id =>
       values.append(id.asAnyRef)
       "and po.post_nr = ?"
     } getOrElse ""
 
-    val andActiveOnly = if (!activeOnly) "" else
-            s"""$and__po_approved_at__is_not_null
-                and  po.hidden_at  is null
+    val andPostNrGtOrLt = which match {
+      case None =>
+        // Then we're loading specific posts by nr, don't need another filter.
+        ""
+      case Some(which2) => which2 match {
+        case _: WhichPostsOnPage.OnlyPublic =>
+          s"and  po.post_nr >= ${PageParts.MinPublicNr}"
+        case priv: WhichPostsOnPage.OnlyPrivate =>
+          // Later: Need a way to specify & load private-posts-visible-to somebody. [priv_comts]
+          // Maybe we'll need to [load_all_private_comments] on pageId.
+          // But for now, this works for bookmarks.
+          // If:  activeOnly = true, mustBeApproved = Some(false),
+          // then is ame as:  loadUnapprovedPosts(allPublic = false, ...)?
+          // except that the latter loads hidden posts, this one doesn't, but
+          // doesn't matter since bookmarks & priv comments can't be hidden?
+          values.append(priv.byUserId.asAnyRef)
+          s"and  po.post_nr <= ${PageParts.MaxPrivateNr}  and po.created_by_id = ?"
+        case _: WhichPostsOnPage.AllByAnyone =>
+           "" // all
+      }
+    }
+
+    val mustBeApproved = which map { which2 =>
+            which2.mustBeApproved getOrElse which2.activeOnly  // [load_only_approved]
+          } getOrElse {
+            // If loading a specific post nr, it's wanted, approved or not approved.
+            false
+          }
+
+    val andApproved =
+          if (mustBeApproved) and__po_approved_at__is_not_null
+          else ""
+
+    val andNotHiddenDeleted = if (!which.exists(_.activeOnly)) "" else
+            s"""and  po.hidden_at  is null
                 and  po.deleted_status = ${DeletedStatus.NotDeleted.toInt} """
 
     val query = s""" -- loadPostsOnPageImpl
@@ -99,7 +136,9 @@ trait PostsSiteDaoMixin extends SiteTransaction {
           where po.site_id = ? and
                 po.page_id = ?
                 $andPostNrEq
-                $andActiveOnly
+                $andPostNrGtOrLt
+                $andApproved
+                $andNotHiddenDeleted
           $groupBy_orderBy__siteId_postId """
 
     runQueryFindMany(query, values.toList, rs => {
@@ -244,36 +283,70 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post] = {
-    loadUnapprovedPostsImpl(pageId, None, limit)
-  }
+  def loadUnapprovedPosts(pageId: PageId, ownBy: PatId, allPublic: Bo = false,
+          limit: i32): immutable.Seq[Post] = {
 
+    // Later: Do we ever want to use this for loading private comments? [priv_comts]
+    // Maybe theoretically if  loadPostsOnPageImpl()  [load_all_private_comments]  won't
+    // load all private comments because there's too many (a billion!), then we could use
+    // this fn to load the current user's *own* private comments, which would be
+    // more important to han.
 
-  def loadUnapprovedPosts(pageId: PageId, by: UserId, limit: Int): immutable.Seq[Post] = {
-    loadUnapprovedPostsImpl(pageId, Some(by), limit)
-  }
+    // If we're also loading *all* public unapproved posts, no need
+    // to also load our *own* public unapproved posts. Only our own private.
+    val andIsPrivate =
+          if (allPublic) s"and po.post_nr <= ${PageParts.MaxPrivateNr}"
+          else ""
 
+    // If admins want to see deleted posts, or one wants to see one's own deleted
+    // posts, the last `po.deleted_status` test needs to be dynamically changed to
+    // `or deleted_status <> ...` and some reordering and parenthesis.  [opt_show_deld_posts]
+    // Then, rename this fn to: loadUnapprovedAndDeletedPosts ?
+    val andNotFormOrDeleted = s"""
+              and (po.type is null or po.type not in (
+                    -- Form submissions don't currently need to be approved
+                    -- (aren't part of any discussion).
+                    ${PostType.CompletedForm.toInt}))
+              -- Load unapproved hidden posts, right. [_load_hidden]
+              -- But not deleted:
+              and po.deleted_status = ${DeletedStatus.NotDeleted.toInt}  """
 
-  private def loadUnapprovedPostsImpl(pageId: PageId, by: Option[UserId], limit: Int)
-        : immutable.Seq[Post] = {
-    var query = s""" -- loadUnapprovedPostsImpl
-      $select__posts_po__leftJoin__patPostRels_pa
-      where po.site_id = ?
-        and po.page_id = ?
-        and po.approved_at is null
-        and (po.type is null or po.type <> ${PostType.CompletedForm.toInt})
-      """
+    val values = ArrayBuffer[AnyRef](
+          siteId.asAnyRef, pageId.asAnyRef, ownBy.asAnyRef)
 
-    var values = ArrayBuffer[AnyRef](siteId.asAnyRef, pageId.asAnyRef)
+    // One's own unapproved comments, but also one's bookmarks (they're posts too, unapproved).
+    val ownUnapprovedQuery = s"""
+          $select__posts_po__leftJoin__patPostRels_pa
+          where po.site_id = ?
+              and po.page_id = ?
+              and po.approved_at is null
+              -- Only our own.
+              and po.created_by_id = ?  -- pat_node_rels_t [AuthorOf]
+              -- Only private, if loading all public in the union query below.
+              $andIsPrivate
+              $andNotFormOrDeleted
+          $groupBy__siteId_postId """
 
-    if (by.isDefined) {
-      query += " and po.created_by_id = ?  -- pat_node_rels_t [AuthorOf]"
-      values += by.get.asAnyRef
+    // For moderators, so they can see & review posts pending approval.
+    val unionPublicUnapprovedQuery = if (!allPublic) "" else {
+      values.append(siteId.asAnyRef, pageId.asAnyRef)
+      s"""
+          union
+          $select__posts_po__leftJoin__patPostRels_pa
+          where po.site_id = ?
+              and po.page_id = ?
+              and po.approved_at is null
+              -- Only public (exclude bookmarks and private comments).
+              and po.post_nr >= ${PageParts.MinPublicNr}
+              $andNotFormOrDeleted
+          $groupBy__siteId_postId """
     }
 
-    query += s"""
-          $groupBy__siteId_postId
-          order by po.created_at desc limit $limit """
+    val query = s""" -- loadUnapprovedPosts
+          $ownUnapprovedQuery
+          $unionPublicUnapprovedQuery
+          -- Order the total result, after union. (Incl id, for predictable e2e tests.)
+          order by created_at desc, unique_post_id desc limit $limit """
 
     runQueryFindMany(query, values.toList, rs => {
       readPost(rs, pageId = Some(pageId))
@@ -297,6 +370,49 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def loadBookmarksAndBookmarkedPosts(byPatId: PatId,
+            limit: i32, offsetAt: When, offsetId: PostId)
+            : (ImmSeq[Post], ImmSeq[Post]) = {
+
+    val values = List(siteId.asAnyRef, byPatId.asAnyRef)
+    val query = s""" -- loadBookmarksAndBookmarkedPosts
+          with bms as (
+            $select__posts_po__leftJoin__patPostRels_pa
+            where  po.site_id =  ?
+              and  po.created_by_id = ?
+              and  po.type = ${PostType.Bookmark.toInt}
+              and  po.deleted_at is null
+            $groupBy__siteId_postId
+            order by po.created_at desc
+            limit $limit
+          )
+          -- Bookmarks
+          select * from bms
+          union
+          -- Bookmarked posts
+          $select__posts_po__leftJoin__patPostRels_pa
+          inner join  bms
+             on   bms.site_id       =  po.site_id
+             and  bms.page_id       =  po.page_id
+             and  bms.parent_nr     =  po.post_nr
+             -- Skip deleted, but do _load_hidden posts.
+             and  po.deleted_status = ${DeletedStatus.NotDeleted.toInt}
+             and  (po.type is null  or  po.type between 1 and 12)  -- [depr_post_type]
+          $groupBy__siteId_postId
+          -- This is for the complete result set (after union).
+          order by created_at desc
+          """
+    val bookmarks = MutArrBuf[Post]()
+    val bookmarkedPosts = MutArrBuf[Post]()
+    runQueryAndForEachRow(query, values, rs => {
+      val p = readPost(rs)
+      if (p.tyype == PostType.Bookmark) bookmarks.append(p)
+      else bookmarkedPosts.append(p)
+    })
+    (bookmarks.to[Vec], bookmarkedPosts.to[Vec])
+  }
+
+
   /*
   def loadPosts(authorId: UserId, includeTitles: Boolean, includeChatMessages: Boolean,
         limit: Int, orderBy: OrderBy, onPageId: Option[PageId], onlyUnapproved: Boolean)
@@ -306,6 +422,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
     val andSkipTitles = includeTitles ? "" | s"and post_nr <> $TitleNr"
     val andSkipChat = includeChatMessages ?
+          ? Skip bookmarks too ?
       "" | s"and (po.type is null or po.type <> ${PostType.ChatMessage.toInt})"
     val andOnlyUnapproved = onlyUnapproved ? "po.curr_rev_nr > approved_rev_nr" | ""
 
@@ -333,13 +450,23 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef)
 
-    val andAuthorEq = postQuery match {
+    val (andAuthorEq, andTypeEq) = postQuery match {
       case q: PostQuery.PostsByAuthor =>
         // Including the author's anon posts, hasn't been implemented.
         unimplIf(postQuery.inclAnonPosts, "TyEANONUNIMP04") ; ANON_UNIMPL
         values.append(q.authorId.asAnyRef)
-        "and po.created_by_id = ?"
-      case _ => ""
+
+        val andTypeEq = q.onlyPostType map { t =>
+          // This not in use  [onlyPostType_not_used]. I thought this'd be for loading
+          // bookmarks, but they're loaded via  loadBookmarksAndBookmarkedPosts()  instead.
+          assert(false)
+          values.append(t.toInt.asAnyRef)
+          "and po.post_type = ?"
+        } getOrElse ""
+
+        ("and po.created_by_id = ?", andTypeEq)
+      case _ =>
+        ("", "")
     }
 
     val andNotTitle = postQuery.inclTitles ? "" | s"and po.post_nr <> $TitleNr"
@@ -355,10 +482,10 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         CLEAN_UP; REMOVE // Or? Not in use.
         // Including tasks assigned to one's anonyms, hasn't been implemented.
         unimplIf(postQuery.inclAnonPosts, "TyEANONUNIMP05") ; ANON_UNIMPL
-
         // Currently using  tx.loadPatPostRels()  instead, see [load_posts_by_rels],
         // and this match-case branch is dead code.
         unimpl("Would .not_load_all_post_rels [TyE602MRTL5]")
+        /*
         values.append(q.relatedPatId.asAnyRef)
         values.append(q.relType.toInt.asAnyRef)
         ("and pa.from_pat_id_c = ?"
@@ -369,6 +496,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
             // (Need sth like max() or min() because we array_agg rows from pa =
             // pat_node_rels_t.)
             "order by max(pa.created_at) desc, po.unique_post_id desc")) // [.same_time]
+            */
       case _ => ("", "", None)
     }
 
@@ -417,10 +545,16 @@ trait PostsSiteDaoMixin extends SiteTransaction {
             select__posts_po__leftJoin__patPostRels_pa
           }
 
+    val andOnlyPublic =  // [all_0_incl_bookmarks]
+          if (false) ""
+          else s"and po.post_nr >= ${PageParts.MinPublicNr}"
+
     val sqlQuery = s""" -- loadPostsByQuery
           $select__posts_po__theJoin__patPostRels_pa
           where po.site_id = ?
               $andAuthorEq  -- pat_node_rels_t [AuthorOf]  needs new sub query?
+              $andOnlyPublic
+              $andTypeEq
               $andNotTitle
               $andSomeVersionApproved
               $andPageNotUnlisted_unimpl
@@ -473,6 +607,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
              and  t.on_post_id_c =  po.unique_post_id
              and  t.tagtype_id_c =  ?
           where  po.site_id =  ?
+            and  po.post_nr >= ${PageParts.MinPublicNr} -- [all_0_incl_bookmarks]
             and  (po.type is null  or  po.type between 1 and 12)  -- [depr_post_type]
             and  po.deleted_status = ${DeletedStatus.NotDeleted.toInt}
             and  po.hidden_at is null
@@ -560,6 +695,12 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         where p.site_id = ?
           and p.page_id in (${makeInListFor(pageIds)})
           and p.post_nr >= ${exclOrigPost ? PageParts.FirstReplyNr | PageParts.BodyNr}
+          -- We want public posts only. The line above is enough, but let's include
+          -- this check too, for clarity:
+          and p.post_nr >= ${PageParts.MinPublicNr}
+          -- Bookmarks have nrs < 0, but let's include here anyway.
+          and (p.type is null or p.type not in (
+                ${PostType.Bookmark.toInt}, ${PostType.CompletedForm.toInt}))
           and length(p.approved_html_sanitized) > 20
           and p.collapsed_status = 0
           and p.closed_status = 0
@@ -589,11 +730,18 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         where po.site_id = ?
           and po.page_id in (${makeInListFor(pageIds)})
           and po.post_nr <> ${PageParts.TitleNr}
+          -- This excludes bookmarks and private comments.
+          and po.post_nr >= ${PageParts.MinPublicNr}
           and po.approved_at is not null
           and (po.type is null or po.type not in (
             ${PostType.BottomComment.toInt},  -- [2GYKFS4]
             ${PostType.MetaMessage.toInt},
-            ${PostType.ChatMessage.toInt}))
+            ${PostType.ChatMessage.toInt},
+            -- Don't need to list these (bookmarks & forms), but why not:
+            -- (Hmm? But do need to list forms? They have nrs > 0?)
+            ${PostType.Bookmark.toInt},
+            ${PostType.CompletedForm.toInt}
+            ))
           and po.closed_status = 0
           and po.hidden_at is null
           and po.deleted_status = 0
@@ -1172,6 +1320,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
             and  po.unique_post_id = pa.to_post_id_c
             and  po.closed_status = 0
             and  po.deleted_status = 0
+            -- Later: Sometimes include [priv_comts]? (nr <= MaxPrivateNr)
+            and  po.post_nr >= ${PageParts.MinPublicNr} -- [all_0_incl_bookmarks]
           inner join  pages3 pg
              on  pg.site_id = po.site_id
             and  pg.page_id = po.page_id
@@ -1192,6 +1342,9 @@ trait PostsSiteDaoMixin extends SiteTransaction {
                  $andPageIdEq
                  $andCreatedBy
                  $andRelTypeIn
+                  -- This (post_actions3.post_nr) gets out of date if post moved to other page?
+                  -- But the sign (> 0 or < 0) will at least stay the same. [priv_comts]
+                  and  pa.post_nr >= ${PageParts.MinPublicNr} -- [all_0_incl_bookmarks]
           $orderByAndLimit  """
 
     val result = runQueryFindMany(query, values.toList, rs => {
@@ -1338,6 +1491,12 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         throw DbDao.DuplicateVoteException
       })
     }
+
+    // Upvoting a bookmark would be a bug.
+    // Could search for all  insertPostAction()  usage too, throwForbidden  if wrong
+    // post type?  [weird_post_actions]
+    dieIf(postNr < PageParts.MinPublicNr, "TyEPRIVPOACT", o"""s$siteId: Trying to do sth
+          with a private post, nr $postNr id $postId, action type: $actionType""")
 
     val statement = s"""
       insert into post_actions3(site_id, to_post_id_c, page_id, post_nr, rel_type_c,

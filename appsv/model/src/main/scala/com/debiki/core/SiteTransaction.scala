@@ -111,7 +111,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   /** Useful for chats — then, we want to show the chat description, which is
     * in the orig post. And the most recent chat messsages, to show.  */
   def loadOrigPostAndLatestPosts(pageId: PageId, limit: Int): Seq[Post]
-  def loadPostsOnPage(pageId: PageId, activeOnly: Bo = false): Vec[Post]
+  def loadPostsOnPage(pageId: PageId, which: WhichPostsOnPage): Vec[Post]
   def loadPostsByNrs(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]
   /** The result is shorter, if some posts weren't found. */
   def loadPostsByIdKeepOrder(postIds: Iterable[PostId]): ImmSeq[Post]
@@ -119,8 +119,9 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadPostsByExtIdAsMap(extImpIds: Iterable[ExtId]): immutable.Map[ExtId, Post]
 
   def loadAllPostsForExport(): immutable.Seq[Post]
-  def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post]
-  def loadUnapprovedPosts(pageId: PageId, by: UserId, limit: Int): immutable.Seq[Post]
+  // This loads one's bookmarks too (they are posts, unapproved).
+  def loadUnapprovedPosts(pageId: PageId, ownBy: PatId, allPublic: Bo = false,
+                          limit: i32): immutable.Seq[Post]
   def loadCompletedForms(pageId: PageId, limit: Int): immutable.Seq[Post]
 
 
@@ -166,6 +167,17 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadDraftsByLocator(userId: UserId, draftLocator: DraftLocator): immutable.Seq[Draft]
   def listDraftsRecentlyEditedFirst(userId: UserId, limit: Int): immutable.Seq[Draft]
 
+  /** Returns (bookmarks, bookmarked-posts),  most recent first (no particular page).
+    *
+    * Bookmarks[X] might not be a bookmark for bookmarked-posts[X], and there would be
+    * more bookmarks than bookmarked posts if some bookmarked posts have been deleted.
+    *
+    * @param offsetAt Currently ignored [to_paginate].
+    * @param offsetId Ignored too.
+    */
+  def loadBookmarksAndBookmarkedPosts(byPatId: PatId,
+          limit: i32, offsetAt: When, offsetId: PostId): (imm.Seq[Post], imm.Seq[Post])
+
   def nextPostId(): PostId
   def insertPost(newPost: Post): Unit
   def updatePost(newPost: Post): Unit
@@ -202,7 +214,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   // Returns recently active pages first.
   def loadPagePostNrsByPostIds(postIds: Iterable[PostId]): Map[PostId, PagePostNr]
-  def loadPageIdsWithVisiblePostsBy(patIds: Set[PatId], limit: i32): Set[PageId]
+  def loadPageIdsWithPublicActivePostsBy(patIds: Set[PatId], limit: i32): Set[PageId]
   def loadPageIdsUserIsMemberOf(userAndGroupIds: Seq[MemId], onlyPageRoles: Set[PageType]): ImmSeq[PageId]
   def loadReadProgress(userId: UserId, pageId: PageId): Option[PageReadingProgress]
   def loadReadProgressAndIfHasSummaryEmailed(userId: UserId, pageId: PageId)

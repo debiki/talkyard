@@ -52,6 +52,10 @@ declare namespace debiki2 {
     function makeResizableUp(elem, handle, onResize): (stop: Bo) => Vo;
   }
 
+  namespace todos {
+    function ToDos(props);
+  }
+
   namespace topbar {
     function openMyMenu(store, where);
   }
@@ -133,6 +137,7 @@ declare namespace debiki2.nopage {
 declare namespace debiki2.tags {
   var routes;
   function openTagDropdown(atRect, ps);
+  function openBookmarkDropdown(atRect, ps);
 }
 
 declare namespace debiki2.titleeditor {

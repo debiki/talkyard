@@ -833,6 +833,14 @@ tags with values:
   cannot create tags with the wrong value type: (different from the tag type's value type)
             - TESTS_MISSING  TyTTAGVALBADTYPE
 
+bookmarks:
+            - TESTS_MISSING   TyTBOOKMLS
+            - TESTS_MISSING   case q: PostQuery.PatsBookmarks
+            - TESTS_MISSING   TyTIMPBOOKMRK
+            - TESTS_MISSING   Check bookmarks not sent over WebSocket [dont_leak_private_posts]
+            - Edit & delete & recreate bookmarks
+            - add more ...
+
 # Move to ^security:  ?
 access permissions,
 permissions -

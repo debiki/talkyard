@@ -587,7 +587,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
 
 
 /*
-Old code that recursively finds all ancestor pages of a page. Was in use
+Old code that recursively finds all ancestor pages of a page  [sub_pages]. Was in use
 before I created the categories table. Perhaps it'll be useful again in the future
 if there'll be really many categories sometimes, so one doesn't want to load all of them?
 def batchLoadAncestorIdsParentFirst(pageIds: List[PageId])(connection: js.Connection)

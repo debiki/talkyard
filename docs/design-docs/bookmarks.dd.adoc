@@ -1,0 +1,33 @@
+
+Bookmarks are posts, stored in posts3 / nodes_t. Then they'll get doing status fields
+"for free" and can later function as one's personal tasks too: planned, doing, done.
+  And  due-at  or  remind-at  properties, just like posts might one day have.
+
+At the same time, means we have to avoid accidentally loading bookmarks (>= MinPublicNr tests)
+or bookmark authors. [dont_list_bookmarkers]
+
+The parent post is the bookmarked post.
+
+The post nr is <= MaxPrivateNr — bookmarks are private: others can't see one's bookmarks.
+
+  _________________________
+  |                        |
+  |  Add [Bookmark | Task] |  
+  |                        |
+  | Tags:  Read later v    |    (or e.g.  Reply-to | To-do | Reference)
+  |                        |
+  | Text: _Parrots_Petr__  |
+  |                        |
+  | Order: [7]             |
+  |                        |
+  | Date  /  reminder  ?   |
+  |                        |
+  |________________________|
+
+
+Bookmarks are shown in the sidebar, so one can single-click jump between different
+bookmarked posts, without having to click and open a bookmarks dropdown in between.
+(Plus, in a tab on one's profile page.)
+
+For more work-in-progress bookmark things, see: ../../wip/bookmarks/bookmarks-wip.txt
+

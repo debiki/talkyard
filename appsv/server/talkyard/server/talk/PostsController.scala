@@ -71,7 +71,8 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def listPostsByUser(authorId: UserId, relType: Opt[Int], which: Opt[Int]): Action[U] =
+  def listPostsByUser(authorId: UserId, postType: Opt[i32], relType: Opt[Int],
+          which: Opt[Int]): Action[U] =
           GetActionRateLimited() { req: GetRequest =>
     import req.{dao, requesterOrUnknown}
 
@@ -84,11 +85,41 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // (_Double_check 1/2, if calling _listPostsImpl(), oh well.)
     _throwIfMayNotSeeActivity(requesterOrUnknown, targetUser, dao)
 
+    val postType2 = postType.map(t => PostType.fromInt(t).getOrThrowBadRequest(
+          "TyEPOSTTY037", s"Bad post type: $t"))
+    val onlyOpen = which is 678321  // for now
+
     relType match {
       case None =>
-        // Later, will use PostQuery here too, just like below (and this match-case
-        // branch maybe then no longer needed).
-        _listPostsImpl(authorId, all = false, req)
+        if (postType2 is PostType.Bookmark) {
+          TESTS_MISSING  // TyTBOOKMLS
+          // For now, can't list other's bookmarks. Maybe will be shared bookmarks some day.
+          // Others' bookmarks are filtered away here: [own_bookmarks]  but mabye there's
+          // a way to find out if other bookarks exist, see:  [others_bookmarks]
+          // So, for now, to prevent that, abort directly.
+          throwForbiddenIf(req.reqrInf.id != authorId,
+                "TyE0YOURBOOKMS", "Can't list other people's bookmarks")
+
+          val query = PostQuery.PatsBookmarks(
+                reqrInf = req.reqrInf,
+                bookmarkerId = authorId,
+                limit = 100, // UX, [to_paginate]
+                orderBy = OrderBy.MostRecentFirst)
+          OkSafeJson(
+                _listPostsImpl2(query, req.dao))
+        }
+        else if (postType2.isDefined) {
+          // This is probably totally fine, just that it's currently dead code,
+          // never invoked by the current Ty browser client.
+          // Later: Simply remove this `else-if`, keep the `else` below.
+          TESTS_MISSING
+          throwUntested("TyETYPE0BOKM", "postType != bookmarks")
+        }
+        else {
+          // Later, will use PostQuery here too, just like below (and this match-case
+          // branch maybe then no longer needed).
+          _listPostsImpl(authorId, onlyPostType = postType2, all = false, req)
+        }
       case Some(relTypeInt) =>
 
         // Tests:
@@ -102,7 +133,6 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
         val reqrIsStaff = req.requester.exists(_.isStaff)
         val reqrIsStaffOrSelf = reqrIsStaff || req.requester.exists(_.id == relToPatId)
 
-        val onlyOpen = which is 678321  // for now
         val query = PostQuery.PostsRelatedToPat(
               reqrInf = req.reqrInf,
               relatedPatId = relToPatId,
@@ -172,9 +202,12 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  private def _listPostsImpl(authorId: UserId, all: Boolean, request: GetRequest): mvc.Result = {
+  private def _listPostsImpl(authorId: UserId, onlyPostType: Opt[PostType], all: Bo,
+          request: GetRequest): mvc.Result = {
     import request.dao
     import request.{dao, requester, requesterOrUnknown}
+
+    untestedIf(onlyPostType.isDefined, "TyEONLYTYPE", "onlyPostType")
 
     // Return Not Found directly, using the cache, if no such user.  Bit dupl [_6827]
     val targetUser: Pat =
@@ -195,6 +228,7 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val res = _listPostsImpl2(
           PostQuery.PostsByAuthor(
                 reqrInf = request.reqrInf,
+                onlyPostType = onlyPostType,
                 orderBy = OrderBy.MostRecentFirst,
                 limit = limit,
                 // Later, include, if reqr is the author henself. [list_anon_posts]
@@ -211,9 +245,12 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   private def _listPostsImpl2(query: PostQuery, dao: SiteDao): JsObject = {
-    val LoadPostsResult(postsOneMaySee, pageStuffById) =
-          // This excludes any stuff the requester may not see. [downl_own_may_see]
-          dao.loadPostsMaySeeByQuery(query)
+    val LoadPostsResult(
+          postsOneMaySee,
+          pageStuffById,
+          bookmarksMaySee) =
+              // This excludes any stuff the requester may not see. [downl_own_may_see]
+              dao.loadPostsMaySeeByQuery(query)
 
     val posts = postsOneMaySee
 
@@ -238,33 +275,48 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
             )  // skip!  toShowForPatId = Some(query.reqr.id))  // Maybe use Opt[Pat] instead, hmm
     })
 
-    val postsJson = posts flatMap { post =>
+    val bookmarksJson: ImmSeq[JsObject] = bookmarksMaySee map { post =>
+      dao.jsonMaker.postToJsonOutsidePage(post, PageType.Discussion /* doesn't matter */,
+            showHidden = true,
+            // Bookmars don't get approved by anyone.
+            includeUnapproved = true,
+            // Some day, it'll be possible to tag one's bookmarks? [tagd_bokms]
+            // But these tags are for the *bookmarked* posts only. Need to incl bookmark posts
+            // (not only bookmarked posts) when calling loadPostTagsAndAuthorBadges() above.
+            tagsAndBadges,
+            // Bookmarks are usually on different pages, need to know which, so can jump
+            // to the correct page (in the browser) when clicking a bookmark.
+            inclPageId = true)
+    }
+
+    val postsJson: ImmSeq[JsObject] = posts map { post =>
       val pageStuff = pageStuffById.get(post.pageId) getOrDie "EdE2KW07E"
       val pageMeta = pageStuff.pageMeta
       var postJson = dao.jsonMaker.postToJsonOutsidePage(post, pageMeta.pageType,
             showHidden = true,
             // Really need to specify this again?
             includeUnapproved = query.reqrIsStaffOrObject,
-            tagsAndBadges)
+            tagsAndBadges,
+            inclPageId = true)
 
-      pageStuffById.get(post.pageId) map { pageStuff =>
-        // Since these posts aren't wrapped in a page, but rather listed separately
-        // outside their parent pages, it's nice to have the page title available
-        // to show in the browser.  [posts_0_page_json]
-        // Typescript: PostWithPage
-        postJson += "pageId" -> JsString(post.pageId)
-        postJson += "pageTitle" -> JsString(pageStuff.title)
-        postJson += "pageRole" -> JsNumber(pageStuff.pageRole.toInt)
-        if (query.reqr.isStaff && (post.numPendingFlags > 0 || post.numHandledFlags > 0)) {
-          postJson += "numPendingFlags" -> JsNumber(post.numPendingFlags)
-          postJson += "numHandledFlags" -> JsNumber(post.numHandledFlags)
-        }
-        postJson
+      if (query.reqr.isStaff && (post.numPendingFlags > 0 || post.numHandledFlags > 0)) {
+        postJson += "numPendingFlags" -> JsNumber(post.numPendingFlags)
+        postJson += "numHandledFlags" -> JsNumber(post.numHandledFlags)
       }
+
+      // Since these posts aren't wrapped in a page, but rather listed separately
+      // outside their parent pages, it's nice to have the page title available
+      // to show in the browser. And page id, see `inclPageId` above.  [posts_0_page_json]
+      // Typescript: PostWithPage
+      assert(JsonUtils.parseOptSt(postJson, "pageId") == Some(pageStuff.pageId))
+      postJson += "pageTitle" -> JsString(pageStuff.title)
+      postJson += "pageRole" -> JsNumber(pageStuff.pageRole.toInt)
+      postJson
     }
 
     Json.obj(  // Typescript: LoadPostsResponse
             "posts" -> JsArray(postsJson),
+            "bookmarks" -> JsArray(bookmarksJson),
             "storePatch" -> Json.obj(
               // RENAME  to patsBr? (for "brief", Ty standard abbreviation)
               "patsBrief" -> patsJsArr,
@@ -276,7 +328,7 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   def downloadUsersContent(authorId: UserId): Action[Unit] = GetActionRateLimited(
         RateLimits.DownloadOwnContentArchive) { request: GetRequest =>
     // These responses can be huge; don't prettify the json.
-    _listPostsImpl(authorId, all = true, request)
+    _listPostsImpl(authorId, onlyPostType = None, all = true, request)
   }
 
 

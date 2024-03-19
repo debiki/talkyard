@@ -136,6 +136,7 @@ sealed abstract class PostType(
   protected val IntValue: Int,
   val isChat: Bo = false,
   val isComment: Bo = false,
+  val isPrivate: Bo = false,
 ) {
   def toInt: Int = IntValue
   def isWiki = false
@@ -145,11 +146,17 @@ sealed abstract class PostType(
 }
 
 
-// REFACTOR. See harmless bug below. Should change to a bit field, or split into separate fields.
+// REFACTOR. See harmless bug below. Should change *some* types to a bit field,
+// or split into separate fields.
 // The title should be it's own type. Maybe title and OP will be -1 and 1?
 // And comments 2, meta posts 3?
+// But types Bookmark, Flag, Comment, Meta Comment still make sense?
+// (Can't be both a bookmark and a flag, for example.)
 //
-@deprecated  // [depr_post_type]
+// Currently types 1-12 are used in discussions  [depr_post_type],
+// and can be tagged and bookmarked. SHOULD change to 1-31? Why not be able to
+// tag & bookmark CompletedForm and MetaMessage?
+//
 object PostType {
 
   // Maybe could be the same as PageType, + a higher bit set, if is a chat message, and another,
@@ -223,6 +230,7 @@ object PostType {
   //    date. For FormSubmission pages only.
   // ? But isn't this CompletedForm above ?
 
+  // But should be a *page* & page type, not a post?
   /** Later:
     *
     * Flags of posts and pats, will in the future be posts themselves [flags_as_posts] —
@@ -242,15 +250,13 @@ object PostType {
     * version control? Should  posts_t  include a val_json_c  or  val_i32_c  (and maybe a  title_c),
     * in addition to  current_source_c?  And editing any, creates a new post revision?
     */
-  case object Flag_later extends PostType(-1)   // probably not 51
+  case object Flag_later extends PostType(-1)
 
-  /** Later: Bookmarks.
+  /** Bookmarks. Post nrs should be < 0, so can easily avoid loading other people's bookmarks.
     *
-    * A tree of bookmarks would be nicely stored as posts? Posts form a tree already,
-    * have edit history, sub threads can be moved to other places in the tree.
-    * And can be shared with each other, by changing visibility.
+    * Is private: Others cannot see your bookmarks.
     */
-  case object Bookmark_later extends PostType(-1)
+  case object Bookmark extends PostType(51, isPrivate = true)
 
 
   def fromInt(value: Int): Option[PostType] = Some(value match {
@@ -263,7 +269,7 @@ object PostType {
     case CompletedForm.IntValue => CompletedForm
     case MetaMessage.IntValue => MetaMessage
     case Flag_later.IntValue => Flag_later
-    case Bookmark_later.IntValue => Bookmark_later
+    case Bookmark.IntValue => Bookmark
     case _ => return None
   })
 }
@@ -478,8 +484,8 @@ case class Post(   // [exp] ok use
   require(id >= 1, "DwE4WEKQ8")
 
   if (isPrivate) {
-    require(nr == PageParts.TitleNr || nr <= PageParts.MaxPrivateNr, s"Private post nr is: ${nr
-          } but should be < ${PageParts.MaxPrivateNr} [TyEPRIVPONR]")
+    require(nr <= PageParts.MaxPrivateNr, s"Private post nr is: ${nr
+          } but should be <= ${PageParts.MaxPrivateNr} [TyEPRIVPONR]")
   }
   else {
     require(nr == PageParts.TitleNr || nr >= PageParts.BodyNr, s"Post nr: $nr [TyE4AKB28]")
@@ -579,7 +585,7 @@ case class Post(   // [exp] ok use
   def isOrigPostReply: Boolean = isReply && parentNr.contains(PageParts.BodyNr) && !isBottomComment
   def isMultireply: Boolean = isReply && multireplyPostNrs.nonEmpty
   def isFlat: Boolean = tyype == PostType.Flat
-  def isPrivate: Bo = false // privatePatsId.isDefined  [priv_comts]
+  def isPrivate: Bo = tyype.isPrivate // || privatePatsId.isDefined  [priv_comts]
   def isMetaMessage: Boolean = tyype == PostType.MetaMessage
   def isBottomComment: Boolean = tyype == PostType.BottomComment   // RENAME to isProgressReply
   def shallAppendLast: Boolean = isMetaMessage || isBottomComment
@@ -604,6 +610,7 @@ case class Post(   // [exp] ok use
 
   def createdAtUnixSeconds: UnixSecs = createdAt.getTime / 1000
   def createdAtMillis: UnixMillis = createdAt.getTime
+  def createdAtMnt: UnixMinutes = (createdAt.getTime / MillisPerMinute).toInt
   def createdWhen: When = When.fromMillis(createdAt.getTime)
 
   def newChildCollapsedStatus = new CollapsedStatus(

@@ -560,7 +560,8 @@ package object core {
   }
 
 
-  val LowestTempImpId: Int = 2*1000*1000*1000
+  val LowestTempImpId: Int     = 2*1000*1000*1000
+  val RandomIdNrRangeLen: Int  =      9*1000*1000
   val FirstTempImpId: Int = LowestTempImpId + 1
   def isPageTempId(pageId: PageId): Boolean =
     pageId.length == 10 && pageId.startsWith("2000") // good enough for now

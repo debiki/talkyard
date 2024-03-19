@@ -1,0 +1,16 @@
+
+Later:
+
+More data types, e.g. dates, date ranges, full text, geo locations,
+& ways to filter & search, e.g. all pages/events close to a city (coordinate).
+See Scala object TypeValueType.
+
+Distant future:
+
+[bottom_up_tags]
+Let people create their own tag types, own names.
+These will be scoped by user id, so won't be name conflicts (the db constraints
+in the tagtypes_t table support this alraedy, e.g.: tagtypes_u_anypat_urlslug).
+Later, moderators can promote these personal tag types to official tags
+(if the users want).
+

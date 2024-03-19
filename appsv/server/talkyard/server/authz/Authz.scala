@@ -519,11 +519,21 @@ object Authz {
       if (!mayWhat.mayEditPage) // before: user.id != pageMeta.authorId && !user.isStaff)
         return NoMayNot("EsEMAY0REMINDM", "Not allowed to add more items to this mind map")
     }
+    else if (postType.isPrivate) {
+      // That means the new "reply" is a private comment [priv_comts]  or a bookmark.
+      // Those are ok to add — other's won't see them (except for the people one adds to
+      // the private thread).
+      // Later: But private comments won't have any special type?  They'll just have a
+      // nr <= PageParts.MaxPrivateNr?  Maybe a `willBePrivate` param instead?
+    }
     else {
       if (!mayWhat.mayPostComment)
         return NoMayNot("EdEM0RE0RE", "You don't have permissions to post a reply on this page")
     }
 
+    // (This prevents us from bookmarking pages that can't have replies — that's ok,
+    // they're e.g. forum index pages, blog index pages, or special pages e.g. CSS, or
+    // legacy pages e.g. html. Not important to bookmark, and isn't any UI for that anyway.)
     if (!pageMeta.pageType.canHaveReplies)
       return NoMayNot("EsEM0REPAGETY", s"Cannot post to page type ${pageMeta.pageType}")
 

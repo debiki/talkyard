@@ -182,6 +182,7 @@ window['theStore'] = store; // simplifies inspection in Dev Tools — and hacky 
 
 store.postsToUpdate = {};
 
+
 if (store.user && !store.me) store.me = store.user; // try to remove
 if (!store.me) {
   store.me = makeStranger(store);
@@ -192,9 +193,10 @@ store.user = store.me; // try to remove
 // Auto pages are e.g. admin or user profile pages, html generated automatically when needed.
 // No page id or user created data server side. Auto pages need this default empty stuff,
 // to avoid null errors.
-export function makeAutoPage(): Page {
+export function makeAutoPage(pageId?: PageId): Page {
   return <Page> <any> <AutoPage> {
     dbgSrc: 'AP',
+    pageId,
     ancestorsRootFirst: [],
     pageMemberIds: [],
     postsByNr: [],
@@ -1073,6 +1075,7 @@ export function clonePost(postNr: number): Post {
 
 
 function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
+  const isCurrentPage = pageId === store.currentPageId;
   const page: Page = store.currentPage;
 
   if (page.pageId !== pageId) {
@@ -1093,8 +1096,8 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
     post.summarize = oldVersion.summarize;
   }
 
-  if (post.isPreview) {
-    // Don't update num replies etc fields.
+  if (post.isPreview || post_isPrivate(post)) {
+    // Don't update num replies etc fields. [0_stats_for_priv_posts]
   }
   else if (oldVersion) {
     if (post_isReply(post)) {
@@ -1128,9 +1131,23 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
 
   const layout: DiscPropsDerived = page_deriveLayout(page, store, LayoutFor.PageWithTweaks);
 
-  // In case this is a new post, update its parent's child id list.
+  // In case this is a new post, update its parent's bookmarks or replies list.
+  // (Maybe break out some obj_addArrayItem_inPl__unimp fn? To use in the if-else branches.)
   const parentPost = page.postsByNr[post.parentNr];
-  if (parentPost) {
+  if (parentPost && post.postType === PostType.Bookmark) {
+    let bookmarkNrs = parentPost.bookmarkNrs;
+    const alreadyHere = _.find(bookmarkNrs || [], nr => nr === post.nr);
+    if (!alreadyHere) {
+      if (!bookmarkNrs) {
+        bookmarkNrs = [];
+        parentPost.bookmarkNrs = bookmarkNrs;
+      }
+      bookmarkNrs.push(post.nr);
+      sortPostNrsInPlace(
+            bookmarkNrs, page.postsByNr, PostSortOrder.NewestFirst);
+    }
+  }
+  else if (parentPost) {
     const childNrsSorted = parentPost.childNrsSorted;
     const alreadyAChild = _.find(childNrsSorted, nr => nr === post.nr);
     if (!alreadyAChild) {
@@ -1170,11 +1187,15 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
         page.parentlessReplyNrsSorted, page.postsByNr, sortOrder);
   }
 
+  // If we aren't showing the page (but just updating the store), then we're done now.
+  if (!isCurrentPage)
+    return;
+
   rememberPostsToQuickUpdate(post.nr);
 
   stopGifsPlayOnClick();
   setTimeout(() => {
-    debiki2.page.Hacks.processPosts();
+    debiki2.page.Hacks.processPosts(); // COULD_OPTIMIZE: Don't do for each new post, if many
     if (!oldVersion && post.authorId === store.me.id && !post.isPreview &&
         // Need not flash these — if one does sth that results in a meta comment,
         // then one is aware about that already (since one did it oneself).
@@ -1267,6 +1288,9 @@ function markPostAsRead(postId: number, manually: boolean) {
 let lastPostIdMarkCycled = null;
 
 function cycleToNextMark(postId: number) {
+  /* This was working 10+ years ago, but more like a demo — wasn't saved sever side.
+     Can be useful later when implementing:  [bookmark_shapes_colors]
+
   const me: Myself = store.me;
   const myPageData: MyPageData = me.myCurrentPageData;
   const currentMark = myPageData.marksByPostId[postId];
@@ -1307,6 +1331,7 @@ function cycleToNextMark(postId: number) {
   myPageData.marksByPostId[postId] = nextMark;
 
   rememberPostsToQuickUpdate(postId);
+  */
 }
 
 
@@ -1672,7 +1697,7 @@ function sortPostNrsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
 }
 
 
-function postAppearedBefore(postA: Post, postB: Post): number {
+export function postAppearedBefore(postA: Post, postB: Post): number {
   // Sync w Scala [5BKZQF02]
   // BUG  [first_last_apr_at]  use 'nr' only, to sort by date, for now.
   /*
@@ -1687,7 +1712,19 @@ function postAppearedBefore(postA: Post, postB: Post): number {
   if (postA.isPreview != postB.isPreview)
     return postA.isPreview ? +1 : -1;
 
-  return postA.nr < postB.nr ? -1 : +1;
+  // Private posts (incl bookmarks) have random negative nrs. Then, sort by
+  // created-at instead of nr. (But otherwise better to sort by nr, since a comment
+  // might have been posted long ago, and moved to the current page just recently
+  // — then, since it's new on the current page, it appeared later.)
+  if (postA.nr <= PostNrs.MaxPrivateNr || postB.nr <= PostNrs.MaxPrivateNr) {
+    // They might have been created using software at the exact same timestamp.
+    // Then skip this, and sort by nr instead, below.
+    if (postA.createdAtMs !== postB.createdAtMs) {
+      return postA.createdAtMs - postB.createdAtMs;
+    }
+  }
+
+  return postA.nr - postB.nr;
 }
 
 

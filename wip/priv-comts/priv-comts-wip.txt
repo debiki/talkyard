@@ -1,0 +1,37 @@
+
+Private comments [priv_comts], also see  maybe-do-later.txt.
+
+
+A better way to implement private comments:  [priv_comts_pages]
+(Then maybe negative nrs should be "personal" rather than "private" ?)
+
+For each private comment and sub comments, create a new & separate *page*,
+and let it be a sub page, of PageType.PrivateComments, of the current page.
+
+Benefits:
+ - Won't load private comments by mistake. They're on totally different pages.
+ - Can use the same access permission to manage who can see a private thread,
+    as for managing members of a private chat or private DMs.
+ - Pretty easy & efficient to load all private comments, for those who are
+    talking in private sub threads: An index on parent page id & child page type,
+    to load all relevant private comment trees (pages), and then filter on
+    one's id and groups to know which ones one can see.
+ - Can reuse for implementing sub tasks [sub_pages].
+
+That's better than storing private trees as ordinary comments but with negative ids
+and inventing a new permission system, like I was thinking when I added
+   posts3.private_pats_id_c.
+
+
+This could be a nice way to (re)implement flags? A flag is then a separate
+page linking to the flagged post, [flags_as_posts]  and any discussion about
+the flagged comment can be shown inline in the discussion with the flagged comment,
+just like private comment threads. Only the mods could see, and they'll now
+have all the context (all ancestor comments) & any discussions about the flagged
+comment visible at once.
+
+
+Related: (sometimes old out-of-date thoughts)
+  [its_a_node]
+  [remember_if_bookmarks_or_priv_comts]
+

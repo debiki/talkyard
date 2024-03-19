@@ -79,9 +79,6 @@ declare const UnknownUserId: UserId;
 
 declare const ReviewDecisionUndoTimoutSeconds: number;
 
-declare function makeNoPageData(): MyPageData;
-declare function makeAutoPage(): any;
-
 declare const ManualReadMark;
 declare const YellowStarMark;
 declare const FirstStarMark;
@@ -213,6 +210,7 @@ declare namespace debiki2 {
   function replaceById(itemsWithId: any[], replacement);
   function deleteById(itemsWithId: any[], id);
   function url_getHost(url: St): St;
+  function arr_concat<V>(a: V[] | NU, b: V[] | NU): V[];
   function arr_sortAlphaInPlace<V>(vs: V[], strFn: (v: V) => St);
 
   namespace notfs {
@@ -428,6 +426,9 @@ declare namespace debiki2 {
 
   function categories_sortTree(categories: Category[]): CatsTree;
 
+  function makeNoPageData(): MyPageData;
+  function makeAutoPage(pageId?: PageId): Page;
+
   function store_curPage(store: Store): Page | U;
 
   function page_makePostPatch(page: Page, post: Post): StorePatch;
@@ -466,6 +467,7 @@ declare namespace debiki2 {
   function origin(): string;
   function linkToPageId(pageId: PageId): string;
   function linkToPostNr(pageId: PageId, postNr: PostNr): string;
+  function linkToPost(post: PostWithPageId): St;
   function linkToType(type: TagType): St;
   function linkToDraftSource(draft: Draft, pageId?: PageId, postNr?: PostNr): string;
   function linkToNotificationSource(notf: Notification): string;
@@ -510,6 +512,7 @@ declare namespace debiki2 {
   function tags_mkSortFn(tagTypesById: TagTypesById): (a: Tag, b: Tag) => Nr;
 
   function isSection(pageRole: PageRole): boolean;
+  function page_unsafeTitle(page: Page): St | U;
   function page_isClosedUnfinished(page: Page): Bo;
   function page_isDone(page: Page | Topic): Bo;
   function page_canBeDone(page: Page | Topic): Bo;

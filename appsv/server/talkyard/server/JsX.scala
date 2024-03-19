@@ -767,6 +767,10 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
+  // Is duplicated here and there, oh well. At least currently there's no other
+  // json field named "nr" that can have negative values (like private posts do).
+  val PostNrIdFieldName = "nr"
+
   RENAME // add suffix:  JsPostVb_butNoPatRels  ?
   def JsPostInclDetails(post: Post): JsObject = {
     COULD_OPTIMIZE // Skip null / false fields, so less json.
@@ -774,7 +778,7 @@ object JsX {   RENAME // to JsonPaSe
     Json.obj(
       "id" -> post.id,
       "pageId" -> post.pageId,
-      "nr" -> post.nr,
+      PostNrIdFieldName -> post.nr,
       "parentNr" -> JsNumberOrNull(post.parentNr),
       "multireplyPostNrs" -> JsArray(), // post.multireplyPostNrs
       "postType" -> post.tyype.toInt,
@@ -936,6 +940,7 @@ object JsX {   RENAME // to JsonPaSe
     val jOb = asJsObject(jsVal, "tag type")
     val id = parseInt32(jOb, "id")
     val refId = parseOptSt(jOb, "refId")
+    val scopedToPatId = None // later: Opt[PatId] = parseOptInt32(jOb, "scopedToPatId")
     val canTagWhat = parseInt32(jOb, "canTagWhat")
     val dispName = parseSt(jOb, "dispName")
     val anySlug = parseOptSt(jOb, "urlSlug").noneIfBlank
@@ -957,6 +962,7 @@ object JsX {   RENAME // to JsonPaSe
     TagType(
           id = id,
           refId = refId,
+          scopedToPatId = scopedToPatId,
           canTagWhat = canTagWhat,
           urlSlug = anySlug,
           dispName = dispName,

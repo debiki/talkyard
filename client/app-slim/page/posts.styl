@@ -693,7 +693,12 @@ html:not(.mouse) .dw-rr
   display: inline-block;
   position: relative;
   top: -1px;
-  margin-right: 10px;
+  // margin-right: 10px;
+  // But this looks better if there's a bookmark button just after. Hmm.
+  // But 10px is better, if tags after. Maybe margin-left on tags instead?
+  // margin: 0 2px 0 2px;
+  // Sort of ok w both:
+  margin: 0 5px 0 1px;
 
 .dw-a-clps.icon-left-open,
 .dw-a-clps.icon-right-open
@@ -969,8 +974,12 @@ html:not(.mouse) .dw-rr
     opacity: 0.76
 
 
-// Marks
+// Marks  incl bookmarks
 //===========================
+
+span.s_P_H_Bm.dw-p-mark-click
+  padding: 5px;
+  margin-right: 4px;
 
 .dw-p-mark-click
   padding: 7px 0px 7px 5px;
@@ -984,6 +993,13 @@ html:not(.mouse) .dw-rr
   &:hover
     outline: 2px solid hsl($uiHue, 100%, 77%);
     background: hsl($uiHue, 100%, 97%);
+
+// A bookmark icon <span> — maybe skip, and add class to the wrapping <span> instead?
+.dw-p-mark.icon-bookmark
+  color: hsl($uiHue, 85%, 60%);
+  margin: 0;
+  &:before
+    font-size: 122%;
 
 html.touch .dw-p-mark-click
   padding: 9px 5px 9px 5px;

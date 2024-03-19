@@ -675,6 +675,17 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     result
   }
 
+  /** Returns a random number between -RandomIdNrRangeLen and  PageParts.MaxPrivateNr.
+    */
+  def nextRandomPrivPostNr(): i32 = {
+    assert(PageParts.MaxPrivateNr == -1001)
+    val positiveNr = _random.nextInt(RandomIdNrRangeLen + PageParts.MaxPrivateNr)
+    val nr = -positiveNr + PageParts.MaxPrivateNr
+    require(nr <= PageParts.MaxPrivateNr)
+    require(nr >= -RandomIdNrRangeLen)
+    nr
+  }
+
 
   /** Generates a by default 130 bits entropy string, almost 26 chars long since
     * each char in a 32 chars alphabet has 5 bits (but we use 36 chars here).

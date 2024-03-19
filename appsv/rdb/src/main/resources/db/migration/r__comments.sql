@@ -179,6 +179,29 @@ $_$;
 --@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
+--======================================================================
+--  drafts3
+--======================================================================
+
+------------------------------------------------------------------------
+comment on table  drafts3  is $_$
+Should remove, and store drafts in posts_t/nodes_t instead. [drafts3_2_nodes_t]
+With negative nrs, to indicate that they're private (others can't see
+one's drafts). Then, once published, the nr changes to the next public nr
+on the relevant page (i.e. 1, 2, 3, ...).
+But what about the `title` column — there's no title column in posts_t.
+Maybe wait until pages are stored in nodes_t, and then create both a
+title & a body post that together become the new page draft.
+$_$; -- '
+
+------------------------------------------------------------------------
+comment on column  drafts3.order_c  is $_$
+For sorting drafts in one's todo list (with tasks, bookmarks, drafts).
+Once drafts3 has been merged into posts_t, maybe merge posts_t.pinned_position
+into order_c? Then use it both for sorting personal posts
+(drafts, bookmarks) and for public post pin order (if any — rarely used).
+$_$; -- '
+
 
 --======================================================================
 --  pats_t
@@ -212,6 +235,8 @@ comment on table  post_actions3 is $_$
 To be renamed to  pat_post_rels_t or pat_node_rels_t. Currently stores votes,
 AssignedTo, and flags.  Later, flags will be kept in posts_t instead,
 linked to the flagged things via the upcoming table post_rels_t.
+Maybe assigned-to could be a post too? So can add a note about what the assignee 
+is assigned to do — maybe assigned-to-review for example. [tasks_2_nodes_t]
 $_$;
 
 ------------------------------------------------------------------------
@@ -228,6 +253,12 @@ $_$;
 ------------------------------------------------------------------------
 comment on index  patnoderels_i_pageid_fromtrueid  is $_$
 For finding one's Like votes etc done anonymously on the current page.
+$_$;
+
+------------------------------------------------------------------------
+comment on column  post_actions3.order_c  is $_$
+For the assignee, so han can reorder the task as han wants, in hans
+personal todo list (with tasks, bookmarks, drafts).
 $_$;
 
 
@@ -315,12 +346,33 @@ And to find the true author, one looks up that anon/pseudonym in pats_t,
 and looks at the true_id_c column.
 $_$; -- '
 
+------------------------------------------------------------------------
+comment on column  posts3.order_c  is $_$
+For sorting bookmarks in one's todo list (together with tasks, bookmarks, drafts).
+Maybe merge posts_t.pinned_position into order_c, don't need both?
+Can't have public posts directly in one's todo list — instead, they'd be
+there via bookmarks or assigned-to relationships. So, don't need both order_c
+and pinned_position?
+> 0 means place first, ascending?
+< 0 means place last (asc or desc? from end?), for less important bookmarks?
+null (or 0) means in the middle (after the > 0 but before the < 0), newest first?
+$_$;
 
+------------------------------------------------------------------------
+comment on column  posts3.pinned_position  is $_$
+Rename to  order_c. Use for sorting one's private posts: bookmarks and drafts.
+$_$; -- '
 
 ------------------------------------------------------------------------
 comment on column  posts3.private_status_c  is $_$
+NO, skip this. Instead, use private pages  [priv_comts_pages] 
+for storing private comments? And all comments on such a page, are private,
+private_status_c is overkill.
+
 If non-null, the post is private, and all descendants (the whole
-comments tree or page if it's the orig post) are private too.
+comments tree or page if it's the orig post) are private too. Its
+post nr (and those of all its descendants) must be negative, <=
+PageParts.MaxPrivateNr.
 
 In  perms_on_pages3.{may_post_comment, may_see}  we see who may
 reply to (or only see) the private tree.
@@ -331,28 +383,37 @@ tree, and if someone added, can see already existing private comments
 These things can only be changed in the more-private direction,
 once the private tree has been created.  Maybe values could be:
 
-0 or null: Not private.
-1: Can add more private members, and make it public. The default.
-   All other values below, won't be implemented the nearest ... years?:
-2: Can add more people to the private tree, that is, make it less private, sort of.
-   And they get to see the alreday existing comments.
-3: Can add more people to a private tree, but they don't get to see any
-   already existing comments; they can see only comments posted after they
-   (the new people) got added. Will use  perms_on_posts3.can_see_priv_aft_c
-   to remember when?
-4: If adding more people to a private page, instead, a new private page
-   gets created, with the original people plus the ones now added.
-   (And you can keep adding people, until a comment has been posted on this
-   new page — thereafter, adding more, cerates yet another page.)
-   Then new people won't see that there was an earlier discussion,
-   with fewer participants.
-5: Cannot add more private pats (except for by adding to a group who can see).
-6: Cannot add more private pats, not even by adding sbd to a group.
-   (How's that going to get implemented? And does it ever make sense)
+Edit: Isn't it better to store the below "was previously public" in a separate
+field, e.g.  was_public_until_c  — then we'd know for about how long too.
+Or don't store at all in posts3, only in the audit log. [_skip_was_pub]  /Edit
 
-Comments in private comment trees have nr:s < 0
-(actually, <= -1001, PageParts.MaxPrivateNr), so there's a quick way for Ty
-to skip them when loading comments to show by default on a page, *and*
+Null: Not private. Edit: Or it can be a bookmark? [bookm_0_priv_status]
+4:  Like 5, but was previously public for a while?  EDIT: _skip_was_pub? See above.
+5:  Can add more private members, and make it public. The default.
+    All other values below, won't be implemented the nearest ... years?:
+8:  Like 9, but previously_public.
+9:  Can add more people to the private tree, that is, make it less private, sort of.
+    And they get to see the alreday existing comments.
+12:  Like 12, but previously_public.
+13: Can add more people to a private tree, but they don't get to see any
+    already existing comments; they can see only comments posted after they
+    (the new people) got added. Will use  perms_on_posts3.can_see_priv_aft_c
+    to remember when?
+16:  Like 17, but previously_public.
+17: If adding more people to a private page, instead, a new private page
+    gets created, with the original people plus the ones now added.
+    (And you can keep adding people, until a comment has been posted on this
+    new page — thereafter, adding more, cerates yet another page.)
+    Then new people won't see that there was an earlier discussion,
+    with fewer participants.
+20:  Like 9, but previously_public.
+21: Cannot add more private pats (except for by adding to a group who can see).
+24:  Like 9, but previously_public.
+25: Cannot add more private pats, not even by adding sbd to a group.
+    (How's that going to get implemented? And does it ever make sense)
+
+Since private comments have nr:s <= -1001 (PageParts.MaxPrivateNr), they can be
+effectively skipped when loading comments to show by default on a page, *and*
 so there won't be any gaps in the not-private comment nr sequence (> 0).
 Comments on private *pages* though, can have nrs > 0? Because anyone who can
 see the private page, can see those comments, so we want to load all of them.
