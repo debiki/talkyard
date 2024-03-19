@@ -1,6 +1,14 @@
 
 /*
 
+Update 2024:
+    If you don't know, use  morekit.openProxyDiag().  It works also in embedded iframes
+    — it knows if parts of the iframe it is in, isn't visible, because the human has
+    scrolled down/up a bit.
+
+    See e.g.: client/app-more/tags/tag-dropdown.more.ts  search for 'openProxyDiag'.
+
+
 Is there a dialog template?
 
 Almost, look at:  client/app-more/page-dialogs/disc-layout-dialog.more.ts
@@ -16,7 +24,7 @@ Sometimes you want a mini menu popup, right where you clicked
   a modal dialog in the middle & top of the page, it might be outside (above)
   the viewport, if one has scrolled down to view comments futher below),
 then use:
-            SimpleDropdown
+            SimpleDropdown — no? I've renamed it to morekit.openProxyDiag() I think.
 
 
 
