@@ -38,5 +38,5 @@ addDependencyTreePlugin
 
 // Makes e.g. Git SHA1 available to the Scala code at runtime.
 // ---------------------------------------------------------------
-addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.11.0")
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.12.0")
 
