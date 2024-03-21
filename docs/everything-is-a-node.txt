@@ -1,6 +1,10 @@
 [add_nodes_t]
 
+See the _explanation below.
+
+
 alter table posts3 rename to nodes_t
+  & move pages & categories to that table too — they're all nodes.
 
 alter table post_actions3 rename to  pat_node_rels_t
 — if it's interesting to know when and by who a relationship was added, e.g.:
@@ -8,6 +12,9 @@ Assigned to Alice by Bob on 2023-04-05. Or post revision nr, or any rel specific
 value (pat_node_rels_t.val_i32_c).
 
 alter table perms_on_pages3 rename to  pat_node_multi_rels_t
+-- "multi", because  many relationships in the same table row.
+-- Each one isn't that interesting. Unlike pat_node_rels_t, which has one
+-- relationship per row, plus some relationship properties.
 
 Move from  categories_t, pages3, posts3  to pat_node_multi_rels_t:
     comts_start_hidden_c  never_always_d
@@ -226,7 +233,32 @@ NEXT: Add these fields to perms_on_pages3  (to be renamed to  pat_node_multi_rel
   )
 
 
- (s = site)
+The leftmost column below is a list of these, e.g. "c,p,po":  _explanation
+    s       = exists in site settings
+    c       = is a cat prop
+    proj    = project page ? (a page with sub pages, probably w doing-status)
+    p       = is a page prop
+    po      = is a post prop
+    pstat   = is page statistics
+    g       = is a group prop ?  (or user, but usually better to configure groups)
+    jn      = journal ?  (similar to audit log, but shouldn't be deleted —
+                                      is needed to know e.g. who may undo sth)
+    rel     = node —> node relationship, e.g. X-is-answer-of-Y, or X-is-flag-of-Y.
+    rm      = remove (column not needed)
+    tty     = is a type property, needed in the types_t table (currently named tagtypes_t)
+    tag     = is a tag prop
+And "c,p,po" means that the database table column just to the right,
+is needed for categories, pages and posts. For example:
+"c,p,po  may_edit_comment"  — if it's set on a category, then one may edit
+comments everywhere in the category. Or everywhere on a page, if set on a page.
+Or one may edit a specific comment.
+
+But, with everything as a node,  "c,p,po" wouldn't be 3 separate tables, but
+instead one table, with different types of rows (nodes are cats, others pages,
+others comments). — And now, with everything in one table, there's no need to
+repeat these columns x 3.
+
+
 
 group_participants3  ——>  pat_rels_t   (or  pat_pat_rels_t ?)
 --------------------------------------------------------------------------
@@ -602,7 +634,7 @@ pages3
  c,p      locked_at              | timestamp
  c,p      frozen_at              | timestamp
  p        unwanted_at            | timestamp
- p        planned_at             | timestamp
+ p,po     planned_at             | timestamp
  p        version                | integer
  pstat    last_reply_by_id       | integer
  pstat    frequent_poster_1_id   | integer
@@ -615,8 +647,8 @@ pages3
  c,p      layout                 | bigint              pers_pref: layout
  p        hidden_at              | timestamp
  c,p      incl_in_summaries      | smallint            pers_pref: emails
- p        started_at             | timestamp
- p        postponed_til_c        | timestamp
+ p,po     started_at             | timestamp
+ p,po     postponed_til_c        | timestamp
  p        num_posts_total        | integer
  c,p      ext_id                 | character varying
  pstat    num_op_do_it_votes_c   | i32_gez_d
@@ -631,9 +663,9 @@ pages3
  c?,p,po  closed_by_id_c ‾‾‾\
  c?,p,po  locked_by_id_c     >  closed_status_c:  colsed, locked, frozen
  c?,p,po  frozen_by_id_c ___/
- p        unwanted_by_id_c       | integer
- p        hidden_by_id_c         | integer
- c,p      deleted_by_id_c        | integer
+ p,po     unwanted_by_id_c       | integer
+ p,po     hidden_by_id_c         | integer
+ c,p,po   deleted_by_id_c        | integer
  s,c,p    forum_search_box_c     | i16_gz_d
  s,c,p    forum_main_view_c      | i16_gz_d
  s,c,p    forum_cats_topics_c    | i32_gz_d
