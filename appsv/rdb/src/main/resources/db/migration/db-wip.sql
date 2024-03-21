@@ -13,6 +13,11 @@
 -- start & end with  ^  and   $.  Write an update stmt that removes
 -- any not-allowed stuff?
 
+-- Ooops,  tags_t.val_f64_b_c  is an  i32_d.
+     add column  val_f64_b_c  i32_d   -- in:  v423__type_val_type.sql
+-- Can just change, not in use anyway.
+alter table tags_t alter column val_f64_b_c type f64_d using (user_id::f64_d); -- or `using` not needed?
+
 alter table tags_t  add column  val_page_id_st_c   page_id_st_d;
 alter table tags_t  add column  val_node_id_later  node_id_d__later;
 alter table tags_t  add column  val_pat_id_c       pat_id_d;
