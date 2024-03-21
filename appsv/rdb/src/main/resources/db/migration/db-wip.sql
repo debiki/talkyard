@@ -13,6 +13,13 @@
 -- start & end with  ^  and   $.  Write an update stmt that removes
 -- any not-allowed stuff?
 
+alter table tags_t  add column  val_page_id_st_c   page_id_st_d;
+alter table tags_t  add column  val_node_id_later  node_id_d__later;
+alter table tags_t  add column  val_pat_id_c       pat_id_d;
+alter table tags_t  add column  for_pat_id_c       pat_id_d;
+
+
+
 
 -- *_u: For unused columns, just sketching the future:
 create domain i16_u smallint;
@@ -442,6 +449,8 @@ create unique index types_u_anypat_basetype_subtype_urlslug on types_t (
 
 -- upd triggers too!
 alter table post_actions3 rename to pat_node_rels_t; -- not: pat_rels_t;
+-- Also see: [tags_vs_pat_node_rels] — because pat_node_rels_t is
+-- pretty similar to tags_t.
 
 alter table post_actions3 drop column action_id; -- ?. Already noted below in "delete: ...".
 alter table post_actions3 rename to created_at to added_at_c;
@@ -587,6 +596,26 @@ $_$;
 --   about_tag_id_c,
 -- )
 
+-- Maybe a menu_t?
+
+create table menu_t (
+  site_id_c     site_id_d,
+  mene_id_c     i32_lt2e9_gt1000_d,
+  for_pat_id_c  pat_id_d,        -- oops, dupl!  Perm & visibilyty :-(  remipl all again? ugh
+  owned_by_pat_id_c  pat_id_d,   --
+  item_id_c     i32_lt2e9_gt1000_d,
+  parent_id_c   i32_lt2e9_gt1000_d
+  -- url_slug_c  url_slug_60_d
+  disp_name_c   tag_name_60_d,
+  long_name_c   tag_name_120_d,
+  abbr_name_c   tag_name_15_d,
+
+  link_cat_id_c       cat_id_d,
+  link_page_id_c      page_id_d,  -- ?
+  link_pat_id_c       pat_id_d,
+  link_tag_type_id_c  type_d,    -- incl tags, bookmarks, user badges
+
+);
 
 
 -- Split settings3 and pages3 into:
