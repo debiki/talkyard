@@ -443,13 +443,14 @@ on edge start or endpoint as appropriate).
 
 == Custom types and values
 
-Custom types, e.g. tag types, user badge types, are stored in types_t
-(currently named tagtypes_t). For example, a tag has a tag type that
+Custom types, e.g. tag types, bookmark types, user badge types, are kept in
+types_t (currently named tagtypes_t). For example, a tag has a tag type that
 says how the tag should be displayed: title, color, descr,
 if the tag can have values and then of what type.
 
 A type has a kind id, type id and sub type id.  Once a type has been
 created, these never changes. (Is primary key.)
+(But I didn't add any kind id column yet to tagtypes_t? Or yes, it's can_tag_what_c?)
 
 The "kind" says what kind of thing the type is for: nodes (in nodes_t,
 currently named posts3), or participants (pats_t, currently users3),
@@ -472,10 +473,28 @@ To do?: See `[Custom_types] [Alt_5]`
 in ../appsv/rdb/src/main/resources/db/migration/db-wip.sql
 
 
+== Tags, Badges & Bookmarks
+
+In Talkyard, tags, user badges & bookmarks are a bit the same thing: they're
+all in the tags_t table, and can have searhcable values
+
+
 === Tags with values
 
 Tags can have values, e.g. "Version: v1.23.4" or "Event-Location: Paris"
-or "Published-Year: 1999". This is not that much implemented though.
+or "Published-Year: 1999".  You can search & sort for tags and their values,
+e.g. this gives you a sorted prio list at forum.talkyard.io:
+"tags:priority:desc>2 is:open"
+
+=== Bookmarks
+
+(Not yet impl.) Bookmarks are personal tags, sort of. You can create your own
+bookmark types, e.g. "Reply-to", "Read-later", "To-do", "Reference",
+and filter on, say, "Reply-to" & "To-do", to find out what you should
+probably do next.
+
+==== Bookmark tasks
+
 
 
 

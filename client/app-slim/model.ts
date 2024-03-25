@@ -805,10 +805,10 @@ interface CategoryPatch extends Category {  // or Partial<Category>?
 
 
 
-interface TagType {
-  id: TagTypeId;
+interface TagType {       // RENAME to Type
+  id: TagTypeId;          // RENAME to TypeId
   refId?: RefId;
-  canTagWhat: ThingType;
+  canTagWhat: ThingType;  // RENAME & CHANGE to thingKind: KindOfThing? [ThingKind]
   dispName: St;
   urlSlug?: St;
   wantsValue?: NeverAlways;

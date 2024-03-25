@@ -86,7 +86,7 @@ create table tag_synonyms_t (
 
 
 
--- This'd be in  pat_rels_t instead? E.g.  Sarah —> PatRelType.SuggestDelete —> a-tag
+-- This'd be in  pat_node_rels_t  instead? E.g.  Sarah —> PatRelType.SuggestDelete —> a-tag
 --
 create table tag_actions_t (  -- maybe never
   site_id_c
@@ -115,7 +115,7 @@ create table perms_on_types_t(    -- much later.
   may_see_others_c,      -- false —> becomes personal bookmark / star?
   may_add_c,
   may_edit_others_c,
-  may_add_own_inst_c,
+  may_add_own_inst_c,   -- inst = "instance"?
   may_edit_own_inst_c,
   may_merge_c,
 );
@@ -138,15 +138,13 @@ create table types_use_where_t(    -- much later
 
 
 
-create table tags_t(
+create table tags_t
+  Done, see: /home/user/styd/ty2/docs/db-schema-dump/tags_t.txt .
 
   -- mayeb add later: ------------
   on_cat_id_c,
   on_tag_id_c,       -- tag a tag? Maybe later
   on_type_id_c,      -- e.g. tag a type with a "Merge this type with: (other type)"?
-
-  cust_i32_c   i32_d,
-  cust_json_c  jsonb_ste100_000_d,  -- simpler than  tag_vals_t?
 
   -- So anyone can suggest tags, but, say, a trusted member needs to review and
   -- approve — so tags end up getting wisely used: (tags are often a mess, in other
@@ -157,7 +155,6 @@ create table tags_t(
   hidden_by_id_c,  -- e.g. if staff added tag, but pat hides it, doesn't like it, then hidden_by_id_c = pat's id
   ----------------------------
 );
-----
 
 
 == Can tag what?
@@ -175,7 +172,7 @@ Guests, (built-in users), users, bot users, groups,  = 2^5 - 1 = 31.
   — what about accounts controlled by both a bot and a human? Or if unknown.
 Pages (orig posts), replies, meta posts, = 2^5 + 2^6 + 2^7 - 1 = 32+64+128 = 224
 Think about later: categories, tags, votes, flags, edit suggestions, plugins, ... .
------- Intstead?: -----
+------ Intstead?: -----  [ThingType_ids]
   Guests = 2^0 + Users = 2^1 + Groups = 2^2       =  7  (instead of 31)
      but what about anons, pseudonyms and circles?
   Pages  = 2^3 + Replies = 2^4 + Meta posts = 2^5 = 56  (instead of 224)
@@ -198,86 +195,29 @@ Therefore: domain thing_types_d, can be only 7 or 56, for now.
 
 == Tag values
 
-Maybe:  If a tag needs many values, let a single tag in  tags_t  consist of many rows,
-each row with one value?  — Instead of a new table tag_vals_t?
-NO, so complicated! Just add a  cust_jsonb_c  column and that's it — if a plugin
-    needs to store an array of values, then, it can do so in that jsonb thing.
+If ever needs tag values that are lists of user or page ids, then:
+Interesting about arrays of ids, instead of an id table with foreign keys,
+it's really fast:
+http://www.databasesoup.com/2015/01/tag-all-things.html & part 2 & 3.
+(But with arrays/json, foreign keys won't work.)
 
-either:  (but too complicated!?)
-    tags_t: remove pk
-    tags_t +=
-      has_extra_vals          bool
-      extra_val_for_tag_id_c  tag_id_d,
-
-or:      (but too complicated!?)
-    tags_t: add val_nr: 0,1,2,... , 0 could be the main
-    tags_t +=
-      has_extra_vals          bool
-      extra_val_for_tag_id_c  tag_id_d,
-      val_type_c     val_type_d,   -- e.g. date —> val_i64_c = unix time millis?
-                                    -- date_range —> val_i64_end_c  = end date range?
-                                    -- CVE score: (0, 10]
-                                    -- SemVer2 —> regex check?
-                                    -- etc etc
-
-and/or just inline all values, maybe:
-(Foreign keys won't work, but the simplicity and the higher performance and the
-lower bug risk (than if joining with a tag values table) is worth it I think!
-See: http://www.databasesoup.com/2015/01/tag-all-things.html & part 2 & 3.
-BUT there can be a  tag_rels_t  with links from tags to posts or pats, if that
-   ever makes sense. With foreign keys.  Just like there's  post_rels_t and pat_rels_t.)
-
-    -- Hmm this can handle almost everything?:
-    val_type_c     i32,
-    val_f64_c      f64,
-    val_text_c     text,
-    val_http_url_c http_url_d,
-    val_jsonb_c    jsonb_ste100_000_d,
-    ----------
-
-    val_i64_c      i64_d,    -- name it  cust_i64_c ?
-    -- Mabye skip all this (just an i64 and a jsonb can be enough?!) -----
-    val_i64_end_c  i64_d,
-    val_f64_c      f64_d,
-    val_f64_end_c  f64_d,
-
-    val_title_c    text w max len,
-    val_http_url_c http_url_d,
-
+Maybe later, probably never: (instead, the val_jsonb_c is flexible enough?)
     val_i32_arr_c   i32[],
     val_i64_arr_c   i64[],
     val_f64_arr_c   f64[],
     val_text_arr_c  text[],
-    ----------------------------------------------------------------------
-
-
-And tag_types_t:
-  allowed_val_types_c  User   for example    — maybe a bitfield?
-  max_num_vals_c      5   (0..=100 for example)   — e.g. assign sth to 5 ppl?
 
 
 Mat views are reealy slow, often out of sync:
     https://stackoverflow.com/questions/29437650/how-can-i-ensure-that-a-materialized-view-is-always-up-to-date
 
-Later:
 
-In Talkyard, tags will be able to have values. E.g. an Assigned-To page tag,
-with its value being the person (or people, or group) responsible for gettin it done.
-*NO*, instead, the links tables, just 1 row:
-        pat_rels_t:
-            from_pat_id_c = ...
-            to_post_id_c = ...
-            rel_type_c = PatLinkType.AssignedTo
-    That's simpler. But with tags, would need 2 rows (or 3 if counting the types_t row)
-    that's pointless indirection (linking a post and a person via a tag, not directly),
-    more complicated:
-        types_t:  Assigned-To tag type,
-        tags_t:   a tag of type Assigned-To, tagging the post
-        tag_rels_t:
-            from_tag_id_c =  the tag just above (in tags_t)
-            to_pat_id_c =    the person assigned
-
-And also, this makes it harder to write queries for looking up who's assigned to what
+------------------------------------------------
+Update 2024: Now each tag has only one reference value — seems there won't be any
+tag_rels_t.  Therefore, can use tags also for things like AssignedTo.
+------------------------
+We don't use tags for Assigned-To and Like etc relationships. That would have
+made it harder to write queries for looking up who's assigned to what
 — need to join all of:  posts_t, tags_t, types_t, tag_rels_t, pats_t
 
                           ,——> types_t: AssignedTo
@@ -285,28 +225,18 @@ And also, this makes it harder to write queries for looking up who's assigned to
             [post] <—— tag ——————> [person]
                           `~—————> [person-2]  (2 ppl assigned)
 
-     instead of just:   posts_t, pat_rels_t, pats_t
+     instead of just:   posts_t, pat_node_rels_t, pats_t
 
             [post] <——— AssignedTo ——— [person]
                  ^————— AssignedTo ——— [person-2]
 
-So don't use tags for AssignedTo etc.  Instead, pat_rels_t and the AssignedTo type.
+So don't use tags for AssignedTo etc.  Instead, pat_node_rels_t and the AssignedTo type.
+------------------------------------------------
 
--- Don't: ----------
-Or a Do-After tag, saying that something should/needs-to wait until
-after another feature/problem has been done/fixed.
--- Instead: --------
-A  post_post_rels_t  relationship of type  PostPostRelType.DoAfter?
-Just one row:
-            [idea post] ——> Depends-On ———> [other idea post]
-instead of with tags:  3 rows?
-            the tag itself
-            tag ——> do first post
-            tag ——> do later post
-But the  types_t  table is still needed, where not built-in types like  Depends-On  can be stored?
---------------------
-
---- NO, this'll probably be a post of type sth like AboutNotes, and a post_rels_t entry
+--- Update 2024: Yes, it's better with tags? Because then the *type* of relationship
+  (the tag type) is available directly, rather than having to look up the post too, first.
+  This makes it simpler to skip all for-the-moment off-topic posts.
+--- Old: NO, this'll probably be a post of type sth like AboutNotes, and a post_rels_t entry
       linking the post to the person?  No need to bring tags into this. Links are simpler,
       more direct.
 Or a "Staff Notes" tag (user badge) on a person, visible only to staff,
@@ -344,50 +274,6 @@ Many date-time ranges? (a many evenings / days event)
 Cat list?
 Tag list? Hmm
 
-----
-create table tag_vals_t(
-  site_id_c int,
-  tag_id_c int,
-
-  ----------------------------------------
-  -- But this would instead be in a table  tag_rels_t,
-  -- Like post_rels_t and pat_rels_t?
-  val_pat_id_c     i32,    -- e.g.  Assigned to: {some-user}  on a page
-
-  val_page_id_c    i32,    -- this tag or user badge, links to a page
-                           -- e.g. a "Maybe Promote" tag, placed on a user,
-                           -- visible only to core members,
-                           -- which links to a page with a discussion about
-                           -- what this user is doing well / why-very-helpful,
-                           -- explaining why s/he should be made a Trusted member.
-  val_cat_id_c     i32,
-  ----------------------------------------
-
-
-  -- Maybe not: -----------
-  -- Maybe simple_vals_c (see above) instead?
-
-  -- Link from a tag, to another tag, which could be on a different page? But why?
-  -- val_tag_id_c     i32,
-
-  -- val_type_id_c     i32,  -- link to a type? Mabye not.
-
-  --  val_i64_c         i64,
-  --  val_i64_len_c     i64_gez,  -- if a range
-
-  --  val_f64_c         f64,
-  --  val_f64_len_c     f64_gez,
-
-  --  -- val_f64_perc_c    f64,  -- for confidence intervals, percent?
-
-  --  val_text varchar,
-  --  val_text_end varchar,  -- if a text range, e.g. v0.2021.30 to v0.2021.40
-  --  val_json  jsonb_ste100_000_d,
-
-  --  val_link_url_c url_d,
-  --  val_link_title_c title_d,
-);
-----
 
 
 

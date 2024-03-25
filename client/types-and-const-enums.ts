@@ -190,16 +190,20 @@ const enum TypeValueType {
   // Flt64Range?
   // BigDecRange?
 
-  StrKwd          = 17,
+  StrKwd          = 17,   // 2^4 + 1
+  StrTxt          = 18,   // Unimpl server side!
   /*
-  StrTxt          = 18,
   StrUrl          = 19,
   SemanticVersion = 2?,
 
-  Date            = 33,
+  Date            = 33,   // 2^5 + 1
   DateRange       = 34,
 
-  LocationLatLong = 49,
+  LocationLatLong = 49,   // 2^5 + 2^4 + 1
+
+  Reminder        = 129,  // 2^7 + 1
+
+  PostLink        = 193,  // 2^7 + 2^6 + 1
   */
 }
 
@@ -212,16 +216,16 @@ const enum TopicFilters {
 
 
 // Also see type FindWhat in tests/e2e-wdio7/pub-api.ts. [ty_things_types]
+// And [ThingType_ids] in docs/design-docs/tags.dd.adoc.
 //
-const enum ThingType {  // or RENAME to TaggableThingType?
-  // How was I thinking? These numbers? Some kind of bitmasks, hmm.
-  // Pats = 1 + 2 + 4 = guests, users, groups (but which order?).
+const enum ThingType {  // or RENAME to TaggableThingType? no CHANGE to [ThingKind]?
+  // Pats = 1 + 2 + 4 = guests, users, groups.
   Pats = 7,
-  // Posts = Orig Posts (pages) + comments + ...what? + hmm. 32 + 16 + 8 = 56
+  // Posts = Pages = 8, comments = 16, meta posts = 32
   Posts = 56,
-  // And: Post tags = 64? Pat tags = 128?
-  // And cats 256, then? For now.
-  //Cats = 256,
+  // And: Post tags = 64? User badges (pat tags) = 128? Bookmaks = 256?
+  // And cats 512, then? For now.
+  //Cats = 512,
 
   All = Pats + Posts,  // RENAME to AllThatCanBeTagged
 }

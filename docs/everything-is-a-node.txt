@@ -14,27 +14,30 @@ value (pat_node_rels_t.val_i32_c).
 But keep  tags_t  — don't merge into pat_node_rels_t (which, if you look at the tables,
 might seem like a possibly good thing).  There's a difference between tags (in tags_t)
 and relationships (in pat_node_rels_t):    [tags_vs_pat_node_rels]
-   there can be just one relationship of a specific type between a person & a node.
-   But there can be many tags of the same type added to the same node (by the same person,
-   or different people).
+
+   There can be just one relationship of a specific type between a person & a node.
+   But there can be many *tags* of the same type, on a node (added by the same person).
    For example, a Like relationships: it's nice that the database enforces that there's
    just one Like relationships between each person & comment.
    But tags:  You might tag an event with "Happens-in", and if it happens in two
    cities, you'd like two tag of the same type, e.g.:  "Happens-in: New York" and
    "Happens-in: London", or "Happens-on: 2024-09-01" and "Happens-on: 2024-10-01".
    And tag values are searchable in ElasticSearch, but the things in pat_node_rels_t
-   don't have any searchable values.
+   don't have any searchable values (at least not now).
+  
    (Still unsure if maybe a single table would have been better, and having
    a "sub-id" for the (rare?) cases where many relationships of the same type
    makes sense. — Maybe ok either way)
+
    Also,  on_parent_tag_c  maybe won't ever make sense for relationships? (At least not
    in Talkyard's case?) Relationships in graph databases don't have parent *relationships*
-   (only parent & child *nodes*, but relationships don't have parent & child *relationships*).
+   (only parent & child *nodes*).
    But tags can be nested, and the tag_t table enforces that nested tags are indeed
-   on the same post or person (so you can't nest a tag C on page B in a tag P on page A
-   — tag C needs to be on the same page as tag P, that is, page A).
+   on the same post (so you can't nest a tag C on post B in a tag P on post A
+   — tag C needs to be on the same post as tag P, that is, post A).
    So maybe it's good with tags_t after all?  Some things are a bit specific to tags?
    (Tag hierarchies are pretty common in software — websearch for "tag hierarchies".) 
+
 
 alter table perms_on_pages3 rename to  pat_node_multi_rels_t
 -- "multi", because many relationships in the same table row, e.g.:
@@ -104,11 +107,18 @@ Comments:
   - NodeType.Comment.
   - Node text = comment text.
   - Child nodes = replies.
+  Skip:  (Too complicated, better use separate menus_t & menu_items_t tables.)
+  --------------------
   And, helpful for a bookmarks tree or to specify sidebar contents?:
   - Page child nodes: Show as a list below the comment? (When would that be useful?)
   - Category child nodes: Show as a list, too?
   Hmm but it's all a tree, currently — can't have many parent nodes.
   Need new table, maybe node_node_rels_t with column  other_parent_id_c  ?
+  --------------------
+
+  (But maybe a  node_node_rels_t  table, for e.g.  PostPostRelType.DoAfter:
+        [idea post] ——> Depends-On ———> [other idea post]
+  or  PostPostRelType.IsAlsoAnswerTo  for "secondary" answers, if many ok answers.)
 
 Then can:
   - Delete duplicated settings in:
