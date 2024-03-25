@@ -594,7 +594,37 @@ $_$;
 
 -- Maybe a menu_t?  See wip_v427__sidebar_menu.sql  (or v427__sidebar_menu.sql)
 
+-- [bookmarks] Do they want an 'order' or 'priority' value?  Or can pat
+-- use  val_i32_c for that?  But the software wouldn't know ...?
+-- Maybe:
+    -- If one wants to sort one's bookmark in maybe a priority order.
+    -- (Maybe not of any use for tags?)
+    -- > 0 means place first, ascending.
+    -- < 0 means place last (asc or desc? from end?), for less important bookmarks.
+    -- null (or 0) means in the middle (after the > 0 but before the < 0)
+    -- Or rename to priority?
+alter table tags_t
+    add column  order_c                   f32_nz_d;
+-- No! Add a types_t.value_type_c = Bookmark instead? ... Or, no. value_type_c = Task
+-- instead?  And kind_c = Bookmark?  Then:
+--    tagtype_id_c = e.g. read-later, reply-to, reference, to-do, custom,
+--                     all of which have  kind_c = KindOfThing.Bookmark
+--    val_type_id_c = Task | PostLink
+--    val_i32_c    = remind-me-at (indexed as a date-time in ElasticSearch)
+--    val_f64_c    = priority  (so can sort bookmarks by priority)
+--    val_str_c    = description
+--    val_url_c
+--    val_jsonb_c
+--    val_i32_b_c  = due at
+--    val_f64_b_c
+--
+-- Then, people can configure *tags* to function as reminders too. Then
+-- the tag appears in people's notification list, when it's time to remind them
+-- (them being the types_t.scoped_to_pat_id_c group?
+--   Or the  tags_t.visible_only_to_pat_id_c  group — no, that's just for
+--   rendering pages, right.)
 
+-- And change  can_tag_what_c ——>  kind_c = Tag | Badge | Bookmark (| TagBadge | NestedValue) ?
 
 
 -- Split settings3 and pages3 into:
