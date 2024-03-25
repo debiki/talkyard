@@ -592,26 +592,9 @@ $_$;
 --   about_tag_id_c,
 -- )
 
--- Maybe a menu_t?
+-- Maybe a menu_t?  See wip_v427__sidebar_menu.sql  (or v427__sidebar_menu.sql)
 
-create table menu_t (
-  site_id_c     site_id_d,
-  mene_id_c     i32_lt2e9_gt1000_d,
-  for_pat_id_c  pat_id_d,        -- oops, dupl!  Perm & visibilyty :-(  remipl all again? ugh
-  owned_by_pat_id_c  pat_id_d,   --
-  item_id_c     i32_lt2e9_gt1000_d,
-  parent_id_c   i32_lt2e9_gt1000_d
-  -- url_slug_c  url_slug_60_d
-  disp_name_c   tag_name_60_d,
-  long_name_c   tag_name_120_d,
-  abbr_name_c   tag_name_15_d,
 
-  link_cat_id_c       cat_id_d,
-  link_page_id_c      page_id_d,  -- ?
-  link_pat_id_c       pat_id_d,
-  link_tag_type_id_c  type_d,    -- incl tags, bookmarks, user badges
-
-);
 
 
 -- Split settings3 and pages3 into:
