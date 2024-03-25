@@ -1861,7 +1861,15 @@ trait UserDao {
         val emailTexts = talkyard.server.emails.out.Emails.inLanguage(settings.languageCode)
         val (site, siteOrigin, siteHostname) = theSiteOriginHostname(tx)
         val allAdmins = tx.loadAdmins()
-        allAdmins.filter(_.canReceiveEmail) foreach { admin =>
+        for {
+          admin <- allAdmins
+          // If an admin somehow hasn't approved hans email address.
+          if admin.canReceiveEmail
+          // When the owner verifies hans email, han will be in the allAdmins list
+          // (and the only one in the list — the forum is empty, at that time).
+          // Don't send han an an email about approving hanself:
+          if admin.id != userId
+        } {
           emailsToSend.append(Email.createGenId(
                 EmailType.NewMemberToApprove,
                 createdAt = tx.now,
