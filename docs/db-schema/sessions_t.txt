@@ -1,0 +1,31 @@
+                                Table "public.sessions_t"
+          Column           |            Type             | Collation | Nullable | Default 
+---------------------------+-----------------------------+-----------+----------+---------
+ site_id_c                 | i32_d                       |           | not null | 
+ pat_id_c                  | i32_d                       |           | not null | 
+ created_at_c              | timestamp without time zone |           | not null | 
+ deleted_at_c              | timestamp without time zone |           |          | 
+ expired_at_c              | timestamp without time zone |           |          | 
+ version_c                 | i16_gz_d                    |           | not null | 
+ start_ip_c                | inet                        |           |          | 
+ start_browser_id_c        | browser_id_d                |           |          | 
+ start_headers_c           | jsonb                       |           |          | 
+ part_1_comp_id_c          | base64us_len16_d            |           | not null | 
+ hash_2_for_embg_storage_c | bytea_len32_d               |           | not null | 
+ hash_3_for_dir_js_c       | bytea_len32_d               |           | not null | 
+ hash_4_http_only_c        | bytea_len32_d               |           | not null | 
+ hash_5_strict_c           | bytea_len32_d               |           | not null | 
+Indexes:
+    "sessions_p_patid_createdat" PRIMARY KEY, btree (site_id_c, pat_id_c, created_at_c)
+    "sessions_u_hash4" UNIQUE CONSTRAINT, btree (site_id_c, hash_4_http_only_c)
+    "sessions_u_part1" UNIQUE CONSTRAINT, btree (site_id_c, part_1_comp_id_c)
+    "sessions_i_patid_createdat_active" btree (site_id_c, pat_id_c, created_at_c DESC) WHERE deleted_at_c IS NULL AND expired_at_c IS NULL
+Check constraints:
+    "sessions_c_createdat_lte_deletedat" CHECK (created_at_c <= deleted_at_c)
+    "sessions_c_createdat_lte_expiredat" CHECK (created_at_c <= expired_at_c)
+    "settings_c_startheaders_len" CHECK (pg_column_size(start_headers_c) <= 1000)
+Foreign-key constraints:
+    "sessions_r_pats" FOREIGN KEY (site_id_c, pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+Referenced by:
+    TABLE "audit_log3" CONSTRAINT "auditlog_sid_part1_r_sessions" FOREIGN KEY (site_id, sess_id_part_1) REFERENCES sessions_t(site_id_c, part_1_comp_id_c) DEFERRABLE
+

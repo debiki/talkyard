@@ -1,0 +1,20 @@
+                              Table "public.blocks3"
+      Column       |            Type             | Collation | Nullable | Default 
+-------------------+-----------------------------+-----------+----------+---------
+ site_id           | integer                     |           | not null | 
+ threat_level      | smallint                    |           |          | 
+ blocked_at        | timestamp without time zone |           | not null | 
+ blocked_till      | timestamp without time zone |           |          | 
+ blocked_by_id     | integer                     |           | not null | 
+ ip                | inet                        |           |          | 
+ browser_id_cookie | character varying           |           |          | 
+Indexes:
+    "dw2_blocks_browseridcookie__u" UNIQUE, btree (site_id, browser_id_cookie) WHERE browser_id_cookie IS NOT NULL AND ip IS NULL
+    "dw2_blocks_ip__u" UNIQUE, btree (site_id, ip) WHERE ip IS NOT NULL
+    "dw2_blocks_blockedby__i" btree (site_id, blocked_by_id)
+Check constraints:
+    "dw2_blocks__c_something_blocked" CHECK (browser_id_cookie IS NOT NULL OR ip IS NOT NULL)
+    "dw2_blocks_blockedat_till__c" CHECK (blocked_at <= blocked_till)
+Foreign-key constraints:
+    "blocks_blockedby_r_people" FOREIGN KEY (site_id, blocked_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+

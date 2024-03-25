@@ -1,0 +1,19 @@
+                             Table "public.usernames3"
+       Column       |            Type             | Collation | Nullable | Default 
+--------------------+-----------------------------+-----------+----------+---------
+ site_id            | integer                     |           | not null | 
+ username_lowercase | character varying           |           | not null | 
+ in_use_from        | timestamp without time zone |           | not null | 
+ in_use_to          | timestamp without time zone |           |          | 
+ user_id            | integer                     |           | not null | 
+ first_mention_at   | timestamp without time zone |           |          | 
+Indexes:
+    "usernames_p" PRIMARY KEY, btree (site_id, username_lowercase, in_use_from)
+Check constraints:
+    "usernames_c_from_le_mention" CHECK (in_use_from <= first_mention_at)
+    "usernames_c_from_lt_to" CHECK (in_use_from < in_use_to)
+    "usernames_c_mention_le_to" CHECK (first_mention_at <= in_use_to)
+    "usernames_c_username_len" CHECK (length(username_lowercase::text) >= 2 AND length(username_lowercase::text) <= 50)
+Foreign-key constraints:
+    "usernames_r_people" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+

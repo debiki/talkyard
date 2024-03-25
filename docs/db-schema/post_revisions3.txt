@@ -1,0 +1,42 @@
+                        Table "public.post_revisions3"
+     Column     |            Type             | Collation | Nullable | Default 
+----------------+-----------------------------+-----------+----------+---------
+ site_id        | integer                     |           | not null | 
+ post_id        | integer                     |           | not null | 
+ revision_nr    | integer                     |           | not null | 
+ previous_nr    | integer                     |           |          | 
+ source_patch   | text                        |           |          | 
+ full_source    | text                        |           |          | 
+ title          | character varying           |           |          | 
+ composed_at    | timestamp without time zone |           | not null | 
+ composed_by_id | integer                     |           | not null | 
+ approved_at    | timestamp without time zone |           |          | 
+ approved_by_id | integer                     |           |          | 
+ hidden_at      | timestamp without time zone |           |          | 
+ hidden_by_id   | integer                     |           |          | 
+Indexes:
+    "dw2_postrevs_postid_revnr__p" PRIMARY KEY, btree (site_id, post_id, revision_nr)
+    "dw2_postrevs_approvedby__i" btree (site_id, approved_by_id) WHERE approved_by_id IS NOT NULL
+    "dw2_postrevs_composedby__i" btree (site_id, composed_by_id)
+    "dw2_postrevs_hiddenby__i" btree (site_id, hidden_by_id) WHERE hidden_by_id IS NOT NULL
+    "dw2_postrevs_postid_prevnr__i" btree (site_id, post_id, previous_nr) WHERE previous_nr IS NOT NULL
+Check constraints:
+    "dw2_postrevs_approved__c_null" CHECK ((approved_at IS NULL) = (approved_by_id IS NULL))
+    "dw2_postrevs_approvedat_ge_composedat__c" CHECK (approved_at >= composed_at)
+    "dw2_postrevs_hidden__c_null" CHECK ((hidden_at IS NULL) = (hidden_by_id IS NULL))
+    "dw2_postrevs_hiddenat_ge_composedat__c" CHECK (hidden_at >= composed_at)
+    "dw2_postrevs_patch_source__c_nn" CHECK (source_patch IS NOT NULL OR full_source IS NOT NULL)
+    "dw2_postrevs_revisionnr_gt_prevnr__c" CHECK (revision_nr > previous_nr)
+    "dw2_postrevs_revisionnr_prevnr__c_gz" CHECK (revision_nr > 0 AND previous_nr > 0)
+    "postrevisions_c_revnr_not_for_imp" CHECK (revision_nr < 2000000000)
+Foreign-key constraints:
+    "postrevs_approvedby_r_people" FOREIGN KEY (site_id, approved_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "postrevs_composedby_r_people" FOREIGN KEY (site_id, composed_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "postrevs_hiddenby_r_people" FOREIGN KEY (site_id, hidden_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "postrevs_post_r_posts" FOREIGN KEY (site_id, post_id) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    "postrevs_prevnr_r__postrevs" FOREIGN KEY (site_id, post_id, previous_nr) REFERENCES post_revisions3(site_id, post_id, revision_nr) DEFERRABLE
+Referenced by:
+    TABLE "post_revisions3" CONSTRAINT "postrevs_prevnr_r__postrevs" FOREIGN KEY (site_id, post_id, previous_nr) REFERENCES post_revisions3(site_id, post_id, revision_nr) DEFERRABLE
+Triggers:
+    post_revs3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON post_revisions3 FOR EACH ROW EXECUTE PROCEDURE post_revs3_sum_quota()
+

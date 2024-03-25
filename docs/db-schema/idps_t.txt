@@ -1,0 +1,79 @@
+                                        Table "public.idps_t"
+                Column                 |            Type             | Collation | Nullable | Default 
+---------------------------------------+-----------------------------+-----------+----------+---------
+ site_id_c                             | integer                     |           | not null | 
+ idp_id_c                              | integer                     |           | not null | 
+ protocol_c                            | character varying           |           | not null | 
+ alias_c                               | character varying           |           | not null | 
+ enabled_c                             | boolean                     |           | not null | 
+ display_name_c                        | character varying           |           |          | 
+ description_c                         | character varying           |           |          | 
+ admin_comments_c                      | character varying           |           |          | 
+ trust_verified_email_c                | boolean                     |           | not null | 
+ link_account_no_login_c               | boolean                     |           | not null | 
+ gui_order_c                           | integer                     |           |          | 
+ sync_mode_c                           | integer                     |           | not null | 
+ oidc_config_url                       | character varying           |           |          | 
+ oidc_config_fetched_at                | timestamp without time zone |           |          | 
+ oidc_config_json_c                    | jsonb                       |           |          | 
+ oau_authorization_url_c               | character varying           |           | not null | 
+ oau_auth_req_scope_c                  | character varying           |           |          | 
+ oau_auth_req_claims_c                 | jsonb                       |           |          | 
+ oau_auth_req_claims_locales_c         | character varying           |           |          | 
+ oau_auth_req_ui_locales_c             | character varying           |           |          | 
+ oau_auth_req_display_c                | character varying           |           |          | 
+ oau_auth_req_prompt_c                 | character varying           |           |          | 
+ oau_auth_req_max_age_c                | integer                     |           |          | 
+ oau_auth_req_hosted_domain_c          | character varying           |           |          | 
+ oau_auth_req_access_type_c            | character varying           |           |          | 
+ oau_auth_req_include_granted_scopes_c | boolean                     |           |          | 
+ oau_access_token_url_c                | character varying           |           | not null | 
+ oau_access_token_auth_method_c        | character varying           |           |          | 
+ oau_client_id_c                       | character varying           |           | not null | 
+ oau_client_secret_c                   | character varying           |           | not null | 
+ oau_issuer_c                          | character varying           |           |          | 
+ oidc_user_info_url_c                  | character varying           |           | not null | 
+ oidc_user_info_fields_map_c           | jsonb                       |           |          | 
+ oidc_userinfo_req_send_user_ip_c      | boolean                     |           |          | 
+ oidc_logout_url_c                     | character varying           |           |          | 
+ email_verified_domains_c              | character varying           |           |          | 
+Indexes:
+    "idps_p_id" PRIMARY KEY, btree (site_id_c, idp_id_c)
+    "idps_u_displayname" UNIQUE, btree (site_id_c, display_name_c) WHERE enabled_c
+    "idps_u_protocol_alias" UNIQUE, btree (site_id_c, protocol_c, alias_c)
+Check constraints:
+    "idps_c_admincomments_len" CHECK (length(admin_comments_c::text) >= 1 AND length(admin_comments_c::text) <= 5000)
+    "idps_c_alias_chars" CHECK (alias_c::text ~ '^[a-z0-9_-]+$'::text)
+    "idps_c_alias_len" CHECK (length(alias_c::text) >= 1 AND length(alias_c::text) <= 50)
+    "idps_c_description_len" CHECK (length(description_c::text) >= 1 AND length(description_c::text) <= 1000)
+    "idps_c_displayname_len" CHECK (length(display_name_c::text) >= 1 AND length(display_name_c::text) <= 200)
+    "idps_c_displayname_trim" CHECK (trim_all(display_name_c)::text = display_name_c::text)
+    "idps_c_emailverifieddomains_len" CHECK (length(email_verified_domains_c::text) >= 1 AND length(email_verified_domains_c::text) <= 11000)
+    "idps_c_id_gtz" CHECK (idp_id_c > 0)
+    "idps_c_oauaccesstokenauthmethod_in" CHECK (oau_access_token_auth_method_c::text = ANY (ARRAY['client_secret_basic'::character varying, 'client_secret_post'::character varying]::text[]))
+    "idps_c_oauaccesstokenurl_len" CHECK (length(oau_access_token_url_c::text) >= 1 AND length(oau_access_token_url_c::text) <= 500)
+    "idps_c_oauauthorizationurl_len" CHECK (length(oau_authorization_url_c::text) >= 1 AND length(oau_authorization_url_c::text) <= 500)
+    "idps_c_oauauthreqaccesstype_in" CHECK (oau_auth_req_access_type_c::text = ANY (ARRAY['online'::character varying, 'offline'::character varying]::text[]))
+    "idps_c_oauauthreqclaims_len" CHECK (pg_column_size(oau_auth_req_claims_c) >= 1 AND pg_column_size(oau_auth_req_claims_c) <= 5000)
+    "idps_c_oauauthreqclaimslocales_len" CHECK (length(oau_auth_req_claims_locales_c::text) >= 1 AND length(oau_auth_req_claims_locales_c::text) <= 200)
+    "idps_c_oauauthreqdisplay_in" CHECK (oau_auth_req_display_c::text = ANY (ARRAY['page'::character varying, 'popup'::character varying, 'touch'::character varying, 'wap'::character varying]::text[]))
+    "idps_c_oauauthreqhosteddomain_len" CHECK (length(oau_auth_req_hosted_domain_c::text) >= 1 AND length(oau_auth_req_hosted_domain_c::text) <= 200)
+    "idps_c_oauauthreqmaxage_gtz" CHECK (oau_auth_req_max_age_c > 0)
+    "idps_c_oauauthreqprompt_in" CHECK (oau_auth_req_prompt_c::text = ANY (ARRAY['none'::character varying, 'login'::character varying, 'consent'::character varying, 'select_account'::character varying]::text[]))
+    "idps_c_oauauthreqscope_len" CHECK (length(oau_auth_req_scope_c::text) >= 1 AND length(oau_auth_req_scope_c::text) <= 200)
+    "idps_c_oauauthrequilocales_len" CHECK (length(oau_auth_req_ui_locales_c::text) >= 1 AND length(oau_auth_req_ui_locales_c::text) <= 200)
+    "idps_c_oauclientid_len" CHECK (length(oau_client_id_c::text) >= 1 AND length(oau_client_id_c::text) <= 200)
+    "idps_c_oauclientsecret_len" CHECK (length(oau_client_secret_c::text) >= 1 AND length(oau_client_secret_c::text) <= 200)
+    "idps_c_oauissuer_len" CHECK (length(oau_issuer_c::text) >= 1 AND length(oau_issuer_c::text) <= 200)
+    "idps_c_oidcconfigjson_len" CHECK (pg_column_size(oidc_config_json_c) >= 1 AND pg_column_size(oidc_config_json_c) <= 11000)
+    "idps_c_oidcconfigurl_len" CHECK (length(oidc_config_url::text) >= 1 AND length(oidc_config_url::text) <= 500)
+    "idps_c_oidclogouturl_len" CHECK (length(oidc_logout_url_c::text) >= 1 AND length(oidc_logout_url_c::text) <= 500)
+    "idps_c_oidcuserinfofieldsmap_len" CHECK (pg_column_size(oidc_user_info_fields_map_c) >= 1 AND pg_column_size(oidc_user_info_fields_map_c) <= 3000)
+    "idps_c_oidcuserinfourl_len" CHECK (length(oidc_user_info_url_c::text) >= 1 AND length(oidc_user_info_url_c::text) <= 500)
+    "idps_c_protocol" CHECK (protocol_c::text = ANY (ARRAY['oidc'::character varying, 'oauth2'::character varying]::text[]))
+    "idps_c_syncmode" CHECK (sync_mode_c >= 1 AND sync_mode_c <= 10)
+Foreign-key constraints:
+    "idps_r_sites" FOREIGN KEY (site_id_c) REFERENCES sites3(id) DEFERRABLE
+Referenced by:
+    TABLE "identities3" CONSTRAINT "idtys_r_idps" FOREIGN KEY (site_id, idp_id_c) REFERENCES idps_t(site_id_c, idp_id_c) DEFERRABLE
+

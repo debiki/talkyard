@@ -1,0 +1,77 @@
+                                     Table "public.sites3"
+             Column             |            Type             | Collation | Nullable | Default 
+--------------------------------+-----------------------------+-----------+----------+---------
+ id                             | integer                     |           | not null | 
+ name                           | character varying(100)      |           | not null | 
+ ctime                          | timestamp without time zone |           | not null | now()
+ creator_ip                     | character varying(39)       |           |          | 
+ next_page_id                   | integer                     |           | not null | 1
+ creator_email_address          | character varying           |           |          | 
+ rdb_quota_mibs_c               | integer                     |           |          | 
+ num_guests                     | integer                     |           | not null | 0
+ num_identities                 | integer                     |           | not null | 0
+ num_roles                      | integer                     |           | not null | 0
+ num_role_settings              | integer                     |           | not null | 0
+ num_pages                      | integer                     |           | not null | 0
+ num_posts                      | integer                     |           | not null | 0
+ num_post_text_bytes            | bigint                      |           | not null | 0
+ num_posts_read                 | bigint                      |           | not null | 0
+ num_actions                    | integer                     |           | not null | 0
+ num_notfs                      | integer                     |           | not null | 0
+ num_emails_sent                | integer                     |           | not null | 0
+ num_audit_rows                 | integer                     |           | not null | 0
+ num_uploads                    | integer                     |           | not null | 0
+ num_upload_bytes               | bigint                      |           | not null | 0
+ version                        | integer                     |           | not null | 1
+ num_post_revisions             | integer                     |           | not null | 0
+ num_post_rev_bytes             | bigint                      |           | not null | 0
+ status                         | integer                     |           | not null | 1
+ publ_id                        | character varying           |           | not null | 
+ super_staff_notes              | character varying           |           |          | 
+ feature_flags_c                | character varying           |           |          | 
+ deleted_at_c                   | timestamp without time zone |           |          | 
+ auto_purge_at_c                | timestamp without time zone |           |          | 
+ purged_at_c                    | timestamp without time zone |           |          | 
+ file_quota_mibs_c              | i32_gez_d                   |           |          | 
+ max_upl_size_kibs_c            | i32_gez_d                   |           |          | 
+ may_upl_pub_media_min_tr_lv_c  | trust_level_or_staff_d      |           |          | 
+ may_upl_pub_risky_min_tr_lv_c  | trust_level_or_staff_d      |           |          | 
+ may_upl_pub_safer_min_tr_lv_c  | trust_level_or_staff_d      |           |          | 
+ may_upl_priv_media_min_tr_lv_c | trust_level_or_staff_d      |           |          | 
+ may_upl_priv_risky_min_tr_lv_c | trust_level_or_staff_d      |           |          | 
+ may_upl_priv_safer_min_tr_lv_c | trust_level_or_staff_d      |           |          | 
+ read_lims_mult_c               | f32_gez_d                   |           |          | 
+ log_lims_mult_c                | f32_gez_d                   |           |          | 
+ create_lims_mult_c             | f32_gez_d                   |           |          | 
+Indexes:
+    "dw1_tenants_id__p" PRIMARY KEY, btree (id)
+    "dw1_tenants_name__u" UNIQUE CONSTRAINT, btree (name)
+    "sites_publid_u" UNIQUE, btree (publ_id)
+    "dw1_tenants_creatoremail" btree (creator_email_address)
+    "dw1_tenants_creatorip" btree (creator_ip)
+Check constraints:
+    "dw1_sites_version__c_gz" CHECK (version >= 1)
+    "dw1_tnt_creatoremail__c" CHECK (creator_email_address::text ~~ '%@%.%'::text)
+    "dw1_tnt_id__c_n0" CHECK (id::text <> '0'::text)
+    "dw1_tnt_id__c_ne" CHECK (btrim(id::text) <> ''::text)
+    "dw1_tnt_name__c_len" CHECK (length(name::text) >= 1 AND length(name::text) <= 100)
+    "dw1_tnt_name__c_trim" CHECK (btrim(name::text) = name::text)
+    "sites3_c_featureflags_len" CHECK (length(feature_flags_c::text) >= 1 AND length(feature_flags_c::text) <= 500)
+    "sites3_c_superstaffnotes_len" CHECK (length(super_staff_notes::text) >= 1 AND length(super_staff_notes::text) <= 2000)
+    "sites_c_autopurgeat_status" CHECK (auto_purge_at_c IS NULL OR status >= 6)
+    "sites_c_deletedat_status" CHECK ((deleted_at_c IS NOT NULL) = (status >= 6))
+    "sites_c_id_not_for_imp" CHECK (id < 2000000000)
+    "sites_c_purgedat_status" CHECK ((purged_at_c IS NOT NULL) = (status >= 7))
+    "sites_c_rdbquotamibs_gez" CHECK (rdb_quota_mibs_c >= 0)
+    "sites_c_status" CHECK (status >= 1 AND status <= 7)
+Referenced by:
+    TABLE "hosts3" CONSTRAINT "hosts_r_sites" FOREIGN KEY (site_id) REFERENCES sites3(id) DEFERRABLE
+    TABLE "idps_t" CONSTRAINT "idps_r_sites" FOREIGN KEY (site_id_c) REFERENCES sites3(id) DEFERRABLE
+    TABLE "notifications3" CONSTRAINT "ntfs_r_sites" FOREIGN KEY (site_id) REFERENCES sites3(id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_r_sites" FOREIGN KEY (site_id) REFERENCES sites3(id) DEFERRABLE
+    TABLE "settings3" CONSTRAINT "settings_site_r_sites" FOREIGN KEY (site_id) REFERENCES sites3(id) DEFERRABLE
+    TABLE "spam_check_queue3" CONSTRAINT "spamcheckqueue_r_sites" FOREIGN KEY (site_id) REFERENCES sites3(id) DEFERRABLE
+    TABLE "tagtypes_t" CONSTRAINT "tagtypes_r_sites" FOREIGN KEY (site_id_c) REFERENCES sites3(id) DEFERRABLE
+    TABLE "users3" CONSTRAINT "users_r_sites" FOREIGN KEY (site_id) REFERENCES sites3(id) DEFERRABLE
+    TABLE "webhooks_t" CONSTRAINT "webhooks_r_sites" FOREIGN KEY (site_id_c) REFERENCES sites3(id) DEFERRABLE
+

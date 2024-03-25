@@ -1,0 +1,190 @@
+                                 Table "public.pages3"
+         Column         |            Type             | Collation | Nullable | Default 
+------------------------+-----------------------------+-----------+----------+---------
+ site_id                | integer                     |           | not null | 
+ page_id                | character varying(32)       |           | not null | 
+ page_role              | smallint                    |           | not null | 
+ category_id            | integer                     |           |          | 
+ created_at             | timestamp without time zone |           | not null | now()
+ updated_at             | timestamp without time zone |           | not null | now()
+ published_at           | timestamp without time zone |           |          | now()
+ bumped_at              | timestamp without time zone |           | not null | 
+ author_id              | integer                     |           | not null | 
+ num_child_pages        | integer                     |           | not null | 0
+ embedding_page_url     | character varying           |           |          | 
+ num_likes              | integer                     |           | not null | 0
+ num_wrongs             | integer                     |           | not null | 0
+ deleted_at             | timestamp without time zone |           |          | 
+ num_replies_visible    | integer                     |           | not null | 0
+ num_replies_to_review  | integer                     |           | not null | 0
+ num_replies_total      | integer                     |           | not null | 0
+ num_bury_votes         | integer                     |           | not null | 0
+ num_unwanted_votes     | integer                     |           | not null | 0
+ last_reply_at          | timestamp without time zone |           |          | 
+ pin_order              | smallint                    |           |          | 
+ pin_where              | smallint                    |           |          | 
+ num_op_like_votes      | integer                     |           | not null | 0
+ num_op_wrong_votes     | integer                     |           | not null | 0
+ num_op_bury_votes      | integer                     |           | not null | 0
+ num_op_unwanted_votes  | integer                     |           | not null | 0
+ num_op_replies_visible | integer                     |           | not null | 0
+ answered_at            | timestamp without time zone |           |          | 
+ answer_post_id         | integer                     |           |          | 
+ done_at                | timestamp without time zone |           |          | 
+ closed_at              | timestamp without time zone |           |          | 
+ locked_at              | timestamp without time zone |           |          | 
+ frozen_at              | timestamp without time zone |           |          | 
+ unwanted_at            | timestamp without time zone |           |          | 
+ planned_at             | timestamp without time zone |           |          | 
+ version                | integer                     |           | not null | 1
+ last_reply_by_id       | integer                     |           |          | 
+ frequent_poster_1_id   | integer                     |           |          | 
+ frequent_poster_2_id   | integer                     |           |          | 
+ frequent_poster_3_id   | integer                     |           |          | 
+ frequent_poster_4_id   | integer                     |           |          | 
+ html_tag_css_classes   | character varying           |           |          | 
+ html_head_title        | character varying           |           |          | 
+ html_head_description  | character varying           |           |          | 
+ layout                 | bigint                      |           | not null | 0
+ hidden_at              | timestamp without time zone |           |          | 
+ incl_in_summaries      | smallint                    |           |          | 
+ started_at             | timestamp without time zone |           |          | 
+ postponed_til_c        | timestamp without time zone |           |          | 
+ num_posts_total        | integer                     |           | not null | 0
+ ext_id                 | character varying           |           |          | 
+ num_op_do_it_votes_c   | i32_gez_d                   |           | not null | 0
+ num_op_do_not_votes_c  | i32_gez_d                   |           | not null | 0
+ answered_by_id_c       | integer                     |           |          | 
+ published_by_id_c      | integer                     |           |          | 
+ postponed_by_id_c      | integer                     |           |          | 
+ planned_by_id_c        | integer                     |           |          | 
+ started_by_id_c        | integer                     |           |          | 
+ paused_by_id_c         | integer                     |           |          | 
+ done_by_id_c           | integer                     |           |          | 
+ closed_by_id_c         | integer                     |           |          | 
+ locked_by_id_c         | integer                     |           |          | 
+ frozen_by_id_c         | integer                     |           |          | 
+ unwanted_by_id_c       | integer                     |           |          | 
+ hidden_by_id_c         | integer                     |           |          | 
+ deleted_by_id_c        | integer                     |           |          | 
+ forum_search_box_c     | i16_gz_d                    |           |          | 
+ forum_main_view_c      | i16_gz_d                    |           |          | 
+ forum_cats_topics_c    | i32_gz_d                    |           |          | 
+ comt_order_c           | comt_order_d                |           |          | 
+ comt_nesting_c         | max_nesting_d               |           |          | 
+ comts_start_hidden_c   | never_always_d              |           |          | 
+ comts_start_anon_c     | never_always_d              |           |          | 
+ new_anon_status_c      | anonym_status_d             |           |          | 
+Indexes:
+    "dw1_pages__u" UNIQUE CONSTRAINT, btree (site_id, page_id)
+    "dw1_pages_category_about__u" UNIQUE, btree (site_id, category_id, page_role) WHERE page_role = 9
+    "pages_u_extid" UNIQUE, btree (site_id, ext_id)
+    "dw1_pages_bumpedat__i" btree (site_id, bumped_at DESC)
+    "dw1_pages_frequentposter1id__i" btree (site_id, frequent_poster_1_id) WHERE frequent_poster_1_id IS NOT NULL
+    "dw1_pages_frequentposter2id__i" btree (site_id, frequent_poster_2_id) WHERE frequent_poster_2_id IS NOT NULL
+    "dw1_pages_frequentposter3id__i" btree (site_id, frequent_poster_3_id) WHERE frequent_poster_3_id IS NOT NULL
+    "dw1_pages_frequentposter4id__i" btree (site_id, frequent_poster_4_id) WHERE frequent_poster_4_id IS NOT NULL
+    "dw1_pages_lastreplybyid__i" btree (site_id, last_reply_by_id) WHERE last_reply_by_id IS NOT NULL
+    "dw1_pages_likes_bump__i" btree (site_id, num_likes DESC, bumped_at DESC)
+    "dw1_pages_pinorder__i" btree (site_id, pin_order) WHERE pin_order IS NOT NULL
+    "dw1_pages_publishedat__i" btree (site_id, published_at)
+    "dw2_pages_createdby__i" btree (site_id, author_id)
+    "pages_i_answeredby" btree (site_id, answered_by_id_c) WHERE answered_by_id_c IS NOT NULL
+    "pages_i_cat_bumpedat_id" btree (site_id, category_id, bumped_at DESC, page_id DESC)
+    "pages_i_cat_createdat_id" btree (site_id, category_id, created_at DESC, page_id DESC)
+    "pages_i_cat_publishedat_id" btree (site_id, category_id, published_at DESC, page_id DESC)
+    "pages_i_closedby" btree (site_id, closed_by_id_c) WHERE closed_by_id_c IS NOT NULL
+    "pages_i_deletedby" btree (site_id, deleted_by_id_c) WHERE deleted_by_id_c IS NOT NULL
+    "pages_i_doneby" btree (site_id, done_by_id_c) WHERE done_by_id_c IS NOT NULL
+    "pages_i_frozenby" btree (site_id, frozen_by_id_c) WHERE frozen_by_id_c IS NOT NULL
+    "pages_i_hiddenby" btree (site_id, hidden_by_id_c) WHERE hidden_by_id_c IS NOT NULL
+    "pages_i_lockedby" btree (site_id, locked_by_id_c) WHERE locked_by_id_c IS NOT NULL
+    "pages_i_pausedby" btree (site_id, paused_by_id_c) WHERE paused_by_id_c IS NOT NULL
+    "pages_i_plannedby" btree (site_id, planned_by_id_c) WHERE planned_by_id_c IS NOT NULL
+    "pages_i_postponedby" btree (site_id, postponed_by_id_c) WHERE postponed_by_id_c IS NOT NULL
+    "pages_i_publishedby" btree (site_id, published_by_id_c) WHERE published_by_id_c IS NOT NULL
+    "pages_i_startedby" btree (site_id, started_by_id_c) WHERE started_by_id_c IS NOT NULL
+    "pages_i_unwantedby" btree (site_id, unwanted_by_id_c) WHERE unwanted_by_id_c IS NOT NULL
+Check constraints:
+    "dw1_pages__c_closed_if_done_answered" CHECK (done_at IS NULL AND answered_at IS NULL OR closed_at IS NOT NULL)
+    "dw1_pages__c_has_category" CHECK ((page_role <> ALL (ARRAY[6, 7, 9])) OR category_id IS NOT NULL)
+    "dw1_pages__c_votes_gez" CHECK (num_likes >= 0 AND num_wrongs >= 0 AND num_bury_votes >= 0 AND num_unwanted_votes >= 0)
+    "dw1_pages_answerat_answerpostid__c" CHECK ((answered_at IS NULL) = (answer_post_id IS NULL))
+    "dw1_pages_cdati_mdati__c_le" CHECK (created_at <= updated_at)
+    "dw1_pages_cdati_publdati__c_le" CHECK (created_at <= published_at)
+    "dw1_pages_cdati_smdati__c_le" CHECK (created_at <= bumped_at)
+    "dw1_pages_createdat_closedat__c_lt" CHECK (created_at <= closed_at)
+    "dw1_pages_createdat_deletedat__c_lt" CHECK (created_at <= deleted_at)
+    "dw1_pages_createdat_doneat__c_lt" CHECK (created_at <= done_at)
+    "dw1_pages_createdat_frozenat__c_lt" CHECK (created_at <= frozen_at)
+    "dw1_pages_createdat_hiddenat__c_le" CHECK (created_at <= hidden_at)
+    "dw1_pages_createdat_lockedat_at" CHECK (created_at <= locked_at)
+    "dw1_pages_createdat_plannedat__c_le" CHECK (created_at <= planned_at)
+    "dw1_pages_createdat_unwantedat__c_lt" CHECK (created_at <= unwanted_at)
+    "dw1_pages_embpageurl__c_len" CHECK (length(embedding_page_url::text) >= 1 AND length(embedding_page_url::text) <= 200)
+    "dw1_pages_embpageurl__c_trim" CHECK (btrim(embedding_page_url::text) = embedding_page_url::text)
+    "dw1_pages_frequentposter1234__c_null" CHECK ((last_reply_by_id IS NOT NULL OR frequent_poster_1_id IS NULL) AND (frequent_poster_1_id IS NOT NULL OR frequent_poster_2_id IS NULL) AND (frequent_poster_2_id IS NOT NULL OR frequent_poster_3_id IS NULL) AND (frequent_poster_3_id IS NOT NULL OR frequent_poster_4_id IS NULL))
+    "dw1_pages_htmlheaddescr__c_len" CHECK (length(html_head_description::text) >= 1 AND length(html_head_description::text) <= 1000)
+    "dw1_pages_htmlheadtitle__c_len" CHECK (length(html_head_title::text) >= 1 AND length(html_head_title::text) <= 200)
+    "dw1_pages_htmltagcssclass__c_len" CHECK (length(html_tag_css_classes::text) >= 1 AND length(html_tag_css_classes::text) <= 100)
+    "dw1_pages_htmltagcssclass__c_ptrn" CHECK (is_valid_css_class(html_tag_css_classes))
+    "dw1_pages_lastreplyat_byid__c_nn" CHECK ((last_reply_at IS NULL) = (last_reply_by_id IS NULL))
+    "dw1_pages_pagerole__c_in" CHECK (page_role >= 1 AND page_role <= 30)
+    "dw1_pages_pinorder_where__c_n" CHECK ((pin_where IS NULL) = (pin_order IS NULL))
+    "dw1_pages_pinwhere__c_in" CHECK (pin_where IS NULL OR pin_where >= 1 AND pin_where <= 3)
+    "dw1_pages_plannedat_doneat__c_le" CHECK (planned_at <= done_at)
+    "dw1_pages_publdat_bumpedat__c_le" CHECK (published_at <= bumped_at)
+    "dw1_pages_version__c_gz" CHECK (version >= 1)
+    "pages_c_answpostid_not_for_imp" CHECK (answer_post_id < 2000000000)
+    "pages_c_createdat_le_startedat" CHECK (created_at <= started_at)
+    "pages_c_deletedby_at_null" CHECK (deleted_by_id_c IS NULL OR deleted_at IS NOT NULL)
+    "pages_c_extid_ok" CHECK (is_valid_ext_id(ext_id))
+    "pages_c_id_not_for_imp" CHECK (page_id::text !~~ '200???????'::text)
+    "pages_c_not_todo" CHECK (page_role <> 13)
+    "pages_c_numpoststotal_ge_numrepliestotal" CHECK (num_posts_total >= num_replies_total)
+    "pages_c_plannedat_le_startedat" CHECK (planned_at <= started_at)
+    "pages_c_startedat_le_doneat" CHECK (started_at <= done_at)
+Foreign-key constraints:
+    "pages_answeredby_r_pats" FOREIGN KEY (site_id, answered_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_category_r_categories" FOREIGN KEY (site_id, category_id) REFERENCES categories3(site_id, id) DEFERRABLE
+    "pages_closedby_r_pats" FOREIGN KEY (site_id, closed_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_createdby_r_people" FOREIGN KEY (site_id, author_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_deletedby_r_pats" FOREIGN KEY (site_id, deleted_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_doneby_r_pats" FOREIGN KEY (site_id, done_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_frequentposter1_r_people" FOREIGN KEY (site_id, frequent_poster_1_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_frequentposter2_r_people" FOREIGN KEY (site_id, frequent_poster_2_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_frequentposter3_r_people" FOREIGN KEY (site_id, frequent_poster_3_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_frequentposter4_r_people" FOREIGN KEY (site_id, frequent_poster_4_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_frozenby_r_pats" FOREIGN KEY (site_id, frozen_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_hiddenby_r_pats" FOREIGN KEY (site_id, hidden_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_lastreplyby_r_people" FOREIGN KEY (site_id, last_reply_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_lockedby_r_pats" FOREIGN KEY (site_id, locked_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_pausedby_r_pats" FOREIGN KEY (site_id, paused_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_plannedby_r_pats" FOREIGN KEY (site_id, planned_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_postponedby_r_pats" FOREIGN KEY (site_id, postponed_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_publishedby_r_pats" FOREIGN KEY (site_id, published_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_r_sites" FOREIGN KEY (site_id) REFERENCES sites3(id) DEFERRABLE
+    "pages_startedby_r_pats" FOREIGN KEY (site_id, started_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pages_unwantedby_r_pats" FOREIGN KEY (site_id, unwanted_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+Referenced by:
+    TABLE "alt_page_ids3" CONSTRAINT "altpageids_r_pages" FOREIGN KEY (site_id, real_page_id) REFERENCES pages3(site_id, page_id)
+    TABLE "audit_log3" CONSTRAINT "auditlog_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    TABLE "categories3" CONSTRAINT "cats_page_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    TABLE "drafts3" CONSTRAINT "drafts_pageid_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    TABLE "emails_out3" CONSTRAINT "emailsout_aboutpagestr_r_pages" FOREIGN KEY (site_id, about_page_id_str_c) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    TABLE "links_t" CONSTRAINT "links_topageid_r_pages" FOREIGN KEY (site_id_c, to_page_id_c) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    TABLE "notifications3" CONSTRAINT "notfs_aboutpage_r_pages" FOREIGN KEY (site_id, about_page_id_str_c) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    TABLE "page_html_cache_t" CONSTRAINT "pagehtml_r_pages" FOREIGN KEY (site_id_c, page_id_c) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    TABLE "page_notf_prefs_t" CONSTRAINT "pagenotfprefs_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    TABLE "page_popularity_scores3" CONSTRAINT "pagepopscores_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    TABLE "page_users3" CONSTRAINT "pageusers_page_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    TABLE "users3" CONSTRAINT "pats_anononpage_r_pages" FOREIGN KEY (site_id, anon_on_page_id_st_c) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    TABLE "perms_on_pages3" CONSTRAINT "permsonpages_r_pages" FOREIGN KEY (site_id, on_page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    TABLE "page_paths3" CONSTRAINT "pgpths_page_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    TABLE "posts3" CONSTRAINT "posts_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    TABLE "review_tasks3" CONSTRAINT "reviewtasks_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    TABLE "settings3" CONSTRAINT "settings_page_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    TABLE "tagtypes_t" CONSTRAINT "tagtypes_descrpage_r_pages" FOREIGN KEY (site_id_c, descr_page_id_c) REFERENCES pages3(site_id, page_id) DEFERRABLE
+Triggers:
+    pages3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON pages3 FOR EACH ROW EXECUTE PROCEDURE pages3_sum_quota()
+

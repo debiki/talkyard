@@ -1,0 +1,48 @@
+                            Table "public.webhook_reqs_out_t"
+        Column         |              Type              | Collation | Nullable | Default 
+-----------------------+--------------------------------+-----------+----------+---------
+ site_id_c             | site_id_d                      |           | not null | 
+ webhook_id_c          | webhook_id_d                   |           | not null | 
+ req_nr_c              | i64_gz_d                       |           | not null | 
+ sent_at_c             | timestamp without time zone    |           | not null | 
+ sent_as_id_c          | pat_id_d                       |           |          | 
+ sent_to_url_c         | http_url_d                     |           | not null | 
+ sent_by_app_ver_c     | text_nonempty_ste120_d         |           | not null | 
+ sent_api_version_c    | api_version_d                  |           | not null | 
+ sent_to_ext_app_ver_c | text_nonempty_ste120_d         |           |          | 
+ sent_event_types_c    | integer[]                      |           | not null | 
+ sent_event_subtypes_c | integer[]                      |           |          | 
+ sent_event_ids_c      | integer[]                      |           | not null | 
+ sent_json_c           | jsonb_ste500_000_d             |           | not null | 
+ sent_headers_c        | jsonb_ste8000_d                |           |          | 
+ retry_nr_c            | retry_nr_d                     |           |          | 
+ failed_at_c           | timestamp without time zone    |           |          | 
+ failed_how_c          | i16_gz_d                       |           |          | 
+ failed_msg_c          | text_nonempty_ste16000_d       |           |          | 
+ resp_at_c             | timestamp without time zone    |           |          | 
+ resp_status_c         | i32_d                          |           |          | 
+ resp_status_text_c    | text_nonempty_ste250_trimmed_d |           |          | 
+ resp_body_c           | text_nonempty_ste16000_d       |           |          | 
+ resp_headers_c        | jsonb_ste8000_d                |           |          | 
+Indexes:
+    "webhookreqsout_p_webhookid_reqnr" PRIMARY KEY, btree (site_id_c, webhook_id_c, req_nr_c)
+    "webhookreqsout_i_sentasid" btree (site_id_c, sent_as_id_c)
+    "webhookreqsout_i_sentat" btree (site_id_c, sent_at_c)
+Check constraints:
+    "webhookreqsout_c_failed_at_how_null" CHECK ((failed_at_c IS NULL) = (failed_how_c IS NULL))
+    "webhookreqsout_c_failed_at_msg_null" CHECK (failed_at_c IS NOT NULL OR failed_msg_c IS NULL)
+    "webhookreqsout_c_not_yet_any_subtypes" CHECK (sent_event_subtypes_c IS NULL)
+    "webhookreqsout_c_num_ev_subtypes_gte1" CHECK (cardinality(sent_event_subtypes_c) >= 1)
+    "webhookreqsout_c_num_ev_types_gte1" CHECK (cardinality(sent_event_types_c) >= 1)
+    "webhookreqsout_c_num_ev_types_lte_num_evs" CHECK (cardinality(sent_event_types_c) <= cardinality(sent_event_ids_c))
+    "webhookreqsout_c_num_events_gte1" CHECK (cardinality(sent_event_ids_c) >= 1)
+    "webhookreqsout_c_resp_at_body_null" CHECK (resp_at_c IS NOT NULL OR resp_body_c IS NULL)
+    "webhookreqsout_c_resp_at_headers_null" CHECK (resp_at_c IS NOT NULL OR resp_headers_c IS NULL)
+    "webhookreqsout_c_resp_at_status_null" CHECK (resp_at_c IS NOT NULL OR resp_status_c IS NULL)
+    "webhookreqsout_c_resp_at_statustext_null" CHECK (resp_at_c IS NOT NULL OR resp_status_text_c IS NULL)
+    "webhookreqsout_c_sent_bef_failed" CHECK (sent_at_c <= failed_at_c)
+    "webhookreqsout_c_sent_bef_resp" CHECK (sent_at_c <= resp_at_c)
+Foreign-key constraints:
+    "webhookreqsout_sentasid_r_pats" FOREIGN KEY (site_id_c, sent_as_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "webhookreqsout_webhookid_r_webhooks" FOREIGN KEY (site_id_c, webhook_id_c) REFERENCES webhooks_t(site_id_c, webhook_id_c) DEFERRABLE
+

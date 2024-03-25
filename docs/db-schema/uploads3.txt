@@ -1,0 +1,32 @@
+                              Table "public.uploads3"
+       Column        |            Type             | Collation | Nullable | Default 
+---------------------+-----------------------------+-----------+----------+---------
+ base_url            | character varying           |           | not null | 
+ hash_path           | character varying           |           | not null | 
+ original_hash_path  | character varying           |           | not null | 
+ size_bytes          | integer                     |           | not null | 
+ mime_type           | character varying           |           | not null | 
+ width               | integer                     |           |          | 
+ height              | integer                     |           |          | 
+ uploaded_at         | timestamp without time zone |           | not null | 
+ updated_at          | timestamp without time zone |           | not null | 
+ num_references      | integer                     |           | not null | 
+ verified_present_at | timestamp without time zone |           |          | 
+ verified_absent_at  | timestamp without time zone |           |          | 
+ unused_since        | timestamp without time zone |           |          | 
+Indexes:
+    "dw2_uploads__p" PRIMARY KEY, btree (base_url, hash_path)
+    "dw2_uploads_hashpathsuffix__i" btree (hash_path)
+    "dw2_uploads_unusedsince__i" btree (unused_since) WHERE num_references = 0
+Check constraints:
+    "dw2_uploads_0refs_unusedsince__c" CHECK ((num_references = 0) = (unused_since IS NOT NULL))
+    "dw2_uploads__c_dates" CHECK (verified_present_at > uploaded_at AND verified_absent_at > uploaded_at)
+    "dw2_uploads__c_numbers" CHECK (num_references >= 0 AND size_bytes > 0 AND width > 0 AND height > 0)
+    "dw2_uploads_baseurl__c" CHECK (base_url::text ~~ '%/'::text)
+    "dw2_uploads_baseurl__c_len" CHECK (length(base_url::text) >= 1 AND length(base_url::text) <= 100)
+    "dw2_uploads_hashpath__c" CHECK (is_valid_hash_path(hash_path))
+    "dw2_uploads_hashpathsuffix__c_len" CHECK (length(hash_path::text) >= 1 AND length(hash_path::text) <= 100)
+    "dw2_uploads_mimetype__c_len" CHECK (length(mime_type::text) >= 1 AND length(mime_type::text) <= 100)
+    "dw2_uploads_orighashpathsuffix__c_len" CHECK (length(original_hash_path::text) >= 1 AND length(original_hash_path::text) <= 100)
+    "dw2_uploads_originalhashpath__c" CHECK (is_valid_hash_path(original_hash_path))
+

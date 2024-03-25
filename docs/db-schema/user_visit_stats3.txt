@@ -1,0 +1,18 @@
+                    Table "public.user_visit_stats3"
+            Column            |  Type   | Collation | Nullable | Default 
+------------------------------+---------+-----------+----------+---------
+ site_id                      | integer |           | not null | 
+ user_id                      | integer |           | not null | 
+ visit_date                   | date    |           | not null | 
+ num_seconds_reading          | integer |           | not null | 0
+ num_discourse_replies_read   | integer |           | not null | 0
+ num_discourse_topics_entered | integer |           | not null | 0
+ num_chat_messages_read       | integer |           | not null | 0
+ num_chat_topics_entered      | integer |           | not null | 0
+Indexes:
+    "uservisitstats_p" PRIMARY KEY, btree (site_id, user_id, visit_date)
+Check constraints:
+    "uservisitstats_c_gez" CHECK (num_seconds_reading >= 0 AND num_discourse_replies_read >= 0 AND num_discourse_topics_entered >= 0 AND num_chat_messages_read >= 0 AND num_chat_topics_entered >= 0)
+Foreign-key constraints:
+    "uservisitstats_r_people" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+

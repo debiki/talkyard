@@ -1,0 +1,83 @@
+                              Table "public.audit_log3"
+        Column        |            Type             | Collation | Nullable | Default 
+----------------------+-----------------------------+-----------+----------+---------
+ site_id              | integer                     |           | not null | 
+ audit_id             | bigint                      |           | not null | 
+ doer_id_c            | integer                     |           | not null | 
+ done_at              | timestamp without time zone |           | not null | 
+ did_what             | smallint                    |           | not null | 
+ details              | character varying           |           |          | 
+ ip                   | inet                        |           |          | 
+ browser_id_cookie    | character varying           |           |          | 
+ browser_fingerprint  | integer                     |           |          | 
+ anonymity_network    | character varying           |           |          | 
+ country              | character varying           |           |          | 
+ region               | character varying           |           |          | 
+ city                 | character varying           |           |          | 
+ page_id              | character varying           |           |          | 
+ page_role            | smallint                    |           |          | 
+ post_id              | integer                     |           |          | 
+ post_nr              | integer                     |           |          | 
+ post_action_type     | integer                     |           |          | 
+ post_action_sub_id   | integer                     |           |          | 
+ target_page_id       | character varying           |           |          | 
+ target_post_id       | integer                     |           |          | 
+ target_post_nr       | integer                     |           |          | 
+ target_pat_id_c      | integer                     |           |          | 
+ target_site_id       | integer                     |           |          | 
+ size_bytes           | integer                     |           |          | 
+ upload_hash_path     | character varying           |           |          | 
+ upload_file_name     | character varying           |           |          | 
+ email_address        | character varying           |           |          | 
+ batch_id             | bigint                      |           |          | 
+ forgotten            | smallint                    |           | not null | 0
+ doer_true_id_c       | member_id_d                 |           |          | 
+ target_pat_true_id_c | member_id_d                 |           |          | 
+ sess_id_part_1       | base64us_len16_d            |           |          | 
+Indexes:
+    "dw2_auditlog__p" PRIMARY KEY, btree (site_id, audit_id)
+    "auditlog_forgotten_ix" btree (forgotten, done_at DESC)
+    "auditlog_i_doertrueid" btree (site_id, doer_true_id_c)
+    "auditlog_i_sid_part1" btree (site_id, sess_id_part_1)
+    "auditlog_i_targetpattrueid" btree (site_id, target_pat_true_id_c)
+    "dw2_auditlog_doer_doneat__i" btree (site_id, doer_id_c, done_at)
+    "dw2_auditlog_doneat__i" btree (site_id, done_at)
+    "dw2_auditlog_fingerprint_doneat__i" btree (site_id, browser_fingerprint, done_at)
+    "dw2_auditlog_idcookie_doneat__i" btree (site_id, browser_id_cookie, done_at)
+    "dw2_auditlog_ip_doneat__i" btree (site_id, ip, done_at)
+    "dw2_auditlog_page_doneat__i" btree (site_id, page_id, done_at) WHERE page_id IS NOT NULL
+    "dw2_auditlog_post_doneat__i" btree (site_id, post_id, done_at) WHERE post_id IS NOT NULL
+    "dw2_auditlog_uploadhashpathsuffix__i" btree (upload_hash_path) WHERE upload_hash_path IS NOT NULL
+Check constraints:
+    "auditlog_c_didwhat_in" CHECK (did_what >= 1 AND did_what <= 9999)
+    "auditlog_c_doer_trueid_null" CHECK (doer_true_id_c IS NULL OR doer_id_c IS NOT NULL)
+    "auditlog_c_id_not_for_imp" CHECK (audit_id < 2000000000)
+    "auditlog_c_postnr_not_for_imp" CHECK (post_nr < 2000000000)
+    "auditlog_c_postnr_null" CHECK (post_nr IS NULL OR post_id IS NOT NULL)
+    "auditlog_c_targetpat_trueid_null" CHECK (target_pat_true_id_c IS NULL OR target_pat_id_c IS NOT NULL)
+    "auditlog_c_targetpostid_not_for_imp" CHECK (target_post_id < 2000000000)
+    "auditlog_c_targetpostnr_not_for_imp" CHECK (target_post_nr < 2000000000)
+    "auditlog_c_targetuserid_not_for_imp" CHECK (target_pat_id_c < 2000000000)
+    "dw2_auditlog_batchid_btwn_1_id__c" CHECK (batch_id >= 1 AND batch_id <= audit_id)
+    "dw2_auditlog_emailaddr__c_email" CHECK (email_address::text ~~ '%_@_%'::text)
+    "dw2_auditlog_emailaddr__c_len" CHECK (length(email_address::text) >= 3 AND length(email_address::text) <= 200)
+    "dw2_auditlog_hashpath__c" CHECK (is_valid_hash_path(upload_hash_path))
+    "dw2_auditlog_hashpathsuffix__c_len" CHECK (length(upload_hash_path::text) >= 1 AND length(upload_hash_path::text) <= 100)
+    "dw2_auditlog_page_post__c" CHECK (did_what <> 3 OR page_id IS NOT NULL AND post_id IS NOT NULL)
+    "dw2_auditlog_pagerole__c_in" CHECK (page_role >= 1 AND page_role <= 100)
+    "dw2_auditlog_pagerole_pageid__c" CHECK (page_role IS NULL OR page_id IS NOT NULL)
+    "dw2_auditlog_postaction__c" CHECK ((post_action_type IS NULL) = (post_action_sub_id IS NULL))
+    "dw2_auditlog_postaction__c2" CHECK (post_action_type IS NULL OR post_id IS NOT NULL)
+    "dw2_auditlog_size__c_gez" CHECK (size_bytes >= 0)
+    "dw2_auditlog_tgtpost__c" CHECK ((target_post_nr IS NULL) = (target_post_id IS NULL))
+    "dw2_auditlog_uploadfilename__c" CHECK (upload_file_name::text !~~ '%/%'::text)
+    "dw2_auditlog_uploadfilename__c_len" CHECK (length(upload_file_name::text) >= 1 AND length(upload_file_name::text) <= 200)
+Foreign-key constraints:
+    "auditlog_doer_r_people" FOREIGN KEY (site_id, doer_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "auditlog_doertrueid_r_pats" FOREIGN KEY (site_id, doer_true_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "auditlog_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    "auditlog_r_posts" FOREIGN KEY (site_id, post_id) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    "auditlog_sid_part1_r_sessions" FOREIGN KEY (site_id, sess_id_part_1) REFERENCES sessions_t(site_id_c, part_1_comp_id_c) DEFERRABLE
+    "auditlog_targetpattrueid_r_pats" FOREIGN KEY (site_id, target_pat_true_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "auditlog_targetuser_r_people" FOREIGN KEY (site_id, target_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+

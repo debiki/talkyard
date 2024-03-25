@@ -1,0 +1,54 @@
+                                  Table "public.webhooks_t"
+          Column           |              Type              | Collation | Nullable | Default 
+---------------------------+--------------------------------+-----------+----------+---------
+ site_id_c                 | site_id_d                      |           | not null | 
+ webhook_id_c              | webhook_id_d                   |           | not null | 
+ owner_id_c                | pat_id_d                       |           | not null | 
+ run_as_id_c               | pat_id_d                       |           |          | 
+ enabled_c                 | boolean                        |           | not null | 
+ deleted_c                 | boolean                        |           | not null | 
+ descr_c                   | text_nonempty_ste500_trimmed_d |           |          | 
+ send_to_url_c             | http_url_d                     |           | not null | 
+ check_dest_cert_c         | boolean                        |           |          | 
+ send_event_types_c        | integer[]                      |           |          | 
+ send_event_subtypes_c     | integer[]                      |           |          | 
+ api_version_c             | api_version_d                  |           |          | 
+ to_ext_app_ver_c          | text_nonempty_ste120_d         |           |          | 
+ send_max_reqs_per_sec_c   | f32_gz_d                       |           |          | 
+ send_max_events_per_req_c | i16_gz_d                       |           |          | 
+ send_max_delay_secs_c     | i16_gz_d                       |           |          | 
+ send_custom_headers_c     | jsonb_ste4000_d                |           |          | 
+ retry_max_secs_c          | i32_gez_d                      |           |          | 
+ retry_extra_times_c       | i16_gz_d                       |           |          | 
+ failed_since_c            | timestamp without time zone    |           |          | 
+ last_failed_how_c         | i16_gz_d                       |           |          | 
+ last_err_msg_or_resp_c    | text_nonempty_ste16000_d       |           |          | 
+ retried_num_times_c       | i16_gez_d                      |           |          | 
+ retried_num_secs_c        | i32_gez_d                      |           |          | 
+ broken_reason_c           | i16_gz_d                       |           |          | 
+ sent_up_to_when_c         | timestamp without time zone    |           |          | 
+ sent_up_to_event_id_c     | event_id_d                     |           |          | 
+ num_pending_maybe_c       | i16_gez_d                      |           |          | 
+ done_for_now_c            | boolean                        |           |          | 
+Indexes:
+    "webhooks_p_id" PRIMARY KEY, btree (site_id_c, webhook_id_c)
+    "webhooks_i_ownerid" btree (site_id_c, owner_id_c)
+    "webhooks_i_runasid" btree (site_id_c, run_as_id_c)
+    "webhooks_ig_sendtourl" btree (send_to_url_c)
+    "webhooks_ig_sentuptowhen" btree (sent_up_to_when_c)
+    "webhooks_ig_sentuptowhen_more" btree (sent_up_to_when_c) WHERE enabled_c AND deleted_c IS NOT TRUE AND done_for_now_c IS NOT TRUE AND (broken_reason_c IS NULL OR retry_extra_times_c::smallint >= 1)
+Check constraints:
+    "webhooks_c_failed_brokenreason" CHECK (failed_since_c IS NOT NULL OR broken_reason_c IS NULL)
+    "webhooks_c_failed_errmsgresp" CHECK (failed_since_c IS NOT NULL OR last_err_msg_or_resp_c IS NULL)
+    "webhooks_c_failed_retriednumsecs" CHECK (failed_since_c IS NOT NULL OR retried_num_secs_c IS NULL)
+    "webhooks_c_failed_retriednumtimes" CHECK (failed_since_c IS NOT NULL OR retried_num_times_c IS NULL)
+    "webhooks_c_failed_since_how" CHECK ((failed_since_c IS NULL) = (last_failed_how_c IS NULL))
+    "webhooks_c_retry_eq1" CHECK (retry_extra_times_c::smallint = 1)
+    "webhooks_c_retry_failed" CHECK (retry_extra_times_c IS NULL OR failed_since_c IS NOT NULL)
+Foreign-key constraints:
+    "webhooks_ownerid_r_pats" FOREIGN KEY (site_id_c, owner_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "webhooks_r_sites" FOREIGN KEY (site_id_c) REFERENCES sites3(id) DEFERRABLE
+    "webhooks_runasid_r_pats" FOREIGN KEY (site_id_c, run_as_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+Referenced by:
+    TABLE "webhook_reqs_out_t" CONSTRAINT "webhookreqsout_webhookid_r_webhooks" FOREIGN KEY (site_id_c, webhook_id_c) REFERENCES webhooks_t(site_id_c, webhook_id_c) DEFERRABLE
+

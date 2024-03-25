@@ -1,0 +1,59 @@
+                               Table "public.spam_check_queue3"
+             Column             |            Type             | Collation | Nullable | Default 
+--------------------------------+-----------------------------+-----------+----------+---------
+ created_at                     | timestamp without time zone |           | not null | 
+ site_id                        | integer                     |           | not null | 
+ post_id                        | integer                     |           | not null | 
+ post_rev_nr                    | integer                     |           | not null | 
+ author_id_c                    | integer                     |           | not null | 
+ browser_id_cookie              | character varying           |           |          | 
+ browser_fingerprint            | integer                     |           | not null | 
+ req_uri                        | character varying           |           | not null | 
+ req_ip                         | character varying           |           | not null | 
+ req_user_agent                 | character varying           |           |          | 
+ req_referer                    | character varying           |           |          | 
+ post_nr                        | integer                     |           |          | 
+ page_id                        | character varying           |           |          | 
+ page_type                      | integer                     |           |          | 
+ page_available_at              | timestamp without time zone |           |          | 
+ author_name                    | character varying           |           |          | 
+ author_email_addr              | character varying           |           |          | 
+ author_trust_level             | integer                     |           |          | 
+ author_url                     | character varying           |           |          | 
+ html_to_spam_check             | character varying           |           |          | 
+ language                       | character varying           |           |          | 
+ results_at                     | timestamp without time zone |           |          | 
+ results_json                   | jsonb                       |           |          | 
+ results_text                   | character varying           |           |          | 
+ num_is_spam_results            | integer                     |           |          | 
+ num_not_spam_results           | integer                     |           |          | 
+ human_says_is_spam             | boolean                     |           |          | 
+ is_misclassified               | boolean                     |           |          | 
+ misclassifications_reported_at | timestamp without time zone |           |          | 
+Indexes:
+    "scq_site_postid_revnr__p" PRIMARY KEY, btree (site_id, post_id, post_rev_nr)
+    "scq_actionat__i" btree (created_at DESC)
+    "spamcheckqueue_next_miscl_i" btree (results_at) WHERE is_misclassified AND misclassifications_reported_at IS NULL
+Check constraints:
+    "spamcheckqueue_c_authoremailaddr_len" CHECK (length(author_email_addr::text) >= 1 AND length(author_email_addr::text) <= 200)
+    "spamcheckqueue_c_authorid_not_for_imp" CHECK (author_id_c < 2000000000)
+    "spamcheckqueue_c_authorname_len" CHECK (length(author_name::text) >= 1 AND length(author_name::text) <= 200)
+    "spamcheckqueue_c_authorurl_len" CHECK (length(author_url::text) >= 1 AND length(author_url::text) <= 200)
+    "spamcheckqueue_c_htmltospamcheck_len" CHECK (length(html_to_spam_check::text) >= 1 AND length(html_to_spam_check::text) <= 20200)
+    "spamcheckqueue_c_ismiscl_null" CHECK ((results_at IS NOT NULL AND human_says_is_spam IS NOT NULL) = (is_misclassified IS NOT NULL))
+    "spamcheckqueue_c_language_len" CHECK (length(language::text) >= 1 AND length(language::text) <= 200)
+    "spamcheckqueue_c_pageid_not_for_imp" CHECK (page_id::text !~~ '200???????'::text)
+    "spamcheckqueue_c_post_html_null" CHECK (post_id IS NULL OR html_to_spam_check IS NOT NULL)
+    "spamcheckqueue_c_post_null_eq" CHECK ((post_id IS NULL) = (post_nr IS NULL) AND (post_id IS NULL) = (post_rev_nr IS NULL) AND (post_id IS NULL) = (page_id IS NULL) AND (post_id IS NULL) = (page_type IS NULL) AND (post_id IS NULL) = (page_available_at IS NULL) AND (post_id IS NULL) = (language IS NULL))
+    "spamcheckqueue_c_postid_not_for_imp" CHECK (post_id < 2000000000)
+    "spamcheckqueue_c_postnr_not_for_imp" CHECK (post_nr < 2000000000)
+    "spamcheckqueue_c_postrevnr_not_for_imp" CHECK (post_rev_nr < 2000000000)
+    "spamcheckqueue_c_results_before_report_miscl" CHECK (results_json IS NOT NULL AND human_says_is_spam IS NOT NULL OR misclassifications_reported_at IS NULL)
+    "spamcheckqueue_c_results_null_eq" CHECK ((results_at IS NULL) = (results_json IS NULL) AND (results_at IS NULL) = (num_is_spam_results IS NULL) AND (results_at IS NULL) = (num_not_spam_results IS NULL))
+    "spamcheckqueue_c_resultsjson_len" CHECK (pg_column_size(results_json) >= 2 AND pg_column_size(results_json) <= 40400)
+    "spamcheckqueue_c_resultstext_len" CHECK (length(results_text::text) >= 0 AND length(results_text::text) <= 40400)
+    "spamcheckqueue_c_resultstext_null" CHECK (results_at IS NOT NULL OR results_text IS NULL)
+    "spamcheckqueue_c_trustlevel_betw" CHECK (author_trust_level >= 1 AND author_trust_level <= 6)
+Foreign-key constraints:
+    "spamcheckqueue_r_sites" FOREIGN KEY (site_id) REFERENCES sites3(id) DEFERRABLE
+

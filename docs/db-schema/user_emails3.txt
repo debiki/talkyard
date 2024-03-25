@@ -1,0 +1,18 @@
+                         Table "public.user_emails3"
+    Column     |            Type             | Collation | Nullable | Default 
+---------------+-----------------------------+-----------+----------+---------
+ site_id       | integer                     |           | not null | 
+ user_id       | integer                     |           | not null | 
+ email_address | character varying           |           | not null | 
+ added_at      | timestamp without time zone |           | not null | 
+ verified_at   | timestamp without time zone |           |          | 
+Indexes:
+    "useremails_p" PRIMARY KEY, btree (site_id, user_id, email_address)
+    "useremails_email_verified_u" UNIQUE, btree (site_id, email_address) WHERE verified_at IS NOT NULL
+Check constraints:
+    "useremails_c_email_ok" CHECK (email_seems_ok(email_address))
+Foreign-key constraints:
+    "useremails_r_users" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+Referenced by:
+    TABLE "users3" CONSTRAINT "users_primaryemail_r_useremails" FOREIGN KEY (site_id, user_id, primary_email_addr) REFERENCES user_emails3(site_id, user_id, email_address) DEFERRABLE
+

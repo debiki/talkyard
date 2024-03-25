@@ -1,0 +1,14 @@
+                 Table "public.tag_notf_levels3"
+   Column   |       Type        | Collation | Nullable | Default 
+------------+-------------------+-----------+----------+---------
+ site_id    | integer           |           | not null | 
+ user_id    | integer           |           | not null | 
+ tag        | character varying |           | not null | 
+ notf_level | integer           |           | not null | 
+Indexes:
+    "tagnotflvl_site_user_tag__p" PRIMARY KEY, btree (site_id, user_id, tag)
+Check constraints:
+    "tagnotflvl_notf_lvl" CHECK (is_valid_notf_level(notf_level))
+Foreign-key constraints:
+    "tagnotflvl_r_people" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+

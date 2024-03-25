@@ -1,0 +1,47 @@
+                               Table "public.tags_t"
+     Column      |              Type              | Collation | Nullable | Default 
+-----------------+--------------------------------+-----------+----------+---------
+ site_id_c       | integer                        |           | not null | 
+ id_c            | i32_gz_d                       |           | not null | 
+ tagtype_id_c    | integer                        |           | not null | 
+ parent_tag_id_c | integer                        |           |          | 
+ on_pat_id_c     | integer                        |           |          | 
+ on_post_id_c    | integer                        |           |          | 
+ val_type_c      | value_type_d                   |           |          | 
+ val_i32_c       | i32_d                          |           |          | 
+ val_f64_c       | f64_d                          |           |          | 
+ val_str_c       | text_nonempty_ste250_trimmed_d |           |          | 
+ val_url_c       | http_url_ste_250_d             |           |          | 
+ val_jsonb_c     | jsonb_ste1000_d                |           |          | 
+ val_i32_b_c     | i32_d                          |           |          | 
+ val_f64_b_c     | i32_d                          |           |          | 
+Indexes:
+    "tags_p_id" PRIMARY KEY, btree (site_id_c, id_c)
+    "tags_u_id_patid" UNIQUE CONSTRAINT, btree (site_id_c, id_c, on_pat_id_c)
+    "tags_u_id_postid" UNIQUE CONSTRAINT, btree (site_id_c, id_c, on_post_id_c)
+    "tags_i_onpatid" btree (site_id_c, on_pat_id_c) WHERE on_pat_id_c IS NOT NULL
+    "tags_i_onpostid" btree (site_id_c, on_post_id_c) WHERE on_post_id_c IS NOT NULL
+    "tags_i_parentid" btree (site_id_c, parent_tag_id_c) WHERE parent_tag_id_c IS NOT NULL
+    "tags_i_parentid_patid" btree (site_id_c, parent_tag_id_c, on_pat_id_c) WHERE parent_tag_id_c IS NOT NULL AND on_pat_id_c IS NOT NULL
+    "tags_i_parentid_postid" btree (site_id_c, parent_tag_id_c, on_post_id_c) WHERE parent_tag_id_c IS NOT NULL AND on_post_id_c IS NOT NULL
+    "tags_i_tagtypeid" btree (site_id_c, tagtype_id_c)
+Check constraints:
+    "tags_c_id_gt1000" CHECK (id_c::integer > 1000)
+    "tags_c_tags_one_thing" CHECK ((on_pat_id_c IS NOT NULL) <> (on_post_id_c IS NOT NULL))
+    "tags_c_valf64_b_null" CHECK (val_f64_c IS NOT NULL OR val_f64_b_c IS NULL)
+    "tags_c_vali32_b_null" CHECK (val_i32_c IS NOT NULL OR val_i32_b_c IS NULL)
+    "tags_c_valtype_has_val" CHECK ((val_type_c IS NULL OR val_type_c::smallint < 0) = (num_nonnulls(val_i32_c, val_i32_b_c, val_f64_c, val_f64_b_c, val_str_c, val_url_c, val_jsonb_c) = 0))
+Foreign-key constraints:
+    "tags_onpat_r_pats" FOREIGN KEY (site_id_c, on_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "tags_onpost_r_posts" FOREIGN KEY (site_id_c, on_post_id_c) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    "tags_parenttagid_onpatid_r_tags_id_onpatid" FOREIGN KEY (site_id_c, parent_tag_id_c, on_pat_id_c) REFERENCES tags_t(site_id_c, id_c, on_pat_id_c) DEFERRABLE
+    "tags_parenttagid_onpostid_r_tags_id_onpostid" FOREIGN KEY (site_id_c, parent_tag_id_c, on_post_id_c) REFERENCES tags_t(site_id_c, id_c, on_post_id_c) DEFERRABLE
+    "tags_parenttagid_r_tags_id" FOREIGN KEY (site_id_c, parent_tag_id_c) REFERENCES tags_t(site_id_c, id_c) DEFERRABLE
+    "tags_r_tagtypes" FOREIGN KEY (site_id_c, tagtype_id_c) REFERENCES tagtypes_t(site_id_c, id_c) DEFERRABLE
+Referenced by:
+    TABLE "emails_out3" CONSTRAINT "emailsout_abouttag_r_tags" FOREIGN KEY (site_id, about_tag_id_c) REFERENCES tags_t(site_id_c, id_c) DEFERRABLE
+    TABLE "notifications3" CONSTRAINT "notfs_abouttag_r_tags" FOREIGN KEY (site_id, about_tag_id_c) REFERENCES tags_t(site_id_c, id_c) DEFERRABLE
+    TABLE "tags_t" CONSTRAINT "tags_parenttagid_onpatid_r_tags_id_onpatid" FOREIGN KEY (site_id_c, parent_tag_id_c, on_pat_id_c) REFERENCES tags_t(site_id_c, id_c, on_pat_id_c) DEFERRABLE
+    TABLE "tags_t" CONSTRAINT "tags_parenttagid_onpostid_r_tags_id_onpostid" FOREIGN KEY (site_id_c, parent_tag_id_c, on_post_id_c) REFERENCES tags_t(site_id_c, id_c, on_post_id_c) DEFERRABLE
+    TABLE "tags_t" CONSTRAINT "tags_parenttagid_r_tags_id" FOREIGN KEY (site_id_c, parent_tag_id_c) REFERENCES tags_t(site_id_c, id_c) DEFERRABLE
+

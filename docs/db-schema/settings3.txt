@@ -1,0 +1,213 @@
+                                     Table "public.settings3"
+                Column                 |          Type           | Collation | Nullable | Default 
+---------------------------------------+-------------------------+-----------+----------+---------
+ site_id                               | integer                 |           | not null | 
+ category_id                           | integer                 |           |          | 
+ page_id                               | character varying       |           |          | 
+ user_must_be_auth                     | boolean                 |           |          | 
+ user_must_be_approved                 | boolean                 |           |          | 
+ allow_guest_login                     | boolean                 |           |          | 
+ num_first_posts_to_review             | smallint                |           |          | 
+ num_first_posts_to_approve            | smallint                |           |          | 
+ max_posts_pend_appr_before            | smallint                |           |          | 
+ head_styles_html                      | character varying       |           |          | 
+ head_scripts_html                     | character varying       |           |          | 
+ end_of_body_html                      | character varying       |           |          | 
+ header_html                           | character varying       |           |          | 
+ footer_html                           | character varying       |           |          | 
+ horizontal_comments                   | boolean                 |           |          | 
+ social_links_html                     | character varying       |           |          | 
+ logo_url_or_html                      | character varying       |           |          | 
+ org_domain                            | character varying       |           |          | 
+ org_full_name                         | character varying       |           |          | 
+ org_short_name                        | character varying       |           |          | 
+ contrib_agreement                     | smallint                |           |          | 
+ content_license                       | smallint                |           |          | 
+ google_analytics_id                   | character varying       |           |          | 
+ experimental                          | boolean                 |           |          | 
+ many_sections                         | boolean                 |           |          | 
+ html_tag_css_classes                  | character varying       |           |          | 
+ num_flags_to_hide_post                | integer                 |           |          | 
+ cooldown_minutes_after_flagged_hidden | integer                 |           |          | 
+ num_flags_to_block_new_user           | integer                 |           |          | 
+ num_flaggers_to_block_new_user        | integer                 |           |          | 
+ notify_mods_if_user_blocked           | boolean                 |           |          | 
+ regular_member_flag_weight            | real                    |           |          | 
+ core_member_flag_weight               | real                    |           |          | 
+ invite_only                           | boolean                 |           |          | 
+ allow_signup                          | boolean                 |           |          | 
+ allow_local_signup                    | boolean                 |           |          | 
+ show_categories                       | boolean                 |           |          | 
+ show_topic_filter                     | boolean                 |           |          | 
+ show_topic_types                      | boolean                 |           |          | 
+ select_topic_type                     | boolean                 |           |          | 
+ forum_main_view                       | character varying       |           |          | 
+ forum_topics_sort_buttons             | character varying       |           |          | 
+ forum_category_links                  | character varying       |           |          | 
+ forum_topics_layout                   | integer                 |           |          | 
+ forum_categories_layout               | integer                 |           |          | 
+ require_verified_email                | boolean                 |           |          | 
+ may_compose_before_signup             | boolean                 |           |          | 
+ may_login_before_email_verified       | boolean                 |           |          | 
+ double_type_email_address             | boolean                 |           |          | 
+ double_type_password                  | boolean                 |           |          | 
+ beg_for_email_address                 | boolean                 |           |          | 
+ allow_embedding_from                  | character varying       |           |          | 
+ show_sub_communities                  | boolean                 |           |          | 
+ language_code                         | character varying       |           |          | 
+ enable_google_login                   | boolean                 |           |          | 
+ enable_facebook_login                 | boolean                 |           |          | 
+ enable_twitter_login                  | boolean                 |           |          | 
+ enable_github_login                   | boolean                 |           |          | 
+ email_domain_blacklist                | character varying       |           |          | 
+ email_domain_whitelist                | character varying       |           |          | 
+ show_author_how                       | smallint                |           |          | 
+ watchbar_starts_open                  | boolean                 |           |          | 
+ favicon_url                           | character varying       |           |          | 
+ enable_chat                           | boolean                 |           |          | 
+ enable_direct_messages                | boolean                 |           |          | 
+ feature_flags                         | character varying       |           |          | 
+ enable_sso                            | boolean                 |           |          | 
+ sso_url                               | character varying       |           |          | 
+ sso_not_approved_url                  | character varying       |           |          | 
+ expire_idle_after_mins                | integer                 |           |          | 
+ enable_gitlab_login                   | boolean                 |           |          | 
+ enable_linkedin_login                 | boolean                 |           |          | 
+ enable_vk_login                       | boolean                 |           |          | 
+ enable_instagram_login                | boolean                 |           |          | 
+ enable_forum                          | boolean                 |           |          | 
+ enable_api                            | boolean                 |           |          | 
+ enable_tags                           | boolean                 |           |          | 
+ embedded_comments_category_id         | integer                 |           |          | 
+ terms_of_use_url                      | character varying       |           |          | 
+ privacy_url                           | character varying       |           |          | 
+ rules_url                             | character varying       |           |          | 
+ contact_email_addr                    | character varying       |           |          | 
+ contact_url                           | character varying       |           |          | 
+ enable_stop_forum_spam                | boolean                 |           |          | 
+ send_email_to_stop_forum_spam         | boolean                 |           |          | 
+ enable_akismet                        | boolean                 |           |          | 
+ send_email_to_akismet                 | boolean                 |           |          | 
+ akismet_api_key                       | character varying       |           |          | 
+ enable_similar_topics                 | boolean                 |           |          | 
+ sso_login_required_logout_url         | character varying       |           |          | 
+ discussion_layout                     | integer                 |           |          | 
+ disc_post_nesting                     | integer                 |           |          | 
+ disc_post_sort_order                  | integer                 |           |          | 
+ progress_layout                       | integer                 |           |          | 
+ progr_post_nesting                    | integer                 |           |          | 
+ progr_post_sort_order                 | integer                 |           |          | 
+ orig_post_reply_btn_title             | character varying       |           |          | 
+ orig_post_votes                       | integer                 |           |          | 
+ enable_cors                           | boolean                 |           |          | 
+ allow_cors_from                       | character varying       |           |          | 
+ allow_cors_creds                      | boolean                 |           |          | 
+ cache_cors_prefl_secs                 | integer                 |           |          | 
+ nav_conf                              | jsonb                   |           |          | 
+ start_of_body_html                    | character varying       |           |          | 
+ appr_before_if_trust_lte              | smallint                |           |          | 
+ review_after_if_trust_lte             | smallint                |           |          | 
+ max_posts_pend_revw_aftr              | smallint                |           |          | 
+ enable_custom_idps                    | boolean                 |           |          | 
+ use_only_custom_idps                  | boolean                 |           |          | 
+ emb_com_sort_order_c                  | integer                 |           |          | 
+ emb_com_nesting_c                     | integer                 |           |          | 
+ enable_disagree_vote_c                | boolean                 |           |          | 
+ sso_logout_redir_url_c                | http_url_d              |           |          | 
+ sso_show_emb_authn_btns_c             | i16_gez_d               |           |          | 
+ sso_paseto_v2_loc_secret_c            | key_hex_b64us_d         |           |          | 
+ sso_paseto_v2_pub_pub_key_c           | key_hex_b64us_d         |           |          | 
+ sso_refresh_authn_token_url_c         | http_url_d              |           |          | 
+ remember_emb_sess_c                   | i16_gez_d               |           |          | 
+ expire_idle_emb_sess_after_mins_c     | i32_gez_d               |           |          | 
+ outbound_emails_from_name_c           | email_name_d            |           |          | 
+ outbound_emails_from_addr_c           | email_d                 |           |          | 
+ outbound_emails_reply_to_c            | email_d                 |           |          | 
+ outbound_emails_smtp_conf_c           | jsonb                   |           |          | 
+ commonmark_conf_c                     | jsonb_ste4000_d         |           |          | 
+ can_remove_mod_reqmts_c               | i32_gz_d                |           |          | 
+ enable_anon_posts_c                   | boolean                 |           |          | 
+ ai_conf_c                             | jsonb_ste16000_d        |           |          | 
+ enable_online_status_c                | boolean                 |           |          | 
+ follow_links_to_c                     | text_nonempty_ste2000_d |           |          | 
+Indexes:
+    "settings3_site_category" UNIQUE, btree (site_id, category_id) WHERE category_id IS NOT NULL
+    "settings3_site_page" UNIQUE, btree (site_id, page_id) WHERE page_id IS NOT NULL
+    "settings3_siteid__u" UNIQUE, btree (site_id) WHERE page_id IS NULL AND category_id IS NULL
+    "settings3_site__i" btree (site_id)
+Check constraints:
+    "settings3_c_akismetapikey_len" CHECK (length(akismet_api_key::text) >= 1 AND length(akismet_api_key::text) <= 200)
+    "settings3_c_langcode_len" CHECK (length(language_code::text) >= 2 AND length(language_code::text) <= 10)
+    "settings3_compose_before_c" CHECK (NOT may_compose_before_signup OR may_login_before_email_verified)
+    "settings3_contentlicense__c_in" CHECK (content_license >= 1 AND content_license <= 100)
+    "settings3_contrib_agr_and_license__c_null" CHECK (contrib_agreement IS NULL OR contrib_agreement = 10 OR content_license IS NOT NULL AND content_license = contrib_agreement)
+    "settings3_contribagr__c_in" CHECK (contrib_agreement >= 1 AND contrib_agreement <= 100)
+    "settings3_flag_weight__c_ge" CHECK (regular_member_flag_weight >= 1.0::double precision AND core_member_flag_weight >= regular_member_flag_weight)
+    "settings3_flags__c_gez" CHECK (num_flags_to_hide_post >= 0 AND cooldown_minutes_after_flagged_hidden >= 0 AND num_flags_to_block_new_user >= 0 AND num_flaggers_to_block_new_user >= 0)
+    "settings3_googleanalyticsid__c_len" CHECK (length(google_analytics_id::text) >= 1 AND length(google_analytics_id::text) <= 100)
+    "settings3_htmltagcssclasses__c_len" CHECK (length(html_tag_css_classes::text) >= 1 AND length(html_tag_css_classes::text) <= 100)
+    "settings3_htmltagcssclasses__c_valid" CHECK (is_valid_css_class(html_tag_css_classes))
+    "settings3_numfirst_allow_ge_approve" CHECK (max_posts_pend_appr_before >= num_first_posts_to_approve)
+    "settings3_numfirsttoallow_0_to_10" CHECK (max_posts_pend_appr_before >= 0 AND max_posts_pend_appr_before <= 10)
+    "settings3_numfirsttoapprove_0_to_10" CHECK (num_first_posts_to_approve >= 0 AND num_first_posts_to_approve <= 10)
+    "settings3_numfirsttoreview_0_to_10" CHECK (num_first_posts_to_review >= 0 AND num_first_posts_to_review <= 10)
+    "settings3_only_for_site__c" CHECK (category_id IS NULL AND page_id IS NULL OR user_must_be_auth IS NULL AND user_must_be_approved IS NULL AND allow_guest_login IS NULL AND require_verified_email IS NULL AND may_compose_before_signup IS NULL AND may_login_before_email_verified IS NULL AND double_type_email_address IS NULL AND double_type_password IS NULL AND beg_for_email_address IS NULL AND num_first_posts_to_review IS NULL AND num_first_posts_to_approve IS NULL AND max_posts_pend_appr_before IS NULL AND org_domain IS NULL AND org_full_name IS NULL AND org_short_name IS NULL AND contrib_agreement IS NULL AND content_license IS NULL AND google_analytics_id IS NULL AND experimental IS NULL AND many_sections IS NULL AND num_flags_to_hide_post IS NULL AND cooldown_minutes_after_flagged_hidden IS NULL AND num_flags_to_block_new_user IS NULL AND num_flaggers_to_block_new_user IS NULL AND notify_mods_if_user_blocked IS NULL AND regular_member_flag_weight IS NULL AND core_member_flag_weight IS NULL)
+    "settings3_orgdomain__c_len" CHECK (length(org_domain::text) >= 1 AND length(org_domain::text) <= 100)
+    "settings3_orgfullname__c_len" CHECK (length(org_full_name::text) >= 1 AND length(org_full_name::text) <= 100)
+    "settings3_orgfullname__c_trim" CHECK (btrim(org_full_name::text) = org_full_name::text)
+    "settings3_orgshortname__c_len" CHECK (length(org_short_name::text) >= 1 AND length(org_short_name::text) <= 100)
+    "settings3_page_or_cat_null__c" CHECK (category_id IS NULL OR page_id IS NULL)
+    "settings3_signup__c" CHECK (allow_signup OR NOT allow_local_signup)
+    "settings3_signup_email_verif_c" CHECK (NOT (require_verified_email AND (may_compose_before_signup OR may_login_before_email_verified OR allow_guest_login)))
+    "settings_c_allowcorsfrom_len" CHECK (length(allow_cors_from::text) >= 1 AND length(allow_cors_from::text) <= 1000)
+    "settings_c_allowembeddingfrom_btw_5_300" CHECK (length(allow_embedding_from::text) >= 5 AND length(allow_embedding_from::text) <= 300)
+    "settings_c_apprbeforeiftrustlte" CHECK (is_ok_trust_level(appr_before_if_trust_lte::integer))
+    "settings_c_contactemailaddr_len" CHECK (length(contact_email_addr::text) >= 1 AND length(contact_email_addr::text) <= 200)
+    "settings_c_contacturl_len" CHECK (length(contact_url::text) >= 1 AND length(contact_url::text) <= 200)
+    "settings_c_custom_idps_xor_sso" CHECK (NOT enable_custom_idps OR NOT enable_sso)
+    "settings_c_discpostnesting" CHECK (disc_post_nesting >= '-1'::integer AND disc_post_nesting <= 100)
+    "settings_c_discpostsortorder" CHECK (disc_post_sort_order >= 0 AND disc_post_sort_order <= 1000)
+    "settings_c_discussionlayout" CHECK (discussion_layout >= 0 AND discussion_layout <= 100)
+    "settings_c_emailallowlist_len" CHECK (length(email_domain_whitelist::text) >= 1 AND length(email_domain_whitelist::text) <= 50000)
+    "settings_c_emailblocklist_len" CHECK (length(email_domain_blacklist::text) >= 1 AND length(email_domain_blacklist::text) <= 50000)
+    "settings_c_embcomnesting" CHECK (emb_com_nesting_c >= '-1'::integer AND emb_com_nesting_c <= 100)
+    "settings_c_embcomsortorder" CHECK (emb_com_sort_order_c >= 0 AND emb_com_sort_order_c <= 1000)
+    "settings_c_enable_use_only_custom_idps" CHECK (enable_custom_idps IS NOT NULL AND enable_custom_idps OR NOT use_only_custom_idps)
+    "settings_c_enablesso_ssourl" CHECK (NOT enable_sso OR sso_url IS NOT NULL)
+    "settings_c_endofbodyhtml_len" CHECK (length(end_of_body_html::text) >= 1 AND length(end_of_body_html::text) <= 50000)
+    "settings_c_faviconurl_len" CHECK (length(favicon_url::text) >= 1 AND length(favicon_url::text) <= 200)
+    "settings_c_featureflags_len" CHECK (length(feature_flags::text) < 10000)
+    "settings_c_footerhtml_len" CHECK (length(footer_html::text) >= 1 AND length(footer_html::text) <= 50000)
+    "settings_c_guestlogin_auth" CHECK (NOT (allow_guest_login AND (user_must_be_auth OR user_must_be_approved OR invite_only)))
+    "settings_c_headerhtml_len" CHECK (length(header_html::text) >= 1 AND length(header_html::text) <= 50000)
+    "settings_c_headscriptshtml_len" CHECK (length(head_scripts_html::text) >= 1 AND length(head_scripts_html::text) <= 50000)
+    "settings_c_headstyleshtml_len" CHECK (length(head_styles_html::text) >= 1 AND length(head_styles_html::text) <= 50000)
+    "settings_c_logourlorhtml_len" CHECK (length(logo_url_or_html::text) >= 1 AND length(logo_url_or_html::text) <= 50000)
+    "settings_c_maxpostspendrevwaftr" CHECK (max_posts_pend_revw_aftr >= 0 AND max_posts_pend_revw_aftr <= 10)
+    "settings_c_navconf_len" CHECK (pg_column_size(nav_conf) >= 1 AND pg_column_size(nav_conf) <= 50000)
+    "settings_c_origpostreplybtntitle" CHECK (length(orig_post_reply_btn_title::text) >= 1 AND length(orig_post_reply_btn_title::text) <= 100)
+    "settings_c_origpostvotes" CHECK (orig_post_votes >= 0 AND orig_post_votes <= 100)
+    "settings_c_privacyurl_len" CHECK (length(privacy_url::text) >= 1 AND length(privacy_url::text) <= 200)
+    "settings_c_progresslayout" CHECK (progress_layout >= 0 AND progress_layout <= 100)
+    "settings_c_progrpostnesting" CHECK (progr_post_nesting >= '-1'::integer AND progr_post_nesting <= 100)
+    "settings_c_progrpostsortorder" CHECK (progr_post_sort_order >= 0 AND progr_post_sort_order <= 1000)
+    "settings_c_reviewafteriftrustlte" CHECK (is_ok_trust_level(review_after_if_trust_lte::integer))
+    "settings_c_rulesurl_len" CHECK (length(rules_url::text) >= 1 AND length(rules_url::text) <= 200)
+    "settings_c_sociallinkshtml_len" CHECK (length(social_links_html::text) >= 1 AND length(social_links_html::text) <= 50000)
+    "settings_c_ssologinrequiredlogouturl_len" CHECK (length(sso_login_required_logout_url::text) >= 1 AND length(sso_login_required_logout_url::text) <= 200)
+    "settings_c_ssonotappr_len" CHECK (length(sso_not_approved_url::text) < 200)
+    "settings_c_ssourl_len" CHECK (length(sso_url::text) < 200)
+    "settings_c_startofbodyhtml_len" CHECK (length(start_of_body_html::text) >= 1 AND length(start_of_body_html::text) <= 50000)
+    "settings_c_termsofuseurl_len" CHECK (length(terms_of_use_url::text) >= 1 AND length(terms_of_use_url::text) <= 200)
+    "settings_forum_features" CHECK (enable_forum IS NOT FALSE OR show_categories = false AND enable_tags = false AND enable_chat = false AND enable_direct_messages = false AND show_sub_communities IS NOT TRUE AND show_topic_filter = false AND show_topic_types = false AND select_topic_type = false AND embedded_comments_category_id IS NULL)
+    "settings_forumcatlinks_c_in" CHECK (is_menu_spec(forum_category_links) AND length(forum_category_links::text) >= 1 AND length(forum_category_links::text) <= 300)
+    "settings_forumcatslayout_c_in" CHECK (forum_categories_layout >= 0 AND forum_categories_layout <= 20)
+    "settings_forummainview_c_in" CHECK (is_menu_spec(forum_main_view) AND length(forum_main_view::text) >= 1 AND length(forum_main_view::text) <= 100)
+    "settings_forumtopicslayout_c_in" CHECK (forum_topics_layout >= 0 AND forum_topics_layout <= 20)
+    "settings_forumtopicssort_c_in" CHECK (is_menu_spec(forum_topics_sort_buttons) AND length(forum_topics_sort_buttons::text) >= 1 AND length(forum_topics_sort_buttons::text) <= 200)
+Foreign-key constraints:
+    "settings_cat_r_cats" FOREIGN KEY (site_id, category_id) REFERENCES categories3(site_id, id) DEFERRABLE
+    "settings_embcmtscatid_r_categories" FOREIGN KEY (site_id, embedded_comments_category_id) REFERENCES categories3(site_id, id) DEFERRABLE
+    "settings_page_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    "settings_site_r_sites" FOREIGN KEY (site_id) REFERENCES sites3(id) DEFERRABLE
+

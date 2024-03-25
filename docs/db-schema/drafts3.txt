@@ -1,0 +1,52 @@
+                              Table "public.drafts3"
+      Column       |            Type             | Collation | Nullable | Default 
+-------------------+-----------------------------+-----------+----------+---------
+ site_id           | integer                     |           | not null | 
+ by_user_id        | integer                     |           | not null | 
+ draft_nr          | integer                     |           | not null | 
+ draft_type        | smallint                    |           | not null | 
+ created_at        | timestamp without time zone |           | not null | 
+ last_edited_at    | timestamp without time zone |           |          | 
+ deleted_at        | timestamp without time zone |           |          | 
+ category_id       | integer                     |           |          | 
+ to_user_id        | integer                     |           |          | 
+ topic_type        | smallint                    |           |          | 
+ page_id           | character varying           |           |          | 
+ post_nr           | integer                     |           |          | 
+ post_id           | integer                     |           |          | 
+ post_type         | smallint                    |           |          | 
+ title             | character varying           |           | not null | 
+ text              | character varying           |           | not null | 
+ new_anon_status_c | anonym_status_d             |           |          | 
+ post_as_id_c      | pat_id_d                    |           |          | 
+Indexes:
+    "drafts_byuser_nr_p" PRIMARY KEY, btree (site_id, by_user_id, draft_nr)
+    "drafts_byuser_deldat_i" btree (site_id, by_user_id, deleted_at DESC) WHERE deleted_at IS NOT NULL
+    "drafts_byuser_editedat_i" btree (site_id, by_user_id, COALESCE(last_edited_at, created_at)) WHERE deleted_at IS NULL
+    "drafts_category_i" btree (site_id, category_id)
+    "drafts_i_postasid" btree (site_id, post_as_id_c) WHERE post_as_id_c IS NOT NULL
+    "drafts_pageid_postnr_i" btree (site_id, page_id, post_nr)
+    "drafts_postid_i" btree (site_id, post_id)
+    "drafts_touser_i" btree (site_id, to_user_id)
+Check constraints:
+    "drafts_c_createdat_lte_deletedat" CHECK (created_at <= deleted_at)
+    "drafts_c_createdat_lte_lasteditedat" CHECK (created_at <= last_edited_at)
+    "drafts_c_lasteditedat_lte_deletedat" CHECK (last_edited_at <= deleted_at)
+    "drafts_c_nr_gte_1" CHECK (draft_nr >= 1)
+    "drafts_c_nr_not_for_imp" CHECK (draft_nr < 2000000000)
+    "drafts_c_postnr_has_pageid" CHECK (post_nr IS NULL OR page_id IS NOT NULL)
+    "drafts_c_text_len_lte_500k" CHECK (length(text::text) <= (500 * 1000))
+    "drafts_c_title_len_lte_500" CHECK (length(title::text) <= 500)
+    "drafts_c_type_direct_message" CHECK (draft_type <> 3 OR category_id IS NULL AND topic_type IS NOT NULL AND page_id IS NULL AND post_nr IS NULL AND post_id IS NULL AND post_type IS NULL AND to_user_id IS NOT NULL)
+    "drafts_c_type_edit" CHECK (draft_type <> 4 OR category_id IS NULL AND topic_type IS NULL AND page_id IS NOT NULL AND post_nr IS NOT NULL AND post_id IS NOT NULL AND to_user_id IS NULL)
+    "drafts_c_type_reply" CHECK (draft_type <> 5 OR category_id IS NULL AND topic_type IS NULL AND page_id IS NOT NULL AND post_nr IS NOT NULL AND post_id IS NOT NULL AND post_type IS NOT NULL AND to_user_id IS NULL)
+    "drafts_c_type_topic" CHECK (draft_type <> 2 OR category_id IS NOT NULL AND topic_type IS NOT NULL AND page_id IS NOT NULL AND post_nr IS NULL AND post_id IS NULL AND post_type IS NULL AND to_user_id IS NULL)
+Foreign-key constraints:
+    "drafts_byuser_r_users" FOREIGN KEY (site_id, by_user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "drafts_category_r_cats" FOREIGN KEY (site_id, category_id) REFERENCES categories3(site_id, id) DEFERRABLE
+    "drafts_pageid_postnr_r_posts" FOREIGN KEY (site_id, page_id, post_nr) REFERENCES posts3(site_id, page_id, post_nr) DEFERRABLE
+    "drafts_pageid_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    "drafts_postasid_r_pats" FOREIGN KEY (site_id, post_as_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "drafts_postid_r_posts" FOREIGN KEY (site_id, post_id) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    "drafts_touser_r_users" FOREIGN KEY (site_id, to_user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+

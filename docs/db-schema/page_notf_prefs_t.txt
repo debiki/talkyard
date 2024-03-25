@@ -1,0 +1,31 @@
+                      Table "public.page_notf_prefs_t"
+         Column         |       Type        | Collation | Nullable | Default 
+------------------------+-------------------+-----------+----------+---------
+ site_id                | integer           |           | not null | 
+ pat_id_c               | integer           |           | not null | 
+ notf_level             | integer           |           | not null | 
+ page_id                | character varying |           |          | 
+ pages_in_whole_site_c  | boolean           |           |          | 
+ pages_in_cat_id_c      | integer           |           |          | 
+ incl_sub_cats_c        | boolean           |           |          | 
+ pages_pat_created_c    | boolean           |           |          | 
+ pages_pat_replied_to_c | boolean           |           |          | 
+Indexes:
+    "pagenotfprefs_category_people_u" UNIQUE CONSTRAINT, btree (site_id, pages_in_cat_id_c, pat_id_c)
+    "pagenotfprefs_pageid_people_u" UNIQUE CONSTRAINT, btree (site_id, page_id, pat_id_c)
+    "pagenotfprefs_u_pagespatcreated_patid" UNIQUE, btree (site_id, pages_pat_created_c, pat_id_c)
+    "pagenotfprefs_u_pagespatrepliedto_patid" UNIQUE, btree (site_id, pages_pat_replied_to_c, pat_id_c)
+    "pagenotfprefs_wholesite_people_u" UNIQUE CONSTRAINT, btree (site_id, pages_in_whole_site_c, pat_id_c)
+    "pagenotfprefs_people_i" btree (site_id, pat_id_c)
+Check constraints:
+    "pagenotfprefs_c_for_sth" CHECK (num_nonnulls(page_id, pages_pat_created_c, pages_pat_replied_to_c, pages_in_cat_id_c, pages_in_whole_site_c) = 1)
+    "pagenotfprefs_c_inclsubcats" CHECK (incl_sub_cats_c IS NULL)
+    "pagenotfprefs_c_notf_level" CHECK (notf_level >= 1 AND notf_level <= 9)
+    "pagenotfprefs_c_pagespatcreated_true" CHECK (pages_pat_created_c)
+    "pagenotfprefs_c_pagespatrepliedto_true" CHECK (pages_pat_replied_to_c)
+    "pagenotfprefs_c_wholesite_true" CHECK (pages_in_whole_site_c)
+Foreign-key constraints:
+    "pagenotfprefs_r_cats" FOREIGN KEY (site_id, pages_in_cat_id_c) REFERENCES categories3(site_id, id) DEFERRABLE
+    "pagenotfprefs_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    "pagenotfprefs_r_people" FOREIGN KEY (site_id, pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+
