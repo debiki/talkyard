@@ -868,6 +868,7 @@ object JsX {   RENAME // to JsonPaSe
     val jOb = asJsObject(jsVal, "tag type")
     val id = parseInt32(jOb, "id")
     val refId = parseOptSt(jOb, "refId")
+    val scopedToPatId: Opt[PatId] = parseInt32(jOb, "scopedToPatId")
     val canTagWhat = parseInt32(jOb, "canTagWhat")
     val dispName = parseSt(jOb, "dispName")
     val anySlug = parseOptSt(jOb, "urlSlug").noneIfBlank
@@ -889,6 +890,7 @@ object JsX {   RENAME // to JsonPaSe
     TagType(
           id = id,
           refId = refId,
+          scopedToPatId = scopedToPatId,
           canTagWhat = canTagWhat,
           urlSlug = anySlug,
           dispName = dispName,

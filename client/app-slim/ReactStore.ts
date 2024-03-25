@@ -1200,6 +1200,17 @@ let lastPostIdMarkCycled = null;
 function cycleToNextMark(postId: number) {
   const me: Myself = store.me;
   const myPageData: MyPageData = me.myCurrentPageData;
+  if (!myPageData.myBookmarks) myPageData.myBookmarks = [];
+  const tag: Tag = {
+    id: 0, // No.TagId,
+    tagTypeId: 123, // TagTypeId;
+    //onPatId?: PatId;
+    onPostId: postId, //?: PostId;
+    //order?: Nr;  // ??
+    valType: TypeValueType.StrTxt,
+    valStr: "Bookmark description, up to 250 chars",
+  };
+  myPageData.myBookmarks[0] = tag;
   const currentMark = myPageData.marksByPostId[postId];
   let nextMark;
   // The first time when clicking the star icon, try to star the post,

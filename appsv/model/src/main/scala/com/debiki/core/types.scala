@@ -30,7 +30,9 @@ import com.debiki.core.Prelude._
 case class TagType(
   id: TagTypeId,
   refId: Opt[RefId],
-  canTagWhat: i32,
+  scopedToPatId: Opt[PatId] = None,
+  //isPersonal: Bo,   // Bookmarks should always be? But then, ThingKind.Bookmark is enough?
+  canTagWhat: i32,  // CHANGE to ThingKind.Tag|Badge|Bookmark ?
   urlSlug: Opt[St],
   dispName: St,
   createdById: PatId,
@@ -73,11 +75,22 @@ object TypeValueType {
   // Sync w db constr: value_type_d_c_lt3000_for_now.
   // Sync w db constr: value_type_d_c_gtem3_nz
   // Sync w Typescript enum TypeValueType.
-  // case object BoolTrue extends TypeValueType(-2)
-  // case object BoolFalse extends TypeValueType(-1)
+
+  // Booleans: No need to store both a type and a value — can instead use
+  // "types" true & false, and skip the value.
+  // case object BoolTrue extends TypeValueType(-1)
+  // case object BoolFalse extends TypeValueType(-2)
+  // (case object None/Null/Undefined? — Can just leave the value empty instead?)
+
   case object Int32 extends TypeValueType(1)
   case object Flt64 extends TypeValueType(5)
   case object StrKwd extends TypeValueType(17)
+  case object StrTxt extends TypeValueType(18)
+
+  //case object Task extends TypeValueType(?)
+
+  //case object PostLink extends TypeValueType(?)
+  //case object PatLink  extends TypeValueType(?)
 
   def fromInt(value: i32): Opt[TypeValueType] = Some(value match {
     case Int32.IntVal => Int32

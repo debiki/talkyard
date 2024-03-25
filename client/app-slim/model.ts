@@ -460,6 +460,7 @@ interface MyPageData {
   dbgSrc?: string;
   pageId: PageId;
   myDrafts: Draft[];
+  myBookmarks?: Tag[];
   // The user's own notification preference, for this page. Hen can change this setting.
   myPageNotfPref?: PageNotfPref;
   // Notification preferences, for the groups one is a member of, for this page. The user cannot change
@@ -832,6 +833,7 @@ interface Tag {
   tagTypeId: TagTypeId;
   onPatId?: PatId;
   onPostId?: PostId;
+  order?: Nr;  // ??
   valType?: TypeValueType;
   valInt32?: Nr;
   valFlt64?: Nr;

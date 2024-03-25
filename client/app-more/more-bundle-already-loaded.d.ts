@@ -120,6 +120,7 @@ declare namespace debiki2.nopage {
 declare namespace debiki2.tags {
   var routes;
   function openTagDropdown(atRect, ps);
+  function openBookmarkDropdown(atRect, ps);
 }
 
 declare namespace debiki2.titleeditor {

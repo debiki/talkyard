@@ -37,6 +37,13 @@ export function openTagDropdown(atRect, ps: {
 }
 
 
+export function openBookmarkDropdown(atRect, ps) {
+  Server.loadMoreScriptsBundle(() => {
+    tags.openBookmarkDropdown(atRect, ps);
+  });
+}
+
+
 export function openDropdown(ps: ProxyDiagParams, childrenFn: (close: () => V) => RElm) {
   Server.loadMoreScriptsBundle(() => {
     morekit.openProxyDiag(ps, childrenFn);

@@ -25,6 +25,7 @@
 /// <reference path="metabar.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../rules.ts" />
+/// <reference path="../tags/tags.ts" />
 /// <reference path="../widgets.ts" />
 /// <reference path="../page-dialogs/open-share-popup.ts" />
 /// <reference path="../login/login-if-needed.ts" />
@@ -1737,14 +1738,22 @@ export const PostHeader = createComponent({
       }
     }
 
-    // Skip? Use: bookmarksList  instead? see below
-    let bookmark;
-    if (true) { // me.bookmarks[post.uniqueId]) {
-      let starClass = ' icon-bookmark-empty';
-      bookmark =
+    // Show an add-bookmarks button, if there are no bookmarks on this post.
+    let bookmarkBtn: RElm | U;
+    const bms: Tag[] = me.myCurrentPageData.myBookmarks || [];
+    const bookmarks: Tag[] = bms.filter(bm => bm.onPostId === post.uniqueId); // [On2] for now
+    if (!bookmarks.length) {
+      // let starClass = ' icon-bookmark-empty';
+      bookmarkBtn =
         // The outer -click makes the click area larger, because the marks are small.
-        r.span({ className: 's_P_H_Bm dw-p-mark-click', onClick: this.props.onMarkClick },
-          r.span({ className: 'dw-p-mark icon-bookmark' + starClass }));
+        r.span({ className: 's_P_H_Bm dw-p-mark-click',   // onClick: this.props.onMarkClick
+              onClick: (event: MouseEvent) => {
+                const atRect = cloneEventTargetRect(event);
+                morebundle.openBookmarkDropdown(atRect, {
+                  // tag, tagName, tagType, anyValue,
+                  me, post });
+              }},
+          r.span({ className: 'dw-p-mark icon-bookmark-empty' }));
     }
 
     const unreadMark = !me.isLoggedIn || me_hasRead(me, post) ? null :
@@ -1790,7 +1799,7 @@ export const PostHeader = createComponent({
             TagListLive({ className: 'n_TagL-Po', forPost: post, store, live: props.live });
     // Just testing.
     const bookmarksList: RElm | U =
-            TagList({ className: 'n_TagL-Po-Bo', forPost: post, store,
+            TagList({ className: 'n_TagL-Po-Bo', tags: bookmarks, store,
                 canEditTags: props.live, isBookmarks: true });
 
     const timeClass = 'esP_H_At';
@@ -1813,8 +1822,8 @@ export const PostHeader = createComponent({
           inReplyTo,
           assignees(),
           toggleCollapsedButton,
-          bookmark,
           unreadMark,
+          bookmarkBtn,
           bookmarksList,
           this.props.stuffToAppend,
           ),

@@ -227,6 +227,8 @@ const enum ThingType {  // or RENAME to TaggableThingType? no CHANGE to [ThingKi
   // And cats 512, then? For now.
   //Cats = 512,
 
+  Bookmark = 78,  // [ThingKind]
+
   All = Pats + Posts,  // RENAME to AllThatCanBeTagged
 }
 
