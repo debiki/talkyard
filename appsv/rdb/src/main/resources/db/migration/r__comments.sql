@@ -724,6 +724,13 @@ a '{}' after any numeric or text value, to indicate that there's json.
 For now, urls and jsonb aren't allowed — only numbers and plain text.
 $_$; -- '
 
+------------------------------------------------------------------------
+comment on column  tags_t.visible_only_to_pat_id_c  is $_$
+Bookmarks are visible only to oneself, so we need to remember who may
+see them. And there'll be private tags & badges, e.g. staff-only user
+notes (see below), so this makes sense for tags & badges too.
+$_$;  -- '
+
 
 --======================================================================
 --  types_t   (currently named tagtypes_t)
