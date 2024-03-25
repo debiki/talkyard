@@ -1,0 +1,37 @@
+                               Table "public.job_queue_t"
+        Column         |            Type             | Collation | Nullable |  Default  
+-----------------------+-----------------------------+-----------+----------+-----------
+ inserted_at           | timestamp without time zone |           | not null | now_utc()
+ action_at             | timestamp without time zone |           | not null | 
+ site_id               | integer                     |           | not null | 
+ site_version          | integer                     |           | not null | 
+ page_id               | character varying           |           |          | 
+ page_version          | integer                     |           |          | 
+ post_id               | integer                     |           |          | 
+ post_rev_nr           | integer                     |           |          | 
+ cat_id_c              | i32_nz_d                    |           |          | 
+ pat_id_c              | i32_nz_d                    |           |          | 
+ type_id_c             | i32_nz_d                    |           |          | 
+ time_range_from_c     | timestamp without time zone |           |          | 
+ time_range_from_ofs_c | i32_d                       |           |          | 
+ time_range_to_c       | timestamp without time zone |           |          | 
+ time_range_to_ofs_c   | i32_d                       |           |          | 
+ do_what_c             | i64_nz_d                    |           | not null | 1
+Indexes:
+    "jobq_u_dowhat_cat" UNIQUE, btree (site_id, do_what_c, cat_id_c) WHERE cat_id_c IS NOT NULL
+    "jobq_u_dowhat_page" UNIQUE, btree (site_id, do_what_c, page_id) WHERE page_id IS NOT NULL
+    "jobq_u_dowhat_pat" UNIQUE, btree (site_id, do_what_c, pat_id_c) WHERE pat_id_c IS NOT NULL
+    "jobq_u_dowhat_post" UNIQUE, btree (site_id, do_what_c, post_id) WHERE post_id IS NOT NULL
+    "jobq_u_dowhat_site_timerange" UNIQUE, btree (site_id, do_what_c) WHERE time_range_to_c IS NOT NULL AND page_id IS NULL AND post_id IS NULL AND cat_id_c IS NULL AND pat_id_c IS NULL AND type_id_c IS NULL
+    "jobq_u_dowhat_timerange_for_now" UNIQUE, btree (site_id, do_what_c) WHERE time_range_to_c IS NOT NULL
+    "jobq_u_dowhat_type" UNIQUE, btree (site_id, do_what_c, type_id_c) WHERE type_id_c IS NOT NULL
+    "ixq_actionat__i" btree (action_at DESC)
+Check constraints:
+    "ixq_page_pageversion__c_nl_eq" CHECK ((page_id IS NULL) = (page_version IS NULL))
+    "ixq_post_postrevnr__c_nl_eq" CHECK ((post_id IS NULL) = (post_rev_nr IS NULL))
+    "jobq_c_0_post_w_timerange" CHECK (post_id IS NULL OR time_range_to_c IS NULL)
+    "jobq_c_one_thing" CHECK (num_nonnulls(page_id, post_id, cat_id_c, pat_id_c, type_id_c) = 1 OR num_nonnulls(page_id, post_id, cat_id_c, pat_id_c, type_id_c) = 0 AND time_range_to_c IS NOT NULL)
+    "jobq_c_timerange_for_whole_site_for_now" CHECK (time_range_to_c IS NULL OR post_id IS NULL AND page_id IS NULL AND cat_id_c IS NULL AND pat_id_c IS NULL AND type_id_c IS NULL)
+    "jobq_c_timerange_from_0_for_now" CHECK (date_part('epoch'::text, time_range_from_c) = 0::double precision AND time_range_from_ofs_c::integer = 0)
+    "jobq_c_timerange_ofs_null" CHECK ((time_range_from_c IS NULL) = (time_range_from_ofs_c IS NULL) AND (time_range_from_c IS NULL) = (time_range_to_c IS NULL) AND (time_range_from_c IS NULL) = (time_range_to_ofs_c IS NULL))
+

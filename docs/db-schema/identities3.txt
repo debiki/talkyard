@@ -1,0 +1,90 @@
+                                  Table "public.identities3"
+            Column             |            Type             | Collation | Nullable | Default 
+-------------------------------+-----------------------------+-----------+----------+---------
+ idty_id_c                     | integer                     |           | not null | 
+ site_id                       | integer                     |           | not null | 
+ user_id_c                     | integer                     |           | not null | 
+ user_id_orig_c                | integer                     |           | not null | 
+ oid_claimed_id                | character varying(500)      |           |          | 
+ oid_op_local_id               | character varying(500)      |           |          | 
+ oid_realm                     | character varying(100)      |           |          | 
+ oid_endpoint                  | character varying(100)      |           |          | 
+ oid_version                   | character varying(100)      |           |          | 
+ first_name_c                  | character varying           |           |          | 
+ email_adr_c                   | character varying           |           |          | 
+ country_c                     | character varying           |           |          | 
+ inserted_at_c                 | timestamp without time zone |           | not null | now()
+ last_name_c                   | character varying           |           |          | 
+ full_name_c                   | character varying           |           |          | 
+ picture_url_c                 | pic_url_d                   |           |          | 
+ conf_file_idp_id_c            | character varying           |           |          | 
+ idp_user_id_c                 | character varying           |           |          | 
+ broken_idp_sth_c              | character varying           |           |          | 
+ idp_id_c                      | integer                     |           |          | 
+ oidc_id_token_str_c           | character varying           |           |          | 
+ oidc_id_token_json_c          | jsonb                       |           |          | 
+ idp_user_json_c               | jsonb                       |           |          | 
+ pref_username_c               | character varying           |           |          | 
+ idp_realm_id_c                | character varying           |           |          | 
+ idp_realm_user_id_c           | character varying           |           |          | 
+ issuer_c                      | character varying           |           |          | 
+ is_email_verified_by_idp_c    | boolean                     |           |          | 
+ nickname_c                    | character varying           |           |          | 
+ middle_name_c                 | character varying           |           |          | 
+ phone_nr_c                    | character varying           |           |          | 
+ is_phone_nr_verified_by_idp_c | boolean                     |           |          | 
+ profile_url_c                 | character varying           |           |          | 
+ website_url_c                 | character varying           |           |          | 
+ gender_c                      | character varying           |           |          | 
+ birthdate_c                   | character varying           |           |          | 
+ time_zone_info_c              | character varying           |           |          | 
+ locale_c                      | character varying           |           |          | 
+ is_realm_guest_c              | boolean                     |           |          | 
+ last_updated_at_idp_at_sec_c  | bigint                      |           |          | 
+Indexes:
+    "idtys_p_idtyid" PRIMARY KEY, btree (site_id, idty_id_c)
+    "dw1_idsoid_tnt_oid__u" UNIQUE CONSTRAINT, btree (site_id, oid_claimed_id)
+    "idtys_u_conffileidpid_idpusrid" UNIQUE, btree (site_id, conf_file_idp_id_c, idp_user_id_c) WHERE conf_file_idp_id_c IS NOT NULL
+    "idtys_u_idpid_idpuserid" UNIQUE, btree (site_id, idp_id_c, idp_user_id_c) WHERE idp_id_c IS NOT NULL
+    "idtys_u_idprealmid_idprealmuserid" UNIQUE, btree (site_id, idp_realm_id_c, idp_realm_user_id_c) WHERE idp_realm_id_c IS NOT NULL
+    "idtys_i_g_email" btree (email_adr_c)
+    "idtys_i_patid" btree (site_id, user_id_c)
+Check constraints:
+    "dw1_idsoid_sno_not_0__c" CHECK (idty_id_c::text <> '0'::text)
+    "identities_c_id_not_for_imp" CHECK (idty_id_c < 2000000000)
+    "idtys_c_birthdate_len" CHECK (length(birthdate_c::text) >= 1 AND length(birthdate_c::text) <= 100)
+    "idtys_c_brokenidpsth_len" CHECK (length(broken_idp_sth_c::text) >= 1 AND length(broken_idp_sth_c::text) <= 1000)
+    "idtys_c_conffileidpid_len" CHECK (length(conf_file_idp_id_c::text) < 500)
+    "idtys_c_country_len" CHECK (length(country_c::text) >= 1 AND length(country_c::text) <= 250)
+    "idtys_c_email_len" CHECK (length(email_adr_c::text) >= 1 AND length(email_adr_c::text) <= 250)
+    "idtys_c_emailadr_emailverified_null" CHECK (email_adr_c IS NOT NULL OR NOT is_email_verified_by_idp_c)
+    "idtys_c_firstname_len" CHECK (length(first_name_c::text) >= 1 AND length(first_name_c::text) <= 250)
+    "idtys_c_fullname_len" CHECK (length(full_name_c::text) >= 1 AND length(full_name_c::text) <= 250)
+    "idtys_c_gender_len" CHECK (length(gender_c::text) >= 1 AND length(gender_c::text) <= 100)
+    "idtys_c_idprealmid_len" CHECK (length(idp_realm_id_c::text) >= 1 AND length(idp_realm_id_c::text) <= 500)
+    "idtys_c_idprealmid_realmuserid_null" CHECK (idp_realm_id_c IS NOT NULL OR idp_realm_user_id_c IS NULL)
+    "idtys_c_idprealmuserid_len" CHECK (length(idp_realm_user_id_c::text) >= 1 AND length(idp_realm_user_id_c::text) <= 500)
+    "idtys_c_idpuserid_len" CHECK (length(idp_user_id_c::text) >= 1 AND length(idp_user_id_c::text) <= 500)
+    "idtys_c_idpuserjson_len" CHECK (pg_column_size(idp_user_json_c) >= 1 AND pg_column_size(idp_user_json_c) <= 7000)
+    "idtys_c_issuer_len" CHECK (length(issuer_c::text) >= 1 AND length(issuer_c::text) <= 500)
+    "idtys_c_lastname_len" CHECK (length(last_name_c::text) >= 1 AND length(last_name_c::text) <= 250)
+    "idtys_c_lastupdatedatidpatsec_len" CHECK (last_updated_at_idp_at_sec_c >= 0)
+    "idtys_c_locale_len" CHECK (length(locale_c::text) >= 1 AND length(locale_c::text) <= 250)
+    "idtys_c_middlename_len" CHECK (length(middle_name_c::text) >= 1 AND length(middle_name_c::text) <= 250)
+    "idtys_c_nickname_len" CHECK (length(nickname_c::text) >= 1 AND length(nickname_c::text) <= 250)
+    "idtys_c_oidcidtokenjson" CHECK (pg_column_size(oidc_id_token_json_c) >= 1 AND pg_column_size(oidc_id_token_json_c) <= 7000)
+    "idtys_c_oidcidtokenstr" CHECK (length(oidc_id_token_str_c::text) >= 1 AND length(oidc_id_token_str_c::text) <= 7000)
+    "idtys_c_one_type" CHECK (num_nonnulls(oid_claimed_id, idp_id_c, conf_file_idp_id_c, broken_idp_sth_c) = 1)
+    "idtys_c_phonenr_len" CHECK (length(phone_nr_c::text) >= 1 AND length(phone_nr_c::text) <= 250)
+    "idtys_c_phonenr_phonenrverified_null" CHECK (phone_nr_c IS NOT NULL OR NOT is_phone_nr_verified_by_idp_c)
+    "idtys_c_prefusername_len" CHECK (length(pref_username_c::text) >= 1 AND length(pref_username_c::text) <= 200)
+    "idtys_c_profileurl_len" CHECK (length(profile_url_c::text) >= 1 AND length(profile_url_c::text) <= 500)
+    "idtys_c_timezoneinfo_len" CHECK (length(time_zone_info_c::text) >= 1 AND length(time_zone_info_c::text) <= 250)
+    "idtys_c_websiteurl_len" CHECK (length(website_url_c::text) >= 1 AND length(website_url_c::text) <= 500)
+Foreign-key constraints:
+    "ids_user_users" FOREIGN KEY (site_id, user_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "ids_useridorig_r_people" FOREIGN KEY (site_id, user_id_orig_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "idtys_r_idps" FOREIGN KEY (site_id, idp_id_c) REFERENCES idps_t(site_id_c, idp_id_c) DEFERRABLE
+Triggers:
+    identities3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON identities3 FOR EACH ROW EXECUTE PROCEDURE identities3_sum_quota()
+

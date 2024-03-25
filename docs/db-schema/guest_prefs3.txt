@@ -1,0 +1,16 @@
+                        Table "public.guest_prefs3"
+   Column    |            Type             | Collation | Nullable | Default 
+-------------+-----------------------------+-----------+----------+---------
+ site_id     | integer                     |           | not null | 
+ ctime       | timestamp without time zone |           | not null | 
+ version     | character(1)                |           | not null | 
+ email       | character varying(100)      |           | not null | 
+ email_notfs | character varying(1)        |           | not null | 
+Indexes:
+    "dw1_idsmpleml__p" PRIMARY KEY, btree (site_id, email, ctime)
+    "dw1_idsmpleml_version__u" UNIQUE, btree (site_id, email, version) WHERE version = 'C'::bpchar
+Check constraints:
+    "dw1_idsmpleml_email__c" CHECK (email::text ~~ '%@%.%'::text)
+    "dw1_idsmpleml_notfs__c" CHECK (email_notfs::text = ANY (ARRAY['R'::character varying::text, 'N'::character varying::text, 'F'::character varying::text]))
+    "dw1_idsmpleml_version__c" CHECK (version = ANY (ARRAY['C'::bpchar, 'O'::bpchar]))
+

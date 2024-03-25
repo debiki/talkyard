@@ -1,0 +1,29 @@
+                      Table "public.page_popularity_scores3"
+      Column       |            Type             | Collation | Nullable | Default 
+-------------------+-----------------------------+-----------+----------+---------
+ site_id           | integer                     |           | not null | 
+ page_id           | character varying           |           | not null | 
+ popular_since     | timestamp without time zone |           | not null | 
+ updated_at        | timestamp without time zone |           | not null | 
+ score_alg_c       | i16_gz_lt1000_d             |           | not null | 
+ day_score         | double precision            |           | not null | 
+ week_score        | double precision            |           | not null | 
+ month_score       | double precision            |           | not null | 
+ quarter_score     | double precision            |           | not null | 
+ year_score        | double precision            |           | not null | 
+ all_score         | double precision            |           | not null | 
+ triennial_score_c | double precision            |           | not null | 
+Indexes:
+    "pagepopscores_p_pageid_algid" PRIMARY KEY, btree (site_id, page_id, score_alg_c)
+    "pagepopscores_i_algid_allscore" btree (site_id, score_alg_c, all_score)
+    "pagepopscores_i_algid_dayscore" btree (site_id, score_alg_c, day_score)
+    "pagepopscores_i_algid_monthscore" btree (site_id, score_alg_c, month_score)
+    "pagepopscores_i_algid_quarterscore" btree (site_id, score_alg_c, quarter_score)
+    "pagepopscores_i_algid_triennialscore" btree (site_id, score_alg_c, triennial_score_c)
+    "pagepopscores_i_algid_weekscore" btree (site_id, score_alg_c, week_score)
+    "pagepopscores_i_algid_yearscore" btree (site_id, score_alg_c, year_score)
+Check constraints:
+    "pagepopscores_updat_ge_popsince" CHECK (updated_at >= popular_since)
+Foreign-key constraints:
+    "pagepopscores_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+

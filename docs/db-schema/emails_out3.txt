@@ -1,0 +1,76 @@
+                                       Table "public.emails_out3"
+         Column          |            Type             | Collation | Nullable |         Default         
+-------------------------+-----------------------------+-----------+----------+-------------------------
+ site_id                 | integer                     |           | not null | 
+ email_id_c              | character varying(32)       |           | not null | 
+ sent_to                 | character varying           |           | not null | 
+ sent_on                 | timestamp without time zone |           |          | 
+ subject                 | character varying           |           | not null | 
+ body_html               | character varying           |           | not null | 
+ provider_email_id       | character varying           |           |          | 
+ failure_type            | character varying(1)        |           |          | NULL::character varying
+ failure_text            | character varying           |           |          | 
+ failure_time            | timestamp without time zone |           |          | 
+ out_type_c              | i16_gz_lt1000_d             |           | not null | 
+ created_at              | timestamp without time zone |           | not null | 
+ to_user_id              | integer                     |           |          | 
+ can_login_again         | boolean                     |           |          | 
+ sent_from_c             | email_d                     |           |          | 
+ num_replies_back_c      | i16_gez_d                   |           |          | 
+ secret_value_c          | secret_alnum_d              |           |          | 
+ secret_status_c         | secret_status_d             |           |          | 
+ smtp_msg_id_c           | smtp_msg_id_out_d           |           |          | 
+ smtp_in_reply_to_c      | smtp_msg_id_out_d           |           |          | 
+ smtp_in_reply_to_more_c | smtp_msg_ids_out_d          |           |          | 
+ smtp_references_c       | smtp_msg_ids_out_d          |           |          | 
+ by_pat_id_c             | pat_id_d                    |           |          | 
+ about_pat_id_c          | pat_id_d                    |           |          | 
+ about_cat_id_c          | cat_id_d                    |           |          | 
+ about_tag_id_c          | tag_id_d                    |           |          | 
+ about_page_id_str_c     | page_id_st_d                |           |          | 
+ about_page_id_int_c     | page_id_d__later            |           |          | 
+ about_post_id_c         | post_id_d                   |           |          | 
+ about_post_nr_c         | post_nr_d                   |           |          | 
+ about_parent_nr_c       | post_nr_d                   |           |          | 
+ out_sub_type_c          | i16_gz_lt1000_d             |           |          | 
+Indexes:
+    "emailsout_p_id" PRIMARY KEY, btree (site_id, email_id_c)
+    "emailsout_u_secretvalue" UNIQUE, btree (site_id, secret_value_c) WHERE secret_value_c IS NOT NULL
+    "emailsout_gi_createdat" btree (created_at)
+    "emailsout_gi_secretstatus" btree (secret_status_c) WHERE secret_status_c::smallint = ANY (ARRAY[1, 2, 3])
+    "emailsout_gi_sentfrom" btree (sent_from_c) WHERE sent_from_c IS NOT NULL
+    "emailsout_i_aboutcat" btree (site_id, about_cat_id_c) WHERE about_cat_id_c IS NOT NULL
+    "emailsout_i_aboutpagestr" btree (site_id, about_page_id_str_c) WHERE about_page_id_str_c IS NOT NULL
+    "emailsout_i_aboutpat" btree (site_id, about_pat_id_c) WHERE about_pat_id_c IS NOT NULL
+    "emailsout_i_aboutpostid" btree (site_id, about_post_id_c) WHERE about_post_id_c IS NOT NULL
+    "emailsout_i_abouttag" btree (site_id, about_tag_id_c) WHERE about_tag_id_c IS NOT NULL
+    "emailsout_i_bypat" btree (site_id, by_pat_id_c) WHERE by_pat_id_c IS NOT NULL
+    "emailsout_i_createdat" btree (site_id, created_at)
+    "emailsout_i_secretstatus" btree (site_id, secret_status_c) WHERE secret_status_c::smallint = ANY (ARRAY[1, 2, 3])
+    "emailsout_i_sentfrom" btree (site_id, sent_from_c) WHERE sent_from_c IS NOT NULL
+    "emailsout_i_topat" btree (site_id, to_user_id)
+Check constraints:
+    "dw1_emlot_created_sent__c_le" CHECK (created_at <= sent_on)
+    "dw1_emlot_failtext_type__c" CHECK ((failure_text IS NULL) = (failure_type IS NULL))
+    "dw1_emlot_failtime_type__c" CHECK ((failure_time IS NULL) = (failure_type IS NULL))
+    "dw1_emlot_failtype__c" CHECK (failure_type::text = ANY (ARRAY['B'::character varying::text, 'R'::character varying::text, 'C'::character varying::text, 'O'::character varying::text]))
+    "dw1_emlot_failuretext__c_len" CHECK (length(failure_text::text) <= 10000)
+    "dw1_emlot_provideremailid__c_len" CHECK (length(provider_email_id::text) <= 200)
+    "dw1_emlot_sentto__c_len" CHECK (length(sent_to::text) <= 200)
+    "dw1_emlot_subject__c_len" CHECK (length(subject::text) >= 1 AND length(subject::text) <= 200)
+    "emailsout_c_bodyhtml_len" CHECK (length(body_html::text) >= 1 AND length(body_html::text) <= 20000)
+    "emailsout_c_secretval_status_null" CHECK (secret_value_c IS NULL OR secret_status_c IS NOT NULL)
+    "emailsout_c_senton_sentfrom_null" CHECK (sent_on IS NOT NULL OR sent_from_c IS NULL)
+Foreign-key constraints:
+    "emailsout_aboutcat_r_cats" FOREIGN KEY (site_id, about_cat_id_c) REFERENCES categories3(site_id, id) DEFERRABLE
+    "emailsout_aboutpagestr_r_pages" FOREIGN KEY (site_id, about_page_id_str_c) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    "emailsout_aboutpat_r_pats" FOREIGN KEY (site_id, about_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "emailsout_aboutpostid_r_posts" FOREIGN KEY (site_id, about_post_id_c) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    "emailsout_abouttag_r_tags" FOREIGN KEY (site_id, about_tag_id_c) REFERENCES tags_t(site_id_c, id_c) DEFERRABLE
+    "emailsout_bypat_r_pats" FOREIGN KEY (site_id, by_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "emailsout_topat_r_pats" FOREIGN KEY (site_id, to_user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+Referenced by:
+    TABLE "notifications3" CONSTRAINT "ntfs_r_emails" FOREIGN KEY (site_id, email_id) REFERENCES emails_out3(site_id, email_id_c) DEFERRABLE
+Triggers:
+    emails3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON emails_out3 FOR EACH ROW EXECUTE PROCEDURE emails3_sum_quota()
+

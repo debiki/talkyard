@@ -1,0 +1,51 @@
+                                   Table "public.user_stats3"
+             Column              |            Type             | Collation | Nullable | Default 
+---------------------------------+-----------------------------+-----------+----------+---------
+ site_id                         | integer                     |           | not null | 
+ user_id                         | integer                     |           | not null | 
+ last_seen_at                    | timestamp without time zone |           | not null | 
+ last_posted_at                  | timestamp without time zone |           |          | 
+ last_emailed_at                 | timestamp without time zone |           |          | 
+ last_emaill_link_clicked_at     | timestamp without time zone |           |          | 
+ last_emaill_failed_at           | timestamp without time zone |           |          | 
+ email_bounce_sum                | real                        |           | not null | 0
+ first_seen_at                   | timestamp without time zone |           | not null | 
+ first_new_topic_at              | timestamp without time zone |           |          | 
+ first_discourse_reply_at        | timestamp without time zone |           |          | 
+ first_chat_message_at           | timestamp without time zone |           |          | 
+ topics_new_since                | timestamp without time zone |           | not null | 
+ notfs_new_since_id              | integer                     |           | not null | 0
+ num_days_visited                | integer                     |           | not null | 0
+ num_seconds_reading             | integer                     |           | not null | 0
+ num_discourse_replies_read      | integer                     |           | not null | 0
+ num_discourse_replies_posted    | integer                     |           | not null | 0
+ num_discourse_topics_entered    | integer                     |           | not null | 0
+ num_discourse_topics_replied_in | integer                     |           | not null | 0
+ num_discourse_topics_created    | integer                     |           | not null | 0
+ num_chat_messages_read          | integer                     |           | not null | 0
+ num_chat_messages_posted        | integer                     |           | not null | 0
+ num_chat_topics_entered         | integer                     |           | not null | 0
+ num_chat_topics_replied_in      | integer                     |           | not null | 0
+ num_chat_topics_created         | integer                     |           | not null | 0
+ num_likes_given                 | integer                     |           | not null | 0
+ num_likes_received              | integer                     |           | not null | 0
+ num_solutions_provided          | integer                     |           | not null | 0
+ last_summary_email_at           | timestamp without time zone |           |          | 
+ next_summary_maybe_at           | timestamp without time zone |           |          | 
+ tour_tips_seen                  | character varying[]         |           |          | 
+ snooze_notfs_until              | timestamp without time zone |           |          | 
+ after_snooze_then               | integer                     |           |          | 
+Indexes:
+    "userstats_p" PRIMARY KEY, btree (site_id, user_id)
+    "userstats_lastseen_i" btree (site_id, last_seen_at DESC)
+    "userstats_nextsummary_i" btree (next_summary_maybe_at)
+Check constraints:
+    "ppstats_c_notfsnewsinceid_not_for_imp" CHECK (notfs_new_since_id < 2000000000)
+    "userstats_c_firstseen_gz" CHECK (date_part('epoch'::text, first_seen_at) > 0::double precision)
+    "userstats_c_firstseen_smallest" CHECK ((first_seen_at <= last_posted_at OR last_posted_at IS NULL) AND (first_seen_at <= first_new_topic_at OR first_new_topic_at IS NULL) AND (first_seen_at <= first_discourse_reply_at OR first_discourse_reply_at IS NULL) AND (first_seen_at <= first_chat_message_at OR first_chat_message_at IS NULL))
+    "userstats_c_gez" CHECK (email_bounce_sum >= 0::double precision AND notfs_new_since_id >= 0 AND num_days_visited >= 0 AND num_seconds_reading >= 0 AND num_discourse_replies_read >= 0 AND num_discourse_replies_posted >= 0 AND num_discourse_topics_entered >= 0 AND num_discourse_topics_replied_in >= 0 AND num_discourse_topics_created >= 0 AND num_chat_messages_read >= 0 AND num_chat_messages_posted >= 0 AND num_chat_topics_entered >= 0 AND num_chat_topics_replied_in >= 0 AND num_chat_topics_created >= 0 AND num_likes_given >= 0 AND num_likes_received >= 0 AND num_solutions_provided >= 0)
+    "userstats_c_lastseen_greatest" CHECK ((last_seen_at >= last_posted_at OR last_posted_at IS NULL) AND last_seen_at >= first_seen_at AND (last_seen_at >= first_new_topic_at OR first_new_topic_at IS NULL) AND (last_seen_at >= first_discourse_reply_at OR first_discourse_reply_at IS NULL) AND (last_seen_at >= first_chat_message_at OR first_chat_message_at IS NULL) AND last_seen_at >= topics_new_since)
+    "userstats_c_tourtipsseen_len" CHECK (pg_column_size(tour_tips_seen) <= 400)
+Foreign-key constraints:
+    "userstats_r_people" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+

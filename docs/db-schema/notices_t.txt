@@ -1,0 +1,18 @@
+                   Table "public.notices_t"
+    Column     |    Type     | Collation | Nullable | Default 
+---------------+-------------+-----------+----------+---------
+ site_id_c     | integer     |           | not null | 
+ to_pat_id_c   | integer     |           | not null | 
+ notice_id_c   | i32_gz_d    |           | not null | 
+ first_at_c    | when_mins_d |           | not null | 
+ last_at_c     | when_mins_d |           | not null | 
+ num_total_c   | i32_gz_d    |           | not null | 
+ notice_data_c | jsonb       |           |          | 
+Indexes:
+    "notices_p_patid_noticeid" PRIMARY KEY, btree (site_id_c, to_pat_id_c, notice_id_c)
+    "notices_ig_noticeid" btree (notice_id_c)
+Check constraints:
+    "notices_c_firstat_lte_lastat" CHECK (first_at_c::integer <= last_at_c::integer)
+Foreign-key constraints:
+    "notices_r_pats" FOREIGN KEY (site_id_c, to_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+

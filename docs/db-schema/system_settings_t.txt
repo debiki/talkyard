@@ -1,0 +1,7 @@
+                             Table "public.system_settings_t"
+            Column             |          Type           | Collation | Nullable | Default 
+-------------------------------+-------------------------+-----------+----------+---------
+ maintenance_until_unix_secs_c | i64_gz_d                |           |          | 
+ maint_words_html_unsafe_c     | text_nonempty_ste500_d  |           |          | 
+ maint_msg_html_unsafe_c       | text_nonempty_ste2000_d |           |          | 
+

@@ -1,0 +1,289 @@
+                                          Table "public.users3"
+                Column                 |              Type              | Collation | Nullable | Default 
+---------------------------------------+--------------------------------+-----------+----------+---------
+ site_id                               | integer                        |           | not null | 
+ user_id                               | integer                        |           | not null | 
+ full_name                             | character varying(100)         |           |          | 
+ primary_email_addr                    | character varying(100)         |           |          | 
+ country                               | character varying(100)         |           |          | 
+ website                               | character varying(100)         |           |          | 
+ is_admin                              | boolean                        |           |          | 
+ email_notfs                           | character varying(1)           |           |          | 
+ is_owner                              | boolean                        |           |          | 
+ username                              | character varying              |           |          | 
+ email_verified_at                     | timestamp without time zone    |           |          | 
+ created_at                            | timestamp without time zone    |           |          | 
+ password_hash                         | character varying              |           |          | 
+ email_for_every_new_post              | boolean                        |           |          | 
+ guest_browser_id                      | character varying              |           |          | 
+ is_approved                           | boolean                        |           |          | 
+ approved_at                           | timestamp without time zone    |           |          | 
+ approved_by_id                        | integer                        |           |          | 
+ suspended_at                          | timestamp without time zone    |           |          | 
+ suspended_till                        | timestamp without time zone    |           |          | 
+ suspended_by_id                       | integer                        |           |          | 
+ suspended_reason                      | character varying              |           |          | 
+ updated_at                            | timestamp without time zone    |           |          | 
+ is_moderator                          | boolean                        |           |          | 
+ avatar_tiny_base_url                  | character varying              |           |          | 
+ avatar_tiny_hash_path                 | character varying              |           |          | 
+ avatar_small_base_url                 | character varying              |           |          | 
+ avatar_small_hash_path                | character varying              |           |          | 
+ avatar_medium_base_url                | character varying              |           |          | 
+ avatar_medium_hash_path               | character varying              |           |          | 
+ trust_level                           | smallint                       |           |          | 
+ locked_trust_level                    | smallint                       |           |          | 
+ threat_level                          | smallint                       |           |          | 
+ locked_threat_level                   | smallint                       |           |          | 
+ is_superadmin                         | boolean                        |           |          | 
+ about                                 | character varying              |           |          | 
+ summary_email_interval_mins           | integer                        |           |          | 
+ summary_email_if_active               | boolean                        |           |          | 
+ guest_email_addr                      | character varying              |           |          | 
+ deactivated_at                        | timestamp without time zone    |           |          | 
+ deleted_at                            | timestamp without time zone    |           |          | 
+ may_see_my_activity_tr_lv_c           | integer                        |           |          | 
+ sso_id                                | character varying              |           |          | 
+ ui_prefs                              | jsonb                          |           |          | 
+ is_group                              | boolean                        |           | not null | false
+ ext_id                                | character varying              |           |          | 
+ max_upload_bytes_c                    | integer                        |           |          | 
+ allowed_upload_extensions_c           | character varying              |           |          | 
+ may_search_engines_index_me_c         | boolean                        |           |          | 
+ may_see_my_username_tr_lv_c           | trust_level_or_staff_d         |           |          | 
+ may_see_my_full_name_tr_lv_c          | trust_level_or_staff_d         |           |          | 
+ may_see_my_tiny_avatar_tr_lv_c        | trust_level_or_staff_d         |           |          | 
+ may_see_my_medium_avatar_tr_lv_c      | trust_level_or_staff_d         |           |          | 
+ may_see_my_brief_bio_tr_lv_c          | trust_level_or_staff_d         |           |          | 
+ may_see_my_full_bio_tr_lv_c           | trust_level_or_staff_d         |           |          | 
+ may_see_my_memberships_tr_lv_c        | trust_level_or_staff_d         |           |          | 
+ may_see_my_profile_tr_lv_c            | trust_level_or_staff_d         |           |          | 
+ may_see_me_in_lists_tr_lv_c           | trust_level_or_staff_d         |           |          | 
+ may_see_if_im_online_tr_lv_c          | trust_level_or_staff_d         |           |          | 
+ may_see_my_visit_stats_tr_lv_c        | trust_level_or_staff_d         |           |          | 
+ may_see_my_post_stats_tr_lv_c         | trust_level_or_staff_d         |           |          | 
+ may_see_my_approx_stats_tr_lv_c       | trust_level_or_staff_d         |           |          | 
+ may_see_my_exact_stats_tr_lv_c        | trust_level_or_staff_d         |           |          | 
+ may_find_me_by_email_tr_lv_c          | trust_level_or_staff_d         |           |          | 
+ may_follow_me_tr_lv_c                 | trust_level_or_staff_d         |           |          | 
+ may_mention_me_tr_lv_c                | trust_level_or_staff_d         |           |          | 
+ may_mention_me_same_disc_tr_lv_c      | trust_level_or_staff_d         |           |          | 
+ may_dir_msg_me_tr_lv_c                | trust_level_or_staff_d         |           |          | 
+ why_may_not_mention_msg_me_html_c     | text_nonempty_ste500_trimmed_d |           |          | 
+ may_see_my_account_email_adrs_tr_lv_c | trust_level_or_staff_d         |           |          | 
+ may_see_my_contact_email_adrs_tr_lv_c | trust_level_or_staff_d         |           |          | 
+ may_assign_me_tr_lv_c                 | trust_level_or_staff_d         |           |          | 
+ may_see_my_assignments_tr_lv_c        | trust_level_or_staff_d         |           |          | 
+ email_threading_c                     | i16_gz_lt1024_d                |           |          | 
+ email_notf_details_c                  | i16_gz_lt1024_d                |           |          | 
+ tech_level_c                          | i16_gz_lt1024_d                |           |          | 
+ can_see_others_email_adrs_c           | boolean                        |           |          | 
+ true_id_c                             | member_id_d                    |           |          | 
+ pseudonym_status_c                    | pseudonym_status_d             |           |          | 
+ anonym_status_c                       | anonym_status_d                |           |          | 
+ anon_on_page_id_st_c                  | page_id_st_d                   |           |          | 
+ anon_in_tree_id__later_c              | post_id_d                      |           |          | 
+ mod_conf_c                            | jsonb_ste500_d                 |           |          | 
+ may_set_rel_follow_c                  | boolean                        |           |          | 
+Indexes:
+    "dw1_users_tnt_sno__p" PRIMARY KEY, btree (site_id, user_id)
+    "dw1_users_site_usernamelower__u" UNIQUE, btree (site_id, lower(username::text))
+    "pps_u_extid" UNIQUE, btree (site_id, ext_id)
+    "pps_u_site_guest_w_browser_id" UNIQUE, btree (site_id, full_name, guest_email_addr, guest_browser_id) WHERE guest_browser_id IS NOT NULL
+    "pps_u_ssoid" UNIQUE, btree (site_id, sso_id)
+    "users_site_primaryemail_u" UNIQUE, btree (site_id, primary_email_addr)
+    "dw1_user_guestcookie__i" btree (site_id, guest_browser_id) WHERE user_id < '-1'::integer
+    "dw1_user_guestemail__i" btree (site_id, primary_email_addr) WHERE user_id < '-1'::integer
+    "dw1_users_approvedbyid__i" btree (site_id, approved_by_id) WHERE approved_by_id IS NOT NULL
+    "dw1_users_avatarmediumbaseurl__i" btree (avatar_medium_base_url)
+    "dw1_users_avatarmediumhashpath__i" btree (avatar_medium_hash_path)
+    "dw1_users_avatarsmallbaseurl__i" btree (avatar_small_base_url)
+    "dw1_users_avatarsmallhashpath__i" btree (avatar_small_hash_path)
+    "dw1_users_avatartinybaseurl__i" btree (avatar_tiny_base_url)
+    "dw1_users_avatartinyhashpath__i" btree (avatar_tiny_hash_path)
+    "dw1_users_suspendebyid__i" btree (site_id, suspended_by_id) WHERE suspended_by_id IS NOT NULL
+    "participants_groupid_i" btree (site_id, user_id) WHERE is_group
+    "pats_i_anonintreeid" btree (site_id, anon_in_tree_id__later_c)
+    "pats_i_anononpageid" btree (site_id, anon_on_page_id_st_c)
+    "pats_i_trueid_anonintreeid" btree (site_id, true_id_c, anon_in_tree_id__later_c)
+    "pats_i_trueid_anononpageid" btree (site_id, true_id_c, anon_on_page_id_st_c)
+Check constraints:
+    "dw1_users_approved__c_null" CHECK ((approved_by_id IS NULL) = (approved_at IS NULL) AND (is_approved IS NULL OR approved_by_id IS NOT NULL))
+    "dw1_users_avatarmediumbaseurl__c_len" CHECK (length(avatar_medium_base_url::text) >= 1 AND length(avatar_medium_base_url::text) <= 100)
+    "dw1_users_avatarmediumhashpath__c" CHECK (is_valid_hash_path(avatar_medium_hash_path))
+    "dw1_users_avatars_none_or_all__c" CHECK (avatar_tiny_base_url IS NULL AND avatar_tiny_hash_path IS NULL AND avatar_small_base_url IS NULL AND avatar_small_hash_path IS NULL AND avatar_medium_base_url IS NULL AND avatar_medium_hash_path IS NULL OR avatar_tiny_base_url IS NOT NULL AND avatar_tiny_hash_path IS NOT NULL AND avatar_small_base_url IS NOT NULL AND avatar_small_hash_path IS NOT NULL AND avatar_medium_base_url IS NOT NULL AND avatar_medium_hash_path IS NOT NULL)
+    "dw1_users_avatarsmallbaseurl__c_len" CHECK (length(avatar_small_base_url::text) >= 1 AND length(avatar_small_base_url::text) <= 100)
+    "dw1_users_avatarsmallhashpath__c" CHECK (is_valid_hash_path(avatar_small_hash_path))
+    "dw1_users_avatartinybaseurl__c_len" CHECK (length(avatar_tiny_base_url::text) >= 1 AND length(avatar_tiny_base_url::text) <= 100)
+    "dw1_users_avatartinyhashpath__c" CHECK (is_valid_hash_path(avatar_tiny_hash_path))
+    "dw1_users_country__c" CHECK (country::text <> ''::text)
+    "dw1_users_dname__c" CHECK (full_name::text <> ''::text)
+    "dw1_users_passwordhash__c_len" CHECK (length(password_hash::text) >= 8 AND length(password_hash::text) <= 150)
+    "dw1_users_suspended__c_null" CHECK ((suspended_by_id IS NULL) = (suspended_at IS NULL) AND (suspended_by_id IS NULL) = (suspended_till IS NULL) AND (suspended_by_id IS NULL) = (suspended_reason IS NULL))
+    "dw1_users_suspreason__c_len" CHECK (length(suspended_reason::text) <= 255)
+    "dw1_users_username__c_at" CHECK (username::text !~~ '%@%'::text)
+    "dw1_users_username__c_len" CHECK (length(btrim(username::text)) >= 2)
+    "dw1_users_website__c" CHECK (website::text <> ''::text)
+    "participants_c_group_id_gz" CHECK (NOT is_group OR user_id > 0)
+    "participants_c_group_no_password" CHECK (NOT is_group OR password_hash IS NULL)
+    "participants_c_group_no_trust_threat_lvl" CHECK (NOT is_group OR trust_level IS NULL AND threat_level IS NULL)
+    "participants_c_group_not_adm_mod_ownr" CHECK (NOT is_group OR (is_admin IS NOT TRUE OR user_id = 19) AND (is_moderator IS NOT TRUE OR (user_id = ANY (ARRAY[17, 18]))) AND is_owner IS NOT TRUE AND is_superadmin IS NOT TRUE)
+    "participants_c_group_not_approved" CHECK (NOT is_group OR is_approved IS NULL AND approved_at IS NULL AND approved_by_id IS NULL)
+    "participants_c_group_not_deactivated" CHECK (NOT is_group OR deactivated_at IS NULL)
+    "participants_c_group_not_suspended" CHECK (NOT is_group OR suspended_at IS NULL AND suspended_till IS NULL AND suspended_by_id IS NULL AND suspended_reason IS NULL)
+    "participants_c_guest_no_username" CHECK (user_id > 0 OR username IS NULL)
+    "participants_c_member_no_guest_email" CHECK (user_id < 0 OR guest_email_addr IS NULL)
+    "participants_c_user_has_trust_threat_lvl" CHECK (is_group OR user_id < 0 OR trust_level IS NOT NULL AND threat_level IS NOT NULL)
+    "participants_c_username_len_active" CHECK (deleted_at IS NOT NULL OR length(username::text) <= 40)
+    "participants_c_username_len_deleted" CHECK (deleted_at IS NULL OR length(username::text) <= 80)
+    "pats_c_alloweduploadexts_alnum" CHECK (allowed_upload_extensions_c::text ~ '^[a-z0-9 _.*-]+$'::text)
+    "pats_c_alloweduploadexts_len" CHECK (length(allowed_upload_extensions_c::text) >= 1 AND length(allowed_upload_extensions_c::text) <= 2000)
+    "pats_c_alloweduploads_is_group" CHECK (is_group OR allowed_upload_extensions_c IS NULL AND max_upload_bytes_c IS NULL)
+    "pats_c_anon_no_avatar" CHECK (anonym_status_c IS NULL OR avatar_tiny_base_url IS NULL AND avatar_tiny_hash_path IS NULL AND avatar_small_base_url IS NULL AND avatar_small_hash_path IS NULL AND avatar_medium_base_url IS NULL AND avatar_medium_hash_path IS NULL)
+    "pats_c_anon_no_email" CHECK (anonym_status_c IS NULL AND pseudonym_status_c IS NULL OR guest_email_addr IS NULL AND primary_email_addr IS NULL AND email_notfs IS NULL AND email_verified_at IS NULL AND email_for_every_new_post IS NULL AND summary_email_interval_mins IS NULL AND summary_email_if_active IS NULL)
+    "pats_c_anon_no_levels" CHECK (anonym_status_c IS NULL OR trust_level IS NULL AND locked_trust_level IS NULL AND threat_level IS NULL AND locked_threat_level IS NULL AND tech_level_c IS NULL)
+    "pats_c_anon_null_same" CHECK (true_id_c IS NULL AND anonym_status_c IS NULL AND anon_on_page_id_st_c IS NULL AND pseudonym_status_c IS NULL OR true_id_c IS NOT NULL AND (anonym_status_c IS NOT NULL AND anon_on_page_id_st_c IS NOT NULL AND pseudonym_status_c IS NULL OR anonym_status_c IS NULL AND anon_on_page_id_st_c IS NULL AND pseudonym_status_c IS NOT NULL))
+    "pats_c_anon_nulls" CHECK (anonym_status_c IS NULL OR guest_browser_id IS NULL AND sso_id IS NULL AND ext_id IS NULL AND username IS NULL AND password_hash IS NULL AND full_name IS NULL AND country IS NULL AND website IS NULL AND about IS NULL AND is_moderator IS NULL AND is_admin IS NULL AND is_superadmin IS NULL AND is_owner IS NULL AND is_group = false AND ui_prefs IS NULL AND max_upload_bytes_c IS NULL AND allowed_upload_extensions_c IS NULL AND may_search_engines_index_me_c IS NULL AND may_see_my_activity_tr_lv_c IS NULL AND may_see_my_username_tr_lv_c IS NULL AND may_see_my_full_name_tr_lv_c IS NULL AND may_see_my_tiny_avatar_tr_lv_c IS NULL AND may_see_my_medium_avatar_tr_lv_c IS NULL AND may_see_my_brief_bio_tr_lv_c IS NULL AND may_see_my_full_bio_tr_lv_c IS NULL AND may_see_my_memberships_tr_lv_c IS NULL AND may_see_my_profile_tr_lv_c IS NULL AND may_see_me_in_lists_tr_lv_c IS NULL AND may_see_if_im_online_tr_lv_c IS NULL AND may_see_my_visit_stats_tr_lv_c IS NULL AND may_see_my_post_stats_tr_lv_c IS NULL AND may_see_my_approx_stats_tr_lv_c IS NULL AND may_see_my_exact_stats_tr_lv_c IS NULL AND may_find_me_by_email_tr_lv_c IS NULL AND may_follow_me_tr_lv_c IS NULL AND may_mention_me_tr_lv_c IS NULL AND may_mention_me_same_disc_tr_lv_c IS NULL AND may_dir_msg_me_tr_lv_c IS NULL AND why_may_not_mention_msg_me_html_c IS NULL AND may_see_my_account_email_adrs_tr_lv_c IS NULL AND may_see_my_contact_email_adrs_tr_lv_c IS NULL AND can_see_others_email_adrs_c IS NULL AND may_assign_me_tr_lv_c IS NULL AND may_see_my_assignments_tr_lv_c IS NULL AND email_threading_c IS NULL AND email_notf_details_c IS NULL)
+    "pats_c_anonid_ltem10" CHECK (anonym_status_c IS NULL OR user_id <= '-10'::integer)
+    "pats_c_anons_need_no_approval" CHECK (anonym_status_c IS NULL OR created_at IS NOT NULL AND is_approved IS NULL AND approved_at IS NULL AND approved_by_id IS NULL)
+    "pats_c_contactemailadr_lte_accountadr_trlv" CHECK (may_see_my_contact_email_adrs_tr_lv_c::smallint <= may_see_my_account_email_adrs_tr_lv_c::smallint)
+    "pats_c_guest_non_nulls" CHECK (user_id > '-10'::integer OR anonym_status_c IS NOT NULL OR created_at IS NOT NULL AND full_name IS NOT NULL AND guest_email_addr IS NOT NULL)
+    "pats_c_guest_nulls" CHECK (user_id > '-10'::integer OR anonym_status_c IS NOT NULL OR can_see_others_email_adrs_c IS NULL)
+    "pats_c_guest_w_no_browserid_has_extid" CHECK (user_id > '-10'::integer OR anonym_status_c IS NOT NULL OR guest_browser_id IS NOT NULL OR ext_id IS NOT NULL)
+    "pats_c_maxuploadbytes_gez" CHECK (max_upload_bytes_c >= 0)
+    "pats_c_maymentionme_gte_samedisc" CHECK (may_mention_me_tr_lv_c::smallint >= may_mention_me_same_disc_tr_lv_c::smallint)
+    "pats_c_mayseemyassignments_lte_mayassign_trlv" CHECK (may_see_my_assignments_tr_lv_c::smallint <= may_assign_me_tr_lv_c::smallint)
+    "pats_c_mayseemyfullbio_gte_briefbio" CHECK (may_see_my_full_bio_tr_lv_c::smallint >= may_see_my_brief_bio_tr_lv_c::smallint)
+    "pats_c_mayseemymediumavatar_gte_tiny" CHECK (may_see_my_medium_avatar_tr_lv_c::smallint >= may_see_my_tiny_avatar_tr_lv_c::smallint)
+    "pats_c_not_both_anon_pseudo" CHECK (num_nonnulls(pseudonym_status_c, anonym_status_c) <= 1)
+    "pats_c_pseudonymid_gte100" CHECK (pseudonym_status_c IS NULL OR user_id >= 100)
+    "people_c_not_both_admin_mod" CHECK (NOT is_admin OR NOT is_moderator)
+    "people_member_c_nn" CHECK (user_id < 0 OR created_at IS NOT NULL AND username IS NOT NULL)
+    "pps_c_extid_not_builtin" CHECK (ext_id IS NULL OR NOT (user_id >= '-9'::integer AND user_id <= 99))
+    "pps_c_extid_ok" CHECK (is_valid_ext_id(ext_id))
+    "pps_c_group_no_sso_id" CHECK (NOT is_group OR sso_id IS NULL)
+    "pps_c_guest_id_not_for_imp" CHECK (user_id > '-2000000000'::integer)
+    "pps_c_guest_no_avatar" CHECK (user_id > 0 OR avatar_tiny_base_url IS NULL)
+    "pps_c_guest_no_email_pwd" CHECK (user_id > 0 OR primary_email_addr IS NULL AND password_hash IS NULL)
+    "pps_c_guest_no_trust_level" CHECK (user_id > 0 OR trust_level IS NULL)
+    "pps_c_guest_not_staff" CHECK (user_id > 0 OR is_admin IS NOT TRUE AND is_moderator IS NOT TRUE AND is_owner IS NOT TRUE AND is_superadmin IS NOT TRUE)
+    "pps_c_member_id_not_for_imp" CHECK (user_id < 2000000000)
+    "pps_c_ssoid_max_len" CHECK (length(sso_id::text) <= 200)
+    "pps_c_ssoid_min_len" CHECK (1 <= length(sso_id::text))
+    "users3_country_c_trim" CHECK (is_trimmed(country))
+    "users3_fullname_c_trim" CHECK (is_trimmed(full_name))
+    "users3_lockedthreatlevel__c_betw" CHECK (locked_threat_level >= 1 AND locked_threat_level <= 6)
+    "users3_threatlevel__c_betw" CHECK (threat_level >= 1 AND threat_level <= 6)
+    "users3_username_c_blank" CHECK (NOT contains_blank(username))
+    "users3_website_c_trim" CHECK (NOT contains_blank(website))
+    "users_about__c_len" CHECK (length(about::text) >= 1 AND length(about::text) <= 2000)
+    "users_c_deact_bef_delete" CHECK (deactivated_at IS NULL OR deleted_at IS NULL OR deactivated_at <= deleted_at)
+    "users_c_email_ok" CHECK (email_seems_ok(primary_email_addr))
+    "users_c_guestbrowserid_len" CHECK (length(guest_browser_id::text) >= 2 AND length(guest_browser_id::text) <= 100)
+    "users_c_uiprefs_len" CHECK (pg_column_size(ui_prefs) <= 400)
+    "users_id__c" CHECK (user_id <> 0)
+    "users_lockedtrustlevel_c_betw" CHECK (locked_trust_level >= 1 AND locked_trust_level <= 6)
+    "users_member__c_nulls" CHECK (user_id < 0 OR guest_browser_id IS NULL)
+    "users_member_email__c" CHECK (user_id < 0 OR primary_email_addr::text ~~ '%@%.%'::text)
+    "users_trustlevel_c_betw" CHECK (trust_level >= 1 AND trust_level <= 6)
+Foreign-key constraints:
+    "pats_anonintree_r_nodes" FOREIGN KEY (site_id, anon_in_tree_id__later_c) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    "pats_anononpage_r_pages" FOREIGN KEY (site_id, anon_on_page_id_st_c) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    "pats_trueid_r_pats" FOREIGN KEY (site_id, true_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "users_approvedby_r_people" FOREIGN KEY (site_id, approved_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "users_primaryemail_r_useremails" FOREIGN KEY (site_id, user_id, primary_email_addr) REFERENCES user_emails3(site_id, user_id, email_address) DEFERRABLE
+    "users_r_sites" FOREIGN KEY (site_id) REFERENCES sites3(id) DEFERRABLE
+    "users_suspendeby_r_people" FOREIGN KEY (site_id, suspended_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+Referenced by:
+    TABLE "api_secrets3" CONSTRAINT "apisecrets_user_r_users" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "audit_log3" CONSTRAINT "auditlog_doer_r_people" FOREIGN KEY (site_id, doer_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "audit_log3" CONSTRAINT "auditlog_doertrueid_r_pats" FOREIGN KEY (site_id, doer_true_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "audit_log3" CONSTRAINT "auditlog_targetpattrueid_r_pats" FOREIGN KEY (site_id, target_pat_true_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "audit_log3" CONSTRAINT "auditlog_targetuser_r_people" FOREIGN KEY (site_id, target_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "blocks3" CONSTRAINT "blocks_blockedby_r_people" FOREIGN KEY (site_id, blocked_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "drafts3" CONSTRAINT "drafts_byuser_r_users" FOREIGN KEY (site_id, by_user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "drafts3" CONSTRAINT "drafts_postasid_r_pats" FOREIGN KEY (site_id, post_as_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "drafts3" CONSTRAINT "drafts_touser_r_users" FOREIGN KEY (site_id, to_user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "emails_out3" CONSTRAINT "emailsout_aboutpat_r_pats" FOREIGN KEY (site_id, about_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "emails_out3" CONSTRAINT "emailsout_bypat_r_pats" FOREIGN KEY (site_id, by_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "emails_out3" CONSTRAINT "emailsout_topat_r_pats" FOREIGN KEY (site_id, to_user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "group_participants3" CONSTRAINT "groupparticipants_group_r_pps" FOREIGN KEY (site_id, group_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "group_participants3" CONSTRAINT "groupparticipants_pp_r_pps" FOREIGN KEY (site_id, participant_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "identities3" CONSTRAINT "ids_user_users" FOREIGN KEY (site_id, user_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "identities3" CONSTRAINT "ids_useridorig_r_people" FOREIGN KEY (site_id, user_id_orig_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "invites3" CONSTRAINT "invites_addtogroup_r_pps" FOREIGN KEY (site_id, add_to_group_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "invites3" CONSTRAINT "invites_inviter_r_people" FOREIGN KEY (site_id, created_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "invites3" CONSTRAINT "invites_user_r_people" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "link_previews_t" CONSTRAINT "linkpreviews_firstlinkedby_r_pps" FOREIGN KEY (site_id_c, first_linked_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "links_t" CONSTRAINT "links_addedby_r_pps" FOREIGN KEY (site_id_c, added_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "links_t" CONSTRAINT "links_toppid_r_pps" FOREIGN KEY (site_id_c, to_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "notifications3" CONSTRAINT "notfs_aboutpat_r_pats" FOREIGN KEY (site_id, about_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "notifications3" CONSTRAINT "notfs_bypat_r_pats" FOREIGN KEY (site_id, by_user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "notices_t" CONSTRAINT "notices_r_pats" FOREIGN KEY (site_id_c, to_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "notifications3" CONSTRAINT "ntfs_touser_r_people" FOREIGN KEY (site_id, to_user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "page_notf_prefs_t" CONSTRAINT "pagenotfprefs_r_people" FOREIGN KEY (site_id, pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_answeredby_r_pats" FOREIGN KEY (site_id, answered_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_closedby_r_pats" FOREIGN KEY (site_id, closed_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_createdby_r_people" FOREIGN KEY (site_id, author_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_deletedby_r_pats" FOREIGN KEY (site_id, deleted_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_doneby_r_pats" FOREIGN KEY (site_id, done_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_frequentposter1_r_people" FOREIGN KEY (site_id, frequent_poster_1_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_frequentposter2_r_people" FOREIGN KEY (site_id, frequent_poster_2_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_frequentposter3_r_people" FOREIGN KEY (site_id, frequent_poster_3_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_frequentposter4_r_people" FOREIGN KEY (site_id, frequent_poster_4_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_frozenby_r_pats" FOREIGN KEY (site_id, frozen_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_hiddenby_r_pats" FOREIGN KEY (site_id, hidden_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_lastreplyby_r_people" FOREIGN KEY (site_id, last_reply_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_lockedby_r_pats" FOREIGN KEY (site_id, locked_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_pausedby_r_pats" FOREIGN KEY (site_id, paused_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_plannedby_r_pats" FOREIGN KEY (site_id, planned_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_postponedby_r_pats" FOREIGN KEY (site_id, postponed_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_publishedby_r_pats" FOREIGN KEY (site_id, published_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_startedby_r_pats" FOREIGN KEY (site_id, started_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_unwantedby_r_pats" FOREIGN KEY (site_id, unwanted_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "page_users3" CONSTRAINT "pageusers_joinedby_r_people" FOREIGN KEY (site_id, joined_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "page_users3" CONSTRAINT "pageusers_kickedby_r_people" FOREIGN KEY (site_id, kicked_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "page_users3" CONSTRAINT "pageusers_user_r_people" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "post_actions3" CONSTRAINT "patnodesinrels_addedbyid_r_pats" FOREIGN KEY (site_id, added_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "post_actions3" CONSTRAINT "patnodesinrels_aspatid_r_pats" FOREIGN KEY (site_id, as_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "users3" CONSTRAINT "pats_trueid_r_pats" FOREIGN KEY (site_id, true_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "perms_on_pages3" CONSTRAINT "permsonpages_r_people" FOREIGN KEY (site_id, for_people_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "post_actions3" CONSTRAINT "postacs_createdby_r_people" FOREIGN KEY (site_id, from_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "post_actions3" CONSTRAINT "postacs_deletedby_r_people" FOREIGN KEY (site_id, deleted_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "post_revisions3" CONSTRAINT "postrevs_approvedby_r_people" FOREIGN KEY (site_id, approved_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "post_revisions3" CONSTRAINT "postrevs_composedby_r_people" FOREIGN KEY (site_id, composed_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "post_revisions3" CONSTRAINT "postrevs_hiddenby_r_people" FOREIGN KEY (site_id, hidden_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "posts3" CONSTRAINT "posts_approvedby_r_people" FOREIGN KEY (site_id, approved_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "posts3" CONSTRAINT "posts_closedby_r_people" FOREIGN KEY (site_id, closed_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "posts3" CONSTRAINT "posts_collapsedby_r_people" FOREIGN KEY (site_id, collapsed_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "posts3" CONSTRAINT "posts_createdby_r_people" FOREIGN KEY (site_id, created_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "posts3" CONSTRAINT "posts_deletedby_r_people" FOREIGN KEY (site_id, deleted_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "posts3" CONSTRAINT "posts_hiddenby_r_people" FOREIGN KEY (site_id, hidden_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "posts3" CONSTRAINT "posts_lastapprovededitby_r_people" FOREIGN KEY (site_id, last_approved_edit_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "posts3" CONSTRAINT "posts_lasteditedby_r_people" FOREIGN KEY (site_id, curr_rev_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "posts3" CONSTRAINT "posts_pinnedby_r_people" FOREIGN KEY (site_id, pinned_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "posts3" CONSTRAINT "posts_privatepatsid_r_pats" FOREIGN KEY (site_id, private_pats_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "post_read_stats3" CONSTRAINT "pstsrd_r_people" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "review_tasks3" CONSTRAINT "reviewtasks_causedby_r_people" FOREIGN KEY (site_id, created_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "review_tasks3" CONSTRAINT "reviewtasks_complby_r_people" FOREIGN KEY (site_id, decided_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "review_tasks3" CONSTRAINT "reviewtasks_user_r_people" FOREIGN KEY (site_id, about_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "sessions_t" CONSTRAINT "sessions_r_pats" FOREIGN KEY (site_id_c, pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "tag_notf_levels3" CONSTRAINT "tagnotflvl_r_people" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "tags_t" CONSTRAINT "tags_onpat_r_pats" FOREIGN KEY (site_id_c, on_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "tagtypes_t" CONSTRAINT "tagtypes_createdby_r_pats" FOREIGN KEY (site_id_c, created_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "tagtypes_t" CONSTRAINT "tagtypes_deleteby_r_pats" FOREIGN KEY (site_id_c, deleted_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "tagtypes_t" CONSTRAINT "tagtypes_mergedby_r_pats" FOREIGN KEY (site_id_c, merged_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "tagtypes_t" CONSTRAINT "tagtypes_scopedtopat_r_pats" FOREIGN KEY (site_id_c, scoped_to_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "upload_refs3" CONSTRAINT "uploadrefs_r_people" FOREIGN KEY (site_id, added_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "user_emails3" CONSTRAINT "useremails_r_users" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "usernames3" CONSTRAINT "usernames_r_people" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "users3" CONSTRAINT "users_approvedby_r_people" FOREIGN KEY (site_id, approved_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "users3" CONSTRAINT "users_suspendeby_r_people" FOREIGN KEY (site_id, suspended_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "user_stats3" CONSTRAINT "userstats_r_people" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "user_visit_stats3" CONSTRAINT "uservisitstats_r_people" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "webhook_reqs_out_t" CONSTRAINT "webhookreqsout_sentasid_r_pats" FOREIGN KEY (site_id_c, sent_as_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "webhooks_t" CONSTRAINT "webhooks_ownerid_r_pats" FOREIGN KEY (site_id_c, owner_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "webhooks_t" CONSTRAINT "webhooks_runasid_r_pats" FOREIGN KEY (site_id_c, run_as_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+Triggers:
+    users3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON users3 FOR EACH ROW EXECUTE PROCEDURE users3_sum_quota()
+

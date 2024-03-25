@@ -1,0 +1,74 @@
+                                 Table "public.categories3"
+            Column            |            Type             | Collation | Nullable | Default 
+------------------------------+-----------------------------+-----------+----------+---------
+ site_id                      | integer                     |           | not null | 
+ id                           | integer                     |           | not null | 
+ page_id                      | character varying           |           | not null | 
+ parent_id                    | integer                     |           |          | 
+ name                         | character varying           |           | not null | 
+ slug                         | character varying           |           | not null | 
+ position                     | integer                     |           | not null | 
+ description                  | character varying           |           |          | 
+ new_topic_types              | character varying           |           |          | 
+ created_at                   | timestamp without time zone |           | not null | 
+ updated_at                   | timestamp without time zone |           | not null | 
+ locked_at                    | timestamp without time zone |           |          | 
+ frozen_at                    | timestamp without time zone |           |          | 
+ deleted_at                   | timestamp without time zone |           |          | 
+ unlist_category              | boolean                     |           | not null | false
+ staff_only                   | boolean                     |           | not null | false
+ only_staff_may_create_topics | boolean                     |           | not null | false
+ default_topic_type           | smallint                    |           |          | 12
+ default_category_id          | integer                     |           |          | 
+ incl_in_summaries            | smallint                    |           |          | 
+ unlist_topics                | boolean                     |           |          | 
+ ext_id                       | character varying           |           |          | 
+ def_sort_order_c             | page_sort_order_d           |           |          | 
+ def_score_alg_c              | i16_gez_d                   |           |          | 
+ def_score_period_c           | trending_period_d           |           |          | 
+ do_vote_style_c              | do_vote_style_d             |           |          | 
+ do_vote_in_topic_list_c      | boolean                     |           |          | 
+ comt_order_c                 | comt_order_d                |           |          | 
+ comt_nesting_c               | max_nesting_d               |           |          | 
+ comts_start_hidden_c         | never_always_d              |           |          | 
+ comts_start_anon_c           | never_always_d              |           |          | 
+ op_starts_anon_c             | never_always_d              |           |          | 
+ new_anon_status_c            | anonym_status_d             |           |          | 
+Indexes:
+    "dw2_cats_id__p" PRIMARY KEY, btree (site_id, id)
+    "categories_u_extid" UNIQUE, btree (site_id, ext_id)
+    "dw2_cats_page_slug__u" UNIQUE, btree (site_id, page_id, slug)
+    "dw2_cats_parent_slug__u" UNIQUE, btree (site_id, parent_id, slug)
+    "dw2_cats_page__i" btree (site_id, page_id)
+    "dw2_cats_slug__i" btree (site_id, slug)
+Check constraints:
+    "categories_c_extid_ok" CHECK (is_valid_ext_id(ext_id))
+    "categories_c_id_not_for_imp" CHECK (id < 2000000000)
+    "cats_c_defscorealg_period" CHECK ((def_score_alg_c IS NULL) = (def_score_period_c IS NULL))
+    "cats_default_or_parent__c_nn" CHECK (default_category_id IS NOT NULL OR parent_id IS NOT NULL)
+    "cats_topictype__c_in" CHECK (default_topic_type >= 1 AND default_topic_type <= 100)
+    "dw2_cats_created_deleted__c_le" CHECK (created_at <= deleted_at)
+    "dw2_cats_created_frozen__c_le" CHECK (created_at <= frozen_at)
+    "dw2_cats_created_locked__c_le" CHECK (created_at <= locked_at)
+    "dw2_cats_created_updated__c_le" CHECK (created_at <= updated_at)
+    "dw2_cats_description__c_len" CHECK (length(description::text) < 1000)
+    "dw2_cats_name__c_len" CHECK (length(name::text) >= 1 AND length(name::text) <= 100)
+    "dw2_cats_newtopictypes__c" CHECK (new_topic_types::text ~ '^([0-9]+,)*[0-9]+$'::text)
+    "dw2_cats_slug__c_len" CHECK (length(slug::text) >= 1 AND length(slug::text) <= 100)
+Foreign-key constraints:
+    "cats_defaultcat_r_cats" FOREIGN KEY (site_id, default_category_id) REFERENCES categories3(site_id, id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE
+    "cats_page_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    "cats_r_cats" FOREIGN KEY (site_id, parent_id) REFERENCES categories3(site_id, id) DEFERRABLE
+Referenced by:
+    TABLE "categories3" CONSTRAINT "cats_defaultcat_r_cats" FOREIGN KEY (site_id, default_category_id) REFERENCES categories3(site_id, id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE
+    TABLE "categories3" CONSTRAINT "cats_r_cats" FOREIGN KEY (site_id, parent_id) REFERENCES categories3(site_id, id) DEFERRABLE
+    TABLE "drafts3" CONSTRAINT "drafts_category_r_cats" FOREIGN KEY (site_id, category_id) REFERENCES categories3(site_id, id) DEFERRABLE
+    TABLE "emails_out3" CONSTRAINT "emailsout_aboutcat_r_cats" FOREIGN KEY (site_id, about_cat_id_c) REFERENCES categories3(site_id, id) DEFERRABLE
+    TABLE "links_t" CONSTRAINT "links_tocatid_r_categories" FOREIGN KEY (site_id_c, to_category_id_c) REFERENCES categories3(site_id, id) DEFERRABLE
+    TABLE "notifications3" CONSTRAINT "notfs_aboutcat_r_cats" FOREIGN KEY (site_id, about_cat_id_c) REFERENCES categories3(site_id, id) DEFERRABLE
+    TABLE "page_notf_prefs_t" CONSTRAINT "pagenotfprefs_r_cats" FOREIGN KEY (site_id, pages_in_cat_id_c) REFERENCES categories3(site_id, id) DEFERRABLE
+    TABLE "pages3" CONSTRAINT "pages_category_r_categories" FOREIGN KEY (site_id, category_id) REFERENCES categories3(site_id, id) DEFERRABLE
+    TABLE "perms_on_pages3" CONSTRAINT "permsonpages_r_cats" FOREIGN KEY (site_id, on_category_id) REFERENCES categories3(site_id, id) DEFERRABLE
+    TABLE "settings3" CONSTRAINT "settings_cat_r_cats" FOREIGN KEY (site_id, category_id) REFERENCES categories3(site_id, id) DEFERRABLE
+    TABLE "settings3" CONSTRAINT "settings_embcmtscatid_r_categories" FOREIGN KEY (site_id, embedded_comments_category_id) REFERENCES categories3(site_id, id) DEFERRABLE
+

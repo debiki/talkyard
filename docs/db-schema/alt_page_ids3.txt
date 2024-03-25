@@ -1,0 +1,13 @@
+                   Table "public.alt_page_ids3"
+    Column    |       Type        | Collation | Nullable | Default 
+--------------+-------------------+-----------+----------+---------
+ site_id      | integer           |           | not null | 
+ alt_page_id  | character varying |           | not null | 
+ real_page_id | character varying |           | not null | 
+Indexes:
+    "altpageids_p" PRIMARY KEY, btree (site_id, alt_page_id)
+Check constraints:
+    "altpageids_altid_c_len" CHECK (length(alt_page_id::text) >= 1 AND length(alt_page_id::text) <= 300)
+Foreign-key constraints:
+    "altpageids_r_pages" FOREIGN KEY (site_id, real_page_id) REFERENCES pages3(site_id, page_id)
+

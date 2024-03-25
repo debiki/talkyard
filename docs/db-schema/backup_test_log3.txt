@@ -1,0 +1,14 @@
+                         Table "public.backup_test_log3"
+      Column       |            Type             | Collation | Nullable | Default 
+-------------------+-----------------------------+-----------+----------+---------
+ logged_at         | timestamp without time zone |           | not null | 
+ logged_by         | character varying           |           | not null | 
+ backup_of_what    | character varying           |           | not null | 
+ random_value      | character varying           |           | not null | 
+ got_ok_message_at | timestamp without time zone |           |          | 
+ file_name         | character varying           |           |          | 
+Indexes:
+    "backup_test_log_i" btree (logged_at DESC)
+Check constraints:
+    "backuptestlog_c_filename_len" CHECK (length(file_name::text) >= 1 AND length(file_name::text) <= 200)
+

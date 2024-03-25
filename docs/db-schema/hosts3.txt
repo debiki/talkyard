@@ -1,0 +1,17 @@
+                          Table "public.hosts3"
+  Column   |            Type             | Collation | Nullable | Default 
+-----------+-----------------------------+-----------+----------+---------
+ site_id   | integer                     |           | not null | 
+ host      | character varying           |           | not null | 
+ canonical | character varying(1)        |           | not null | 
+ ctime     | timestamp without time zone |           | not null | now()
+ mtime     | timestamp without time zone |           | not null | now()
+Indexes:
+    "hosts_u_canonical" UNIQUE, btree (site_id) WHERE canonical::text = 'C'::text
+    "hosts_u_g_hostname" UNIQUE, btree (host) WHERE canonical::text <> 'X'::text
+Check constraints:
+    "dw1_hosts_host__c_len" CHECK (length(host::text) >= 1 AND length(host::text) <= 100)
+    "hosts_c_role_in" CHECK (canonical::text = ANY (ARRAY['C'::character varying, 'R'::character varying, 'L'::character varying, 'D'::character varying, 'X'::character varying]::text[]))
+Foreign-key constraints:
+    "hosts_r_sites" FOREIGN KEY (site_id) REFERENCES sites3(id) DEFERRABLE
+

@@ -1,0 +1,150 @@
+                                  Table "public.posts3"
+          Column          |            Type             | Collation | Nullable | Default 
+--------------------------+-----------------------------+-----------+----------+---------
+ site_id                  | integer                     |           | not null | 
+ unique_post_id           | integer                     |           | not null | 
+ page_id                  | character varying           |           | not null | 
+ post_nr                  | integer                     |           | not null | 
+ parent_nr                | integer                     |           |          | 
+ multireply               | character varying           |           |          | 
+ created_at               | timestamp without time zone |           | not null | 
+ created_by_id            | integer                     |           | not null | 
+ curr_rev_started_at      | timestamp without time zone |           | not null | 
+ curr_rev_last_edited_at  | timestamp without time zone |           |          | 
+ curr_rev_by_id           | integer                     |           | not null | 
+ last_approved_edit_at    | timestamp without time zone |           |          | 
+ last_approved_edit_by_id | integer                     |           |          | 
+ num_distinct_editors     | integer                     |           | not null | 
+ num_edit_suggestions     | smallint                    |           | not null | 0
+ last_edit_suggestion_at  | timestamp without time zone |           |          | 
+ safe_rev_nr              | integer                     |           |          | 
+ approved_source          | text                        |           |          | 
+ approved_html_sanitized  | text                        |           |          | 
+ approved_at              | timestamp without time zone |           |          | 
+ approved_by_id           | integer                     |           |          | 
+ approved_rev_nr          | integer                     |           |          | 
+ curr_rev_source_patch    | text                        |           |          | 
+ curr_rev_nr              | integer                     |           | not null | 
+ collapsed_status         | smallint                    |           | not null | 
+ collapsed_at             | timestamp without time zone |           |          | 
+ collapsed_by_id          | integer                     |           |          | 
+ closed_status            | smallint                    |           | not null | 
+ closed_at                | timestamp without time zone |           |          | 
+ closed_by_id             | integer                     |           |          | 
+ hidden_at                | timestamp without time zone |           |          | 
+ hidden_by_id             | integer                     |           |          | 
+ hidden_reason            | character varying           |           |          | 
+ deleted_status           | smallint                    |           | not null | 
+ deleted_at               | timestamp without time zone |           |          | 
+ deleted_by_id            | integer                     |           |          | 
+ pinned_position          | smallint                    |           |          | 
+ pinned_at                | timestamp without time zone |           |          | 
+ pinned_by_id             | integer                     |           |          | 
+ num_pending_flags        | smallint                    |           | not null | 0
+ num_handled_flags        | smallint                    |           | not null | 0
+ num_like_votes           | integer                     |           | not null | 0
+ num_wrong_votes          | integer                     |           | not null | 0
+ num_times_read           | integer                     |           | not null | 0
+ num_bury_votes           | integer                     |           | not null | 0
+ num_unwanted_votes       | integer                     |           | not null | 0
+ type                     | post_type_d                 |           |          | 
+ prev_rev_nr              | integer                     |           |          | 
+ branch_sideways          | smallint                    |           |          | 
+ ext_id                   | character varying           |           |          | 
+ smtp_msg_id_prefix_c     | smtp_msg_id_out_prefix_d    |           |          | 
+ private_pats_id_c        | pat_id_d                    |           |          | 
+ sub_type_c               | sub_type_d                  |           |          | 
+ val_i32_c                | i32_d                       |           |          | 
+ postponed_status_c       | postponed_status_d          |           |          | 
+ answered_status_c        | answered_status_d           |           |          | 
+ doing_status_c           | doing_status_d              |           |          | 
+ review_status_c          | review_status_d             |           |          | 
+ unwanted_status_c        | unwanted_status_d           |           |          | 
+ flagged_status_c         | flagged_status_d            |           |          | 
+ hidden_status_c          | hidden_status_d             |           |          | 
+ index_prio_c             | index_prio_d                |           |          | 
+ private_status_c         | private_status_d            |           |          | 
+ creator_status_c         | creator_status_d            |           |          | 
+Indexes:
+    "dw2_posts_id__p" PRIMARY KEY, btree (site_id, unique_post_id)
+    "dw2_posts_page_postnr__u" UNIQUE, btree (site_id, page_id, post_nr)
+    "posts_u_extid" UNIQUE, btree (site_id, ext_id)
+    "dw2_posts_approvedbyid__i" btree (site_id, approved_by_id) WHERE approved_by_id IS NOT NULL
+    "dw2_posts_closedbyid__i" btree (site_id, closed_by_id) WHERE closed_by_id IS NOT NULL
+    "dw2_posts_collapsedbyid__i" btree (site_id, collapsed_by_id) WHERE collapsed_by_id IS NOT NULL
+    "dw2_posts_deletedbyid__i" btree (site_id, deleted_by_id) WHERE deleted_by_id IS NOT NULL
+    "dw2_posts_hiddenbyid__i" btree (site_id, hidden_by_id) WHERE hidden_by_id IS NOT NULL
+    "dw2_posts_lastapprovededitbyid__i" btree (site_id, last_approved_edit_by_id) WHERE last_approved_edit_by_id IS NOT NULL
+    "dw2_posts_lasteditedbyid__i" btree (site_id, curr_rev_by_id) WHERE curr_rev_by_id IS NOT NULL
+    "dw2_posts_numflags__i" btree (site_id, num_pending_flags) WHERE deleted_status = 0 AND num_pending_flags > 0
+    "dw2_posts_page_parentnr__i" btree (site_id, page_id, parent_nr)
+    "dw2_posts_pendingedits__i" btree (site_id, last_edit_suggestion_at) WHERE deleted_status = 0 AND num_pending_flags = 0 AND approved_rev_nr = curr_rev_nr AND num_edit_suggestions > 0
+    "dw2_posts_pinnedbyid__i" btree (site_id, pinned_by_id) WHERE pinned_by_id IS NOT NULL
+    "dw2_posts_unapproved__i" btree (site_id, curr_rev_last_edited_at) WHERE deleted_status = 0 AND num_pending_flags = 0 AND (approved_rev_nr IS NULL OR approved_rev_nr < curr_rev_nr)
+    "posts_i_createdat_id" btree (site_id, created_at DESC, unique_post_id DESC)
+    "posts_i_createdby_createdat_id" btree (site_id, created_by_id, created_at DESC, unique_post_id DESC)
+    "posts_i_lastapprovedat_0deld" btree (site_id, GREATEST(approved_at, last_approved_edit_at)) WHERE approved_at IS NOT NULL AND deleted_status = 0
+    "posts_i_privatepatsid" btree (site_id, private_pats_id_c) WHERE private_pats_id_c IS NOT NULL
+Check constraints:
+    "dw2_posts__c_approved" CHECK ((approved_rev_nr IS NULL) = (approved_at IS NULL) AND (approved_rev_nr IS NULL) = (approved_by_id IS NULL) AND (approved_rev_nr IS NULL) = (approved_source IS NULL))
+    "dw2_posts__c_apr_at_ge_cre" CHECK (approved_at IS NULL OR approved_at >= created_at)
+    "dw2_posts__c_apr_html_ne" CHECK (approved_html_sanitized IS NULL OR length(btrim(approved_html_sanitized)) >= 1)
+    "dw2_posts__c_apr_html_src" CHECK (approved_html_sanitized IS NULL OR approved_source IS NOT NULL)
+    "dw2_posts__c_apr_src_ne" CHECK (approved_source IS NULL OR length(btrim(approved_source)) >= 1)
+    "dw2_posts__c_apr_ver_le_cur" CHECK (approved_rev_nr IS NULL OR approved_rev_nr <= curr_rev_nr)
+    "dw2_posts__c_closed" CHECK ((closed_at IS NULL OR closed_at >= created_at) AND (closed_status = 0) = (closed_at IS NULL) AND (closed_status = 0) = (closed_by_id IS NULL))
+    "dw2_posts__c_collapsed" CHECK ((collapsed_at IS NULL OR collapsed_at >= created_at) AND (collapsed_status = 0) = (collapsed_at IS NULL) AND (collapsed_status = 0) = (collapsed_by_id IS NULL))
+    "dw2_posts__c_counts_gez" CHECK (num_distinct_editors >= 0 AND num_edit_suggestions >= 0 AND num_pending_flags >= 0 AND num_handled_flags >= 0 AND num_like_votes >= 0 AND num_wrong_votes >= 0 AND num_bury_votes >= 0 AND num_unwanted_votes >= 0 AND num_times_read >= 0)
+    "dw2_posts__c_curpatch_ne" CHECK (curr_rev_source_patch IS NULL OR length(btrim(curr_rev_source_patch)) >= 1)
+    "dw2_posts__c_deleted" CHECK ((deleted_at IS NULL OR deleted_at >= created_at) AND (deleted_status = 0) = (deleted_at IS NULL) AND (deleted_status = 0) = (deleted_by_id IS NULL))
+    "dw2_posts__c_first_rev_started_when_created" CHECK (curr_rev_started_at = created_at OR curr_rev_nr > 1)
+    "dw2_posts__c_hidden" CHECK ((hidden_at IS NULL OR hidden_at >= created_at) AND (hidden_at IS NULL) = (hidden_by_id IS NULL) AND (hidden_reason IS NULL OR hidden_at IS NOT NULL))
+    "dw2_posts__c_last_apr_edit_at_id" CHECK ((last_approved_edit_at IS NULL) = (last_approved_edit_by_id IS NULL))
+    "dw2_posts__c_last_edi_sug" CHECK ((num_edit_suggestions = 0 OR last_edit_suggestion_at IS NOT NULL) AND (last_edit_suggestion_at IS NULL OR last_edit_suggestion_at >= created_at))
+    "dw2_posts__c_ne" CHECK (approved_source IS NOT NULL OR curr_rev_source_patch IS NOT NULL)
+    "dw2_posts__c_not_its_parent" CHECK (parent_nr IS NULL OR post_nr <> parent_nr)
+    "dw2_posts__c_saf_ver_le_apr" CHECK (safe_rev_nr IS NULL OR safe_rev_nr <= approved_rev_nr AND approved_rev_nr IS NOT NULL)
+    "dw2_posts__c_up_to_date_no_patch" CHECK (approved_rev_nr IS NULL OR (curr_rev_nr = approved_rev_nr) = (curr_rev_source_patch IS NULL))
+    "dw2_posts_curreveditedat_ge_lastapprovededitat__c" CHECK (curr_rev_last_edited_at >= last_approved_edit_at)
+    "dw2_posts_curreveditedat_ge_startedat__c" CHECK (curr_rev_last_edited_at >= curr_rev_started_at)
+    "dw2_posts_currevisionat_ge_createdat__c" CHECK (curr_rev_started_at IS NULL OR curr_rev_started_at >= created_at)
+    "dw2_posts_multireply__c_num" CHECK (multireply::text ~ '^([0-9]+,)*[0-9]+$'::text)
+    "dw2_posts_parent__c_not_title" CHECK (parent_nr <> 0)
+    "posts__c_first_rev_by_creator" CHECK (curr_rev_by_id = created_by_id OR curr_rev_nr > 1)
+    "posts_c_currevnr_not_for_imp" CHECK (curr_rev_nr < 2000000000)
+    "posts_c_extid_ok" CHECK (is_valid_ext_id(ext_id))
+    "posts_c_id_not_for_imp" CHECK (unique_post_id < 2000000000)
+    "posts_c_nr_not_for_imp" CHECK (post_nr < 2000000000)
+    "posts_c_parentnr_not_for_imp" CHECK (parent_nr < 2000000000)
+Foreign-key constraints:
+    "posts_approvedby_r_people" FOREIGN KEY (site_id, approved_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "posts_closedby_r_people" FOREIGN KEY (site_id, closed_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "posts_collapsedby_r_people" FOREIGN KEY (site_id, collapsed_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "posts_createdby_r_people" FOREIGN KEY (site_id, created_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "posts_deletedby_r_people" FOREIGN KEY (site_id, deleted_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "posts_hiddenby_r_people" FOREIGN KEY (site_id, hidden_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "posts_lastapprovededitby_r_people" FOREIGN KEY (site_id, last_approved_edit_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "posts_lasteditedby_r_people" FOREIGN KEY (site_id, curr_rev_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "posts_pinnedby_r_people" FOREIGN KEY (site_id, pinned_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "posts_privatepatsid_r_pats" FOREIGN KEY (site_id, private_pats_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "posts_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+Referenced by:
+    TABLE "audit_log3" CONSTRAINT "auditlog_r_posts" FOREIGN KEY (site_id, post_id) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    TABLE "drafts3" CONSTRAINT "drafts_pageid_postnr_r_posts" FOREIGN KEY (site_id, page_id, post_nr) REFERENCES posts3(site_id, page_id, post_nr) DEFERRABLE
+    TABLE "drafts3" CONSTRAINT "drafts_postid_r_posts" FOREIGN KEY (site_id, post_id) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    TABLE "emails_out3" CONSTRAINT "emailsout_aboutpostid_r_posts" FOREIGN KEY (site_id, about_post_id_c) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    TABLE "links_t" CONSTRAINT "links_frompostid_r_posts" FOREIGN KEY (site_id_c, from_post_id_c) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    TABLE "links_t" CONSTRAINT "links_topostid_r_posts" FOREIGN KEY (site_id_c, to_post_id_c) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    TABLE "notifications3" CONSTRAINT "ntfs_post_r_posts" FOREIGN KEY (site_id, about_post_id_c) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    TABLE "users3" CONSTRAINT "pats_anonintree_r_nodes" FOREIGN KEY (site_id, anon_in_tree_id__later_c) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    TABLE "perms_on_pages3" CONSTRAINT "permsonpages_r_posts" FOREIGN KEY (site_id, on_post_id) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    TABLE "post_actions3" CONSTRAINT "postacs_r_posts" FOREIGN KEY (site_id, to_post_id_c) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    TABLE "post_revisions3" CONSTRAINT "postrevs_post_r_posts" FOREIGN KEY (site_id, post_id) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    TABLE "post_tags3" CONSTRAINT "posttags_r_posts" FOREIGN KEY (site_id, post_id) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    TABLE "post_read_stats3" CONSTRAINT "pstsrd_r_posts" FOREIGN KEY (site_id, page_id, post_nr) REFERENCES posts3(site_id, page_id, post_nr) DEFERRABLE
+    TABLE "review_tasks3" CONSTRAINT "reviewtasks_r_posts" FOREIGN KEY (site_id, post_id) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    TABLE "tags_t" CONSTRAINT "tags_onpost_r_posts" FOREIGN KEY (site_id_c, on_post_id_c) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    TABLE "upload_refs3" CONSTRAINT "uploadrefs_r_posts" FOREIGN KEY (site_id, post_id) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+Triggers:
+    posts3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON posts3 FOR EACH ROW EXECUTE PROCEDURE posts3_sum_quota()
+
