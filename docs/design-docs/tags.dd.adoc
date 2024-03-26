@@ -1,3 +1,12 @@
+Bookmarks, search:
+
+  tag:year:desc>1990  
+  tag:priority:desc>=3
+
+  bookmark:to-do:desc>=3  — but what bookmark property?
+
+  bookmark:to-do.due-at:asc>=now&.open
+  bookmark:to-do.priority:desc>=3
 
 ----
 pats_t

@@ -48,13 +48,22 @@ export function openBookmarkDropdown(atRect, ps: BookmDiag  // I18N bookmark men
             dialogClassName: 'c_TagDrpdD' }, closeDiag => BookmDiag({ ...ps, closeDiag }));
 }
 
+
 interface State {
   bookm: Tag
-  tyype: TagType
+  tyype?: TagType
+  descr?: St
 }
 
 const BookmDiag = React.createFactory<BookmDiag>(function(ps: any) {
-    const [state, setState] = React.useState<State | N>(null);
+    const [tyype, setType] = React.useState<TagType | N>(null);
+    const [bookm, setBookm] = React.useState<Tag>({
+      id: No.TagId as TagId,
+      tagTypeId: 0,  // later TagType.NoId  ?
+      onPostId: ps.post.uniqueId,
+    });
+    const [descr, setDescr] = React.useState<St>('');
+    const [prio, setPrio] = React.useState<Nr>(3);
 
     const bookmType = ps.bookmType || state?.tyype;
 
