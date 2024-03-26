@@ -618,6 +618,8 @@ alter table tags_t
 --    val_i32_b_c  = due at
 --    val_f64_b_c
 --
+-- And, if value type = Task, then,  index  val_f64_c as priority,
+--
 -- Then, people can configure *tags* to function as reminders too. Then
 -- the tag appears in people's notification list, when it's time to remind them
 -- (them being the types_t.scoped_to_pat_id_c group?

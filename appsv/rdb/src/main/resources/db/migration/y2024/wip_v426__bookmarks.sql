@@ -1,5 +1,14 @@
 
+alter table  pages3
+    add  column parent_page_id_st_c  page_id_st_d,
+    -- fk ix: pages_parentpageid_r_pages
+    add constraint  (site_id, parten_page_id_st_c)
+        references  pages3 (site_id, page_id)  deferrable;
 
+create index  pages_parentpageid_r_pages  on  pages3 (site_id, parten_page_id_st_c);
+
+
+-- No!   (Except for the bugfix.)
 -- Bookmarks need  visible_only_to_pat_id_c,  since they're private (per person).
 --
 alter table tags_t
@@ -25,7 +34,7 @@ alter table tags_t
     -- plus all one's own bookmarks, on a page.
     add column  visible_only_to_pat_id_c  pat_id_d,
 
-    -- fk ix: tags_valpostid_i
+    -- fk ix: tags_i_valpostid
     add constraint tags_valpostid_r_posts foreign key (site_id_c, val_post_id_c)
         references posts3 (site_id, unique_post_id) deferrable,
 

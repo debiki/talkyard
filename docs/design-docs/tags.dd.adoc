@@ -1,12 +1,85 @@
 Bookmarks, search:
 
+  _________________________
+  |                       |
+  | Add bookmark          |
+  |                       |
+  | Type:  Read later v   |    (or  Reply-to | To-do | Reference)
+  |                       |
+  | Title: _Pat parrots__ |
+  |                       |
+  | Priority: [7]         |
+  |                       |    ————>   page of type Bookmark,  & title post  "Pat parrots",
+  |                       |            parent page ... no, parent *post* = bookmarked post.
+  |                       |            Sub type = Reply-to | To-do ... etc
+  |_______________________|            assigned to oneself,
+                                       visible only to oneself,
+                                       but not placed in any category?
+                                       Appears in one's task list,
+                                          & on one's bookmarks page,
+                                          & as a bookmark, at the bookmarked post.
+
+  assigned-to: me
+
+  pages3.pin_order  finns redan — använd för att sortera bookmarks?
+  .done_at 
+
+
+
   tag:year:desc>1990  
   tag:priority:desc>=3
 
   bookmark:to-do:desc>=3  — but what bookmark property?
 
   bookmark:to-do.due-at:asc>=now&.open
-  bookmark:to-do.priority:desc>=3
+  bookmark:to-do priority:desc>=3
+
+  has:priority:desc>=3
+
+  priority:desc>=3   // finds tag:priority  and  bookmarks.priority   and  badge:proirity
+
+  task:priority>=3
+
+If  value type = Task,
+then index val_i32_c as 
+
+
+Each tag (incl badges, bookmarks) should have its own  Tag Page.
+And bookmark properties are not about the bookmarked *page*,
+  but about the Tag Page.
+  
+  For example, a  ThingKind = Bookmark tag, with ThingType = To-Do,
+  and ValueType = Task:
+     Its  page would have a title like:
+
+     [To-Do] Buy carrot cake    <—— bookmark type & title
+
+     Carrots are needed to keey your rabbits calm,   <——  orig-post, describes the bookmark task
+     they have sharp teeth, blah blah, ...
+
+  And the bookmark properties:
+     priority
+     due at
+     reminder at
+  would sort of be *tags* on the bookmark task page?
+
+  Isn't it better, then, if bookmarks are pages themselves?
+  And  due-at  or  remind-at  properties (tags-with-values)  on a bokmark page,
+    can be placed also on an ordinary page,
+    and have everyone who follows that page to get notified. Hmm.
+
+  And bookmark tasks would ... Be normal tasks, assigned & visible only to oneself?
+
+
+
+
+
+
+-- scen & film, kollektivavtal upphovsrätt
+-- teaterförbundet royalties
+-- copyright-avtal
+-- https://scenochfilm.se/faktabanken/upphovsrattsliga-ersattningar/
+-- https://commercialactors.com/en/aboutus
 
 ----
 pats_t

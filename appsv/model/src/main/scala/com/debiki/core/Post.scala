@@ -223,6 +223,7 @@ object PostType {
   //    date. For FormSubmission pages only.
   // ? But isn't this CompletedForm above ?
 
+  // But should be a *page* & page type, not a post?
   /** Later:
     *
     * Flags of posts and pats, will in the future be posts themselves [flags_as_posts] —
@@ -244,7 +245,8 @@ object PostType {
     */
   case object Flag_later extends PostType(-1)   // probably not 51
 
-  // Probably not. Instead, it's nice with different bookmark types, e.g. a Reply-to
+  // Edit: Yes, good idea? But should be a *page* not a post?
+  // Old: Probably not. Instead, it's nice with different bookmark types, e.g. a Reply-to
   // bookmark, a  Read-later  bookmark,  a References bookmark (if you've read it already).
   // Then, tags with values is simpler, for now. The tag type is the bookmark type,
   // and optional tag value is a bookmark description.
