@@ -112,7 +112,7 @@ export const UserNotifications = createFactory({
         r.p({}, isMe ? t.upp.NotfsToYouC : t.upp.NotfsToOtherC(user.username || user.fullName)),
         anyNoNotfsMessage,
         r.ol({ className: 'esNotfs' },
-          notfsElems)));
+          notfsElems)));  // UX SHOULD: Load More btn. Also mitigates the [ios_notf_list_bug].
   }
 });
 

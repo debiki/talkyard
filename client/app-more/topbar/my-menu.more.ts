@@ -99,6 +99,10 @@ export const MyMenuContent = createFactory({
     // especially on mobile so won't need to scroll up.
     const extraViewAllNotfsOrClear = me.notifications.length <= 10 ? null :
         viewAllNotfsOrClear;
+
+    // UX BUG report [ios_bugs] [ios_notf_list_bug]: On a *real* iPhone, Safari (& Chrome),
+    // one can't scroll down in the notification list, although works in an emulator.
+    // Temp workaround: Make list shorter, if iOS? And notification page pagination.
     const notfsItems = me.notifications.map((notf: Notification) =>
         MenuItemLink({ key: notf.id, to: linkToNotificationSource(notf),
             className: notf.seen ? '' : 'esNotf-unseen' },
@@ -200,8 +204,6 @@ export const MyMenuContent = createFactory({
         viewDraftsAndBookmarks,
         viewAsOtherItem,
         notfsDivider,
-        // UX BUG [ios_bugs] On Safari (& Chrome) on iOS, one cannot scroll down
-        // in the notifications list.
         viewAllNotfsOrClear,
         notfsItems,
         extraViewAllNotfsOrClear,
