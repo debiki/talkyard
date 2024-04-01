@@ -622,6 +622,7 @@ interface TalkyardTranslations {
     DismNotfs: string;
     ViewProfile: string;
     ViewGroups: string;
+    ViewUsers: string;
     LogOut: string;
     UnhideHelp: string;
   },
