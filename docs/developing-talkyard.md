@@ -340,7 +340,7 @@ We're building & using a smaller version of Lodash, like so:
     # Lodash fns that have been excluded here?
 
     node_modules/lodash-cli/bin/lodash \
-      include="assign,assignIn,before,bind,chain,clone,cloneDeep,compact,concat,create,debounce,defaults,defer,delay,each,escape,every,filter,find,findLast,flatten,flattenDeep,forEach,forOwn,groupBy,has,head,includes,identity,indexOf,isArguments,isArray,isBoolean,isDate,isEmpty,isEqual,isFinite,isFunction,isNaN,isNull,isNumber,isObject,isRegExp,isString,isUndefined,iteratee,keys,last,map,mapValues,matches,max,min,mixin,negate,noConflict,noop,once,partition,pick,reduce,remove,result,size,slice,some,sortBy,sumBy,take,tap,throttle,thru,toArray,uniq,uniqBy,uniqueId,value,values" \
+      include="assign,assignIn,before,bind,chain,clone,cloneDeep,compact,concat,create,debounce,defaults,defer,delay,each,escape,every,filter,find,findLast,flatMap,flatMapDeep,flatten,flattenDeep,forEach,forOwn,groupBy,has,head,includes,identity,indexOf,isArray,isBoolean,isDate,isEmpty,isEqual,isFinite,isFunction,isNaN,isNull,isNumber,isObject,isRegExp,isString,isUndefined,iteratee,keys,last,map,mapValues,matches,max,min,mixin,negate,noConflict,noop,once,partition,pick,pickBy,reduce,remove,result,size,slice,some,sortBy,sumBy,take,tap,throttle,thru,toArray,uniq,uniqBy,value,values" \
       --output client/third-party/lodash-custom.js
 
     # If you upgrade Lodash, afterwards, have a look at the diff of `lodash-custom.js`

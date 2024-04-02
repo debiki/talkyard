@@ -1,7 +1,7 @@
 /**
  * @license
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash include="assign,assignIn,before,bind,chain,clone,cloneDeep,compact,concat,create,debounce,defaults,defer,delay,each,escape,every,filter,find,findLast,flatten,flattenDeep,forEach,forOwn,groupBy,has,head,includes,identity,indexOf,isArguments,isArray,isBoolean,isDate,isEmpty,isEqual,isFinite,isFunction,isNaN,isNull,isNumber,isObject,isRegExp,isString,isUndefined,iteratee,keys,last,map,mapValues,matches,max,min,mixin,negate,noConflict,noop,once,partition,pick,pickBy,reduce,remove,result,size,slice,some,sortBy,sumBy,take,tap,throttle,thru,toArray,uniq,uniqBy,uniqueId,value,values" --output client/third-party/lodash-custom.js`
+ * Build: `lodash include="assign,assignIn,before,bind,chain,clone,cloneDeep,compact,concat,create,debounce,defaults,defer,delay,each,escape,every,filter,find,findLast,flatMap,flatMapDeep,flatten,flattenDeep,forEach,forOwn,groupBy,has,head,includes,identity,indexOf,isArray,isBoolean,isDate,isEmpty,isEqual,isFinite,isFunction,isNaN,isNull,isNumber,isObject,isRegExp,isString,isUndefined,iteratee,keys,last,map,mapValues,matches,max,min,mixin,negate,noConflict,noop,once,partition,pick,pickBy,reduce,remove,result,size,slice,some,sortBy,sumBy,take,tap,throttle,thru,toArray,uniq,uniqBy,value,values" --output client/third-party/lodash-custom.js`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -952,9 +952,6 @@
 
   /** Used to check objects for own properties. */
   var hasOwnProperty = objectProto.hasOwnProperty;
-
-  /** Used to generate unique IDs. */
-  var idCounter = 0;
 
   /** Used to detect methods masquerading as native. */
   var maskSrcKey = (function() {
@@ -5959,6 +5956,55 @@
   var findLast = createFind(findLastIndex);
 
   /**
+   * Creates a flattened array of values by running each element in `collection`
+   * thru `iteratee` and flattening the mapped results. The iteratee is invoked
+   * with three arguments: (value, index|key, collection).
+   *
+   * @static
+   * @memberOf _
+   * @since 4.0.0
+   * @category Collection
+   * @param {Array|Object} collection The collection to iterate over.
+   * @param {Function} [iteratee=_.identity] The function invoked per iteration.
+   * @returns {Array} Returns the new flattened array.
+   * @example
+   *
+   * function duplicate(n) {
+   *   return [n, n];
+   * }
+   *
+   * _.flatMap([1, 2], duplicate);
+   * // => [1, 1, 2, 2]
+   */
+  function flatMap(collection, iteratee) {
+    return baseFlatten(map(collection, iteratee), 1);
+  }
+
+  /**
+   * This method is like `_.flatMap` except that it recursively flattens the
+   * mapped results.
+   *
+   * @static
+   * @memberOf _
+   * @since 4.7.0
+   * @category Collection
+   * @param {Array|Object} collection The collection to iterate over.
+   * @param {Function} [iteratee=_.identity] The function invoked per iteration.
+   * @returns {Array} Returns the new flattened array.
+   * @example
+   *
+   * function duplicate(n) {
+   *   return [[[n, n]]];
+   * }
+   *
+   * _.flatMapDeep([1, 2], duplicate);
+   * // => [1, 1, 2, 2]
+   */
+  function flatMapDeep(collection, iteratee) {
+    return baseFlatten(map(collection, iteratee), INFINITY);
+  }
+
+  /**
    * Iterates over elements of `collection` and invokes `iteratee` for each element.
    * The iteratee is invoked with three arguments: (value, index|key, collection).
    * Iteratee functions may exit iteration early by explicitly returning `false`.
@@ -8557,28 +8603,6 @@
     return false;
   }
 
-  /**
-   * Generates a unique ID. If `prefix` is given, the ID is appended to it.
-   *
-   * @static
-   * @since 0.1.0
-   * @memberOf _
-   * @category Util
-   * @param {string} [prefix=''] The value to prefix the ID with.
-   * @returns {string} Returns the unique ID.
-   * @example
-   *
-   * _.uniqueId('contact_');
-   * // => 'contact_104'
-   *
-   * _.uniqueId();
-   * // => '105'
-   */
-  function uniqueId(prefix) {
-    var id = ++idCounter;
-    return toString(prefix) + id;
-  }
-
   /*------------------------------------------------------------------------*/
 
   /**
@@ -8675,6 +8699,8 @@
   lodash.defer = defer;
   lodash.delay = delay;
   lodash.filter = filter;
+  lodash.flatMap = flatMap;
+  lodash.flatMapDeep = flatMapDeep;
   lodash.flatten = flatten;
   lodash.flattenDeep = flattenDeep;
   lodash.groupBy = groupBy;
@@ -8772,7 +8798,6 @@
   lodash.toInteger = toInteger;
   lodash.toNumber = toNumber;
   lodash.toString = toString;
-  lodash.uniqueId = uniqueId;
 
   // Add aliases.
   lodash.each = forEach;
