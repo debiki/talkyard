@@ -22,7 +22,7 @@ let siteId: any;
 const gmailCommentOne = 'gmailCommentOne';
 const gmailCommentTwo = 'gmailCommentTwo';
 
-const localHostname = 'comments-for-e2e-test-embdb3cvgm-localhost-8080';
+const localHostname = 'comments-for-e2e-test-embdb3cvgm';
 const embeddingOrigin = 'http://e2e-test-embdb3cvgm.localhost:8080';
 const pageGggSlug = 'emb-cmts-b3c-ggg.html';
 

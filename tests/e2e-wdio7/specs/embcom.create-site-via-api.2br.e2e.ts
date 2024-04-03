@@ -19,7 +19,7 @@ let mei_brB: TyE2eTestBrowser;
 
 let newSite: { id: SiteId, origin: St } | U;
 
-const localHostname = 'comments-for-e2e-test-creembsit-localhost-8080';
+const localHostname = 'comments-for-e2e-test-creembsit';
 const embeddingOrigin = 'http://e2e-test-creembsit.localhost:8080';
 
 
@@ -48,7 +48,7 @@ describe(`embcom.create-site-via-api.2br  TyTE2ECREAEMBSITAPI`, () => {
     newSite = server.apiV0.createSite({ data: {
       testSiteOkDelete: true,
       acceptTermsAndPrivacy: true,
-      localHostname: 'comments-for-e2e-test-creembsit-localhost-8080',
+      localHostname: 'comments-for-e2e-test-creembsit',
       createEmbeddedComments: true,
       embeddingSiteAddress: embeddingOrigin,
       organizationName: "E2E Test Create Site Via Api",

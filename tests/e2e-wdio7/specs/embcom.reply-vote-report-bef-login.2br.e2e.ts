@@ -18,7 +18,7 @@ let maria_brB: TyE2eTestBrowser;
 let memah: Member;
 let memah_brB: TyE2eTestBrowser;
 
-const localHostname = 'comments-for-e2e-test-embdftpv-localhost-8080';
+const localHostname = 'comments-for-e2e-test-embdftpv';
 const embeddingOrigin = 'http://e2e-test-embdftpv.localhost:8080';
 
 let site: IdAddress;

@@ -22,7 +22,7 @@ let maria_brB: TyE2eTestBrowser;
 
 let site: IdAddress;
 
-const localHostname = 'comments-for-e2e-test-comcount-localhost-8080';
+const localHostname = 'comments-for-e2e-test-comcount';
 const embeddingOrigin = 'http://e2e-test-comcount.localhost:8080';
 let forum: TwoPagesTestForum;
 

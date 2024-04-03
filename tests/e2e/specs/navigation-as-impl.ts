@@ -60,7 +60,7 @@ function makeWholeSpec(initFn: () => InitResult) {
   let willBeLoggedIn = false;
 
   // Only for testing guests. -----
-  const embeddedLocalHostname = 'comments-for-e2e-test-embguest-localhost-8080';
+  const embeddedLocalHostname = 'comments-for-e2e-test-embguest';
   const embeddingOrigin = 'http://e2e-test-embguest.localhost:8080';
   // Different tests might run in parallel, so need different slugs.
   // WON'T WORK but fine, for now. — Also need to use different localHostname, see above.

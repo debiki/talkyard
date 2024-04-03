@@ -25,7 +25,7 @@ const mariasCommentOnePageAaa = 'mariasCommentOnePageAaa';
 const guestCommentOne = 'guestCommentOne';
 const guestCommentTwo = 'guestCommentTwo';
 
-const localHostname = 'comments-for-e2e-test-embdb3c-localhost-8080';
+const localHostname = 'comments-for-e2e-test-embdb3c';
 const embeddingOrigin = 'http://e2e-test-embdb3c.localhost:8080';
 const pageAaaSlug = 'emb-cmts-b3c-aaa.html';
 

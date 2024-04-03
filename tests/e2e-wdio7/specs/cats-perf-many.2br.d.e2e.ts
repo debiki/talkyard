@@ -16,7 +16,7 @@ let owen_brA: TyE2eTestBrowser;
 let stranger_brB: TyE2eTestBrowser;
 
 // For embedded comments:  EMBCMTS
-// const localHostname = 'comments-for-e2e-test-embsth-localhost-8080';
+// const localHostname = 'comments-for-e2e-test-embsth';
 // const embeddingOrigin = 'http://e2e-test-embsth.localhost:8080';
 
 let site: IdAddress;

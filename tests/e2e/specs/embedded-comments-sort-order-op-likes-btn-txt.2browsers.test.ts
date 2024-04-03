@@ -33,7 +33,7 @@ let siteId;
 
 let forum: TwoPagesTestForum;
 
-const localHostname = 'comments-for-e2e-test-scrlld-localhost-8080';
+const localHostname = 'comments-for-e2e-test-scrlld';
 const embeddingOrigin = 'http://e2e-test-scrlld.localhost:8080';
 
 const newAddCommentBtnTitle = 'newAddCommentBtnTitle';

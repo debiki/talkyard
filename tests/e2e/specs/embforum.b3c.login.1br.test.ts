@@ -33,7 +33,7 @@ let mariasBrowser: TyE2eTestBrowser;
 let michael: Member;
 let michaelsBrowser: TyE2eTestBrowser;
 
-const localHostname = 'e2e-test-emb-forum-localhost-8080';
+const localHostname = 'e2e-test-emb-forum';
 
 let siteIdAddress: IdAddress;
 let siteId;

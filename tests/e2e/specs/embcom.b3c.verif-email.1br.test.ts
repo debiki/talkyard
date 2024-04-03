@@ -24,7 +24,7 @@ const mariasCommentOnePageAaa = 'mariasCommentOnePageAaa';
 const mariasCommentTwoPageBbb = 'mariasCommentTwoPageBbb';
 const mariasCommentThreePageBbb = 'mariasCommentThreePageBbb';
 
-const localHostname = 'comments-for-e2e-test-embdb3cve-localhost-8080';
+const localHostname = 'comments-for-e2e-test-embdb3cve';
 const embeddingOrigin = 'http://e2e-test-embdb3cve.localhost:8080';
 const pageAaaSlug = 'emb-cmts-b3c-aaa.html';
 const pageBbbSlug = 'emb-cmts-b3c-bbb.html';

@@ -16,7 +16,7 @@ let owen_brA: TyE2eTestBrowser;
 let maria: Member;
 let maria_brB: TyE2eTestBrowser;
 
-const localHostname = 'comments-for-e2e-test-embdftpv-localhost-8080';
+const localHostname = 'comments-for-e2e-test-embdftpv';
 const embeddingOrigin = 'http://e2e-test-embdftpv.localhost:8080';
 
 const considerQueryPageUrlPath = '/page-consider-query.html';

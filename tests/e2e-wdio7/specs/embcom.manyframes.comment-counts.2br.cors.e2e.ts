@@ -20,7 +20,7 @@ let maria_brB: TyE2eTestBrowser;
 
 let site: IdAddress;
 let forum: TwoCatsTestForum;
-const localHostname = 'comments-for-e2e-test-manyifr-localhost-8080';
+const localHostname = 'comments-for-e2e-test-manyifr';
 const embeddingOrigin = 'http://e2e-test-manyifr.localhost:8080';
 
 const slashSlug_c407_many = '/embcom-manyframes-com-counts-c407.html';

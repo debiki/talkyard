@@ -23,7 +23,7 @@ let siteIdAddress: IdAddress;
 let siteId: SiteId;
 
 let forum: TwoPagesTestForum;
-const localHostname = 'comments-for-e2e-test-catdiid-localhost-8080';
+const localHostname = 'comments-for-e2e-test-catdiid';
 const embeddingOrigin = 'http://e2e-test-catdiid.localhost:8080';
 
 

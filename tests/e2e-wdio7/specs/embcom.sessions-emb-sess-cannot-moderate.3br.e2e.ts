@@ -30,7 +30,7 @@ const majasUserId = 104;
 
 const weakSidErrCode = 'TyEWEAKSID_';  // move to test constants?
 
-const localHostname = 'comments-for-e2e-test-stealembs-localhost-8080';
+const localHostname = 'comments-for-e2e-test-stealembs';
 const embeddingOrigin = 'http://e2e-test-stealembs.localhost:8080';
 let embeddingPageSlug = 'emb-sess-stealer.html';
 let embeddingPageUrl = embeddingOrigin + '/' + embeddingPageSlug;

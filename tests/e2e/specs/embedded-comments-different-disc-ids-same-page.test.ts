@@ -21,7 +21,7 @@ let idAddress: IdAddress;
 let siteId: any;
 
 const dir = 'target';
-const localHostname = 'comments-for-e2e-test-embdscid-localhost-8080';
+const localHostname = 'comments-for-e2e-test-embdscid';
 const embeddingOrigin = 'http://e2e-test-embdscid.localhost:8080';
 
 // The ids shall be RGB colors.

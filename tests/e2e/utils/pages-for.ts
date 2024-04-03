@@ -841,7 +841,7 @@ export class TyE2eTestBrowser {
       // Need to generate new local hostname, since we're going to create a new site.
       const testId = utils.generateTestId();
       const embeddingHostPort = `e2e-test--${ps.shortName}-${testId}.localhost:8080`;
-      const localHostname = `e2e-test--${ps.shortName}-${testId}-localhost-8080`;
+      const localHostname = `e2e-test--${ps.shortName}-${testId}`;
       //const localHostname = settings.localHostname ||
       //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
 

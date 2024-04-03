@@ -28,7 +28,7 @@ const majasComment = 'majasComment';
 const majas2ndComment = 'majas2ndComment';
 const michaelsComment = 'michaelsComment';
 
-const localHostname = 'comments-for-e2e-test-emballgi-localhost-8080';
+const localHostname = 'comments-for-e2e-test-emballgi';
 const embeddingOrigin = 'http://e2e-test-emballgi.localhost:8080';
 const pageSlug = 'emb-cmts-all-logins.html';
 const pageUrl = embeddingOrigin + '/' + pageSlug;

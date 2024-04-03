@@ -26,7 +26,7 @@ const majasFirstCommentEditedTwice = 'majasFirstCommentEditedTwice';
 const michaelsComment = 'michaelsComment';
 const michaelsCommentEdited = 'michaelsCommentEdited';
 
-const localHostname = 'comments-for-e2e-test-embedvo-localhost-8080';
+const localHostname = 'comments-for-e2e-test-embedvo';
 const embeddingOrigin = 'http://e2e-test-embedvo.localhost:8080';
 const pageSlug = 'emb-cmts-edit-and-vote.html';
 const pageUrl = embeddingOrigin + '/' + pageSlug;
