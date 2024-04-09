@@ -46,14 +46,14 @@ object Dependencies {
     // supports listener-notify.
     // https://stackoverflow.com/questions/21632243/
     //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
-    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.6.0"
+    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.6.2"
 
     // Database migrations.
     val flywaydb = "org.flywaydb" % "flyway-core" % "5.0.7"   // scala-steward:off
 
     // HikariCP — "A solid high-performance JDBC connection pool at last"
     // Java 11 needs/can/should use "5.0.1". [java_8_to_11]
-    val hikariCp = "com.zaxxer" % "HikariCP" % "5.0.1"
+    val hikariCp = "com.zaxxer" % "HikariCP" % "5.1.0"
 
     // ElasticSearch client, in https://mvnrepository.com.
     // When upgrading to next major version, consider improving the mappings at the same
@@ -61,20 +61,20 @@ object Dependencies {
     val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
     val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "6.8.23"
 
-    val guava = "com.google.guava" % "guava" % "32.1.2-jre"
+    val guava = "com.google.guava" % "guava" % "32.1.3-jre"
 
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
 
     val apacheCommonsEmail = "org.apache.commons" % "commons-email" % "1.5"
-    val apacheCommonsLang3 = "org.apache.commons" % "commons-lang3" % "3.13.0"
+    val apacheCommonsLang3 = "org.apache.commons" % "commons-lang3" % "3.14.0"
 
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
-    val apacheTika = "org.apache.tika" % "tika-core" % "2.9.0"
+    val apacheTika = "org.apache.tika" % "tika-core" % "2.9.2"
 
-    val jsoup = "org.jsoup" % "jsoup" % "1.16.1"
+    val jsoup = "org.jsoup" % "jsoup" % "1.16.2"
 
-    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.15.2"
+    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.15.4"
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
     // ScribeJava is listed by Microsoft as compatible with Azure,
@@ -104,11 +104,11 @@ object Dependencies {
     app_1      | SLF4J: Ignoring binding found at [jar:file:/home/owner/.cache/coursier/v1/https/repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.2.11/logback-classic-1.2.11.jar!/org/slf4j/impl/StaticLoggerBinder.class]
     app_1      | SLF4J: See http://www.slf4j.org/codes.html#ignoredBindings for an explanation.
     */
-    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.3.11"
+    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.3.14"
 
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
     // 1.3.x is for Java EE, 1.4.x is for Jakarta (which I don't think we use), otherwise identical.
-    val logbackCore = "ch.qos.logback" % "logback-core" % "1.3.11"
+    val logbackCore = "ch.qos.logback" % "logback-core" % "1.3.14"
 
     // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
     val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.4"
@@ -116,13 +116,13 @@ object Dependencies {
 
     // The ElasticSearch client uses Log4j. log4j-api already included, but not -core.
     // (Versions <= 2.17.0 are vulnerable.)
-    //  log4jApi  = "org.apache.logging.log4j" % "log4j-api" % "2.17.1"   // not needed
-    val log4jCore = "org.apache.logging.log4j" % "log4j-core" % "2.17.1"  // missing
+    //  log4jApi  = "org.apache.logging.log4j" % "log4j-api" % "..."   // not needed
+    val log4jCore = "org.apache.logging.log4j" % "log4j-core" % "2.17.2"  // needed
 
 
     // ----- Metrics, tracing
 
-    val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.18"
+    val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.25"
 
     // Deprecated. SHOULD migrate to OpenTelemetry, they say, https://opentelemetry.io/.
     // 1.8.1 exists now.
@@ -183,12 +183,13 @@ object Dependencies {
 
     // ----- Test
 
-    val scalactic = "org.scalactic" %% "scalactic" % "3.2.17"
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.17" % "test"
+    val scalactic = "org.scalactic" %% "scalactic" % "3.2.18"
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.18" % "test"
     val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 
     // Don't use, migrate to ScalaTest instead, some day.
     val specs2 = "org.specs2" %% "specs2-core" % "3.10.0" % "test"  // scala-steward:off
+    //val specs2 = "org.specs2" %% "specs2-core" % "4.20.4" % "test" // [scala_2_13]
   }
 
 }
