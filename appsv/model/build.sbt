@@ -9,7 +9,7 @@ resolvers += "Scala-Tools Maven2 Repository" at "https://scala-tools.org/repo-re
 libraryDependencies ++= Seq(
   Dependencies.Libs.scalactic,
   Dependencies.Libs.guava,
-  "commons-codec" % "commons-codec" % "1.16.0",
+  "commons-codec" % "commons-codec" % "1.16.1",
   "commons-validator" % "commons-validator" % "1.7",
   Dependencies.Libs.apacheCommonsEmail,  // needed here for email address validation only
   Dependencies.Libs.apacheTika,
