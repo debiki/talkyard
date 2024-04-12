@@ -16,6 +16,7 @@
  */
 
 $paddingLeft = 12px;
+$paddingTopBtn = 7px;
 
 // BEM name: esMB (no longer esMetabar)
 
@@ -55,11 +56,11 @@ $paddingLeft = 12px;
   border-right: none
 
   .dw-cmts-tlbr-head
-
-    position: relative; // so dw-cmts-tlbr-open height: 100% works
+    display: flex;
 
     .dw-cmts-tlbr-summary
-      padding: 7px 55px 7px $paddingLeft; // COULD extract variable, 50px [KP409f]
+      padding: $paddingTopBtn 55px $paddingTopBtn $paddingLeft; // COULD extract var, 50px [KP409f]
+      flex: 1;
 
       & > li
         display: inline-block;
@@ -97,9 +98,10 @@ $paddingLeft = 12px;
       .dw-page-notf-level
         cursor: pointer
 
+    .c_NavBs
+      padding: $paddingTopBtn 19px $paddingTopBtn 12px;
+
     .dw-cmts-tlbr-open
-      position: absolute;
-      height: 100%;
       width: 50px; // COULD extract variable, 50px [KP409f]
       right: 0;
       top: 0;

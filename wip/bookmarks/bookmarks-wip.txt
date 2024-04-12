@@ -6,6 +6,10 @@ Disabled in prod,
       until there are auto tests,  see ^bookmarks in ../../docs/tests-map.txt,
       and the below todos fixed.
 
+When enabling: Update the renderer version (from 0.00.79 to 0.00.80), and remove the
+!ifLoggedIn test so the  Go to latest  buton is shown also if logged out, see: [renderer_version].
+
+
 TODO:
   - Maybe create new fns:  ReactActions.createBookmark() and editBookmark(),
     instead of reusing  ReactActions.saveReply()  etc.

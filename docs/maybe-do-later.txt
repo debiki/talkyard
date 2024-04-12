@@ -38,6 +38,14 @@ Primary button colors, secondary, background, arrows, fonts,
 and embedded widgets, e.g. Twitter's oEmbed has a 'link_color: #223344' attr,
                             and  theme=light/dark.
 
+[big_page_nav]
+How make the sidebar and the Recent tab more discoverable?
+Maybe if there's more than 5 comments, pop up a tips when someone clicks "Go to latest"?
+And / or if the display is wide, auto open the sidebar and show the Recent tab?
+(But not if it's open already, maybe they are doing something there, e.g. looking at
+their bookmarks.)
+And tips about keyboard shortcuts too, and add keybindings for prev/next comment.
+
 [post_owners] posts_t.owners_id_c — if ownership of a post has been transferred.
 The new owner can, but the original author can't, edit it and delete it etc.
 

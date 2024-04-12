@@ -2124,7 +2124,10 @@ export function page_mostRecentPostNr(page: Page): number {
   // Related to: [fetch_alias]
   let maxNr = -1;
   _.values(page.postsByNr).forEach((post: Post) => {  // COULD use _.reduce instead
-    maxNr = Math.max(post.nr, maxNr);
+    // Maybe skip meta posts? At least skip private posts (one's bookmarks and, later, drafts).
+    if (post.nr >= PostNrs.MinPublicNr) {
+      maxNr = Math.max(post.nr, maxNr);
+    }
   });
   // @ifdef DEBUG
   dieIf(maxNr < TitleNr, 'TyE5FKBQATS');
