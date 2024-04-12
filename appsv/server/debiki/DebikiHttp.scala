@@ -195,14 +195,29 @@ object EdHttp {  // REFACTOR move to  talkyard.server.http object methods?
   def throwUnprocessableEntity(errCode: String, message: String = "") =
     throw ResultException(UnprocessableEntityResult(errCode, message))
 
+  def throwBadArgIf(test: Bo, errCode: St, paramName: St, problemOrValue: St = ""): U =
+    throwBadParamIf(test, errCode, paramName, problemOrValue)
+
+  RENAME // use throwBadArgIf just above instead
   def throwBadParamIf(test: Bo, errCode: St, paramName: St, problemOrValue: St = ""): U =
     if (test)
       throwBadParam(errCode, paramName, problemOrValue)
 
+  RENAME // use throwBadArg instead
   def throwBadParam(errCode: St, paramName: St, problemOrValue: St = ""): Nothing =
     throwBadArgument(errCode, paramName, problemOrValue)
 
-  // RENAME to throwBadParam? started, see above.
+  // RENAME to throwBadParam? started, see above. <—— NO! Instead, this comment:
+  /** Specific values passed to a function are called 'arguments', while inside the
+    * function, the values it accepts, are called parameters.  But when showing an
+    * error message, it's from the perspective of the caller and because of
+    * specific values, so "argument" is the correct word to use. Hence,
+    * 'paramName', but '...ThrowBadArg',  not '...ThrowBadParam'.
+    */
+  def throwBadArg(errCode: St, paramName: St, problemOrValue: St = ""): Nothing =
+    throwBadArgument(errCode, paramName, problemOrValue)
+
+  RENAME // too long name, use throwBadArg instead
   def throwBadArgument(errCode: St, paramName: St, problemOrValue: St = ""): Nothing =
     throwBadReq(errCode, s"Bad '$paramName' value" + (
           if (problemOrValue.nonEmpty) s": $problemOrValue" else ""))
@@ -390,9 +405,14 @@ object EdHttp {  // REFACTOR move to  talkyard.server.http object methods?
       }
     }
 
+    def getOrThrowBadArg(errCode: St, paramName: St, msg: => St = ""): A = {
+      getOrThrowBadArgument(errCode, paramName, msg)
+    }
+
+    REMOVE // too long name, use getOrThrowBadArg instead? (it's just above)
     def getOrThrowBadArgument(errorCode: String, parameterName: String, message: => String = ""): A = {
       underlying getOrElse {
-        throwBadArgument(errorCode, parameterName, message)
+        throwBadArg(errorCode, parameterName, message)
       }
     }
   }
