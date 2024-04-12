@@ -111,6 +111,27 @@ trait PostsSiteDaoMixin extends SiteTransaction {
           // doesn't matter since bookmarks & priv comments can't be hidden?
           values.append(priv.byUserId.asAnyRef)
           s"and  po.post_nr <= ${PageParts.MaxPrivateNr}  and po.created_by_id = ?"
+        case range: WhichPostsOnPage.TopLevelRange =>
+          // Posts with lower nrs were added first — they're "older'.
+          val (start, end) = range.direction match {
+            case RangeDir.Older => (range.offset - range.limit + 1, range.offset)
+            case RangeDir.Newer => (range.offset, range.offset + range.limit - 1)
+            case RangeDir.Around =>
+              // If TopLevelRange.limit is 25:  25 / 2 = 12, so we'll load the post nr
+              // at `range.offset` + 12 older and 12 newer, that's 25 in total.
+              val halfLim = range.limit / 2
+              (range.offset - halfLim, range.offset + halfLim)
+          }
+          // Load from incl start.  But the title and orig post should already have been
+          // loaded. Negative nr are private posts (e.g. bookmarks, private comments) and
+          // have random nrs, so, off-topic here.
+          values.append(Math.max(start, PageParts.FirstReplyNr).asAnyRef)
+          // Shouldn't try to load private posts, or title or body.
+          dieIf(end < PageParts.FirstReplyNr, "TyE602SKL9", s"Bad scroll offset: end = ${
+                end} < FirstReplyNr, range: $range")
+          // Load up to incl end:
+          values.append(end.asAnyRef)
+          s"and  po.post_nr  between ? and ?"
         case _: WhichPostsOnPage.AllByAnyone =>
            "" // all
       }
@@ -123,6 +144,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
             false
           }
 
+    COULD_OPTIMIZE // Don't load others' unapproved comments. Filtered out later, but better
+    // do here directly? [careful_cache_range]
     val andApproved =
           if (mustBeApproved) and__po_approved_at__is_not_null
           else ""
@@ -147,6 +170,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
+  // [to_paginate]
   override def loadOrigPostAndLatestPosts(pageId: PageId, limit: Int): Seq[Post] = {
     require(limit > 0, "EsE7GK4W0")
     // Use post_nr, not created_at, because 1) if a post is moved from another page to page pageId,
@@ -166,7 +190,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
             $select__posts_po__leftJoin__patPostRels_pa
             where po.site_id = ? and
                   po.page_id = ? and
-                  po.post_nr not in (${PageParts.TitleNr}, ${PageParts.BodyNr})
+                  -- Skip title & body (loaded above) and private posts e.g. bookmarks.
+                  po.post_nr >= ${PageParts.FirstReplyNr}
             $groupBy__siteId_postId
             order by post_nr desc limit $limit
             ) required_subquery_alias  """

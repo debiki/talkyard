@@ -797,6 +797,13 @@ const enum Sizes {
 }
 
 
+const enum RangeDir {
+  Older = -1,
+  // Around = 0, — later
+  Newer = +1,
+}
+
+
 const enum WhichStorage {
   PageVar = 1,
   SessionStorage = 4,

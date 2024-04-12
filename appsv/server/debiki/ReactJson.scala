@@ -242,6 +242,8 @@ class JsonMaker(dao: SiteDao) {
   private def pageToJsonImpl(page: Page, renderParams: PageRenderParams,
         dao: SiteDao, transaction: SiteTx): PageToJsonResult = {
 
+    // Also see: [posts_2_json]
+
     // The json constructed here will be cached & sent to "everyone", so in this function
     // we always specify !isStaff and the requester must be a stranger (user = None):
     val pubAuthzCtx = dao.getForumPublicAuthzContext()
@@ -252,8 +254,23 @@ class JsonMaker(dao: SiteDao) {
     val pageParts = page.parts
     val posts =
       if (page.pageType.isChat) {
-        // Load the latest chat messages only. We'll load earlier posts from the browser, on demand.
-        transaction.loadOrigPostAndLatestPosts(page.id, limit = 100)
+        renderParams.comtOffset match {
+          case None =>
+            // Load the latest chat messages only. We'll load earlier posts from the browser,
+            // on demand.
+            transaction.loadOrigPostAndLatestPosts(page.id, limit = 40)
+          case Some(ofs) =>
+            die("TyEDEADMAYBE04", "Is this dead code?")
+            // Orig pots & title should have been loaded already? But then would
+            // one really need *page*PoJsonImpl? Shouldn't we return only json
+            // for the post range, not any html?   [careful_cache_range]
+            transaction.loadPostsOnPage(page.id, WhichPostsOnPage.TopLevelRange(
+                  offset = ofs,
+                  // Either include range dir in the render params, or decide on
+                  // fixed offsets and limits? E.g. first 25, 26-50, 51-75, ...
+                  direction = RangeDir.Older,
+                  activeOnly = true))
+        }
       }
       else if (page.pageType == PageType.Form) {
         // Don't load any comments on form pages. [5GDK02]
@@ -2182,7 +2199,7 @@ object JsonMaker {
   }
 
 
-  private def postToJsonNoDbAccess(post: Post, showHidden: Bo, includeUnapproved: Bo,
+  def postToJsonNoDbAccess(post: Post, showHidden: Bo, includeUnapproved: Bo,
           tagsAndBadges: TagsAndBadges, howRender: HowRenderPostInPage,
           renderer: RendererWithSettings): JsObject = {
 

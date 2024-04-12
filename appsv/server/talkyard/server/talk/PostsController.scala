@@ -20,7 +20,7 @@ package talkyard.server.talk
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.dao.{LoadPostsResult, SiteDao}
+import debiki.dao.{LoadPostsResult, SiteDao, PageStuff}
 import debiki.EdHttp._
 import talkyard.server.http._
 import play.api.mvc
@@ -254,6 +254,8 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     val posts = postsOneMaySee
 
+    // Bit dupl code. [posts_2_json]
+
     val patIds = mut.Set[PatId]()
     posts.foreach(_.addVisiblePatIdsTo(patIds))
 
@@ -320,7 +322,7 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
             "storePatch" -> Json.obj(
               // RENAME  to patsBr? (for "brief", Ty standard abbreviation)
               "patsBrief" -> patsJsArr,
-              // RENAME  to tagsBr?
+              // RENAME  to tagsBr?  no!,  "typesBr" ?
               "tagTypes" -> JsTagTypeArray(tagTypes, inclRefId = query.reqr.isStaff)))
   }
 

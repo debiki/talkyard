@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017 Kaj Magnus Lindberg
+ * Copyright (c) 2016, 2017, 2024 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -69,6 +69,17 @@ export const ChatMessages = createComponent({
 
 
 
+interface TitleAndChatMsgsState {
+  lastEndDir?: RangeDir
+  numMsgsInMem?: Nr
+  skipTopUntil?: Nr
+  hasScrolledDown?: Bo
+}
+
+const maxToShow = 100;
+const batchSize = 20;
+
+
 const TitleAndLastChatMessages = createComponent({
   displayName: 'TitleAndLastChatMessages',
 
@@ -79,6 +90,38 @@ const TitleAndLastChatMessages = createComponent({
   componentDidMount: function() {
     this.scrollDown();
     this.setState({ hasScrolledDown: true });
+
+    const observer = new IntersectionObserver((entries: IntersectionObserverEntry[],
+          _obsInit: IntersectionObserverInit) => {
+      logD(`In observer clbk, ${entries.length} entries.`)
+      let isAtTop = false;
+      let isAtBottom = false;
+      for (let e of entries) {
+        if (!e.isIntersecting) continue;
+        if (e.target.className.indexOf('c_Chat_Top') >= 0) isAtTop = true;
+        if (e.target.className.indexOf('c_Chat_Bottom') >= 0) isAtBottom = true;
+      }
+      logD(`isAtTop: ${isAtTop}, bottom: ${isAtBottom}`);
+      if (isAtTop !== isAtBottom) {
+        // Later: If showing recent first, then flip Older/Newer.
+        this.showMoreMessages(isAtTop ? RangeDir.Older : RangeDir.Newer);
+      }
+    }, {
+      root: null, // means the viewport
+      rootMargin: '0px',
+      threshold: 0.01, // that's 1%
+    });
+
+    observer.observe(this.refs.topRef);
+    observer.observe(this.refs.bottomRef);
+    this.observer = observer;
+  },
+
+  componentWillUnmount: function() {
+    this.isGone = true;
+    if (this.observer) {
+      this.observer.disconnect();
+    }
   },
 
   UNSAFE_componentWillUpdate: function() {
@@ -99,38 +142,183 @@ const TitleAndLastChatMessages = createComponent({
     pageColumn.scrollTop = pageColumn.scrollHeight;
   },
 
+  showMoreMessages: function (scrollDir: RangeDir) {
+    logD(`showMoreMessages(${scrollDir})`);
+    const state: TitleAndChatMsgsState = this.state;
+    const store: Store = this.props.store;
+    const afterNr = scrollDir === RangeDir.Newer ? this.newestShownNr : this.oldestShownNr;
+    let afterRectBef: Rect;
+
+    // Currently chat messages are always chronological, so up = older.
+    const scrollingUp = scrollDir === RangeDir.Older;
+    const scrollingDown = scrollDir === RangeDir.Newer;
+
+    const hasMoreInMem = _.isNumber(state.skipTopUntil);
+
+    if (hasMoreInMem) {
+      // Note that scrollDir is +-1.
+      const newSkipTopUntil = state.skipTopUntil + scrollDir * batchSize;
+      const newSkipBottomAfter = newSkipTopUntil + maxToShow;
+      const needLoadMore = scrollingUp && newSkipTopUntil <= 0 ||
+                            scrollingDown && newSkipBottomAfter >= state.numMsgsInMem;
+
+      if (!needLoadMore) {
+        const newState: Partial<TitleAndChatMsgsState> = {
+          lastEndDir: scrollDir,
+          skipTopUntil: newSkipTopUntil,
+        };
+        rememberScrollTop();
+        this.setState(newState);
+        // Adjust scrollTop so all messages stay at the same position in the viewport.
+        // (Otherwise can be hard to see what happens, or look jerky.)
+        requestAnimationFrame(updateScrollTop);
+        return;
+      }
+    }
+
+    const offset = afterNr + scrollDir; // skips one (we have it already)
+
+    // Posts with lower numbers are the title, orig post and private posts (e.g. bookmarks).
+    if (offset < PostNrs.FirstReplyNr && scrollingUp)
+      return;
+
+    // This patches the store (adds more chat messages), and adjusts the scroll
+    // position so the chat messages already visible stay in the same positions.
+    Server.loadPagePartsJson({ pageId: store.currentPageId,
+          comtOrder: PostSortOrder.OldestFirst, // always, for chats
+          offset,
+          scrollDir,
+          onOkBeforePatch: rememberScrollTop,
+          onOkAfterPatch: (patchedStore: Store) => {
+            if (this.isGone) return;
+
+            // If there are really many chat messages, don't render all (or the browser might
+            // get sluggish). 100 is a guess, maybe 500 is fine or 50 is a lot on mobiles?
+            const page: Page = patchedStore.currentPage;
+            let numMsgsInMem = 0;
+            _.each(page.postsByNr, (post: Post) => {
+              if (post.nr >= PostNrs.FirstReplyNr) numMsgsInMem += 1;
+            });
+
+            // If we loaded so many messages so there's now too many to show all at once
+            // (for performance reasons), then, if we're scrolling up, skip the messages
+            // at the bottom. If scrolling down, skip the ones at the top.
+            //
+            // This assumes that we don't load so many messages from the server so the ones
+            // previously visible on screen gets skipped (because of `maxToShow`). We load
+            // only 25, see [chat_pagination_size], that's much smaller than `maxToShow`.
+            //
+            let skipTopUntil = null;
+            if (numMsgsInMem > maxToShow) {
+              if (scrollDir === RangeDir.Older) {
+                // Scrolling up. Render all messages we just loaded, they'll be at the top. 
+                // (But we won't render the `numMsgsInMem - maxToShow` messages at the bottom.)
+                skipTopUntil = 0;
+              }
+              else {
+                // Scrolling down. Skip the "too many" messages at the top, but render
+                // all messages at the bottom (those are the ones we just loaded).
+                skipTopUntil = numMsgsInMem - maxToShow;
+              }
+            }
+
+            // Remember the scroll direction, so, if there are too many messages,
+            // we know if we should hide messages at the top, or bottom, so there
+            // will be fewer to render.
+            // (Here we still haven't rerendered the page; we can still edit the
+            // state, to affect the next rendering ..._ctd)
+            const newState: Partial<TitleAndChatMsgsState> = {
+              lastEndDir: scrollDir,
+              numMsgsInMem,
+              skipTopUntil,
+            };
+            this.setState(newState);
+            requestAnimationFrame(updateScrollTop);
+    }});
+
+    function rememberScrollTop() {
+      if (this.isGone) return;
+      // (The elem might be outside the viewport, fine.)
+      const afterElm = document.getElementById('post-' + afterNr);
+      afterRectBef = afterElm && afterElm.getBoundingClientRect();
+    }
+
+    function updateScrollTop() {
+      // (_ctd... But here, the page has been rerendered — however, the screen has
+      // not yet been repainted (right?), so we can adjust the scroll position
+      // without any flash-of-wrong-scroll-position.)
+      if (this.isGone) return;
+      const afterElm2 = document.getElementById('post-' + afterNr);
+      if (!afterRectBef || !afterElm2) return;
+      const afterRectAft = afterElm2.getBoundingClientRect();
+      const pageColumn = document.getElementById('esPageColumn');
+      const jumpedDownDist = afterRectAft.top - afterRectBef.top;
+      pageColumn.scrollTop = pageColumn.scrollTop + jumpedDownDist;
+    }
+  },
+
   render: function () {
+    const state: TitleAndChatMsgsState = this.state;
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
     const title = Title({ store }); // later: only if not scrolled down too far
 
     const originalPost = page.postsByNr[store.rootPostId];
     const origPostAuthor = store.usersByIdBrief[originalPost.authorId];
-    const origPostHeader = PostHeader({ store, post: originalPost });
+    //const origPostHeader = PostHeader({ store, post: originalPost });
     const origPostBody = PostBody({ store, post: originalPost });
     let canScrollUpToFetchOlder = true;
 
+    let oldestShownNr = Number.MAX_SAFE_INTEGER;
+    let newestShownNr = PostNrs.FirstReplyNr - 1;
+
+    const skipBottomAfter = _.isNumber(state.skipTopUntil) ?
+            state.skipTopUntil + maxToShow : Number.MAX_SAFE_INTEGER;
+
     const messages = [];
+    let ix = 0;
+
     _.each(page.postsByNr, (post: Post) => {
-      if (post.nr === TitleNr || post.nr === BodyNr) {
-        // We show the title & body elsewhere.
+
+      // Skip title & body (they're shown as title & description instead),
+      // and bookmarks (shown in message headers instead)
+      // and private comments (not impl). [priv_comts]
+      // But show previews of new messages — they have negative nrs [preview_id_nr_lt_0].
+      if (post.nr < PostNrs.FirstReplyNr && !(post.isPreview && post.nr < 0))
         return;
+
+      ix += 1;
+      if (ix < state.skipTopUntil || skipBottomAfter < ix)
+        return;
+
+      if (!post.isPreview) {
+        if (post.nr < oldestShownNr)
+          oldestShownNr = post.nr;
+
+        if (post.nr > newestShownNr)
+          newestShownNr = post.nr;
       }
+
       if (post.isPostDeleted) {
         messages.push(DeletedChatMessage({ key: post.uniqueId, store: store, post: post }));
         return;
       }
+
       if (post.nr === FirstReplyNr) {
         // (COULD make this work also if post nr FirstReplyNr has been moved to another page
         // and hence will never be found. Fix by scrolling up, noticing that nothing was found,
         // and remove the you-can-scroll-up indicator?)
         canScrollUpToFetchOlder = false;
       }
+
       const postProps = { key: post.uniqueId, store, post };
       const postElem =
           post.postType === PostType.MetaMessage ? MetaPost(postProps) : ChatMessage(postProps);
       messages.push(postElem);
     });
+
+    this.oldestShownNr = oldestShownNr;
+    this.newestShownNr = newestShownNr;
 
     if (!messages.length) {
       canScrollUpToFetchOlder = false;
@@ -143,14 +331,29 @@ const TitleAndLastChatMessages = createComponent({
           ", ", timeExact(originalPost.createdAtMs));
 
     let perhapsHidden;
-    if (!this.state.hasScrolledDown) {
+    if (!state.hasScrolledDown) {
       // Avoid flash of earlier messages before scrolling to end.
       perhapsHidden = { display: 'none' };
     }
 
-    const scrollUpTips = !canScrollUpToFetchOlder ? null :
-      r.div({ className: 'esChat_scrollUpTips' },
-        t.c.ScrollUpViewComments, r.br(), t.NotImplemented);
+    // When the chat top or bottom elems scroll into view, we'll load more messages from
+    // the server.
+    // When can't scroll (because not many messages), don't remove them, just set
+    // visibility: hidden — otherwise the IntersectionObserver won't work.
+    const visHidden = { visibility: 'hidden' };
+    const hideUpTips = canScrollUpToFetchOlder ? undefined : visHidden;
+
+    const scrollUpTips =
+      r.div({ className: 'c_Chat_Top', ref: 'topRef', style: hideUpTips },
+        r.button({ onClick: () => this.showMoreMessages(RangeDir.Older) },
+          "Loading more ..."), // I18N & below
+        ); // t.c.ScrollUpViewComments);
+
+    // Let's always hide for now, simpler.
+    const scrollDownTips =
+      r.div({ className: 'c_Chat_Bottom', ref: 'bottomRef', style: visHidden },
+        r.button({ onClick: () => this.showMoreMessages(RangeDir.Newer) },
+          "Load more ..."));
 
     return (
       r.div({ className: 'esLastChatMsgs', style: perhapsHidden },
@@ -160,7 +363,8 @@ const TitleAndLastChatMessages = createComponent({
           r.div({}, t.c.Purpose),
           origPostBody),
         scrollUpTips,
-        messages));
+        messages,
+        scrollDownTips));
   }
 });
 

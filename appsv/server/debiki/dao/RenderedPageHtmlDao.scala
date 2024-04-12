@@ -32,6 +32,7 @@ object RenderedPageHtmlDao {
   private def renderedPageKey(sitePageId: SitePageId, pageRenderParams: PageRenderParams) = {
     val pageId = sitePageId.pageId
     val comtOrder = pageRenderParams.comtOrder.toInt
+    val comtOffset = pageRenderParams.comtOffset
     val comtNesting = -1 // = pageRenderParams.comtNesting.toInt  — later
     val mobile = if (pageRenderParams.widthLayout == WidthLayout.Tiny) "tny" else "med"
     val embedded = if (pageRenderParams.isEmbedded) "emb" else "dir"
@@ -40,9 +41,26 @@ object RenderedPageHtmlDao {
     // might move one's site to a custom domain, at runtime), so need to incl in the key.
     val origin = pageRenderParams.origin
     val cdnOrigin = pageRenderParams.cdnOriginOrEmpty // could skip, change requires restart —> cache gone
+
     // Skip page query and page root. Won't cache, if they're not default, anyway. [5V7ZTL2]
-    MemCacheKey(sitePageId.siteId,
-          s"$pageId|$comtOrder|$comtNesting|$mobile|$embedded|$origin|$cdnOrigin|PgH")
+
+    // But do consider comtOffset — people "often" scroll up and down in chats;
+    // it's good to have cached chat-paginations. [to_paginate]
+    // However, as a separate key, for now, so adding comtOffset  won't in effect
+    // invalidate all cached pages (hence this match-case).
+
+    comtOffset match {
+      case None =>
+        // What was PgH short for? Maybe it's "Page and host?" ...
+        MemCacheKey(sitePageId.siteId,
+              s"$pageId|$comtOrder|$comtNesting|$mobile|$embedded|$origin|$cdnOrigin|PgH")
+      case Some(offs) =>
+        // ... Then "PgOH" can be Page-offset-host.
+        die("TyEDEADMAYBE03", "Is this dead code?  loadManyPosts() doesn't use any cache")
+        // But don't cache unapproved posts or true ids! [careful_cache_range]
+        MemCacheKey(sitePageId.siteId,
+              s"$pageId|$comtOrder|$offs|$comtNesting|$mobile|$embedded|$origin|$cdnOrigin|PgOH")
+    }
   }
 }
 
@@ -257,6 +275,7 @@ trait RenderedPageHtmlDao {
   def removePageFromMemCache(sitePageId: SitePageId, pageRenderParams: Option[PageRenderParams] = None): Unit = {
     pageRenderParams foreach { params =>
       logger.trace(s"Removing mem-cached page: ${sitePageId.toPrettyString}, $params [TyMMW20ZF4]...")
+      // Ooops! Won't remove at all offsets  [careful_cache_range]
       memCache.remove(renderedPageKey(sitePageId, params))
       return
     }
@@ -336,6 +355,8 @@ trait RenderedPageHtmlDao {
     var renderParams = PageRenderParams(
           comtOrder,
           // comtNesting,  — later
+          // This also won't remove all offsets  [careful_cache_range]
+          comtOffset = None,
           widthLayout = WidthLayout.Tiny,
           isEmbedded = false,
           origin = origin,

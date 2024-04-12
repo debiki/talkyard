@@ -33,8 +33,9 @@ import ViewPageController._
 import debiki.dao.NoUsersOnlineStuff
 import talkyard.server.authn.LoginReason
 import talkyard.server.authn.MinAuthnStrength
-import talkyard.server.authz.MaySeeOrWhyNot
+import talkyard.server.authz.{Authz, MaySeeOrWhyNot}
 import talkyard.server.JsX.JsObjOrNull
+import scala.collection.{mutable => mut}
 
 
 
@@ -55,23 +56,34 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
 
 
   CHECK_AUTHN_STRENGTH
-  def loadPost(pageId: PageId, postNr: PostNr): Action[Unit] = GetActionAllowAnyone { request =>
+  private def _checkAuthn(request: GetRequest): U = {
     // Similar to getPageAsJsonImpl and getPageAsHtmlImpl, keep in sync. [7PKW0YZ2]
 
     val dao = request.dao
-    val siteSettings = dao.getWholeSiteSettings()
-    val authenticationRequired = siteSettings.userMustBeAuthenticated ||
-      siteSettings.userMustBeApproved
+    val settings = dao.getWholeSiteSettings()
+    val authenticationRequired = settings.userMustBeAuthenticated || settings.userMustBeApproved
 
+    // Need not return detailed error messages. Those are shown on the initial page load,
+    // by getPageAsHtmlImpl.
     if (authenticationRequired) {
       if (!request.theUser.isAuthenticated)
         throwForbidden("EdE7KFW02", "Not authenticated")
 
-      if (siteSettings.userMustBeApproved && !request.theUser.isApprovedOrStaff)
+      if (settings.userMustBeApproved && !request.theUser.isApprovedOrStaff)
         throwForbidden("EdE4F8WV0", "Account not approved")
     }
+  }
+
+
+  def loadPost(pageId: PageId, postNr: PostNr): Action[Unit] =
+          GetActionAllowAnyoneRateLimited(RateLimits.ReadsFromDb) { request =>
+    import request.dao
+    // Authentication
+    _checkAuthn(request)
 
     // & sid leveL?
+
+    // Authorization
     val (maySeeResult, debugCode) = dao.maySeePostUseCache(pageId, postNr, request.user)
     maySeeResult match {
       case MaySeeOrWhyNot.YesMaySee =>
@@ -95,6 +107,104 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
   }
 
 
+  def loadManyPosts(pageId: PageId, comtOrder: i32, offset: i32, rangeDir: i32): Action[U] =
+          GetActionAllowAnyoneRateLimited(RateLimits.ReadsFromDb) { req =>
+    import req.{dao, anyReqr}
+    val reqrIsStaff = anyReqr.exists(_.isStaff)
+
+    throwBadReqIf(offset < PageParts.FirstReplyNr,
+          "TyEPOSTSOFS", s"Bad offset: $offset, it's < ${PageParts.FirstReplyNr}")
+
+    // Bit dupl code. [posts_2_json]
+
+    _checkAuthn(req)
+
+    // ----- AuthZ 1/2: The page
+
+    val pageMeta = dao.getPageMeta(pageId) getOrElse {
+      throwIndistinguishableNotFound("ManyPos_0Meta")
+    }
+    val maySeeResult = dao.maySeePageUseCache(pageMeta, anyReqr)
+    if (!maySeeResult.maySee)
+      throwIndistinguishableNotFound(maySeeResult.debugCode)
+
+    SHOULD_OPTIMIZE // Cache, but what? Posts json chunks: 2–9, 10–19, 20–29, ... or each
+    // post individually?  But don't cache too much! [careful_cache_range]
+
+    // ----- Load posts
+
+    // `order` needed later.
+    val order = PostSortOrder.fromInt(comtOrder).getOrThrowBadArg("TyECOMTORD", "comtOrder")
+    val direction = RangeDir.fromInt(rangeDir).getOrThrowBadArg("TyECOMTRANGE", "rangeDir")
+    val which = WhichPostsOnPage.TopLevelRange(offset = offset, direction,
+          // Don't load deleted or hidden commnets.
+          activeOnly = true,
+          // Isn't cached anyway, so might as well load one's own unapproved comments, if
+          // one want to edit them.
+          mustBeApproved = Some(false))
+
+    val postsInclCantSee: Vec[Post] = dao.readTx(_.loadPostsOnPage(pageId, which))
+
+    // ----- AuthZ 2/2: Each post  [careful_cache_range]
+
+    val postsMaySee = postsInclCantSee.filter { p =>
+      val (maySee, dbgCode) = Authz.maySeePostIfMaySeePage(anyReqr, p)
+      maySee.may
+    }
+
+    // ----- Get related things
+
+    val patIds = mut.Set[PatId]()
+    postsMaySee.foreach(_.addVisiblePatIdsTo(patIds))
+
+    // Bit dupl code. [pats_by_id_json]
+    val patsById: Map[PatId, Pat] = dao.getParticipantsAsMap(patIds)
+
+    val tagsAndBadges: TagsAndBadges =
+          dao.readTx(_.loadPostTagsAndAuthorBadges(postsMaySee.map(_.id)))
+    val tagTypes = dao.getTagTypes(tagsAndBadges.tagTypeIds)
+
+    import talkyard.server.JsX._
+
+    val patsJsArr = JsArray(patsById.values.toSeq map { pat =>
+      JsPat(pat, tagsAndBadges,
+            // Set to None, if ever caching this. [careful_cache_range]
+            toShowForPatId = anyReqr.map(_.id))
+    })
+
+    // ----- To json
+
+    val postsJson = postsMaySee map { post =>
+      var postJson = dao.jsonMaker.postToJsonOutsidePage(post, pageMeta.pageType,
+            showHidden = false,
+            // We've filtered out posts the reqr can't see, in authz step 2/2 above.
+            includeUnapproved = true, // [careful_cache_range]
+            tagsAndBadges,
+            // The client already knows which page this is for.
+            inclPageId = false)
+
+      if (reqrIsStaff && (post.numPendingFlags > 0 || post.numHandledFlags > 0)) {
+        postJson += "numPendingFlags" -> JsNumber(post.numPendingFlags)
+        postJson += "numHandledFlags" -> JsNumber(post.numHandledFlags)
+      }
+      postJson
+    }
+
+    val res = Json.obj(  // Typescript: MorePostsStorePatch
+        "storePatch" -> Json.obj(
+          // This tells the client app to ignore the page version — it's better to show
+          // the posts we return, even if the page has changed (e.g. gotten renamed).
+          // (Normally, old changes (old page versions) are ignored — so a patch that
+          // arrives too late somehow, won't reintroduce an old change.)
+          "ignorePageVersion" -> JsTrue,
+          "postsByPageId" -> Json.obj(pageId -> JsArray(postsJson)),
+          "patsBrief" -> patsJsArr,
+          "tagTypes" -> JsTagTypeArray(tagTypes, inclRefId = reqrIsStaff)))
+
+    OkSafeJson(res)
+  }
+
+
   /** Load a page like so: GET server/page/path and you'll get normal HTML.
     * Load it instead like so: GET server/page/path?json — and you'll get JSON for usage
     * in "instant" navigation in the single-page-app (SPA).
@@ -105,6 +215,10 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
     * steps that updates the browser's URL to the page path.
     * Good for analytics and understanding what the users do at the site?
     * The SPA stuff is just an optimization.
+    *
+    * CLEAN_UP, COULD: RateLimits checked in  renderWholePageHtmlMaybeUseMemCache
+    * — but wouldn't it be clearer to check  RateLimits.ViewPage  here, and only
+    * RateLimits.ViewPageNoCache  there?
     */
   CHECK_AUTHN_STRENGTH
   def viewPage(path: String): Action[Unit] = AsyncGetActionAllowAnyone { request =>
@@ -140,8 +254,6 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
   private def getPageAsJsonImpl(path: String, request: GetRequest): Future[Result] = {
     // Similar to loadPost and getPageAsHtmlImpl, keep in sync. [7PKW0YZ2]
 
-    // [to_paginate]
-
     // If the URL needs to be corrected, the client can do that via the browser history api,
     // so don't throw any redirect or sth like that.
     val specifiedPagePath: PagePath = PagePath.fromUrlPath(request.siteId, request.request.path) match {
@@ -156,19 +268,8 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
 
     val dao = request.dao
     val user = request.user
-    val siteSettings = dao.getWholeSiteSettings()
-    val authenticationRequired = siteSettings.userMustBeAuthenticated ||
-      siteSettings.userMustBeApproved
 
-    // Need not return detailed error messages. Those are shown on the initial page load,
-    // by getPageAsHtmlImpl.
-    if (authenticationRequired) {
-      if (!user.exists(_.isAuthenticated))
-        return Future.successful(makeProblemJsonResult(UNAUTHORIZED))
-
-      if (siteSettings.userMustBeApproved && !user.exists(_.isApprovedOrStaff))
-        return Future.successful(makeProblemJsonResult(UNAUTHORIZED))
-    }
+    _checkAuthn(request)
 
     val correctPagePath = dao.checkPagePath(specifiedPagePath) getOrElse {
       throwIndistinguishableNotFound("LoadJson-NotFound")

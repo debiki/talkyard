@@ -238,6 +238,7 @@ class RenderContentActor(
     val tinyParams = PageRenderParams(
       comtOrder = discProps.comtOrder,
       //comtNesting = ... later
+      comtOffset = None,
       widthLayout = WidthLayout.Tiny,
       isEmbedded = isEmbedded,
       origin = dao.theSiteOrigin(),

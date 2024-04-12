@@ -344,6 +344,7 @@ function runAllE2eTests {
   $r s/wdio --only chat-basic.2br.mtime $args  #  broken [DRAFTS_BUG]
   $r s/wdio --only chat-create-from-direct-message.2browsers $args
   $r s/wdio --only chat-create-from-profile-pages.2browsers $args
+  $r s/wdio-7 --only chat-scroll.2br.f --cd -i $args
 
   $r s/wdio-7 --only categories-basic.3br.d --cd -i $args
   # There're more category tests below. [.more_cat_tests]

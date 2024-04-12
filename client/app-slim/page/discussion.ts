@@ -1104,6 +1104,8 @@ const SquashedThreads = createComponent({
     const is2dColumnClass = this.props.is2dTreeColumn ? ' dw-2dcol' : '';
     const postNrDebug = debiki.debug ? '  #' + post.nr : '';
 
+    // COULD UX: Two unsquash buttons, one to unsquash from the top, another from the bottom
+    // (depending on what part of the discussion one wants to see more of).
     return (
       baseElem({ className: 'dw-t dw-ts-squashed' + depthClass + indentationDepthClass +
           is2dColumnClass },

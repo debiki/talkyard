@@ -2274,7 +2274,9 @@ interface StorePatch
 
   listingCatId?: CatId;
 
-  pageVersionsByPageId?: { [pageId: string]: PageVersion };
+  ignorePageVersion?: true;  // Either this or ...
+  pageVersionsByPageId?: { [pageId: string]: PageVersion };  // ... this, but not both.
+
   postsByPageId?: { [pageId: string]: Post[] };
 
   pageMetasBrief?: PageMetaBrief[];
@@ -2323,6 +2325,14 @@ interface PatsStorePatch {
 
 interface PageTweaksStorePatch {
   curPageTweaks?: Partial<Page>;
+}
+
+interface MorePostsStorePatch extends TagTypesStorePatch, PatsStorePatch {
+  ignorePageVersion: true;
+  pageVersionsByPageId: undefined;
+  postsByPageId: { [pageId: string]: Post[] };
+  patsBrief: Pat[];
+  tagTypes: TagType[];
 }
 
 

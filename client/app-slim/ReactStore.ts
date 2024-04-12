@@ -50,6 +50,8 @@ export function win_getSessWinStore(): SessWinStore {
   return mainWin.theStore;
 }
 
+export let __patchedStore: Store | St; // [flux_mess]
+
 type StoreStateSetter = (store: Store) => void;
 const useStoreStateSetters: StoreStateSetter[] = [];
 
@@ -570,6 +572,7 @@ ReactDispatcher.register(function(payload) {
   // below gets a new object. If reusing the same obj, the useEffect fn:s aren't called.
   const meCopy: Myself = { ...store.me };
   const storeCopy: Store = { ...store, me: meCopy };
+  __patchedStore = 'TyEPATSTOR';
 
   useStoreStateSetters.forEach(setStore => {  // ... new, hooks based code
     setStore(storeCopy);
@@ -583,6 +586,7 @@ ReactDispatcher.register(function(payload) {
     storeEventListeners.forEach(listener => {
       listener(thePatch);
     });
+    __patchedStore = storeCopy; // [flux_mess]
   }
 
   resetQuickUpdateInPlace(store);
@@ -1074,7 +1078,7 @@ export function clonePost(postNr: number): Post {
 }
 
 
-function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
+function updatePost(post: Post, pageId: PageId, isCollapsing?: Bo, isScrollAdding?: Bo) {
   const isCurrentPage = pageId === store.currentPageId;
   const page: Page = store.currentPage;
 
@@ -1192,6 +1196,12 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
     return;
 
   rememberPostsToQuickUpdate(post.nr);
+
+  if (isScrollAdding) {
+    // Noop. Caller calls processPosts(). And, no need to loadAndShowPost() —
+    // they'll scroll in at the top or bottom anyway.
+    return;
+  }
 
   stopGifsPlayOnClick();
   setTimeout(() => {
@@ -2008,6 +2018,7 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
     // have been the old one, if any.)
     _.each(store.pagesById, (oldPage: Page) => {
       _.each(patchedPosts, (patchedPost: Post) => {
+        // [On2] Maybe remember posts by page & id too, so this'll be a direct lookup?
         _.each(oldPage.postsByNr, (oldPost: Post) => {
           // Oops, drafts and previews have ids like = -1000101, -1000102
           // — but they are the *newest*, so, "old" in oldPost is then misleading.
@@ -2045,35 +2056,44 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
   // ----- Posts, new or edited?
 
   // Update the current page.
-  if (!storePatch.pageVersionsByPageId) {
-    // No page. Currently storePatch.usersBrief is for the current page (but there is none)
-    // so ignore it too.
+  if (!storePatch.pageVersionsByPageId && !storePatch.ignorePageVersion) {
+    // No page to update, or we shouldn't compare page version.
   }
   else {
     _.each(store.pagesById, patchPage);
   }
 
   function patchPage(page: Page) {
-    const storePatchPageVersion = storePatch.pageVersionsByPageId[page.pageId];
-    if (!storePatchPageVersion || storePatchPageVersion < page.pageVersion) {
-      // These changes are old, might be out-of-date, ignore.
-      return;
-    }
-    else if (storePatchPageVersion === page.pageVersion) {
-      // We might be loading the text of a hidden/unapproved/deleted comment, in order to show it.
-      // So although store & patch page versions are the same, proceed with updating
-      // any posts below.
+    if (storePatch.ignorePageVersion) {
+      // Don't look at or update any `page.pageVersion`. (We might be loading
+      // missing chat messages, if scrolling up in a chat; then, the page version
+      // doesn't matter.)
     }
     else {
-      // (Hmm this assumes we get all patches in between these two versions, or that
-      // the current patch contains all changes, since the current page version.)
-      page.pageVersion = storePatchPageVersion;
+      const storePatchPageVersion = storePatch.pageVersionsByPageId[page.pageId];
+      if (!storePatchPageVersion || storePatchPageVersion < page.pageVersion) {
+        // These changes are old, might be out-of-date, ignore.
+        return;
+      }
+      else if (storePatchPageVersion === page.pageVersion) {
+        // We might be loading the text of a hidden/unapproved/deleted comment, in order
+        // to show it.  So although store & patch page versions are the same,
+        // proceed with updating any posts below.
+      }
+      else {
+        // (Hmm this assumes we get all patches in between these two versions, or that
+        // the current patch contains all changes, since the current page version.)
+        page.pageVersion = storePatchPageVersion;
+      }
     }
 
     const patchedPosts = storePatch.postsByPageId[page.pageId];
     _.each(patchedPosts || [], (patchedPost: Post) => {
       // RENAME to  upsertPost?
-      updatePost(patchedPost, page.pageId);
+      // SHOULD_OPTIMIZE — handle all posts on a page at once, otherwise [On2]+
+      // when loading missing chat messages.
+      updatePost(patchedPost, page.pageId, undefined,
+              storePatch.ignorePageVersion /*isScrollAdding*/);
     });
 
     // The server should have marked this page as unread because of these new events.
@@ -2084,6 +2104,11 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
     if (page.pageId === currentPage.pageId && store.me.isAuthenticated) {
       Server.markCurrentPageAsSeen();
     }
+  }
+
+  if (storePatch.ignorePageVersion) {
+    stopGifsPlayOnClick();
+    setTimeout(debiki2.page.Hacks.processPosts, 0)
   }
 
   // [update_personas], here after both comments & the user's persona mode

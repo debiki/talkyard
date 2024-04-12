@@ -121,6 +121,16 @@ class PageRequest[A](
   } */
 
 
+  /** For rendering a chat somewhere in the middle of the chat — e.g. if following a
+    * search result link, then we'd want to render a few messages before and after
+    * the search result chat message. Or if following a bookmark link to a chat message.
+    */
+  private def anyOffset: Opt[i32] =
+    request.queryString.getFirst("offset") map { intStr: St =>
+      intStr.toIntOption getOrThrowBadArg("TyEOFS0INT", "offest", s"not an int: $intStr")
+    }
+
+
   def renderParams: PageRenderParams = {
     val discProps = DiscProps.derive(
           selfSource = pageMeta,
@@ -132,6 +142,7 @@ class PageRequest[A](
     PageRenderParams(
           discProps.comtOrder,
           //discProps.comtNesting — later
+          comtOffset = anyOffset,
           widthLayout = if (isMobile) WidthLayout.Tiny else WidthLayout.Medium,
           isEmbedded = embeddingUrl.nonEmpty,
           origin = origin,

@@ -1700,6 +1700,7 @@ export function listDrafts(userId: UserId,
 }
 
 
+// [to_paginate]  upToWhen —> offset: { atMs, id }  ?
 export function loadNotifications(userId: UserId, upToWhenMs: number,
       onOk: (notfs: Notification[]) => void, error: () => void) {
   const query = '?userId=' + userId + '&upToWhenMs=' + upToWhenMs;
@@ -2224,6 +2225,7 @@ export function submitUsabilityTestingRequest(formData: FormData) {  // [plugin]
 }
 
 
+// A bit similar to loading a range of posts? [load_page_and_parts]
 export function loadPostByNr(postNr: PostNr, success: (patch: StorePatch) => void) {
   get(`/-/load-post?pageId=${getPageId()}&postNr=${postNr}`, success,
       (errorDetails: string, satus: number) => {
@@ -2472,12 +2474,36 @@ export function savePageIdsUrls(data: PageIdsUrls, onDone: () => void) {
 }
 
 
+// [load_page_and_parts]
 export function loadPageJson(path: string, success: (response) => void) {
   logM(`Loading page: ${path} [TyMLDPG]`);
   get(path + '?json', response => {
     logM(`Done loading ${path}, updating store...`);
     success(response);
     logM(`Done updating store.`);
+  });
+}
+
+
+// [load_page_and_parts]
+export function loadPagePartsJson(ps: {
+    pageId: PageId,
+    comtOrder: PostSortOrder, // not yet in use
+    offset: PostNr,
+    scrollDir: RangeDir,
+    // So can remember scroll offset, before updating page.
+    onOkBeforePatch: () => V,
+    // So can update scroll offset after having added the new comments, so the same
+    // comments stay in the same place after. And to update other state e.g. comment count.
+    onOkAfterPatch: (s: Store) => V,
+  }) {
+  const params = `pageId=${ps.pageId}&comtOrder=${ps.comtOrder
+                    }&offset=${ps.offset}&rangeDir=${ps.scrollDir}`;
+  get('/-/load-many-posts?' + params, (patch: MorePostsStorePatch) => {
+    ps.onOkBeforePatch();
+    ReactActions.patchTheStore(patch);
+    logM(`Done updating store.`);
+    ps.onOkAfterPatch(debiki2.__patchedStore as Store);
   });
 }
 

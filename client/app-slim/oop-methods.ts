@@ -1448,7 +1448,7 @@ export function store_makePostForDraft(authorId: PatId, draft: Draft): Post | Nl
 
 export function post_makePreviewIdNr(parentNr: PostNr, newPostType: PostType): PostNr & PostId {
   // So won't overlap with post nrs and ids.
-  const previewOffset = -1000 * 1000;
+  const previewOffset = -1000 * 1000;  // [preview_id_nr_lt_0]
   const previewPostIdNr =
       previewOffset -
       // We create one preview posts, per parent post we're replying to, so

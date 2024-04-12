@@ -549,6 +549,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
             this.onPostClick);
         break; */
       case 'Starred':
+        // [to_paginate]
         title = t.cb.YourBookmarks;
         starredClass = ' active';
         panelClass = 'c_Cb_P-ToDos';

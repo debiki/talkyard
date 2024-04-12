@@ -431,6 +431,7 @@ OPTIONS  /*whatever             controllers.ApiV0Controller.getFromApi(whatever)
 # ----- View pages/posts
 
 GET   /-/load-post              controllers.ViewPageController.loadPost(pageId: String, postNr: Int)
+GET   /-/load-many-posts        controllers.ViewPageController.loadManyPosts(pageId, comtOrder: Int, offset: Int, rangeDir: Int)
 
 # COULD remove? use only /-/track-reading-activity ?
 POST  /-/mark-as-seen           controllers.ViewPageController.markPageAsSeen(pageId)

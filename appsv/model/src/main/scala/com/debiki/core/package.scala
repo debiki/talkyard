@@ -1350,6 +1350,7 @@ package object core {
     */
   case class PageRenderParams(
     comtOrder: PostSortOrder,
+    comtOffset: Opt[PostNr],
     //comtNesting: NestingDepth, — later, for now, `def comtNesting` below instead
     widthLayout: WidthLayout,
     isEmbedded: Bo,
@@ -1418,7 +1419,7 @@ package object core {
           pageVersion = -1,
           appVersion = "wrong",
           renderParams = PageRenderParams(
-                PostSortOrder.OldestFirst, WidthLayout.Tiny,
+                PostSortOrder.OldestFirst, comtOffset = None, WidthLayout.Tiny,
                 isEmbedded = false, "https://example.com", None, None, None, None),
           storeJsonHash = "wrong")
 
@@ -1484,10 +1485,30 @@ package object core {
   sealed trait ComtOrderAtDepth
 
   RENAME // to ComtOrder?
-  sealed abstract class PostSortOrder(val IntVal: Int, val isByTime__remove: Bo) {
+
+
+  /** How to sort posts, when rendering a page.  A bitfield, or rather, a nibble field.
+    */
+  sealed abstract class PostSortOrder(val IntVal: i32) {
+
     def toInt: Int = IntVal
+
     // Overridden by subclasses.
     def atDepth(_depth: i32): ComtOrderAtDepth = this.asInstanceOf[ComtOrderAtDepth]
+
+    /** If top level comments (replies to the orig post, or chat messages if a chat)
+      * are to be sorted by the order in which they appeared on the page
+      * (which might be different from the order in which they were created,
+      * if they're moved from an old page, to a newer page).
+      */
+    def topLevelIsByNr: Bo = topLevelIsByNrAsc || topLevelIsByNrDesc
+
+    /** For chats — then, most recent messages are at the bottom.
+      * (Threaded chats (not impl) might sort sub threads differently though.)
+      */
+    def topLevelIsByNrAsc: Bo = atDepth(1) == PostSortOrder.OldestFirst
+
+    def topLevelIsByNrDesc: Bo = atDepth(1) == PostSortOrder.NewestFirst
   }
 
   /// Sync with Typescript [PostSortOrder].
@@ -1517,12 +1538,12 @@ package object core {
     // Like FriendsAndBestFirst but sort by Trending not by Best.
     // private val FriendsAndTrendingFirst
 
-    case object BestFirst extends PostSortOrder(BestFirstNibble, false) with ComtOrderAtDepth
-    case object NewestFirst extends PostSortOrder(NewestFirstNibble, true) with ComtOrderAtDepth
-    case object OldestFirst extends PostSortOrder(OldestFirstNibble, true) with ComtOrderAtDepth
+    case object BestFirst extends PostSortOrder(BestFirstNibble) with ComtOrderAtDepth
+    case object NewestFirst extends PostSortOrder(NewestFirstNibble) with ComtOrderAtDepth
+    case object OldestFirst extends PostSortOrder(OldestFirstNibble) with ComtOrderAtDepth
 
     case object NewestThenBest extends PostSortOrder(
-      NewestFirstNibble + (BestFirstNibble << 4), true) {
+      NewestFirstNibble + (BestFirstNibble << 4)) {
       assert(IntVal == 18)  // 2 + 1 * 16
       override def atDepth(depth: i32): ComtOrderAtDepth =
         if (depth <= 1) NewestFirst
@@ -1530,7 +1551,7 @@ package object core {
     }
 
     case object NewestThenOldest extends PostSortOrder(
-      NewestFirstNibble + (OldestFirstNibble << 4), true) {
+      NewestFirstNibble + (OldestFirstNibble << 4)) {
       assert(IntVal == 50)  // 2 + 3 * 16
       override def atDepth(depth: i32): ComtOrderAtDepth =
         if (depth <= 1) NewestFirst

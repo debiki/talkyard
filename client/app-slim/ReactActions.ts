@@ -493,6 +493,7 @@ export function uncollapsePost(post) {
 }
 
 
+// Sth a bit similar, when paginating in a chat?  [to_paginate]
 // COULD RENAME to loadIfNeededThenShow(AndHighlight)Post
 export function loadAndShowPost(postNr: PostNr, showPostOpts: ShowPostOpts = {},
        onDone?: (post?: Post) => void) {
@@ -1546,6 +1547,7 @@ export function maybeLoadAndShowNewPage(store: Store, history: ReactRouterHistor
 }
 
 
+// REFACTOR look at server.loadPagePartsJson()  [load_page_and_parts]
 function loadAndShowNewPage(newUrlPath: St, history: ReactRouterHistory) {
   // UX maybe dim & overlay-cover the current page, to prevent interactions, until request completes?
   // So the user e.g. won't click Reply and start typing, but then the page suddenly changes.
