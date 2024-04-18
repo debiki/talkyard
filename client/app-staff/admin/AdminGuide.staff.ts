@@ -29,7 +29,7 @@ const r = ReactDOMFactories;
 //
 // Don't add anything more. Because if the text is long, people tend to skip it completely.
 //
-export var AdminGuide =
+export var AdminGuide: RElm =
   r.div({ className: 'esAdminGuide' },
     r.p({},
       "You're an admin, so you can edit settings, define what this community is about, " +
