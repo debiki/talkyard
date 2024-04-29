@@ -1079,15 +1079,13 @@ export function clonePost(postNr: number): Post {
 
 
 function updatePost(post: Post, pageId: PageId, isCollapsing?: Bo, isScrollAdding?: Bo) {
+  // The post might be for the page currently being shown, but could also be for a page
+  // in our client side mem cache. [8YDVP2A]
   const isCurrentPage = pageId === store.currentPageId;
-  const page: Page = store.currentPage;
+  const page: Page = store.pagesById[pageId];
 
-  if (page.pageId !== pageId) {
-    // Need to lookup the correct page then, just above, instead of using the current page?
-    // But for now, just ignore this. We currently reload, when navigating back to a page
-    // in the store anyway [8YDVP2A].
+  if (!page)
     return;
-  }
 
   const oldVersion = page.postsByNr[post.nr];
   if (oldVersion && !isCollapsing) {
@@ -2019,6 +2017,8 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
     _.each(store.pagesById, (oldPage: Page) => {
       _.each(patchedPosts, (patchedPost: Post) => {
         // [On2] Maybe remember posts by page & id too, so this'll be a direct lookup?
+        // SHOULD COULD_OPTIMIZE: But can just look up by `nr`?
+        // like so:  oldPage.postsByNr[patchedPost.nr]  — why not?
         _.each(oldPage.postsByNr, (oldPost: Post) => {
           // Oops, drafts and previews have ids like = -1000101, -1000102
           // — but they are the *newest*, so, "old" in oldPost is then misleading.
@@ -2060,6 +2060,9 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
     // No page to update, or we shouldn't compare page version.
   }
   else {
+    // (WOULD_OPTIMIZE: For each page id in the keys of `storePatch.pageVersionsByPageId`,
+    // look up that page directly in store.pagesById — no need to iterate through all pages.
+    // But there're so few (in our browser cache), so doesn't matter.)
     _.each(store.pagesById, patchPage);
   }
 
@@ -2191,6 +2194,14 @@ function showNewPage(ps: ShowNewPageParams) {
     }
   }
 
+  // If using the cache, `watchbar` wasn't changed, above. Let's update it here.
+  // But this is in fact an optimistic UI update — looks better if the watchbar topic
+  // directly stops being highlighted (means it's unread).
+  // The actual http request isn't sent until a tiny bit later. [upd_watchbar_has_read]
+  // No, let's wait, let's not update it here — harder to see & fix bugs then.
+  //if (newPage.pageId)
+  //  watchbar_markAsRead(store.me.watchbar, newPage.pageId);
+
   store.me.myCurrentPageData = myData || makeNoPageData();
 
   // Update <title> tag. Also done from the title editor [30MRVH2].
@@ -2299,6 +2310,11 @@ function showNewPage(ps: ShowNewPageParams) {
     }
     else {
       correctedUrl = pagePath + location.search + location.hash;
+      // @ifdef DEBUG
+      logD(`ReactStore showNewPage: ${
+                              location.pathname + location.search + location.hash
+                              } –> history.replace(${correctedUrl})`);
+      // @endif
       history.replace(correctedUrl);  // [4DKWWY0]  TyTE2EPGID2SLUG
     }
   }
@@ -2437,13 +2453,25 @@ function store_updatePersonaOpts(store: Store) {
   }
 }
 
+// ---- Break_out_watchbar.ts file? ----
+
+export function watchbar_isUnread(watchbar: Watchbar, pageId: PageId): Bo {
+  let res = false;
+  watchbar_foreachTopic(watchbar, watchbarTopic => {
+    if (watchbarTopic.pageId === pageId && watchbarTopic.unread)
+      res = true;
+      // break, but how?
+  });
+  return res;
+}
+
 
 function watchbar_markAsUnread(watchbar: Watchbar, pageId: PageId) {
   watchbar_markReadUnread(watchbar, pageId, false);
 }
 
 
-function watchbar_markAsRead(watchbar: Watchbar, pageId: PageId) {
+export function watchbar_markAsRead(watchbar: Watchbar, pageId: PageId) {
   watchbar_markReadUnread(watchbar, pageId, true);
 }
 
@@ -2524,6 +2552,7 @@ function watchbar_copyUnreadStatusFromTo(old: Watchbar, newWatchbar: Watchbar) {
   });
 }
 
+// -- / Break_out_watchbar.ts file? ----
 
 function makeStranger(store: Store): Myself {
   const stranger = {

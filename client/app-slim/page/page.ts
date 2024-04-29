@@ -53,6 +53,20 @@ function scrollToLastPosition(pageId: PageId) {
 }
 
 
+interface PageWithStateComponentState {
+  store: Store
+
+  // What does isMaybePrevPage mean? Let's say we're in the forum. Then we click a link
+  // to /some-page. The URL will update immediately to /some-page, and React will activate
+  // the route to that page, i.e. this component, PageWithStateComponent.
+  // And we'll run this code — but we haven't yet loaded the new page. The current page
+  // is still the forum page. We'd render the forum, as a normal page, instead of as a topic list.
+  // That'd result in "a flash of the forum rendered incorrectly" and doesn't look nice.
+  // Instead, until we've loaded the new page, render nothing.
+  isMaybePrevPage?: Bo
+}
+
+
 export const PageWithStateComponent = createReactClass(<any> {
   displayName: 'PageWithStateComponent',
   mixins: [debiki2.StoreListenerMixin],
@@ -70,16 +84,30 @@ export const PageWithStateComponent = createReactClass(<any> {
 
 
   makeState: function() {
+    // @ifdef DEBUG
+    logD(`PageWithStateComponent.makeState`);
+    // @endif
     const store: Store = ReactStore.allData();
+    const isMaybePrevPage = this._isMaybePrevPage(this.props.location, store);
+    return { store, isMaybePrevPage } satisfies PageWithStateComponentState;
+  },
+
+
+  // When going to a new page, the url is updated before the page has been loaded. This
+  // fn says if the `store.currentPage` is in fact the page we were showing at the *previous*
+  // url path — then it's too soon to render the new url path (we'd show the wrong page,
+  // possibly of a different type e.g. trying to render a forum index page
+  // as a discussion page).
+  //
+  _isMaybePrevPage: function(location, store: Store): Bo | U {
 
     // Is undef if on an embedded comments page (then, no router).
-    const location = this.props.location;
     if (!location)
-      return { store };
+      return undefined;
 
     const curPage: Page = store.currentPage;
     const curPagePath: St = curPage.pagePath.value;
-    let isMaybeWrongPage = location.pathname !== curPagePath;
+    let isMaybePrevPage = location.pathname !== curPagePath;
 
     // We can get to here, if curPage is a *deleted* site section page  [subcomms]
     // (e.g. a deleted forum) — because then it wouldn't be included in
@@ -92,17 +120,24 @@ export const PageWithStateComponent = createReactClass(<any> {
     if (isSectionPage && location.pathname.startsWith(curPagePath)) {
       // (Maybe check if curPagePath + RoutePathLatest or RoutePathNew etc
       // becomes pathname?)
-      isMaybeWrongPage = false;
+      isMaybePrevPage = false;
     }
 
-    return { store, isMaybeWrongPage };
+    // @ifdef DEBUG
+    logD(`PageWithStateComponent._isMaybePrevPage  props.location.pathname=${location.pathname
+            } & store.currentPage.pagePath=${store.currentPage.pagePath.value
+            }  —> isMaybePrevPage=${isMaybePrevPage}`);
+    // @endif
+
+    return isMaybePrevPage;
   },
 
 
   componentDidMount: function() {
-    const store: Store = this.state.store;
+    const state: PageWithStateComponentState = this.state;
+    const store: Store = state.store;
     ReactActions.maybeLoadAndShowNewPage(store, this.props.history, this.props.location);
-    if (!this.state.isMaybeWrongPage) {
+    if (!state.isMaybePrevPage) {
       scrollToLastPosition(store.currentPageId);
     }
   },
@@ -114,19 +149,65 @@ export const PageWithStateComponent = createReactClass(<any> {
       return;
 
     // If we're about to show another page, remember the current page's scroll offset.
-    const store: Store = this.state.store;
+    const state: PageWithStateComponentState = this.state;
+    const store: Store = state.store;
     const nextUrlPath = nextProps.location.pathname;
     if (nextUrlPath !== location.pathname && !urlPath_isToPageId(nextUrlPath, store.currentPageId)) {
       rememberScrollPosition(store.currentPageId);
     }
 
+    // @ifdef DEBUG
+    logD(`PageWithStateComponent.UNSAFE_componentWillReceiveProps  props.location.pathname=${
+            location.pathname
+            }  state.store.currentPage.pagePath.value=${store.currentPage.pagePath.value
+            }  state.isMaybePrevPage=${state.isMaybePrevPage
+            }  nextProps.location.pathname=${nextProps.location.pathname}
+        calling ReactActions.maybeLoadAndShowNewPage ...`);
+    // @endif
+
     ReactActions.maybeLoadAndShowNewPage(store, this.props.history, location, nextProps.location);
+
+    // @ifdef DEBUG
+    logD(`... ReactActions.maybeLoadAndShowNewPage done.`);
+    // @endif
   },
 
 
+  /* Never called. Needs to be static, but this is not a class.
+   * Using componentDidUpdate() just below, instead.
+  getDerivedStateFromProps: function(props, state) {
+    logD(`PageWithStateComponent.getDerivedStateFromProps`);
+    const isMaybePrevPage = this._isMaybePrevPage(props.location, state.store);
+    return { isMaybePrevPage };
+  }, */
+
+
   componentDidUpdate: function(oldProps, oldState) {
-    const store: Store = this.state.store;
-    if (this.scrollPageId !== store.currentPageId && !this.state.isMaybeWrongPage) {
+    const state: PageWithStateComponentState = this.state;
+    // @ifdef DEBUG
+    logD(`PageWithStateComponent.componentDidUpdate  props.location.pathname=${
+        this.props.location?.pathname
+        }  state.store.currentPage.pagePath.value=${state.store.currentPage.pagePath.value
+        }  state.isMaybePrevPage=${state.isMaybePrevPage}`);
+    // @endif
+
+    // Have we loaded the new page, so store.currentPage is the page for the new url path?
+    const isMaybePrevPage = this._isMaybePrevPage(this.props.location, state.store);
+    if (state.isMaybePrevPage && isMaybePrevPage === false) {
+      // Now `store.currentPage` matches the current url path.
+      // @ifdef DEBUG
+      logD(`PageWithStateComponent.componentDidUpdate setState({ isMaybePrevPage: false })`);
+      // @endif
+      this.setState({ isMaybePrevPage: false });
+
+      // Wait until the page has been rendered, before updating the scroll position.
+      // (Otherwise the page might be too short; the scroll position would be truncated.)
+      return;
+    }
+
+    // Update scroll position, but just once after a navigation.
+    const store: Store = state.store;
+    if (this.scrollPageId !== store.currentPageId && !state.isMaybePrevPage) {
       this.scrollPageId = store.currentPageId;
       const hash = location.hash;
       // Magic hash params start with &, like &param=value or &debug. [2FG6MJ9]
@@ -156,6 +237,9 @@ export const PageWithStateComponent = createReactClass(<any> {
 
 
   componentWillUnmount: function() {
+    // @ifdef DEBUG
+    logD(`PageWithStateComponent.componentWillUnmount`);
+    // @endif
     // Close any [scroll locally on the current page] scroll dialog the user might
     // have opened — we're leaving the current page.
     page.closeAnyScrollButtons();
@@ -163,15 +247,17 @@ export const PageWithStateComponent = createReactClass(<any> {
 
 
   render: function() {
-    // 1. What does isMaybeWrongPage mean? Let's say we're in the forum. Then we click a link
-    // to /some-page. The URL will update immediately to /some-page, and React will activate
-    // the route to that page, i.e. this component, PageWithStateComponent.
-    // And we'll run this code — but we haven't yet loaded the new page. The current page
-    // is still the forum page. We'd render the forum, as a normal page, instead of as a topic list.
-    // That'd result in "a flash of the forum rendered incorrectly" and doesn't look nice.
-    // Instead, until we've loaded the new page, render nothing.
+    const state: PageWithStateComponentState = this.state;
+    // @ifdef DEBUG
+    logD(`PageWithStateComponent.render  isMaybePrevPage=${state.isMaybePrevPage}`);
+    // @endif
+
+    // 1. If `store.currentPage` is still from the previous url path, don't render
+    // anything yet — we'd render the wrong (previous) page using React components
+    // for the new url, which might look funny (e.g. trying to render a topic list
+    // as a discussion page with comments).
     // 2. About ...this.props: That sends router props to the new page.
-    return this.state.isMaybeWrongPage ? null : Page({ store: this.state.store, ...this.props });
+    return state.isMaybePrevPage ? null : Page({ store: state.store, ...this.props });
   }
 });
 
@@ -222,6 +308,10 @@ const Page = createComponent({
     const compactClass = this.state.useWideLayout ? '' : ' esPage-Compact'; // BUG React rendering: Was missing server side, present in browser
     const pageTypeClass = ' s_PT-' + page.pageRole;  // REFACTOR place here: [5J7KTW2] instead
     const isChat = page_isChat(page.pageRole);
+    // @ifdef DEBUG
+    logD(`Page.render  page id: ${page.pageId}`);
+    // @endif
+
     return rFragment({},
       isChat ? r.div({ id: 'theChatVspace' }) : null,
       r.div({ className: 'esPage' + compactClass + pageTypeClass },

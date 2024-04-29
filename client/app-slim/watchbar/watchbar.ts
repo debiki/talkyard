@@ -260,12 +260,19 @@ const DirectMessages = createComponent({
 const SingleTopic = createComponent({
   displayName: 'SingleTopic',
 
-  UNSAFE_componentWillMount: function() {
+  getInitialState: function() {
+    // Just init _url — not using any state.
     const topic: WatchbarTopic = this.props.topic;
     this._url = linkToPageId(topic.pageId);
+    return null;
   },
 
   // If this topic is clicked, when it's the current topic already, then open the dropdown.
+  //
+  // If it's clicked when it's not the current, then the corresponding page is opened.
+  // And after a second or so, it's marked as no-longer-unread, but that happens via a
+  // track-reading request, here: [upd_watchbar_has_read].
+  //
   onListItemClick: function(event) {
     if (!this.props.isCurrent)
       return;

@@ -942,21 +942,7 @@ class JsonMaker(dao: SiteDao) {
     if (pageRequest.pageExists) {
       // (See comment above about ought-to-rename this whole function / stuff.)
       RACE // if the user opens a page, and someone adds her to a chat at the same time.
-      watchbar.tryAddRecentTopicMarkSeen(pageRequest.thePageMeta) match {
-        case None => // watchbar wasn't modified
-        case Some(modifiedWatchbar) =>
-
-          // Double check we may see the page(s) we're adding to the watchbar. [WATCHSEC]
-          SEC_TESTS_MISSING // TyT602KRGJG
-          val pageCtx = dao.maySeePageUseCacheAndAuthzCtx(pageRequest.thePageMeta, authzCtx)
-                              .ifNot { debugCode =>
-            dao.context.security.throwIndistinguishableNotFound(debugCode)
-          }
-
-          watchbar = modifiedWatchbar
-          dao.saveWatchbar(requester.id, watchbar)
-          dao.pubSub.userWatchesPages(pageRequest.siteId, requester.id, watchbar.watchedPageIds) ;RACE
-      }
+      watchbar = dao.watchbarAddRecentMarkSeen(watchbar, pageRequest.thePageMeta, authzCtx)
     }
     val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
     val restrTopicsCatsLinks = listRestrictedCategoriesAndTopics(pageRequest)
@@ -2199,7 +2185,7 @@ object JsonMaker {
   }
 
 
-  def postToJsonNoDbAccess(post: Post, showHidden: Bo, includeUnapproved: Bo,
+  private def postToJsonNoDbAccess(post: Post, showHidden: Bo, includeUnapproved: Bo,
           tagsAndBadges: TagsAndBadges, howRender: HowRenderPostInPage,
           renderer: RendererWithSettings): JsObject = {
 

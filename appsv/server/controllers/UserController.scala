@@ -33,8 +33,7 @@ import scala.util.Try
 import scala.collection.{mutable => mut}
 import debiki.RateLimits.TrackReadingActivity
 import talkyard.server.{TyContext, TyController}
-import talkyard.server.authz
-import talkyard.server.authz.{Authz, PatAndPrivPrefs}
+import talkyard.server.authz.{Authz, PatAndPrivPrefs, AuthzCtxOnAllWithReqer}
 import talkyard.server.security.WhatApiSecret
 import javax.inject.Inject
 import org.scalactic.{Bad, Good}
@@ -1177,7 +1176,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       throwForbidden("TyE5RKPW025", s"Bad post nr, smaller than BodyNr: $badNr")
     }
 
-    CHECK_AUTHN_STRENGTH // + may see?
+    CHECK_AUTHN_STRENGTH
+    // If page & post nrs read included, we check if _may_see_page, below.
 
     logger.trace(
       s"s$siteId, page $anyPageId: Post nrs read: $postNrsRead, seconds reading: $secondsReading")
@@ -1224,13 +1224,26 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       }
     }
 
-    request.dao.pubSub.userIsActive(request.siteId, requester, request.theBrowserIdData)
+    COULD_OPTIMIZE // Don't need both this and [user_watches_pages_pubsub]?
+    dao.pubSub.userIsActive(request.siteId, requester, request.theBrowserIdData)
 
     if (anyPageReadingProgress.isDefined) {
       // This visit happened on an article / discussion page.
-      dieIf(anyPageId.isEmpty, "TyE7KAKR25")
+      val pageId = anyPageId.getOrDie("TyE7KAKR25")
+
+      // [upd_watchbar_has_read]
+      val authzCtx: AuthzCtxOnAllWithReqer = request.authzCtxOnAllWithReqer.get
+      var watchbar: BareWatchbar = dao.getOrCreateWatchbar(authzCtx)
+      COULD_OPTIMIZE // Page loaded again below in trackReadingProgressClearNotfsPerhapsPromote().
+      val page = dao.getPageMeta(pageId) getOrElse {
+        throwIndistinguishableNotFound("TyE702SKJ", s"Page $pageId not found")
+      }
+
+      // This'll check if _may_see_page, throws Not Found if not. [WATCHSEC]
+      dao.watchbarAddRecentMarkSeen(watchbar, page, authzCtx)
+
       dao.trackReadingProgressClearNotfsPerhapsPromote(
-        requester, anyPageId.get, pagePostNrIdsRead.map(_.postId).toSet, anyPageReadingProgress.get)
+          requester, pageId, pagePostNrIdsRead.map(_.postId).toSet, anyPageReadingProgress.get)
     }
     else {
       // This visit happened on an admin page or user profile page.

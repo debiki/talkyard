@@ -867,6 +867,7 @@ Things to think about, if making Ty work offline.
 Use two session ids and cookies — one HttpOnly, another not-HttpOnly. Both needs to be
 present, to be logged in. By deleting the not-HttpOnly, one can log out, also if
 the server is offline.  And, the HttpOnly session offers a bit extra security.
+Partly impl, pages are cached, see: [cache_how_long], but only in dev builds [8YDVP2A].
 
 [serversid]
 Server side sesison ids, maybe in Redis? So can log ppl out, without having access
