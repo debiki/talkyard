@@ -775,18 +775,18 @@ const RootPostAndComments = createComponent({
         return;
 
       isSquashing = false;
-      const threadProps: any = { store };
-      if (isProgrPost || repliesAreFlat) {
-        threadProps.isFlat = true;
-      }
 
-      threadProps.elemType = 'div';
-      threadProps.post = child;
-      threadProps.postId = childNr;  // CLEAN_UP should be .postNr. But use .post only? [349063216]
-      threadProps.index = childIndex;
-      threadProps.depth = 1;
-      threadProps.indentationDepth = 0;
-      threadProps.is2dTreeColumn = page.horizontalLayout;
+      const threadProps: ThreadProps = {
+        store,
+        isFlat: isProgrPost || repliesAreFlat,
+        elemType: 'div',
+        post: child,
+        postId: childNr,  // CLEAN_UP should be .postNr. But use .post only? [349063216]
+        index: childIndex,
+        depth: 1,
+        indentationDepth: 0,
+        is2dTreeColumn: page.horizontalLayout,
+      };
 
       if (child.squash) {
         isSquashing = true;
@@ -1224,7 +1224,7 @@ const Thread = createComponent({
         if (childrenSideways) {
           childIndentationDepth = 0;
         }
-        const threadProps = _.clone(this.props);
+        const threadProps: ThreadProps = { ...this.props };
         threadProps.elemType = childrenSideways ? 'div' : 'li';
         threadProps.post = child;
         threadProps.postId = childNr;   // CLEAN_UP should be .postNr. But use .post only? [349063216]
@@ -1233,7 +1233,7 @@ const Thread = createComponent({
         threadProps.indentationDepth = childIndentationDepth;
         threadProps.is2dTreeColumn = childrenSideways;
         threadProps.key = childNr;
-        let thread;
+        let thread: RElm;
         if (child.squash) {
           isSquashingChildren = true;
           thread = SquashedThreads(threadProps);
@@ -1421,11 +1421,12 @@ export const Post = createComponent({
   displayName: 'Post',
 
   onUncollapseClick: function(event) {
-    debiki2.ReactActions.uncollapsePost(this.props.post);
+    const props: PostProps = this.props;
+    debiki2.ReactActions.uncollapsePost(props.post);
   },
 
   onClick: function(event) {
-    const props = this.props;
+    const props: PostProps = this.props;
     if (!props.abbreviate) {
       if (props.post.isTreeCollapsed || props.post.isPostCollapsed) {
         this.onUncollapseClick(event);
@@ -1446,16 +1447,20 @@ export const Post = createComponent({
     // debiki2.ReactActions.markPostAsRead(this.props.post.nr, true);
   },
 
+  /* Not currently needed, with the new bookmarks. Maybe will add back one day?
+   * so let's keep for now.
   onMarkClick: function(event) {  // [bookmark_shapes_colors]
     // Try to avoid selecting text:
     event.stopPropagation();
     event.preventDefault();
-    debiki2.ReactActions.cycleToNextMark(this.props.post.nr);
-  },
+    const props: PostProps = this.props;
+    debiki2.ReactActions.cycleToNextMark(props.post.nr);
+  }, */
 
   render: function() {
-    const store: Store = this.props.store;
-    const post: Post = this.props.post;
+    const props: PostProps = this.props;
+    const store: Store = props.store;
+    const post: Post = props.post;
     if (!post)
       return r.p({}, '(Post missing [TyE0POST])');
 
@@ -1467,8 +1472,8 @@ export const Post = createComponent({
     let bodyElem;
     let clickToExpand;
     let clickCover;
-    let extraClasses = this.props.className || '';
-    const isFlat = this.props.isFlat;
+    let extraClasses = props.className || '';
+    const isFlat = props.isFlat;
 
     extraClasses += post.isPreview ? ' s_P-Prvw' : '';
     extraClasses += post_isWiki(post) ? ' s_P-Wiki' : '';
@@ -1480,30 +1485,30 @@ export const Post = createComponent({
       // The post doesn't yet exist, shouldn't have a real post nr.
       dieIf(post.nr > MaxVirtPostNr, 'TyE50SKRPJAECW2');
       // @endif
-      bodyElem = PostBody(this.props);
+      bodyElem = PostBody(props);
       extraClasses += ' s_P-Prvw-NotEd';
     }
     else if (post_isDeleted(post)) {
       headerElem = r.div({ className: 'dw-p-hd' }, post.isTreeDeleted ? t.d.ThreadDeld : t.d.CmntDeld);
       extraClasses += ' s_P-Dd';
     }
-    else if (this.props.renderCollapsed &&
+    else if (props.renderCollapsed &&
         // COULD rename isTreeCollapsed since it's not always a boolean.
         post.isTreeCollapsed !== 'Truncated') {
       // COULD remove this way of collapsing comments, which doesn't show the first line?
       // Currently inactive, this is dead code (!== 'Truncated' is always false).
-      let text = this.props.is2dTreeColumn ? '' : (
+      let text = props.is2dTreeColumn ? '' : (
           post.isTreeCollapsed ? t.d.ClickSeeMoreComments : t.d.ClickSeeThisComment);
-      if (debiki.debug) text +='  #' + this.props.postId;
-      const iconClass = this.props.is2dTreeColumn ? 'icon-right-open' : 'icon-down-open';
+      if (debiki.debug) text +='  #' + props.postId;
+      const iconClass = props.is2dTreeColumn ? 'icon-right-open' : 'icon-down-open';
       bodyElem =
           r.span({}, text, r.span({ className: 'dw-a-clps ' + iconClass }));
       extraClasses += ' dw-zd clearfix';
     }
     else if (!post.isApproved && !post.sanitizedHtml && !post.isPreview) {
       // (Dupl code, for anyAvatar [503KP25])
-      const showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
-      const author: BriefUser = this.props.author || // author specified here: [4WKA8YB]
+      const showAvatar = props.depth > 1 || props.is2dTreeColumn;
+      const author: BriefUser = props.author || // author specified here: [4WKA8YB]
           store_getAuthorOrMissing(store, post);
       const anyAvatar = !showAvatar ? null : avatar.Avatar({ user: author, origins: store });
       headerElem =
@@ -1526,13 +1531,13 @@ export const Post = createComponent({
             onClick: this.onUncollapseClick },
           t.d.CmtBelowPendAppr(isMine));
       }
-      const headerProps = _.clone(this.props);
-      headerProps.onMarkClick = this.onMarkClick;
+      const headerProps: PostHeaderProps = _.clone(this.props);
+      // headerProps.onMarkClick = this.onMarkClick;
       // For mind maps, each node is part of the article/page (rather than a comment) so skip author.
       headerElem = page.pageRole === PageRole.MindMap ? null : PostHeader(headerProps);
-      bodyElem = PostBody(this.props);
+      bodyElem = PostBody(props);
 
-      if (post.isTreeCollapsed === 'Truncated' && !this.props.abbreviate) {
+      if (post.isTreeCollapsed === 'Truncated' && !props.abbreviate) {
         extraClasses += ' dw-x';
         clickToExpand = r.div({ className: 'dw-x-show' }, t.d.clickToShow);
         clickCover = r.div({ className: 'dw-x-cover' });
@@ -1543,8 +1548,8 @@ export const Post = createComponent({
     // instead we draw an arrow. For flat replies, show "In response to" inside the header instead,
     // that looks better (see PostHeader).
     let replyReceivers;
-    if (!this.props.abbreviate && !isFlat && (
-          this.props.index > 0 || post.multireplyPostNrs.length)) {
+    if (!props.abbreviate && !isFlat && (
+          props.index > 0 || post.multireplyPostNrs.length)) {
       replyReceivers = ReplyReceivers({ store, post });
     }
 
@@ -1578,11 +1583,11 @@ export const Post = createComponent({
       unwantedCross = r.div({ className: 'dw-unwanted-cross' });
     }
 
-    const id = this.props.abbreviate ? undefined : 'post-' + post.nr;
+    const id = props.abbreviate ? undefined : 'post-' + post.nr;
 
     return (
       r.div({ className: 'dw-p ' + extraClasses, id: id,
-            onMouseEnter: this.props.onMouseEnter, onClick: this.onClick },
+            onMouseEnter: props.onMouseEnter, onClick: this.onClick },
         pendingApprovalElem,
         replyReceivers,
         headerElem,
@@ -1662,30 +1667,33 @@ export const PostHeader = createComponent({
 
   onUserClick: function(event: Event) {
     // Dupl code [1FVBP4E]
-    morebundle.openAboutUserDialogForAuthor(this.props.post, event.target);
+    const props: PostHeaderProps = this.props;
+    morebundle.openAboutUserDialogForAuthor(props.post, event.target);
     event.preventDefault();
     event.stopPropagation();
   },
 
   onCollapseClick: function(event) {
-    debiki2.ReactActions.collapseTree(this.props.post);
+    const props: PostHeaderProps = this.props;
+    debiki2.ReactActions.collapseTree(props.post);
     event.stopPropagation();
   },
 
   showEditHistory: function() {
-    morebundle.openEditHistoryDialog(this.props.post.uniqueId);
+    const props: PostHeaderProps = this.props;
+    morebundle.openEditHistoryDialog(props.post.uniqueId);
   },
 
   render: function() {
-    const props = this.props;
-    const store: Store = this.props.store;
-    const post: Post = this.props.post;
+    const props: PostHeaderProps = this.props;
+    const store: Store = props.store;
+    const post: Post = props.post;
     if (!post)
       return r.p({}, '(Post missing [DwE7IKW2])');
 
     const page: Page = store_pageWith(store, post);
     const me: Myself = store.me;
-    const abbreviate = this.props.abbreviate;
+    const abbreviate = props.abbreviate;
 
     const assignees = (capitalizeClass: St = '') => !post.assigneeIds ? null :
         r.span({ className: 'n_Asgd2' },
@@ -1702,7 +1710,7 @@ export const PostHeader = createComponent({
               // How does this look? Currently always null — cannot yet [assign_comments].
               anyAssigneesCaps);
       }
-      if (this.props.is2dTreeColumn || post.isTreeCollapsed || post.nr === BodyNr) {
+      if (props.is2dTreeColumn || post.isTreeCollapsed || post.nr === BodyNr) {
         return anyAssigneesCaps;
       }
       // Show a collapse button for this wiki post, but no author name because this is
@@ -1721,10 +1729,10 @@ export const PostHeader = createComponent({
       : null;
 
     // (Dupl code, for anyAvatar [503KP25])
-    const author: BriefUser = this.props.author || // author specified here: [4WKA8YB]
+    const author: BriefUser = props.author || // author specified here: [4WKA8YB]
         store_getAuthorOrMissing(store, post);
     // Currently no page author avatar (looks better without). [no_op_avatar]
-    const showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
+    const showAvatar = props.depth > 1 || props.is2dTreeColumn;
     const anyAvatar = !showAvatar ? null : avatar.Avatar({ user: author, origins: store });
 
     let editInfo = null;
@@ -1754,7 +1762,7 @@ export const PostHeader = createComponent({
     // (But not if we're in the todo list in the right sidebar — then a bookmark icon and
     // bookmark description are shown instead, above the bookmarked post.)
     let bookmarkBtn: RElm | U;
-    if (me.isAuthenticated && !post.isForDraftNr && !post.isPreview) {
+    if (me.isAuthenticated && !post.isForDraftNr && !post.isPreview && !props.inTodoList) {
       const postsByNr: { [postNr: number]: Post; } = page.postsByNr;
       // WOULD_OPTIMIZE: Can stop the search when nr >= PostNrs.MinPublicNr.
       const bookmarkPosts: Post[] = _.flatMap(post.bookmarkNrs || post.childNrsSorted, (childNr) => {
@@ -1767,7 +1775,7 @@ export const PostHeader = createComponent({
       const iconClass = bookmarkPosts.length ? 'icon-bookmark' : 'icon-bookmark-empty';
       bookmarkBtn =
         // The outer -click makes the click area larger, because the marks are small.
-        r.span({ className: 's_P_H_Bm dw-p-mark-click',   // onClick: this.props.onMarkClick
+        r.span({ className: 's_P_H_Bm dw-p-mark-click',   // onClick: props.onMarkClick
               onClick: (event: MouseEvent) => {
                 const atRect = cloneEventTargetRect(event);
                 morebundle.openBookmarkDropdown(atRect, {
@@ -1788,9 +1796,9 @@ export const PostHeader = createComponent({
 
     const isBodyPostClass = isPageBody ? ' dw-ar-p-hd' : '';
 
-    const is2dColumn = page.horizontalLayout && this.props.depth === 1;
+    const is2dColumn = page.horizontalLayout && props.depth === 1;
     const collapseIcon = is2dColumn ? 'icon-left-open' : 'icon-up-open';
-    const isFlat = this.props.isFlat;
+    const isFlat = props.isFlat;
     const toggleCollapsedButton =
         is2dColumn || abbreviate || post.isTreeCollapsed || isPageBody || isFlat
           ? null
@@ -1798,7 +1806,7 @@ export const PostHeader = createComponent({
 
     // For flat replies, show "In response to" here inside the header instead,
     // rather than above the header — that looks better.
-    let inReplyTo;
+    let inReplyTo: RElm | U;
     if (abbreviate) {
        // We'd like to show as little as possible: just an excerpt. So skip "replies to".
     }
@@ -1833,7 +1841,7 @@ export const PostHeader = createComponent({
           // COULD add "Posted on ..." tooltip.
           r.span({ className: 'n_EdAt'},
             post.isPreview ? null : (
-              this.props.exactTime ?
+              props.exactTime ?
                 timeExact(post.createdAtMs, timeClass) : timeAgo(post.createdAtMs, timeClass)),
             editInfo),
           inReplyTo,

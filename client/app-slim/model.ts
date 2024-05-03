@@ -2682,6 +2682,71 @@ interface ChangePageDiagParams {
 }
 
 
+/// For rendering a comment and its descendants.
+interface ThreadProps {
+  store: Store
+  rootPostId?: PostNr // is in fact the pots *nr*
+  post: Post
+  postId?: PostId // is in fact the post *nr*. Try to remove [349063216].
+  index?: Nr  // isn't required?
+  depth: Nr
+  indentationDepth: Nr
+  isFlat?: Bo
+  is2dTreeColumn?: Bo
+
+  elemType: 'div' | 'li'
+  key?: Nr | St
+}
+
+
+/// For rendering a comment or meta post.
+interface PostProps {
+  store: Store
+  post: Post
+  postId?: PostId // is in fact the post *nr*. Try to remove [349063216].
+  author?: BriefUser
+  index?: Nr  // isn't required?
+  depth?: Nr  // not needed when rendering in a flat list
+  isFlat?: Bo
+  is2dTreeColumn?: Bo
+  renderCollapsed?: Bo
+  abbreviate?: St
+
+  // In the todo lists, we skip bookmark icon — bookmarks are shown on a line
+  // above instead, including any bookmark note and page name.
+  inTodoList?: true
+
+  onClick?: () => V
+  onMouseEnter?: () => V
+  className?: St
+
+  // For PostHeaderProps:
+  live?: Bo
+  exactTime?: Bo
+  stuffToAppend?: any; // RElm
+  // onMarkClick?: () => V
+}
+
+
+/// For rendering the "Author-Name [times] [bookmark] [tags] ..."
+/// line above each comment, and below the page title.
+interface PostHeaderProps {
+  store: Store
+  post: Post
+  depth?: Nr
+  author?: BriefUser
+  isFlat?: Bo
+  is2dTreeColumn?: Bo
+  abbreviate?: St
+  inTodoList?: true
+
+  live?: Bo
+  exactTime?: Bo
+  stuffToAppend?: any; // RElm
+  // onMarkClick?: () => V
+}
+
+
 interface PatPanelProps {
   me: Me;
   store: Store;
