@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Kaj Magnus Lindberg
+ * Copyright (c) 2023, 2024 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,119 +17,38 @@
 
 /// <reference path="../more-prelude.more.ts" />
 /// <reference path="../utils/utils.more.ts" />
+/// <reference path="./never-alwas-diag.more.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const DropdownModal = utils.DropdownModal;
-const ExplainingListItem = util.ExplainingListItem;
-
-
-let setDiagStateFromOutside: (_: DiscLayoutDiagState) => Vo;
 
 export function openAnonsAllowedDiag(ps: DiscLayoutDiagState) {
-  if (!setDiagStateFromOutside) {
-    ReactDOM.render(AnonsAllowedDiag(), utils.makeMountNode());  // or [use_portal] ?
-  }
-  setDiagStateFromOutside(ps);
+  openNeverAlwaysDiag(ps,
+        (p: DiscPropsSource) => p.comtsStartAnon,
+        (p: DiscPropsSource, val: NeverAlways) => { return { ...p, comtsStartAnon: val }},
+        anonNeverAlways_title,
+        anonNeverAlways_descr,
+        'e_AnonComtsD');
 }
 
 
-/// Some dupl code? [6KUW24]  but this with React hooks.
-///
-const AnonsAllowedDiag = React.createFactory<{}>(function() {
-  //displayName: 'DiscLayoutDiag',
-
-  // Dupl code [node_props_diag], similar to  ./disc-layout-dialog.more.ts
-  // and  ../morekit/proxy-diag.more.ts .
-
-  const [diagState, setDiagState] =
-      React.useState<DiscLayoutDiagState | N>(null);
-
-  setDiagStateFromOutside = setDiagState;
-
-  const layout: DiscPropsSource | NU = diagState && diagState.layout;
-  const atRect: Rect = (diagState?.atRect || {}) as Rect;
-  const isOpen = !!layout;
-
-  function close() {
-    setDiagState(null);
-  }
-
-  let forCat: Bo | U;
-  let inheritItem: RElm | U;
-  let neverItem: RElm | U;
-  let allowItem: RElm | U;
-  let recommendItem: RElm | U;
-  let alwaysItem: RElm | U;
-
-  if (isOpen) {
-    forCat = diagState.forCat;
-
-    const makeItem = (comtsStartAnon: NeverAlways, e2eClass: St): RElm => {
-      let active: Bo;
-      let title: St | RElm;
-      const isInherit = comtsStartAnon === NeverAlways.Inherit;
-      if (!isInherit) {
-        active = comtsStartAnon === layout.comtsStartAnon;
-        title = neverAlways_title(comtsStartAnon);
-      }
-      else {   // [def_disc_layout_title]
-        // Inheriting is the default, so unlss we've choosen sth else, this
-        // item is the active one.
-        active = !layout.comtsStartAnon;
-        title = rFr({},
-                  "Default: ",
-                  r.span({ className: 'c_CmtOrdIt_InhDef_Val' },
-                    neverAlways_title(diagState.default.comtsStartAnon)));
-      }
-      return ExplainingListItem({
-            active,
-            title: r.span({ className: e2eClass  }, title),
-            text: anonNeverAlways_descr(comtsStartAnon, diagState.default.from.comtsStartAnon),
-            onSelect: () => {
-              if (active) {
-                // Noop. Already using this setting.
-              }
-              else {
-                diagState.onSelect({ ...layout, comtsStartAnon });
-              }
-              close();
-            } });
-    }
-
-    inheritItem = makeItem(NeverAlways.Inherit, 'e_Inh');
-    neverItem = makeItem(NeverAlways.NeverButCanContinue, 'e_Nevr');
-    allowItem = makeItem(NeverAlways.Allowed, 'e_Alw');
-    recommendItem = makeItem(NeverAlways.Recommended, 'e_Rec');
-    alwaysItem = makeItem(NeverAlways.AlwaysButCanContinue, 'e_Alw');
-  }
-
-  return (
-      DropdownModal({ show: isOpen, onHide: close, atX: atRect.left, atY: atRect.top,
-            pullLeft: true, showCloseButton: true, dialogClassName2: 'e_AnonComtsD c_NevAlwD' },
-        r.div({ className: 's_ExplDrp_Ttl' },
-          forCat
+function anonNeverAlways_title(forCat: Bo | U): St | RElm {
+  return (forCat
               ? rFr({}, `Anonymous comments, in this category: `, // 0I18N, is for staff
                   r.small({ style: { marginLeft: '1ex' }},
                     `(and subcategories)`))
-              : `Anonymous comments, on this page`),
-        inheritItem,
-        neverItem,
-        allowItem,
-        recommendItem,
-        alwaysItem,
-        ));
-});
+              : `Anonymous comments, on this page`);
+}
 
 
-function anonNeverAlways_descr(nevAlw: NeverAlways, inheritedFrom: Ref | Cat): St | RElm | N {
+function anonNeverAlways_descr(nevAlw: NeverAlways, defaultFrom: DiscPropsComesFrom): St | RElm | N {
   // 0I18N here; this is for staff.
   switch (nevAlw) {
     case NeverAlways.Inherit:
-      return utils.showDefaultFrom(inheritedFrom);
+      return utils.showDefaultFrom(defaultFrom.comtsStartAnon);
 
     case NeverAlways.NeverButCanContinue:
       return "People cannot post anonymously here.";
