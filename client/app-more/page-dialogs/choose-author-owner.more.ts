@@ -44,7 +44,7 @@ export function openAnonDropdown(ps: ChooseAnonDlgPs) {
 ///       if any?
 ///
 ///
-const ChooseAnonModal = React.createFactory<{ChooseAnonDlgPs}>(function() {
+const ChooseAnonModal = React.createFactory<{}>(function() {
   //displayName: 'ChooseAnonModal',
 
   // TESTS_MISSING
@@ -94,11 +94,13 @@ const ChooseAnonModal = React.createFactory<{ChooseAnonDlgPs}>(function() {
     if (mayUseRealName) {
       asYourName = makeItem({ newAnonStatus: AnonStatus.NotAnon }, 'e_AtrSelf');
     }
-    anonymously = makeItem({ newAnonStatus: AnonStatus.IsAnonCanAutoDeanon }, 'e_AtrAnon');
+
+    anonymously = makeItem({ newAnonStatus: state.discProps.newAnonStatus }, 'e_AtrAnon');
 
     // Distant future: [pseudonyms_later]
     // usingPseudonym = ...
     // and also a way to: openAddPseudonymsDialog(alreadyAddedIds, onDone) ?
+    //  — there could be a Create Pseudonym button?
   }
 
   return (

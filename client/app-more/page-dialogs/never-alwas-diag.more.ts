@@ -112,6 +112,7 @@ function openNeverAlwaysDiag(ps: DiscLayoutDiagState,
 
 
 /// Some dupl code? [6KUW24]  but this with React hooks.
+/// Use ProxyDiag instead?  See [anon_purpose_proxy_diag].
 ///
 const NeverAlwaysDiag = React.createFactory<{}>(function() {
   //displayName: 'NeverAlwaysDiag',
