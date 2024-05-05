@@ -1359,6 +1359,7 @@ interface DiscPropsBase {
   comtsStartAnon: NeverAlways;
   opStartsAnon: NeverAlways;
   newAnonStatus: AnonStatus;
+  pseudonymsAllowed: NeverAlways;
 
   // Later: [sum_squash_lims]
   // summarizeLimit;

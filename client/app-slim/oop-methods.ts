@@ -1699,6 +1699,7 @@ const DiscPropDefaults: DiscPropsBase = {
   opStartsAnon: NeverAlways.NeverButCanContinue,
   // For now. Later: OnlySelfCanDeanon.
   newAnonStatus: AnonStatus.IsAnonCanAutoDeanon,
+  pseudonymsAllowed: NeverAlways.NeverButCanContinue,
 };
 
 const DiscPropNames = Object.keys(DiscPropDefaults);

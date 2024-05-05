@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Kaj Magnus Lindberg
+ * Copyright (c) 2024 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -26,47 +26,47 @@
 const r = ReactDOMFactories;
 
 
-export const AnonsAllowedDropdownBtn = function(props: DiscLayoutDropdownBtnProps): RElm {
+export const PseudonymsAllowedDrpBtn = function(props: DiscLayoutDropdownBtnProps): RElm {
   const nevAlwProps: NeverAlwaysProps = {
-    getVal: (p: DiscPropsSource) => p.comtsStartAnon,
-    setVal: (p: DiscPropsSource, val: NeverAlways) => { return { ...p, comtsStartAnon: val }},
-    mkDiagTitle: anonNeverAlways_title,
-    mkItemDescr: anonNeverAlways_descr,
-    e2eClass: 'e_AnonComtsD',
+    getVal: (p: DiscPropsSource) => p.pseudonymsAllowed,
+    setVal: (p: DiscPropsSource, val: NeverAlways) => { return { ...p, pseudonymsAllowed: val }},
+    mkDiagTitle,
+    mkItemDescr,
+    e2eClass: 'e_PseudonAlwD',
   };
 
   return NeverAlwaysBtn({ ...props, ...nevAlwProps });
 }
 
 
-function anonNeverAlways_title(forCat: Bo | U): St | RElm {
+function mkDiagTitle(forCat: Bo | U): St | RElm {
   return (forCat
-              ? rFr({}, `Anonymous comments, in this category: `, // 0I18N, is for staff
+              ? rFr({}, `Pseudonyms, in this category: `, // 0I18N, is for staff
                   r.small({ style: { marginLeft: '1ex' }},
                     `(and subcategories)`))
-              : `Anonymous comments, on this page`);
+              : `Pseudonyms, on this page`);
 }
 
 
-function anonNeverAlways_descr(nevAlw: NeverAlways, defaultFrom: DiscPropsComesFrom): St | RElm | N {
+function mkItemDescr(nevAlw: NeverAlways, defaultFrom: DiscPropsComesFrom): St | RElm | N {
   // 0I18N here; this is for staff.
   switch (nevAlw) {
     case NeverAlways.Inherit:
-      return utils.showDefaultFrom(defaultFrom.comtsStartAnon);
+      return utils.showDefaultFrom(defaultFrom.pseudonymsAllowed);
 
     case NeverAlways.NeverButCanContinue:
-      return "People cannot post anonymously here.";
+      return "People can't use pseudonyms (pen names) here.";
 
     case NeverAlways.Allowed:
-      return `If anyone wants, they can choose to be anonymous. By default, ` +
-              `though, one's real account is used.`;
+      return `People use their real accounts, by default. But if anyone wants, ` +
+              `they can use a pseudonym, when posting and replying here.`;
 
     case NeverAlways.Recommended:
-      return `People are anonymous, by default. ` +
+      return `People use pseudonyms, by default. ` +
               `One can still chooose to use one's real account.`;
 
     case NeverAlways.AlwaysButCanContinue:
-      return "Everyone is anonymous.";
+      return "Everyone has to use pseudonyms.";
 
     default:
       return null;

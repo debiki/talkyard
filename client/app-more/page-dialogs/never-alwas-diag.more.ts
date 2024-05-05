@@ -27,10 +27,68 @@ const DropdownModal = utils.DropdownModal;
 const ExplainingListItem = util.ExplainingListItem;
 
 
+export interface NeverAlwaysProps {
+  getVal: (_: DiscPropsSource) => NeverAlways,
+  setVal: (_: DiscPropsSource, val: NeverAlways) => DiscPropsSource
+  mkDiagTitle: TitleFn
+  mkItemDescr: DescrFn
+  e2eClass: St
+}
+
 type GetValFn = (p: DiscPropsSource) => NeverAlways;
 type SetValFn = (p: DiscPropsSource, val: NeverAlways) => DiscPropsSource;
 type TitleFn = (forCat: Bo | U) => St | RElm;
 type DescrFn = (nevAlw: NeverAlways, defaultFrom: DiscPropsComesFrom) => St | RElm | N;
+
+
+
+export const NeverAlwaysBtn = React.createFactory<DiscLayoutDropdownBtnProps & NeverAlwaysProps>(
+        function(props: DiscLayoutDropdownBtnProps & NeverAlwaysProps) {
+
+  const derived: NodePropsDerivedAndDefault = node_deriveLayout(props);
+
+  // Bit dupl code. [node_props_btn]
+  return (
+      Button({ className: 'e_ComtAnoB', onClick: (event) => {
+          const atRect = cloneEventTargetRect(event);
+          openNeverAlwaysDiag({
+              atRect,
+              // This is what's being edited.
+              layout: derived.layoutSource,
+              // This is the defaults, e.g. parent category settings, will get used
+              // if layoutSource settings cleared (gets set to Inherit).
+              default: derived.parentsLayout,
+              // These forSth just affect the dialog title.
+              forCat: !!props.cat,
+              forEveryone: props.forEveryone, // not needed actually
+              onSelect: props.onSelect },
+
+              props.getVal,
+              props.setVal,
+              props.mkDiagTitle,
+              props.mkItemDescr,
+              props.e2eClass);
+        }},
+        neverAlways_title(props.getVal(derived.actualLayout)),
+            ' ', r.span({ className: 'caret' })));
+});
+
+
+function neverAlways_title(neverAlways: NeverAlways): St {
+  switch (neverAlways) {
+    // case PostSortOrder.Inherit:
+    //  Not supposed to happen. Instead the DiscLayoutDiag constructs a list item
+    //  for the admins. [def_disc_layout_title]
+    //  Using `default:` case, below.
+    case NeverAlways.NeverButCanContinue: return "Never";  // I18N here and below
+    case NeverAlways.Allowed: return "Allowed";
+    case NeverAlways.Recommended: return "Recommended";
+    case NeverAlways.AlwaysButCanContinue: return "Always";
+    default:
+      return `Bad: ${neverAlways} TyENEVRALW`;
+  }
+}
+
 
 interface State extends DiscLayoutDiagState {
   getVal: GetValFn
@@ -43,7 +101,7 @@ interface State extends DiscLayoutDiagState {
 let setDiagStateFromOutside: (_: State) => V;
 
 
-export function openNeverAlwaysDiag(ps: DiscLayoutDiagState,
+function openNeverAlwaysDiag(ps: DiscLayoutDiagState,
           getVal: GetValFn, setVal: SetValFn,
           mkTitle: TitleFn, mkDescr: DescrFn, e2eClass: St) {
   if (!setDiagStateFromOutside) {

@@ -399,6 +399,16 @@ const CatSettings = createClassAndFactory({
               this.props.updateCategory(newLayout);
             }}));
 
+    const pseudonymsAllowed =
+      r.div({ className: 'form-group' },
+        r.label({ className: 'control-label', style: { display: 'block' }},
+          "Pseudonyms: (pen names)"),
+        debiki2.pagedialogs.PseudonymsAllowedDrpBtn({ cat: category, store,
+            layoutFor: LayoutFor.PageNoTweaks,
+            onSelect: (newProps: DiscPropsSource) => {
+              this.props.updateCategory(newProps);
+            }}));
+
     const anonymsAllowed =
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label', style: { display: 'block' }},
@@ -543,6 +553,7 @@ const CatSettings = createClassAndFactory({
             defaultTopicTypeInput,
             doItVotes,
             commentOrder,
+            pseudonymsAllowed,
             anonymsAllowed,
             parentCatDropdown,
             isDefaultInput,
