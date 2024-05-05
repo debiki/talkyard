@@ -64,7 +64,7 @@ Compile / dependencyOverrides ++= {
       "com.typesafe.play" % "play-caffeine-cache_2.12" % "2.8.20",
       "com.typesafe.play" % "play-exceptions" % "2.8.20",
       "com.typesafe.play" % "play-functional_2.12" % "2.9.4",
-      "com.typesafe.play" % "play-json_2.12" % "2.9.4",
+      "com.typesafe.play" % "play-json_2.12" % "2.10.5",
       "com.typesafe.play" % "play-server_2.12" % "2.8.20",
       "com.typesafe.play" % "play-streams_2.12" % "2.8.20",
       "com.typesafe.play" % "play-ws-standalone-json_2.12" % "2.1.11",
