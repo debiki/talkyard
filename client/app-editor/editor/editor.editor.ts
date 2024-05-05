@@ -1158,6 +1158,7 @@ export const Editor = createFactory<any, EditorState>({
             : undefined;
 
     const newState: Partial<EditorState> = {
+      discProps,
       anyPostType: null,
       editorsCategories: store.currentCategories,
       // The current page doens't matter, when creating a new page. [DRAFTS_BUG] set to undefined
