@@ -67,6 +67,9 @@ package object parser {
     val sameAnonId: Opt[AnonId] = parseOptInt32(doAsJsOb, "sameAnonId")
 
     val newAnonStatus: Opt[AnonStatus] = parseOptInt32(doAsJsOb, "newAnonStatus") map { int =>
+      if (int == AnonStatus.NotAnon.IntVal)
+        return Good(None)
+
       AnonStatus.fromInt(int) getOrElse {
         return Bad(s"Invalid newAnonStatus: $int")
       }
