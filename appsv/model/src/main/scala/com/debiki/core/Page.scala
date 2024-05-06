@@ -601,7 +601,8 @@ trait DiscProps {
 }
 
 
-/** Later, derive:  comtsStartHidden, comtsStartAnon, opStartsAnon, newAnonStatus
+/** Later, derive:
+  *      comtsStartHidden, comtsStartAnon, opStartsAnon, newAnonStatus, pseudonymsAllowed
   *  too, but better wait until moved to  pat_node_multi_rels_t ?  [add_nodes_t]
   * [derive_node_props_on_server]
   * @param comtOrder
@@ -645,6 +646,12 @@ trait DiscPropsSource {
   val comtOrder: Opt[PostSortOrder]
   val comtNesting: Opt[ComtNesting_later]
   // comts2dLayout: Opt[Bo] = None
+
+  // Later, these, but maybe wait until  [add_nodes_t]:
+  // comtsStartHidden: Opt[NeverAlways] = None,
+  // comtsStartAnon: Opt[NeverAlways] = None,
+  // newAnonStatus: Opt[AnonStatus] = None,
+  // pseudonymsAllowed: NeverAlways,
 }
 
 
