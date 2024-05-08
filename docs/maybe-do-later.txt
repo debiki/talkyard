@@ -1159,6 +1159,19 @@ so can use other tech than only Play Fmw, without the file name getting misleadi
         ...
 
 
+[ai_spam_checks]
+Use AI (LLMs) to detect spam. Include in the AI prompt:
+    - The description of the forum — can use the forum intro text?
+    - The description of the current forum category.
+    - The text in the parent and ancestor comments, back up to
+      the Original Post & title. (If the thread is long, maybe just
+      the OP and parent comment.)
+    - The addresses to one's own websites (domains),
+      and brief descriptions about them.
+    - The post author:
+        - For how long they've been a member,
+        - their trust level,
+        - how many OK posts they've posted before, how many spam posts.
 
 
 [bash2deno][ty_v1]
