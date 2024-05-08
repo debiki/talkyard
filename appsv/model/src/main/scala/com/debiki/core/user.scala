@@ -686,6 +686,8 @@ sealed trait Pat extends HasInt32Id {
   def isDeactivated: Bo = false
   def isDeleted: Bo = false
   def isAnon: Bo = false
+  def isPseudonym: Bo = false  // [pseudonyms_later]
+  def isAlias: Bo = isAnon || isPseudonym
 
   def isAuthenticated: Bo = isRoleId(id)
   def isApprovedOrStaff: Bo

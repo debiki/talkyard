@@ -643,7 +643,7 @@ class RdbSystemTransaction(
 
   def loadNotificationsToMailOut(delayInMinutes: Int, numToLoad: Int)
         : Map[SiteId, Seq[Notification]] =
-    loadNotfsImpl(numToLoad, unseenFirst = false, onlyIfEmailVerifiedOrGuest = true,
+    loadNotfsImpl(numToLoad, unseenFirst = false, toMailOut = true,
         None, delayMinsOpt = Some(delayInMinutes))
 
 
@@ -653,7 +653,7 @@ class RdbSystemTransaction(
    * tenantIdOpt + userIdOpt --> loads that user's notfs
    * tenantIdOpt + emailIdOpt --> loads a single email and notf
    */
-  def loadNotfsImpl(limit: Int, unseenFirst: Boolean, onlyIfEmailVerifiedOrGuest: Boolean,
+  def loadNotfsImpl(limit: Int, unseenFirst: Bo, toMailOut: Bo,
         tenantIdOpt: Option[SiteId] = None,
         delayMinsOpt: Option[Int] = None,
         userIdOpt: Option[UserId] = None,
@@ -676,11 +676,16 @@ class RdbSystemTransaction(
 
     unimplementedIf(upToWhen.isDefined, "Loading notfs <= upToWhen [EsE7GYKF2]")
 
+    // If we're going to send via email, then, only load notifications to users with email
+    // addresses.  But for aliases (anonyms & pseudonyms), we don't know, here, if the
+    // true user has any email addr configured — we'll handle that later: [true_has_no_email].
     val andEmailVerifiedOrGuest =
-      if (onlyIfEmailVerifiedOrGuest)
-        "and (u.email_verified_at is not null or guest_email_addr is not null)"
-      else
-        ""
+          if (!toMailOut) ""
+          else s""" and (
+             u.email_verified_at     is not null
+             or u.anonym_status_c    is not null
+             or u.pseudonym_status_c is not null
+             or guest_email_addr     is not null) """
 
     val maybeSkipReviewTasksAnd =
       if (!skipReviewTaskNotfs) ""
@@ -705,6 +710,7 @@ class RdbSystemTransaction(
         n.site_id, n.notf_id, n.notf_type, n.created_at,
         n.about_post_id_c, n.about_page_id_str_c, n.action_type, n.action_sub_id,
         n.by_user_id, n.to_user_id,
+        n.by_true_id_c, n.to_true_id_c,
         n.smtp_msg_id_prefix_c,
         n.email_id, n.email_status, n.seen_at
       from notifications3 n inner join users3 u

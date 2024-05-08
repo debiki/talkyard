@@ -293,6 +293,7 @@ impersonate:
           - impersonate-post-as-other.2browsers  TyT502KNG24
           - impersonate-restricted-areas.test.ts  TyT6502PKSNR57
 
+alias,
 anonymous comments,
 anons:
   partly impl:
@@ -301,7 +302,7 @@ anons:
             - Anons for drafts, UNTSETED.
             - Load anon drafts, restore as anon. TyTANONDFLOAD
             - Cannot move anon post to other page.  TyTMOVANONCOMT
-            - Notfs from anons, don't include real user name  TyTNOTFFROMANON
+            - Notfs from anons (comments, votes, more?), don't include real user name  TyTNOTFFROMANON
             - UNTESTED; TESTS_MISSING // exp imp anons?  True ids are incl in json dumps?
             - Different anon statuses: Comts start anon / NeverAlways.AlwaysButCanContinue / etc
             - Edit & update the draft.  TyTEDUPDDFT04

@@ -58,9 +58,10 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
         SITE_ID, notf_id, CREATED_AT, NOTF_TYPE,
         about_post_id_c, about_page_id_str_c,
         ACTION_TYPE, ACTION_SUB_ID,
-        BY_USER_ID, TO_USER_ID,
+        by_user_id, by_true_id_c,
+        to_user_id, to_true_id_c,
         smtp_msg_id_prefix_c, email_id, email_status, seen_at)
-      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """
+      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """
 
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef, notf.id.asAnyRef, d2ts(notf.createdAt),
       notf.tyype.toInt.asAnyRef)
@@ -72,7 +73,9 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
         values += NullInt // no related post action
         values += NullInt //
         values += postNotf.byUserId.asAnyRef
+        values += postNotf.byTrueId.orNullInt32
         values += postNotf.toUserId.asAnyRef
+        values += postNotf.toTrueId.orNullInt32
         values += postNotf.smtpMsgIdPrefix.orNullVarchar
         values += postNotf.emailId.orNullVarchar
         values += postNotf.emailStatus.toInt.asAnyRef  // [306RDLA4]
@@ -146,7 +149,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
   def loadNotificationsToShowInMyMenu(roleId: RoleId, limit: Int, unseenFirst: Boolean,
         skipDeleted: Boolean, upToWhen: Option[ju.Date]): Seq[Notification] = {
     val notfsBySiteId = asSystem.loadNotfsImpl(   // COULD specify consumers
-        limit = limit, unseenFirst = unseenFirst, onlyIfEmailVerifiedOrGuest = false,
+        limit = limit, unseenFirst = unseenFirst, toMailOut = false,
         Some(siteId), skipReviewTaskNotfs = true, skipDeletedPosts = skipDeleted,
         userIdOpt = Some(roleId), upToWhen = upToWhen)
     // All loaded notifications are to `roleId` only.

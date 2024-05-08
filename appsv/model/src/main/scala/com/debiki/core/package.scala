@@ -976,7 +976,7 @@ package object core {
     * Bit 1:
     *   -------1  =   1: is anonymous
     *
-    * Bits 2-4: *Store* true id?
+    * Bits 2-4: *Store* true id?  [forgetting_true_ids]
     *   ----000-  =  0: don't remember true id info at all
     *   ----001-  =  2: can store in mem, spam etc check using AI (but no human), then delete
     *   ----010-  =  4: can store on disk,            - '' -

@@ -385,11 +385,50 @@ Search for that tag.
 
 [pseudonyms_later][pseudonyms_trust]
 
+
 [auto_deanon]
 [auto_show_replies]
 Needs: [add_triggers_t]
 
 [deanon_risk]
+How can you guess who an anonymous user is?
+- Impersonation (admins can, unless ff0Imp set). Even if one's list of aliases is hidden
+  for an admin impersonates oneself, there's some information in what one has *not* been
+  notified about: Notifications aren't generated if one's own pseudonym replies to
+  oneself, for example.  [trueid_check]
+- Someone's slightly unique writing style. Can be mitigated by letting
+  an AI transform all anon comments to a similar writing style.
+- In a small forum: Sbd being active in the middle of the night, and there appear anonymous
+  comments from the same time span, otherwise just silence the whole night. Repeated a few
+  times. — Mitigated by hiding last-active-at & posted-at timestamps, or making
+  timestamps coarse-grained, e.g. showing only day or week (but not hour and minute).
+  But coarse-grained or not depends on the amount of activity in the forum!
+- Inherits permissions — see [pseudonym_types] below.
+- By looking at the email logs, admins can know who and anon's true id is
+  (since the true id gets notified via email about replies to hans anonyms).
+  Should there be an option to not get email notifications about one's
+  anonymous posts?  Or there could be some Sensitive forum mode, where
+  two admins need to agree that it's ok to look at email logs?
+- Audit log, e.g. ip addresses. & doer_true_id_c,  target_pat_true_id_c
+- Nginx logs: ip addresses etc
+- Notifications. If a pseudonym can be mentioned & relpies in an access restricted
+  category, then, the true user is one of those who has access.
+- 9999 more things...
+
+[pseudonym_types]
+Should a pseudonym inherit the permissions of the underlying true user?
+Pros: More user friendly, probably how people expect things to work.
+      Can grant pseudonymous access to only higher trust level users, or users a specific group.
+Cons: Simpler for others to guess who a pseudonym is, based on what restricted categories
+      han has access to. — If this is a problem, depends on e.g.:
+      - [How many [user groups with different category permission combinations] there are.
+      - How many users and their activity.
+Can even make sense with different types of pseudonyms?
+    - One "type" that has the same access permissions as one's true account?
+    - Another that doesn't inherit anything from one's true account?
+      But can instead be granted permissions independently of one's true account.
+      This, though, is more like a completely separate account, but you access it
+      by first logging in to your true account, then switching accounts.
 
 [anon_pages]
 
@@ -866,7 +905,18 @@ Could also:
   Select which notifications get sent over email (e.g. excl Like votes & mod tasks).
   Still visible in username dropdown.
 
+[dont_notify]
+In some corner cases, one gets a notification about sth one already knows about,
+can happen e.g. if adding a tag to a page one is subscribed to.
 
+[notf_from_who]
+E.g.  "You've been mentioned by @Alice in this comment by @Bob" — a notification is not
+always by a single person? What if Bob wrote the comment, and Alice edited it and
+added "@your_username", because she knows that Bob forgot to include your name in
+a list of mentions? (Maybe Bob is a new hire.)
+Or:  "You've been assigned by Alice to this task: Task Name created by Bob"  — Bob created
+the task, and Alice assigned you.  Currently Ty mentions only Bob, but maybe Alice is
+equally relevant?
 
 [refactor-notfs]  DONE, except for re-enabling reconnect.
 Remove Nchan. Use Rust + server-sent-events instead.  NO, just Play and WebSocket now.

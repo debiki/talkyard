@@ -473,7 +473,8 @@ trait TagsDao {
       // Later, when re-enabling notifcations about tagged pages: [tag_notfs]
       // [notfs_bug] Delete for removed tags — also if notf email already sent?
       // But don't re-send notf emails if toggling tag on-off-on-off.... [toggle_like_email]
-      val notifications = notfGenerator(tx).generateForTags(post, tagsToAdd)
+      val notifications = notfGenerator(tx).generateForTags(
+            post, postAuthor = postAuthor, tagsToAdd)
       tx.saveDeleteNotifications(notifications)
 
       (post, notifications, postAuthor)

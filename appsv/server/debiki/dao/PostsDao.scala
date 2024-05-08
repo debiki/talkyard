@@ -413,7 +413,8 @@ trait PostsDao {
       if (skipNotfsAndAuditLog) Notifications.None
       else notfGenerator(tx).generateForNewPost( // page dao excls new reply, ...
                  // ... that's ok, as of now. (See: [notf_new_post_dao])
-            page, newPost, Some(textAndHtml), postAuthor = Some(authorMaybeAnon),
+            page, newPost, Some(textAndHtml),
+            postAuthor = Some(authorMaybeAnon), trueAuthor = Some(realAuthor),
             anyNewModTask = anyReviewTask)
     tx.saveDeleteNotifications(notifications)
 
@@ -720,7 +721,7 @@ trait PostsDao {
           // (but not appended-to messages).
           // Should work well enough + won't be too many mod tasks.
           appendToLastChatMessage(
-                lastMessage, textAndHtml, byWho, spamRelReqStuff, tx, staleStuff)
+                lastMessage, textAndHtml, authorAndLevels, spamRelReqStuff, tx, staleStuff)
         case _ =>
           // A mod task will (might) get generated.
           createNewChatMessage(
@@ -890,7 +891,11 @@ trait PostsDao {
 
     // If anyModTask: TyTIT50267MT
     val notfs = notfGenerator(tx).generateForNewPost( // page dao excls new chat msg
-          page, newPost, postAuthor = Some(author), sourceAndHtml = Some(textAndHtml),
+          page, newPost,
+          // Anons currently cannot post chat messages. [anon_chats]
+          // What about [pseudonyms_later]?
+          postAuthor = Some(author), trueAuthor = Some(author),
+          sourceAndHtml = Some(textAndHtml),
           anyNewModTask = anyModTask)
     tx.saveDeleteNotifications(notfs)
 
@@ -903,12 +908,12 @@ trait PostsDao {
     * some db storage space & performance when rendering the chat, and
     * is more nice, from a ux perspective? with one message instead of many small?
     */
-  private def appendToLastChatMessage(lastPost: Post, textAndHtml: TextAndHtml, byWho: Who,
+  private def appendToLastChatMessage(lastPost: Post, textAndHtml: TextAndHtml,
+        authorAndLevels: UserAndLevels,
         spamRelReqStuff: SpamRelReqStuff, tx: SiteTransaction, staleStuff: StaleStuff)
         : (Post, Notifications) = {
 
     // Note: Farily similar to editPostIfAuth() just below. [2GLK572]
-    val authorAndLevels = loadUserAndLevels(byWho, tx)
     val author = authorAndLevels.user
 
     // This'd be a bug? [anon_chats]
@@ -996,7 +1001,7 @@ trait PostsDao {
     AUDIT_LOG // that this ip appended to the chat message.
 
     val notfs = notfGenerator(tx).generateForEdits(
-          lastPost, editedPost = editedPost, Some(combinedTextAndHtml))
+          editor = author, lastPost, editedPost = editedPost, Some(combinedTextAndHtml))
     tx.saveDeleteNotifications(notfs)
 
     (editedPost, notfs)
@@ -1377,7 +1382,7 @@ trait PostsDao {
         staleStuff.addPageId(editedPost.pageId)
         saveDeleteLinks(editedPost, newTextAndHtml, editorMaybeAnon.trueId2, tx, staleStuff)
         TESTS_MISSING // notf not sent until after ninja edit window ended?  TyTNINJED02
-        val notfs = notfGenerator(tx).generateForEdits(
+        val notfs = notfGenerator(tx).generateForEdits(editor = editorMaybeAnon,
               postToEdit, editedPost = editedPost, Some(newTextAndHtml))
         tx.saveDeleteNotifications(notfs)
       }
@@ -2213,8 +2218,8 @@ trait PostsDao {
                         pageMeta.pageType.shallFollowLinks)
           }
 
-    // Later: update lastApprovedEditAt, lastApprovedEditById and numDistinctEditors too,
-    // or remove them.
+    // Later: update lastApprovedEditAt, lastApprovedEditById too [upd_last_apr_editor].
+    // (And numDistinctEditors?)
     val postAfter = postBefore.copy(   // sync w test [29LW05KS2]
       safeRevisionNr =
         approver.isHuman ? Option(postBefore.currentRevisionNr) | postBefore.safeRevisionNr,
@@ -2317,8 +2322,22 @@ trait PostsDao {
               anyNewModTask = None, doingModTasks = doingModTasks)
       }
       else {
+        // [notf_from_who] Sometimes the editor is not the author. Maybe a moderator
+        // edits a post, and @mentions the original author, like:
+        //      "Edit: Hi @alex I've fixed some links in this post for you /Edit".
+        // Then we'd want to notify the post author about edits to hans own post.
+        // But! not always updating the editor id.  [upd_last_apr_editor]
+        //
+        // Hmm. Who should a notification be from, if Alice posts a comment replying to
+        // Bob, and later Modya edits the comment, adds "@alex" — should Alex get
+        // notified that Modya mentioned her or that there's a comment by Alice
+        // mentioning her? Maybe both? (in a single notf)
+        // """You got mentioned by Modya, who edited a comment originally
+        //  written by Alice"""   ?
+        //
+        val editor = author  // for now
         notfGenerator(tx).generateForEdits(
-              postBefore, editedPost = postAfter, Some(sourceAndHtml))
+              editor = editor, postBefore, editedPost = postAfter, Some(sourceAndHtml))
       }
     tx.saveDeleteNotifications(notifications)
 

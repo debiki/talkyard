@@ -521,7 +521,7 @@ trait PagesDao {
       val notifications = notfGenerator(tx).generateForNewPost(  // dao incls new page body
             newPageDao(pagePath.pageId, tx), bodyPost,
             Some(body), anyNewModTask = anyReviewTask,
-            postAuthor = Some(authorMaybeAnon))
+            postAuthor = Some(authorMaybeAnon), trueAuthor = Some(realAuthor))
 
       tx.saveDeleteNotifications(notifications)
 
@@ -931,7 +931,8 @@ trait PagesDao {
       // For now. Later, somehow use  NotfType.AssigneesChanged (if assignees changed).
       notfGenerator(tx).generateForNewPost(  // page dao excls new meta post
             page, metaMessage, sourceAndHtml = None,
-            postAuthor = None, // Some(doer) — but `doer` might be from another tx?
+            // or Some(doer) — but `doer` might be from another tx?
+            postAuthor = None, trueAuthor = None,
             anyNewModTask = None)
     }
 

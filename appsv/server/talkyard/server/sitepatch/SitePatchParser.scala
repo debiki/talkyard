@@ -1100,7 +1100,9 @@ case class SitePatchParser(context: TyContext) {
             createdAt = readDateMs(jsObj, "createdAtMs"),
             uniquePostId = readInt(jsObj, "postId"),
             byUserId = readInt(jsObj, "byUserId"),
+            byTrueId = parseOptInt32(jsObj, "byTrueId"),
             toUserId = readInt(jsObj, "toUserId"),
+            toTrueId = parseOptInt32(jsObj, "toTrueId"),
             smtpMsgIdPrefix = readOptString(jsObj, "smtpMsgIdPrefix"),
             // OOPS, there's a foreign key, 'ntfs_r_emails' from notfs_t to emails_out_t.
             // Any email must be included in the patch (so the FK to emails_out_t won't

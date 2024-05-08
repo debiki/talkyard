@@ -240,14 +240,36 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
 
       val siteDao = siteDaoFactory.newSiteDao(siteId)
 
+      // Look up the user to be notified. But if han is an anonym or pseudonym (`anyAlias`
+      // below), look up the true user (`anyUser`) instead and notify that one:
+
       /* COULD batch load all users at once via systemDao.loadUsers().
       val userIdsBySiteId: Map[String, List[SiteId]] =
         notfsBySiteId.mapValues(_.map(_.recipientUserId))
       val usersBySiteAndId: Map[(SiteId, UserId), User] = loadUsers(userIdsBySiteId) */
-      val (anyUser, anyStats) = siteDao.readWriteTransaction { tx => // siteDao.readTx { tx =>
-        tx.loadParticipantAndStats(userId)
+      val (anyUser: Opt[Pat],
+            anyStats: Opt[UserStats],
+            anyAlias: Opt[Pat],
+            anyAliasStats: Opt[UserStats]) = siteDao.readTx { tx =>
+        val (anyPat, anyStats) = tx.loadParticipantAndStats(userId)
+        anyPat match {
+          case None => (None, None, None, None)
+          case Some(pat) =>
+            if (!pat.isAlias) {
+              (Some(pat), anyStats, None, None)
+            }
+            else {
+              val (anyTruePat, anyTrueStats) = tx.loadParticipantAndStats(pat.trueId2.trueId)
+              (anyTruePat, anyTrueStats, Some(pat), anyStats)
+            }
+        }
       }
-      val isSnoozingNow = anyStats.exists(_.isSnoozing(globals.now()))
+
+      // If it's a pseudonym, and it's snoozing, that must mean the true user
+      // don't want notifications related to that pseudonym, for the moment.
+      val isSnoozingNow =
+            anyAliasStats.exists(_.isSnoozing(globals.now())) ||
+            anyStats.exists(_.isSnoozing(globals.now()))
 
       // Maybe the user just changed hens settings and no longer wants to get notified
       // about posts hen has read already?
@@ -262,7 +284,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
       siteDao.updateNotificationSkipEmail(notfsToSkip)
 
       // Send email, or remember why we didn't and don't try again.
-      trySendToSingleUser(userId, anyUser, notfsToSend, siteDao)
+      trySendToSingleUser(userId, anyUser, anyAlias = anyAlias, notfsToSend, siteDao)
     }
   }
 
@@ -271,7 +293,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
     * If error, logs a message and updates the notification, sets email status to
     * NotfEmailStatus.Skipped.
     */
-  private def trySendToSingleUser(userId: UserId, anyUser: Option[Participant],
+  private def trySendToSingleUser(userId: UserId, anyUser: Opt[Pat], anyAlias: Opt[Pat],
         notfs: Seq[Notification], siteDao: SiteDao): U = {
     val siteId = siteDao.siteId
 
@@ -279,8 +301,10 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
     if (notfs.isEmpty)
       return
 
-    def skipBecause(msg: St): U = {
-      logger.warn(s"s$siteId: Skipping email to user id $userId: $msg")
+    def skipBecause(msg: St, warn: Bo = true): U = {
+      val logMsg = s"s$siteId: Skipping email to user id $userId: $msg  [TyMSKIPEML]"
+      if (warn) logger.warn(logMsg)
+      else logger.debug(logMsg)
       siteDao.updateNotificationSkipEmail(notfs)
     }
 
@@ -289,19 +313,31 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
       return
     }
 
-    // If email notification preferences haven't been specified, assume the user
-    // wants to be notified of replies. I think most people want that? And if they
-    // don't, there's an unsubscription link in the email.
-    if (user.emailNotfPrefs != EmailNotfPrefs.Receive &&
-        user.emailNotfPrefs != EmailNotfPrefs.ReceiveAlways &&
-        user.emailNotfPrefs != EmailNotfPrefs.Unspecified) {
-      // Or maybe just debug log level, here? — A harmless race can trigger this?
-      skipBecause("User declines emails")
+    // Maybe let people configure separate addresses for pseudonyms?  [pseudonyms_later]
+    if (user.email.isEmpty) {
+      // If the user getting notified is a pseudonym / anonym, we won't notice until here
+      // that the true user doesn't have any email address. [true_has_no_email]
+      // (Could detect earlier, but we need to update the database in any case (to
+      // remember that the email has been processed) so doesn't matter.)
+      skipBecause("User has no email address", warn = anyAlias.isEmpty)
       return
     }
 
-    if (user.email.isEmpty) {
-      skipBecause("User has no email address")
+    // If email notfs prefs have been configured for a pseudonym, use those.
+    val emailNotfPrefs: EmailNotfPrefs =
+          if (anyAlias.exists(_.emailNotfPrefs != EmailNotfPrefs.Unspecified))
+            anyAlias.get.emailNotfPrefs
+          else
+            user.emailNotfPrefs
+
+    // If email notification preferences haven't been specified, assume the user
+    // wants to be notified of replies. I think most people want that? And if they
+    // don't, there's an unsubscription link in the email.
+    if (emailNotfPrefs != EmailNotfPrefs.Receive &&
+        emailNotfPrefs != EmailNotfPrefs.ReceiveAlways &&
+        emailNotfPrefs != EmailNotfPrefs.Unspecified) {
+      // Or maybe just debug log level, here? — A harmless race can trigger this?
+      skipBecause("User declines emails")
       return
     }
 
@@ -427,8 +463,11 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
               subject = s"[$siteName] ${page.title}"
               val post = anyPost getOrDie "TyE603MRSKD64"
 
+              warnDevDieIf(notf.toTheTrueId != user.id, "TyE40wGKS", s"s${dao.siteId
+                    }: notf.toTheTrueId: ${notf.toTheTrueId}, user.trueId2: ${user.trueId2}")
+
               val earlierEmailsSamePage: ImmSeq[EmailOut] = dao.loadEmailsToPatAboutThread(
-                    toPatId = notf.toUserId, pageId = page.pageId,
+                    toPatId = notf.toTheTrueId, pageId = page.pageId,
                     parentPostNr = post.parentNr, limit = 30)
 
               val aboutWhat = EmailAbout.Post(

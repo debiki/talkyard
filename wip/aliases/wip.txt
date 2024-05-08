@@ -1,0 +1,53 @@
+Alias = anonym or pseudonym.
+- Anonyms are per page.
+- Pseduonyms (a.k.a pen names) can be reused accross pages and categories.
+- Depending on the community, one can have just one pseudonym at a time, or <= N,
+    or maybe only one in a specific category.
+- Can in rare cases make sense to disallow posting & interacting w others using one's
+  true account — instead, must always be via a pseudonym.
+
+Tests missing:  /^alias/
+
+Think about:
+- Pseudonyms: [not_use_true_users], when deciding if they should get notified?
+  But isn't that similar to deciding if it's risky for that same pseudonym to _post_
+  something  in the relevant category?
+
+
+Lots of work:
+- Joint decisions  [joint_decisions]
+- When about to do sth using an alias, count how many others in the forum that can do
+  that same thing, and if it's less than X, then show a notice:
+    """Only Y people can post a comment here. Others might guess who you are.
+    Proceed anyway? [y / n]"""
+- If admins configure categories so there's small groups with unique sets of permissions,
+  and pseudonyms allowed: Maybe tell the admins that it's possible to make pretty
+  good guesses about who the pseudonyms are?
+- If repeatedly doing very different things that few others can do,
+  using the same pseudonym, then what? Calculate total % likelihood that someone
+  correctly guesses their true identidy, looking at all past actions, and if too high,
+  consider switching to a new pseudonym?  — Maybe simpler to just suggest that
+  the user switches to a new pseudonym after N time units or M interactions/comments.
+
+
+
+Minor:
+- Pass doer (usually the author)  and  trueDoer  to NotificationGenerator,
+  so won't need to lookup inside.    [notf_pass_doer]
+
+
+Unnecessary:
+- If an admin Alice impersonates Bob, then, even if Bob's list of aliases are hidden
+  (so Alice can't see them),  it can still be partly possible for Alice to figure out
+  which aliases are Bob's aliases — by looking at when Bob did *not* get notified about
+  a comment, namely if one of Bob's aliases replied on one of Bob's pages, and
+  Bob ought to have gotten notidied but didn't  (Talkyard won't currently notify
+  sbd about *their own* anonymous comments.)  [notfs_trueid_check]
+
+  However, it's better to restrict impersonation? So [joint_decisions] are needed
+  to impersonate anyone  (many admins need to agree) combined with
+  impersonation notifications  [imp_notfs].
+
+
+
+
