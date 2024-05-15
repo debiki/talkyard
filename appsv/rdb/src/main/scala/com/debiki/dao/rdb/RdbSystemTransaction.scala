@@ -720,7 +720,7 @@ class RdbSystemTransaction(
       case (Some(uid), None) =>
         val orderHow =
           if (unseenFirst) {
-            // Sync with index dw1_ntfs_seen_createdat__i, created just for this query.
+            // Sync with index notfs_i_createdat_but_unseen_first, created just for this query.
             o"""case when n.seen_at is null then n.created_at + interval '100 years'
               else n.created_at end desc"""
           }

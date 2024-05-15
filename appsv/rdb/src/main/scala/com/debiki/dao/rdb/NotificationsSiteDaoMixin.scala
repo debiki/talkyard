@@ -290,7 +290,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
     })
 
     COULD_OPTIMIZE; EDIT_INDEX // and simplify: change this index:
-    // "dw1_ntfs_seen_createdat__i" btree ((
+    // "notfs_i_createdat_but_unseen_first" btree ((
     //   case
     //     when seen_at is null then created_at + '100 years'::interval
     //   else created_at

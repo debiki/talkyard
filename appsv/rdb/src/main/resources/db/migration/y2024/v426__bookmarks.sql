@@ -1,4 +1,49 @@
 
+alter table  post_actions3  rename column      as_pat_id_c  to  from_true_id_c;
+alter table  post_actions3  rename constraint  patnodesinrels_aspatid_r_pats
+                                           to  patnoderels_fromtrueid_r_pats;
+
+create index  patnoderels_i_pageid_fromtrueid  on  post_actions3 (
+    site_id, page_id, from_true_id_c)  where  from_true_id_c  is not null;
+
+alter index  dw2_postacs_page_byuser  rename to  patnoderels_i_pageid_frompatid;
+
+
+alter table  notifications3
+    add column  by_true_id_c   pat_id_d,
+    add column  to_true_id_c   pat_id_d,
+
+    -- by/to_true_id_c is null, if would have been the same.
+    add constraint  notfs_c_byuserid_ne_bytrueid  check (by_user_id != by_true_id_c),
+    add constraint  notfs_c_touserid_ne_totrueid  check (to_user_id != to_true_id_c),
+
+    -- fk ix: notfs_i_bytrueid
+    add constraint  notfs_bytrueid_r_pats  foreign key (site_id, by_true_id_c)
+        references users3 (site_id, user_id) deferrable,
+
+    -- fk ix: notfs_i_totrueid_createdat
+    add constraint  notfs_totrueid_r_pats  foreign key (site_id, to_true_id_c)
+        references users3 (site_id, user_id) deferrable;
+
+
+create index  notfs_i_bytrueid on notifications3 (
+    site_id, by_true_id_c) where by_true_id_c is not null;
+
+create index  notfs_i_totrueid_createdat  on notifications3 (
+    site_id, to_true_id_c, created_at desc) where to_true_id_c is not null;
+
+
+alter index  dw1_notfs_id__p            rename to  notfs_p_notfid;
+alter index  dw1_ntfs_createdat_email_undecided__i
+                                        rename to  notfs_i_createdat_if_undecided;
+alter index  dw1_ntfs_emailid           rename to  notfs_i_emailid;
+alter index  dw1_ntfs_postid__i         rename to  notfs_i_aboutpostid;
+alter index  dw1_ntfs_seen_createdat__i rename to  notfs_i_createdat_but_unseen_first;
+alter index  notfs_touser_createdat__i  rename to  notfs_i_touserid_createdat;
+alter index  notfs_touser_post__i       rename to  notfs_i_touserid_aboutpostid;
+
+
+
 alter table  settings3
     add column  own_domains_c           text_nonempty_ste2000_d,
     add column  authn_diag_conf_c       jsonb_ste8000_d;
