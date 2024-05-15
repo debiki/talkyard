@@ -59,6 +59,10 @@ a feature request / idea might be well researched & make sense,
 and it's good to Like it, although for reasons the poster couldn't
 have known about, Do-Not vote.
 
+[joint_decisions]
+See:  wip/joint-decisions/joint-decisions.txt
+
+
 [pat_rels_t]  Rename & change post_actions3  to  pat_rels_t, and store
 votes and AssignedTo there.
 

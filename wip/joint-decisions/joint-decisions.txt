@@ -1,0 +1,77 @@
+[joint_decisions]
+
+Some decisions might need two or more mods or admins to agree? E.g. to promote a user
+to Core Member, or to add/remove a moderator.  Or, if an admin needs to check
+who an anonymous user is (e.g. because the anon wrote sth dangerous).
+
+If cannot trust all admins, then, optionally (forum wide settings) require many admins
+to agree (e.g. two), and notify all other admins, if wants to do any of:
+
+- Impersonating anyone.  [imp_notfs]
+- See who an anonymous user or pseudonym is
+- Looking at email addresses or IP addresses in email logs, request logs, audit logs
+  (e.g. when this anonym got a reply, to what email address did the notification get sent?).
+- Changing any related forum setting.
+- Adding/removing mods and admins.
+
+Background:  Sometimes, e.g. in a university, all forum admins don't
+necessarily have 100.0% good intentions: Sometimes students want to discuss
+mental health _and problematic teachers_ — and who knows if one of the admins,
+is in fact one of the problematic teachers.
+
+Obviously, if any admin has direct ssh or psql access to the Talkyard server,
+they can do whatever — but bigger organizations typically don't let "any random
+teacher" have unrestricted access to their IT systems. The IT staff that _do_
+have access to the servers, probably don't interact much with the students (the
+IT staff is less likely to _also_ work as teachers).  And if a university
+uses Ty as a SaaS, then no wone has such access.
+
+
+How could joint decisions work?
+
+  - A mod or admin creates a page of type Decision (or type Suggestion? or Ask? Maybe a
+    decision is the _result_), other mods/admins might leave comments and discuss.
+  - The difference between a Decision page and an Idea page, is that the Decision page
+    makes something happen automatically: the software takes some action,
+    once the decision has been made, e.g. promotes sbd to moderator.
+    (Maybe in some cases, a webhook could get sent to some external system.)
+    While with Idea pages, it's up to the humans to maybe implement the idea or not,
+    and there's no specific point in time when the Talkyard software considers
+    the idea decided or not.
+  - Then, the others vote, using Do-It and Do-Not votes.  [do_it_votes]
+  - Sometimes it can be enough if just one more mod or admin agrees, and no one disagrees;
+    in other cases, maybe most mods or admins need to vote, and if there're x times more
+    Do-It than Do-Not votes, then it happens (e.g. sbd promoted to Core Member).
+  - Sometimes there'd be a time limit, e.g. 1 week.
+  - Sometimes there's one person, say, a forum owner, who can always decide things single
+    handedly. Han might want to delegate to mods & admins most of the time,
+    but don't want any single admin to be able to do whatever, so the others can only do
+    important things via joint decisions.
+Votes?:
+    Enact / +3  (if e.g. the owner can decide things single-handedly)
+    Approve / +2 (in Gerrit)
+    For (Do-It vote) / + 1
+    I've read, and let others decide  0
+    Against (Do-Not vote) / -1
+    Strongly against / -2 
+    Veto / -3  (if e.g. owner won't allow this)
+Examples of things that in *some* communities might require joint decisions:
+  -  Impersonate
+  -  SeeWhoIs  (see who a pseudonym or anonym is)
+  -  PromoteToTrusted / PromoteToCore
+  -  GrantMod / RevokeMod
+  -  GrantAdmin / RevokeAdmin
+     # If AgreePercent is say 33%, then 33% of the admins need to have
+     # agreed, rounded up. So, if there are, say, 5 admins,
+     # then 1.67 rounded up = 2 admins need to agree. That is,
+     # if just 1 admin votes Do-It, it's ok to do it (since the one
+     # who asked, implicitly voted Do-It.)
+  -  ChangeAgreePercent
+  -  ChangeDisagreePercent
+Also see:
+    Gerrit: https://gerrit-documentation.storage.googleapis.com/Documentation/3.10.0/config-labels.html
+       -2, -1, +1, +2
+    https://abseil.io/resources/swe-book/html/ch19.html
+    https://www.reddit.com/r/programming/comments/18ae0gc/a_look_at_googles_internal_code_review_tool/
+    https://www.gerritcodereview.com/
+
