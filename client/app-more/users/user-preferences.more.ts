@@ -177,6 +177,7 @@ const AboutGuest = createComponent({
     };
     if (!prefs.name) return;
     // Dupl code [save_pat_pref].
+    // BUG, error if trying to rename an anonym:  TyEGOTANANON.  Disable the name input?
     Server.saveGuest(prefs, (r: { patNoStatsNoGroupIds: PatVb }) => {
       if (this.isGone) return;
       this.props.updatePat(r.patNoStatsNoGroupIds);
