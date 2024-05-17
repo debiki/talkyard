@@ -27,9 +27,16 @@ const DropdownModal = utils.DropdownModal;
 const ExplainingListItem = util.ExplainingListItem;
 
 
+interface ChangePageDiagState extends ChangePageDiagParams {
+  store: Store
+  isOpen: Bo
+  atRect: Rect
+}
+
+
 let changePageDialog;
 
-export function openChangePageDialog(atRect, props: { page: Page, showViewAnswerButton?: true }) {
+export function openChangePageDialog(atRect: Rect, props: ChangePageDiagParams) {
   if (!changePageDialog) {
     changePageDialog = ReactDOM.render(ChangePageDialog(), utils.makeMountNode());
   }
@@ -47,21 +54,22 @@ const ChangePageDialog = createComponent({
     return {
       isOpen: false,
       store: debiki2.ReactStore.allData(),
-    };
+    } satisfies Partial<ChangePageDiagState>;
   },
 
   onChange: function() {
-    this.setState({ store: debiki2.ReactStore.allData() });
+    this.setState({
+      store: debiki2.ReactStore.allData(),
+    } satisfies Partial<ChangePageDiagState>);
   },
 
   // dupl code [6KUW24]
-  openAtFor: function(rect, props: { page: Page, showViewAnswerButton?: boolean }) {
+  openAtFor: function(atRect: Rect, props: ChangePageDiagParams) {
     this.setState({
       ...props,
       isOpen: true,
-      atX: rect.left,
-      atY: rect.bottom,
-    });
+      atRect,
+    } satisfies Partial<ChangePageDiagState>);
   },
 
   close: function() {
@@ -69,12 +77,12 @@ const ChangePageDialog = createComponent({
       isOpen: false,
       page: undefined,
       showViewAnswerButton: undefined,
-    });
+    } satisfies Partial<ChangePageDiagState>);
   },
 
   render: function() {
-    const state = this.state;
-    const store: Store = this.state.store;
+    const state: ChangePageDiagState = this.state;
+    const store: Store = state.store;
     const settings: SettingsVisibleClientSide = store.settings;
     const me: Myself = store.me;
     const isOwnPage = store_thisIsMyPage(store);  // [.store_or_state_pg]
@@ -102,11 +110,18 @@ const ChangePageDialog = createComponent({
     // it's broken and are unsure if the changes took effect:
 
     const savePage = (changes: EditPageRequestData) => {
-      ReactActions.editTitleAndSettings(changes, this.close, null);
+      // E.g. EditPageRequestData.showId and .htmlTagCssClasses can be edited by admins only,
+      // and should be grayed out if one is in Anon Mode for example? [alias_mode]
+      anon.maybeChooseModAlias({ store, atRect: state.atRect }, (choices: ChoosenAnon) => {
+        ReactActions.editTitleAndSettings({ ...changes, doAsAnon: choices.doAsAnon },
+                this.close, null);
+      });
     }
 
     const togglePageClosed = () => {
-      debiki2.ReactActions.togglePageClosed(this.close);
+      anon.maybeChooseModAlias({ store, atRect: state.atRect }, (choices: ChoosenAnon) => {
+        ReactActions.togglePageClosed(choices.doAsAnon, this.close);
+      });
     };
 
     if (state.isOpen) {
@@ -281,6 +296,7 @@ const ChangePageDialog = createComponent({
             r.div({ className: 's_ExplDrp_ActIt' },
               Button({ className: 'e_DelPgB',
                   onClick: () => {
+                    // ANON_UNIMPL Do as (mod) alias?
                     ReactActions.deletePages([page.pageId], this.close);
                   } },
                 "Delete")));  // I18N
@@ -291,6 +307,7 @@ const ChangePageDialog = createComponent({
             r.div({ className: 's_ExplDrp_ActIt' },
               Button({ className: 'e_UndelPgB',
                   onClick: () => {
+                    // ANON_UNIMPL Do as (mod) alias?
                     ReactActions.undeletePages([page.pageId], this.close);
                   } },
                 "Undelete")));  // I18N
@@ -298,7 +315,7 @@ const ChangePageDialog = createComponent({
     }
 
     return (
-      DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY,
+      DropdownModal({ show: state.isOpen, onHide: this.close, atRect: state.atRect,
           pullLeft: state.showViewAnswerButton, // (hack) then it's the icon to the left of the title
           showCloseButton: true, dialogClassName2: 's_ChPgD' },
         anyViewAnswerButton,

@@ -20,8 +20,19 @@ package com.debiki.core
 import com.debiki.core.Prelude._
 
 
+// RENAME to  PatIds? Started, see "type PatIds".
 sealed trait TrueId {
+
+  RENAME // to pubId, as in public id:
+  /** Those who can see the comment or vote or whatever it is, see the person
+    * with id `pubId` as the author or voter.
+    * For ideation, though, once a page has been "revealed": Then, everyone's true ids
+    * are used instead. But that would be a *page* property maybe?
+    */
   def curId: PatId
+  def pubId: PatId = curId
+
+  RENAME // to privId? Having both  anyTrueId  and  tureId  is confusing?
   def anyTrueId: Opt[MembId]
 
   require(curId != 0, "curId is 0 [TyE8SKFWW5]")

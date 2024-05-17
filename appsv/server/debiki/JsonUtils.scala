@@ -141,16 +141,18 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
   def readJsObject(json: JsValue, fieldName: St): JsObject =
     readOptJsObject(json, fieldName).getOrElse(throwMissing("EsE1FY90", fieldName))
 
-  def parseOptJsObject(json: JsValue, fieldName: St, emptyAsNone: Bo = false): Opt[JsObject] = {
-    val anyObj = readOptJsObject(json, fieldName)
+  def parseOptJsObject(json: JsValue, fieldName: St, emptyAsNone: Bo = false,
+          falseAsNone: Bo = false): Opt[JsObject] = {
+    val anyObj = readOptJsObject(json, fieldName, falseAsNone = falseAsNone)
     if (emptyAsNone && anyObj.exists(_.value.isEmpty)) None
     else anyObj
   }
 
-  def readOptJsObject(json: JsValue, fieldName: St): Opt[JsObject] =
+  def readOptJsObject(json: JsValue, fieldName: St, falseAsNone: Bo = false): Opt[JsObject] =
     (json \ fieldName).toOption map {
       case o: JsObject => o
       case JsNull => return None
+      case JsFalse if falseAsNone => return None
       case bad =>
         throwBadJson(
             "TyE2YMP73T", s"'$fieldName' is not an object, but a ${classNameOf(bad)}")

@@ -240,7 +240,9 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
       Some(WhichAnon.SameAsBefore(sameAnonId.get))
     }
     else if (newAnonStatus.isDefined) {
-      Some(WhichAnon.NewAnon(newAnonStatus.get))
+      val anonStatus = newAnonStatus.get
+      if (anonStatus == AnonStatus.NotAnon) return None
+      Some(WhichAnon.NewAnon(anonStatus))
     }
     else {
       None

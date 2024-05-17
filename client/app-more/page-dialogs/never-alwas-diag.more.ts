@@ -49,7 +49,7 @@ export const NeverAlwaysBtn = React.createFactory<DiscLayoutDropdownBtnProps & N
 
   // Bit dupl code. [node_props_btn]
   return (
-      Button({ className: 'e_ComtAnoB', onClick: (event) => {
+      Button({ className: 'e_NevAlwB ' + (props.e2eClass || ''), onClick: (event) => {
           const atRect = cloneEventTargetRect(event);
           openNeverAlwaysDiag({
               atRect,
@@ -66,8 +66,7 @@ export const NeverAlwaysBtn = React.createFactory<DiscLayoutDropdownBtnProps & N
               props.getVal,
               props.setVal,
               props.mkDiagTitle,
-              props.mkItemDescr,
-              props.e2eClass);
+              props.mkItemDescr);
         }},
         neverAlways_title(props.getVal(derived.actualLayout)),
             ' ', r.span({ className: 'caret' })));
@@ -95,7 +94,6 @@ interface State extends DiscLayoutDiagState {
   setVal: SetValFn
   mkTitle: TitleFn
   mkDescr: DescrFn
-  e2eClass: St
 }
 
 let setDiagStateFromOutside: (_: State) => V;
@@ -103,11 +101,11 @@ let setDiagStateFromOutside: (_: State) => V;
 
 function openNeverAlwaysDiag(ps: DiscLayoutDiagState,
           getVal: GetValFn, setVal: SetValFn,
-          mkTitle: TitleFn, mkDescr: DescrFn, e2eClass: St) {
+          mkTitle: TitleFn, mkDescr: DescrFn) {
   if (!setDiagStateFromOutside) {
     ReactDOM.render(NeverAlwaysDiag(), utils.makeMountNode());  // or [use_portal] ?
   }
-  setDiagStateFromOutside({ ...ps, getVal, setVal, mkTitle, mkDescr, e2eClass });
+  setDiagStateFromOutside({ ...ps, getVal, setVal, mkTitle, mkDescr });
 }
 
 
@@ -176,15 +174,15 @@ const NeverAlwaysDiag = React.createFactory<{}>(function() {
 
     inheritItem = makeItem(NeverAlways.Inherit, 'e_Inh');
     neverItem = makeItem(NeverAlways.NeverButCanContinue, 'e_Nevr');
-    allowItem = makeItem(NeverAlways.Allowed, 'e_Alw');
+    allowItem = makeItem(NeverAlways.Allowed, 'e_Alow');
     recommendItem = makeItem(NeverAlways.Recommended, 'e_Rec');
-    alwaysItem = makeItem(NeverAlways.AlwaysButCanContinue, 'e_Alw');
+    alwaysItem = makeItem(NeverAlways.AlwaysButCanContinue, 'e_Alwa');
   }
 
   return (
-      DropdownModal({ show: isOpen, onHide: close, atX: atRect.left, atY: atRect.top,
+      DropdownModal({ show: isOpen, onHide: close, atRect,
             pullLeft: true, showCloseButton: true,
-            dialogClassName2: 'c_NevAlwD ' + (diagState ? diagState.e2eClass : '') },
+            dialogClassName2: 'c_NevAlwD' },
         diagTitle,
         inheritItem,
         neverItem,

@@ -427,6 +427,7 @@ class JsonMaker(dao: SiteDao) {
     })
 
     val anons: Seq[Anonym] = usersById.values.collect({ case a: Anonym => a }).toSeq
+    RENAME // to ...ByTrueId?
     val anonsByRealId = anons.groupBy(_.anonForPatId)
 
     // These don't change often, can use the cache.
@@ -964,16 +965,22 @@ class JsonMaker(dao: SiteDao) {
     reqersTags.foreach(t => tagTypeIdsNeeded.add(t.tagTypeId))
 
     val (pageNotfPrefs: Seq[PageNotfPref],
-         votes,
-         unapprovedPosts,
-         unapprovedAuthors) =
+         ownVotesJson,
+         ownAnonVoters: ImmSeq[Anonym],
+         unapprovedPostsJson,
+         unapprovedAuthorsJson) =
       anyPageId map { pageId =>
         COULD_OPTIMIZE // load cat prefs together with page notf prefs here?
         val pageNotfPrefs = tx.loadNotfPrefsForMemberAboutPage(pageId, ownIdAndGroupIds)
         SECURITY // minor: filter out prefs for cats one may not access...  [7RKBGW02]
         SECURITY // Ensure done when generating notfs.
 
-        val votes = votesJson(requester.id, pageId, tx)
+        // The requester's own votes, and any anonyms han's used when voting.
+        val (ownVotesJson, voterIds) = mkVotesJson(requester.id, pageId, tx)
+        val ownVoters = tx.loadParticipants(voterIds)
+        // This excludes the requester hanself, which is included elsewhere.
+        val ownAnonVoters = ownVoters.collect({ case a:Anonym => a })
+
         // + flags, interesting for staff, & so people won't attempt to flag twice [7KW20WY1]
         val UnapprovedPostsAndAuthors(postsJson, postAuthorsJson, tagTypeIds) =
               unapprovedPostsAndAuthorsJson(
@@ -981,9 +988,9 @@ class JsonMaker(dao: SiteDao) {
 
         tagTypeIds foreach tagTypeIdsNeeded.add
 
-        (pageNotfPrefs, votes, postsJson, postAuthorsJson)
+        (pageNotfPrefs, ownVotesJson, ownAnonVoters, postsJson, postAuthorsJson)
       } getOrElse (
-          Nil, JsEmptyObj, JsEmptyObj, JsArray())
+          Nil, JsEmptyObj, Vec.empty, JsEmptyObj, JsArray())
 
     COULD_OPTIMIZE // cache this?
     val effPerms = Authz.deriveEffPatPerms(myGroupsEveryoneLast, permsOnSiteTooMany)
@@ -1018,8 +1025,9 @@ class JsonMaker(dao: SiteDao) {
     val anyReadingProgressJson = anyReadingProgress.map(makeReadingProgressJson).getOrElse(JsNull)
 
     // later:  if (requester.isAdmin *and* wants to see who the anonyms are) ... hmm ..
+    // (anonsByRealId is only anon *posters*, not necessarily any anon *voters*).
     val ownAnons: Seq[Anonym] =
-          anonsByRealId.getOrElse(requester.id, Nil)
+          anonsByRealId.getOrElse(requester.id, Seq.empty) ++ ownAnonVoters
 
     val ownDataByPageId = anyPageId match {
       case None => Json.obj()
@@ -1031,11 +1039,11 @@ class JsonMaker(dao: SiteDao) {
             "myPageNotfPref" -> pageNotfPrefs.find(_.peopleId == requester.id).map(JsPageNotfPref),
             "groupsPageNotfPrefs" -> pageNotfPrefs.filter(_.peopleId != requester.id).map(JsPageNotfPref),
             "readingProgress" -> anyReadingProgressJson,
-            "votes" -> votes,
+            "votesByPostNr" -> ownVotesJson,
             "internalBacklinks" -> restrTopicsCatsLinks.internalBacklinksJson,
             // later: "flags" -> JsArray(...) [7KW20WY1]
-            "unapprovedPosts" -> unapprovedPosts,
-            "unapprovedPostAuthors" -> unapprovedAuthors,  // should remove [5WKW219] + search for elsewhere
+            "unapprovedPosts" -> unapprovedPostsJson,
+            "unapprovedPostAuthors" -> unapprovedAuthorsJson,  // should remove [5WKW219] + search for elsewhere
             "knownAnons" -> JsArray(ownAnons map JsKnownAnonym),
             // later: JsArray(real-anon-authors.map(a => JsUser(a))), if is staff.
             "patsBehindAnons" -> JsArray(),
@@ -1878,20 +1886,44 @@ object JsonMaker {
   }
 
 
-  private def votesJson(userId: UserId, pageId: PageId, transaction: SiteTransaction): JsObject = {
-    val actions = transaction.loadActionsByUserOnPage(userId, pageId)
+  /** Returns (voter json, voter ids).
+    */
+  private def mkVotesJson(reqrId: PatId, pageId: PageId, tx: SiteTx)
+          : (JsObject, mut.Set[PatId]) = {
+    // Currently one always loads one's own votes.
+    val actions = tx.loadActionsByUserOnPage(reqrId = reqrId, userId = reqrId, pageId)
     // COULD load flags too, at least if user is staff [7KW20WY1]
-    val votes = actions.filter(_.isInstanceOf[PostVote]).asInstanceOf[imm.Seq[PostVote]]
-    val userVotesMap = UserPostVotes.makeMap(votes)
-    val votesByPostId = userVotesMap map { case (postNr, postVotes) =>
-      var voteStrs = Vector[String]()
-      if (postVotes.votedLike) voteStrs = voteStrs :+ "VoteLike"
-      if (postVotes.votedWrong) voteStrs = voteStrs :+ "VoteWrong"
-      if (postVotes.votedBury) voteStrs = voteStrs :+ "VoteBury"
-      if (postVotes.votedUnwanted) voteStrs = voteStrs :+ "VoteUnwanted"
-      postNr.toString -> Json.toJson(voteStrs)
+
+    val votes: imm.Seq[PostVote] =
+          actions.filter(_.isInstanceOf[PostVote]).asInstanceOf[imm.Seq[PostVote]]
+    val votesByPostNr: Map[St, imm.Seq[PostVote]] = votes.groupBy(v => v.postNr.toString)
+
+    val voterIds = mut.Set[PatId]()
+
+    val votesJsonByNr: Map[St, JsArray] = votesByPostNr mapValues { votes =>
+      JsArray(votes map { v =>
+        voterIds.add(v.voterId.pubId)
+        var jOb = Json.obj(  // Could create JsX.JsVote  ?
+          "type" -> v.voteType.toInt,
+          "byId" -> v.voterId.pubId,
+          // Later: If some day one has a fixed number of Do-It votes,  (not impl)
+          // then, instead of including X Do-It votes,  incl just one,
+          // with howMany = X.
+          // "howMany" -> v.howMany,  // or "value" instead?
+          )
+        // ---- Not needed, but nice if troubleshooting -------
+        if (v.voterId.anyTrueId is reqrId) {
+          jOb += "byTrueId_dbg" -> JsNumber(v.voterId.anyTrueId.getOrDie("TyE2602RKJ"))
+        }
+        if (v.voterId.anyTrueId.isDefined) {
+          jOb += "isAnon_dbg" -> JsTrue
+        }
+        // ----------------------------------------------------
+        jOb
+      })
     }
-    JsObject(votesByPostId.toSeq)
+
+    (JsObject(votesJsonByNr.toSeq), voterIds)
   }
 
 

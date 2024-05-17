@@ -671,6 +671,8 @@ sealed trait Pat extends HasInt32Id {
 
   def id: PatId
   def trueId2: TrueId = TrueId(id)  ; RENAME // to  trueId  remove '2'.
+                                      // Or better?:  Change  `def id`  to `def id: PatIds`
+                                      // and remove trueId2 completely?
 
   def extId: Opt[ExtId]
   def email: EmailAdr  // COULD rename to emailAddr and change to Opt[EmailAdr] (instead of "")
@@ -802,6 +804,13 @@ sealed trait Pat extends HasInt32Id {
     this match {
       case anon: Anonym => anon
       case _ => throwWrongPatType(wantedWhat = "an anonym")
+    }
+  }
+
+  def asAnonOrNone: Opt[Anonym] = {
+    this match {
+      case anon: Anonym => Some(anon)
+      case _ => None
     }
   }
 

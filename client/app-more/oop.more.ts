@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../editor-prelude.editor.ts" />
+/// <reference path="more-prelude.more.ts" />
 
 //------------------------------------------------------------------------------
-   namespace debiki2.editor {
+   namespace debiki2 {
 //------------------------------------------------------------------------------
 
 
 /// disc_findAnonsToReuse()
 ///
-/// If pat is posting a reply anonymously, then, if hen has posted earlier
-/// anonymously on the same page, usually hen wants hens new reply, to be
+/// If pat is posting a reply anonymously, then, if han has posted or voted earlier
+/// anonymously on the same page, usually han wants hens new reply, to be
 /// by the same anonym, so others see they're talking with the same person
 /// (although they don't know who it is, just that it's the same).
 ///
@@ -43,23 +43,20 @@
 ///     2003: patsAnon2003,  // = { id: 2003, forPatId: 200, ... }
 ///     2004: patsAnon2004,  // = { id: 2004, forPatId: 200, ... }
 ///   },
-///   byThreadLatest: [
+///   sameThread: [
 ///     patsAnon2002,  // pat's anon (or pat henself) who made pat's last comment
 //                     // in the path from  startAtPostNr, back to the orig post.
 ///     patHenself,    // here pat posted using hens real account (not anonymously)
-///     patsAnon2001,  // pat also commented using anon 2001, along this path
-///
+///     patsAnon2001,  // pat upvoted a comment using anon 2001, along this path
+///   ],
+///   outsideThread: [
 ///     // If pat has posted earlier in the thread (closer to the orig post), using
 ///     // any of the above (anon 2002, 2001, or as henself), those comments are
 ///     // ignored: we don't add an anon more than once to the list.)
 ///
 ///     patsAnon2004, // Pat replied elsewhere on the page using hens anon 2004
-///     patsAnon2003, // ... and before that, hen posted as anon 2003, also
+///     patsAnon2003, // ... and before that, han posted as anon 2003, also
 ///                   //     elsewhere on the same page.
-///
-///     // The caller cannot tell if the anons were used in the thread (the first 3)
-///     // or elsewhere on the page (the last 2) — currently doesn't matter,
-///     // as long as the order is right.
 ///   ]
 /// }
 ///
@@ -70,9 +67,20 @@
 ///
 export function disc_findAnonsToReuse(discStore: DiscStore, ps: {
             forWho: Pat | Me | U, startAtPostNr?: PostNr }): MyPatsOnPage {
-  const forWhoId: PatId = ps.forWho && ps.forWho.id;
+
+  const result: MyPatsOnPage = {
+    sameThread: [],
+    outsideThread: [],
+    byId: {},
+  };
+
+  const forWho: Pat | Me | U = ps.forWho;
+  if (!forWho)
+    return result;
+
+  const forWhoId: PatId = ps.forWho.id;
   const curPage: Page | U = discStore.currentPage;
-  const result: MyPatsOnPage = { byThreadLatest: [], byId: {} };
+
   if (!forWhoId || !curPage)
     return result;
 
@@ -85,8 +93,18 @@ export function disc_findAnonsToReuse(discStore: DiscStore, ps: {
 
   const startAtPost: Post | U = ps.startAtPostNr && curPage.postsByNr[ps.startAtPostNr];
   const nrsSeen = {};
+  let myVotesByPostNr: { [postNr: PostNr]: Vote[] } = {};
+
+  const isMe = pat_isMe(forWho);
+  if (isMe) {
+    myVotesByPostNr = forWho.myDataByPageId[curPage.pageId]?.votesByPostNr || {};
+  }
+  else {
+    die('TyE0MYVOTS'); // [_must_be_me]
+  }
+
   let nextPost: Post | U = startAtPost;
-  const myPatsInThread = [];
+  const myAliasesInThread = [];
 
   for (let i = 0; i < StructsAndAlgs.TooLongPath && nextPost; ++i) {
     // Cycle? (Would be a bug somewhere.)
@@ -109,11 +127,24 @@ export function disc_findAnonsToReuse(discStore: DiscStore, ps: {
 
     if (postedAsSelf || postedAnonymously) {
       // This places pat's most recently used anons first.
-      myPatsInThread.push(author);
+      myAliasesInThread.push(author);
       result.byId[author.id] = author;
     }
     else {
-      // This comment is by someone else.
+      // This comment is by someone else. If we've voted anonymously, let's
+      // continue using the same anonym. Or using our main user account, if we've
+      // voted not-anonymously.
+      const votes: Vote[] = myVotesByPostNr[nextPost.nr] || [];
+      for (const myVote of votes) {
+        // If myVote.byId is absent, it's our own vote (it's not anonymous). [_must_be_me]
+        const voterId = myVote.byId || forWho.id;
+        // Have we added this alias (or our real account) already?
+        if (result.byId[voterId])
+          continue;
+        const voter: Pat = discStore.usersByIdBrief[voterId];
+        myAliasesInThread.push(voter);
+        result.byId[voter.id] = voter;
+      }
     }
 
     nextPost = curPage.postsByNr[nextPost.parentNr];
@@ -126,7 +157,11 @@ export function disc_findAnonsToReuse(discStore: DiscStore, ps: {
   // when being active in sub thread startAtPostNr.  (See patsAnon2003 and patsAnon2004
   // in this fn's docs above.)
 
-  const myPostsOutsideThread: Post[] = [];
+  // Sleeping BUG:, ANON_UNIMPL: What if it's a really big page, and we don't have
+  // all parts here, client side?  Maybe this ought to be done server side instead?
+  // Or the server could incl all one's anons on the current page, in a list  [fetch_alias]
+
+  const myAliasesOutsideThread: Pat[] = [];
 
   _.forEach(curPage.postsByNr, function(post: Post) {
     if (nrsSeen[post.nr])
@@ -146,20 +181,42 @@ export function disc_findAnonsToReuse(discStore: DiscStore, ps: {
     const postedAnonymously = author.anonForId === forWhoId;
 
     if (postedAsSelf || postedAnonymously) {
-      myPostsOutsideThread.push(post);
+      myAliasesOutsideThread.push(author);
       result.byId[author.id] = author;
     }
   });
 
-  // Sort, most recent first.
-  myPostsOutsideThread.sort((p: Post) => -p.createdAtMs);
-  const myPatsOutside = myPostsOutsideThread.map(p => discStore.usersByIdBrief[p.authorId]);
+  _.forEach(myVotesByPostNr, function(votes: Vote[], postNrSt: St) {
+    if (nrsSeen[postNrSt])
+      return;
 
-  // ----- Join results
+    for (const myVote of votes) {
+      // The voter is oneself or one's anon or pseudonym. [_must_be_me]
+      const voterId = myVote.byId || forWho.id;
 
-  // This places [anons for pat's most recent comments in the thread] first, followed
-  // by pat's other anons, by time (more recent first).
-  result.byThreadLatest = [...myPatsInThread, ...myPatsOutside];
+      if (result.byId[voterId])
+        return;
+
+      const voter: Pat | U = discStore.usersByIdBrief[voterId];  // [voter_needed]
+      if (!voter)
+        return;
+
+      myAliasesOutsideThread.push(voter);
+      result.byId[voter.id] = voter;
+    }
+  });
+
+
+  // Sort, newest first. Could sort votes by voted-at, not the comment posted-at — but
+  // doesn't currently matter, not until [many_anons_per_page].
+  // Old — now both comments and votes, so won't work:
+  //myPostsOutsideThread.sort((p: Post) => -p.createdAtMs);
+  //const myPatsOutside = myPostsOutsideThread.map(p => discStore.usersByIdBrief[p.authorId]);
+
+  // ----- The results
+
+  result.sameThread = myAliasesInThread;
+  result.outsideThread = myAliasesOutsideThread;
 
   return result;
 }

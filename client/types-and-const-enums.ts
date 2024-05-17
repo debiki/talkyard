@@ -94,6 +94,7 @@ type PubSiteId = St;
 type SiteVersion = number;
 type LoginId = string;
 type UserId = number;     // RENAME to PatId
+type MembId = number;     // A user (not a guest or anon), group or pseudonym
 type PatId = UserId;
 type PatName = St;
 type Username = St;

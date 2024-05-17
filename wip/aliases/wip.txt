@@ -6,15 +6,105 @@ Alias = anonym or pseudonym.
 - Can in rare cases make sense to disallow posting & interacting w others using one's
   true account — instead, must always be via a pseudonym.
 
-Tests missing:  /^alias/
 
-Think about:
+Left to do
+-----------------------
+
+Quick:
+  - RENAME // to ...ByTrueId?
+    val anonsByRealId = anons.groupBy(_.anonForPatId)
+
+  - Code review:
+    - tests/e2e-wdio7/specs/alias-anons-basic.2br.f.e2e.ts
+    - tests/e2e-wdio7/specs/alias-anons-true-mixed.2br.f.e2e.ts
+
+Minor & medium:
+  - Notifications: List notifications to all one's aliases (anonyms & pseudonyms),
+    not just to oneself.
+  - Actions: List comments & pages by one's aliases, on one's recent comment page
+    (but of course others, not even mods or admins, can see this).
+  - Authz.scala:  [_pass_alias] [deanon_risk]
+  - Reuse getAliasOrTruePat() everywhere  [get_anon]
+  - Accept/unaccept answer
+  - Close/reopen page
+  - Delete/undelete own page
+  - Rename page
+  - mayEditPage(.., asAlias, ...) in PageTitleSettingsController  [may_use_alias]
+  - Flag (report) things anonymously?
+  - Search for all DO_AS_ALIAS
+  - Search for all ANON_UNIMPL
+
+Later:
+  - Ask the server which alias to use, instead of deriving client side [fetch_alias]
+  - Incl true id in json dumps, depending on site sensitivity settings  [export_privid]
+  - Suspending: If an anonym posts say toxic comments and gets reported, then,
+    can't suspend the underlying true user — that'd leak info about who the
+    anonym is?  Instead, the anonym would get banned, and the true user
+    prevented from creating new anonyms. Likewise, with pseudonyms?
+  - Think about anonymous votes and how many have read this-or-that comment,
+    when the same person visits & comments sometimes as hanself, sometimes
+    using an alias.  See: PagePopularityCalculator  [alias_vote_stats]
+
+Tests missing:
+  /^alias/  in test-map.txt.
+
+Large:
+  - Alias selector (see below)
+  - Dim buttons
+  - Anonymous moderator actions  [anon_mods]
+
+  - Group aliases / post as group?  [group_pseudonyms]
+    So many people can post, using the same name.
+    E.g. all teachers in a school might want to appear as "Teacher",
+    or support staff as "Support" without any individual name.
+    Is it better to "just" use the group's name & username,
+    or should groups be able to have a pseudonyms?
+
+
+Alias selector  [alias_mode] [choose_alias]
+-----------------------
+A preferred-alias selector in one's upper right username menu, which determines
+which of one's aliases gets used, in places where one can post as oneself,
+anonymously or using a pseudonym.
+
+If one comments or votes on a page where one has used another alias that the one
+currently selected (in the alias selector),  then, Talkyard asks:
+  "You previously commented here as X,  but you've activated pseudonym Y.
+    Continue commenting as X?   [yes, as X  /  no, as Y  /  cancel]"
+
+And, since Y is a somewhat unlikely answer, then dobuble check:
+  "Ok, you'll appear as Y   [yes, fine  /  no, cancel]"
+
+(Might seem as if this double check question is an extra step, but it'll almost
+never happen that anyone replies as X and later on what to continue as Y in the
+same discussion. — Maybe shouldn't even be allowed; could be a config setting.)
+
+
+Dim buttons
+-----------------------
+
+When a not-oneself alias has been selected, then, all buttons that don't work
+with alias mode, could be dimmed a bit?  For example, if one is a moderator,
+an Approve Comment button wouldn't be anonymous — unless anonymous moderator
+actions have been implemented & activated — 
+
+Will need a PermsOnPage for both oneself, and any currently selected alias?
+Buttons one can click oneself, but one's alias cannot, would be dimmed?
+And if clicking, a dialog pop up, e.g.:
+    "You cannot do that anonymously. Use your real account? [y / N]"
+Buttons one cannot click at all, aren't shown. Buttons one can click as one's
+alias, are displayed as usual (not dimmed).)
+
+
+Think about
+-----------------------
 - Pseudonyms: [not_use_true_users], when deciding if they should get notified?
   But isn't that similar to deciding if it's risky for that same pseudonym to _post_
   something  in the relevant category?
 
 
-Lots of work:
+Lots of work
+-----------------------
 - Joint decisions  [joint_decisions]
 - When about to do sth using an alias, count how many others in the forum that can do
   that same thing, and if it's less than X, then show a notice:
@@ -30,13 +120,14 @@ Lots of work:
   the user switches to a new pseudonym after N time units or M interactions/comments.
 
 
-
-Minor:
+Would be nice
+-----------------------
 - Pass doer (usually the author)  and  trueDoer  to NotificationGenerator,
   so won't need to lookup inside.    [notf_pass_doer]
 
 
-Unnecessary:
+Unnecessary
+-----------------------
 - If an admin Alice impersonates Bob, then, even if Bob's list of aliases are hidden
   (so Alice can't see them),  it can still be partly possible for Alice to figure out
   which aliases are Bob's aliases — by looking at when Bob did *not* get notified about
@@ -45,7 +136,7 @@ Unnecessary:
   sbd about *their own* anonymous comments.)  [notfs_trueid_check]
 
   However, it's better to restrict impersonation? So [joint_decisions] are needed
-  to impersonate anyone  (many admins need to agree) combined with
+  to impersonate anyone  (say, >= 2 admins need to agree) combined with
   impersonation notifications  [imp_notfs].
 
 

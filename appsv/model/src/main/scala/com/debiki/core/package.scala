@@ -216,6 +216,7 @@ package object core {
   type GroupVb = Group
   case class ValidGroup(get: Group)  // Scala_3 opaque type
 
+  type PatIds = TrueId
   type PatId = Int
   type ParticipantId = Int  ; RENAME // to PatId
   type GuestId = PatId
@@ -913,7 +914,7 @@ package object core {
   // be exposed to internal parts of Ty (would increase the coupling, in a bad way).
   // So, not ReqInf, but ReqrInf.  [/edit]
   // Is isAnon always false, hmmm?
-  @deprecated
+  @deprecated("Use ReqrAndTgt instead")
   case class Who(trueId: TrueId, browserIdData: BrowserIdData, isAnon: Bo = false) {
     def id: PatId = trueId.curId
     def ip: String = browserIdData.ip

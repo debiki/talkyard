@@ -58,6 +58,20 @@ export function showCreateUserDialog(params: CreateUserParams) {
 }
 
 
+export function maybeChooseModAlias(ps: MaybeChooseAnonPs, then?: (_: ChoosenAnon) => V) {
+  Server.loadMoreScriptsBundle(() => {
+    anon.maybeChooseModAlias(ps, then);
+  });
+}
+
+
+export function maybeChooseAnon(ps: MaybeChooseAnonPs, then: (_: ChoosenAnon) => V) {
+  Server.loadMoreScriptsBundle(() => {
+    anon.maybeChooseAnon(ps, then);
+  });
+}
+
+
 export function openAboutUserDialog(who: number | string | BriefUser, at, extraInfo?: string) {
   Server.loadMoreScriptsBundle(() => {
     if (_.isString(who) || _.isNumber(who)) {
@@ -134,7 +148,7 @@ export function openMovePostsDialog(store: Store, post: Post, closeCaller, at: R
 }
 
 
-export function openChangePageDialog(atRect, props: { page: Page, showViewAnswerButton?: true }) {
+export function openChangePageDialog(atRect: Rect, props: ChangePageDiagParams) {
   Server.loadMoreScriptsBundle(() => {
     debiki2.pagedialogs['openChangePageDialog'](atRect, props);
   });

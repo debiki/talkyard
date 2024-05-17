@@ -1613,7 +1613,7 @@ case class SitePatchParser(context: TyContext) {
         postId,
         pageId = readString(jsObj, "pageId"),
         postNr = readInt(jsObj, "postNr"),
-        doerId = readInt(jsObj, "doerId"),
+        doerId = TrueIdOnly(readInt(jsObj, "doerId")),  // [export_privid]
         doneAt = readWhen(jsObj, "doneAt"),
         actionType))
     }
@@ -1648,7 +1648,7 @@ case class SitePatchParser(context: TyContext) {
         pageId = readString(jsObj, "onPageId"),
         postNr = postNr,
         doneAt = readWhen(jsObj, "votedAtMs"),
-        voterId = readInt(jsObj, "voterId"),
+        voterId = TrueIdOnly(readInt(jsObj, "voterId")),  // [export_privid]
         voteType = voteType))
     }
     catch {

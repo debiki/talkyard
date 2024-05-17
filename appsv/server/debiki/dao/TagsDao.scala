@@ -207,7 +207,7 @@ trait TagsDao {
       abort(errMsg.code, errMsg.message)
     }
     val numTagTypesBef = getAllTagTypesSeq()
-    val maxTypes = getMaxLimits(UseCache).maxTagTypes
+    val maxTypes = getMaxLimits(UseCache(this)).maxTagTypes
     abortIf(numTagTypesBef.length + 1 > maxTypes, "TyE4MF72WP3", s"Cannot create more than ${
           maxTypes} tag types")
     val tagType = writeTx { (tx, _) => {

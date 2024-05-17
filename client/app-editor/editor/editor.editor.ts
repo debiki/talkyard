@@ -16,7 +16,6 @@
  */
 
 /// <reference path="../editor-prelude.editor.ts" />
-/// <reference path="./oop.editor.ts" />
 /// <reference path="./formatting-help.editor.ts" />
 
 //------------------------------------------------------------------------------
@@ -136,8 +135,8 @@ interface EditorState {
   visible: boolean;
   replyToPostNrs: PostNr[];
   anyPostType?: PostType;
-  doAsAnon?: WhichAnon;
-  myAnonsHere?: MyPatsOnPage;
+  doAsAnon?: MaybeAnon;
+  myAliasOpts?: MaybeAnon[]
   discProps?: DiscPropsDerived;
   authorId?: PatId; // remove?
   editorsCategories?: Category[];
@@ -971,19 +970,7 @@ export const Editor = createFactory<any, EditorState>({
     const discProps: DiscPropsDerived = page_deriveLayout(
             discStore.currentPage, discStore, LayoutFor.PageNoTweaks);
 
-    const myAnonsHere: MyPatsOnPage = disc_findAnonsToReuse(discStore2, {
-            forWho: discStore.me, startAtPostNr: postNrs[0] });
-    const lastAnon: KnownAnonym | U =
-            myAnonsHere.byThreadLatest.find(p => p.isAnon) as KnownAnonym | U;
-
-    // Continue replying using the same anon as last time in the same thread.
-    // If none, then, depending on the page / cat settings, use a new anonym,
-    // or use your real account [.use_which_anon].
-    const doAsAnon: WhichAnon | U = lastAnon
-        ? { sameAnonId: lastAnon.id, anonStatus: lastAnon.anonStatus } as SameAnon
-        : (discProps.comtsStartAnon >= NeverAlways.Recommended
-            ? { newAnonStatus: discProps.newAnonStatus } as NewAnon
-            : undefined);
+    const choosenAnon = anon.maybeChooseAnon({ store: discStore2, discProps, postNr });
 
     const newState: Partial<EditorState> = {
       inFrame,
@@ -994,8 +981,8 @@ export const Editor = createFactory<any, EditorState>({
       // [editorsNewLazyPageRole] = PageRole.EmbeddedComments if eds.isInEmbeddedEditor?
       replyToPostNrs: postNrs,
       text: state.text || makeDefaultReplyText(discStore, postNrs),
-      myAnonsHere,
-      doAsAnon,
+      myAliasOpts: choosenAnon.myAliasOpts,
+      doAsAnon: choosenAnon.doAsAnon,
       discProps,
     };
 
@@ -1076,18 +1063,7 @@ export const Editor = createFactory<any, EditorState>({
       const discProps: DiscPropsDerived = page_deriveLayout(
               discStore.currentPage, discStore, LayoutFor.PageNoTweaks);
 
-      const myAnonsHere = disc_findAnonsToReuse(editorsDiscStore, {
-              forWho: discStore.me, startAtPostNr: postNr });
-      const lastAnon: KnownAnonym | U =
-            myAnonsHere.byThreadLatest.find(p => p.isAnon) as KnownAnonym | U;
-
-      // See [.use_which_anon] above.
-      const doAsAnon: WhichAnon | U = draft && draft.doAsAnon || (
-          lastAnon
-            ? { sameAnonId: lastAnon.id, anonStatus: lastAnon.anonStatus } as SameAnon
-            : (discProps.comtsStartAnon >= NeverAlways.Recommended
-                ? { newAnonStatus: discProps.newAnonStatus } as NewAnon
-                : undefined));
+      const choosenAnon = anon.maybeChooseAnon({ store: editorsDiscStore, discProps, postNr });
 
       const newState: Partial<EditorState> = {
         anyPostType: null,
@@ -1100,8 +1076,8 @@ export const Editor = createFactory<any, EditorState>({
         onDone: onDone,
         draftStatus: DraftStatus.NothingHappened,
         draft,
-        myAnonsHere,
-        doAsAnon,
+        doAsAnon: choosenAnon.doAsAnon,
+        myAliasOpts: choosenAnon.myAliasOpts,
         discProps,
       };
 
@@ -1148,14 +1124,11 @@ export const Editor = createFactory<any, EditorState>({
       pageRole: newPageRole,
     };
 
+    // Props for the future page, with settings inherited from the ancestor categories.
     const discProps: DiscPropsDerived = page_deriveLayout(
             futurePage, store, LayoutFor.PageNoTweaks);
 
-    // Also see [.use_which_anon] above.
-    const doAsAnon: WhichAnon | U =
-        discProps.comtsStartAnon >= NeverAlways.Recommended
-            ? { newAnonStatus: discProps.newAnonStatus } as NewAnon
-            : undefined;
+    const choosenAnon = anon.maybeChooseAnon({ store, discProps });
 
     const newState: Partial<EditorState> = {
       discProps,
@@ -1168,8 +1141,8 @@ export const Editor = createFactory<any, EditorState>({
       text: text,
       showSimilarTopics: true,
       searchResults: null,
-      // Skip: myAnonsHere — cannot yet be any anons; page not yet created.
-      doAsAnon,
+      doAsAnon: choosenAnon.doAsAnon,
+      myAliasOpts: choosenAnon.myAliasOpts,
     };
 
     this.showEditor(newState);
@@ -2629,11 +2602,13 @@ export const Editor = createFactory<any, EditorState>({
           // But pretty harmless.
           state.doAsAnon) {
       maybeAnonymously =
-          Button({ className: 'c_AnonB', ref: 'anonB', onClick: () => {
-            const atRect = reactGetRefRect(this.refs.anonB);
-            anon.openAnonDropdown({ atRect, open: true, curAnon: state.doAsAnon, me,
+          Button({ className: 'c_AliasB', ref: 'aliasB', onClick: () => {
+            const atRect = reactGetRefRect(this.refs.aliasB);
+            anon.openAnonDropdown({ atRect, open: true, 
+                curAnon: state.doAsAnon, me,
+                myAliasOpts: state.myAliasOpts,
                 discProps: state.discProps,
-                saveFn: (doAsAnon: WhichAnon) => {
+                saveFn: (doAsAnon: MaybeAnon) => {
                   const newState: Partial<EditorState> = { doAsAnon };
                   this.setState(newState);
                   // The avatar we're showing, might need to change.

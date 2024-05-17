@@ -471,6 +471,10 @@ object Rdb {
   } */
 
 
+  def getPatIds(rs: js.ResultSet, pubIdColumn: St, trueIdColumn: St): PatIds =
+    TrueId(getInt32(rs, pubIdColumn), anyTrueId = getOptInt32(rs, trueIdColumn))
+
+
   def getOptTrustLevel(rs: js.ResultSet, column: St): Opt[TrustLevel] = {
     val asInt = rs.getInt(column)
     if (rs.wasNull()) None

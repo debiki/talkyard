@@ -1539,7 +1539,7 @@ case class SitePatcher(globals: debiki.Globals) {
       // each pat's [numLikesReceived]:
       //    tx.insertPostAction(vote.toPostAction(postId = post.id))
       // Instead:  (and this is more like the Do API, should use instead)
-      val voter = newSiteDao.getTheParticipant(vote.voterId) // just for tests, see comment above
+      val voter = newSiteDao.getTheParticipant(vote.voterId.pubId) // just for tests, see comment above
       val voterAsReqrTgt = ReqrAndTgt(voter, browserIdData, voter)
       newSiteDao.addVoteIfAuZ(pageId = vote.pageId, postNr = vote.postNr, vote.voteType,
             voterAsReqrTgt, voterIp = None, postNrsRead = Set.empty)

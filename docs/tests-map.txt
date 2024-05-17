@@ -307,6 +307,13 @@ anons:
             - Different anon statuses: Comts start anon / NeverAlways.AlwaysButCanContinue / etc
             - Edit & update the draft.  TyTEDUPDDFT04
             - Save anon draft, reuse an anon.  TyTDFTREUSEANON.
+            - Edit comment as anon: Anon name in new edit revision, & email notfs. TyTANONEDIT
+            - Post pages as anon
+            - Accept/unaccept answer
+            - Close/reopen page
+            - Delete/undelete own page
+            - Rename page
+            - Change page status   PageTitleSettingsController
             - ... and more
 
 different users -

@@ -1041,17 +1041,25 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId)
-        : Boolean = {
+        : Opt[PatIds] = {
     REFACTOR // Break out fn, merge w deletePatNodeRels() below?
     val statement = """ -- deleteVote
-      delete from post_actions3
-      where site_id = ? and page_id = ? and post_nr = ? and rel_type_c = ? and from_pat_id_c = ?
-      """
-    val values = List[AnyRef](siteId.asAnyRef, pageId, postNr.asAnyRef, toActionTypeInt(voteType),
-      voterId.asAnyRef)
-    val numDeleted = runUpdate(statement, values)
-    dieIf(numDeleted > 1, "DwE4YP24", s"Too many actions deleted: numDeleted = $numDeleted")
-    numDeleted == 1
+          delete from post_actions3
+          where site_id = ? and page_id = ? and post_nr = ? and rel_type_c = ?
+              and (from_pat_id_c = ?   or  from_true_id_c = ?)
+          returning  from_pat_id_c,  from_true_id_c """
+
+    val values = List[AnyRef](siteId.asAnyRef, pageId, postNr.asAnyRef,
+          toActionTypeInt(voteType), voterId.asAnyRef, voterId.asAnyRef)
+
+    var res: Opt[PatIds] = None
+    runUpdateQuery(statement, values, rs => {
+      devDieIf(res.isDefined, "TyE502MFKJ", s"s$siteId: Found > 1 votes, page ${
+            pageId} post ${postNr}, vote type $voteType, voterId $voterId")
+      res = Some(getPatIds(rs, "from_pat_id_c", "from_true_id_c"))
+    })
+
+    res
   }
 
 
@@ -1068,7 +1076,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
           where site_id = ? and to_post_id_c = ? and rel_type_c = ?
           group by from_pat_id_c
           order by max(created_at) desc, from_pat_id_c
-          limit 500 """  // for now — just to have *some* limit
+          limit 500 """  // for now — just to have *some* limit [1WVKPW02]
 
     val values = List[AnyRef](siteId.asAnyRef, postId.asAnyRef, voteType.toInt.asAnyRef)
     runQueryFindMany(query, values, rs => {
@@ -1083,8 +1091,12 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadActionsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[PostAction] = {
-    loadActionsOnPageImpl(Some(pageId), userId = Some(userId),
+  def loadActionsByUserOnPage(reqrId: PatId, userId: UserId, pageId: PageId)
+        : immutable.Seq[PostAction] = {
+    unimplIf(reqrId != userId, "Viewing sbd else's votes on a page [TyE503RNGC]")
+    // One can see one's own anons and pseudonyms.
+    val inclAnons = reqrId == userId
+    loadActionsOnPageImpl(Some(pageId), userId = Some(userId), inclAnons = inclAnons,
           relTypes = Vec(), limit = Some(19001)) // hmm
   }
 
@@ -1105,7 +1117,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
   // Later: Make generic: [T <: PatNodeRelType] and return a PatNodeRel[T]
   private def loadActionsOnPageImpl(pageId: Option[PageId], userId: Option[UserId],
-        relTypes: ImmSeq[PostActionType], limit: Opt[i32], onlyOpenPosts: Bo = false)
+        relTypes: ImmSeq[PostActionType], limit: Opt[i32], onlyOpenPosts: Bo = false,
+        inclAnons: Bo = false)
         : immutable.Seq[PostAction] = {
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef)
 
@@ -1120,7 +1133,13 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       case None => ""
       case Some(id) =>
         values.append(id.asAnyRef)
-        "and pa.from_pat_id_c = ?"
+        if (!inclAnons) {
+          "and  pa.from_pat_id_c = ?"
+        }
+        else {
+          values.append(id.asAnyRef)
+          "and  (pa.from_pat_id_c = ?  or  pa.from_true_id_c = ?)"
+        }
     }
 
     val andRelTypeIn = {
@@ -1166,7 +1185,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
                   pa.rel_type_c,
                   pa.sub_type_c,
                   pa.created_at,
-                  pa.from_pat_id_c
+                  pa.from_pat_id_c,
+                  pa.from_true_id_c
           from  post_actions3 pa  $innerJoinOpenPosts
           where  pa.site_id = ?
                  $andPageIdEq
@@ -1175,13 +1195,12 @@ trait PostsSiteDaoMixin extends SiteTransaction {
           $orderByAndLimit  """
 
     val result = runQueryFindMany(query, values.toList, rs => {
-      val theUserId = rs.getInt("from_pat_id_c")
       PostAction(
         uniqueId = rs.getInt("to_post_id_c"),
         pageId = rs.getString("page_id"),
         postNr = rs.getInt("post_nr"),
         doneAt = getWhen(rs, "created_at"),
-        doerId = theUserId,
+        doerId = getPatIds(rs, "from_pat_id_c", "from_true_id_c"),
         actionType = fromActionTypeInt(rs.getInt("rel_type_c")))
     })
 
@@ -1191,7 +1210,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
   def loadActionsDoneToPost(pageId: PageId, postNr: PostNr): immutable.Seq[PostAction] = {
     val query = """ -- loadActionsDoneToPost
-      select distinct  to_post_id_c, rel_type_c, created_at, from_pat_id_c
+      select distinct  to_post_id_c, rel_type_c, created_at, from_pat_id_c, from_true_id_c
       from  post_actions3
       where  site_id = ?
         and  page_id = ?
@@ -1205,7 +1224,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         pageId = pageId,
         postNr = postNr,
         doneAt = getWhen(rs, "created_at"),
-        doerId = rs.getInt("from_pat_id_c"),
+        doerId = getPatIds(rs, "from_pat_id_c", "from_true_id_c"),
         actionType = fromActionTypeInt(rs.getInt("rel_type_c")))
     })
   }
@@ -1216,7 +1235,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       return Nil
 
     val queryBuilder = new StringBuilder(256, s""" -- loadFlagsFor
-      select to_post_id_c, page_id, post_nr, rel_type_c, created_at, from_pat_id_c
+      select to_post_id_c, page_id, post_nr, rel_type_c, created_at,
+          from_pat_id_c, from_true_id_c
       from post_actions3
       where site_id = ?
         and rel_type_c in ($FlagValueSpam, $FlagValueInapt, $FlagValueOther)
@@ -1242,7 +1262,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         pageId = rs.getString("page_id"),
         postNr = rs.getInt("post_nr"),
         doneAt = getWhen(rs, "created_at"),
-        flaggerId = rs.getInt("from_pat_id_c"),
+        flaggerId = getPatIds(rs, "from_pat_id_c", "from_true_id_c"),
         flagType = fromActionTypeIntToFlagType(rs.getInt("rel_type_c")))
       dieIf(!postAction.actionType.isInstanceOf[PostFlagType], "DwE2dpg4")
       postAction
@@ -1288,14 +1308,16 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   private def insertPostActionImpl(postId: PostId, pageId: PageId, postNr: PostNr,
-        actionType: PostActionType, doerId: UserId, doneAt: When) {
+        actionType: PostActionType, doerId: PatIds, doneAt: When) {
     val statement = """
-      insert into post_actions3(site_id, to_post_id_c, page_id, post_nr, rel_type_c, from_pat_id_c,
+      insert into post_actions3(site_id, to_post_id_c, page_id, post_nr, rel_type_c,
+          from_pat_id_c, from_true_id_c,
           created_at, sub_type_c)
-      values (?, ?, ?, ?, ?, ?, ?, 1)
+      values (?, ?, ?, ?, ?, ?, ?, ?, 1)
       """
     val values = List[AnyRef](siteId.asAnyRef, postId.asAnyRef, pageId, postNr.asAnyRef,
-      toActionTypeInt(actionType), doerId.asAnyRef, doneAt.asTimestamp)
+          toActionTypeInt(actionType), doerId.pubId.asAnyRef,
+          doerId.anyTrueId.orNullInt32, doneAt.asTimestamp)
     val numInserted =
       try { runUpdate(statement, values) }
       catch {
@@ -1313,6 +1335,11 @@ trait PostsSiteDaoMixin extends SiteTransaction {
           delete from post_actions3
           where site_id = ? and
                 to_post_id_c = ? and
+                -- But not  from_true_id_c.  Let's say someone's pseudonym is assigned
+                -- to a task, and the true user too (which sounds rare, but might
+                -- happen). Then, if unassigning the true user, we wouldn't want the
+                -- pseudonym to get unassigned too — that could reveal who the
+                -- pseudonym is.  [deanon_risk]
                 from_pat_id_c in (${makeInListFor(fromPatIds)}) and
                 rel_type_c in (${makeInListFor(relTypes)}) """
     val values = ArrayBuffer[AnyRef](

@@ -32,7 +32,7 @@ export const AnonsAllowedDropdownBtn = function(props: DiscLayoutDropdownBtnProp
     setVal: (p: DiscPropsSource, val: NeverAlways) => { return { ...p, comtsStartAnon: val }},
     mkDiagTitle: anonNeverAlways_title,
     mkItemDescr: anonNeverAlways_descr,
-    e2eClass: 'e_AnonComtsD',
+    e2eClass: 'e_AnonComtsB',
   };
 
   return NeverAlwaysBtn({ ...props, ...nevAlwProps });

@@ -399,6 +399,7 @@ const CatSettings = createClassAndFactory({
               this.props.updateCategory(newLayout);
             }}));
 
+    /* Later:
     const pseudonymsAllowed =
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label', style: { display: 'block' }},
@@ -407,7 +408,7 @@ const CatSettings = createClassAndFactory({
             layoutFor: LayoutFor.PageNoTweaks,
             onSelect: (newProps: DiscPropsSource) => {
               this.props.updateCategory(newProps);
-            }}));
+            }})); */
 
     const anonymsAllowed =
       r.div({ className: 'form-group' },
@@ -566,7 +567,7 @@ const CatSettings = createClassAndFactory({
             defaultTopicTypeInput,
             doItVotes,
             commentOrder,
-            pseudonymsAllowed,
+            // pseudonymsAllowed,
             r.div({ className: 'c_CD_Anons' }, anonymsAllowed, anonPurpose),
             parentCatDropdown,
             isDefaultInput,

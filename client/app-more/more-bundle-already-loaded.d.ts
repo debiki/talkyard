@@ -1,3 +1,6 @@
+/// <reference path="../app-slim/model.ts" />
+/// <reference path="../app-slim/translations.d.ts" />
+/// <reference path="../reactjs-types.ts" />
 
 declare namespace rb {
   var ReactBootstrap;
@@ -85,10 +88,17 @@ declare namespace debiki2.pagedialogs {
 }
 
 declare namespace debiki2.anon {
-  function openAnonDropdown(ps: any); //AnonStatusState);
-  function whichAnon_titleShort(doAsAnon: WhichAnon | U, ps: { me: Me, pat?: Pat }): St | RElm;
-  function whichAnon_title(doAsAnon: WhichAnon | U, ps: { me: Me, pat?: Pat }): St | RElm;
-  function whichAnon_descr(doAsAnon: WhichAnon | U, ps: { me: Me, pat?: Pat }): St | RElm;
+  function maybeChooseModAlias(ps: MaybeChooseAnonPs, then?: (res: ChoosenAnon) => V);
+  function maybeChooseAnon(ps: MaybeChooseAnonPs, then?: (_: ChoosenAnon) => V): ChoosenAnon;
+  function openAnonDropdown(ps: ChooseAnonDlgPs): V;
+  function whichAnon_titleShort(doAsAnon: MaybeAnon, ps: { me: Me, pat?: Pat }): RElm;
+  function whichAnon_title(doAsAnon: MaybeAnon, ps: { me: Me, pat?: Pat }): St | RElm;
+  function whichAnon_descr(doAsAnon: MaybeAnon, ps: { me: Me, pat?: Pat }): St | RElm;
+}
+
+declare namespace debiki2 {
+  function disc_findAnonsToReuse(discStore: DiscStore, ps: {
+            forWho: Pat | Me | U, startAtPostNr?: PostNr }): MyPatsOnPage;
 }
 
 declare namespace debiki2.subcommunities {

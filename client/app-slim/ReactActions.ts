@@ -285,8 +285,8 @@ export function undeletePages(pageIds: PageId[], success: () => void) {
 }
 
 
-export function togglePageClosed(onDone?: () => void) {
-  Server.togglePageClosed((closedAtMs) => {
+export function togglePageClosed(doAsAnon: MaybeAnon, onDone?: () => V) {
+  Server.togglePageClosed(doAsAnon, (closedAtMs) => {
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.TogglePageClosed,
       closedAtMs: closedAtMs
@@ -298,8 +298,8 @@ export function togglePageClosed(onDone?: () => void) {
 }
 
 
-export function acceptAnswer(postId: number) {
-  Server.acceptAnswer(postId, (answeredAtMs) => {
+export function acceptAnswer(postId: number, doAsAnon: MaybeAnon) {
+  Server.acceptAnswer(postId, doAsAnon, (answeredAtMs) => {
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.AcceptAnswer,
       answeredAtMs: answeredAtMs,
@@ -309,8 +309,8 @@ export function acceptAnswer(postId: number) {
 }
 
 
-export function unacceptAnswer() {
-  Server.unacceptAnswer(() => {
+export function unacceptAnswer(doAsAnon: MaybeAnon) {
+  Server.unacceptAnswer(doAsAnon, () => {
     unacceptAnswerClientSideOnly();
   });
 }
@@ -430,13 +430,14 @@ export function changePostType(post: Post, newType: PostType, onDone: () => void
 
 
 export function vote(storePatch: StorePatch, doWhat: 'DeleteVote' | 'CreateVote',
-        voteType: St, postNr: PostNr) {
+        voteType: PostVoteType, postNr: PostNr, voter: Pat) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.VoteOnPost,
     storePatch,
     doWhat,
     voteType,
     postNr,
+    voter,
   });
 }
 
@@ -1389,7 +1390,7 @@ export function composeReplyTo(parentNr: PostNr, replyPostType: PostType) {
 
 
 export function saveReply(editorsPageId: PageId, postNrs: PostNr[], text: string,
-      anyPostType: Nr, draftToDelete: Draft | U, doAsAnon: WhichAnon | U, onOk?: () => Vo,
+      anyPostType: Nr, draftToDelete: Draft | U, doAsAnon: MaybeAnon, onOk?: () => Vo,
       sendToWhichFrame?: MainWin) {
   Server.saveReply(editorsPageId, postNrs, text, anyPostType, draftToDelete?.draftNr,
         doAsAnon, (storePatch) => {

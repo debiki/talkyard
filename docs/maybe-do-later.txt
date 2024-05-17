@@ -391,29 +391,49 @@ Search for that tag.
 Needs: [add_triggers_t]
 
 [deanon_risk]
-How can you guess who an anonymous user is?
-- Impersonation (admins can, unless ff0Imp set). Even if one's list of aliases is hidden
-  for an admin impersonates oneself, there's some information in what one has *not* been
-  notified about: Notifications aren't generated if one's own pseudonym replies to
-  oneself, for example.  [trueid_check]
-- Someone's slightly unique writing style. Can be mitigated by letting
+- People's slightly unique writing style can be a "problem", can be mitigated by letting
   an AI transform all anon comments to a similar writing style.
-- In a small forum: Sbd being active in the middle of the night, and there appear anonymous
+- In a small forum: Sbd being active in the middle of the night, and some anonymous
   comments from the same time span, otherwise just silence the whole night. Repeated a few
-  times. — Mitigated by hiding last-active-at & posted-at timestamps, or making
-  timestamps coarse-grained, e.g. showing only day or week (but not hour and minute).
-  But coarse-grained or not depends on the amount of activity in the forum!
+  times, then, easy to make a good guess about who posted the anon comments. — Mitigated
+  by hiding last-active-at & posted-at timestamps, or making timestamps coarse-grained,
+  e.g. showing only day or week (but not hour and minute).
 - Inherits permissions — see [pseudonym_types] below.
-- By looking at the email logs, admins can know who and anon's true id is
-  (since the true id gets notified via email about replies to hans anonyms).
-  Should there be an option to not get email notifications about one's
-  anonymous posts?  Or there could be some Sensitive forum mode, where
-  two admins need to agree that it's ok to look at email logs?
-- Audit log, e.g. ip addresses. & doer_true_id_c,  target_pat_true_id_c
-- Nginx logs: ip addresses etc
-- Notifications. If a pseudonym can be mentioned & relpies in an access restricted
-  category, then, the true user is one of those who has access.
 - 9999 more things...
+
+When posting anonymously, often safer to [not_use_true_users]' permissions.
+
+Let mods do things anonymously, but using different per-page-&-user anons [anon_mods],
+so no one can see if replies by an anon, are in fact by one of the mods
+(if that anon later did sth only mods can do). — Look at all `getAliasOrTruePat()` and [get_anon].
+
+[choose_alias]
+Make it possible to choose who to do things as, e.g. anonymously, or using a specific pseudonym.
+Whenver that's not possible (e.g. one is a mod, and tries to do a mod-only thing),
+then, show a modal popup:
+    "You can't do this [anonymously / as Pseudonym-Name]. Do using your true account? [y / N]"
+and a tips about switching back to one's true account.
+
+[alias_mode]
+Choose who one wants to be: A dropdown next to one's username:
+  - One's real account
+  - A pseudonym
+  - Anonymous
+And, buttons one can click, as oneself, are visible — but if the alias one wants to use,
+can't click those buttons, they're dimmed?
+So if you're a mod, and you've choosen Anonymous, then a Delete Page button would be
+grayed out, because you cannot delete the page anonymously (unless it's your page).
+If you've choosen Anonymous, and visit a discussion where you've replied as yourself
+previously, and you hit Reply, then, a dialog:
+   "Continue using your real name in this discussion? [y / n]
+   You're in Anonymous mode but on this page you've used your real name previously."
+
+Or if choosen Real Name, and visits a page where you've posted anonymously:
+   "Continue anonymously in this discussion? [y / n]
+   You're in Real Name mode, but on this page you've been anonymous previously."
+
+[fetch_alias]
+Fetch one's relevant aliases from the server, e.g. if the page is big?
 
 [pseudonym_types]
 Should a pseudonym inherit the permissions of the underlying true user?
@@ -439,6 +459,11 @@ Not now.
 
 [sql_true_id_eq]
 Look at later, realted to anonyms and pseudonyms (looking up on both true id & anon id).
+
+[export_privid]
+Depending on the community, true ids should or should not be included in site JSON dumps.
+Maybe add sth like talkyard.server.parser.JsonConf that says if any doerId.privId
+should be included or not?  SensitiveConf or PrivacyConf maybe?
 
 [assign_anon]
 

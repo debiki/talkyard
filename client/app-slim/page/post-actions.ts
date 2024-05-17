@@ -146,10 +146,16 @@ export const PostActions = createComponent({
   displayName: 'PostActions',
 
   onAcceptAnswerClick: function() {
-    ReactActions.acceptAnswer(this.props.post.uniqueId);
+    morebundle.maybeChooseModAlias({ store: this.props.store, atRect: undefined },
+            (choices: ChoosenAnon) => {
+      ReactActions.acceptAnswer(this.props.post.uniqueId, choices.doAsAnon);
+    });
   },
   onUnacceptAnswerClick: function() {
-    ReactActions.unacceptAnswer();
+    morebundle.maybeChooseModAlias({ store: this.props.store, atRect: undefined },
+            (choices: ChoosenAnon) => {
+      ReactActions.unacceptAnswer(choices.doAsAnon);
+    });
   },
 
   componentWillUnmount: function() {
@@ -205,27 +211,28 @@ export const PostActions = createComponent({
     }, true);
   },
 
-  onEditClick: function(event) {
+  onEditClick: function() {
     ReactActions.editPostWithNr(this.props.post.nr);
   },
-  onLinkClick: function(event) {
+  onLinkClick: function(event: MouseEvent) {
     morebundle.openShareDialog(this.props.post, event.target);
   },
-  onLikeClick: function(event) {
+  onLikeClick: function(event: MouseEvent) {
+    const atRect = cloneEventTargetRect(event);
     const store: Store = this.props.store;
     const post: Post = this.props.post;
     loginIfNeededThen(LoginReason.LoginToLike, post.nr, () => {
       if (this.isGone) return;
-      const toggleOn = !me_hasVoted(store.me, post.nr, 'VoteLike');
-      toggleVote(this.props.store, post, 'VoteLike', toggleOn);
+      const toggleOn = !me_hasVoted(store.me, post.nr, PostVoteType.Like);
+      toggleVote(this.props.store, post, PostVoteType.Like, toggleOn, atRect);
     });
   },
 
-  openMoreVotesDropdown: function(event) {
+  openMoreVotesDropdown: function(event: MouseEvent) {
     openMoreVotesDropdown(this.props.post, event.target);
   },
 
-  openMoreDropdown: function(event) {
+  openMoreDropdown: function(event: MouseEvent) {
     openMoreDropdown(this.props.store, this.props.post, event.target);
   },
 
@@ -237,13 +244,13 @@ export const PostActions = createComponent({
     const canBeSolved = page_canBeSolved(page);
     const isEmbeddedComments = page.pageRole === PageRole.EmbeddedComments;
 
-    const me: Myself = store.me;
+    const me: Me = store.me;
     const myPageData: MyPageData = me.myCurrentPageData;
     const isOwnPost = pat_isAuthorOf(me, post, store.usersByIdBrief);
     const isOwnPage = store_thisIsMyPage(store);
     const isPageBody = post.nr === BodyNr;
-    const votes = myPageData.votes[post.nr] || [];
-    const isStaffOrOwnPage: boolean = isStaff(me) || isOwnPage;
+    const myVotes: Vote[] = myPageData.votesByPostNr[post.nr] || [];
+    const isStaffOrOwnPage: Bo = isStaff(me) || isOwnPage;
     // Later, will use the upcoming [alterPage] permission instead.
     const isCoreOrOwnPage = isStaffOrOwnPage ||
                                 user_isTrustMinNotThreat(me, TrustLevel.CoreMember);
@@ -331,16 +338,16 @@ export const PostActions = createComponent({
     // If isn't staff, then the only "downvote" is the Disagree vote.
     const canDownvote = useDownvotes && (isDisagreeEnabled || isStaff(me));
 
-    let numLikesText;
+    let numLikesText: RElm | U;
     if (post.numLikeVotes && useLikeVote) {
-      numLikesText = r.a({ className: 'dw-a dw-vote-count',
+      numLikesText = r.a({ className: 'dw-a dw-vote-count e_VoLi',
             onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Like, event.target) },
           t.pa.NumLikes(post.numLikeVotes));
     }
 
-    let numWrongsText;
+    let numWrongsText: RElm | U;
     if (post.numWrongVotes && useDownvotes && isDisagreeEnabled) {
-      numWrongsText = r.a({ className: 'dw-a dw-vote-count e_WroVo',
+      numWrongsText = r.a({ className: 'dw-a dw-vote-count e_VoWr',
           onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Disagree, event.target) },
           t.pa.NumDisagree(post.numWrongVotes));
     }
@@ -348,31 +355,31 @@ export const PostActions = createComponent({
     // Bury votes aren't downvotes or bad in any way, so don't show them, except for
     // staff, so they can detect misuse.
     // UX: one won't see one's own Bury vote (unless one is staff). That's confusing. What do about that?
-    let numBurysText;
+    let numBurysText: RElm | U;
     if (isStaff(me) && post.numBuryVotes && useDownvotes) {
-      numBurysText = r.a({ className: 'dw-a dw-vote-count',
+      numBurysText = r.a({ className: 'dw-a dw-vote-count e_VoBu',
           onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Bury, event.target) },
           t.pa.NumBury(post.numBuryVotes));
     }
 
-    let numUnwantedsText;
+    let numUnwantedsText: RElm | U;
     if (post.numUnwantedVotes && useDownvotes) {
-      numUnwantedsText = r.a({ className: 'dw-a dw-vote-count',
+      numUnwantedsText = r.a({ className: 'dw-a dw-vote-count e_VoUn',
           onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Unwanted, event.target) },
           t.pa.NumUnwanted(post.numUnwantedVotes));
     }
 
-    let downvotesDropdown;
-    let likeVoteButton;
+    let downvotesDropdown: RElm | U;
+    let likeVoteButton: RElm | U;
     if (!deletedOrCollapsed && post.isApproved && !isOwnPost &&
         // Don't allow voting whilst editing — that currently would replace the
         // edit preview post [EDPVWPST] with the real post.
         !isEditingThisPost) {
-      const myLikeVote = votes.indexOf('VoteLike') !== -1 ? ' dw-my-vote' : '';
-      const myWrongVote = isDisagreeEnabled && votes.indexOf('VoteWrong') !== -1 ?
+      const myLikeVote = votes_includes(myVotes, PostVoteType.Like) ? ' dw-my-vote' : '';
+      const myWrongVote = isDisagreeEnabled && votes_includes(myVotes, PostVoteType.Disagree) ?
               ' dw-my-vote' : '';
-      const myBuryVote = votes.indexOf('VoteBury') !== -1 ? ' dw-my-vote' : '';
-      const myUnwantedVote = votes.indexOf('VoteUnwanted') !== -1 ? ' dw-my-vote' : '';
+      const myBuryVote = votes_includes(myVotes, PostVoteType.Bury) ? ' dw-my-vote' : '';
+      const myUnwantedVote = votes_includes(myVotes, PostVoteType.Unwanted) ? ' dw-my-vote' : '';
       const myOtherVotes = myWrongVote || myBuryVote || myUnwantedVote ? ' dw-my-vote' : '';
 
       // Always hide the downvotes inside this dropdown, so one has to click one
@@ -546,23 +553,28 @@ const MoreVotesDropdownModal = createComponent({
     return me_hasVoted(store.me, this.state.post.nr, what);
   },
 
-  onWrongClick: function(event) {
+  onWrongClick: function(event: MouseEvent) {
+    const atRect = cloneEventTargetRect(event);
     const post: Post = this.state.post;
     loginIfNeededThen(LoginReason.LoginToDisagree, post.nr, () => {
-      toggleVote(this.state.store, post, 'VoteWrong', !this.hasVoted('VoteWrong'));
+      toggleVote(this.state.store, post, PostVoteType.Disagree, !this.hasVoted(PostVoteType.Disagree), atRect);
       this.closeSoon();
     });
   },
-  onBuryClick: function(event) {
+  onBuryClick: function(event: MouseEvent) {
+    const atRect = cloneEventTargetRect(event);
     const post: Post = this.state.post;
     // Not visible unless logged in.
-    toggleVote(this.state.store, post, 'VoteBury', !this.hasVoted('VoteBury'));
+    // [anon_mods]
+    toggleVote(this.state.store, post, PostVoteType.Bury, !this.hasVoted(PostVoteType.Bury), atRect);
     this.closeSoon();
   },
-  onUnwantedClick: function(event) {
+  onUnwantedClick: function(event: MouseEvent) {
+    const atRect = cloneEventTargetRect(event);
     const post: Post = this.state.post;
     // Not visible unless logged in.
-    toggleVote(this.state.store, post, 'VoteUnwanted', !this.hasVoted('VoteUnwanted'));
+    // [anon_mods]
+    toggleVote(this.state.store, post, PostVoteType.Unwanted, !this.hasVoted(PostVoteType.Unwanted), atRect);
     this.closeSoon();
   },
 
@@ -572,7 +584,7 @@ const MoreVotesDropdownModal = createComponent({
     const me: Myself = store.me;
     const myPageData: MyPageData = me.myCurrentPageData;
     const post: Post = this.state.post;
-    const votes = myPageData.votes[post.nr] || [];
+    const votes = myPageData.votesByPostNr[post.nr] || [];
     const isOwnPage = store_thisIsMyPage(store);
     const isStaffFullMemberOrOwnPage: boolean =
       isStaff(me) || me.trustLevel >= TrustLevel.FullMember || isOwnPage;
@@ -582,9 +594,9 @@ const MoreVotesDropdownModal = createComponent({
     const isDisagreeEnabled = page_voteTypeEnabled(
             store.currentPage, post, PostVoteType.Disagree);
 
-    const myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : '';
-    const myBuryVote = votes.indexOf('VoteBury') !== -1 ? ' dw-my-vote' : '';
-    const myUnwantedVote = votes.indexOf('VoteUnwanted') !== -1 ? ' dw-my-vote' : '';
+    const myWrongVote = votes_includes(votes, PostVoteType.Disagree) ? ' dw-my-vote' : '';
+    const myBuryVote = votes_includes(votes, PostVoteType.Bury) ? ' dw-my-vote' : '';
+    const myUnwantedVote = votes_includes(votes, PostVoteType.Unwanted) ? ' dw-my-vote' : '';
 
     const wrongVoteButton = !isDisagreeEnabled ? null :
       ExplainingListItem({
@@ -622,7 +634,7 @@ const MoreVotesDropdownModal = createComponent({
 
 
 // CLEAN_UP use enum PostVoteType for voteType, instead of string.
-function toggleVote(store: Store, post: Post, voteType: string, toggleOn: boolean) {
+function toggleVote(store: Store, post: Post, voteType: PostVoteType, toggleOn: Bo, atRect: Rect) {
   const page: Page = store.currentPage;
   let action: 'DeleteVote' | 'CreateVote';
   let postNrsRead: PostNr[];
@@ -634,16 +646,20 @@ function toggleVote(store: Store, post: Post, voteType: string, toggleOn: boolea
     postNrsRead = findPostNrsRead(page.postsByNr, post);
   }
 
-  const data = {
-    pageId: store.currentPageId,
-    postNr: post.nr,
-    vote: voteType,
-    action: action,
-    postNrsRead: postNrsRead
-  };
+  morebundle.maybeChooseAnon({ store, postNr: post.nr, atRect }, (choices: ChoosenAnon) => {
+    const data = {
+      pageId: store.currentPageId,
+      postNr: post.nr,
+      vote: voteType,
+      action,
+      postNrsRead,
+      doAsAnon: choices.doAsAnon,
+    };
 
-  debiki2.Server.saveVote(data, function(storePatch: StorePatch) {
-    ReactActions.vote(storePatch, action, voteType, post.nr);
+    debiki2.Server.saveVote(data, function(storePatch: StorePatch) {
+      const by = storePatch.yourAnon || me_toBriefUser(store.me);
+      ReactActions.vote(storePatch, action, voteType, post.nr, by);
+    });
   });
 }
 

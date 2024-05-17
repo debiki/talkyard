@@ -228,7 +228,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadAuthorIdsByPostId(postIds: Set[PostId]): Map[PostId, UserId]
 
   def loadActionsOnPage(pageId: PageId): immutable.Seq[PostAction]
-  def loadActionsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[PostAction]
+  def loadActionsByUserOnPage(reqrId: PatId, userId: UserId, pageId: PageId): immutable.Seq[PostAction]
   def loadActionsDoneToPost(pageId: PageId, postNr: PostNr): immutable.Seq[PostAction]
   def loadPatPostRels[T <: PatNodeRelType](forPatId: PatId, relType: T, onlyOpenPosts: Bo,
                                            limit: i32): ImmSeq[PatNodeRel[T]]
@@ -238,8 +238,13 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def deletePatNodeRels(fromPatIds: Set[PatId], toPostId: PostId,
         relTypes: Set[PatNodeRelType]): i32
 
-  def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId): Boolean
-  /** Loads the first X voter ids, sorted by ... what? Currently loads all. [1WVKPW02]
+  /** Returns the voter's pub and priv id — good to know, if `voterId` is a true id,
+    * but the vote was by an anonym or pseudonym of that person.
+    */
+  def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId)
+        : Opt[PatIds]
+
+  /** Loads the first X voter ids, sorted by ... what? Currently loads at most 500. [1WVKPW02]
     * Also see: loadAuthorIdsByPostId() */
   def loadVoterIds(postId: PostId, voteType: PostVoteType): Seq[UserId]
 

@@ -265,9 +265,17 @@ object PagePopularityCalculator {
     } {
       // No visit might have been recorded, if the visitor didn't stay long enough (a few seconds).
       // COULD load those users explicitly.
-      // ANON_UNIMPL — look at the true id instead? So one cannot vote many times,
-      // by using different anons. Then, visitsByUserId needs to include the true pats too?
-      val visit = visitsByUserId.getOrElse(action.doerId, VisitTrust.UnknownMember)
+      //
+      // ANON_UNIMPL [alias_vote_stats] — look at the true id, to count visits
+      // and posts read?  Then, visitsByUserId needs to include the true pats too?
+      // And use doerId.trueId  not doerId.pubId (on the next line).
+      // But that might make it simpler to guess who's who — if a comment with 1 like is
+      // sorted higher than another with many likes, others might guess it's because the
+      // anonymous upvoter of that 1 like comment, is one of the admins?  [deanon_risk]
+      // (Anonyms don't have a trust level, see: UserSiteDaoMixin.insertAnonym().)
+      //
+      val visit: VisitTrust = visitsByUserId.getOrElse(
+            action.doerId.pubId, VisitTrust.UnknownMember)
       val isOrigPost = action.postNr == PageParts.BodyNr
       val isByTrusted = visit.trustLevelInt >= TrustLevel.TrustedMember.toInt
       val isByCore = visit.trustLevelInt >= TrustLevel.CoreMember.toInt

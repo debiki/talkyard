@@ -203,7 +203,7 @@ export function makeNoPageData(): MyPageData {
     myDrafts: <Draft[]> [],
     myPageNotfPref: <PageNotfPref> undefined,
     groupsPageNotfPrefs: <PageNotfPref[]> [],
-    votes: {},
+    votesByPostNr: {},
     unapprovedPosts: {},
     unapprovedPostAuthors: [],
     postNrsAutoReadLongAgo: [],
@@ -1156,23 +1156,39 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
 }
 
 
-function voteOnPost(action) {
+function voteOnPost(action: {
+    storePatch: StorePatch,
+    doWhat: 'DeleteVote' | 'CreateVote',
+    voteType: PostVoteType,
+    postNr: PostNr,
+    voter: Pat}) {
+
   const postNr: PostNr = action.postNr;
 
   const me: Myself = store.me;
   const myPageData: MyPageData = me.myCurrentPageData;
-  let votes = myPageData.votes[postNr];
+  let votes: Vote[] = myPageData.votesByPostNr[postNr];
   if (!votes) {
     votes = [];
-    myPageData.votes[postNr] = votes;
+    myPageData.votesByPostNr[postNr] = votes;
   }
 
   if (action.doWhat === 'CreateVote') {
-    votes.push(action.voteType);
+    votes.push({
+      // The voter might be the current user's anonym, so we need the voter id.
+      byId: action.voter.id,
+      type: action.voteType,
+    });
   }
   else {
-    _.remove(votes, (voteType) => voteType === action.voteType);
+    _.remove(votes, v => v.type === action.voteType);
   }
+
+  // If this vote is the user's first action on the page, and han is voting
+  // anonymously, we need to add the anon to the store — otherwise it'd be missing,
+  // if han later tries to vote again or post a comment (without reloading the page
+  // in between — then the anon would be included).  [voter_needed]
+  store_patchPatsInPl(store, [action.voter]);
 
   patchTheStore(action.storePatch);
 }

@@ -893,7 +893,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
     val flags: Seq[PostFlag] = tx.loadFlagsFor(postsById.values.map(_.pagePostNr))
     val flagsByPostId: Map[PostId, Seq[PostFlag]] = flags.groupBy(_.uniqueId)
     flags foreach { flag =>
-      userIds.add(flag.flaggerId)
+      userIds.add(flag.flaggerId.pubId)
     }
 
     val usersById = tx.loadParticipantsAsMap(userIds)

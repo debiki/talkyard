@@ -49,15 +49,10 @@ sealed abstract class CacheOrTx {
 }
 
 object CacheOrTx {
-  def apply(anyTx: Opt[SiteTx]): CacheOrTx =   // REMOVE
-    anyTx.map(UseTx) getOrElse UseCache
-
-  def apply2(anyTx: Opt[(SiteTx, StaleStuff)]): CacheOrTx =
-    anyTx.map(txAndStaleStuff => UseTx(txAndStaleStuff._1)) getOrElse UseCache
 }
 
 case class UseTx(tx: SiteTx) extends CacheOrTx { def anyTx: Opt[SiteTx] = Some(tx) }
-case object UseCache extends CacheOrTx { def anyTx: Opt[SiteTx] = None}
+case class UseCache(dao: SiteDao) extends CacheOrTx { def anyTx: Opt[SiteTx] = None}
 
 
 
@@ -899,4 +894,52 @@ object SiteDao extends TyLogging {
     site.copy(hostnames = canonicalHost +: site.hostnames)
   }
 
+
+  /** If the requester is doing sth anonymously (e.g. anon comments or votes),
+    * looks up & returns the anonymous user. Or creates a new anonymous user if
+    * needed.  Otherwise just returns `truePat`.
+    *
+    * @param truePat The true person behind any anonym or pseudonym.
+    * @param pageId Anonyms are per page, each one is restricted to a single page.
+    * @param doAsAlias The anonym or pseudonym to use.
+    * @param mayCreateAnon If the author of a page closes it or reopens it etc,
+    *   han cannot create a new anonym to do that.
+    */
+  def getAliasOrTruePat(truePat: Pat, pageId: PageId, doAsAlias: Opt[WhichAnon],
+          mayCreateAnon: Bo, isCreatingPage: Bo = false)(tx: SiteTx, mab: MessAborter): Pat = {
+    // Dupl code. [get_anon]
+    if (doAsAlias.isEmpty)
+      return truePat
+
+    doAsAlias.get match {
+      case WhichAnon.SameAsBefore(anonId) =>
+        val anon = tx.loadTheParticipant(anonId).asAnonOrThrow
+        if (anon.anonForPatId != truePat.trueId2.trueId)
+          mab.abortDeny("TyE0YOURANON", "No your alias")
+
+        anon
+
+      case WhichAnon.NewAnon(anonStatus) =>
+        if (!mayCreateAnon)
+          mab.abort("TyENEWANON02", "Cannot create new anonym now")
+
+        // Dupl code. [mk_new_anon]
+        val anonymId = tx.nextGuestId
+        val anonym = Anonym(
+              id = anonymId,
+              createdAt = tx.now,
+              anonStatus = anonStatus,
+              anonForPatId = truePat.id,
+              anonOnPageId = pageId)
+
+        // We might insert a new anonym before the page exists, but there's a foreign key
+        // from anons to pages:  pats_t.anon_on_page_id_st_c,  so defer constraints.
+        if (isCreatingPage) {
+          tx.deferConstraints()
+        }
+
+        tx.insertAnonym(anonym)
+        anonym
+    }
+  }
 }

@@ -157,6 +157,7 @@ export const Avatar = createComponent({
   },
 
   render: function() {
+    const props = this.props;
     const user: BriefUser | MemberInclDetails = this.props.user;
     const ignoreClicks = this.props.ignoreClicks ||
         // The user is unknow when rendering the author avatar, in
@@ -201,6 +202,11 @@ export const Avatar = createComponent({
     let title = user.username || user.fullName;
     if (this.props.title) {
       title += ' — ' + this.props.title;
+    }
+
+    if (props.showIsMine) {
+      content = rFr({}, content,
+          r.span({ className: 'n_Me' }, t.You));
     }
 
     // Later: If including some is-admin/moderator symbol, then need to uncache pages
