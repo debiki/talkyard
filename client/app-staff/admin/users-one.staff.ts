@@ -361,9 +361,15 @@ export const UserProfileAdminView = createFactory({
         Button({ onClick: () => openThreatLevelDialog(user, this.reloadUser),
             className: 'e_TrtLvB' }, "Change");
 
-    const impersonateButton = !me.isAdmin ? null :
+    // Enabled, by default. Server side check here: [server_0imp]
+    // (Mods, though, cannot impersonate others.)
+    const impOn = store_isFeatFlagOn(store, 'ffImp', true);
+    const impersonateButton = !me.isAdmin ? null : rFr({},
         Button({ onClick: () => Server.impersonateGoToHomepage(user.id),
-            id: 'e2eA_Us_U_ImpersonateB' }, "Impersonate");
+                disabled: !impOn, id: 'e2eA_Us_U_ImpersonateB' },
+            "Impersonate"),
+            impOn ? null : r.span({},
+              ` — Impersonating others is disabled in this forum`));
 
     return rFragment({},
       r.div({ className: 'pull-right' },

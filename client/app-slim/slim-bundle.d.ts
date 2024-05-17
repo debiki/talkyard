@@ -436,7 +436,7 @@ declare namespace debiki2 {
   function store_maySendInvites(store: Store, user: Myself | UserInclDetails): MayMayNot;
   var isMember;
   var userId_isGuest;
-  function store_isFeatFlagOn(store: Store, featureFlag: St): Bo;
+  function store_isFeatFlagOn(store: Store, featureFlag: St, defaultOn?: Bo): Bo;
   function isNoPage(pageId: PageId): Bo;
   function store_isPageDeleted(store: Store): boolean;
   function page_isAncCatDeld(page: Page): Bo;
