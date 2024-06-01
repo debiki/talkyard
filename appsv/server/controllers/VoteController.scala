@@ -141,13 +141,9 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     CHECK_AUTHN_STRENGTH
 
-    throwNoUnless(Authz.maySeePage(
-      pageMeta, requester,
-      dao.getGroupIdsOwnFirst(requester),
-      dao.getAnyPrivateGroupTalkMembers(pageMeta),
-      catsRootLast = categoriesRootLast,
-      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)),
-      "EdE2QVBF06")
+    dao.readTx { tx =>
+      dao.throwIfMayNotSeePost2(ThePost.WithId(postId), request.reqrTargetSelf)(tx)
+    }
 
     val theVoteType = PostVoteType.fromInt(voteType) getOrElse throwBadArgument("EdE2QTKB40", "voteType")
     val voters = dao.readOnlyTransaction { tx =>

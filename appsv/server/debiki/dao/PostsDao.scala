@@ -3315,12 +3315,12 @@ trait PostsDao {
     loadPost(pageId, postNr)
 
 
-  def loadPost(pageId: PageId, postNr: PostNr): Option[Post] =  // RENAME to loadPostByPageIdNr just above
-    readOnlyTransaction(_.loadPost(pageId, postNr))
+  def loadPost(pageId: PageId, postNr: PostNr, anyTx: Opt[SiteTx] = None): Opt[Post] =  // RENAME to loadPostByPageIdNr just above
+    readTxTryReuse(anyTx)(_.loadPost(pageId, postNr))
 
 
-  def loadPostByUniqueId(postId: PostId): Option[Post] =
-    readOnlyTransaction(_.loadPostsByUniqueId(Vector(postId))).values.headOption
+  def loadPostByUniqueId(postId: PostId, anyTx: Opt[SiteTx] = None): Opt[Post] =
+    readTxTryReuse(anyTx)(_.loadPostsByUniqueId(Vector(postId))).values.headOption
 
 
   def loadPostByRef(ref: PostRef): Opt[Post] = ref match {
