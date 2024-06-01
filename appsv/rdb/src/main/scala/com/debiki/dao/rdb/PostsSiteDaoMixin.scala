@@ -1056,13 +1056,20 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   def loadVoterIds(postId: PostId, voteType: PostVoteType): Seq[UserId] = {
-    TESTS_MISSING
+    // Tests:
+    //  - alias-anons-basic.2br.f.e2e.ts  TyTLISTVOTES
+
+    // Sort [newest_vote_first] — this let's one see who just voted, if one got
+    // a notification about a new Like vote. Or who just flagged the post, etc.
+    // (Order by from_pat_id_c too, so tests will be more stable.)
     val query = """ -- loadVoterIds
-      select distinct from_pat_id_c
-      from post_actions3
-      where site_id = ? and to_post_id_c = ? and rel_type_c = ?
-      order by from_pat_id_c
-      """
+          select distinct from_pat_id_c, max(created_at)
+          from post_actions3
+          where site_id = ? and to_post_id_c = ? and rel_type_c = ?
+          group by from_pat_id_c
+          order by max(created_at) desc, from_pat_id_c
+          limit 500 """  // for now — just to have *some* limit
+
     val values = List[AnyRef](siteId.asAnyRef, postId.asAnyRef, voteType.toInt.asAnyRef)
     runQueryFindMany(query, values, rs => {
       rs.getInt("from_pat_id_c")
