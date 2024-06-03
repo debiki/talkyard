@@ -178,6 +178,11 @@ describe(`embedded comments export json  TyT7FKDJF3`, async () => {
     await mariasBrowser.topic.clickLikeVoteForBlogPost();
   });
 
+  it(`... wait for the Like vote`, async () => {
+    // Once seems it didn't appear — maybe the next go2() came too soon?
+    await mariasBrowser.topic.waitAndGetLikeVotes(c.BodyNr, { exactly: 1 });
+  });
+
   it(`Maria goes to ${embPages.slugs.onlySubscrNotfsPageSlug}`, async () => {
     await mariasBrowser.go2(data.embeddingUrl + embPages.slugs.onlySubscrNotfsPageSlug);
   });

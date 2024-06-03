@@ -90,6 +90,7 @@ interface SnoozeTime {
 
 interface WaitPs {   // ps = params
   refreshBetween?: Bo;
+  tryMaxTimes?: Nr
   timeoutMs?: Nr;
   timeoutIsFine?: Bo;
   serverErrorDialogIsFine?: Bo;
@@ -133,6 +134,20 @@ interface HowMany {
   atLeast?: Nr
   atMost?: Nr
   exactly?: Nr
+}
+
+
+function isOkMany(num: Nr, wants: HowMany): Bo {
+  if (_.isNumber(wants.atLeast) && num < wants.atLeast)
+    return false;
+
+  if (_.isNumber(wants.atMost) && num > wants.atMost)
+    return false;
+
+  if (_.isNumber(wants.exactly) && num !== wants.exactly)
+    return false;
+
+  return true;
 }
 
 
@@ -674,6 +689,7 @@ export class TyE2eTestBrowser {
 
       let delayMs = PollMs;
       let elapsedMs = 0;
+      let attemptNr = 0;
       const timeoutMs = makeTimeoutMs(ps.timeoutMs);
       const startMs = Date.now();
       let loggedAnything = false;
@@ -682,12 +698,21 @@ export class TyE2eTestBrowser {
 
       try {
         do {
+          attemptNr += 1;
           const done = await fn();
           if (done) {
             if (loggedAnything) {
               logMessage(`Done: ${getMsg()}`);
             }
             return true;
+          }
+
+          if (ps.tryMaxTimes && ps.tryMaxTimes <= attemptNr) {
+            // If just once, some ancestor caller probably is retrying, need log nothing here.
+            if (attemptNr >= 2) {
+              logBoring(`Tried ${attemptNr} times: ${getMsg()}`);
+            }
+            return false;
           }
 
           elapsedMs = Date.now() - startMs;
@@ -2553,20 +2578,14 @@ export class TyE2eTestBrowser {
     }
 
 
-    async __waitAndGetThingsInList<T>(listItemSelector: St, ps: HowMany,
+    async __waitAndGetThingsInList<T>(listItemSelector: St, ps: HowMany & WaitPs,
             fn: (e: WElm) => Pr<T>): Pr<T[]> {
       let items: T[] | U;
       let len: Nr | St = `?`;
       await this.waitUntil(async () => {
         const elms: WElm[] = await this.$$(listItemSelector);
         len = elms.length;
-        if (_.isNumber(ps.atLeast) && len < ps.atLeast)
-          return false;
-
-        if (_.isNumber(ps.atMost) && len > ps.atMost)
-          return false;
-
-        if (_.isNumber(ps.exactly) && len !== ps.exactly)
+        if (!isOkMany(len, ps))
           return false;
 
         const promises: Pr<T>[] = elms.map(async (e: WElm) => {
@@ -2576,6 +2595,7 @@ export class TyE2eTestBrowser {
         items = await Promise.all(promises);
         return true;
       }, {
+        ...ps,
         message: () => `Waiting for list: ${listItemSelector}, has: ${len}, wants ${j2s(ps)} [TyM4GMW20L]`,
       })
       return items;
@@ -6878,6 +6898,21 @@ export class TyE2eTestBrowser {
         return await this.isVisible(likeVoteSelector);
       },
 
+      waitAndGetLikeVotes: async (postNr: PostNr, ps: HowMany & WaitPs): Pr<E2eVote[]> => {
+        let votes: E2eVote[] | U;
+        await this.waitUntil(async () => {
+          await this.topic.openLikeVotes(postNr);
+          votes = await this.topic.votesDiag.getVotes({ tryMaxTimes: 1, timeoutIsFine: true });
+          await this.topic.votesDiag.close();
+          return votes && isOkMany(votes.length, ps);
+        }, {
+          ...ps,
+          message: () => `Waiting for post ${postNr} votes, now: ${votes.length
+                          }, wants ${j2s(ps)} [TyMWATN4VOT036]`,
+        });
+        return votes || [];
+      },
+
       openLikeVotes: async (postNr: PostNr): Pr<V> => {
         const sel = this.topic.makeLikeVoteCountSelector(postNr);
         await this.waitAndClick(sel);
@@ -6885,7 +6920,9 @@ export class TyE2eTestBrowser {
       },
 
       votesDiag: {
-        getVotes: async (howMany: HowMany): Pr<E2eVote[]> => {
+        getVotes: async (howMany: HowMany & WaitPs = {}): Pr<E2eVote[]> => {
+          // (Hmm, the dialog is static (I mean, it won't update, once opened) so retrying,
+          // at least refreshing the page (`howMany.refreshBetween`), makes no sense here.)
           return await this.__waitAndGetThingsInList(
                 '.s_VotesD_Voters a.esAvtr', howMany, async (e: WElm) => {
             const voteUrl: St | N = await e.getAttribute('href');
