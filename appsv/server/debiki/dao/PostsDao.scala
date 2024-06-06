@@ -2532,6 +2532,8 @@ trait PostsDao {
 
       updatePageAndPostVoteCounts(post, tx)
       updatePagePopularity(newPageDao(pageId, tx).parts, tx)
+
+      // Ooops, not necessarily a like vote. [counts_all_votes]
       addUserStats(UserStats(post.createdById, numLikesReceived = -1, mayBeNegative = true))(tx)
       // pubId is that of any anonym, while privId would be the true user's id.
       addUserStats(UserStats(voterIdsMaybeAlias.pubId, numLikesGiven = -1,
@@ -2657,6 +2659,8 @@ trait PostsDao {
             readFromIp = voterIp)
       updatePageAndPostVoteCounts(post, tx)
       updatePagePopularity(page.parts, tx)
+      // Ooops, this isn't necessarily a like vote. Fix later (don't just add an
+      // if statement — that'd mess up the statistics when un-voting). [counts_all_votes]
       addUserStats(UserStats(post.createdById, numLikesReceived = 1))(tx)
       addUserStats(UserStats(voterMaybeAnon.id, numLikesGiven = 1))(tx)
 
