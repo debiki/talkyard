@@ -185,6 +185,10 @@ try {
   if (_class) {
     _doc.className += ' ' + _class.replace(/[^a-zA-Z0-9_-]/g, ' ');
   }
+  const ssoHow = _searchParams.get('ssoHow');
+  if (ssoHow) {
+    eds.ssoHow = ssoHow;
+  }
 }
 catch (ignored) {
 }

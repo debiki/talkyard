@@ -772,6 +772,10 @@ Start supporting v4.local? But what js and java libs to use? The old js lib stop
 so currently using a small Rust PASETO cmd tool. See:
     ../tests/e2e-wdio7/specs/embcom.sso.token-in-cookie.2br.test.ts--e2e-crypto-probl.txt
 
+[blog_comments_sso_redir]
+Optionally redirect whole blog post page (the ebmedding page) when clicking Log In in Talkyard.
+Can be a embedding page parameter?
+
 DONE [blog_comments_sso]  emb_sso
 Use PASTEO https://news.ycombinator.com/item?id=17877332
  http://cryto.net/~joepie91/blog/2016/06/13/stop-using-jwt-fo...

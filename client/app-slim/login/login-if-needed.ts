@@ -77,7 +77,12 @@ export function loginIfNeededReturnToAnchor(
   if (me.isLoggedIn || (willCompose && ReactStore.mayComposeBeforeSignup())) {
     success();
   }
-  else if (eds.isInIframe) {
+  else if (!eds.isInIframe ||
+          // Or, check the session win? The editor iframe otherwise doesn't know about eds.ssoHow?
+          eds.ssoHow == 'RedirWholePage') {  // [blog_comments_sso_redir]
+    loginIfNeeded(loginReason, returnToUrl, success);
+  }
+  else {
     // ... or only if isInSomeEmbCommentsIframe()?
 
     anyContinueAfterLoginCallback = success;
@@ -89,9 +94,6 @@ export function loginIfNeededReturnToAnchor(
     const url = origin() + '/-/login-popup?mode=' + loginReason +   // [2ABKW24T]
       '&isInLoginPopup&returnToUrl=' + returnToUrl;
     d.i.createLoginPopup(url);
-  }
-  else {
-    loginIfNeeded(loginReason, returnToUrl, success);
   }
 }
 
@@ -156,9 +158,16 @@ function goToSsoPageOrElse(returnToUrl: St, toDoWhat: LoginReason | U,
     // stay on the same page, and navigate away to the IDP only in a popup win,
     // so the editor stays open and one can submit the reply, after login.
     if (store.settings.enableSso) {
-      // Harmless bug: If session & local storage don't work, this redirect will
-      // destroy the browser authn nonce.  [br_authn_nonce]
-      location.assign(anySsoUrl);  // backw compat, see above
+      if (eds.isInIframe) {
+        // UNTESTED
+        const message = JSON.stringify([ 'goToSsoPage', { url: anySsoUrl, returnToUrl }]);
+        window.parent.postMessage(message, eds.embeddingOrigin);
+      }
+      else {
+        // Harmless bug: If session & local storage don't work, this redirect will
+        // destroy the browser authn nonce.  [br_authn_nonce]
+        location.assign(anySsoUrl);  // backw compat, see above
+      }
     }
     else {
       // This'll trigger the [SSOINSTAREDIR] code in login-dialog.more.ts — the

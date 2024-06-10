@@ -40,6 +40,7 @@ interface WindowWithTalkyardProps {
   talkyardLogLevel?: Nr;
   talkyardDebug: boolean | number | undefined; // deprecated 2020-06-16
   talkyardAuthnToken?: St | Ay;
+  talkyardSsoHow?: 'RedirWholePage' | 'LoginPopup';
   talkyardConsiderQueryParams?: St[];
   edRemoveCommentsAndEditor: () => void;  // deprecated
   edReloadCommentsAndEditor: () => void;  //
@@ -571,9 +572,12 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
 
   const logLevelParam = talkyardLogLevel ? `&logLevel=${talkyardLogLevel}` : '';
 
+  const ssoHowParam = !windowWithTalkyardProps.talkyardSsoHow ? '' :
+          `&ssoHow=${windowWithTalkyardProps.talkyardSsoHow}`;
+
   const allUrlParams =
           edPageIdParam + discIdParam + catRefParam + embeddingUrlParam +
-          htmlClassParam + logLevelParam + scriptVersionQueryParam;
+          ssoHowParam + htmlClassParam + logLevelParam + scriptVersionQueryParam;
 
   var commentsIframeUrl = serverOrigin + '/-/embedded-comments?' + allUrlParams;
   loadWeinre = location.hash.indexOf('&loadWeinre') >= 0;  // [WEINRE]
@@ -1028,6 +1032,16 @@ function onMessage(event) {
       debiki.Utterscroll.stopScrolling(eventData);
       break;
       */
+    case 'goToSsoPage':
+      const ssoUrl = eventData.anySsoUrl;
+      const returnToUrl = eventData.returnToUrl;
+      // what about  returnToUrl?  The ssoUrl needs to know where to send
+      // the user after login.  Let's just, for now:
+      location.assign(ssoUrl + '?returnToUrl=' + returnToUrl);   // oh well, testing
+
+      // Or is the  returnToUrl alread a part of the url — see  makeSsoUrl()
+      // in  client/app-slim/login/login-if-needed.ts.
+      break;
 
     case 'authnErr':
       logW(`Error logging in using ${eventData.prettyMethod}. ` +

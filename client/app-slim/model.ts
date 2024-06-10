@@ -3060,6 +3060,9 @@ interface ServerVars {
   // For embedded comments.
   isInEmbeddedCommentsIframe: boolean;
   isInEmbeddedEditor: boolean;
+  // End user supplied so we can't know for sure what it is. (See `talkyardSsoHow`
+  // in blog-comments.ts.)
+  ssoHow?: 'RedirWholePage' | 'LoginPopup' | St;
 
   embeddingScriptV?: Nr;
   embeddingOrigin?: string;
