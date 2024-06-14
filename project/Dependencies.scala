@@ -58,7 +58,7 @@ object Dependencies {
     // ElasticSearch client, in https://mvnrepository.com.
     // When upgrading to next major version, consider improving the mappings at the same
     // time? Change id fields from type integer to type keyword.  [es_kwd] [ty_v1]
-    val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
+    val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "8.14.1"
     val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "6.8.23"
 
     val guava = "com.google.guava" % "guava" % "32.1.2-jre"
