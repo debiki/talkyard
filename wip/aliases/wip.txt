@@ -1,10 +1,30 @@
-Alias = anonym or pseudonym.
-- Anonyms are per page.
+
+Alias = anonym or pseudonym
+-----------------------
+
+Intro:
+
+- Anonyms are per page. This is safer — can't track a single anonym accross different
+  conversations. And more social? In that, if you want, you can show who you
+  actually are, in one discussion, while staying anonymous in all others.
+  And good for ideation: Anonymous, temporarily. See the Ideation section.
 - Pseduonyms (a.k.a pen names) can be reused accross pages and categories.
+  They are more social, but less "safe".
+- Both anonyms and pseudonyms inherit (some of) the permissions of the underlying
+  true user. (Later, this will be more configurable? But not initially?)
+  See [pseudonym_types] below.
 - Depending on the community, one can have just one pseudonym at a time, or <= N,
-    or maybe only one in a specific category.
-- Can in rare cases make sense to disallow posting & interacting w others using one's
-  true account — instead, must always be via a pseudonym.
+  or maybe only one in a specific category (per-category pseudonyms)?
+  (Can in rare cases make sense to disallow posting & interacting w others using one's
+  true account — instead, must always be via a pseudonym.)
+- When logged in to your real account, you can see notifications to your
+  anonyms and pseudonyms, and things you've posted anonymously.
+  (Not yet impl, see [list_alias_things]).
+- Talkyard remembers & helps you continue using the same anonym or pseudonym in
+  the same discussion (less risk that you accidentally reveal who you are).
+
+If you think anonymous mode is just "flip a bool and they're anonymous",
+then, this is a big box of butterflies!
 
 
 Left to do
@@ -20,7 +40,7 @@ Quick:
 
 Minor & medium:
   - Notifications: List notifications to all one's aliases (anonyms & pseudonyms),
-    not just to oneself.
+    not just to oneself. [list_alias_things]
   - Actions: List comments & pages by one's aliases, on one's recent comment page
     (but of course others, not even mods or admins, can see this).
   - Authz.scala:  [_pass_alias] [deanon_risk]
@@ -42,6 +62,7 @@ Later:
   - Incl true id in json dumps, depending on site sensitivity settings  [export_privid]
     Maybe add sth like talkyard.server.parser.JsonConf that says if any doerId.privId
     should be included or not?  SensitiveConf or PrivacyConf maybe?
+    (Currently not included.)
   - Suspending: If an anonym posts say toxic comments and gets reported, then,
     can't suspend the underlying true user — that'd leak info about who the
     anonym is?  Instead, the anonym would get banned, and the true user
@@ -72,6 +93,10 @@ Large:
     or support staff as "Support" without any individual name.
     Is it better to "just" use the group's name & username,
     or should groups be able to have a pseudonyms?
+
+Much later:
+  - More anonymous modes, e.g. one that doesn't remember who an anonym is — not in email logs,
+    audit logs, etc.
 
 
 For sensitive discussions
