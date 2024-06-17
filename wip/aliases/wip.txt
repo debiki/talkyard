@@ -34,9 +34,14 @@ Minor & medium:
   - Search for all DO_AS_ALIAS
   - Search for all ANON_UNIMPL
 
+(Also see: [anon_pages])
+
 Later:
   - Ask the server which alias to use, instead of deriving client side [fetch_alias]
+    e.g. if the page is big?  Also prevents any misbehaving clients.
   - Incl true id in json dumps, depending on site sensitivity settings  [export_privid]
+    Maybe add sth like talkyard.server.parser.JsonConf that says if any doerId.privId
+    should be included or not?  SensitiveConf or PrivacyConf maybe?
   - Suspending: If an anonym posts say toxic comments and gets reported, then,
     can't suspend the underlying true user — that'd leak info about who the
     anonym is?  Instead, the anonym would get banned, and the true user
@@ -44,6 +49,10 @@ Later:
   - Think about anonymous votes and how many have read this-or-that comment,
     when the same person visits & comments sometimes as hanself, sometimes
     using an alias.  See: PagePopularityCalculator  [alias_vote_stats]
+  - [pseudonyms_later] [pseudonyms_trust]
+  - [anon_priv_msgs][anon_chats]
+  - [sql_true_id_eq]
+    Look at later, realted to anonyms and pseudonyms (looking up on both true id & anon id).
 
 Tests missing:
   /^alias/  in test-map.txt.
@@ -51,7 +60,11 @@ Tests missing:
 Large:
   - Alias selector (see below)
   - Dim buttons
-  - Anonymous moderator actions  [anon_mods]
+
+  - Anonymous moderator actions  [anon_mods]:  Let mods do things anonymously,
+    but using different per-page-&-user anons, so no one can see if
+    replies by an anon, are in fact by one of the mods (if that anon later did
+    sth only mods can do). — Look at all `getAliasOrTruePat()` and [get_anon].
 
   - Group aliases / post as group?  [group_pseudonyms]
     So many people can post, using the same name.
@@ -61,19 +74,31 @@ Large:
     or should groups be able to have a pseudonyms?
 
 
+For sensitive discussions
+=======================
+
+
 Alias selector  [alias_mode] [choose_alias]
 -----------------------
 A preferred-alias selector in one's upper right username menu, which determines
-which of one's aliases gets used, in places where one can post as oneself,
-anonymously or using a pseudonym.
+which of one's aliases gets used, in places where one can post as:
+  - Oneself
+  - A pseudonym
+  - Anonymously
 
-If one comments or votes on a page where one has used another alias that the one
+If you comment or vote on a page where you have used another alias that the one
 currently selected (in the alias selector),  then, Talkyard asks:
   "You previously commented here as X,  but you've activated pseudonym Y.
     Continue commenting as X?   [yes, as X  /  no, as Y  /  cancel]"
 
 And, since Y is a somewhat unlikely answer, then dobuble check:
   "Ok, you'll appear as Y   [yes, fine  /  no, cancel]"
+
+Or, if the current mode is Anonymous, and you visit a discussion where you've
+replied as yourself previously, and you hit Reply, then, a dialog:
+
+   "Continue using your real name in this discussion? [y / n]
+   You're in Anonymous mode but on this page you've used your real name previously."
 
 (Might seem as if this double check question is an extra step, but it'll almost
 never happen that anyone replies as X and later on what to continue as Y in the
@@ -82,11 +107,19 @@ same discussion. — Maybe shouldn't even be allowed; could be a config setting.
 
 Dim buttons
 -----------------------
-
 When a not-oneself alias has been selected, then, all buttons that don't work
 with alias mode, could be dimmed a bit?  For example, if one is a moderator,
-an Approve Comment button wouldn't be anonymous — unless anonymous moderator
-actions have been implemented & activated — 
+an Approve Comment button wouldn't be anonymous (unless anonymous moderator
+actions have been implemented & activated)
+
+so if you're a mod, and you've choosen Anonymous, then a Delete Page button
+would be dimmed, because you cannot delete the page anonymously (unless
+it's your page).
+
+And if you click it, there'll be a modal popup?
+    """You can't do this [anonymously / as Pseudonym-Name].
+       Do using your true account? [y / N]"""
+and a tips about switching back to one's true account.
 
 Will need a PermsOnPage for both oneself, and any currently selected alias?
 Buttons one can click oneself, but one's alias cannot, would be dimmed?
@@ -101,6 +134,36 @@ Think about
 - Pseudonyms: [not_use_true_users], when deciding if they should get notified?
   But isn't that similar to deciding if it's risky for that same pseudonym to _post_
   something  in the relevant category?
+
+- [pseudonym_types]
+  Should a pseudonym inherit the permissions of the underlying true user?
+  Pros: More user friendly, probably how people expect things to work.
+        Can grant pseudonymous access to only higher trust level users, or users a specific group.
+  Cons: Simpler for others to guess who a pseudonym is, based on what restricted categories
+        han has access to. — If this is a problem, depends on e.g.:
+        - How many [user groups with different category permission combinations] there are.
+        - How many users and their activity.
+  Can even make sense with different types of pseudonyms?
+    - One "type" that has the same access permissions as one's true account?
+    - Another that doesn't inherit anything from one's true account?
+      But can instead be granted permissions independently of one's true account.
+      This, though, is more like a completely separate account, but you access it
+      by first logging in to your true account, then switching accounts.
+
+
+Guessing who is who?  [deanon_risk]
+-----------------------
+- People's slightly unique writing style can be a "problem", can be mitigated by letting
+  an AI transform all anon comments to a similar writing style.
+- In a small forum: Sbd being active in the middle of the night, and some anonymous
+  comments from the same time span, otherwise just silence the whole night. Repeated a few
+  times, then, easy to make a good guess about who posted the anon comments. — Mitigated
+  by hiding last-active-at & posted-at timestamps, or making timestamps coarse-grained,
+  e.g. showing only day or week (but not hour and minute).
+- Inherits permissions — see [pseudonym_types] below.
+- 9999 more things...
+
+When posting anonymously, often safer to [not_use_true_users]' permissions.
 
 
 Lots of work
@@ -139,6 +202,17 @@ Unnecessary
   to impersonate anyone  (say, >= 2 admins need to agree) combined with
   impersonation notifications  [imp_notfs].
 
+- One person with [many_anons_per_page].  (Except for anonymous moderation, but maybe
+  a shared moderator pseudonym is better.)
+
+
+For ideation
+=======================
+
+
+[auto_deanon]
+[auto_show_replies]
+Needs: [add_triggers_t]
 
 
 

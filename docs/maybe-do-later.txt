@@ -383,87 +383,8 @@ discovery of pages & people by iterating through all ids in the url.
 [custom-groups]
 Search for that tag.
 
-[pseudonyms_later][pseudonyms_trust]
-
-
-[auto_deanon]
-[auto_show_replies]
-Needs: [add_triggers_t]
-
-[deanon_risk]
-- People's slightly unique writing style can be a "problem", can be mitigated by letting
-  an AI transform all anon comments to a similar writing style.
-- In a small forum: Sbd being active in the middle of the night, and some anonymous
-  comments from the same time span, otherwise just silence the whole night. Repeated a few
-  times, then, easy to make a good guess about who posted the anon comments. — Mitigated
-  by hiding last-active-at & posted-at timestamps, or making timestamps coarse-grained,
-  e.g. showing only day or week (but not hour and minute).
-- Inherits permissions — see [pseudonym_types] below.
-- 9999 more things...
-
-When posting anonymously, often safer to [not_use_true_users]' permissions.
-
-Let mods do things anonymously, but using different per-page-&-user anons [anon_mods],
-so no one can see if replies by an anon, are in fact by one of the mods
-(if that anon later did sth only mods can do). — Look at all `getAliasOrTruePat()` and [get_anon].
-
-[choose_alias]
-Make it possible to choose who to do things as, e.g. anonymously, or using a specific pseudonym.
-Whenver that's not possible (e.g. one is a mod, and tries to do a mod-only thing),
-then, show a modal popup:
-    "You can't do this [anonymously / as Pseudonym-Name]. Do using your true account? [y / N]"
-and a tips about switching back to one's true account.
-
-[alias_mode]
-Choose who one wants to be: A dropdown next to one's username:
-  - One's real account
-  - A pseudonym
-  - Anonymous
-And, buttons one can click, as oneself, are visible — but if the alias one wants to use,
-can't click those buttons, they're dimmed?
-So if you're a mod, and you've choosen Anonymous, then a Delete Page button would be
-grayed out, because you cannot delete the page anonymously (unless it's your page).
-If you've choosen Anonymous, and visit a discussion where you've replied as yourself
-previously, and you hit Reply, then, a dialog:
-   "Continue using your real name in this discussion? [y / n]
-   You're in Anonymous mode but on this page you've used your real name previously."
-
-Or if choosen Real Name, and visits a page where you've posted anonymously:
-   "Continue anonymously in this discussion? [y / n]
-   You're in Real Name mode, but on this page you've been anonymous previously."
-
-[fetch_alias]
-Fetch one's relevant aliases from the server, e.g. if the page is big?
-
-[pseudonym_types]
-Should a pseudonym inherit the permissions of the underlying true user?
-Pros: More user friendly, probably how people expect things to work.
-      Can grant pseudonymous access to only higher trust level users, or users a specific group.
-Cons: Simpler for others to guess who a pseudonym is, based on what restricted categories
-      han has access to. — If this is a problem, depends on e.g.:
-      - [How many [user groups with different category permission combinations] there are.
-      - How many users and their activity.
-Can even make sense with different types of pseudonyms?
-    - One "type" that has the same access permissions as one's true account?
-    - Another that doesn't inherit anything from one's true account?
-      But can instead be granted permissions independently of one's true account.
-      This, though, is more like a completely separate account, but you access it
-      by first logging in to your true account, then switching accounts.
-
-[anon_pages]
-
-[anon_priv_msgs][anon_chats]
-Not now.
-
-[many_anons_per_page]
-
-[sql_true_id_eq]
-Look at later, realted to anonyms and pseudonyms (looking up on both true id & anon id).
-
-[export_privid]
-Depending on the community, true ids should or should not be included in site JSON dumps.
-Maybe add sth like talkyard.server.parser.JsonConf that says if any doerId.privId
-should be included or not?  SensitiveConf or PrivacyConf maybe?
+[pseudonyms_later]
+Anonyms and pseudonyms, see:  wip/aliases/wip.txt
 
 [assign_anon]
 
