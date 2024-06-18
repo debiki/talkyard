@@ -694,7 +694,7 @@ function runAllE2eTests {
   $r s/wdio-7     --only embcom.expimpjson.restore-overwrite-site-same-domain.2br --cd -i $args
   $r s/wdio-7     --only embcom.expimpjson.restore-overwrite-site-new-domain.2br --cd -i $args
 
-  $r s/wdio       --only embcom.comment-counts.2br.cors $args
+  $r s/wdio-7     --only embcom.comment-counts.2br.ec.cors --cd -i $args
 
   # Single Sign-On, embedded comments:
   $r s/wdio-7     --only embcom.sso.token-direct-w-logout-url.2br.ec --cd -i $args

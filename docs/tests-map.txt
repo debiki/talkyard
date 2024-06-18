@@ -474,7 +474,7 @@ security:
             - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J TyT406AK24
             - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
   api get topics in restr cat:
-            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+            - embcom.comment-counts.2br.ec.cors  TyTE2ECOMCOUNTS
   api list restriceted category:
             - api-list-query-for-topics-popular-first.test.ts  TyT603AKSL25.TyT502RKDJ46
   api search restricted categories and private topics:
@@ -497,7 +497,7 @@ security:
             search for "<script>" or "javascript:" to find?
   cors:
             - api-search-ext-site-and-server.2br.cors  TyTEAPIEXTSRV
-            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+            - embcom.comment-counts.2br.ec.cors  TyTE2ECOMCOUNTS
             - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
   categories: see (1QRY7)
   see other's tasks:
@@ -695,7 +695,7 @@ categories:
   upsert categories:  (upscats)
   move topic to new category:
             - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyTMVPG2OTRCAT
-            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS.TyTMVPG2CAT
+            - embcom.comment-counts.2br.ec.cors  TyTE2ECOMCOUNTS.TyTMVPG2CAT
 
   sub categories:
     create,
@@ -1100,7 +1100,7 @@ embedded comments:
   notf about new discusion:
           - embedded-comments-category-refs.2browsers.test.ts   TyT03RKHJF59.TyT063AKDGW60
   comment counts:
-            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+            - embcom.comment-counts.2br.ec.cors  TyTE2ECOMCOUNTS
             - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
   many comments iframes same page:
             - embcom.manyframes.basic.2br  TyTEMANYCOMIFR01
@@ -1811,7 +1811,7 @@ api:
             - api-search-full-text.1br.f  TyT70ADNEFTD36
   get api:
             - api-get-query-for-pats.2br  TyTEAPIGETQPATS
-            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+            - embcom.comment-counts.2br.ec.cors  TyTE2ECOMCOUNTS
             - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
     specify same ref twice — not allowed? (wastes resources)
             - TESTS_MISSING  & unimpl

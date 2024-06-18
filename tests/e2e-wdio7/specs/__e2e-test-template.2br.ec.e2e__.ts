@@ -12,6 +12,7 @@ import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/ty-e2e-test-bro
 import settings from '../utils/settings';
 import { dieIf } from '../utils/log-and-die';
 import c from '../test-constants';
+import { IsWhere } from '../test-types';
 
 let allBrowsers: TyAllE2eTestBrowsers;
 let brA: TyE2eTestBrowser;
