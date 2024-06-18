@@ -1,25 +1,17 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('../utils/ty-assert');
-import fs = require('fs');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
+import assert from '../utils/ty-assert';
+import * as fs from 'fs';
+import server from '../utils/server';
+import * as utils from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import lad = require('../utils/log-and-die');
-import c = require('../test-constants');
-
-declare const $$: any; // webdriver.io global utility
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import c from '../test-constants';
 
 
-
-
-
-let everyonesBrowsers;
-let richBrowserA;
-let richBrowserB;
+let richBrowserA: TyE2eTestBrowser;
+let richBrowserB: TyE2eTestBrowser;
 let owen: Member;
 let owensBrowser: TyE2eTestBrowser;
 let maria: Member;
@@ -38,12 +30,12 @@ const embeddingOrigin = 'http://e2e-test-scrlld.localhost:8080';
 
 const newAddCommentBtnTitle = 'newAddCommentBtnTitle';
 
-let veryLastPostNr;
+let veryLastPostNr: PostNr | U;
 
 
-describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
+describe("embcom.sort-order-op-likes-btn-txt.2br.ec  TyTEMBSORTLIKETXT", () => {
 
-  it("import a site", () => {
+  it("import a site", async () => {
     const builder = buildSite();
     forum = builder.addTwoPagesForum({
       title: "Emb Cmts Scroll Load Posts E2E Test",
@@ -88,15 +80,14 @@ describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
     forum.siteData.settings.allowEmbeddingFrom = embeddingOrigin;
     forum.siteData.settings.enableForum = false;
 
-    siteIdAddress = server.importSiteData(forum.siteData);
+    siteIdAddress = await server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
     server.skipRateLimits(siteId);
   });
 
-  it("initialize people", () => {
-    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
-    richBrowserA = new TyE2eTestBrowser(browserA);
-    richBrowserB = new TyE2eTestBrowser(browserB);
+  it("initialize people", async () => {
+    richBrowserA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    richBrowserB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
     owen = forum.members.owen;
     owensBrowser = richBrowserA;
@@ -111,7 +102,7 @@ describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
   const pageSlug = 'load-and-scroll.html';
   const blankSlug = 'blank.html';
 
-  it("There's an embedding page", () => {
+  it("There's an embedding page", async () => {
     const dir = 'target';
 
     fs.writeFileSync(
@@ -128,27 +119,27 @@ describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
     }
   });
 
-  it("A stranger arrives", () => {
-    strangersBrowser.go2(embeddingOrigin + '/' + pageSlug);
+  it("A stranger arrives", async () => {
+    await strangersBrowser.go2(embeddingOrigin + '/' + pageSlug);
   });
 
-  it("Comments are sorted best-first", () => {
-    strangersBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
+  it("Comments are sorted best-first", async () => {
+    await strangersBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
   });
 
-  it("Maria arrives, and Like-upvotes #comment-9 = #post-10", () => {
-    mariasBrowser.topic.toggleLikeVote(10, { logInAs: maria });
+  it("Maria arrives, and Like-upvotes #comment-9 = #post-10", async () => {
+    await mariasBrowser.topic.toggleLikeVote(10, { logInAs: maria });
   });
 
-  it("... and its 2rd = middle reply,  #comment-11 = #post-12", () => {
+  it("... and its 2rd = middle reply,  #comment-11 = #post-12", async () => {
     // This click can fail, maybe because scrolls then clicks? So toggleLikeVote()
     // tries more than once. [E2ECLICK03962]
-    mariasBrowser.topic.toggleLikeVote(12);
+    await mariasBrowser.topic.toggleLikeVote(12);
   });
 
-  it("After reload, those are first, since Best Fist is default sort order", () => {
-    mariasBrowser.refresh2();
-    mariasBrowser.topic.assertPostOrderIs([
+  it("After reload, those are first, since Best Fist is default sort order", async () => {
+    await mariasBrowser.refresh2();
+    await mariasBrowser.topic.assertPostOrderIs([
         10,  // Like voted OP reply
         12,  // Like voted reply-reply
         11,  // Reply-reply sorted by time
@@ -161,77 +152,76 @@ describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
   });
 
 
-  it("Owen logs in to admin area, ... ", () => {
-    owensBrowser.adminArea.interface.goHere(siteIdAddress.origin, { loginAs: owen });
+  it("Owen logs in to admin area, ... ", async () => {
+    await owensBrowser.adminArea.interface.goHere(siteIdAddress.origin, { loginAs: owen });
   });
 
-  it("Owen changes the comments sort order to Newest First", () => {
-    owensBrowser.adminArea.interface.setSortOrder(2);
+  it("Owen changes the comments sort order to Newest First  TyTEMBNEWEST1ST", async () => {
+    await owensBrowser.adminArea.interface.setSortOrder(2);
   });
 
-  it("... and the 'Add Comment' button title", () => {
-    owensBrowser.adminArea.interface.setAddCommentBtnTitle(newAddCommentBtnTitle);
+  it("... and the 'Add Comment' button title  TyTCOMTBTNTTL", async () => {
+    await owensBrowser.adminArea.interface.setAddCommentBtnTitle(newAddCommentBtnTitle);
   });
 
-  it("... and the disables like votes", () => {
-    owensBrowser.adminArea.interface.setBlogPostLikeVotes(1);
+  it("... and the disables like votes", async () => {
+    await owensBrowser.adminArea.interface.setBlogPostLikeVotes(1);
   });
 
-  it("... saves", () => {
-    owensBrowser.adminArea.settings.clickSaveAll();
+  it("... saves", async () => {
+    await owensBrowser.adminArea.settings.clickSaveAll();
   });
 
-  it("For Maria, the reply button title is still 'Add Comment'", () => {
-    mariasBrowser.switchToEmbCommentsIframeIfNeeded();
-    mariasBrowser.waitAndAssertVisibleTextMatches(
+  it("For Maria, the reply button title is still 'Add Comment'", async () => {
+    await mariasBrowser.switchToEmbCommentsIframeIfNeeded();
+    await mariasBrowser.waitAndAssertVisibleTextMatches(
         '.dw-ar-t > .dw-p-as > .dw-a-reply', "Add Comment");
   });
 
-  it("... and she can Like-upvote the blog post", () => {
-    mariasBrowser.switchToEmbCommentsIframeIfNeeded();
-    assert.ok(mariasBrowser.isVisible('.dw-ar-t > .dw-p-as .dw-a-like'));
+  it("... and she can Like-upvote the blog post", async () => {
+    await mariasBrowser.switchToEmbCommentsIframeIfNeeded();
+    assert.ok(await mariasBrowser.isVisible('.dw-ar-t > .dw-p-as .dw-a-like'));
   });
 
-  it("Maria reloads the page", () => {
-    mariasBrowser.refresh2();
+  it("Maria reloads the page", async () => {
+    await mariasBrowser.refresh2();
   });
 
-  it("... the reply button got renamed ", () => {
-    mariasBrowser.switchToEmbCommentsIframeIfNeeded();
-    mariasBrowser.waitAndAssertVisibleTextMatches(
+  it("... the reply button got renamed ", async () => {
+    await mariasBrowser.switchToEmbCommentsIframeIfNeeded();
+    await mariasBrowser.waitAndAssertVisibleTextMatches(
         '.dw-ar-t > .dw-p-as > .dw-a-reply', newAddCommentBtnTitle);
   });
 
-  it("... and blog post Like votes disabled", () => {
-    mariasBrowser.switchToEmbCommentsIframeIfNeeded();
-    assert.not(mariasBrowser.isVisible('.dw-ar-t > .dw-p-as .dw-a-like'));
+  it("... and blog post Like votes disabled", async () => {
+    await mariasBrowser.switchToEmbCommentsIframeIfNeeded();
+    assert.not(await mariasBrowser.isVisible('.dw-ar-t > .dw-p-as .dw-a-like'));
   });
 
 
-  it("Maria goes to another page", () => {
-    mariasBrowser.go2(embeddingOrigin + '/' + blankSlug);
+  it("Maria goes to another page", async () => {
+    await mariasBrowser.go2(embeddingOrigin + '/' + blankSlug);
   });
 
   /*
-  it("... the reply button is renamed here too  NO because BUG  [04MDKG356]", () => {
-    mariasBrowser.switchToEmbCommentsIframeIfNeeded();
-    mariasBrowser.waitAndAssertVisibleTextMatches(
+  it("... the reply button is renamed here too  NO because BUG  [04MDKG356]", async () => {
+    await mariasBrowser.switchToEmbCommentsIframeIfNeeded();
+    await mariasBrowser.waitAndAssertVisibleTextMatches(
         '.dw-ar-t > .dw-p-as > .dw-a-reply', newAddCommentBtnTitle);
   });
 
-  it("... and blog post Like votes are disabled here too  NO, BUG  [04MDKG356]", () => {
-    mariasBrowser.switchToEmbCommentsIframeIfNeeded();
-    assert.not(mariasBrowser.isVisible('.dw-ar-t > .dw-p-as .dw-a-like'));
+  it("... and blog post Like votes are disabled here too  NO, BUG  [04MDKG356]", async () => {
+    await mariasBrowser.switchToEmbCommentsIframeIfNeeded();
+    assert.not(await mariasBrowser.isVisible('.dw-ar-t > .dw-p-as .dw-a-like'));
   }); */
 
 
-  it("Marria returns to the page with comments", () => {
-    mariasBrowser.go2(embeddingOrigin + '/' + pageSlug);
+  it("Marria returns to the page with comments", async () => {
+    await mariasBrowser.go2(embeddingOrigin + '/' + pageSlug);
   });
 
-  it("the sort order is now newest first", () => {
-    mariasBrowser.refresh2();
-    mariasBrowser.topic.assertPostOrderIs([
+  it("the sort order is now newest first", async () => {
+    await mariasBrowser.topic.assertPostOrderIs([
         // The last Orig Post reply:
         veryLastPostNr - 3,
         // Its children were posted later, so they have higher post nrs,
@@ -249,20 +239,22 @@ describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
   });
 
 
-  it("Maria adds a comment", () => {
+  it("Maria adds a comment", async () => {
     // RACE E2EBUG: The login dialog somitimes pops up, although Maria is logged
     // in already. — Does the test somehow click the button, before Maria's
     // personal data has been added?
-    mariasBrowser.metabar.waitUntilLoggedIn();
-    mariasBrowser.complex.replyToEmbeddingBlogPost("Hi I am here");
+    // 2024-06-18: Happened again: "Waiting for visible:  .s_MB_Name" repeated until timeout.
+    // 2024-06-20: Again
+    // await mariasBrowser.metabar.waitUntilLoggedIn(); // not needed, let's skip?
+    await mariasBrowser.complex.replyToEmbeddingBlogPost("Hi I am here");
   });
 
-  it("... it appears", () => {
-    mariasBrowser.topic.waitForPostAssertTextMatches(veryLastPostNr + 1, "Hi I am here");
+  it("... it appears", async () => {
+    await mariasBrowser.topic.waitForPostAssertTextMatches(veryLastPostNr + 1, "Hi I am here");
   });
 
-  it("... and it's first, since Newest First sort order", () => {
-    mariasBrowser.topic.assertPostOrderIs([
+  it("... and it's first, since Newest First sort order", async () => {
+    await mariasBrowser.topic.assertPostOrderIs([
         // Maria's new comment:
         veryLastPostNr + 1,
         // The last Orig Post reply, and its children;
@@ -270,25 +262,25 @@ describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
         veryLastPostNr - 0, veryLastPostNr - 1, veryLastPostNr - 2]);
   });
 
-  it("... also alfter reload", () => {
-    mariasBrowser.refresh2();
-    mariasBrowser.topic.assertPostOrderIs([
+  it("... also alfter reload", async () => {
+    await mariasBrowser.refresh2();
+    await mariasBrowser.topic.assertPostOrderIs([
         veryLastPostNr + 1,
         veryLastPostNr - 3,
         veryLastPostNr - 0, veryLastPostNr - 1, veryLastPostNr - 2]);
   });
 
-  it("Owen changes sort order back to Best First", () => {
-    owensBrowser.adminArea.interface.setSortOrder(1);
+  it("Owen changes sort order back to Best First", async () => {
+    await owensBrowser.adminArea.interface.setSortOrder(1);
   });
 
-  it("... saves", () => {
-    owensBrowser.adminArea.settings.clickSaveAll();
+  it("... saves", async () => {
+    await owensBrowser.adminArea.settings.clickSaveAll();
   });
 
-  it("Now the upvoted comments are instead first", () => {
-    mariasBrowser.refresh2();
-    mariasBrowser.topic.assertPostOrderIs([
+  it("Now the upvoted comments are instead first", async () => {
+    await mariasBrowser.refresh2();
+    await mariasBrowser.topic.assertPostOrderIs([
         10,  // Like voted OP reply
         12,  // Like voted reply-reply
         11,  // Reply-reply sorted by time

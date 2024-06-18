@@ -959,9 +959,11 @@ discussion -
   sort order of replies:
     best first:
             - votes-and-best-first  TyTESORTBEST
+            - embcom.sort-order-op-likes-btn-txt.2br.ec  TyTEMBSORTLIKETXT
     oldest first:
             - embcom.drafts-previews-not-logged-in.2br.e2e.ts  TyT2ZBKPW048.TyTPOSTORDR
     newest first:
+            - embcom.sort-order-op-likes-btn-txt.2br.ec  TyTEMBSORTLIKETXT.TyTEMBNEWEST1ST
   sort order of topics:  see _topic_order
 
 large pages,
@@ -1068,6 +1070,8 @@ embedded comments:
   (50279460),
   ignores query params:
             - embcom.ignore-query-params.2br  TyTEEMCIGQPRMS
+  sort order:
+            - embcom.sort-order-op-likes-btn-txt.2br.ec  TyTEMBSORTLIKETXT
   scroll and show #comment-n:
           - embedded-comments-scroll  TyT2K4DHR49-05
   scroll and load #comment-nnn:
@@ -1708,6 +1712,10 @@ email notifications:  (5ABKR024)
 
 custom forms:
             - custom-forms.3br.d  TyTCUSTFORMS
+
+translations:
+  edit button texts:
+            - embcom.sort-order-op-likes-btn-txt.2br.ec  TyTEMBSORTLIKETXT.TyTCOMTBTNTTL
 
 terms of use,
 privacy policy:
