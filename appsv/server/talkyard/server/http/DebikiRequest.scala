@@ -292,6 +292,8 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
     ListPagesQueryParser.parsePageFilter(filterParamSt, includeDeleted = isStaff)
   }
 
+  val embeddingUrl: Opt[St] = queryString.getFirst("embeddingUrl")
+
 }
 
 

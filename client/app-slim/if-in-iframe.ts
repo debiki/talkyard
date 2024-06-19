@@ -258,7 +258,7 @@ function syncDocSizeWithIframeSize() {
     // outside the iframe.  2) Don't use document.body.clientHeight — it might be
     // too small, before iframe resized. 3) body.offsetHeight can be incorrect
     // if nested elems have margin-top.  But this works fine:  [iframe_height]
-    var discussion = $byId('dwPosts');
+    var discussion = $byId('esPageColumn'); // <—— works for emb forums too?   was: 'dwPosts'
     var currentWidth = discussion.clientWidth;
     var currentDiscussionHeight = discussion.clientHeight;
 

@@ -218,11 +218,11 @@ class SiteTpi protected (
           "isInEmbeddedEditor" -> isInEmbeddedEditor,
           "isRtl" -> isRtlLanguage, // @{ if (tpi.isRtlLanguage) "true" else "false" },
 
-          "embeddingOrigin" -> JsStringOrNull(anyEmbeddingOrigin), //  @Html(embeddingOriginOrUndefined),
+          "embeddingOrigin" -> "http://e2e-test-comcount.localhost:8080", // JsStringOrNull(anyEmbeddingOrigin), //  @Html(embeddingOriginOrUndefined),
           "embeddingScriptV" -> JsNumberOrNull(embeddingScriptV),
           // These are changed dynamically in an editor iframe, [many_embcom_iframes].
           // to match the embedded comments iframe pat is replying / editing in.
-          "embeddingUrl" -> JsStringOrNull(anyEmbeddingUrl),  //  @Html(embeddingUrlOrUndefined),
+          "embeddingUrl" -> "http://e2e-test-comcount.localhost:8080/page-emb-forum.html", // JsStringOrNull(anyEmbeddingUrl),  //  @Html(embeddingUrlOrUndefined),
           "embeddedPageId" -> JsStringOrNull(anyEmbeddedPageId),
           "embeddedPageAltId" -> JsStringOrNull(anyDiscussionId), // @Html(discussionIdOrUndefined),
           "lazyCreatePageInCatId" -> JsNumberOrNull(lazyCreatePageInCatId), //@Html(lazyCreatePageInCatId),

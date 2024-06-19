@@ -49,7 +49,7 @@ class PageRequest[A](
   val pagePath: PagePath,
   val pageMeta: Option[PageMeta],
   val ancCatsRootLast: ImmSeq[Cat],
-  val embeddingUrl: Option[String],
+  //val embeddingUrl: Option[String],
   val altPageId: Option[String],
   val dao: SiteDao,
   val request: Request[A]) extends DebikiRequest[A] {
@@ -176,7 +176,7 @@ class DummyPageRequest[A](
   dao: SiteDao,
   request: Request[A]) extends PageRequest[A](
     siteIdAndCanonicalHostname, anyTySession, sid, xsrfToken, browserId, user, pageExists,
-    pagePath, Some(pageMeta), ancCatsRootLast, altPageId = None, embeddingUrl = None,
+    pagePath, Some(pageMeta), ancCatsRootLast, altPageId = None, // embeddingUrl = None,
     dao = dao, request = request) {
 
 }

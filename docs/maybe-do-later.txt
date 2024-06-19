@@ -890,6 +890,12 @@ process, that'd almost be a self-DoS. Better delegate to other server.
 Later, support not only CommonMark but also rich text wysiwyg.
 Then first need to fix: [DRAFTPRVW] ?
 
+[inline_editor]
+Sometimes, e.g. for embedded comments, it can be simpler with an editor that
+opens inside the page just where the comment will appear, instead of at the
+bottom of the page.  The chat editor works like that, unless you click "Advanced"
+then the full-width editor opens, fixed at the bottom.
+
 [html_json] [nashorn_in_tx] [save_post_lns_mentions]
 Keep sanitized html in a json array with placeholders for site origin,
 page titles (internal links), usernames, so the html can be reconstructed

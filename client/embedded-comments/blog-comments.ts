@@ -575,7 +575,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
           edPageIdParam + discIdParam + catRefParam + embeddingUrlParam +
           htmlClassParam + logLevelParam + scriptVersionQueryParam;
 
-  var commentsIframeUrl = serverOrigin + '/-/embedded-comments?' + allUrlParams;
+  var commentsIframeUrl = serverOrigin; // '/-/embedded-comments?' + allUrlParams;
   loadWeinre = location.hash.indexOf('&loadWeinre') >= 0;  // [WEINRE]
   if (loadWeinre) {
     // Let's append the whole hash fragment — nice to see any client "name"

@@ -126,7 +126,7 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate'
     // nav buttons, if in emb forum iframe?)
     const isEmbCmts: boolean = eds.isInEmbeddedCommentsIframe;
     // @ifdef DEBUG
-    dieIf(isEmbCmts, 'TyE2RKBP3');
+    //dieIf(isEmbCmts, 'TyE2RKBP3');
     // @endif
 
     // A route for about-user pages and the staff area.

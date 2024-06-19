@@ -143,7 +143,10 @@ try { _isInIframe = window.self !== window.top; }
 catch (e) { _isInIframe = true; }
 
 // RENAME to isInEmbComOrEditorIframe
-var _isInEmbCmtsIframe = (_cp || {}).pageRole === PageRole.EmbeddedComments && _isInIframe;
+// If we're not in any "special" iframe, like the editor or session iframe, then
+// we're in an embedded comments or embedded forum iframe.
+var _isInEmbCmtsIframe = //(_cp || {}).pageRole === PageRole.EmbeddedComments && _isInIframe;
+        _isInIframe && !location.pathname.startsWith('/-/');
 
 // This css class hides the topbar and sidebars — they'd be confusing in an embedded
 // blog comments discussion section.  COULD RENAME to s_InEmbCmtsIframe ?

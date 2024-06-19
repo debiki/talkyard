@@ -197,7 +197,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
       pageMeta = Some(pageMeta),
       ancCatsRootLast = pageCtx.ancCatsRootLast,
       altPageId = None,
-      embeddingUrl = None,
+      //embeddingUrl = None,
       dao = dao,
       request = request.request)
 
@@ -381,7 +381,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
       pageMeta = Some(pageMeta),
       ancCatsRootLast = pageCtx.ancCatsRootLast,
       altPageId = None,
-      embeddingUrl = None,
+      //embeddingUrl = None,
       dao = dao,
       request = request.request)
 
@@ -414,7 +414,8 @@ object ViewPageController {
     val pageHtml = renderedPage.html
     addVolatileJsonAndPreventClickjacking2(pageHtml, renderedPage.unapprovedPostAuthorIds, request,
       anonsByRealId = renderedPage.anonsByRealId,
-      embeddingUrl = embeddingUrl, skipUsersOnline = skipUsersOnline,
+      embeddingUrl = embeddingUrl orElse request.embeddingUrl,
+      skipUsersOnline = skipUsersOnline,
       xsrfTokenIfNoCookies = xsrfTokenIfNoCookies)
   }
 

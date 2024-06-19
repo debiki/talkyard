@@ -167,7 +167,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
           pagePath = pagePath,
           pageMeta = Some(pageMeta),
           ancCatsRootLast = pageCtx.ancCatsRootLast,
-          embeddingUrl = Some(embeddingUrl),
+          //embeddingUrl = Some(embeddingUrl),
           altPageId = discussionId,
           dao = dao,
           request = request.request)

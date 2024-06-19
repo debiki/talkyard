@@ -1,0 +1,103 @@
+
+Seems will work fine.  There's however lots of minor things to fix. Below are some
+that I discovered when giving it a quick-&-hacky try:
+
+
+
+Minor
+——————————
+
+- eds.embeddingOrigin and eds.embeddingUrl,  set in appsv/server/debiki/PageTpi.scala,
+  need to be updated properly.  Currently happens only for embedded *comments*.
+  (embeddedPageId?)
+
+- _isInEmbCmtsIframe  in head-bundle.ts  needs to work also on pages _not_
+  of type EmbeddedComments.  (Embedded forums have type  PageRole.Forum)
+
+
+- Use $byId('esPageColumn')  to calculate page width & height — it's present
+  also on topic list pages.
+
+- Comment out debug test 'TyE2RKBP3'?
+
+- commentsIframeUrl  in blog-comments.ts should be just  serverOrigin,
+  no /-/embedded-comments URL path.  Or sometimes the URL path should point
+  to a category?  Maybe different views of the forum should appear, depending
+  on on what page the forum is embedded.
+
+
+Medium
+——————————
+
+- Emedded sessions.  Currently needs more parts of the session id to list
+  forum topics (& see access restricted topics).  Don't require this, if
+  embedded forum feature is enabled?
+
+- The editor needs to open in the editor iframe at the bottom — but currently
+  it instead opens at the end of the main iframe, if composing a new topic,
+  but when the embedded page is tall, that'll be below the edge of the screen.
+  (The editor iframe, though, is position-fixed  at the bottom of the screen.)
+
+- Deep linking.  How do you link to a specific category or page?  Let's say
+  the forum is embedded below a product on a shopping website — then,
+  might be nice if a forum category about that product, appeared in the embedded
+  forum.  And another category, for another product.
+
+  And if sbd copies a link to a page in the forum, then, the link should be to
+  the embedding website, plus a URL query param or #hash that tells Talkyard
+  what page to show?
+
+  Examples:  (query & hash)
+    http://website.localhost:8080/embedded-forum.html?talkyardPath=/-1234/some-page
+    http://website.localhost:8080/embedded-forum.html#talkyardPath=/-1234/some-page
+  Or just:
+    http://website.localhost:8080/embedded-forum.html?/-1234/some-page
+    http://website.localhost:8080/embedded-forum.html#/-1234/some-page
+  depending on how picky the embedding website is with tolerating unknown
+  URL params.
+
+  Or even sub folders:
+    http://website.localhost:8080/embedded-forum.html/-1234/some-page
+  but that's probably forever far too tricky & error prone.
+
+- Updating the embedding page's URL query or hash, when navigating to other
+  places & pages in the embedded forum.
+
+
+
+Big & optional
+——————————
+
+- Might be better, in some cases, with an in-place editor instead of the full width
+  editor position-fixed  at the bottom of the screen.  [inline_editor]
+
+
+
+Live demo
+——————————
+
+I used this embedding oringin and embedding HTML page:
+
+    http://e2e-test-comcount.localhost:8080
+    ./page-emb-forum.html
+
+Start an embedding server:
+    pushd .
+    cd target/
+    ln -s ../wip/embedded-forums/page-emb-forum.html ./ 
+    popd
+    nix-shell
+    ./node_modules/.bin/http-server -p8080 target/
+
+Run an e2e test to create an embedded Ty site:  (I just picked a random one)
+    nix-shell
+    s/wdio-7     --only embcom.comment-counts.2br.ec.cors --cd --da
+
+    or is it:
+      d/selenium
+      s/wdio       --only embcom.comment-counts.2br.ec.cors  --da
+    in this branch
+
+Open in browser:
+    http://e2e-test-comcount.localhost:8080/page-emb-forum.html
+
