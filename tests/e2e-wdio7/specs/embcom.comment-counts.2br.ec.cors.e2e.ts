@@ -161,7 +161,7 @@ describe(`embcom.comment-counts.2br.ec.cors  TyTE2ECOMCOUNTS`, () => {
     await maria_brB.complex.loginIfNeededViaMetabar(maria);
   });
   it(`... clicks Like`, async () => {
-    await maria_brB.topic.clickLikeVoteForBlogPost();
+    await maria_brB.topic.toggleLikeVote(c.BodyNr);
   });
 
 

@@ -6857,6 +6857,9 @@ export class TyE2eTestBrowser {
         }
       },
 
+      // Don't use! If you go2() elsewhere directly after, the like vote request might
+      // not finish before; no like vote appears.  Use  toggleLikeVote(c.BodyNr)  instead,
+      // just below.
       clickLikeVoteForBlogPost: async () => {
         await this.switchToEmbCommentsIframeIfNeeded();
         await this.waitAndClick('.dw-ar-t > .esPA > .dw-a-like');
