@@ -710,7 +710,7 @@ export async function tryManyTimes<R>(what, maxNumTimes, fn: () => Pr<R>,
 
 
 export async function tryUntilTrue<R>(what: St, maxNumTimes: Nr | 'ExpBackoff',
-        fn: 'ExpBackoff' | (() => Pr<Bo>), fn2?: () => Pr<Bo>) {
+        fn: 'ExpBackoff' | ((attemptNr?: Nr) => Pr<Bo>), fn2?: (attemptNr?: Nr) => Pr<Bo>) {
     let delayMs = 300;
 
     const doExpBackoff = maxNumTimes === 'ExpBackoff' || fn === 'ExpBackoff';
@@ -723,7 +723,7 @@ export async function tryUntilTrue<R>(what: St, maxNumTimes: Nr | 'ExpBackoff',
         throw Error(`Tried ${maxNumTimes} times but failed:  ${what}`)
 
       try {
-        const done = await fn();
+        const done = await fn(retryCount + 1);
         if (done)
           return;
 

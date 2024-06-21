@@ -813,6 +813,11 @@ export class TyE2eTestBrowser {
 
 
     me = {
+      isLoggedIn: async (): Pr<Bo> => {
+        const me = await this.me.waitAndGetMyself();
+        return me.isLoggedIn;
+      },
+
       waitUntilLoggedIn: async () => {
         await this.complex.waitUntilLoggedIn();
       },
@@ -6869,10 +6874,15 @@ export class TyE2eTestBrowser {
         const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr);
         await this.switchToEmbCommentsIframeIfNeeded();
         const isLikedBefore = await this.isVisible(likeVoteSelector + '.dw-my-vote');
+        let isLoggedIn = !opts.logInAs;
         // This click for some reason won't always work, here: [E2ECLICK03962]
-        await utils.tryUntilTrue(`toggle Like vote`, 3, async () => {
+        await utils.tryUntilTrue(`toggle Like vote`, 3, async (attemptNr: Nr) => {
+          if (attemptNr >= 2 && !isLoggedIn) {
+            // We should have been logged in by now, so don't try that again.
+            isLoggedIn = await this.me.isLoggedIn();
+          }
           await this.switchToEmbCommentsIframeIfNeeded();
-          await this.topic.clickLikeVote(postNr, opts);
+          await this.topic.clickLikeVote(postNr, !isLoggedIn && opts);
           // Wait for the server to reply, and the page to get updated.
           const gotToggled = await this.waitUntil(async () => {
             const likedNow = await this.isVisible(likeVoteSelector + '.dw-my-vote');
