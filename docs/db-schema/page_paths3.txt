@@ -1,0 +1,27 @@
+                          Table "public.page_paths3"
+     Column     |            Type             | Collation | Nullable | Default 
+----------------+-----------------------------+-----------+----------+---------
+ site_id        | integer                     |           | not null | 
+ parent_folder  | character varying(100)      |           | not null | 
+ page_id        | character varying(32)       |           | not null | 
+ show_id        | character varying(1)        |           | not null | 
+ page_slug      | character varying(100)      |           | not null | 
+ cdati          | timestamp without time zone |           | not null | now()
+ canonical_dati | timestamp without time zone |           | not null | now()
+ canonical      | character varying(1)        |           | not null | 
+Indexes:
+    "dw1_pgpths_path__u" UNIQUE, btree (site_id, page_id, parent_folder, page_slug, show_id)
+    "dw1_pgpths_path_noid_cncl__u" UNIQUE, btree (site_id, parent_folder, page_slug) WHERE show_id::text = 'F'::text AND canonical::text = 'C'::text
+    "dw1_pgpths_tnt_pgid_cncl__u" UNIQUE, btree (site_id, page_id) WHERE canonical::text = 'C'::text
+    "dw1_pgpths_tnt_fldr_slg_cncl" btree (site_id, parent_folder, page_slug, canonical)
+    "dw1_pgpths_tnt_pgid_cncl" btree (site_id, page_id, canonical)
+Check constraints:
+    "dw1_pgpths_cdati_mdati__c_le" CHECK (cdati <= canonical_dati)
+    "dw1_pgpths_cncl__c" CHECK (canonical::text = ANY (ARRAY['C'::character varying::text, 'R'::character varying::text]))
+    "dw1_pgpths_folder__c_dash" CHECK (parent_folder::text !~~ '%/-%'::text)
+    "dw1_pgpths_folder__c_start" CHECK (parent_folder::text ~~ '/%'::text)
+    "dw1_pgpths_showid__c_in" CHECK (show_id::text = ANY (ARRAY['T'::character varying::text, 'F'::character varying::text]))
+    "dw1_pgpths_slug__c_ne" CHECK (btrim(page_slug::text) <> ''::text)
+Foreign-key constraints:
+    "pgpths_page_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+

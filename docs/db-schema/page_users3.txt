@@ -1,0 +1,46 @@
+                             Table "public.page_users3"
+            Column             |       Type        | Collation | Nullable | Default 
+-------------------------------+-------------------+-----------+----------+---------
+ site_id                       | integer           |           | not null | 
+ page_id                       | character varying |           | not null | 
+ user_id                       | integer           |           | not null | 
+ joined_by_id                  | integer           |           |          | 
+ kicked_by_id                  | integer           |           |          | 
+ notf_level                    | smallint          |           |          | 
+ notf_reason                   | smallint          |           |          | 
+ num_seconds_reading           | integer           |           | not null | 0
+ num_low_posts_read            | smallint          |           | not null | 0
+ first_visited_at_mins         | integer           |           |          | 
+ last_visited_at_mins          | integer           |           |          | 
+ last_viewed_post_nr           | integer           |           |          | 
+ last_read_at_mins             | integer           |           |          | 
+ last_read_post_nr             | integer           |           |          | 
+ recently_read_nrs             | bytea             |           |          | 
+ low_post_nrs_read             | bytea             |           |          | 
+ incl_in_summary_email_at_mins | integer           |           |          | 
+Indexes:
+    "pageusers_page_user_p" PRIMARY KEY, btree (site_id, page_id, user_id)
+    "pageusers_joinedby_i" btree (site_id, joined_by_id)
+    "pageusers_kickedby_i" btree (site_id, kicked_by_id)
+    "pageusers_user_i" btree (site_id, user_id)
+Check constraints:
+    "pageusers_c_gez" CHECK (num_seconds_reading >= 0 AND num_low_posts_read >= 0 AND (last_visited_at_mins >= first_visited_at_mins OR last_visited_at_mins IS NULL) AND (last_viewed_post_nr >= 0 OR last_viewed_post_nr IS NULL) AND (last_read_at_mins >= first_visited_at_mins OR last_read_at_mins IS NULL) AND (last_read_post_nr >= 0 OR last_read_post_nr IS NULL))
+    "pageusers_c_lastreadpostnr_not_for_imp" CHECK (last_read_post_nr < 2000000000)
+    "pageusers_c_lastviewedpostnr_not_for_imp" CHECK (last_viewed_post_nr < 2000000000)
+    "pageusers_lastreadat_lastreadpostnr_c_null" CHECK (last_read_at_mins IS NOT NULL OR last_read_post_nr IS NULL)
+    "pageusers_lastreadat_low_last_nrs_c_null" CHECK (last_read_at_mins IS NOT NULL OR low_post_nrs_read IS NULL AND recently_read_nrs IS NULL)
+    "pageusers_lastreadat_numsecondsreading_c_0" CHECK ((last_read_at_mins IS NULL) = (num_seconds_reading = 0))
+    "pageusers_lastvisited_firstvisited_c_null" CHECK ((last_visited_at_mins IS NULL) = (first_visited_at_mins IS NULL))
+    "pageusers_lastvisited_lastreadat_c_null" CHECK (last_visited_at_mins IS NOT NULL OR last_read_at_mins IS NULL)
+    "pageusers_lastvisited_lastviewedpostnr_c_null" CHECK (last_visited_at_mins IS NOT NULL OR last_viewed_post_nr IS NULL)
+    "pageusers_notflevel_c_in" CHECK (notf_level >= 1 AND notf_level <= 20)
+    "pageusers_notfreason_c_in" CHECK (notf_reason >= 1 AND notf_reason <= 20)
+    "pageusers_reason_level_c_null" CHECK (notf_reason IS NULL OR notf_level IS NOT NULL)
+Foreign-key constraints:
+    "pageusers_joinedby_r_people" FOREIGN KEY (site_id, joined_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pageusers_kickedby_r_people" FOREIGN KEY (site_id, kicked_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pageusers_page_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    "pageusers_user_r_people" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+Triggers:
+    page_users3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON page_users3 FOR EACH ROW EXECUTE PROCEDURE page_users3_sum_quota()
+

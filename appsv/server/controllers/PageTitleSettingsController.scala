@@ -22,15 +22,16 @@ import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.MaxTitleLength
 import debiki._
 import debiki.EdHttp._
-import debiki.JsonUtils.{parseOptInt32, asJsObject}
+import debiki.JsonUtils.{asJsObject, parseOptInt32}
 import debiki.JsonUtils.parseOptZeroSomeNone
-import talkyard.server.{TyContext, TyController}
+import debiki.dao.SiteDao
+import talkyard.server.{TyContext, TyController, parser}
 import talkyard.server.http._
 import talkyard.server.authz.Authz
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
-import talkyard.server.JsX.{JsStringOrNull, JsPageMeta}
+import talkyard.server.JsX.{JsPageMeta, JsStringOrNull}
 
 
 /** Edits the page title and changes settings like forum category, URL path,
@@ -46,7 +47,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
 
   def editTitleSaveSettings: Action[JsValue] = PostJsonAction(RateLimits.EditPost, maxBytes = 2000) {
         request: JsonPostRequest =>
-    import request.{body, dao, theRequester => requester}
+    import request.{body, dao, theRequester => trueEditor}
 
     val pageJo = asJsObject(request.body, "the request body")
     CLEAN_UP // use JsonUtils below, not '\'.
@@ -90,6 +91,9 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
       PageDoingStatus.fromInt(value) getOrElse throwBadArgument("TyE2ABKR04", "doingStatus")
     }
 
+    TESTS_MISSING // & ren to  doAsAlias
+    val doAsAnon = parser.parseDoAsAliasJsonOrThrow(pageJo)
+
     val hasManuallyEditedSlug = anySlug.exists(slug => {
       // The user interface currently makes impossible to post a new slug, without a page title.
       val title = anyNewTitle getOrElse throwForbidden("TyE2AKBF05", "Cannot post slug but not title")
@@ -97,7 +101,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     })
 
     if (anyLayout.isDefined) {
-      throwForbiddenIf(!request.theUser.isAdmin,
+      throwForbiddenIf(!trueEditor.isAdmin,
         "EdE7PK4QL", "Only admins may change the topic list layout")
       throwForbiddenIf(anyNewRole.exists(_ != PageType.Forum),
         "EdEZ5FK20", "Cannot change topic list layout and page type at the same time")
@@ -111,18 +115,26 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     // can-alter-page permissions.  [alterPage]
     val changesOnlyTypeOrStatus =
           // If we got the page id (required, always present) and exactly one more field, ...
-          pageJo.value.size == 2 &&
+          (pageJo.value.size == 2
+                // Except for the doAsAnon field which is off-topic
+                || pageJo.value.size == 3 && pageJo.\(parser.DoAsAnonFieldName).isDefined
+                )  &&
           // ... and it is the page type or doing status, then, pat is trying to change,
           // well, only the type or doing status.  Nothing else.
           (anyNewDoingStatus.isDefined || anyNewRole.isDefined)
 
+    val anyOtherAuthor =
+          if (oldMeta.authorId == trueEditor.id) None
+          else Some(dao.getTheParticipant(oldMeta.authorId))
+
     // AuthZ check 1/3:
     // Could skip authz check 2/3 below: [.dbl_auz] ?
     val oldCatsRootLast = dao.getAncestorCategoriesRootLast(oldMeta.categoryId)
-    val requestersGroupIds = dao.getOnesGroupIds(requester)
+    val requestersGroupIds = dao.getOnesGroupIds(trueEditor)
     throwNoUnless(Authz.mayEditPage(
           pageMeta = oldMeta,
-          pat = requester,
+          pat = trueEditor,
+          otherAuthor = anyOtherAuthor,
           groupIds = requestersGroupIds,
           pageMembers = dao.getAnyPrivateGroupTalkMembers(oldMeta),
           catsRootLast = oldCatsRootLast,
@@ -150,32 +162,85 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     throwForbiddenIf(forumViewChanged && pageTypeAfter != PageType.Forum,
           "TyE0FORMPGE", "Can only edit these properties for forum pages")
 
-    throwForbiddenIf(
-          !request.theUser.isStaff && anyComtOrder.isSomethingButNot(oldMeta.comtOrder),
-          "TyEXCMTORD", "You may not change the comment sort order")
+    // [choose_alias] [deanon_risk]
+    if (!trueEditor.isStaff || doAsAnon.isDefined) {
+      val who = (trueEditor.isStaff && doAsAnon.isDefined) ? "Anonyms" | "You"
+      throwForbiddenIf(
+          anyComtOrder.isSomethingButNot(oldMeta.comtOrder),
+          "TyEXCMTORD", s"$who may not change the comment sort order")
 
-    throwForbiddenIf(
-          !request.theUser.isStaff && anyComtNesting.isSomethingButNot(oldMeta.comtNesting),
-          "TyEXCMTNST", "You may not change the comment nesting max depth")
+      throwForbiddenIf(
+          anyComtNesting.isSomethingButNot(oldMeta.comtNesting),
+          "TyEXCMTNST", s"$who may not change the comment nesting max depth")
+    }
 
-    if (!request.theUser.isStaff && request.theUserId != oldMeta.authorId &&
-          !(changesOnlyTypeOrStatus && request.theUser.isStaffOrCoreMember))
-      throwForbidden("TyECHOTRPGS", "You may not change other people's pages")
+    val isEditorsAnonsPage = doAsAnon.exists(_.anySameAnonId.is(oldMeta.authorId))
+    val isEditorsOwnPage = trueEditor.id == oldMeta.authorId
 
-    if (!request.theUser.isAdmin) {
+    if (doAsAnon.isDefined) {
+      if (isEditorsAnonsPage) {
+        // Fine. If you create a page anonymously, you can close/reopen it,
+        // mark it as solved, etc, using the same anonym.
+      }
+      else if (isEditorsOwnPage) {
+        // It's the trueEditor's page, but han created it using hans real account.
+        // Disallow, so others won't know that `doAsAnon` is the same person.
+        throwForbidden("TyECHPGUSINGALIAS",
+              s"You cannot alter this page as anonym ${doAsAnon
+              } — you created it using your real account, ${trueEditor.nameParaId}")
+      }
+      else if (anyOtherAuthor.exists(_.trueId2.trueId == trueEditor.id)) {
+        // It's the trueEditor's page, but han created it using _another_ anonym
+        // or pseudonym.  `doAsAnon` is the wrong anonym. Disallow, so others can't
+        // know that the two aliases (anyOtherAuthor and doAsAnon) are in fact
+        // the same person. [deanon_risk]
+        throwForbidden("TyECHPGWRONGALIAS",
+              s"You cannot alter this page as anonym ${doAsAnon
+              } — you created it as ${anyOtherAuthor.get.nameParaId}")
+      }
+      else {
+        // This must be beore the `isStaff` test — anonymous moderation [anon_mods] is
+        // not yet suppored. (If the same anon was reused, others might see that
+        // that anon is a moderator.)
+        throwForbidden("TyECHOTRPGSANO",
+              "You cannot alter other people's pages anonymously" + (
+                  trueEditor.isStaffOrCoreMember ?  // [deanon_risk]
+                        " even if you're a moderator or core member" | ""))
+      }
+    }
+    else if (trueEditor.isStaff || isEditorsOwnPage) {
+      // Fine. Moderators can edit pages they have access too, and others can
+      // edit pages they created themselves.
+      // (Maybe later there will be more [granular_perms].)
+    }
+    else if (changesOnlyTypeOrStatus && trueEditor.isStaffOrCoreMember) {
+      // Fine: Core members can alter page type, or mark pages as solved or closed.
+    }
+    else {
+      throwForbidden("TyECHOTRPGS", "You may not alter other people's pages")
+    }
+
+    // If anonyms or pseudonyms could do the things in this block (e.g. change page slug
+    // or folder, change layout),  if the true user is an admin,  then,
+    // others could guess who the anonym is.  [deanon_risk] [choose_alias]
+    // (Since probably there are just a few admins, and if there might be some meta message
+    // about what was done by the anonym, who must thus be one of the admins.)
+    if (!trueEditor.isAdmin || doAsAnon.isDefined) {
+      val prefix = doAsAnon.isDefined ? "Anonyms cannot" | "Only admins can"
+
       // Forum page URL.
       throwForbiddenIf(hasManuallyEditedSlug,
-          "TyENEWPATH001", "Only admins may change the page slug")
+          "TyENEWPATH001", s"$prefix change the page slug")
       throwForbiddenIf(anyFolder.isDefined,
-          "TyENEWPATH002", "Only admins can specify url/path/folders/")
+          "TyENEWPATH002", s"$prefix specify url/path/folders/")
       throwForbiddenIf(anyShowId.isDefined,
-          "TyENEWPATH003", "Only admins can hide or show page ids")
+          "TyENEWPATH003", s"$prefix hide or show page ids")
 
       // How a forum looks.
       throwForbiddenIf(anyLayout.isDefined,
-          "TyE0EDFORUMLAYT", "Only admins may edit forum topics layout")
+          "TyE0EDFORUMLAYT", s"$prefix edit forum topics layout")
       throwForbiddenIf(forumViewChanged,
-          "TyE0EDFORUMPRPS", "Only admins may edit forum properties")
+          "TyE0EDFORUMPRPS", s"$prefix edit forum properties")
     }
 
     if (anyNewRole.is(PageType.Forum) || (anyNewRole.isEmpty && oldMeta.pageType == PageType.Forum)) {
@@ -234,7 +299,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
       // move it, in a separate step.)
       val newTextAndHtml = dao.textAndHtmlMaker.forTitle(newTitle)
       request.dao.editPostIfAuth(pageId = pageId, postNr = PageParts.TitleNr, deleteDraftNr = None,
-        request.who, request.spamRelatedStuff, newTextAndHtml)
+            request.who, request.spamRelatedStuff, newTextAndHtml, doAsAnon)
     }}
 
     // Load old section page id before changing it.
@@ -270,11 +335,18 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     // Later: If a Core Member wants to move a page to another category,  [core_move_page]
     // allow that, but only if no *additional* people then gets to see the page.
     // (But if fewer, that's ok.) — There'll also be [alterPage] maybe move page permissions.
+    //
+    // [deanon_risk] If the page author, or hans anonym, appear in a page changelog, then,
+    // others can guess they're the same? (If only few people have access to the destination
+    // category).
+    //
     if (newMeta.categoryId != oldMeta.categoryId) {
       val newCatsRootLast = dao.getAncestorCategoriesRootLast(newMeta.categoryId)
       throwNoUnless(Authz.mayEditPage(
             pageMeta = newMeta,
-            pat = requester,
+            pat = trueEditor,
+            // asAlias =  — Check if [may_use_alias] in the new category   DO_AS_ALIAS
+            otherAuthor = anyOtherAuthor,
             groupIds = requestersGroupIds,
             pageMembers = dao.getAnyPrivateGroupTalkMembers(newMeta),
             catsRootLast = newCatsRootLast,
@@ -287,8 +359,11 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
                                                 // and move it to PagesDao? [.ed_pg_1_tx]
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
 
+      val aliasOrTrue: Pat = SiteDao.getAliasOrTruePat(truePat = trueEditor, pageId = pageId,
+            doAsAnon, mayCreateAnon = false)(tx, IfBadAbortReq)
+
       if (addsNewDoingStatusMetaPost) {
-        dao.addMetaMessage(requester, s" marked this topic as ${newMeta.doingStatus}", pageId, tx)
+        dao.addMetaMessage(aliasOrTrue, s" marked this topic as ${newMeta.doingStatus}", pageId, tx)
       }
 
       // If moved to new category, with maybe different access permissions

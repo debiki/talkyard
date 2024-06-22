@@ -181,14 +181,17 @@ trait PostsDao {
     val realAuthorAndGroupIds = tx.loadGroupIdsMemberIdFirst(realAuthor)
 
     // Dupl code. [get_anon]
+    // ------- Maybe ------------
     // Hmm, rename to  otherAuthor,  and None by default.  And set  createdById
     // to the real account, always,  and  author_id_c  to any anonym's id.   [mk_new_anon]
+    // --------------------------
     val authorMaybeAnon: Pat =
           if (doAsAnon.isEmpty) {
             realAuthor
           }
           else doAsAnon.get match {
             case WhichAnon.SameAsBefore(anonId) =>
+              // Hmm, verify it's realAuthor's anon ???  — use getAliasOrTruePat() instead
               tx.loadTheParticipant(anonId).asAnonOrThrow
             case WhichAnon.NewAnon(anonStatus) =>
               // Dupl code. [mk_new_anon]
@@ -413,7 +416,8 @@ trait PostsDao {
       if (skipNotfsAndAuditLog) Notifications.None
       else notfGenerator(tx).generateForNewPost( // page dao excls new reply, ...
                  // ... that's ok, as of now. (See: [notf_new_post_dao])
-            page, newPost, Some(textAndHtml), postAuthor = Some(authorMaybeAnon),
+            page, newPost, Some(textAndHtml),
+            postAuthor = Some(authorMaybeAnon), trueAuthor = Some(realAuthor),
             anyNewModTask = anyReviewTask)
     tx.saveDeleteNotifications(notifications)
 
@@ -720,7 +724,7 @@ trait PostsDao {
           // (but not appended-to messages).
           // Should work well enough + won't be too many mod tasks.
           appendToLastChatMessage(
-                lastMessage, textAndHtml, byWho, spamRelReqStuff, tx, staleStuff)
+                lastMessage, textAndHtml, authorAndLevels, spamRelReqStuff, tx, staleStuff)
         case _ =>
           // A mod task will (might) get generated.
           createNewChatMessage(
@@ -890,7 +894,11 @@ trait PostsDao {
 
     // If anyModTask: TyTIT50267MT
     val notfs = notfGenerator(tx).generateForNewPost( // page dao excls new chat msg
-          page, newPost, postAuthor = Some(author), sourceAndHtml = Some(textAndHtml),
+          page, newPost,
+          // Anons currently cannot post chat messages. [anon_chats]
+          // What about [pseudonyms_later]?
+          postAuthor = Some(author), trueAuthor = Some(author),
+          sourceAndHtml = Some(textAndHtml),
           anyNewModTask = anyModTask)
     tx.saveDeleteNotifications(notfs)
 
@@ -903,12 +911,12 @@ trait PostsDao {
     * some db storage space & performance when rendering the chat, and
     * is more nice, from a ux perspective? with one message instead of many small?
     */
-  private def appendToLastChatMessage(lastPost: Post, textAndHtml: TextAndHtml, byWho: Who,
+  private def appendToLastChatMessage(lastPost: Post, textAndHtml: TextAndHtml,
+        authorAndLevels: UserAndLevels,
         spamRelReqStuff: SpamRelReqStuff, tx: SiteTransaction, staleStuff: StaleStuff)
         : (Post, Notifications) = {
 
     // Note: Farily similar to editPostIfAuth() just below. [2GLK572]
-    val authorAndLevels = loadUserAndLevels(byWho, tx)
     val author = authorAndLevels.user
 
     // This'd be a bug? [anon_chats]
@@ -996,7 +1004,7 @@ trait PostsDao {
     AUDIT_LOG // that this ip appended to the chat message.
 
     val notfs = notfGenerator(tx).generateForEdits(
-          lastPost, editedPost = editedPost, Some(combinedTextAndHtml))
+          editor = author, lastPost, editedPost = editedPost, Some(combinedTextAndHtml))
     tx.saveDeleteNotifications(notfs)
 
     (editedPost, notfs)
@@ -1377,7 +1385,7 @@ trait PostsDao {
         staleStuff.addPageId(editedPost.pageId)
         saveDeleteLinks(editedPost, newTextAndHtml, editorMaybeAnon.trueId2, tx, staleStuff)
         TESTS_MISSING // notf not sent until after ninja edit window ended?  TyTNINJED02
-        val notfs = notfGenerator(tx).generateForEdits(
+        val notfs = notfGenerator(tx).generateForEdits(editor = editorMaybeAnon,
               postToEdit, editedPost = editedPost, Some(newTextAndHtml))
         tx.saveDeleteNotifications(notfs)
       }
@@ -2213,8 +2221,8 @@ trait PostsDao {
                         pageMeta.pageType.shallFollowLinks)
           }
 
-    // Later: update lastApprovedEditAt, lastApprovedEditById and numDistinctEditors too,
-    // or remove them.
+    // Later: update lastApprovedEditAt, lastApprovedEditById too [upd_last_apr_editor].
+    // (And numDistinctEditors?)
     val postAfter = postBefore.copy(   // sync w test [29LW05KS2]
       safeRevisionNr =
         approver.isHuman ? Option(postBefore.currentRevisionNr) | postBefore.safeRevisionNr,
@@ -2317,8 +2325,22 @@ trait PostsDao {
               anyNewModTask = None, doingModTasks = doingModTasks)
       }
       else {
+        // [notf_from_who] Sometimes the editor is not the author. Maybe a moderator
+        // edits a post, and @mentions the original author, like:
+        //      "Edit: Hi @alex I've fixed some links in this post for you /Edit".
+        // Then we'd want to notify the post author about edits to hans own post.
+        // But! not always updating the editor id.  [upd_last_apr_editor]
+        //
+        // Hmm. Who should a notification be from, if Alice posts a comment replying to
+        // Bob, and later Modya edits the comment, adds "@alex" — should Alex get
+        // notified that Modya mentioned her or that there's a comment by Alice
+        // mentioning her? Maybe both? (in a single notf)
+        // """You got mentioned by Modya, who edited a comment originally
+        //  written by Alice"""   ?
+        //
+        val editor = author  // for now
         notfGenerator(tx).generateForEdits(
-              postBefore, editedPost = postAfter, Some(sourceAndHtml))
+              editor = editor, postBefore, editedPost = postAfter, Some(sourceAndHtml))
       }
     tx.saveDeleteNotifications(notifications)
 
@@ -2488,9 +2510,13 @@ trait PostsDao {
       // someone else's vote from a post that other person can no longer see.
       throwIfMayNotSeePost(post, Some(reqr))(tx)
 
-      val gotDeleted = tx.deleteVote(pageId, postNr = postNr, voteType, voterId = voterId)
-      throwForbiddenIf(!gotDeleted, "TyE50MWW14",
+      // The true voter (which is voterId — not passing doAsAlias to here) might have voted
+      // anonymously. Then we want to update statistics for the anonym, not the true voter.
+      val voterIdsMaybeAlias: PatIds =
+            tx.deleteVote(pageId, postNr = postNr, voteType, voterId = voterId) getOrElse {
+        throwForbidden( "TyE50MWW14",
             s"No $voteType vote by ${voter.nameHashId} on post id ${post.id} to delete")
+      }
 
       // Don't delete — for now. Because that'd result in many emails
       // getting sent, if someone toggles a Like on/off.  [toggle_like_email]
@@ -2506,8 +2532,12 @@ trait PostsDao {
 
       updatePageAndPostVoteCounts(post, tx)
       updatePagePopularity(newPageDao(pageId, tx).parts, tx)
+
+      // Ooops, not necessarily a like vote. [counts_all_votes]
       addUserStats(UserStats(post.createdById, numLikesReceived = -1, mayBeNegative = true))(tx)
-      addUserStats(UserStats(voterId, numLikesGiven = -1, mayBeNegative = true))(tx)
+      // pubId is that of any anonym, while privId would be the true user's id.
+      addUserStats(UserStats(voterIdsMaybeAlias.pubId, numLikesGiven = -1,
+            mayBeNegative = true))(tx)
 
       /* SECURITY vote-FRAUD SHOULD delete by cookie too, like I did before:
       var numRowsDeleted = 0
@@ -2531,7 +2561,8 @@ trait PostsDao {
 
 
   def addVoteIfAuZ(pageId: PageId, postNr: PostNr, voteType: PostVoteType,
-        reqrAndVoter: ReqrAndTgt, voterIp: Opt[IpAdr], postNrsRead: Set[PostNr]): Unit = {
+        reqrAndVoter: ReqrAndTgt, voterIp: Opt[IpAdr], postNrsRead: Set[PostNr],
+        doAsAnon: Opt[WhichAnon] = None): Opt[Anonym] = {
     require(postNr >= PageParts.BodyNr, "TyE5WKAB20")
 
     SECURITY; SLEEPING // May the requester vote on behalf of voter?  [vote_as_otr]
@@ -2546,26 +2577,60 @@ trait PostsDao {
       // Could do an [authz_pre_check] in VoteController? But why?
       this.throwIfMayNotSeePost2(ThePost.Here(post), reqrAndVoter)(tx)
 
-      val voter = reqrAndVoter.target
+      val trueVoter = reqrAndVoter.target
+      // Dupl code. [get_anon]
+      val voterMaybeAnon =
+            if (doAsAnon.isEmpty) {
+              trueVoter
+            }
+            else doAsAnon.get match {
+              case WhichAnon.SameAsBefore(anonId) =>
+                // Hmm, verify it's target's anon ???  — use getAliasOrTruePat() instead
+                tx.loadTheParticipant(anonId).asAnonOrThrow
+              case WhichAnon.NewAnon(anonStatus) =>
+                // Dupl code. [mk_new_anon]
+                val anonymId = tx.nextGuestId
+                val anonym = Anonym(
+                      id = anonymId,
+                      createdAt = tx.now,
+                      anonStatus = anonStatus,
+                      anonForPatId = trueVoter.id,
+                      anonOnPageId = pageId)
+                // We'll insert the anonym before the page exists, but there's a
+                // foreign key: pats_t.anon_on_page_id_st_c, so defer constraints:
+                tx.deferConstraints()
+                tx.insertAnonym(anonym)
+                anonym
+            }
 
-      if (voteType == PostVoteType.Bury && !voter.isStaffOrFullMember &&  // [7UKDR10]
-          page.meta.authorId != voter.id)
+      if (voteType == PostVoteType.Bury && !voterMaybeAnon.isStaffOrFullMember &&  // [7UKDR10]
+          page.meta.authorId != voterMaybeAnon.id)
         throwForbidden("DwE2WU74", "Only staff, full members and the page author may Bury-vote")
 
-      if (voteType == PostVoteType.Unwanted && !voter.isStaffOrCoreMember)  // [4DKWV9J2]
+      // No need to Unwanted-vote anonymously? These votes aren't visible to non-core
+      // members anyway. [anon_mods]
+      if (voteType == PostVoteType.Unwanted && !voterMaybeAnon.isStaffOrCoreMember)  // [4DKWV9J2]
         throwForbidden("DwE5JUK0", "Only staff and core members may Unwanted-vote")
 
-      ANON_UNIMPL // Don't let people upvote their own anonymous/pseudonymous posts.
+      val postAuthor = tx.loadParticipant(post.createdById) getOrDie(
+            "TyE306RKTD63", s"s$siteId: Author of post ${post.id} missing")
+
 
       if (voteType == PostVoteType.Like) {
-        if (post.createdById == voter.id)
-          throwForbidden("DwE84QM0", "Cannot like own post")
+        // Check if pubId:s are the same — if many people reuse the same pseudonym, the
+        // true id might be different although the pubId:s are the same. [group_pseudonyms]
+        if (postAuthor.id == voterMaybeAnon.id)
+          throwForbidden("TyELIKEOWN", "Cannot like own post")
+
+        if (postAuthor.trueId2.trueId == voterMaybeAnon.trueId2.trueId)
+          throwForbidden("TyELIKEOWNALIAS", "Cannot like own post")
       }
 
+      // Save the vote
       try {
         tx.insertPostAction(
-          PostVote(post.id, pageId = post.pageId, postNr = post.nr, doneAt = tx.now,
-            voterId = voter.id, voteType))
+              PostVote(post.id, pageId = post.pageId, postNr = post.nr, doneAt = tx.now,
+                  voterId = voterMaybeAnon.trueId2, voteType))
       }
       catch {
         case DbDao.DuplicateVoteException =>
@@ -2590,14 +2655,16 @@ trait PostsDao {
           Set(postNr)
         }
 
-      tx.updatePostsReadStats(pageId, postsToMarkAsRead, readById = voter.id,
+      tx.updatePostsReadStats(pageId, postsToMarkAsRead, readById = voterMaybeAnon.id,
             readFromIp = voterIp)
       updatePageAndPostVoteCounts(post, tx)
       updatePagePopularity(page.parts, tx)
+      // Ooops, this isn't necessarily a like vote. Fix later (don't just add an
+      // if statement — that'd mess up the statistics when un-voting). [counts_all_votes]
       addUserStats(UserStats(post.createdById, numLikesReceived = 1))(tx)
-      addUserStats(UserStats(voter.id, numLikesGiven = 1))(tx)
+      addUserStats(UserStats(voterMaybeAnon.id, numLikesGiven = 1))(tx)
 
-      if (voter.id != SystemUserId && voteType == PostVoteType.Like) {
+      if (voterMaybeAnon.id != SystemUserId && voteType == PostVoteType.Like) {
         val oldLikeNotfs = tx.loadNotificationsAboutPost(   // [toggle_like_email]
               postId = post.id, NotificationType.OneLikeVote,
               toPpId = Some(post.createdById))
@@ -2611,21 +2678,27 @@ trait PostsDao {
           // without any noisy extra "Thanks" posts (just a Like vote + notf).
         }
         else {
-          tx.loadParticipant(post.createdById).getOrBugWarn("TyE306RKTD63") { pp =>
-            val notifications = notfGenerator(tx).generateForLikeVote(
-                  post, upvotedPostAuthor = pp, voter = voter,
-                  inCategoryId = page.meta.categoryId)
-            tx.saveDeleteNotifications(notifications)
-          }
+          val notifications = notfGenerator(tx).generateForLikeVote(
+                post, upvotedPostAuthor = postAuthor, voter = voterMaybeAnon,
+                inCategoryId = page.meta.categoryId)
+          tx.saveDeleteNotifications(notifications)
         }
 
         // Test:  modn-from-disc-page-review-after  TyTE2E603RKG4.TyTE2E5ART25
-        maybeReviewAcceptPostByInteracting(post, moderator = voter,
+        // Don't let anonyms or pseudonyms approve-by-voting — that could leak info
+        // (namely that han is a mod or admin). [deanon_risk]
+        if (!voterMaybeAnon.isAlias) {
+          maybeReviewAcceptPostByInteracting(post, moderator = trueVoter,
               ReviewDecision.InteractLike)(tx, staleStuff)
+        }
       }
 
       // Page version in db updated by updatePageAndPostVoteCounts() above.
       staleStuff.addPageId(pageId, memCacheOnly = true)
+
+      // The client (browser app) needs the id of any new anonym
+      // (lazy created for `trueVoter`s first interaction with the page).
+      voterMaybeAnon.asAnonOrNone
     }
   }
 
@@ -2715,7 +2788,8 @@ trait PostsDao {
         WOULD_OPTIMIZE // Could batch insert.
         tx.insertPostAction(PatNodeRel(
               toNodeId = postBef.id,
-              fromPatId = patToAdd.id,
+              // Currently, aliases cannot be assigned.
+              fromPatId = TrueIdOnly(patToAdd.id),
               pageId = postBef.pageId,
               postNr = postBef.nr,
               addedAt = tx.now,
@@ -3002,7 +3076,8 @@ trait PostsDao {
       val userIds = mutable.HashSet[UserId]()
       userIds ++= posts.map(_.createdById)
       userIds ++= posts.map(_.currentRevisionById)
-      userIds ++= flags.map(_.flaggerId)
+      // Not the true id — they're supposed to be anonymous.
+      userIds ++= flags.map(_.flaggerId.pubId)
       val users = tx.loadParticipants(userIds.toSeq)
       ThingsToReview(posts, pageMetas, users, flags)
     }
@@ -3014,7 +3089,8 @@ trait PostsDao {
     */
   def flagPost(pageId: PageId, postNr: PostNr, flagType: PostFlagType, flaggerId: UserId)
         : immutable.Seq[Post] = {
-    val (postAfter, wasHidden) = doFlagPost(pageId, postNr, flagType, flaggerId = flaggerId)
+    val (postAfter, wasHidden) = doFlagPost(pageId, postNr, flagType,
+          flaggerId = flaggerId)
     var postsHidden = ifBadAuthorCensorEverything(postAfter)
     if (wasHidden) {
       postsHidden :+= postAfter
@@ -3026,6 +3102,11 @@ trait PostsDao {
 
   private def doFlagPost(pageId: PageId, postNr: PostNr, flagType: PostFlagType,
         flaggerId: UserId): (Post, Boolean) = {
+
+    // DO_AS_ALIAS: Anonymous flags might be needed? So an anon can flag a toxic comment
+    // by another anon, without the mods realizing who the flagger is just because they
+    // had to use their true account.
+
     writeTx { (tx, staleStuff) =>
       val flagger = tx.loadTheUser(flaggerId)
       val postBefore = tx.loadThePost(pageId, postNr)
@@ -3063,7 +3144,7 @@ trait PostsDao {
 
       tx.insertPostAction(
         PostFlag(postBefore.id, pageId = pageId, postNr = postNr,
-          doneAt = tx.now, flaggerId = flaggerId, flagType = flagType))
+              doneAt = tx.now, flaggerId = TrueIdOnly(flaggerId), flagType = flagType))
       tx.upsertReviewTask(reviewTask)
       (postAfter, shallHide)
     }
@@ -3315,12 +3396,12 @@ trait PostsDao {
     loadPost(pageId, postNr)
 
 
-  def loadPost(pageId: PageId, postNr: PostNr): Option[Post] =  // RENAME to loadPostByPageIdNr just above
-    readOnlyTransaction(_.loadPost(pageId, postNr))
+  def loadPost(pageId: PageId, postNr: PostNr, anyTx: Opt[SiteTx] = None): Opt[Post] =  // RENAME to loadPostByPageIdNr just above
+    readTxTryReuse(anyTx)(_.loadPost(pageId, postNr))
 
 
-  def loadPostByUniqueId(postId: PostId): Option[Post] =
-    readOnlyTransaction(_.loadPostsByUniqueId(Vector(postId))).values.headOption
+  def loadPostByUniqueId(postId: PostId, anyTx: Opt[SiteTx] = None): Opt[Post] =
+    readTxTryReuse(anyTx)(_.loadPostsByUniqueId(Vector(postId))).values.headOption
 
 
   def loadPostByRef(ref: PostRef): Opt[Post] = ref match {

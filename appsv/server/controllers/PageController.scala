@@ -270,6 +270,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val pageId = (request.body \ "pageId").as[PageId]
     val postUniqueId = (request.body \ "postId").as[PostId]   // id not nr
 
+    // DO_AS_ALIAS !
     ANON_UNIMPL /* If created a page as anon, would accept it as anon too?  [anon_pages] So need:
     val doAsAnon: Opt[WhichAnon.SameAsBefore] = parser.parseWhichAnonJson(body) ...
             case _new: WhichAnon.NewAnon => throwBadReq(..., o"""Cannot create
@@ -284,8 +285,11 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   def unacceptAnswer: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) {
         request =>
+    // DO_AS_ALIAS !
     ANON_UNIMPL // Need:  doAsAnon: Opt[WhichAnon.SameAsBefore] ?   [anon_pages]
-    val pageId = (request.body \ "pageId").as[PageId]
+    val body = asJsObject(request.body, "Page-closed request body")
+    val pageId = parseSt(body, "pageId")
+    val asAlias = parser.parseDoAsAliasJsonOrThrow(body)
     request.dao.ifAuthUnacceptAnswer(pageId, request.theReqerTrueId, request.theBrowserIdData)
     Ok
   }
@@ -293,17 +297,20 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   def togglePageClosed: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) {
         request =>
-    val pageId = (request.body \ "pageId").as[PageId]
+    val body = asJsObject(request.body, "Page-closed request body")
+    val pageId = parseSt(body, "pageId")
+    val asAlias = parser.parseDoAsAliasJsonOrThrow(body)
     val closedAt: Option[ju.Date] = request.dao.ifAuthTogglePageClosed(
-          pageId, request.reqrIds)
-    ANON_UNIMPL // Need:  doAsAnon: Opt[WhichAnon.SameAsBefore] ?   [anon_pages]
+          pageId, request.reqrIds, asAlias)
+    TESTS_MISSING // DO_AS_ALIAS
+    //ANON_UNIPL // Need:  doAsAnon: Opt[WhichAnon.SameAsBefore] ?   [anon_pages]
     OkSafeJsValue(JsLongOrNull(closedAt.map(_.getTime)))
   }
 
   def deletePages: Action[JsValue] = PostJsonAction(
           RateLimits.TogglePage, maxBytes = 1000) { request =>
     val pageIds = (request.body \ "pageIds").as[Seq[PageId]]
-    ANON_UNIMPL // Need:  doAsAnon: Opt[WhichAnon.SameAsBefore] ?   [anon_pages]
+    ANON_UNIMPL // ! Need:  doAsAnon: Opt[WhichAnon.SameAsBefore] ?   [anon_pages]
     request.dao.deletePagesIfAuth(pageIds, request.reqrIds, undelete = false)
     Ok
   }
@@ -311,7 +318,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   def undeletePages: Action[JsValue] = PostJsonAction(
           RateLimits.TogglePage, maxBytes = 1000) { request =>
     val pageIds = (request.body \ "pageIds").as[Seq[PageId]]
-    ANON_UNIMPL // Need:  doAsAnon: Opt[WhichAnon.SameAsBefore] ?   [anon_pages]
+    ANON_UNIMPL // ! Need:  doAsAnon: Opt[WhichAnon.SameAsBefore] ?   [anon_pages]
     request.dao.deletePagesIfAuth(pageIds, request.reqrIds, undelete = true)
     Ok
   }

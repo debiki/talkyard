@@ -22,7 +22,7 @@ let siteId: any;
 
 const owensComment = 'owensComment';
 
-const localHostname = 'comments-for-e2e-test-embnprf1st-localhost-8080';
+const localHostname = 'comments-for-e2e-test-embnprf1st';
 const embeddingOrigin = 'http://e2e-test-embnprf1st.localhost:8080';
 const pageSlug = 'emb-cmts-notf-prefs-first.html';
 const pageUrl = embeddingOrigin + '/' + pageSlug;

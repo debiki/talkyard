@@ -446,7 +446,7 @@ class Nashorn(
         |      pageId: '0', // EmptyPageId, but isn't defined here
         |      myPageNotfPref: undefined,
         |      groupsPageNotfPrefs: [],
-        |      votes: {},
+        |      votesByPostNr: {},
         |      unapprovedPosts: {},
         |      unapprovedPostAuthors: [],
         |      postNrsAutoReadLongAgo: [],

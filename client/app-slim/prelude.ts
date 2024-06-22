@@ -544,9 +544,20 @@ export function firstValOf(x, y, z?, w?) {
 }
 
 
+/** If `a` and `b` are objects, then, ignores keys with `undefined` values.
+  * Otherwise just calls _.isEqual() (which does a deep equal comparison).
+  */
+export function any_isDeepEqIgnUndef(a: any, b: any): Bo {
+  if (!_.isObject(a) || !_.isObject(b)) return _.isEqual(a, b);
+  return obj_isDeepEqIgnUndef(a, b);
+}
+
+
 /** Says if `a` and `b` are the same, ignoring keys with `undefined` values,
   * and ignoring key order. Uses _.isEqual() under the hood.
   * Avoids the: [unintened_undefined_bug].
+  *
+  * However, keys with `undefined` values in nested objects are considered.
   */
 export function obj_isDeepEqIgnUndef(a: Object, b: Object): Bo {
   // @ifdef DEBUG

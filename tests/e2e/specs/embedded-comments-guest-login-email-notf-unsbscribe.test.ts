@@ -33,7 +33,7 @@ const theCleverAndFunnyJoke = "Yaffle yaffle yawp yawp - yaffapw, bark, ba-woff 
 const fidoCannotStopTyping = "fidoCannotStopTyping";
 const owenCanReplyAlreadyLoggedIn = "owenCanReplyAlreadyLoggedIn";
 
-const localHostname = 'comments-for-e2e-test-embguest-localhost-8080';
+const localHostname = 'comments-for-e2e-test-embguest';
 const embeddingOrigin = 'http://e2e-test-embguest.localhost:8080';
 const pageSlug = 'emb-cmts-guest.html';
 const pageUrl = embeddingOrigin + '/' + pageSlug;

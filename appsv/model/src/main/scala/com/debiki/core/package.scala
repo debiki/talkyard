@@ -216,6 +216,7 @@ package object core {
   type GroupVb = Group
   case class ValidGroup(get: Group)  // Scala_3 opaque type
 
+  type PatIds = TrueId
   type PatId = Int
   type ParticipantId = Int  ; RENAME // to PatId
   type GuestId = PatId
@@ -913,7 +914,7 @@ package object core {
   // be exposed to internal parts of Ty (would increase the coupling, in a bad way).
   // So, not ReqInf, but ReqrInf.  [/edit]
   // Is isAnon always false, hmmm?
-  @deprecated
+  @deprecated("Use ReqrAndTgt instead")
   case class Who(trueId: TrueId, browserIdData: BrowserIdData, isAnon: Bo = false) {
     def id: PatId = trueId.curId
     def ip: String = browserIdData.ip
@@ -955,6 +956,8 @@ package object core {
 
   /** A bitfield. Currently only None, 65535 = IsAnonOnlySelfCanDeanon
     * and 2097151 = IsAnonCanAutoDeanon are supported.
+    * Maybe 90% of all this will never get implemented? Nice to have thought
+    * a bit about already, though.
     *
     * None, SQL null, 0 means:  is *not* anon.
     *
@@ -968,23 +971,29 @@ package object core {
     * Why is this a bitfield? — Because creating 32 db columns is boring (not that many,
     * but still), and wastes bandwidth if sending as a json obj (instead of an i32)
     * over the network.
+    *   Hmm! But now there're so many parts — maybe it'd be better with
+    *  many [anon_status_fields] after all. No hurry, can wait and see.
     *
     * Bit 1:
     *   -------1  =   1: is anonymous
     *
-    *   Bits 2-3: Store true id?
-    *   -----00-  =  0: don't remember true id info at all
-    *   -----01-  =  2: can keep true id in-memory briefly, to review and spam check, then delete
-    *   -----10-  =  4: can keep in db for a while, but delete after some time (a conf val)
-    *   -----11-  =  6: can keep in db permanently (the default)
+    * Bits 2-4: *Store* true id?  [forgetting_true_ids]
+    *   ----000-  =  0: don't remember true id info at all
+    *   ----001-  =  2: can store in mem, spam etc check using AI (but no human), then delete
+    *   ----010-  =  4: can store on disk,            - '' -
+    *   ----011-  =  6: can store on disk, human(s) review, then delete directly
+    *   ----100-  =  8: can wait some hours or days for flags, then delete (a conf val)
+    *   ----101-  = 10: can keep in db for a while (week maybe month), then delete (conf val)
+    *   ----110-  =     ?
+    *   ----111-  = 14: can keep in db permanently (the default)
     *
-    *   Bits 4:  1,  reserverd
+    *        ?    =  ?: exclude true id from backups
     *
-    *   Bits 5-7: Who may see the true id?
+    * Bits 5-7: Who may *see* the true id?
     *   -000----  =  A DBA cannot and could not see the true id of this anon (wasn't stored)
     *   -001----  =  A DBA can (could) see the true id, by running SQL queries
     *   -010----  =  you cay (could) see your own anons
-    *   -011----  =  admins can see the true ids of anons
+    *   -011----  =  admins can see the true ids of anons (and you can see your own)
     *   -100----  =  ?
     *   -101----  =  ?
     *   -110----  =  ?
@@ -992,24 +1001,43 @@ package object core {
     *           can see true ids (typically mods, so they can know who
     *           a problematic anon is, without having to de-anonymize the account).
     *
-    * Bits 8, 9-16:
-    *   111111111  =  reserved  (and only bits 1-16 set = 65535).
+    * Bits 8-9: *Notify* the author, if sbd has a look at the true id?
+    *         00  =  Notify each time, all communication methods  (not yet implemented)
+    *         01  =  Notify, but debounced & rate limited  (not yet impl)
+    *         10  =  Notify only the first time  (not yet impl)
+    *         11  =  Don't notify
     *
-    *  Bits 17-19:  Who may deanonymize?
-    *   --000  =  cannot be deanonymized (not even by DBAs, info not stored)
-    *   --001  =  can be deanonymize by DBAs
-    *   --010  =  may deanonymize oneself (and DBAs can too)
-    *   --011  =  may be deanonymized by admins (and oneself and DBAs)
-    *   --100  =  may be deanonymized by admins and mods?
-    *   --101  =  ?
-    *   --110  =  may be deanonymized by others with deanon permission in the category?
-    *   --111  =  may get deanonymized automatically (by trigger, e.g. date)
+    * Bits 10-12: Notify other admins & those with see-anon permission  ?
+    *   Let the one who is about to check and see who an anon is, know that
+    *   the others with see-anon permission will be notified afterwards.
+    *   Maybe even a publicly visible audit log for all forum members?
+    *   And include in the audit log info about adding/removing people with
+    *   the see-anon permission?
+    *   And exclude true ids from backup dumps? (Can make sense for managed hosting)
+    *   But this is much more than 3 bits!  [anon_status_fields]
     *
-    *  Bits 20, 21: Reserved, and 1 (set) if IsAnonCanAutoDeanon,
-    *                             0 (unset) if IsAnonOnlySelfCanDeanon. Hmm.
+    * Bits 13-15: Min votes to see anon  ?
+    *   To check who an anon is, at least 2, 3, 4 or ... people with the see-anon
+    *   permission need to agree.
+    *
+    *    (only bits 1-15 & 16 set = 65535)
+    *
+    * Bits 16-18:  Who may *deanonymize*?
+    *   000  =  cannot be deanonymized (except maybe by DBAs, if info stored; see bits 2-7)
+    *   001  =  may deanonymize oneself (and DBAs can too), but not admins
+    *   010  =  may be deanonymized by admins (and DBAs), but not oneself
+    *   011  =  may be deanonymized by admins and oneself
+    *   100  =  may be deanonymized by those with deanon permission in the category? & admins
+    *   101  =  may be deanonymized by those with deanon permission, and oneself? & admins
+    *   110  =  may be deanonymized by those with deanon permission, or automatically & admins
+    *   111  =  may get deanonymized automatically (by trigger, e.g. date),
+    *                                           and those with perms, and oneself  & admins
+    *
+    * Bits 19-21: Reserved, and 111 (set) if IsAnonCanAutoDeanon,
+    *                           000 (unset) if IsAnonOnlySelfCanDeanon. Hmm.
     *
     * Bits  22-32:
-    *   00000000000  reserved   (and only bits 1-21 set = 2097151.)
+    *   00000000000  reserved   (and only bits 1-21 set, 22-23 zero = 2^21-1 = 2097151)
     *
     * Reserved bits could later say if e.g.:
     *       - May any of the anon's posts be moved to other pages? By default, no.

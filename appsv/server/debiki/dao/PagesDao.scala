@@ -334,11 +334,14 @@ trait PagesDao {
     val titleUniqueId = tx.nextPostId()
     val bodyUniqueId = titleUniqueId + 1
 
+    TESTS_MISSING // Dupl code. [get_anon] check all other too.
     val authorMaybeAnon =
           if (doAsAnon.forall(!_.anonStatus.isAnon)) {
             realAuthor
           }
           else {
+            throwForbiddenIf(doAsAnon.exists(_.isInstanceOf[WhichAnon.SameAsBefore]),
+                  "TyE5FWMJL30P", "There're no anons to reuse on a new page")
             // Dupl code. [mk_new_anon]
             val anonymId = tx.nextGuestId
             val anonym = Anonym(
@@ -521,7 +524,7 @@ trait PagesDao {
       val notifications = notfGenerator(tx).generateForNewPost(  // dao incls new page body
             newPageDao(pagePath.pageId, tx), bodyPost,
             Some(body), anyNewModTask = anyReviewTask,
-            postAuthor = Some(authorMaybeAnon))
+            postAuthor = Some(authorMaybeAnon), trueAuthor = Some(realAuthor))
 
       tx.saveDeleteNotifications(notifications)
 
@@ -710,12 +713,15 @@ trait PagesDao {
   }
 
 
-  def ifAuthTogglePageClosed(pageId: PageId, reqr: ReqrId): Opt[ju.Date] = {
+  def ifAuthTogglePageClosed(pageId: PageId, reqr: ReqrId, asAlias: Opt[WhichAnon])
+          : Opt[ju.Date] = {
     val now = globals.now()
     val newClosedAt = readWriteTransaction { tx =>
       val user = tx.loadTheParticipant(reqr.id)
       val oldMeta = tx.loadThePageMeta(pageId)
-      ANON_UNIMPL // This prevents anons from closing their page? [anon_pages]
+
+      TESTS_MISSING
+
       throwIfMayNotSeePage(oldMeta, Some(user))(tx)
 
       throwBadRequestIf(oldMeta.isDeleted,
@@ -724,8 +730,19 @@ trait PagesDao {
       throwBadRequestIf(!oldMeta.pageType.canClose,
           "DwE4PKF7", s"Cannot close pages of type ${oldMeta.pageType}")
 
-      throwForbiddenIf(!user.isStaffOrCoreMember && user.id != oldMeta.authorId,
-            "TyE5JPK7", "Only core members and the topic author can close / reopen")
+      val aliasOrTrue: Pat = SiteDao.getAliasOrTruePat(truePat = user, pageId = pageId,
+            asAlias, mayCreateAnon = false)(tx, IfBadAbortReq)
+
+      val isAuthor = aliasOrTrue.id == oldMeta.authorId
+
+      if (!isAuthor) {
+        throwForbiddenIf(!user.isStaffOrCoreMember,
+              "TyE5JPK7", "Only core members and the topic author can close / reopen")
+
+        // Later: Allow, but use a separate anon for moderator actions. [anon_mods] [deanon_risk]
+        throwForbiddenIf(aliasOrTrue.isAlias,
+              "TyE4PGR02P", "Can't open/close sbd else's page anonymously")
+      }
 
       val (newClosedAt: Option[ju.Date], didWhat: String) = oldMeta.closedAt match {
         case None => (Some(now.toJavaDate), "closed")
@@ -748,7 +765,7 @@ trait PagesDao {
             pageId = Some(pageId))
 
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
-      addMetaMessage(user, s" $didWhat this topic", pageId, tx)
+      addMetaMessage(aliasOrTrue, s" $didWhat this topic", pageId, tx)
       tx.insertAuditLogEntry(auditLogEntry)
 
       newClosedAt
@@ -931,7 +948,8 @@ trait PagesDao {
       // For now. Later, somehow use  NotfType.AssigneesChanged (if assignees changed).
       notfGenerator(tx).generateForNewPost(  // page dao excls new meta post
             page, metaMessage, sourceAndHtml = None,
-            postAuthor = None, // Some(doer) — but `doer` might be from another tx?
+            // or Some(doer) — but `doer` might be from another tx?
+            postAuthor = None, trueAuthor = None,
             anyNewModTask = None)
     }
 

@@ -1,0 +1,39 @@
+                            Table "public.invites3"
+     Column      |            Type             | Collation | Nullable | Default 
+-----------------+-----------------------------+-----------+----------+---------
+ site_id         | integer                     |           | not null | 
+ secret_key      | character varying           |           | not null | 
+ email_address   | character varying           |           | not null | 
+ created_by_id   | integer                     |           | not null | 
+ created_at      | timestamp without time zone |           | not null | 
+ accepted_at     | timestamp without time zone |           |          | 
+ user_id         | integer                     |           |          | 
+ deleted_at      | timestamp without time zone |           |          | 
+ deleted_by_id   | integer                     |           |          | 
+ invalidated_at  | timestamp without time zone |           |          | 
+ start_at_url    | character varying           |           |          | 
+ add_to_group_id | integer                     |           |          | 
+Indexes:
+    "dw2_invites__p" PRIMARY KEY, btree (site_id, secret_key)
+    "dw2_invites_createdby_at__i" btree (site_id, created_by_id, created_at)
+    "dw2_invites_deletedby__i" btree (site_id, deleted_by_id) WHERE deleted_by_id IS NOT NULL
+    "dw2_invites_user__i" btree (site_id, user_id) WHERE user_id IS NOT NULL
+    "invites_emailaddr_invby_i" btree (site_id, email_address, created_by_id)
+    "invites_i_addtogroupid" btree (site_id, add_to_group_id) WHERE add_to_group_id IS NOT NULL
+    "invites_invat_i" btree (site_id, created_at DESC)
+Check constraints:
+    "dw2_invites_accepted_user__c" CHECK ((accepted_at IS NULL) = (user_id IS NULL))
+    "dw2_invites_deleted__c" CHECK ((deleted_at IS NULL) = (deleted_by_id IS NULL))
+    "dw2_invites_deleted__c2" CHECK (deleted_at IS NULL OR accepted_at IS NULL)
+    "dw2_invites_deleted__c3" CHECK (deleted_at >= created_at)
+    "dw2_invites_email__c" CHECK (email_address::text ~~ '%@%'::text AND length(email_address::text) >= 3)
+    "dw2_invites_invalidated__c" CHECK (invalidated_at >= created_at)
+    "dw2_invites_invalidated__c2" CHECK (invalidated_at IS NULL OR accepted_at IS NULL)
+    "dw2_invites_invalidated_deleted__c" CHECK (invalidated_at IS NULL OR deleted_at IS NULL)
+    "dw2_invites_secretkey__c_len" CHECK (length(secret_key::text) > 20)
+    "invites_c_startaturl_len" CHECK (length(start_at_url::text) >= 1 AND length(start_at_url::text) <= 100)
+Foreign-key constraints:
+    "invites_addtogroup_r_pps" FOREIGN KEY (site_id, add_to_group_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "invites_inviter_r_people" FOREIGN KEY (site_id, created_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "invites_user_r_people" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+

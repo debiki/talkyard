@@ -1810,9 +1810,10 @@ export function fetchLinkPreview(url: St, inline: Bo, /* later: curPageId: PageI
 export function saveVote(data: {
     pageId: PageId,
     postNr: PostNr,
-    vote: string,
+    vote: PostVoteType,
     action: 'DeleteVote' | 'CreateVote',
-    postNrsRead: PostNr[]
+    postNrsRead: PostNr[],
+    doAsAnon?: MaybeAnon,
 }, onDone: (storePatch: StorePatch) => Vo) {
   // Specify altPageId and embeddingUrl, so any embedded page can be created lazily. [4AMJX7]
   // @ifdef DEBUG
@@ -1844,7 +1845,7 @@ export function loadVoters(postId: PostId, voteType: PostVoteType,
 
 
 export function saveEdits(editorsPageId: PageId, postNr: PostNr, text: St,
-      deleteDraftNr: DraftNr, doAsAnon: WhichAnon | U, onOK: () => Vo,
+      deleteDraftNr: DraftNr, doAsAnon: MaybeAnon, onOK: () => Vo,
       sendToWhichFrame?: MainWin) {
   postJson('/-/edit', {
     data: {
@@ -1923,7 +1924,7 @@ export function unpinPage(success: () => void) {
 
 
 export function saveReply(editorsPageId: PageId, postNrs: PostNr[], text: string,
-      anyPostType: number, deleteDraftNr: DraftNr | undefined, doAsAnon: WhichAnon | U,
+      anyPostType: number, deleteDraftNr: DraftNr | undefined, doAsAnon: MaybeAnon,
       success: (storePatch: StorePatch) => void) {
   postJson('/-/reply', {
     data: {
@@ -2310,17 +2311,18 @@ export function loadPageJson(path: string, success: (response) => void) {
 }
 
 
-export function acceptAnswer(postId: number, success: (answeredAtMs: number) => void) {
-  postJsonSuccess('/-/accept-answer', success, { pageId: getPageId(), postId: postId });
+export function acceptAnswer(postId: PostNr, doAsAnon: MaybeAnon,
+        onOk: (answeredAtMs: Nr) => V) {
+  postJsonSuccess('/-/accept-answer', onOk, { pageId: getPageId(), postId, doAsAnon });
 }
 
 
-export function unacceptAnswer(success: () => void) {
-  postJsonSuccess('/-/unaccept-answer', success, { pageId: getPageId() });
+export function unacceptAnswer(doAsAnon: MaybeAnon, onOk: () => V) {
+  postJsonSuccess('/-/unaccept-answer', onOk, { pageId: getPageId(), doAsAnon });
 }
 
-export function togglePageClosed(success: (closedAtMs: number) => void) {
-  postJsonSuccess('/-/toggle-page-closed', success, { pageId: getPageId() });
+export function togglePageClosed(doAsAnon: MaybeAnon, onOk: (closedAtMs: Nr) => V) {
+  postJsonSuccess('/-/toggle-page-closed', onOk, { pageId: getPageId(), doAsAnon });
 }
 
 export function deletePages(pageIds: PageId[], success: () => void) {

@@ -1,0 +1,28 @@
+                                 Table "public.page_html_cache_t"
+           Column            |            Type             | Collation | Nullable |    Default    
+-----------------------------+-----------------------------+-----------+----------+---------------
+ site_id_c                   | integer                     |           | not null | 
+ page_id_c                   | character varying           |           | not null | 
+ param_width_layout_c        | smallint                    |           | not null | 
+ param_is_embedded_c         | boolean                     |           | not null | 
+ param_origin_or_empty_c     | character varying           |           | not null | 
+ param_cdn_origin_or_empty_c | character varying           |           | not null | 
+ cached_site_version_c       | integer                     |           | not null | 
+ cached_page_version_c       | integer                     |           | not null | 
+ cached_app_version_c        | character varying           |           | not null | 
+ cached_store_json_hash_c    | character varying           |           | not null | 
+ updated_at_c                | timestamp without time zone |           | not null | 
+ cached_store_json_c         | jsonb                       |           | not null | 
+ cached_html_c               | text                        |           | not null | 
+ param_comt_order_c          | comt_order_d                |           | not null | 3
+ param_comt_nesting_c        | max_nesting_d               |           | not null | '-1'::integer
+ param_ugc_origin_or_empty_c | text                        |           | not null | ''::text
+ param_theme_id_c_u          | i16_gz_d                    |           | not null | 2
+Indexes:
+    "pagehtmlcache_p" PRIMARY KEY, btree (site_id_c, page_id_c, param_comt_order_c, param_comt_nesting_c, param_width_layout_c, param_theme_id_c_u, param_is_embedded_c, param_origin_or_empty_c, param_cdn_origin_or_empty_c, param_ugc_origin_or_empty_c)
+    "pagehtmlcache_gi_updatedat" btree (updated_at_c)
+Check constraints:
+    "pagehtmlcache_c_themeid_eq_2" CHECK (param_theme_id_c_u::smallint = 2)
+Foreign-key constraints:
+    "pagehtml_r_pages" FOREIGN KEY (site_id_c, page_id_c) REFERENCES pages3(site_id, page_id) DEFERRABLE
+

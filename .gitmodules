@@ -107,7 +107,7 @@
 # But why not different submodules, instead of branches? Because creating
 # different submodules is boring, right. And having "too many" submodule repos
 # to maintain, is also boring (e.g. if relocating all repos, then many to move).
-# Creating a new branch is quicker – and long term tiny time saver (?).
+# Creating a new branch is quicker – and, long term, a tiny time saver (?).
 #
 # To fetch only the current branch from the remote repo, do this:
 #
@@ -130,11 +130,23 @@
 # on the host OS (so any node-gyp built stuff then depends on the host OS).
 
 
-# The browser and e2e tests.
+# The browser app.
 [submodule "node_modules"]
 	path = node_modules
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-node_modules
+
+# And:
+# [submodule "tests/e2e/node_modules"]
+#	url = https://github.com/debiki/ty-vendors.git
+#	branch = ty-tests-e2e-node_modules
+#
+# ??
+# git checkout --branch ty-tests-e2e-node_modules zero
+
+# [submodule "tests/e2e-wdio7/node_modules"]
+#	url = https://github.com/debiki/ty-vendors.git
+#	branch = ty-tests-e2e-wdio7-node_modules
 
 # App server: Scala, JARs.
 [submodule "vendors/jars"]

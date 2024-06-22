@@ -51,6 +51,14 @@ object QuickSpamCheckDao {
   /** Does some simple tests to try to fend off spam.
     */
   def throwForbiddenIfLooksSpammy(user: Participant, textAndHtml: TextAndHtml): Unit = {
+    // For now, 2024-05-08, disable this. People nowadays use LLMs like ChatGPT
+    // to generate spam. They don't send long list of spammy links any more, instead,
+    // lots of nice looking text and just a single spam link.
+    // However, real people sometimes post lots of links, e.g. when copy-pasting
+    // log messages to report some error — and the log messages happen to include links.
+    // Later, use AI to try to detect spam. [ai_spam_checks]
+    return
+
     def throwIfTooManyLinks(maxNumLinks: Int): Unit = {
       if (textAndHtml.externalLinks.length > maxNumLinks)
         throwForbidden("EdE4KFY2_", o"""Your text includes more than $maxNumLinks links —

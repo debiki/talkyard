@@ -248,6 +248,14 @@ interface Flag {
 }
 
 
+interface Vote {
+  type: PostVoteType
+  byId: PatId
+  // byTrueId: MembId
+  // howMany?: Nr
+}
+
+
 interface DraftLocator {
   draftType: DraftType;
   categoryId?: number;
@@ -275,7 +283,7 @@ interface DraftDeletor {
 
 interface Draft {
   byUserId: UserId;
-  doAsAnon?: U | WhichAnon;  // not yet impl [doAsAnon_draft]
+  doAsAnon?: MaybeAnon;  // not yet impl [doAsAnon_draft]
   draftNr: DraftNr;
   forWhat: DraftLocator;
   createdAt: WhenMs;
@@ -299,7 +307,7 @@ interface ShowEditsPreviewParams extends EditorIframeHeight {
   anyPostType?: PostType;
   replyToNr?: PostNr;
   editingPostNr?: PostNr;
-  doAsAnon?: WhichAnon;
+  doAsAnon?: MaybeAnon;
   highlightPreview?: boolean; // default: true
 }
 
@@ -466,7 +474,7 @@ interface MyPageData {
   // these prefs. Only staff or a group manager, can do that.
   groupsPageNotfPrefs: PageNotfPref[];
   readingProgress?: ReadingProgress;
-  votes: any; // RENAME to votesByPostNr?   CLEAN_UP also see just below:  id or nr
+  votesByPostNr: { [postNr: PostNr]: Vote[] };
   internalBacklinks?: Topic[];
   unapprovedPosts: { [id: number]: Post };
   unapprovedPostAuthors: Participant[];
@@ -503,6 +511,7 @@ interface Me extends OwnPageNotfPrefs {   // + extends Pat?
   // the remaining parts have (a lot) more entropy than necessary.
   mySidPart1?: St | N;
   id?: UserId;
+  //useAlias?: Pat;  // maybe?  [alias_mode]  and this.id is one's true id
   isStranger?: Bo;
   // missing?: isGuest?: Bo
   isGroup?: boolean; // currently always undefined (i.e. false)
@@ -1359,6 +1368,7 @@ interface DiscPropsBase {
   comtsStartAnon: NeverAlways;
   opStartsAnon: NeverAlways;
   newAnonStatus: AnonStatus;
+  pseudonymsAllowed: NeverAlways;
 
   // Later: [sum_squash_lims]
   // summarizeLimit;
@@ -1531,6 +1541,8 @@ interface KnownAnonym extends Anonym {
   anonOnPageId: PageId;
 }
 
+/// `false` means don't-do-anonymously, use one's real account instead.
+type MaybeAnon = WhichAnon | false;
 
 // For choosing an anonym. Maybe rename to ChooseAnon? Or ChoosenAnon / SelectedAnon?
 interface WhichAnon {
@@ -1549,16 +1561,19 @@ interface NewAnon extends WhichAnon {
   sameAnonId?: U;
   newAnonStatus: AnonStatus.IsAnonOnlySelfCanDeanon | AnonStatus.IsAnonCanAutoDeanon;
 }
+
+/* Confusing!  type MaybeAnon   above, is better?
 interface NotAnon extends WhichAnon {
   sameAnonId?: U;
   newAnonStatus?: U;
   anonStatus: AnonStatus.NotAnon;
-}
+} */
 
 interface MyPatsOnPage {
   // Each item can be an anonym or pseudonym of pat, or pat henself. No duplicates.
-  byThreadLatest: Pat[];
-  byId: { [patId: number] : Pat }
+  sameThread: Pat[];
+  outsideThread: Pat[]
+  byId: { [patId: PatId]: Pat | SameAnon }
 }
 
 
@@ -1965,6 +1980,10 @@ interface StorePatch
   // the lazy-created page's id, to continue doing things on that now *real* page.
   newlyCreatedPageId?: PageId;
   newlyCreatedOrigPostId?: PostId;
+
+  // If an anonym was lazy-created by the server, e.g.: Liking something anonymously
+  // and that's one's first interaction with the page.
+  yourAnon?: Anonym;
 }
 
 // So we know which post to highlight, to indicate it's being replied to.
@@ -2294,6 +2313,13 @@ interface ShowNewPageParams {
 }
 
 
+/// For changing page type, moving a page to a new category, etc.
+interface ChangePageDiagParams {
+  page: Page,
+  showViewAnswerButton?: true,
+}
+
+
 interface PatPanelProps {
   me: Me;
   store: Store;
@@ -2330,6 +2356,23 @@ interface AuthnDlgIf {
 }
 
 
+/// If clicking e.g. Like, one might need to choose if the like vote should
+/// be anonymous or not.
+interface MaybeChooseAnonPs {
+  store: DiscStore
+  discProps?: DiscPropsDerived
+  postNr?: PostNr
+  atRect?: Rect
+}
+
+interface ChoosenAnon {
+  doAsAnon: MaybeAnon
+  /// Which participants the current usr can choose among: hanself (`false`),
+  /// hans anonyms and pseudonyms.
+  myAliasOpts: MaybeAnon[]
+}
+
+
 /// A dropdown for choosing which anonym to use (e.g. if posting anonymous comments).
 /// DlgPs = dialog parameters, hmm.
 ///
@@ -2338,9 +2381,12 @@ interface ChooseAnonDlgPs {
   open?: Bo;
   pat?: Pat;
   me: Me,
-  curAnon?: WhichAnon;
+  // Any currently selected alias.
+  curAnon?: MaybeAnon;
+  // Which anonyms and pseudonyms to list in the choose-alias menu. (The options.)
+  myAliasOpts?: MaybeAnon[];
   discProps: DiscPropsDerived;
-  saveFn: (_: WhichAnon) => Vo ;
+  saveFn: (_: MaybeAnon) => V;
 }
 
 
@@ -2466,8 +2512,8 @@ interface PatsToAddRemove {
 
 interface ExplainingTitleText {
   iconUrl?: St;
-  title: St;
-  text?: any;
+  title: any; // St | RElm; —> compil err in server & blog comments bundles
+  text?: any; // St | RElm;
   key?: any;
   subStuff?: any;
 }
@@ -2791,6 +2837,8 @@ interface EditPageRequestData extends DiscPropsSource {
     htmlTagCssClasses?: string;
     htmlHeadTitle?: string;
     htmlHeadDescription?: string;
+
+    doAsAnon?: MaybeAnon
 }
 
 interface EditPageResponse {

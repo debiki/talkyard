@@ -1,0 +1,21 @@
+            Table "public.group_participants3"
+     Column     |  Type   | Collation | Nullable | Default 
+----------------+---------+-----------+----------+---------
+ site_id        | integer |           | not null | 
+ group_id       | integer |           | not null | 
+ participant_id | integer |           | not null | 
+ is_member      | boolean |           | not null | false
+ is_manager     | boolean |           | not null | false
+ is_adder       | boolean |           | not null | false
+ is_bouncer     | boolean |           | not null | false
+Indexes:
+    "groupparticipants_groupid_ppid_p" PRIMARY KEY, btree (site_id, group_id, participant_id)
+    "groupparticipants_ppid_i" btree (site_id, participant_id)
+Check constraints:
+    "groupparticipants_c_no_built_in_groups" CHECK (group_id >= 100)
+    "groupparticipants_c_no_guests_or_built_in_users" CHECK (participant_id >= 100)
+    "groupparticipants_c_pp_does_sth" CHECK (is_member OR is_manager OR is_adder OR is_bouncer)
+Foreign-key constraints:
+    "groupparticipants_group_r_pps" FOREIGN KEY (site_id, group_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "groupparticipants_pp_r_pps" FOREIGN KEY (site_id, participant_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+

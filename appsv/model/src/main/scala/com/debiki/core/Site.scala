@@ -80,16 +80,23 @@ trait SiteTrait {
 
   def isTestSite: Bo = id <= Site.MaxTestSiteId
 
-  def isFeatureEnabled(ffName: St, serverFeatureFlags: St): Bo = {
+  def isFeatureEnabled(ffName: St, serverFeatureFlags: St, onByDefault: Bo = false): Bo = {
     val offName = "0" + ffName  // zero  — same as when disabling options in Vim
     val enabledWholeServer = serverFeatureFlags.contains(ffName)
     val disabledWholeServer = serverFeatureFlags.contains(offName)
     val enabledThisSite = featureFlags.contains(ffName)
     val disabledThisSite = featureFlags.contains(offName)
-    val enabledSomewhere = enabledWholeServer || enabledThisSite
+    val enabledSomewhere = onByDefault || enabledWholeServer || enabledThisSite
     val disabledSomewhere = disabledWholeServer || disabledThisSite
-    // By default a feature flag is not enabled, and can be enabled in a   [ff_on_off]
-    // specific site only via this.featureFlags. So, if a feature has been
+
+    // Later: Better:  Site specific flags have priority over server global flags
+    // — but if the server global flag is followed by '!' it has precedence.
+    // So:   ff0Imp!  means that impersonation is absolutely disabled
+    // everywhere on the server.
+
+    // Old comment!
+    // Feature flags that are disabled by default, can be enabled in a   [ff_on_off]
+    // specific site only via this.featureFlags. But if a feature has been
     // disabled explicitly in the whole server, then, that overrides
     // it being enabled per site (so it'll be disabled everywhere) (Otherwise
     // disabledWholeServer would be pointless.)

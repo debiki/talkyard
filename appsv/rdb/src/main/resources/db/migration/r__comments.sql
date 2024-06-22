@@ -220,9 +220,14 @@ If one pat assigns another to a task.
 $_$;
 
 ------------------------------------------------------------------------
-comment on column  post_actions3.as_pat_id_c  is $_$
-Done as another user, e.g. for anonymous votes, points to the anonym
-to show instead of oneself.
+comment on column  post_actions3.from_true_id_c  is $_$
+The true user behind an anonymous vote. Makes it possible to load all
+one's votes, for the current page, also if one voted anonymously.
+$_$;
+
+------------------------------------------------------------------------
+comment on index  patnoderels_i_pageid_fromtrueid  is $_$
+For finding one's Like votes etc done anonymously on the current page.
 $_$;
 
 
@@ -345,7 +350,8 @@ once the private tree has been created.  Maybe values could be:
 6: Cannot add more private pats, not even by adding sbd to a group.
    (How's that going to get implemented? And does it ever make sense)
 
-Comments in private comment trees have nr:s < 0, so there's a quick way for Ty
+Comments in private comment trees have nr:s < 0
+(actually, <= -1001, PageParts.MaxPrivateNr), so there's a quick way for Ty
 to skip them when loading comments to show by default on a page, *and*
 so there won't be any gaps in the not-private comment nr sequence (> 0).
 Comments on private *pages* though, can have nrs > 0? Because anyone who can
@@ -660,6 +666,16 @@ $_$;
 comment on column  posts3.doing_status_c  is $_$
 
 1: Planned, 2: Started, 3: Paused, 4: Done.
+$_$;
+
+
+--======================================================================
+--  notifications3
+--======================================================================
+
+-- ------------------------------------------------------------------------
+comment on index  notfs_i_totrueid_createdat  is $_$
+For listing notifications to one's aliases.
 $_$;
 
 

@@ -297,10 +297,17 @@ object Authz {
   //
   /** If pat may edit the page title & body, and settings e.g. page type,
     * and open/close it, delete/undeleted, move to another category.
+    *
+    * @param otherAuthor the page author, if it's someone else than `pat` — needed,
+    *   so we can check if `pat` is actually the true author (if `otherAuthor` is hans alias).
+    *   Confusing param name? Maybe simpler to rename to `pageAuthor` and always include,
+    *   also if same as `pat`?
+    *   Or better:   [_pass_alias]  ?
     */
   def mayEditPage(
         pageMeta: PageMeta,
         pat: Pat,
+        otherAuthor: Opt[Pat],
         groupIds: immutable.Seq[GroupId],
         pageMembers: Set[UserId],
         catsRootLast: immutable.Seq[Cat],
@@ -311,10 +318,12 @@ object Authz {
     val mayWhat = checkPermsOnPages(
           Some(pat), groupIds, Some(pageMeta), Some(pageMembers),
           catsRootLast = catsRootLast, tooManyPermissions,
-          maySeeUnlisted = maySeeUnlisted)
+          maySeeUnlisted = maySeeUnlisted, otherAuthor = otherAuthor)
 
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"TyEM0SEE2-${mayWhat.debugCode}")
+
+    val isOwnPage = _isOwn(pat, authorId = pageMeta.authorId, otherAuthor)
 
     // For now, Core Members can change page type and doing status, if they
     // can see the page (which we checked just above).  Later, this will be
@@ -322,7 +331,7 @@ object Authz {
     if (changesOnlyTypeOrStatus && pat.isStaffOrCoreMember) {
       // Fine (skip the checks below).
     }
-    else if (pageMeta.authorId == pat.id) {
+    else if (isOwnPage) {
       // Do this check in mayEditPost() too?  [.mayEditOwn]
       if (!mayWhat.mayEditOwn)
         return NoMayNot(s"TyEM0EDOWN-${mayWhat.debugCode}", "")
@@ -444,10 +453,7 @@ object Authz {
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"TyEM0ED0SEE-${mayWhat.debugCode}")
 
-    val isOwnPost = user.id == post.createdById || otherAuthor.exists({ // [8UAB3WG2]
-      case anon: Anonym => anon.anonForPatId == user.id
-      case _ => false
-    })
+    val isOwnPost = _isOwn(user, authorId = post.createdById, otherAuthor)
 
     if (isOwnPost) {
       // Fine, may edit.
@@ -561,7 +567,9 @@ object Authz {
     pageMembers: Opt[Set[UserId]],
     catsRootLast: immutable.Seq[Category],
     tooManyPermissions: immutable.Seq[PermsOnPages],
-    maySeeUnlisted: Bo = true): MayWhat = {
+    maySeeUnlisted: Bo = true,
+    otherAuthor: Opt[Pat] = None,
+    ): MayWhat = {
 
     // Admins, but not moderators, have access to everything.
     // Why not mods? Can be good with a place for members to bring up problems
@@ -571,7 +579,16 @@ object Authz {
       return MayEverything
 
     val isStaff = user.exists(_.isStaff)
-    val isOwnPage = user.exists(u => pageMeta.exists(_.authorId == u.id))
+
+    val isOwnPage = user.exists(u => pageMeta exists { page =>
+      _isOwn(u, authorId = page.authorId, otherAuthor)
+
+      // Won't work, if creating as anon and then editing as oneself?:
+      // user.exists(_.id == m.authorId) || doAsAlias.exists(_.id == m.authorId)
+      //
+      // But it's good if that won't work?  [deanon_risk]  Let's use  `useAlias: Opt[Anonym]`
+      // instead of `otherAuthor` ?   [_pass_alias]
+    })
 
     // For now, don't let people see pages outside any category. Hmm...?
     // (<= 1 not 0: don't count the root category, no pages should be placed directly in them.)
@@ -745,6 +762,29 @@ object Authz {
     }
 
     mayWhat
+  }
+
+
+  /** Says if whatever-it-is was created by `pat`, by comparing pat's id with that of
+    * the author — but that won't work, if the author is one of pat's aliases (because
+    * aliases have their own ids). Therefore, also compares with the true id of
+    * any alias author (anonym or pseudonym).
+    *
+    * Maybe remove?  [_pass_alias]
+    */
+  def _isOwn(pat: Pat, authorId: PatId, author: Opt[Pat]): Bo = {
+    if (pat.id == authorId) {
+      true
+    }
+    else author.exists({
+      // BUT isn't it safer to pass  pat & patsAlias  and require that the alias is
+      // the same?  [deanon_risk]  So can't accidentally edit an anon page as oneself
+      // (one's true id) just because it's one's own anonym — which others might then guess.
+      case anon: Anonym =>
+        dieIf(anon.id != authorId, "TyE0PGAUTHOR", s"Anon ${anon.id} != author ${authorId}")
+        anon.anonForPatId == pat.id
+      case _ => false
+    })
   }
 
 }

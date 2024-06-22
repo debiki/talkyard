@@ -1,0 +1,54 @@
+                             Table "public.tagtypes_t"
+          Column          |          Type          | Collation | Nullable | Default 
+--------------------------+------------------------+-----------+----------+---------
+ site_id_c                | integer                |           | not null | 
+ id_c                     | i32_gz_d               |           | not null | 
+ can_tag_what_c           | thing_types_d          |           | not null | 
+ scoped_to_pat_id_c       | integer                |           |          | 
+ is_personal              | boolean                |           |          | 
+ url_slug_c               | url_slug_60_d          |           |          | 
+ disp_name_c              | tag_name_60_d          |           | not null | 
+ long_name_c              | tag_name_120_d         |           |          | 
+ abbr_name_c              | tag_name_15_d          |           |          | 
+ descr_page_id_c          | text                   |           |          | 
+ descr_url_c              | http_url_d             |           |          | 
+ text_color_c             | color_d                |           |          | 
+ handle_color_c           | color_d                |           |          | 
+ background_color_c       | color_d                |           |          | 
+ css_class_suffix_c       | html_class_suffix_30_d |           |          | 
+ sort_order_c             | i16_d                  |           |          | 
+ created_by_id_c          | integer                |           | not null | 
+ deleted_by_id_c          | integer                |           |          | 
+ merged_into_tagtype_id_c | integer                |           |          | 
+ merged_by_id_c           | integer                |           |          | 
+ ref_id_c                 | ref_id_d               |           |          | 
+ wants_value_c            | never_always_d         |           |          | 
+ value_type_c             | value_type_d           |           |          | 
+Indexes:
+    "tagtypes_p_id" PRIMARY KEY, btree (site_id_c, id_c)
+    "tagtypes_u_anypat_abbrname" UNIQUE, btree (site_id_c, COALESCE(scoped_to_pat_id_c, 0), index_friendly(abbr_name_c::text))
+    "tagtypes_u_anypat_dispname" UNIQUE, btree (site_id_c, COALESCE(scoped_to_pat_id_c, 0), index_friendly(disp_name_c::text))
+    "tagtypes_u_anypat_longname" UNIQUE, btree (site_id_c, COALESCE(scoped_to_pat_id_c, 0), index_friendly(long_name_c::text))
+    "tagtypes_u_anypat_urlslug" UNIQUE, btree (site_id_c, COALESCE(scoped_to_pat_id_c, 0), url_slug_c)
+    "types_u_refid" UNIQUE, btree (site_id_c, ref_id_c) WHERE ref_id_c IS NOT NULL
+    "tagtypes_i_createdby" btree (site_id_c, created_by_id_c)
+    "tagtypes_i_deletedby" btree (site_id_c, deleted_by_id_c)
+    "tagtypes_i_descrpage" btree (site_id_c, descr_page_id_c)
+    "tagtypes_i_mergedby" btree (site_id_c, merged_by_id_c)
+    "tagtypes_i_mergedinto" btree (site_id_c, merged_into_tagtype_id_c)
+    "tagtypes_i_scopedto" btree (site_id_c, scoped_to_pat_id_c)
+Check constraints:
+    "tagtypes_c_id_gt1000" CHECK (id_c::integer > 1000)
+    "types_c_wantsval_valtype_null" CHECK (wants_value_c IS NULL OR wants_value_c::smallint <= 2 OR value_type_c IS NOT NULL)
+Foreign-key constraints:
+    "tagtypes_createdby_r_pats" FOREIGN KEY (site_id_c, created_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "tagtypes_deleteby_r_pats" FOREIGN KEY (site_id_c, deleted_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "tagtypes_descrpage_r_pages" FOREIGN KEY (site_id_c, descr_page_id_c) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    "tagtypes_mergedby_r_pats" FOREIGN KEY (site_id_c, merged_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "tagtypes_mergedinto_r_tagtypes" FOREIGN KEY (site_id_c, merged_into_tagtype_id_c) REFERENCES tagtypes_t(site_id_c, id_c) DEFERRABLE
+    "tagtypes_r_sites" FOREIGN KEY (site_id_c) REFERENCES sites3(id) DEFERRABLE
+    "tagtypes_scopedtopat_r_pats" FOREIGN KEY (site_id_c, scoped_to_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+Referenced by:
+    TABLE "tags_t" CONSTRAINT "tags_r_tagtypes" FOREIGN KEY (site_id_c, tagtype_id_c) REFERENCES tagtypes_t(site_id_c, id_c) DEFERRABLE
+    TABLE "tagtypes_t" CONSTRAINT "tagtypes_mergedinto_r_tagtypes" FOREIGN KEY (site_id_c, merged_into_tagtype_id_c) REFERENCES tagtypes_t(site_id_c, id_c) DEFERRABLE
+

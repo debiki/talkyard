@@ -1,0 +1,37 @@
+                             Table "public.links_t"
+      Column      |            Type             | Collation | Nullable | Default 
+------------------+-----------------------------+-----------+----------+---------
+ site_id_c        | integer                     |           | not null | 
+ from_post_id_c   | integer                     |           | not null | 
+ link_url_c       | character varying           |           | not null | 
+ added_at_c       | timestamp without time zone |           | not null | 
+ added_by_id_c    | integer                     |           | not null | 
+ is_external_c    | boolean                     |           |          | 
+ to_staff_space_c | boolean                     |           |          | 
+ to_page_id_c     | character varying           |           |          | 
+ to_post_id_c     | integer                     |           |          | 
+ to_pat_id_c      | integer                     |           |          | 
+ to_tag_id_c      | integer                     |           |          | 
+ to_category_id_c | integer                     |           |          | 
+Indexes:
+    "links_p_postid_url" PRIMARY KEY, btree (site_id_c, from_post_id_c, link_url_c)
+    "links_i_addedbyid" btree (site_id_c, added_by_id_c)
+    "links_i_linkurl" btree (site_id_c, link_url_c)
+    "links_i_tocategoryid" btree (site_id_c, to_category_id_c)
+    "links_i_topageid" btree (site_id_c, to_page_id_c)
+    "links_i_topostid" btree (site_id_c, to_post_id_c)
+    "links_i_toppid" btree (site_id_c, to_pat_id_c)
+    "links_i_totagid" btree (site_id_c, to_tag_id_c)
+Check constraints:
+    "links_c_isexternal_null_true" CHECK (is_external_c OR is_external_c IS NULL)
+    "links_c_linkurl_len" CHECK (length(link_url_c::text) >= 1 AND length(link_url_c::text) <= 500)
+    "links_c_to_just_one" CHECK (num_nonnulls(is_external_c, to_staff_space_c, to_page_id_c, to_post_id_c, to_pat_id_c, to_tag_id_c, to_category_id_c) = 1)
+    "links_c_tostaffspace_null_true" CHECK (to_staff_space_c OR to_staff_space_c IS NULL)
+Foreign-key constraints:
+    "links_addedby_r_pps" FOREIGN KEY (site_id_c, added_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "links_frompostid_r_posts" FOREIGN KEY (site_id_c, from_post_id_c) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    "links_tocatid_r_categories" FOREIGN KEY (site_id_c, to_category_id_c) REFERENCES categories3(site_id, id) DEFERRABLE
+    "links_topageid_r_pages" FOREIGN KEY (site_id_c, to_page_id_c) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    "links_topostid_r_posts" FOREIGN KEY (site_id_c, to_post_id_c) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    "links_toppid_r_pps" FOREIGN KEY (site_id_c, to_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+

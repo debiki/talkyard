@@ -100,6 +100,12 @@ export function store_maySendInvites(store: Store, user: Myself | UserInclDetail
   return mayIndeed();
 }
 
+export function pat_isMe(pat: UserInclDetails | Me | Pat | PatId): pat is Me {
+  // Let's test for any property that would never be set for a user other than
+  // `theStore.me` — and would always be set for `theStore.me`.
+  return !!(pat as Me).watchbar;
+}
+
 export function pat_isMember(pat: UserInclDetails | Me | Pat | PatId): Bo {
   if (!pat) return false;
   const patId: PatId = _.isObject(pat) ? (pat as Pat).id : pat

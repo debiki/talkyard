@@ -237,7 +237,7 @@ sealed abstract class PostAction {
   def pageId: PageId  // deprecated?
   def postNr: PostNr  //
   RENAME // to fromPatId
-  def doerId: UserId
+  def doerId: PatIds
   RENAME // to addedAt
   def doneAt: When
   RENAME // to relType
@@ -245,9 +245,16 @@ sealed abstract class PostAction {
 }
 
 
+/** A vote, or Assigned-To, or flag (but flags will instead be implemented as
+  * posts, some day).
+  *
+  * @param fromPatId — The voter, or person assigned, etc.  If it's an anonym or pseudonym,
+  *     then, fromPatId.pubId  is the anonym's or pseudonym's id,
+  *     and  fromPatId.anyTrueId  is the id of the true user.
+  */
 case class PatNodeRel[T <: PatNodeRelType](
   toNodeId: PostId,
-  fromPatId: PatId,
+  fromPatId: PatIds,
   @deprecated
   pageId: PageId,
   @deprecated
@@ -256,7 +263,7 @@ case class PatNodeRel[T <: PatNodeRelType](
   relType: T,
 ) extends PostAction {
   def uniqueId: PostId = toNodeId
-  def doerId: UserId = fromPatId
+  def doerId: PatIds = fromPatId
   def doneAt: When = addedAt
   def actionType: T = relType
 
@@ -264,13 +271,15 @@ case class PatNodeRel[T <: PatNodeRelType](
   require(relType.toInt == PatNodeRelType.AssignedTo.toInt,
         s"Bad rel type: ${relType}, only AssignedTo implemented [TyEPATNODERELTYP]")
 
-  require(fromPatId >= Pat.LowestTalkToMemberId,
+  // For now.  Since PatNodeRel is currently used only for PatNodeRelType.AssignedTo,
+  // the user can't be an anonym or guest.
+  require(fromPatId.pubId >= Pat.LowestTalkToMemberId,
         s"Bad pat id to assign: ${fromPatId}, is < ${Pat.LowestTalkToMemberId} [TyEASGNPATID]")
 }
 
 
 object PostAction {
-  def apply(uniqueId: PostId, pageId: PageId, postNr: PostNr, doerId: UserId,
+  def apply(uniqueId: PostId, pageId: PageId, postNr: PostNr, doerId: PatIds,
         doneAt: When, actionType: PostActionType)
         : PostAction = actionType match {
     case voteType: PostVoteType =>
@@ -296,11 +305,11 @@ case class PostVote(  // [exp] ok to use
   pageId: PageId,
   postNr: PostNr,
   doneAt: When,
-  voterId: UserId,
+  voterId: PatIds,
   voteType: PostVoteType) extends PostAction {
 
   def actionType: PostVoteType = voteType
-  def doerId: UserId = voterId
+  def doerId: PatIds = voterId
 }
 
 /** Post id missing — nice to not have to specify, when constructing tests, since the post id is
@@ -310,7 +319,7 @@ case class PostVoteToInsert(
   pageId: PageId,
   postNr: PostNr,
   doneAt: When,
-  voterId: UserId,
+  voterId: PatIds,
   voteType: PostVoteType) {
 
   def toPostAction(postId: PostId): PostVote = PostVote(
@@ -328,11 +337,11 @@ case class PostFlag(  // [exp] ok to use
   pageId: PageId,
   postNr: PostNr,
   doneAt: When,
-  flaggerId: UserId,
+  flaggerId: PatIds,
   flagType: PostFlagType) extends PostAction {
 
   def actionType: PostFlagType = flagType
-  def doerId: UserId = flaggerId
+  def doerId: PatIds = flaggerId
   def flaggedAt: When = doneAt
 }
 

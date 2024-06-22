@@ -520,12 +520,12 @@ export const Title = createComponent({
       const titleIcon = !page.pageAnsweredAtMs && !isCoreOrMyPage
           ? r.span({ className: iconClass, title: iconTooltip })
           : r.a({ className: 'dw-clickable ' + iconClass, title: iconTooltip,
-              onClick: event => {
+              onClick: (event: MouseEvent) => {
                 const rect = cloneEventTargetRect(event);
                 morebundle.openChangePageDialog(rect, { page, showViewAnswerButton: true });
               }});
 
-      let deletedIcon;
+      let deletedIcon: RElm | U;
       if (store_isPageDeleted(store)) {
         let deletedReason = page.pageDeletedAtMs ?
             t.d.ThisPageDeleted : t.d.CatDeldPageToo;
@@ -1711,6 +1711,7 @@ export const PostHeader = createComponent({
     // (Dupl code, for anyAvatar [503KP25])
     const author: BriefUser = this.props.author || // author specified here: [4WKA8YB]
         store_getAuthorOrMissing(store, post);
+    // Currently no page author avatar (looks better without). [no_op_avatar]
     const showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
     const anyAvatar = !showAvatar ? null : avatar.Avatar({ user: author, origins: store });
 

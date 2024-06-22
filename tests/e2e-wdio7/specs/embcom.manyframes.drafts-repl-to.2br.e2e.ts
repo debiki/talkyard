@@ -21,7 +21,7 @@ let maria_brB: TyE2eTestBrowser;
 
 let site: IdAddress;
 let forum: TwoCatsTestForum;
-const localHostname = 'comments-for-e2e-test-mnyifre-localhost-8080';
+const localHostname = 'comments-for-e2e-test-mnyifre';
 const embeddingOrigin = 'http://e2e-test-manyifr.localhost:8080';
 
 const slashSlug_c052_many2 = '/embcom-manyframes-replyto-c052-many-2.html';

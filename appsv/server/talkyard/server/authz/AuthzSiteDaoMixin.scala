@@ -404,16 +404,15 @@ trait AuthzSiteDaoMixin {
         maySeeUnlistedPages: Bo = true, anyTx: Opt[SiteTx])
         : (MaySeeOrWhyNot, St) = {
 
-    // COULD reuse anyTx?
     val post = whatPost match {
       case ThePost.Here(post) => post
       case ThePost.WithId(postId) =>
-        loadPostByUniqueId(postId) getOrElse {
+        loadPostByUniqueId(postId, anyTx) getOrElse {
           return (MaySeeOrWhyNot.NopeNoPostWithThatNr, "7URAZ8T-Post-Id-Not-Found")
         }
       case ThePost.OnPageWithNr(pageId, postNr) =>
         // Or is it better to look up the page first?
-        loadPost(pageId, postNr) getOrElse {
+        loadPost(pageId, postNr, anyTx) getOrElse {
           return (MaySeeOrWhyNot.NopeNoPostWithThatNr, "7URAZ8S-Post-Not-Found")
         }
     }

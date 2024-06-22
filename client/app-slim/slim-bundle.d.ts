@@ -374,6 +374,7 @@ declare namespace debiki2 {
   function prettyNum(num: number, digits?: Nr): number;
   function isBlank(x: string): boolean;
 
+  function any_isDeepEqIgnUndef(a: any, b: any): Bo;
   function obj_isDeepEqIgnUndef(a: Object, b: Object): Bo;
 
   function whenMsToIsoDate(whenMs: WhenMs): string;
@@ -389,6 +390,7 @@ declare namespace debiki2 {
   //function threatLevel_toString(threatLevel: ThreatLevel): [St, St];
   function threatLevel_toElem(threatLevel: ThreatLevel);
   function pat_name(pat: Me | Pat): St;
+  function pat_isMe(pat: UserInclDetails | Me | Pat | PatId): pat is Me;
   function pat_isMember(pat: UserInclDetails | Me | Pat | PatId): Bo;
   var isGuest;
   function pat_isGuest(pat: UserInclDetails | Me | Pat): Bo;
@@ -424,7 +426,7 @@ declare namespace debiki2 {
 
   function store_makeNewPostPreviewPatch(
       store: Store, page: Page, parentPostNr: PostNr, safePreviewHtml: string,
-      newPostType?: PostType): StorePatch;
+      newPostType?: PostType, doAsAnon?: MaybeAnon): StorePatch;
   function store_makeEditsPreviewPatch(
       store: Store, page: Page, post: Post, safePreviewHtml: string): StorePatch;
   function store_makeDeletePreviewPostPatch(
@@ -436,7 +438,7 @@ declare namespace debiki2 {
   function store_maySendInvites(store: Store, user: Myself | UserInclDetails): MayMayNot;
   var isMember;
   var userId_isGuest;
-  function store_isFeatFlagOn(store: Store, featureFlag: St): Bo;
+  function store_isFeatFlagOn(store: Store, featureFlag: St, defaultOn?: Bo): Bo;
   function isNoPage(pageId: PageId): Bo;
   function store_isPageDeleted(store: Store): boolean;
   function page_isAncCatDeld(page: Page): Bo;

@@ -471,6 +471,10 @@ object Rdb {
   } */
 
 
+  def getPatIds(rs: js.ResultSet, pubIdColumn: St, trueIdColumn: St): PatIds =
+    TrueId(getInt32(rs, pubIdColumn), anyTrueId = getOptInt32(rs, trueIdColumn))
+
+
   def getOptTrustLevel(rs: js.ResultSet, column: St): Opt[TrustLevel] = {
     val asInt = rs.getInt(column)
     if (rs.wasNull()) None
@@ -688,6 +692,15 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
   }
 
 
+  /** For  `update ... returning ...`.
+    */
+  def updateQuery[R](sql: St, binds: List[AnyRef] = Nil,
+               resultSetHandler: js.ResultSet => R)
+               (conn: js.Connection): Bo = {
+    execImpl(sql, binds, null, conn, Some(resultSetHandler)).asInstanceOf[Bo]
+  }
+
+
   /**
    * For calls to stored functions: """{? = call some_function(?, ?, ...) }"""
    */
@@ -700,7 +713,9 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
 
   private def execImpl(query: String, binds: List[AnyRef],
                 resultSetHandler: js.ResultSet => Any,
-                conn: js.Connection): Any = {
+                conn: js.Connection,
+                updateResultSetHandler: Opt[js.ResultSet => Any] = None,
+                ): Any = {
     val isAutonomous = conn eq null
     var conn2: js.Connection = null
     var pstmt: js.PreparedStatement = null
@@ -715,7 +730,17 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
       pstmt = conn2.prepareStatement(query)
       _bind(binds, pstmt)
       //s.setPoolable(false)  // don't cache infrequently used statements
-      val result: Any = (if (resultSetHandler ne null) {
+      val result: Any = (if (updateResultSetHandler.isDefined) {
+        // Maybe better to remove "autonomous" statements completely.
+        unimplIf(isAutonomous, "Update queries not supported [TyEAUTONUPDQ]")
+        // `executeUpdate()` doesn't work together with SQL `returning ...`.
+        val trueOrFalse = pstmt.execute()
+        numWritesDone.incrementAndGet()
+        val rs: js.ResultSet = pstmt.getResultSet()
+        updateResultSetHandler.foreach(h => h(rs))
+        trueOrFalse
+      }
+      else if (resultSetHandler ne null) {
         val rs = pstmt.executeQuery()
         //if (!isProdLive)
         numQueriesDone.incrementAndGet()
@@ -730,7 +755,7 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
         }
         updateCount
       })
-      COULD // handle errors, throw exception
+
       result
     } catch {
       case ex: js.SQLException =>

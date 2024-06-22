@@ -293,6 +293,7 @@ impersonate:
           - impersonate-post-as-other.2browsers  TyT502KNG24
           - impersonate-restricted-areas.test.ts  TyT6502PKSNR57
 
+alias,
 anonymous comments,
 anons:
   partly impl:
@@ -301,11 +302,18 @@ anons:
             - Anons for drafts, UNTSETED.
             - Load anon drafts, restore as anon. TyTANONDFLOAD
             - Cannot move anon post to other page.  TyTMOVANONCOMT
-            - Notfs from anons, don't include real user name  TyTNOTFFROMANON
+            - Notfs from anons (comments, votes, more?), don't include real user name  TyTNOTFFROMANON
             - UNTESTED; TESTS_MISSING // exp imp anons?  True ids are incl in json dumps?
             - Different anon statuses: Comts start anon / NeverAlways.AlwaysButCanContinue / etc
             - Edit & update the draft.  TyTEDUPDDFT04
             - Save anon draft, reuse an anon.  TyTDFTREUSEANON.
+            - Edit comment as anon: Anon name in new edit revision, & email notfs. TyTANONEDIT
+            - Post pages as anon
+            - Accept/unaccept answer
+            - Close/reopen page
+            - Delete/undelete own page
+            - Rename page
+            - Change page status   PageTitleSettingsController
             - ... and more
 
 different users -
@@ -466,7 +474,7 @@ security:
             - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J TyT406AK24
             - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
   api get topics in restr cat:
-            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+            - embcom.comment-counts.2br.ec.cors  TyTE2ECOMCOUNTS
   api list restriceted category:
             - api-list-query-for-topics-popular-first.test.ts  TyT603AKSL25.TyT502RKDJ46
   api search restricted categories and private topics:
@@ -489,7 +497,7 @@ security:
             search for "<script>" or "javascript:" to find?
   cors:
             - api-search-ext-site-and-server.2br.cors  TyTEAPIEXTSRV
-            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+            - embcom.comment-counts.2br.ec.cors  TyTE2ECOMCOUNTS
             - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
   categories: see (1QRY7)
   see other's tasks:
@@ -687,7 +695,7 @@ categories:
   upsert categories:  (upscats)
   move topic to new category:
             - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyTMVPG2OTRCAT
-            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS.TyTMVPG2CAT
+            - embcom.comment-counts.2br.ec.cors  TyTE2ECOMCOUNTS.TyTMVPG2CAT
 
   sub categories:
     create,
@@ -951,9 +959,11 @@ discussion -
   sort order of replies:
     best first:
             - votes-and-best-first  TyTESORTBEST
+            - embcom.sort-order-op-likes-btn-txt.2br.ec  TyTEMBSORTLIKETXT
     oldest first:
             - embcom.drafts-previews-not-logged-in.2br.e2e.ts  TyT2ZBKPW048.TyTPOSTORDR
     newest first:
+            - embcom.sort-order-op-likes-btn-txt.2br.ec  TyTEMBSORTLIKETXT.TyTEMBNEWEST1ST
   sort order of topics:  see _topic_order
 
 large pages,
@@ -1060,6 +1070,8 @@ embedded comments:
   (50279460),
   ignores query params:
             - embcom.ignore-query-params.2br  TyTEEMCIGQPRMS
+  sort order:
+            - embcom.sort-order-op-likes-btn-txt.2br.ec  TyTEMBSORTLIKETXT
   scroll and show #comment-n:
           - embedded-comments-scroll  TyT2K4DHR49-05
   scroll and load #comment-nnn:
@@ -1088,7 +1100,7 @@ embedded comments:
   notf about new discusion:
           - embedded-comments-category-refs.2browsers.test.ts   TyT03RKHJF59.TyT063AKDGW60
   comment counts:
-            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+            - embcom.comment-counts.2br.ec.cors  TyTE2ECOMCOUNTS
             - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
   many comments iframes same page:
             - embcom.manyframes.basic.2br  TyTEMANYCOMIFR01
@@ -1701,6 +1713,10 @@ email notifications:  (5ABKR024)
 custom forms:
             - custom-forms.3br.d  TyTCUSTFORMS
 
+translations:
+  edit button texts:
+            - embcom.sort-order-op-likes-btn-txt.2br.ec  TyTEMBSORTLIKETXT.TyTCOMTBTNTTL
+
 terms of use,
 privacy policy:
   read after have signed up:
@@ -1795,7 +1811,7 @@ api:
             - api-search-full-text.1br.f  TyT70ADNEFTD36
   get api:
             - api-get-query-for-pats.2br  TyTEAPIGETQPATS
-            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+            - embcom.comment-counts.2br.ec.cors  TyTE2ECOMCOUNTS
             - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
     specify same ref twice — not allowed? (wastes resources)
             - TESTS_MISSING  & unimpl

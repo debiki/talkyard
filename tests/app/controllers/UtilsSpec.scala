@@ -18,63 +18,125 @@
 package controllers
 
 import com.debiki.core._
-import com.debiki.core
-import org.specs2.mutable._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 
 
-class UtilsSpec extends Specification {
+class UtilsSpec extends AnyFreeSpec with must.Matchers {
 
 
-  "Utils.parsePathRanges" can {
+  "Utils.parsePathRanges can" - {
 
     import Utils.parsePathRanges
 
     val baseFolder = "/folder/"
 
-    "fallback to defaults" >> {
+    "fallback to defaults" in {
       val ranges = parsePathRanges(baseFolder, Map.empty)
-      ranges must be_==(PathRanges(folders = Seq("/folder/"), trees = Nil))
+      ranges mustBe PathRanges(folders = Seq("/folder/"), trees = Nil)
     }
 
-    "understand &in-folder and &for-folder" >> {
+    "understand &in-folder and &for-folder" in {
       val rangesIn = parsePathRanges(baseFolder, Map("in-folder" -> Seq("")))
       val rangesFor = parsePathRanges(baseFolder, Map("for-folder" -> Seq("")),
          "for")
       val key = PathRanges(folders = Seq("/folder/"), trees = Nil)
-      rangesIn must be_==(key)
-      rangesFor must be_==(key)
+      rangesIn mustBe key
+      rangesFor mustBe key
     }
 
-    "understand &in-tree and &for-tree" >> {
+    "understand &in-tree and &for-tree" in {
       val rangesIn = parsePathRanges(baseFolder, Map("in-tree" -> Seq("")))
       val rangesFor = parsePathRanges(baseFolder, Map("for-tree" -> Seq("")),
          "for")
       val key = PathRanges(folders = Nil, trees = Seq("/folder/"))
-      rangesIn must be_==(key)
-      rangesFor must be_==(key)
+      rangesIn mustBe key
+      rangesFor mustBe key
     }
 
-    "understand &in-folders=f/" >> {
+    "understand &in-folders=f/" in {
       val ranges = parsePathRanges(baseFolder, Map("in-folders" -> Seq("f/")))
-      ranges must be_==(PathRanges(folders = Seq("/folder/f/"), trees = Nil))
+      ranges mustBe PathRanges(folders = Seq("/folder/f/"), trees = Nil)
     }
 
-    "understand &in-folders=f/,f2/&in-trees=t/,t2/" >> {
+    "understand &in-folders=f/,f2/&in-trees=t/,t2/" in {
       val ranges = parsePathRanges(baseFolder, Map(
         "in-folders" -> Seq("f/,f2/"), "in-trees" -> Seq("t/,t2/")))
-      ranges must be_==(PathRanges(folders = Seq("/folder/f/", "/folder/f2/"),
-        trees = Seq("/folder/t/", "/folder/t2/")))
+      ranges mustBe PathRanges(folders = Seq("/folder/f/", "/folder/f2/"),
+        trees = Seq("/folder/t/", "/folder/t2/"))
     }
 
-    "understand absolute paths: /f/ and /t/" >> {
+    "understand absolute paths: /f/ and /t/" in {
       val ranges = parsePathRanges(baseFolder, Map(
         "in-folders" -> Seq("/f/"), "in-trees" -> Seq("/t/")))
-      ranges must be_==(PathRanges(folders = Seq("/f/"), trees = Seq("/t/")))
+      ranges mustBe PathRanges(folders = Seq("/f/"), trees = Seq("/t/"))
     }
 
-    "understand &for-pages=aa,bb" >> {
+    "understand &for-pages=aa,bb" in {
       val ranges = parsePathRanges(baseFolder, Map("for-pages" -> Seq("aa,bb")))
-      ranges must be_==(PathRanges(pageIds = Seq("aa", "bb")))
+      ranges mustBe PathRanges(pageIds = Seq("aa", "bb"))
+    }
+  }
+
+
+  "Utils.makeLocalHostnameFromEmbeddingAdr can" - {
+    import Utils.makeLocalHostnameFromEmbeddingAdr
+    "handle simple cases" in {
+      makeLocalHostnameFromEmbeddingAdr("") mustBe ""
+      makeLocalHostnameFromEmbeddingAdr("localhost") mustBe "localhost"
+    }
+
+    "remove simple TLDs" in {
+      makeLocalHostnameFromEmbeddingAdr("example.com") mustBe "example"
+      makeLocalHostnameFromEmbeddingAdr("example.org") mustBe "example"
+    }
+
+    "remove two part 'TLDs'" in {
+      makeLocalHostnameFromEmbeddingAdr("example.co.uk") mustBe "example"
+      makeLocalHostnameFromEmbeddingAdr("example.org.uk") mustBe "example"
+    }
+
+    "remove URL paths & query etc" in {
+      makeLocalHostnameFromEmbeddingAdr("example.co.uk/ab") mustBe "example"
+      makeLocalHostnameFromEmbeddingAdr("example.co.uk/ab/cd?ef=gh#ij") mustBe "example"
+      makeLocalHostnameFromEmbeddingAdr("x.org?param") mustBe "x"
+      makeLocalHostnameFromEmbeddingAdr("y.co#hash") mustBe "y"
+    }
+
+    "dots to dashes" in {
+      makeLocalHostnameFromEmbeddingAdr("ex.am.ple.ventures") mustBe "ex-am-ple"
+      makeLocalHostnameFromEmbeddingAdr("ex.am.ple.com") mustBe "ex-am-ple"
+      makeLocalHostnameFromEmbeddingAdr("ex.am.ple.org.uk") mustBe "ex-am-ple"
+      makeLocalHostnameFromEmbeddingAdr("www.ex.am.ple.org.uk") mustBe "www-ex-am-ple"
+      makeLocalHostnameFromEmbeddingAdr("..www....ex.am.ple..org.uk..") mustBe "www-ex-am-ple"
+      makeLocalHostnameFromEmbeddingAdr("dots..and--dash.feed-your.cat"
+                                ) mustBe "dots-and-dash-feed-your"
+    }
+
+    "keeps 'e2e-test--' prefix (although two '-')" in {
+      makeLocalHostnameFromEmbeddingAdr("e2e-test--brave--bat.--.cat"
+            ) mustBe "e2e-test--brave-bat"
+      makeLocalHostnameFromEmbeddingAdr("smoke-test--brave---rabbit.-.news"
+            ) mustBe "smoke-test--brave-rabbit"
+      makeLocalHostnameFromEmbeddingAdr("somethingelse-test--aa-bb.com"
+            ) mustBe "somethingelse-test-aa-bb" // only one '-' after 'test'
+    }
+
+    "remove https://" in {
+      makeLocalHostnameFromEmbeddingAdr("//example") mustBe "example"
+      makeLocalHostnameFromEmbeddingAdr("http://example") mustBe "example"
+      makeLocalHostnameFromEmbeddingAdr("https://example") mustBe "example"
+    }
+
+    "all at the same time" in {
+      makeLocalHostnameFromEmbeddingAdr("blog.com.pany.com:8080") mustBe "blog-com-pany"
+      makeLocalHostnameFromEmbeddingAdr("x.org.in?param") mustBe "x"
+      makeLocalHostnameFromEmbeddingAdr("y.co#hash") mustBe "y"
+      makeLocalHostnameFromEmbeddingAdr("https://blog.kittens.example.com:8080/ab?cd#e"
+            ) mustBe "blog-kittens-example"
+      makeLocalHostnameFromEmbeddingAdr("e2e-test--aa.bb--cc.co.uk:80#hmm"
+            ) mustBe "e2e-test--aa-bb-cc"
+
     }
   }
 

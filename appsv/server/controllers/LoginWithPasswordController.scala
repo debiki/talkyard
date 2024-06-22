@@ -288,8 +288,8 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  def sendEmailAddressVerificationEmail(user: User, anyReturnToUrl: Option[String],
-                                        host: String, dao: SiteDao): Unit = {
+  private def sendEmailAddressVerificationEmail(user: User, anyReturnToUrl: Opt[St],
+          host: St, dao: SiteDao): U = {
     val email = LoginWithPasswordController.createEmailAddrVerifEmailLogDontSend(
       user, anyReturnToUrl, host, dao)
     globals.sendEmail(email, dao.siteId)

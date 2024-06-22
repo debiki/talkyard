@@ -69,7 +69,7 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
     // Need to generate new local hostname, since we're going to create a new site.
     const testId = utils.generateTestId();
     const embeddingHostPort = `e2e-test--imp-dsq-${testId}.localhost:8080`;
-    const localHostname     = `e2e-test--imp-dsq-${testId}-localhost-8080`;
+    const localHostname     = `e2e-test--imp-dsq-${testId}`;
     //const localHostname = settings.localHostname ||
     //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
 

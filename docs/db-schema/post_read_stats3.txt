@@ -1,0 +1,19 @@
+                    Table "public.post_read_stats3"
+ Column  |            Type             | Collation | Nullable | Default 
+---------+-----------------------------+-----------+----------+---------
+ site_id | integer                     |           | not null | 
+ page_id | character varying(32)       |           | not null | 
+ post_nr | integer                     |           | not null | 
+ ip      | character varying(39)       |           |          | 
+ user_id | integer                     |           |          | 
+ read_at | timestamp without time zone |           | not null | 
+Indexes:
+    "dw1_pstsrd_guest_ip__u" UNIQUE, btree (site_id, page_id, post_nr, ip) WHERE user_id IS NULL OR user_id::text ~~ '-%'::text
+    "dw1_pstsrd_role__u" UNIQUE, btree (site_id, page_id, post_nr, user_id)
+    "postsread_i_readbyid" btree (site_id, user_id)
+Foreign-key constraints:
+    "pstsrd_r_people" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "pstsrd_r_posts" FOREIGN KEY (site_id, page_id, post_nr) REFERENCES posts3(site_id, page_id, post_nr) DEFERRABLE
+Triggers:
+    post_read_stats3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON post_read_stats3 FOR EACH ROW EXECUTE PROCEDURE post_read_stats3_sum_quota()
+

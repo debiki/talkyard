@@ -249,5 +249,59 @@ object Utils extends Results with http.ContentTypes {
         pageIds = pageIdsList)
   }
 
+
+  /** Converts e.g.  blog.some.company.com  to  blog-some-company,  which can then be used
+    * to construct an address like   comments-for-blog-some-company.talkyard.net  where
+    * blog comments can be hosted.
+    *
+    * Unfortunately, Google Chrome easily thinks that at least addresses like
+    *         comments-for-blog-some-company-com.talkyard.net
+    * looks suspiciously similar to
+    *                      blog.some.company.com
+    * and shows a hacker warning when the blog amin visits the comments site to administrate or
+    * setup comments.  Now trying to work around that, by excluding the TLD. So we now generate:
+    *         comments-for-blog-some-company.talkyard.net   (without  '-com')
+    * Hopefully this works, but who knows.
+    *
+    * Blog comments are also accessible via  site-<pub-id>.talkyard.net,
+    * e.g.  site-123abcd45.talkyard.net — this is used as the hostname for the blog comments
+    * iframes. End users don't see at all, unless they look at the html source. And maybe
+    * in the address bar of a login popup window.
+    * Admins, though, might find such ID based addresses hard to remember,
+    * when configuring the site or moderating comments. Not sure what to do about it —
+    * the underlying problem is a sloppy risk identification algorithm by Google?
+    * (They'll need to use either a pretty long & random site id, or get a security warning?)
+    * After all, "comments-for-example-com.talkyard.net" does *not* look like "example.com"?
+    */
+  def makeLocalHostnameFromEmbeddingAdr(embAdr: St): St = {
+    var host = embAdr.replaceFirst("""^(https?:)?\/\/""", "")
+          // www.weird.com/some/path?query#hash —> www.weird.com  only
+          .replaceFirst("[/?#].*$", "")
+
+    // Let's allow "--" in "e2e-test--".  Looks nice, and,  more importantly,
+    // I won't have to update lots of e2e test hostnames.  Also see: [7UKPwF2]
+    val hasE2eTestPrefix = host.startsWith("e2e-test--")
+    if (hasE2eTestPrefix) host = host.drop("e2e-test--".length)
+
+    val hasSmokeTestPrefix = host.startsWith("smoke-test--") && !hasE2eTestPrefix
+    if (hasSmokeTestPrefix) host = host.drop("smoke-test--".length)
+
+    var result = host
+          // Drops the TLD, e.g. ".com", ".org" but also ".co.uk" and such "two parts TLDs".
+          // And any port number:
+          // blog.com.pany.com:8080 —> blog.com.pany,  or www.example.co.uk —> www.example
+          // (And any trailing dots.)
+          .replaceFirst("""\.([^.]{2,3}\.[^.]{2}|[^.]+)(:[0-9]*)?[.:]*$""", "")
+          // Leading and trailing symbols (why would there be? don't know).
+          .replaceAll("""^[.:-]+""", "")
+          .replaceAll("""[.:-]+$""", "")
+          // blog.com-pany —> blog-com-pany
+          .replaceAll("[.:-]+", "-")
+
+    if (hasE2eTestPrefix) result = "e2e-test--" + result
+    if (hasSmokeTestPrefix) result = "smoke-test--" + result
+    result
+  }
+
 }
 

@@ -3,6 +3,7 @@ package talkyard.server
 import com.debiki.core._
 import com.debiki.core.Prelude.dieIf
 import debiki.JsonUtils.parseOptJsObject
+import debiki.EdHttp.throwBadReq
 import org.scalactic.{Bad, Good, Or}
 import play.api.libs.json.JsObject
 
@@ -55,18 +56,29 @@ package object parser {
   }
 
 
+  def parseDoAsAliasJsonOrThrow(jOb: JsObject): Opt[WhichAnon] = {
+    parseWhichAnonJson(jOb) getOrIfBad { prob =>
+      throwBadReq("TyEBADALIAS", s"Bad doAsAnon params: $prob")
+    }
+  }
+
+
+  val DoAsAnonFieldName = "doAsAnon"
 
   /** Sync w  parseWhichAnon(..)  in com.debiki.dao.rdb. */
   def parseWhichAnonJson(jsOb: JsObject): Opt[WhichAnon] Or ErrMsg = {
     import debiki.JsonUtils.parseOptInt32
 
-    val doAsJsOb = parseOptJsObject(jsOb, "doAsAnon") getOrElse {
+    val doAsJsOb = parseOptJsObject(jsOb, DoAsAnonFieldName, falseAsNone = true) getOrElse {
       return Good(None)
     }
 
     val sameAnonId: Opt[AnonId] = parseOptInt32(doAsJsOb, "sameAnonId")
 
     val newAnonStatus: Opt[AnonStatus] = parseOptInt32(doAsJsOb, "newAnonStatus") map { int =>
+      if (int == AnonStatus.NotAnon.IntVal)
+        return Good(None)
+
       AnonStatus.fromInt(int) getOrElse {
         return Bad(s"Invalid newAnonStatus: $int")
       }

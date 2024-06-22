@@ -55,7 +55,7 @@ const mariasImageLinksEdited = mariasImageLinksOrig + "\n\n Extra_text.";
 
 
 
-const localHostname = 'comments-for-e2e-test-embuplorg-localhost-8080';
+const localHostname = 'comments-for-e2e-test-embuplorg';
 const embeddingOrigin = 'http://e2e-test-embuplorg.localhost:8080';
 const pageDddSlug = 'emb-cmts-ddd.html';
 

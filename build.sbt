@@ -24,10 +24,25 @@ import _root_.sbtbuildinfo.BuildInfoPlugin.autoImport._
 
 // Note: In VSCode, the Scala Metals plugin, one needs to run the
 // 'Metals: Import Build' task for Metals to notice a Scala version change.
-ThisBuild / scalaVersion := "2.12.17"
+//
+// Can't upgrade to Play 2.9, until using Scala 2.13.x — these Play libs aren't built
+// for Scala 2.12: (but are built for 2.13, then, no download errors)
+//    sbt.librarymanagement.ResolveException: Error downloading  [all of these:]
+//       com.typesafe.play:play-caffeine-cache_2.12:2.9.2
+//       com.typesafe.play:play-filters-helpers_2.12:2.9.2
+//       com.typesafe.play:play-akka-http-server_2.12:2.9.2
+//       com.typesafe.play:play-ahc-ws_2.12:2.9.2
+//       com.typesafe.play:play-server_2.12:2.9.2
+//
+ThisBuild / scalaVersion := "2.12.19"
+
 
 // Show unchecked and deprecated warnings, in this project and its modules.
 // scalacOptions in ThisBuild ++= Seq("-deprecation")
+
+// Causes error:
+//    bad option: -P:semanticdb:synthetics:on
+// scalacOptions in ThisBuild += "-P:semanticdb:synthetics:on"   // [scala_2_13]
 
 
 val appName = "talkyard-server"
@@ -47,8 +62,8 @@ lazy val tyRdb =
 
 val appDependencies = Seq(
   play.sbt.PlayImport.ws,
-  // Gzip filter.
-  play.sbt.Play.autoImport.filters,
+  play.sbt.PlayImport.filters, // gzip filter
+
   Dependencies.Play.json,
   //Dependencies.Play.twirl,
 
@@ -116,7 +131,10 @@ val appDependencies = Seq(
   // CLEAN_UP remove Spec2 use only ScalaTest, need to edit some tests.
   "org.mockito" % "mockito-all" % "1.10.19" % "test", // I use Mockito with Specs2...
   Dependencies.Libs.scalaTest,
-  Dependencies.Libs.scalaTestPlusPlay)
+  Dependencies.Libs.scalaTestPlusPlay,
+
+  // SalaFix plugin, https://github.com/scala/scala-collection-compat/releases [scala_2_13]
+  "org.scala-lang.modules" %% "scala-collection-compat" % "2.11.0")
 
 
 val main = (project in file("."))
@@ -172,7 +190,7 @@ def mainSettings = List(
   //  play.routes.compiler.InjectedRoutesGenerator,
 
   buildInfoPackage := "generatedcode",
-  // Don't include the build time — because then Play Framework will reload, whenever [7UJ2Z5]
+  // Don't include the build time — because then Play Framework will reload, whenever [7UJ2Z5]
   // anything in public/ changes. E.g. fixing a typo in a Javascript comment.
   // buildInfoOptions += BuildInfoOption.BuildTime,
   buildInfoKeys := Seq[BuildInfoKey](

@@ -241,6 +241,7 @@ object JsX {   RENAME // to JsonPaSe
         user match {
           case anon: Anonym =>
             if (anon.anonForPatId == showForPatId) {
+              // [see_own_alias]
               json += "anonForId" -> JsNumber(anon.anonForPatId)
               //on += "anonOnPageId" -> JsString(anon.anonOnPageId),
               json += "anonStatus" -> JsNumber(anon.anonStatus.toInt)
@@ -760,7 +761,9 @@ object JsX {   RENAME // to JsonPaSe
       "pageId" -> postAction.pageId,
       "postNr" -> postAction.postNr,
       "doneAt" -> JsWhenMs(postAction.doneAt),
-      "doerId" -> postAction.doerId,
+      // Maybe add sth like talkyard.server.parser.JsonConf that says if any doerId.privId
+      // should be included or not?
+      "doerId" -> postAction.doerId.pubId,  // [export_privid]
       "actionType" -> postAction.actionType.toInt)
   }
 
@@ -1038,7 +1041,7 @@ object JsX {   RENAME // to JsonPaSe
 
   def JsFlag(flag: PostFlag): JsValue =
     Json.obj(
-      "flaggerId" -> flag.flaggerId,
+      "flaggerId" -> flag.flaggerId.pubId,  // [export_privid]
       "flagType" -> flag.flagType.toInt,
       "flaggedAt" -> JsWhenMs(flag.doneAt),
       //flagReason

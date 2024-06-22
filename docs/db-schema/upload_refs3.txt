@@ -1,0 +1,23 @@
+                             Table "public.upload_refs3"
+        Column        |            Type             | Collation | Nullable | Default 
+----------------------+-----------------------------+-----------+----------+---------
+ site_id              | integer                     |           | not null | 
+ post_id              | integer                     |           | not null | 
+ base_url             | character varying           |           | not null | 
+ hash_path            | character varying           |           | not null | 
+ added_by_id          | integer                     |           | not null | 
+ added_at             | timestamp without time zone |           | not null | 
+ uploaded_file_name_c | text_trimmed_not_empty_d    |           |          | 
+Indexes:
+    "dw2_uploadrefs__p" PRIMARY KEY, btree (site_id, post_id, base_url, hash_path)
+    "dw2_uploadrefs_addedby__i" btree (site_id, added_by_id)
+    "dw2_uploadrefs_baseurl__i" btree (base_url)
+    "dw2_uploadrefs_hashpathsuffix__i" btree (hash_path)
+Check constraints:
+    "dw2_uploadrefs_baseurl__c_len" CHECK (length(base_url::text) >= 1 AND length(base_url::text) <= 100)
+    "dw2_uploadrefs_hashpath__c" CHECK (is_valid_hash_path(hash_path))
+    "dw2_uploadrefs_hashpathsuffix__c_len" CHECK (length(hash_path::text) >= 1 AND length(hash_path::text) <= 100)
+Foreign-key constraints:
+    "uploadrefs_r_people" FOREIGN KEY (site_id, added_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "uploadrefs_r_posts" FOREIGN KEY (site_id, post_id) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+

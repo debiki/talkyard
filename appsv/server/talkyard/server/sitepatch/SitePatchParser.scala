@@ -1100,7 +1100,9 @@ case class SitePatchParser(context: TyContext) {
             createdAt = readDateMs(jsObj, "createdAtMs"),
             uniquePostId = readInt(jsObj, "postId"),
             byUserId = readInt(jsObj, "byUserId"),
+            byTrueId = parseOptInt32(jsObj, "byTrueId"),
             toUserId = readInt(jsObj, "toUserId"),
+            toTrueId = parseOptInt32(jsObj, "toTrueId"),
             smtpMsgIdPrefix = readOptString(jsObj, "smtpMsgIdPrefix"),
             // OOPS, there's a foreign key, 'ntfs_r_emails' from notfs_t to emails_out_t.
             // Any email must be included in the patch (so the FK to emails_out_t won't
@@ -1611,7 +1613,7 @@ case class SitePatchParser(context: TyContext) {
         postId,
         pageId = readString(jsObj, "pageId"),
         postNr = readInt(jsObj, "postNr"),
-        doerId = readInt(jsObj, "doerId"),
+        doerId = TrueIdOnly(readInt(jsObj, "doerId")),  // [export_privid]
         doneAt = readWhen(jsObj, "doneAt"),
         actionType))
     }
@@ -1646,7 +1648,7 @@ case class SitePatchParser(context: TyContext) {
         pageId = readString(jsObj, "onPageId"),
         postNr = postNr,
         doneAt = readWhen(jsObj, "votedAtMs"),
-        voterId = readInt(jsObj, "voterId"),
+        voterId = TrueIdOnly(readInt(jsObj, "voterId")),  // [export_privid]
         voteType = voteType))
     }
     catch {

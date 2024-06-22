@@ -180,10 +180,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
       val embAddr = anyEmbeddingSiteAddress getOrElse {
         throwForbidden("EdE2FGHS0", "No local hostname and no embedding address")
       }
-      val hostnameWithDashes = embAddr
-        .replaceFirst("https?://", "")
-        .replaceAll("[.:]+", "-")   // www.example.com:8080 —> www-example-com-8080
-        .replaceFirst("/.*$", "")   // www.weird.com/some/path —> www-weird-com  only
+      val hostnameWithDashes = Utils.makeLocalHostnameFromEmbeddingAdr(embAddr)
       Hostname.EmbeddedCommentsHostnamePrefix + hostnameWithDashes
     }
 

@@ -53,6 +53,8 @@ const VotesDialog = createComponent({
       atY: rect.bottom - 60,
       post: post,
       voteType: voteType,
+      numVoters: null,
+      someVoters: null,
     });
     this.loadVoters(post, voteType);
   },
@@ -75,6 +77,7 @@ const VotesDialog = createComponent({
   render: function () {
     const state = this.state;
     const store: Store = this.state.store;
+    const me: Me = store.me;
     const numVoters: number = state.numVoters;
     const voters: BriefUser[] = state.someVoters;
     const voteType: PostVoteType = state.voteType;
@@ -87,6 +90,7 @@ const VotesDialog = createComponent({
       content = r.p({}, "Loading ...");
     }
     else {
+      // I18N: Votes list text
       const people = numVoters === 1 ? " person " : " people ";
       let didWhat: string;
       switch (voteType) {
@@ -98,8 +102,12 @@ const VotesDialog = createComponent({
       content = r.div({},
           r.p({ className: 's_VotesD_Title' }, numVoters + people + didWhat + " this post:"),
           r.div({ className: 's_VotesD_Voters' },
-            voters.map(voter => avatar.Avatar({ user: voter, origins: store,
-                size: AvatarSize.Small }))));
+            voters.map(voter => avatar.Avatar({ user: voter, key: voter.id, origins: store,
+                size: AvatarSize.Small,
+                // Anons have "names" A1, A2 etc — it's not easy to know which one
+                // is one's own (if any).   (voter.anonForId  is only included if it's one's
+                // own vote. [see_own_alias])
+                showIsMine: me.id && me.id === voter.anonForId }))));
     }
 
     return (

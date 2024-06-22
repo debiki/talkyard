@@ -24,7 +24,7 @@ let data;
 
 
 const specifiedEmbeddingHost =                 'e2e-test--gatsby-starter-blog.localhost';
-const commentsSiteLocalHostname = 'comments-for-e2e-test--gatsby-starter-blog-localhost';
+const commentsSiteLocalHostname = 'comments-for-e2e-test--gatsby-starter-blog';
 const blogUrl = 'http://localhost:8000/';
 
 const owensHiFolksComment = 'owensHiFolksComment';

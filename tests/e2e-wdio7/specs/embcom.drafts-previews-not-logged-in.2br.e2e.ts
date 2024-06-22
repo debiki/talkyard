@@ -22,7 +22,7 @@ const mariasCommentTwo = 'mariasCommentTwo';
 const mariasCommentThree = 'mariasCommentThree';
 const mariasCommentFour = 'mariasCommentFour';
 
-const localHostname = 'comments-for-e2e-test-embddrft-localhost-8080';
+const localHostname = 'comments-for-e2e-test-embddrft';
 const embeddingOrigin = 'http://e2e-test-embddrft.localhost:8080';
 const pageDddSlug = 'emb-cmts-ddd.html';
 const pageEeeSlug = 'emb-cmts-eee.html';

@@ -1,0 +1,203 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Talkyard Search API",
+    "version": "tyse-v0.2024.004-678d1190f"
+  },
+  "servers": [{ "url": "https://forum.talkyard.io" }],
+  "paths": {
+    "/-/v0/search": {
+      "post": {
+        "summary": "Search Talkyard forum content",
+        "operationId": "TySeV0Search",
+        "description": "Allows searching the forum for topics and comments based on a freetext query.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "searchQuery": {
+                    "type": "object",
+                    "required": [
+                      "freetext"
+                    ],
+                    "properties": {
+                      "freetext": {
+                        "type": "string",
+                        "description": "The search query.",
+                        "example": "What is Talkyard?"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A successful response containing the search results.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "origin": {
+                      "type": "string",
+                      "example": "https://forum.talkyard.io"
+                    },
+                    "thingsFound": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "description": "Pages found.",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "248"
+                          },
+                          "title": {
+                            "type": "string",
+                            "description": "Title of one page whose contents matched the search query. Often a question.",
+                            "example": "Can Ghost authors receive notifications when a comment is created on a post?"
+                          },
+                          "urlPath": {
+                            "type": "string",
+                            "description": "Append the URL path to the API server URL, to get the full page URL.",
+                            "example": "/-248/can-ghost-authors-receive-notifications-when-a-comment-is-created-on-a-post"
+                          },
+                          "excerpt": {
+                            "type": "string",
+                            "example": "I have integrated TalkYard in my Ghost blog. So far, it's working great..."
+                          },
+                          "author": {
+                            "type": "object",
+                            "description": "The person who created/posted this page.",
+                            "properties": {
+                              "id": {
+                                "type": "integer",
+                                "example": 480
+                              },
+                              "username": {
+                                "type": "string",
+                                "example": "brynolf"
+                              },
+                              "fullName": {
+                                "type": "string",
+                                "example": "Adam Brynolf"
+                              }
+                            }
+                          },
+                          "categoriesMainFirst": {
+                            "type": "array",
+                            "description": "Where in the forum this page was found (which categories).",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "integer",
+                                  "example": 6
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "description": "Category name.",
+                                  "example": "Ideas"
+                                },
+                                "urlPath": {
+                                  "type": "string",
+                                  "description": "The URL path to this category. Append to the 'origin' field.",
+                                  "example": "/latest/ideas"
+                                }
+                              }
+                            }
+                          },
+                          "pageType": {
+                            "type": "string",
+                            "description": "Pages can be of type Idea, Question, Problem, or (open-ended) Discussion.",
+                            "example": "Idea"
+                          },
+                          "answerPostId": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "doingStatus": {
+                            "type": "string",
+                            "description": "Ideas and Problems can have status Planned, Started and Done.",
+                            "example": "Started",
+                            "nullable": true
+                          },
+                          "closedStatus": {
+                            "type": "boolean",
+                            "description": "Pages that have gotten answered / solved, or are off-topic, get closed.",
+                            "nullable": true
+                          },
+                          "deletedStatus": {
+                            "type": "boolean",
+                            "description": "If the page has been deleted.",
+                            "nullable": true
+                          },
+                          "pageId": {
+                            "type": "string",
+                            "example": "248"
+                          },
+                          "postsFound": {
+                            "type": "array",
+                            "description": "Posts on the page that matched the search query. A comment is a post, and the page body too \u2014 that's the Original Post (OP).",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "isPageTitle": {
+                                  "type": "boolean"
+                                },
+                                "isPageBody": {
+                                  "type": "boolean"
+                                },
+                                "author": {
+                                  "type": "object",
+                                  "description": "The person who wrote this page or comment.",
+                                  "properties": {
+                                    "id": {
+                                      "type": "integer",
+                                      "example": 575
+                                    },
+                                    "username": {
+                                      "type": "string",
+                                      "example": "nicklas"
+                                    },
+                                    "fullName": {
+                                      "type": "string",
+                                      "example": "Andreas Nicklas"
+                                    },
+                                    "tinyAvatarUrl": {
+                                      "type": "string",
+                                      "example": "https://tyw-49f8.kxcdn.com/-/u/e7ef490a72/v/c/boq4fjs46w7n7axf77qq42f4yz4b4vo.jpg",
+                                      "nullable": true
+                                    }
+                                  }
+                                },
+                                "htmlWithMarks": {
+                                  "type": "array",
+                                  "description": "The actual text that matched the search query. This is the most interesing field, combined with the \"urlPath\" field. It's plain text *but* there's also \"<mark>...</mark>\" HTML tags surrounding the parts of the text that match the search query.",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

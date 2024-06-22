@@ -12,6 +12,7 @@ import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/ty-e2e-test-bro
 import settings from '../utils/settings';
 import { dieIf } from '../utils/log-and-die';
 import c from '../test-constants';
+import { IsWhere } from '../test-types';
 
 let allBrowsers: TyAllE2eTestBrowsers;
 let brA: TyE2eTestBrowser;
@@ -23,7 +24,7 @@ let maria_brB: TyE2eTestBrowser;
 let memah: Member;
 let memah_brB: TyE2eTestBrowser;
 
-const localHostname = 'comments-for-e2e-test-embdftpv-localhost-8080';
+const localHostname = 'comments-for-e2e-test-embdftpv';
 const embeddingOrigin = 'http://e2e-test-embdftpv.localhost:8080';
 
 let site: IdAddress;

@@ -136,12 +136,19 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: TyCon
 
   private def impersonateImpl(anyUserId: Opt[PatId], viewAsOnly: Bo,
         request: DebikiRequest[_]): p_Result = {
+    import request.dao
 
     // To view as another user, the session id should be amended so it includes info like:
     // "We originally logged in as Nnn and now we're viewing as Nnn2." And pages should be shown
     // only if _both_ Nnn and Nnn2 may view them. — Not yet implemented, only view-as-stranger
     // supported right now.
     dieIf(anyUserId.isDefined && viewAsOnly, "EdE6WKT0S")
+
+    TESTS_MISSING // Has impersonation been disabled?  [server_0imp]
+    val impOn = dao.theSite().isFeatureEnabled("ffImp",
+          globals.config.featureFlags, onByDefault = true)
+    throwForbiddenIf(!impOn && anyUserId.isDefined, "TyEIMPOFF",
+          "Impersonation has been disabled by a super admin.")
 
     val sidAndXsrfCookies = anyUserId.toList flatMap { userId =>
       createSessionIdAndXsrfToken(request, userId)._3
@@ -154,7 +161,7 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: TyCon
     val impCookie = makeImpersonationCookie(request.siteId, viewAsOnly, request.theUserId)
     val newCookies = impCookie :: sidAndXsrfCookies
 
-    request.dao.pubSub.unsubscribeUser(request.siteId, request.theRequester)
+    dao.pubSub.unsubscribeUser(request.siteId, request.theRequester)
 
     // But do _not_mark_as_online or subscribe to events for the user we'll be viewing
     // the site as. Real time events isn't the purpose of view-site-as.  The client

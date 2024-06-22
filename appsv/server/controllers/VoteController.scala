@@ -22,9 +22,11 @@ import com.debiki.core.Prelude._
 import collection.immutable
 import debiki._
 import debiki.EdHttp._
+import debiki.JsonUtils.{asJsObject, parseInt32}
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
 import talkyard.server.http._
+import talkyard.server.parser
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
@@ -44,14 +46,15 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
   /** Currently handles only one vote at a time. Example post data, in Yaml:
     *   pageId: "123abc"
     *   postNr: 123
-    *   vote: "VoteLike"      # or "VoteWrong" or "VoteBury"
+    *   vote: PostVoteType.Like      # or Disagree, Bury etc
     *   action: "CreateVote"  # or "DeleteVote"
     *   postIdsRead: [1, 9, 53, 82]
     */
   def handleVotes: Action[JsValue] = PostJsonAction(RateLimits.RatePost,
           MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 500) {
           request: JsonPostRequest =>
-    import request.{body, dao, theRequester => requester}
+    import request.{dao, theRequester => requester}
+    val body = asJsObject(request.body, "votes request body")
     val anyPageId = (body \ "pageId").asOpt[PageId]
 
     val anyDiscussionId = (body \ "discussionId").asOpt[AltPageId] orElse (
@@ -60,9 +63,15 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val lazyCreatePageInCatId = (body \ "lazyCreatePageInCatId").asOpt[CategoryId]
 
     val postNr = (body \ "postNr").as[PostNr] ; SHOULD // change to id, not nr? [idnotnr]
-    val voteStr = (body \ "vote").as[String]
+    val voteTypeId = parseInt32(body, "vote")
+    val voteType = PostVoteType.fromInt(voteTypeId).getOrThrowBadRequest(
+                      "TyE7WJG65035", s"Bad vote type: $voteTypeId")
     val actionStr = (body \ "action").as[String]
     val postNrsReadSeq = (body \ "postNrsRead").asOpt[immutable.Seq[PostNr]]
+
+    val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(body) getOrIfBad { prob =>
+      throwBadReq("TyEANONPARVO", s"Bad anon params: $prob")
+    }
 
     val postNrsRead = postNrsReadSeq.getOrElse(Nil).toSet
 
@@ -90,14 +99,6 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
         throwBadReq("DwE46F82", "postNr not part of postNrsRead")
     }
 
-    val voteType: PostVoteType = voteStr match {
-      case "VoteLike" => PostVoteType.Like
-      case "VoteWrong" => PostVoteType.Wrong
-      case "VoteBury" => PostVoteType.Bury
-      case "VoteUnwanted" => PostVoteType.Unwanted
-      case _ => throwBadReq("DwE35gKP8", s"Bad vote type: $voteStr")
-    }
-
     val (pageId, newEmbPage) = EmbeddedCommentsPageCreator.getOrCreatePageId(
           anyPageId = anyPageId, anyDiscussionId = anyDiscussionId,
           anyEmbeddingUrl = anyEmbeddingUrl, lazyCreatePageInCatId = lazyCreatePageInCatId,
@@ -105,17 +106,16 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     CHECK_AUTHN_STRENGTH
 
-    ANON_UNIMPL // don't allow, if is anon post by oneself
-    // val author = dao.getParticipantOrUnknown( the-post .createdById)
-
     val reqrTgt = request.reqrTargetSelf.denyUnlessLoggedIn()
+
+    var anyNewAnon: Opt[Anonym] = None
 
     if (delete) {
       dao.deleteVoteIfAuZ(pageId, postNr, voteType, reqrAndVoter = reqrTgt)
     }
     else {
-      dao.addVoteIfAuZ(pageId, postNr, voteType, reqrAndVoter = reqrTgt,
-            voterIp = Some(request.ip), postNrsRead)
+      anyNewAnon = dao.addVoteIfAuZ(pageId, postNr, voteType, reqrAndVoter = reqrTgt,
+            voterIp = Some(request.ip), postNrsRead, doAsAnon)
     }
 
     RACE // Fine, harmless.
@@ -125,8 +125,13 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val storePatchJson = dao.jsonMaker.makeStorePatchForPost(
           updatedPost, showHidden = true, reqerId = request.theReqerId)
 
-    val responseJson = storePatchJson ++
+    var responseJson: JsObject =
+          storePatchJson ++
           EmbeddedCommentsPageCreator.makeAnyNewPageJson(newEmbPage)
+
+    anyNewAnon foreach { anon =>
+      responseJson += "yourAnon" -> JsUser(anon, toShowForPatId = Some(requester.id))
+    }
 
     OkSafeJson(responseJson)
   }
@@ -141,13 +146,9 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     CHECK_AUTHN_STRENGTH
 
-    throwNoUnless(Authz.maySeePage(
-      pageMeta, requester,
-      dao.getGroupIdsOwnFirst(requester),
-      dao.getAnyPrivateGroupTalkMembers(pageMeta),
-      catsRootLast = categoriesRootLast,
-      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)),
-      "EdE2QVBF06")
+    dao.readTx { tx =>
+      dao.throwIfMayNotSeePost2(ThePost.WithId(postId), request.reqrTargetSelf)(tx)
+    }
 
     val theVoteType = PostVoteType.fromInt(voteType) getOrElse throwBadArgument("EdE2QTKB40", "voteType")
     val voters = dao.readOnlyTransaction { tx =>
@@ -155,8 +156,8 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
       tx.loadParticipants(ids)
     }
     val json = Json.obj(
-      "numVoters" -> voters.size, // currently all voters always loaded [1WVKPW02]
-      "someVoters" -> JsArray(voters.map(JsUser(_))))
+      "numVoters" -> voters.size, // currently loads at most 500 though [1WVKPW02]
+      "someVoters" -> JsArray(voters.map(JsUser(_, toShowForPatId = requester.map(_.id)))))
     OkSafeJson(json)
   }
 }

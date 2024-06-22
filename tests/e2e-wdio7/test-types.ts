@@ -59,3 +59,21 @@ export function isWhere_isInIframe(where: IsWhere): Bo {
       return false;
   }
 }
+
+
+export interface E2eAuthor {
+  username?: St
+  fullName?: St
+  profileUrl: St
+  avatarText?: St
+  saysIsYou?: Bo
+}
+
+
+export interface E2eVote {
+  avatarText: St
+  voteUrl: St
+  isMine?: Bo
+}
+
+

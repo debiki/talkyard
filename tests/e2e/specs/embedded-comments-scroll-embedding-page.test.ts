@@ -21,7 +21,7 @@ let siteId: any;
 const mariasCommentOne = 'mariasCommentOne';
 const mariasCommentTwo = 'mariasCommentTwo';
 
-const localHostname = 'comments-for-e2e-test-embscrl-localhost-8080';
+const localHostname = 'comments-for-e2e-test-embscrl';
 const embeddingOrigin = 'http://e2e-test-embscrl.localhost:8080';
 //const pageShortSlug = 'emb-cmts-short.html';
 const pageTallSlug = 'emb-cmts-tall.html';

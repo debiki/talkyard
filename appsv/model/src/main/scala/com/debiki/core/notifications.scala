@@ -154,6 +154,7 @@ sealed abstract class Notification {  // RENAME to just Notf
   def createdAt: ju.Date
   def tyype: NotificationType
   def toUserId: UserId
+  def toTrueId: Opt[PatId]
   def emailId: Option[EmailId]
   def emailStatus: NotfEmailStatus
   def seenAt: Option[ju.Date]
@@ -185,7 +186,9 @@ object Notification {
     generatedWhy: St = "",  // later: save in db, incl expl about why notfd in email
     uniquePostId: PostId,        // RENAME to aboutPostId?
     byUserId: UserId,
+    byTrueId: Opt[PatId],
     toUserId: UserId,
+    toTrueId: Opt[PatId],
     smtpMsgIdPrefix: Opt[SmtpMsgIdPrefix],
     emailId: Option[EmailId] = None,
     emailStatus: NotfEmailStatus = NotfEmailStatus.Undecided,
@@ -194,6 +197,8 @@ object Notification {
     extends Notification {
 
     override def tyype: NotificationType = notfType
+
+    def toTheTrueId: PatId = toTrueId getOrElse toUserId
 
     def makeSmtpMsgId(host: St): Opt[SmtpMsgId] = {
       smtpMsgIdPrefix.map(prfx => s"$prfx@$host")

@@ -306,6 +306,19 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
+  /** For  `update ... returning ...`  statements.  The `resultSetHandler` is
+    * called once per returned row. (Only tested with single rows, as of 2024-05.)
+    */
+  def runUpdateQuery[R](statement: St, values: List[AnyRef] = Nil,
+          resultSetHandler: js.ResultSet => R): Bo = {
+    db.updateQuery(statement, values, rs => {
+      while (rs.next) {
+        resultSetHandler(rs)
+      }
+    })(theOneAndOnlyConnection)
+  }
+
+
   def runUpdateSingleRow(statement: String, values: List[AnyRef] = Nil): Boolean = {
     val numRowsUpdated = runUpdate(statement, values)
     dieIf(numRowsUpdated > 1, "TyE4KBW2L0", o"""This statement modified $numRowsUpdated rows

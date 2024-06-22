@@ -1,0 +1,30 @@
+                           Table "public.link_previews_t"
+        Column        |            Type             | Collation | Nullable | Default 
+----------------------+-----------------------------+-----------+----------+---------
+ site_id_c            | integer                     |           | not null | 
+ link_url_c           | character varying           |           | not null | 
+ fetched_from_url_c   | character varying           |           | not null | 
+ fetched_at_c         | timestamp without time zone |           | not null | 
+ cache_max_secs_c     | integer                     |           |          | 
+ status_code_c        | integer                     |           | not null | 
+ preview_type_c       | integer                     |           | not null | 
+ first_linked_by_id_c | integer                     |           | not null | 
+ content_json_c       | jsonb                       |           |          | 
+Indexes:
+    "linkpreviews_p_linkurl_fetchurl" PRIMARY KEY, btree (site_id_c, link_url_c, fetched_from_url_c)
+    "linkpreviews_i_fetch_err_at" btree (site_id_c, fetched_at_c) WHERE status_code_c <> 200
+    "linkpreviews_i_fetchedat" btree (site_id_c, fetched_at_c)
+    "linkpreviews_i_firstlinkedby" btree (site_id_c, first_linked_by_id_c)
+    "linkpreviews_i_g_fetch_err_at" btree (fetched_at_c) WHERE status_code_c <> 200
+    "linkpreviews_i_g_fetchedat" btree (fetched_at_c)
+    "linkpreviews_i_g_linkurl" btree (link_url_c)
+Check constraints:
+    "linkpreviews_c_cachemaxsecs" CHECK (cache_max_secs_c >= 0)
+    "linkpreviews_c_contentjson_len" CHECK (pg_column_size(content_json_c) >= 1 AND pg_column_size(content_json_c) <= 27000)
+    "linkpreviews_c_fetchedfromurl_len" CHECK (length(fetched_from_url_c::text) >= 5 AND length(fetched_from_url_c::text) <= 500)
+    "linkpreviews_c_linkurl_len" CHECK (length(link_url_c::text) >= 5 AND length(link_url_c::text) <= 500)
+    "linkpreviews_c_previewtype" CHECK (preview_type_c >= 1 AND preview_type_c <= 9)
+    "linkpreviews_c_statuscode" CHECK (status_code_c >= 0)
+Foreign-key constraints:
+    "linkpreviews_firstlinkedby_r_pps" FOREIGN KEY (site_id_c, first_linked_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+

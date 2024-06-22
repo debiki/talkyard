@@ -1,0 +1,53 @@
+                             Table "public.perms_on_pages3"
+         Column          |            Type             | Collation | Nullable | Default 
+-------------------------+-----------------------------+-----------+----------+---------
+ site_id                 | integer                     |           | not null | 
+ perm_id                 | integer                     |           | not null | 
+ for_people_id           | integer                     |           | not null | 
+ on_whole_site           | boolean                     |           |          | 
+ on_category_id          | integer                     |           |          | 
+ on_page_id              | character varying           |           |          | 
+ on_post_id              | integer                     |           |          | 
+ on_tag_id               | integer                     |           |          | 
+ may_edit_page           | boolean                     |           |          | 
+ may_edit_comment        | boolean                     |           |          | 
+ may_edit_wiki           | boolean                     |           |          | 
+ may_edit_own            | boolean                     |           |          | 
+ may_delete_page         | boolean                     |           |          | 
+ may_delete_comment      | boolean                     |           |          | 
+ may_create_page         | boolean                     |           |          | 
+ may_post_comment        | boolean                     |           |          | 
+ may_see                 | boolean                     |           |          | 
+ may_see_own             | boolean                     |           |          | 
+ may_see_private_flagged | boolean                     |           |          | 
+ can_see_others_priv_c   | boolean                     |           |          | 
+ can_see_who_can_see_c   | can_see_who_d               |           |          | 
+ can_see_priv_aft_c      | timestamp without time zone |           |          | 
+ can_post_private_c      | never_always_d              |           |          | 
+ can_delete_own_c        | boolean                     |           |          | 
+ can_alter_c             | i64_gz_d                    |           |          | 
+ is_owner_c              | i16_gz_d                    |           |          | 
+ on_pats_id_c            | pat_id_d                    |           |          | 
+ can_manage_pats_c       | i64_gz_d                    |           |          | 
+ can_invite_pats_c       | i64_gz_d                    |           |          | 
+ can_suspend_pats_c      | i64_gz_d                    |           |          | 
+ can_assign_pats_c       | boolean                     |           |          | 
+ can_assign_self_c       | boolean                     |           |          | 
+ can_see_assigned_c      | can_see_who_d               |           |          | 
+Indexes:
+    "permsonpages_p" PRIMARY KEY, btree (site_id, perm_id)
+    "permsonpages_on_cat_u" UNIQUE, btree (site_id, on_category_id, for_people_id) WHERE on_category_id IS NOT NULL
+    "permsonpages_on_page_u" UNIQUE, btree (site_id, on_page_id, for_people_id) WHERE on_page_id IS NOT NULL
+    "permsonpages_on_post_u" UNIQUE, btree (site_id, on_post_id, for_people_id) WHERE on_post_id IS NOT NULL
+    "permsonpages_on_site_u" UNIQUE, btree (site_id, for_people_id) WHERE on_whole_site IS NOT NULL
+    "permsonpages_people_i" btree (site_id, for_people_id)
+Check constraints:
+    "permsonpages_c_id_not_for_imp" CHECK (perm_id < 2000000000)
+    "permsonpages_c_not_meaningless" CHECK (may_edit_page IS NOT NULL OR may_edit_comment IS NOT NULL OR may_edit_wiki IS NOT NULL OR may_edit_own IS NOT NULL OR may_delete_page IS NOT NULL OR may_delete_comment IS NOT NULL OR may_create_page IS NOT NULL OR may_post_comment IS NOT NULL OR may_see IS NOT NULL OR may_see_own IS NOT NULL OR may_see_private_flagged IS NOT NULL)
+    "permsonpages_c_on_one" CHECK (1 = (one_unless_null(on_whole_site) + one_unless_null(on_category_id) + one_unless_null(on_page_id) + one_unless_null(on_post_id) + one_unless_null(on_tag_id)))
+Foreign-key constraints:
+    "permsonpages_r_cats" FOREIGN KEY (site_id, on_category_id) REFERENCES categories3(site_id, id) DEFERRABLE
+    "permsonpages_r_pages" FOREIGN KEY (site_id, on_page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    "permsonpages_r_people" FOREIGN KEY (site_id, for_people_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "permsonpages_r_posts" FOREIGN KEY (site_id, on_post_id) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+

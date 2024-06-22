@@ -79,7 +79,7 @@ if (browserNameAndOpts.browserName === 'chrome'
       //'--allow-insecure-localhost',
 
       // Apparently also not needed: (good because the hostname is "never" the same)
-      //'--unsafely-treat-insecure-origin-as-secure=https://comments-for-...-localhost-8080.localhost'
+      //'--unsafely-treat-insecure-origin-as-secure=https://comments-for-...localhost'
     ],
     // --- Trying to disable "Save password?" popup --------
     prefs: {

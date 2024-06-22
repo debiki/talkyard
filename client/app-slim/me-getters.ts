@@ -59,9 +59,10 @@ export function me_toBriefUser(me: Me): Pat {
   }
 }
 
-export function me_hasVoted(me: Me, postId: PostId, what: St): Bo {
-  const votes = me.myCurrentPageData.votes[postId] || [];
-  return votes.indexOf(what) !== -1;
+
+export function me_hasVoted(me: Me, postNr: PostNr, voteType: PostVoteType): Bo {
+  const votes = me.myCurrentPageData.votesByPostNr[postNr] || [];
+  return votes_includes(votes, voteType);
 }
 
 

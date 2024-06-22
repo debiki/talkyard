@@ -92,6 +92,7 @@ object ReservedNames {
 # https://github.com/shouldbee/reserved-usernames/blob/master/reserved-usernames.txt  as of 2017-05-11
 # The MIT license: https://github.com/shouldbee/reserved-usernames/blob/master/LICENSE
 # Copyright (c) 2014   (no author names specified)
+# (but #kml rows were added by me, KajMagnus)
 0
 about
 access
@@ -144,9 +145,11 @@ blogs
 board
 book
 bookmark
+bookmarks  # kml
 bot
 bots
 bug
+bugs   # kml
 business
 cache
 cadastro
@@ -506,6 +509,8 @@ req
 request
 requests
 reset
+response  #kml
+responses #kml
 roc
 root
 rss
@@ -850,6 +855,8 @@ me
 no-reply
 nobody
 noreply
+reply     #kml
+replies   #kml
 user
 users
 
@@ -932,6 +939,11 @@ trait traits
 they their them
 he she it is who whom whos whose which that what why
 yes no not maybe option
+
+question
+questions
+answer
+answers
 
 rubot
 robot

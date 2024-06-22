@@ -24,7 +24,7 @@ let stranger_brB: TyE2eTestBrowser;
 
 let site: IdAddress;
 let forum: TwoCatsTestForum;
-const localHostname = 'comments-for-e2e-test-manyifr-localhost-8080';
+const localHostname = 'comments-for-e2e-test-manyifr';
 const embeddingOrigin = 'http://e2e-test-manyifr.localhost:8080';
 
 const slashSlug_c404_many2 = '/embcom-manyframes-basic-c404-many-2.html';

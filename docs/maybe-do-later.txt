@@ -59,6 +59,10 @@ a feature request / idea might be well researched & make sense,
 and it's good to Like it, although for reasons the poster couldn't
 have known about, Do-Not vote.
 
+[joint_decisions]
+See:  wip/joint-decisions/joint-decisions.txt
+
+
 [pat_rels_t]  Rename & change post_actions3  to  pat_rels_t, and store
 votes and AssignedTo there.
 
@@ -383,23 +387,8 @@ discovery of pages & people by iterating through all ids in the url.
 [custom-groups]
 Search for that tag.
 
-[pseudonyms_later][pseudonyms_trust]
-
-[auto_deanon]
-[auto_show_replies]
-Needs: [add_triggers_t]
-
-[deanon_risk]
-
-[anon_pages]
-
-[anon_priv_msgs][anon_chats]
-Not now.
-
-[many_anons_per_page]
-
-[sql_true_id_eq]
-Look at later, realted to anonyms and pseudonyms (looking up on both true id & anon id).
+[pseudonyms_later]
+Anonyms and pseudonyms, see:  wip/aliases/wip.txt
 
 [assign_anon]
 
@@ -866,7 +855,18 @@ Could also:
   Select which notifications get sent over email (e.g. excl Like votes & mod tasks).
   Still visible in username dropdown.
 
+[dont_notify]
+In some corner cases, one gets a notification about sth one already knows about,
+can happen e.g. if adding a tag to a page one is subscribed to.
 
+[notf_from_who]
+E.g.  "You've been mentioned by @Alice in this comment by @Bob" — a notification is not
+always by a single person? What if Bob wrote the comment, and Alice edited it and
+added "@your_username", because she knows that Bob forgot to include your name in
+a list of mentions? (Maybe Bob is a new hire.)
+Or:  "You've been assigned by Alice to this task: Task Name created by Bob"  — Bob created
+the task, and Alice assigned you.  Currently Ty mentions only Bob, but maybe Alice is
+equally relevant?
 
 [refactor-notfs]  DONE, except for re-enabling reconnect.
 Remove Nchan. Use Rust + server-sent-events instead.  NO, just Play and WebSocket now.
@@ -1159,6 +1159,19 @@ so can use other tech than only Play Fmw, without the file name getting misleadi
         ...
 
 
+[ai_spam_checks]
+Use AI (LLMs) to detect spam. Include in the AI prompt:
+    - The description of the forum — can use the forum intro text?
+    - The description of the current forum category.
+    - The text in the parent and ancestor comments, back up to
+      the Original Post & title. (If the thread is long, maybe just
+      the OP and parent comment.)
+    - The addresses to one's own websites (domains),
+      and brief descriptions about them.
+    - The post author:
+        - For how long they've been a member,
+        - their trust level,
+        - how many OK posts they've posted before, how many spam posts.
 
 
 [bash2deno][ty_v1]

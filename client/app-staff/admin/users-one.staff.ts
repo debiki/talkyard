@@ -178,9 +178,12 @@ export const UserProfileAdminView = createFactory({
 
     const thatIsYou = user.id === me.id ? " — that's you" : '';
 
-    const usernameAndFullName = rFragment({},
-      r.span({ className: 'e_A_Us_U_Username' }, user.username),
-      user.fullName ? r.span({}, ' (' + user.fullName + ')') : null,
+    const usernameAndOrFullName = rFr({},
+      !user.username ? null : r.span({ className: 'e_A_Us_U_Username' }, user.username),
+      !user.fullName ? null : (
+          // If no username, skip parenthesis around fullName.
+          !user.username ? user.fullName
+                         : r.span({}, ' (' + user.fullName + ')')),
       thatIsYou);
 
     // ----- Enabled?
@@ -260,7 +263,9 @@ export const UserProfileAdminView = createFactory({
           user.emailVerifiedAtMs ?
               r.span({ style: { marginLeft: '1em' }},
                 "(will then need to re-verify his/her email) ") : null, */
-          r.a({ className: 's_A_Us_U_Rows_Row_EmlManage', href: linkToUsersEmailAddrs(user.username) },
+          r.a({ className: 's_A_Us_U_Rows_Row_EmlManage',
+                // Anonyms have no usernames.
+                href: linkToUsersEmailAddrs(user.username || user.id) },
             "Manage ...")));
 
     const externalIdRow = !user.externalId ? null : makeRow(
@@ -350,28 +355,36 @@ export const UserProfileAdminView = createFactory({
 
     // UX SHOULD not be able to mark admins as threats. Is confusing, and has no effect (?) anyway.
     const threatLevelText = user.isGroup ? null : (
+        !user.threatLevel ? r.span({}, "Not set") : (
         user.lockedThreatLevel
         ? r.span({ className: 'e_ThreatLvlIsLkd' },
             "Locked at: ", threatLevel_toElem(user.lockedThreatLevel), '.', r.br(),
             "Would otherwise have been: ", threatLevel_toElem(user.threatLevel))
         : r.span({ className: 'e_ThreatLvlNotLkd' },
-            threatLevel_toElem(user.threatLevel)));
+            threatLevel_toElem(user.threatLevel))));
 
     const threatButton = user.isGroup ? null :
         Button({ onClick: () => openThreatLevelDialog(user, this.reloadUser),
             className: 'e_TrtLvB' }, "Change");
 
-    const impersonateButton = !me.isAdmin ? null :
+    // Enabled, by default. Server side check here: [server_0imp]
+    // (Mods, though, cannot impersonate others.)
+    const impOn = store_isFeatFlagOn(store, 'ffImp', true);
+    const impersonateButton = !me.isAdmin ? null : rFr({},
         Button({ onClick: () => Server.impersonateGoToHomepage(user.id),
-            id: 'e2eA_Us_U_ImpersonateB' }, "Impersonate");
+                disabled: !impOn, id: 'e2eA_Us_U_ImpersonateB' },
+            "Impersonate"),
+            impOn ? null : r.span({},
+              ` — Impersonating others is disabled in this forum`));
 
     return rFragment({},
       r.div({ className: 'pull-right' },
         showPublProfileButton),
 
       r.div({ className: 'esA_Us_U_Rows'},
-        makeRow("Username: ", usernameAndFullName, null),
+        makeRow(user.username ? `Username: ` : `Name: `, usernameAndOrFullName, null),
         user.isGroup ? r.p({}, "Is a group.") : null,
+        user.isAnon ? r.p({}, "Is an anonym.") : null,
         makeRow("Enabled: ", enabledInfo, null),
         emailAddrRow,
         externalIdRow,

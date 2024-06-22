@@ -14,7 +14,7 @@ let idAddress: IdAddress;
 
 const michaelsComment = 'michaelsComment';
 
-const localHostname = 'comments-for-e2e-test-embvote1st-localhost-8080';
+const localHostname = 'comments-for-e2e-test-embvote1st';
 const embeddingOrigin = 'http://e2e-test-embvote1st.localhost:8080';
 const pageSlug = 'emb-cmts-edit-and-vote.html';
 const pageUrl = embeddingOrigin + '/' + pageSlug;

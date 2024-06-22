@@ -21,7 +21,7 @@ let stranger_brB: TyE2eTestBrowser;
 
 let site: IdAddress;
 let forum: TwoCatsTestForum;
-const localHostname = 'comments-for-e2e-test-manyifr-localhost-8080';
+const localHostname = 'comments-for-e2e-test-manyifr';
 const embeddingOrigin = 'http://e2e-test-manyifr.localhost:8080';
 
 const embPage404SlashSlug = '/many-embcom-iframes-404.html';

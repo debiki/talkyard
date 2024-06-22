@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { IsWhere, isWhere_isInIframe } from '../test-types';
+import { IsWhere, E2eAuthor, E2eVote, isWhere_isInIframe } from '../test-types';
 import { ServerSays } from '../test-types2';
 import { SiteType, NewSiteOwnerType } from '../test-constants';
 
@@ -90,6 +90,7 @@ interface SnoozeTime {
 
 interface WaitPs {   // ps = params
   refreshBetween?: Bo;
+  tryMaxTimes?: Nr
   timeoutMs?: Nr;
   timeoutIsFine?: Bo;
   serverErrorDialogIsFine?: Bo;
@@ -127,6 +128,27 @@ interface WaitAndClickPs extends WaitPs {
 
 type WaitForClickableResult = 'Clickable' | 'NotClickable';
 type ClickResult = 'Clicked' | 'CouldNotClick';
+
+
+interface HowMany {
+  atLeast?: Nr
+  atMost?: Nr
+  exactly?: Nr
+}
+
+
+function isOkMany(num: Nr, wants: HowMany): Bo {
+  if (_.isNumber(wants.atLeast) && num < wants.atLeast)
+    return false;
+
+  if (_.isNumber(wants.atMost) && num > wants.atMost)
+    return false;
+
+  if (_.isNumber(wants.exactly) && num !== wants.exactly)
+    return false;
+
+  return true;
+}
 
 
 const CookiePrefix = settings.secure ? '__Host-' : '';
@@ -667,6 +689,7 @@ export class TyE2eTestBrowser {
 
       let delayMs = PollMs;
       let elapsedMs = 0;
+      let attemptNr = 0;
       const timeoutMs = makeTimeoutMs(ps.timeoutMs);
       const startMs = Date.now();
       let loggedAnything = false;
@@ -675,12 +698,21 @@ export class TyE2eTestBrowser {
 
       try {
         do {
+          attemptNr += 1;
           const done = await fn();
           if (done) {
             if (loggedAnything) {
               logMessage(`Done: ${getMsg()}`);
             }
             return true;
+          }
+
+          if (ps.tryMaxTimes && ps.tryMaxTimes <= attemptNr) {
+            // If just once, some ancestor caller probably is retrying, need log nothing here.
+            if (attemptNr >= 2) {
+              logBoring(`Tried ${attemptNr} times: ${getMsg()}`);
+            }
+            return false;
           }
 
           elapsedMs = Date.now() - startMs;
@@ -781,6 +813,11 @@ export class TyE2eTestBrowser {
 
 
     me = {
+      isLoggedIn: async (): Pr<Bo> => {
+        const me = await this.me.waitAndGetMyself();
+        return me.isLoggedIn;
+      },
+
       waitUntilLoggedIn: async () => {
         await this.complex.waitUntilLoggedIn();
       },
@@ -922,7 +959,7 @@ export class TyE2eTestBrowser {
       // Need to generate new local hostname, since we're going to create a new site.
       const testId = utils.generateTestId();
       const embeddingHostPort = `e2e-test--${ps.shortName}-${testId}.localhost:8080`;
-      const localHostname = `e2e-test--${ps.shortName}-${testId}-localhost-8080`;
+      const localHostname = `e2e-test--${ps.shortName}-${testId}`;
       //const localHostname = settings.localHostname ||
       //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
 
@@ -2535,24 +2572,40 @@ export class TyE2eTestBrowser {
 
 
     async waitAndGetListTexts(selector: St): Pr<St[]> {
-      return await this.__waitAndGetThingsInList(selector, async (e) => await e.getText());
+      return await this.__waitAndGetThingsInList(
+            selector, {}, async (e) => await e.getText());
     }
 
 
     async waitAndGetListLinks(selector: St): Pr<(St | U)[]> {
       return await this.__waitAndGetThingsInList(
-              selector, async (e) => await e.getAttribute('href'));
+              selector, {}, async (e) => await e.getAttribute('href'));
     }
 
 
-    async __waitAndGetThingsInList<T>(listItemSelector: St, fn: (e: WElm) => Pr<T>): Pr<T[]> {
-      const elms: WElm[] = await this.$$(listItemSelector);
-      const promises: Pr<T>[] = elms.map(async (e: WElm) => {
-        return await fn(e);
-      });
-      const items: T[] = await Promise.all(promises);
+    async __waitAndGetThingsInList<T>(listItemSelector: St, ps: HowMany & WaitPs,
+            fn: (e: WElm) => Pr<T>): Pr<T[]> {
+      let items: T[] | U;
+      let len: Nr | St = `?`;
+      await this.waitUntil(async () => {
+        const elms: WElm[] = await this.$$(listItemSelector);
+        len = elms.length;
+        if (!isOkMany(len, ps))
+          return false;
+
+        const promises: Pr<T>[] = elms.map(async (e: WElm) => {
+          return await fn(e);
+        });
+
+        items = await Promise.all(promises);
+        return true;
+      }, {
+        ...ps,
+        message: () => `Waiting for list: ${listItemSelector}, has: ${len}, wants ${j2s(ps)} [TyM4GMW20L]`,
+      })
       return items;
     }
+
 
     async waitAndGetNthText(selector, n: Nr, ps: { notEmpty?: Bo } = {}): Pr<St> {
       let text = '';
@@ -6261,7 +6314,7 @@ export class TyE2eTestBrowser {
 
       // RENAME to ...VisibleText?
       waitForPostNrVisible: async (postNr: PostNr, ps: { atDepth?: Nr, childOfNr?: Nr,
-              timeoutMs?: Nr, timeoutIsFine?: Bo } = {}): Pr<Bo> => {
+              } & WaitPs = {}): Pr<Bo> => {
         await this.switchToEmbCommentsIframeIfNeeded();
         const selector = this.topic.__mkPostSelector(postNr, ps);
         return await this.waitForVisibleText(selector, ps);
@@ -6550,9 +6603,47 @@ export class TyE2eTestBrowser {
         return await this.waitAndGetVisibleText('.dw-ar-p-hd .esP_By .esP_By_U');
       },
 
+      getTopicAuthorFullName: async (): Pr<St> => {
+        return await this.waitAndGetVisibleText('.dw-ar-p-hd .esP_By .esP_By_F');
+      },
+
       getPostAuthorUsernameInclAt: async (postNr: PostNr): Pr<St> => {
         const sel = this.topic.postHeaderSelector(postNr);
         return await this.waitAndGetVisibleText(sel + ' .esP_By .esP_By_U');
+      },
+
+      getPostAuthor: async (postNr: PostNr): Pr<E2eAuthor> => {
+        // COULD_OPTIMIZE: Fetch html for the whole header, and parse and extract,
+        // instead of round-tripping to the e2e test browser.
+        const postSel = this.topic.postHeaderSelector(postNr);
+        await this.waitForDisplayed(postSel + ' .esP_By');
+        const fullName = await this.getVisibleTextOrNull(postSel + ' .esP_By .esP_By_F');
+        const atUsername = await this.getVisibleTextOrNull(postSel + ' .esP_By .esP_By_U');
+        const username = atUsername && atUsername.substring(1); // drop '@'
+        const isYou = await this.isExisting(postSel + ' .esP_By .c_P_By_AnonYou');
+
+        // Do here, after waitAndGet...() is done waiting:
+        const elm = await this.$(postSel + ' .esP_By');
+        const profileUrl: St = await elm.getAttribute('href');
+
+        // Tricky to select top level replies avatars, the `#post-123` is *after* that avatar.
+        // But this works:
+        const mediumAvatarText = await this.getVisibleTextOrNull(
+            `.dw-t:has(> #post-${postNr}) > .esAvtr`);
+            // (More verbose:  `.dw-t:has(> div[id="post-${postNr}"]) > .esAvtr`  )
+
+        const tinyAvatarText = !mediumAvatarText && await this.getVisibleTextOrNull(
+            postSel + ' .esAvtr');
+        const avatarText = mediumAvatarText || tinyAvatarText;
+        // The html:
+        // `<div class="dw-p" id="post-3"><div class="dw-p-hd"><span class="n_ByAt"><a class="esAvtr edAvtr esAvtr-tny esAvtr-ltr edAvtr-manyLetters esAvtr-gst" href="/-/users/-10" title="Anonym">A2</a><a class="dw-p-by esP_By" href="/-/users/-10"><span class="esP_By_F esP_By_F-G">Anonym</span></a><ul class=" c_TagL ...
+
+        return { fullName, username, profileUrl, avatarText, saysIsYou: isYou };
+      },
+
+      getPostAuthorFullName: async (postNr: PostNr): Pr<St> => {
+        const sel = this.topic.postHeaderSelector(postNr);
+        return await this.waitAndGetVisibleText(sel + ' .esP_By .esP_By_F');
       },
 
       getPostAuthorUsername: async (postNr: PostNr): Pr<St> => {
@@ -6727,23 +6818,29 @@ export class TyE2eTestBrowser {
         await this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-votes`);
       },
 
-      makeLikeVoteSelector: (postNr: PostNr, ps: { byMe?: Bo } = {}): St => {
+      makePostActionsSelector: (postNr: PostNr): St => {
         // Embedded comments pages lack the orig post — instead, there's the
         // blog post, on the embedding page.
         const startSelector = this.#isOnEmbeddedCommentsPage && postNr === c.BodyNr
             ? '.dw-ar-t > ' :`#post-${postNr} + `;
-        let result = startSelector + '.esPA .dw-a-like';
+        let result = startSelector + '.esPA';
+        return result;
+      },
+
+      makeLikeVoteSelector: (postNr: PostNr, ps: { byMe?: Bo } = {}): St => {
+        const startSelector = this.topic.makePostActionsSelector(postNr);
+        let result = startSelector + ' .dw-a-like';
         if (ps.byMe) result += '.dw-my-vote';
         else if (ps.byMe === false)  result += ':not(.dw-my-vote)';
         return result;
       },
 
       makeLikeVoteCountSelector: (postNr: PostNr): St => {
-        return this.topic.makeLikeVoteSelector(postNr) + ' + .dw-vote-count';
+        return this.topic.makePostActionsSelector(postNr) + ' .e_VoLi';
       },
 
       __disagreeVoteSel: (postNr: PostNr): St => {
-        return `#post-${postNr} + .esPA .e_WroVo`;
+        return this.topic.makePostActionsSelector(postNr) + ' .e_VoWr';
       },
 
       clickLikeVote: async (postNr: PostNr, opts: { logInAs? } = {}) => {
@@ -6765,6 +6862,9 @@ export class TyE2eTestBrowser {
         }
       },
 
+      // Don't use! If you go2() elsewhere directly after, the like vote request might
+      // not finish before; no like vote appears.  Use  toggleLikeVote(c.BodyNr)  instead,
+      // just below.
       clickLikeVoteForBlogPost: async () => {
         await this.switchToEmbCommentsIframeIfNeeded();
         await this.waitAndClick('.dw-ar-t > .esPA > .dw-a-like');
@@ -6774,10 +6874,15 @@ export class TyE2eTestBrowser {
         const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr);
         await this.switchToEmbCommentsIframeIfNeeded();
         const isLikedBefore = await this.isVisible(likeVoteSelector + '.dw-my-vote');
+        let isLoggedIn = !opts.logInAs;
         // This click for some reason won't always work, here: [E2ECLICK03962]
-        await utils.tryUntilTrue(`toggle Like vote`, 3, async () => {
+        await utils.tryUntilTrue(`toggle Like vote`, 3, async (attemptNr: Nr) => {
+          if (attemptNr >= 2 && !isLoggedIn) {
+            // We should have been logged in by now, so don't try that again.
+            isLoggedIn = await this.me.isLoggedIn();
+          }
           await this.switchToEmbCommentsIframeIfNeeded();
-          await this.topic.clickLikeVote(postNr, opts);
+          await this.topic.clickLikeVote(postNr, !isLoggedIn && opts);
           // Wait for the server to reply, and the page to get updated.
           const gotToggled = await this.waitUntil(async () => {
             const likedNow = await this.isVisible(likeVoteSelector + '.dw-my-vote');
@@ -6804,6 +6909,54 @@ export class TyE2eTestBrowser {
             ?  this.topic.makeLikeVoteSelector(postNr, ps)
             : this.topic.makeLikeVoteCountSelector(postNr);
         return await this.isVisible(likeVoteSelector);
+      },
+
+      waitAndGetLikeVotes: async (postNr: PostNr, ps: HowMany & WaitPs): Pr<E2eVote[]> => {
+        let votes: E2eVote[] | U;
+        await this.waitUntil(async () => {
+          await this.topic.openLikeVotes(postNr);
+          votes = await this.topic.votesDiag.getVotes({ tryMaxTimes: 1, timeoutIsFine: true });
+          await this.topic.votesDiag.close();
+          return votes && isOkMany(votes.length, ps);
+        }, {
+          ...ps,
+          message: () => `Waiting for post ${postNr} votes, now: ${votes.length
+                          }, wants ${j2s(ps)} [TyMWATN4VOT036]`,
+        });
+        return votes || [];
+      },
+
+      openLikeVotes: async (postNr: PostNr): Pr<V> => {
+        const sel = this.topic.makeLikeVoteCountSelector(postNr);
+        await this.waitAndClick(sel);
+        await this.waitForVisible('.s_VotesD ');
+      },
+
+      votesDiag: {
+        getVotes: async (howMany: HowMany & WaitPs = {}): Pr<E2eVote[]> => {
+          // (Hmm, the dialog is static (I mean, it won't update, once opened) so retrying,
+          // at least refreshing the page (`howMany.refreshBetween`), makes no sense here.)
+          return await this.__waitAndGetThingsInList(
+                '.s_VotesD_Voters a.esAvtr', howMany, async (e: WElm) => {
+            const voteUrl: St | N = await e.getAttribute('href');
+            let avatarText: St | N = await e.getText();
+            const isMine = await (await e.$('.n_Me')).isExisting();
+            // If it's one's own vote, the text "You" is below the avatar, if one is
+            // anonymous (since the name "Anonymous" doesn't say much).
+            if (isMine && avatarText.endsWith('You')) {
+              // There's a newline '\n' too, at least right now.
+              avatarText = avatarText.replace(/\n?You$/, '');
+            }
+            return { voteUrl, avatarText, isMine } satisfies E2eVote;
+          });
+        },
+
+        close: async () => {
+          // Break out close dialog fn?  [E2ECLOSEDLGFN]
+          await this.waitAndClick('.esDropModal_CloseB');
+          await this.waitUntilGone('.esDropModal_CloseB');
+          await this.waitUntilModalGone();
+        },
       },
 
       waitForLikeVote: async (postNr: PostNr, ps: { byMe?: Bo } = {}) => {

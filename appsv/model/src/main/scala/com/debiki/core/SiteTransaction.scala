@@ -228,7 +228,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadAuthorIdsByPostId(postIds: Set[PostId]): Map[PostId, UserId]
 
   def loadActionsOnPage(pageId: PageId): immutable.Seq[PostAction]
-  def loadActionsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[PostAction]
+  def loadActionsByUserOnPage(reqrId: PatId, userId: UserId, pageId: PageId): immutable.Seq[PostAction]
   def loadActionsDoneToPost(pageId: PageId, postNr: PostNr): immutable.Seq[PostAction]
   def loadPatPostRels[T <: PatNodeRelType](forPatId: PatId, relType: T, onlyOpenPosts: Bo,
                                            limit: i32): ImmSeq[PatNodeRel[T]]
@@ -238,8 +238,13 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def deletePatNodeRels(fromPatIds: Set[PatId], toPostId: PostId,
         relTypes: Set[PatNodeRelType]): i32
 
-  def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId): Boolean
-  /** Loads the first X voter ids, sorted by ... what? Currently loads all. [1WVKPW02]
+  /** Returns the voter's pub and priv id — good to know, if `voterId` is a true id,
+    * but the vote was by an anonym or pseudonym of that person.
+    */
+  def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId)
+        : Opt[PatIds]
+
+  /** Loads the first X voter ids, sorted by ... what? Currently loads at most 500. [1WVKPW02]
     * Also see: loadAuthorIdsByPostId() */
   def loadVoterIds(postId: PostId, voteType: PostVoteType): Seq[UserId]
 
@@ -573,6 +578,47 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadParticipant(userId: UserId): Option[Participant]
   def loadTheParticipant(userId: UserId): Participant =
     loadParticipant(userId).getOrElse(throw UserNotFoundException(userId))
+
+  def loadTheTruePat(patId: PatId): (Pat, Pat) =
+    loadTruePat(patId).getOrElse(throw UserNotFoundException(patId))
+
+  /** If patId is an alias, returns (pat, true-pat) — otherwise returns (pat, pat).
+    */
+  def loadTruePat(patId: PatId): Opt[(Pat, Pat)] = Some {
+    val byId: Map[PatId, Pat] = this.loadTruePatsById(Set(patId))
+    val pat = byId.getOrElse(patId, { return None })
+    if (pat.trueId2.anyTrueId.isEmpty) (pat, pat)
+    else {
+      val truePat = byId.getOrElse(pat.trueId2.trueId, {
+        // True pat missing, "can't happen", there's a foreign key. Later, though,
+        // once [forgetting_true_ids] has been implemented, this might happen (fine).
+        // Then maybe change the return type to:  Opt[(Pat, Opt[Pat])]  ?
+        warnDevDie("TyE502MRJV", s"s$siteId: True pat missing: ${pat.trueId2}")
+        return None
+      })
+      (pat, truePat)
+    }
+  }
+
+  /** Loads patIds, and, for any aliases (anonyms and pseudonyms), also loads the true
+    * users behind those anonyms and pseudonyms. (So, there might be more
+    * pats in the resulting map, than in the `patIds` param.)
+    */
+  def loadTruePatsById(patIds: Set[PatId]): Map[PatId, Pat] = {
+    COULD_OPTIMIZE // Do in a single SQL query (a join that looks up patIds and any
+    // related true ids).
+    val patsById: Map[PatId, Pat] = loadParticipantsAsMap(patIds)
+    val aliases = patsById.values.filter(_.isAlias)
+    val trueById = loadParticipantsAsMap(aliases.map(_.trueId2.trueId))
+    if (trueById.isEmpty) patsById
+    else {
+      // (`all` might contain dupl items, if in some weird way a true user turns out
+      // to be an anonym or pseudonym (which shouldn't be allowed but who knows
+      // what might happen) — doesn't matter; the map remembers just one.)
+      val all = patsById.values.toVector ++ trueById.values.toVector
+      Map(all.map(x => x.id -> x): _*)
+    }
+  }
 
   def loadAllGuests(): immutable.Seq[Guest]
   def loadAllGuestEmailNotfPrefsByEmailAddr(): Map[String, EmailNotfPrefs]

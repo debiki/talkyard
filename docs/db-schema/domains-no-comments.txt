@@ -1,0 +1,156 @@
+                                                                                                                                                      List of domains
+ Schema |               Name               |              Type              | Collation | Nullable | Default |                                                                                                    Check                                                                                                     
+--------+----------------------------------+--------------------------------+-----------+----------+---------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ public | anonym_status_d                  | i32_d                          |           |          |         | CHECK (VALUE::integer = ANY (ARRAY[65535, 2097151]))
+ public | answered_status_d                | i16_gz_lt128_d                 |           |          |         | 
+ public | api_version_d                    | text_nonempty_ste60_d          |           |          |         | CHECK (VALUE::text = '0.0.1'::text)
+ public | base64us_inf_d                   | text_nonempty_inf_d            |           |          |         | CHECK (VALUE::text ~ '^[a-zA-Z0-9_=-]*$'::text)
+ public | base64us_len16_d                 | base64us_inf_d                 |           |          |         | CHECK (length(VALUE::text) = 16)
+ public | browser_id_d                     | text                           |           |          |         | CHECK (VALUE ~ '^[a-zA-Z0-9._=-]*$'::text) CHECK (length(VALUE) >= 14) CHECK (length(VALUE) <= 60)
+ public | bytea_len28_d                    | bytea                          |           |          |         | CHECK (length(VALUE) = 28)
+ public | bytea_len32_d                    | bytea                          |           |          |         | CHECK (length(VALUE) = 32)
+ public | bytea_len48_d                    | bytea                          |           |          |         | CHECK (length(VALUE) = 48)
+ public | bytea_len64_d                    | bytea                          |           |          |         | CHECK (length(VALUE) = 64)
+ public | can_see_who_d                    | i16_d                          |           |          |         | CHECK (VALUE IS NULL OR VALUE::smallint >= 1 AND VALUE::smallint <= 4)
+ public | cat_id_d                         | i32_lt2e9_gz_d                 |           |          |         | 
+ public | closed_status_d                  | i16_gz_lt128_d                 |           |          |         | 
+ public | collapsed_status_d               | i16_gz_lt128_d                 |           |          |         | 
+ public | color_d                          | text                           |           |          |         | CHECK (VALUE ~ '^#[a-f0-9]{3}([a-f0-9]{3})?$'::text)
+ public | comt_order_d                     | i32_nz_d                       |           |          |         | CHECK (VALUE::integer = ANY (ARRAY[1, 2, 3, 18, 50]))
+ public | creator_status_d                 | i16_gz_lt1024_d                |           |          |         | 
+ public | deleted_status_d                 | i16_gz_lt128_d                 |           |          |         | 
+ public | do_vote_style_d                  | i16_gez_d                      |           |          |         | CHECK (VALUE::smallint <= 5)
+ public | doing_status_d                   | i16_gz_lt128_d                 |           |          |         | 
+ public | dormant_status_d                 | i32_gz_d                       |           |          |         | 
+ public | email_d                          | text                           |           |          |         | CHECK (lower(VALUE) = VALUE) CHECK (length(VALUE) < 200) CHECK (length(VALUE) >= 5) CHECK (email_seems_ok(VALUE::character varying))
+ public | email_name_d                     | text_oneline_60_d              |           |          |         | CHECK (VALUE::text !~ '[!"#$%&();<=>?@[\]^`{|}]|//|https?:|script:'::text)
+ public | event_id_d                       | i64_lt2e9_gz_d                 |           |          |         | 
+ public | event_type_d                     | i16_gz_d                       |           |          |         | 
+ public | f32_d                            | real                           |           |          |         | 
+ public | f32_gez_d                        | real                           |           |          |         | CHECK (VALUE >= 0::double precision)
+ public | f32_gz_d                         | real                           |           |          |         | CHECK (VALUE > 0::double precision)
+ public | f64_d                            | double precision               |           |          |         | 
+ public | f64_gez_d                        | double precision               |           |          |         | CHECK (VALUE >= 0::double precision)
+ public | f64_gz_d                         | double precision               |           |          |         | CHECK (VALUE > 0::double precision)
+ public | flagged_status_d                 | i16_gz_lt128_d                 |           |          |         | 
+ public | hidden_status_d                  | i16_gz_lt128_d                 |           |          |         | 
+ public | html_class_suffix_30_d           | text_nonempty_ste30_d          |           |          |         | CHECK (VALUE::text ~ '^[a-zA-Z0-9_-]*$'::text)
+ public | http_url_d                       | text                           |           |          |         | CHECK (VALUE ~ '^https?:\/\/[a-z0-9_.-]+(:[0-9]+)?(/.*)?$'::text) CHECK (length(VALUE) <= 2100) CHECK (VALUE !~ '\s'::text)
+ public | http_url_ste_250_d               | http_url_d                     |           |          |         | CHECK (length(VALUE::text) <= 250)
+ public | i16_d                            | smallint                       |           |          |         | 
+ public | i16_gez_d                        | smallint                       |           |          |         | CHECK (VALUE >= 0)
+ public | i16_gz_d                         | smallint                       |           |          |         | CHECK (VALUE > 0)
+ public | i16_gz_lt1000_d                  | i16_gz_d                       |           |          |         | CHECK (VALUE::smallint < 1000)
+ public | i16_gz_lt1024_d                  | i16_gz_d                       |           |          |         | CHECK (VALUE::smallint < 1024)
+ public | i16_gz_lt10_000_d                | i16_gz_d                       |           |          |         | CHECK (VALUE::smallint < 10000)
+ public | i16_gz_lt128_d                   | i16_gz_d                       |           |          |         | CHECK (VALUE::smallint < 128)
+ public | i16_nz_d                         | smallint                       |           |          |         | CHECK (VALUE <> 0)
+ public | i32_abs_lt2e9_d                  | i32_lt2e9_d                    |           |          |         | CHECK (VALUE::integer > '-2000000000'::integer)
+ public | i32_abs_lt2e9_nz_d               | i32_abs_lt2e9_d                |           |          |         | CHECK (VALUE::integer <> 0)
+ public | i32_d                            | integer                        |           |          |         | 
+ public | i32_gez_d                        | integer                        |           |          |         | CHECK (VALUE >= 0)
+ public | i32_gz_d                         | integer                        |           |          |         | CHECK (VALUE > 0)
+ public | i32_gz_lt1000_d                  | i32_gz_d                       |           |          |         | CHECK (VALUE::integer < 1000)
+ public | i32_gz_lt1024_d                  | i32_gz_d                       |           |          |         | CHECK (VALUE::integer < 1024)
+ public | i32_gz_lt10_000_d                | i32_gz_d                       |           |          |         | CHECK (VALUE::integer < 10000)
+ public | i32_gz_lt128_d                   | i32_gz_d                       |           |          |         | CHECK (VALUE::integer < 128)
+ public | i32_lt2e9_d                      | i32_d                          |           |          |         | CHECK (VALUE::integer < 2000000000)
+ public | i32_lt2e9_gt1000_d               | i32_lt2e9_d                    |           |          |         | CHECK (VALUE::integer > 1000)
+ public | i32_lt2e9_gz_d                   | i32_lt2e9_d                    |           |          |         | CHECK (VALUE::integer > 0)
+ public | i32_nz_d                         | integer                        |           |          |         | CHECK (VALUE <> 0)
+ public | i64_abs_lt2e9_d                  | i64_lt2e9_d                    |           |          |         | CHECK (VALUE::bigint > '-2000000000'::integer)
+ public | i64_abs_lt2e9_nz_d               | i64_abs_lt2e9_d                |           |          |         | CHECK (VALUE::bigint <> 0)
+ public | i64_d                            | bigint                         |           |          |         | 
+ public | i64_gez_d                        | bigint                         |           |          |         | CHECK (VALUE >= 0)
+ public | i64_gz_d                         | bigint                         |           |          |         | CHECK (VALUE > 0)
+ public | i64_lt2e9_d                      | i64_d                          |           |          |         | CHECK (VALUE::bigint < 2000000000)
+ public | i64_lt2e9_gt1000_d               | i64_lt2e9_d                    |           |          |         | CHECK (VALUE::bigint > 1000)
+ public | i64_lt2e9_gz_d                   | i64_lt2e9_d                    |           |          |         | CHECK (VALUE::bigint > 0)
+ public | i64_nz_d                         | bigint                         |           |          |         | CHECK (VALUE <> 0)
+ public | index_prio_d                     | i16_nz_d                       |           |          |         | CHECK (VALUE::smallint = 102)
+ public | jsonb_ste1000_d                  | jsonb                          |           |          |         | CHECK (pg_column_size(VALUE) <= 1000)
+ public | jsonb_ste100_000_d               | jsonb                          |           |          |         | CHECK (pg_column_size(VALUE) <= 100000)
+ public | jsonb_ste16000_d                 | jsonb                          |           |          |         | CHECK (pg_column_size(VALUE) <= 16000)
+ public | jsonb_ste2000_d                  | jsonb                          |           |          |         | CHECK (pg_column_size(VALUE) <= 2000)
+ public | jsonb_ste250_000_d               | jsonb                          |           |          |         | CHECK (pg_column_size(VALUE) <= 250000)
+ public | jsonb_ste4000_d                  | jsonb                          |           |          |         | CHECK (pg_column_size(VALUE) <= 4000)
+ public | jsonb_ste500_000_d               | jsonb                          |           |          |         | CHECK (pg_column_size(VALUE) <= 500000)
+ public | jsonb_ste500_d                   | jsonb                          |           |          |         | CHECK (pg_column_size(VALUE) <= 500)
+ public | jsonb_ste8000_d                  | jsonb                          |           |          |         | CHECK (pg_column_size(VALUE) <= 8000)
+ public | key_hex_b64us_d                  | text                           |           |          |         | CHECK (length(VALUE) < 250) CHECK (length(VALUE) >= 24) CHECK (VALUE ~ '^(base64:|hex:).*$'::text) CHECK (VALUE ~ '^([a-z0-9]+:)?[a-zA-Z0-9_=-]*$'::text)
+ public | max_nesting_d                    | i16_d                          |           |          |         | CHECK (VALUE::smallint <= 100) CHECK (VALUE::smallint = '-1'::integer OR VALUE::smallint >= 1)
+ public | member_id_d                      | pat_id_d                       |           |          |         | CHECK (VALUE::integer > 0)
+ public | never_always_d                   | i16_d                          |           |          |         | CHECK (VALUE::smallint = ANY (ARRAY[2, 3, 7, 8]))
+ public | page_id_d__later                 | i64_lt2e9_gz_d                 |           |          |         | 
+ public | page_id_st_d                     | text_nonempty_ste60_d          |           |          |         | CHECK (VALUE::text ~ '^[a-zA-Z0-9_]*$'::text)
+ public | page_sort_order_d                | i16_gz_d                       |           |          |         | CHECK (VALUE::smallint < 100)
+ public | page_type_d                      | i16_gz_lt1000_d                |           |          |         | 
+ public | pat_id_d                         | i32_abs_lt2e9_nz_d             |           |          |         | 
+ public | pat_rel_type_d                   | i16_gz_lt1000_d                |           |          |         | 
+ public | pic_url_d                        | character varying              |           |          |         | CHECK (length(VALUE::text) <= 2100) CHECK (length(VALUE::text) > 0)
+ public | post_id_d                        | i32_lt2e9_gz_d                 |           |          |         | 
+ public | post_nr_d                        | i32_abs_lt2e9_d                |           |          |         | 
+ public | post_rel_type_d                  | i16_gz_lt1000_d                |           |          |         | 
+ public | post_type_d                      | i16_gz_lt1000_d                |           |          |         | 
+ public | postponed_status_d               | i16_gz_lt128_d                 |           |          |         | 
+ public | private_status_d                 | i16_gz_lt1024_d                |           |          |         | CHECK (VALUE IS NULL OR VALUE::smallint = 1)
+ public | pseudonym_status_d               | i32_d                          |           |          |         | CHECK (VALUE IS NULL)
+ public | ref_id_d                         | text                           |           |          |         | CHECK (is_valid_ext_id(VALUE::character varying))
+ public | retry_nr_d                       | i16_d                          |           |          |         | CHECK (VALUE::smallint = '-1'::integer OR VALUE::smallint >= 1)
+ public | rev_nr_d                         | i32_lt2e9_gz_d                 |           |          |         | 
+ public | review_status_d                  | i16_gz_lt128_d                 |           |          |         | 
+ public | secret_alnum_d                   | text                           |           |          |         | CHECK (length(VALUE) <= 200) CHECK (length(VALUE) >= 20) CHECK (VALUE ~ '^[a-zA-Z0-9]*$'::text)
+ public | secret_status_d                  | i16_gz_d                       |           |          |         | CHECK (VALUE::smallint <= 6)
+ public | site_id_d                        | i32_abs_lt2e9_nz_d             |           |          |         | 
+ public | smtp_msg_id_out_d                | text_nonempty_ste250_trimmed_d |           |          |         | CHECK (VALUE::text ~ '^([a-zA-Z0-9_.+-]+@[a-z0-9_.-]+(:[0-9]+)?)?$'::text)
+ public | smtp_msg_id_out_prefix_d         | text_nonempty_ste60_trimmed_d  |           |          |         | CHECK (VALUE::text ~ '^[a-zA-Z0-9_.+-]*$'::text)
+ public | smtp_msg_ids_out_d               | text[]                         |           |          |         | CHECK ((array_to_string(VALUE, ' '::text) || ' '::text) ~ '^([a-zA-Z0-9_.+-]+@[a-z0-9_.-]+(:[0-9]+)? )* ?$'::text) CHECK (pg_column_size(VALUE) < 8000) CHECK (length(array_to_string(VALUE, ''::text)) > 0)
+ public | sub_type_d                       | i32_gz_d                       |           |          |         | 
+ public | tag_id_d                         | i32_lt2e9_gz_d                 |           |          |         | 
+ public | tag_name_120_d                   | text_nonempty_ste120_trimmed_d |           |          |         | CHECK (is_ok_tag_chars(VALUE::text))
+ public | tag_name_15_d                    | text_nonempty_ste15_trimmed_d  |           |          |         | CHECK (is_ok_tag_chars(VALUE::text))
+ public | tag_name_60_d                    | text_nonempty_ste60_trimmed_d  |           |          |         | CHECK (is_ok_tag_chars(VALUE::text))
+ public | tagtype_id_d                     | i32_lt2e9_gt1000_d             |           |          |         | 
+ public | text_nonempty_inf_d              | text                           |           |          |         | CHECK (length(VALUE) > 0)
+ public | text_nonempty_ste1000_d          | text_nonempty_inf_d            |           |          |         | CHECK (length(VALUE::text) <= 1000)
+ public | text_nonempty_ste1000_trimmed_d  | text_nonempty_ste1000_d        |           |          |         | CHECK (is_trimmed(VALUE::text))
+ public | text_nonempty_ste120_d           | text_nonempty_inf_d            |           |          |         | CHECK (length(VALUE::text) <= 120)
+ public | text_nonempty_ste120_trimmed_d   | text_nonempty_ste120_d         |           |          |         | CHECK (is_trimmed(VALUE::text))
+ public | text_nonempty_ste15_d            | text_nonempty_inf_d            |           |          |         | CHECK (length(VALUE::text) <= 15)
+ public | text_nonempty_ste15_trimmed_d    | text_nonempty_ste15_d          |           |          |         | CHECK (is_trimmed(VALUE::text))
+ public | text_nonempty_ste16000_d         | text_nonempty_inf_d            |           |          |         | CHECK (length(VALUE::text) <= 16000)
+ public | text_nonempty_ste16000_trimmed_d | text_nonempty_ste16000_d       |           |          |         | CHECK (is_trimmed(VALUE::text))
+ public | text_nonempty_ste2000_d          | text_nonempty_inf_d            |           |          |         | CHECK (length(VALUE::text) <= 2000)
+ public | text_nonempty_ste2000_trimmed_d  | text_nonempty_ste2000_d        |           |          |         | CHECK (is_trimmed(VALUE::text))
+ public | text_nonempty_ste2100_d          | text_nonempty_inf_d            |           |          |         | CHECK (length(VALUE::text) <= 2100)
+ public | text_nonempty_ste2100_trimmed_d  | text_nonempty_ste2100_d        |           |          |         | CHECK (is_trimmed(VALUE::text))
+ public | text_nonempty_ste250_d           | text_nonempty_inf_d            |           |          |         | CHECK (length(VALUE::text) <= 250)
+ public | text_nonempty_ste250_trimmed_d   | text_nonempty_ste250_d         |           |          |         | CHECK (is_trimmed(VALUE::text))
+ public | text_nonempty_ste30_d            | text_nonempty_inf_d            |           |          |         | CHECK (length(VALUE::text) <= 30)
+ public | text_nonempty_ste30_trimmed_d    | text_nonempty_ste30_d          |           |          |         | CHECK (is_trimmed(VALUE::text))
+ public | text_nonempty_ste4000_d          | text_nonempty_inf_d            |           |          |         | CHECK (length(VALUE::text) <= 4000)
+ public | text_nonempty_ste4000_trimmed_d  | text_nonempty_ste4000_d        |           |          |         | CHECK (is_trimmed(VALUE::text))
+ public | text_nonempty_ste500_d           | text_nonempty_inf_d            |           |          |         | CHECK (length(VALUE::text) <= 500)
+ public | text_nonempty_ste500_trimmed_d   | text_nonempty_ste500_d         |           |          |         | CHECK (is_trimmed(VALUE::text))
+ public | text_nonempty_ste60_d            | text_nonempty_inf_d            |           |          |         | CHECK (length(VALUE::text) <= 60)
+ public | text_nonempty_ste60_trimmed_d    | text_nonempty_ste60_d          |           |          |         | CHECK (is_trimmed(VALUE::text))
+ public | text_nonempty_ste8000_d          | text_nonempty_inf_d            |           |          |         | CHECK (length(VALUE::text) <= 8000)
+ public | text_nonempty_ste8000_trimmed_d  | text_nonempty_ste8000_d        |           |          |         | CHECK (is_trimmed(VALUE::text))
+ public | text_oneline_120_d               | text_oneline_d                 |           |          |         | CHECK (length(VALUE::text) <= 120)
+ public | text_oneline_15_d                | text_oneline_d                 |           |          |         | CHECK (length(VALUE::text) <= 15)
+ public | text_oneline_30_d                | text_oneline_d                 |           |          |         | CHECK (length(VALUE::text) <= 30)
+ public | text_oneline_60_d                | text_oneline_d                 |           |          |         | CHECK (length(VALUE::text) <= 60)
+ public | text_oneline_d                   | text_trimmed_not_empty_d       |           |          |         | CHECK (VALUE::text ~ '^[[:print:]]*$'::text) CHECK (length(VALUE::text) <= 2100)
+ public | text_trimmed_not_empty_d         | text                           |           |          |         | CHECK (VALUE ~ '^(\S(.*\S)?)?$'::text) CHECK (length(VALUE) >= 1)
+ public | thing_type_d                     | i16_gz_lt1000_d                |           |          |         | 
+ public | thing_types_d                    | i64_d                          |           |          |         | CHECK (VALUE::bigint = ANY (ARRAY[7::bigint, 56::bigint]))
+ public | trending_period_d                | i16_gz_d                       |           |          |         | CHECK (VALUE::smallint <= 7)
+ public | trust_level_or_staff_d           | i16_d                          |           |          |         | CHECK (VALUE::smallint >= 0 AND VALUE::smallint <= 8)
+ public | unwanted_status_d                | i16_gz_lt128_d                 |           |          |         | 
+ public | url_slug_60_d                    | url_slug_d                     |           |          |         | CHECK (length(VALUE::text) <= 60)
+ public | url_slug_d                       | text_nonempty_ste2100_d        |           |          |         | CHECK (lower(VALUE::text) = VALUE::text) CHECK (VALUE::text ~ '^[[:alnum:]_-]*$'::text)
+ public | value_type_d                     | i16_d                          |           |          |         | CHECK (VALUE::smallint >= '-3'::integer AND VALUE::smallint <> 0) CHECK (VALUE::smallint < 3000)
+ public | webhook_id_d                     | i16_gz_d                       |           |          |         | 
+ public | when_mins_d                      | i32_gez_d                      |           |          |         | CHECK (VALUE::integer <= 68400000) CHECK (VALUE::integer >= 21050000)
+(151 rows)
+

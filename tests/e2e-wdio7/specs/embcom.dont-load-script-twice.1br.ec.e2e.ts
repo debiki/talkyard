@@ -15,7 +15,7 @@ let brA: TyE2eTestBrowser;
 let owen: Member;
 let owen_brA: TyE2eTestBrowser;
 
-const localHostname = 'comments-for-e2e-test-loadtwice.localhost-8080';
+const localHostname = 'comments-for-e2e-test-loadtwice';
 const embeddingOrigin = 'http://e2e-test-loadtwice.localhost:8080';
 
 let site: IdAddress;

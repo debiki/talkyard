@@ -1,0 +1,57 @@
+                             Table "public.review_tasks3"
+         Column         |            Type             | Collation | Nullable | Default 
+------------------------+-----------------------------+-----------+----------+---------
+ site_id                | integer                     |           | not null | 
+ id                     | integer                     |           | not null | 
+ reasons                | bigint                      |           | not null | 
+ created_by_id          | integer                     |           | not null | 
+ created_at             | timestamp without time zone |           | not null | 
+ created_at_rev_nr      | integer                     |           |          | 
+ more_reasons_at        | timestamp without time zone |           |          | 
+ more_reasons_at_rev_nr | integer                     |           |          | 
+ completed_at           | timestamp without time zone |           |          | 
+ decided_at_rev_nr      | integer                     |           |          | 
+ decided_by_id          | integer                     |           |          | 
+ invalidated_at         | timestamp without time zone |           |          | 
+ decision               | integer                     |           |          | 
+ about_pat_id_c         | integer                     |           | not null | 
+ page_id                | character varying           |           |          | 
+ post_id                | integer                     |           |          | 
+ post_nr                | integer                     |           |          | 
+ decided_at             | timestamp without time zone |           |          | 
+Indexes:
+    "reviewtasks__p" PRIMARY KEY, btree (site_id, id)
+    "reviewtasks_open_createdby_postid__u" UNIQUE, btree (site_id, created_by_id, post_id) WHERE post_id IS NOT NULL AND decision IS NULL
+    "reviewtasks_open_createdby_userid__u" UNIQUE, btree (site_id, created_by_id, about_pat_id_c) WHERE post_id IS NULL AND decision IS NULL
+    "reviewtasks_completedbyid__i" btree (site_id, decided_by_id) WHERE decided_by_id IS NOT NULL
+    "reviewtasks_createdat__i" btree (site_id, created_at DESC)
+    "reviewtasks_createdbyid__i" btree (site_id, created_by_id)
+    "reviewtasks_decided_do_soon_i" btree (decided_at) WHERE decided_at IS NOT NULL AND completed_at IS NULL AND invalidated_at IS NULL
+    "reviewtasks_open_createdat__i" btree (site_id, created_at DESC) WHERE decision IS NULL
+    "reviewtasks_pageid__i" btree (site_id, page_id) WHERE page_id IS NOT NULL
+    "reviewtasks_postid__i" btree (site_id, post_id) WHERE post_id IS NOT NULL
+    "reviewtasks_undecided_i" btree (site_id, created_at DESC) WHERE decision IS NULL AND completed_at IS NULL AND invalidated_at IS NULL
+    "reviewtasks_userid__i" btree (site_id, about_pat_id_c) WHERE about_pat_id_c IS NOT NULL
+Check constraints:
+    "reviewtasks_c_decided_compl_match_atrevnr" CHECK (decided_at IS NOT NULL OR completed_at IS NOT NULL OR decided_at_rev_nr IS NULL)
+    "reviewtasks_c_decided_compl_match_by" CHECK ((decided_at IS NULL AND completed_at IS NULL) = (decided_by_id IS NULL))
+    "reviewtasks_c_decided_compl_match_decision" CHECK ((decided_at IS NULL AND completed_at IS NULL) = (decision IS NULL))
+    "reviewtasks_c_decidedat_ge_createdat" CHECK (decided_at >= created_at)
+    "reviewtasks_c_id_not_for_imp" CHECK (id < 2000000000)
+    "reviewtasks_c_postnr_not_for_imp" CHECK (post_nr < 2000000000)
+    "reviewtasks_completed_or_invalidatedat_null__c" CHECK (completed_at IS NULL OR invalidated_at IS NULL)
+    "reviewtasks_completedat_ge_createdat__c" CHECK (completed_at >= created_at)
+    "reviewtasks_completedat_ge_morereasonsat__c" CHECK (completed_at >= more_reasons_at)
+    "reviewtasks_invalidatedat_ge_createdat__c" CHECK (invalidated_at >= created_at)
+    "reviewtasks_morereasonsat_ge_createdat__c" CHECK (more_reasons_at >= created_at)
+    "reviewtasks_morereasonsat_revnr__c_n" CHECK (more_reasons_at IS NOT NULL OR more_reasons_at_rev_nr IS NULL)
+    "reviewtasks_morereasonsatrevnr_ge_createdrevnr__c" CHECK (more_reasons_at_rev_nr >= created_at_rev_nr)
+    "reviewtasks_postid_nr__c_n" CHECK ((post_id IS NULL) = (post_nr IS NULL))
+    "reviewtasks_thing__c_nn" CHECK (post_id IS NOT NULL OR about_pat_id_c IS NOT NULL OR page_id IS NOT NULL)
+Foreign-key constraints:
+    "reviewtasks_causedby_r_people" FOREIGN KEY (site_id, created_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "reviewtasks_complby_r_people" FOREIGN KEY (site_id, decided_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "reviewtasks_r_pages" FOREIGN KEY (site_id, page_id) REFERENCES pages3(site_id, page_id) DEFERRABLE
+    "reviewtasks_r_posts" FOREIGN KEY (site_id, post_id) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+    "reviewtasks_user_r_people" FOREIGN KEY (site_id, about_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+

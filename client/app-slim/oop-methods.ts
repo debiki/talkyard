@@ -547,6 +547,11 @@ export function emailPref_descr(emailNotfPref: EmailNotfPrefs): RElm | St {
 }
 
 
+export function votes_includes(votes: Vote[], voteType: PostVoteType): Bo {
+  return !!_.find(votes, v => v.type === voteType);
+}
+
+
 export function post_isReply(post: Post): Bo {
   return post.nr >= FirstReplyNr &&
           post.postType !== PostType.MetaMessage &&
@@ -852,12 +857,14 @@ export function settings_selectTopicType(settings: SettingsVisibleClientSide, me
 //----------------------------------
 
 
-export function store_isFeatFlagOn(store: Store, featureFlag: St): Bo {
+export function store_isFeatFlagOn(store: Store, featureFlag: St, defaultOn?: Bo): Bo {
   const offFlag = '0' + featureFlag;
-  const isOn = _.includes(store.siteFeatureFlags, featureFlag) ||
-         _.includes(store.serverFeatureFlags, featureFlag);
-  const isOff = _.includes(store.siteFeatureFlags, offFlag) ||
-         _.includes(store.serverFeatureFlags, offFlag);
+  const isOn = defaultOn ||
+          _.includes(store.siteFeatureFlags, featureFlag) ||
+          _.includes(store.serverFeatureFlags, featureFlag);
+  const isOff =
+          _.includes(store.siteFeatureFlags, offFlag) ||
+          _.includes(store.serverFeatureFlags, offFlag);
   return isOn && !isOff;   // [ff_on_off]
 }
 
@@ -1286,7 +1293,7 @@ export function store_makeDraftPostPatch(store: Store, page: Page, draft: Draft)
 
 export function store_makeNewPostPreviewPatch(store: Store, page: Page,
       parentPostNr: PostNr | undefined, safePreviewHtml: string,
-      newPostType?: PostType, doAsAnon?: WhichAnon): StorePatch {
+      newPostType?: PostType, doAsAnon?: MaybeAnon): StorePatch {
   // If this is an anon post, and one's first on this page, then, the anonym
   // who will be used in place of oneself, hasn't yet been created.
   // Then use the magic built-in id Pats.FutureAnonId which will
@@ -1699,6 +1706,7 @@ const DiscPropDefaults: DiscPropsBase = {
   opStartsAnon: NeverAlways.NeverButCanContinue,
   // For now. Later: OnlySelfCanDeanon.
   newAnonStatus: AnonStatus.IsAnonCanAutoDeanon,
+  pseudonymsAllowed: NeverAlways.NeverButCanContinue,
 };
 
 const DiscPropNames = Object.keys(DiscPropDefaults);

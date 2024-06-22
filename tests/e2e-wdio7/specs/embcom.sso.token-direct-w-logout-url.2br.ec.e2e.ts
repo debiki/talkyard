@@ -48,7 +48,7 @@ const selinaAutnhMsg = {
 let selinaWithMariasEmailAuthnMsg = _.cloneDeep(selinaAutnhMsg);
 
 
-const localHostname = 'comments-for-e2e-test-embsth-localhost-8080';
+const localHostname = 'comments-for-e2e-test-embsth';
 const embeddingOrigin = 'http://e2e-test-embsth.localhost:8080';
 
 let site: IdAddress;

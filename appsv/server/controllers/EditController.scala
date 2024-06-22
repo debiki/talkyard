@@ -190,6 +190,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val anyPostId: Option[PostId] = (body \ "postId").asOpt[PostId]
     val newText = (body \ "text").as[String]
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
+    TESTS_MISSING // Do as anon  TyTANONEDIT
     val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(body) getOrIfBad { prob =>
       throwBadReq("TyEANONPARED", s"Bad anon params: $prob")
     }

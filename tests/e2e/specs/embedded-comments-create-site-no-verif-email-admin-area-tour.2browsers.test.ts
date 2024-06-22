@@ -51,7 +51,7 @@ describe("embedded comments, new site, admin tour  TyT6KRKV20", () => {
     // Need to generate new local hostname, since we're going to create a new site.
     const testId = utils.generateTestId();
     const embeddingHostPort = `e2e-test--ec-${testId}.localhost:8080`;
-    const localHostname     = `e2e-test--ec-${testId}-localhost-8080`;
+    const localHostname     = `e2e-test--ec-${testId}`;
     //const localHostname = settings.localHostname ||
     //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
 

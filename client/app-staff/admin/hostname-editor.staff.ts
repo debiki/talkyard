@@ -99,9 +99,9 @@ const HostnameEditorDialog = createComponent({
             r.b({}, "Redirect old addresses"),  // dupl button name [5KFU2R0]
             " button to redirect visitors from the old address to the new."),
           r.li({},
-            "But before you redirect to the new address, email ", r.b({}, "support@talkyard.io"),
-            " and say that you need a Let'sEncrypt https cert for your new custom domain " +
-            "(this hasn't been automated yet)."),
+            "You'll see an invalid HTTPS certificate warning, when you visit your " +
+            "new address the first time. Then, wait half a minute, reload the page, " +
+            "and HTTPS should have started working, warning gone."),
             ),
         r.p({}, "If you use ", r.b({}, "CloudFlare"),
           ", either 1) configure CloudFlare to send the traffic directly to " +

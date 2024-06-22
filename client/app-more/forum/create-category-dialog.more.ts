@@ -399,11 +399,35 @@ const CatSettings = createClassAndFactory({
               this.props.updateCategory(newLayout);
             }}));
 
+    /* Later:
+    const pseudonymsAllowed =
+      r.div({ className: 'form-group' },
+        r.label({ className: 'control-label', style: { display: 'block' }},
+          "Pseudonyms: (pen names)"),
+        debiki2.pagedialogs.PseudonymsAllowedDrpBtn({ cat: category, store,
+            layoutFor: LayoutFor.PageNoTweaks,
+            onSelect: (newProps: DiscPropsSource) => {
+              this.props.updateCategory(newProps);
+            }})); */
+
     const anonymsAllowed =
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label', style: { display: 'block' }},
           "Anonymous comments:"),
         debiki2.pagedialogs.AnonsAllowedDropdownBtn({ cat: category, store,
+            layoutFor: LayoutFor.PageNoTweaks,
+            onSelect: (newProps: DiscPropsSource) => {
+              this.props.updateCategory(newProps);
+            }}));
+
+    const anonsConfigd =
+            category.comtsStartAnon && category.comtsStartAnon >= NeverAlways.Allowed;
+
+    const anonPurpose = !anonsConfigd ? null :
+      r.div({ className: 'form-group' },
+        r.label({ className: 'control-label', style: { display: 'block' }},
+          "Purpose:"),
+        debiki2.widgets.AnonPurposeBtn({ cat: category, store,
             layoutFor: LayoutFor.PageNoTweaks,
             onSelect: (newProps: DiscPropsSource) => {
               this.props.updateCategory(newProps);
@@ -543,7 +567,8 @@ const CatSettings = createClassAndFactory({
             defaultTopicTypeInput,
             doItVotes,
             commentOrder,
-            anonymsAllowed,
+            // pseudonymsAllowed,
+            r.div({ className: 'c_CD_Anons' }, anonymsAllowed, anonPurpose),
             parentCatDropdown,
             isDefaultInput,
             slugInput,

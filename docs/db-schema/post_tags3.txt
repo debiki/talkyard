@@ -1,0 +1,14 @@
+                  Table "public.post_tags3"
+ Column  |       Type        | Collation | Nullable | Default 
+---------+-------------------+-----------+----------+---------
+ site_id | integer           |           | not null | 
+ post_id | integer           |           | not null | 
+ tag     | character varying |           | not null | 
+ is_page | boolean           |           | not null | 
+Indexes:
+    "posttags_site_post__p" PRIMARY KEY, btree (site_id, post_id, tag)
+Check constraints:
+    "posttags_tag__c_valid" CHECK (is_valid_tag_label(tag))
+Foreign-key constraints:
+    "posttags_r_posts" FOREIGN KEY (site_id, post_id) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
+

@@ -83,9 +83,23 @@ case class NotificationGenerator(
   private var avoidDuplEmailToUserIds = new mutable.HashSet[UserId]()
 
   private var nextNotfId: Option[NotificationId] = None
-  // Might be an anon.  ANON_UNIMPL. Make sure won't get notf to henself.
+
+  REFACTOR // Pass to the constructor? Probably the doer is always known by
+  // the caller — the caller has done access control, and would have
+  // loaded both the doer and any true doer  (if the doer is an alias)?  [notf_pass_doer]
+  //
+  RENAME // to anyDoer and theDoer? — Not just authoring new posts, but also
+  // editing old,  assigning sbd to a task,  mentioning sbd, adding to private chat,
+  // promoting/demoting — so, "author" not always correct, "doer" better?
+  //
+  // Might be an alias (anonym or pseudonym).
   private var anyAuthor: Option[Participant] = None
   private def author: Participant = anyAuthor getOrDie "TyE5RK2WAG8"
+
+  // The true user behind any anonym or pseudonym.  Pass to ctor too?
+  //private val anyTrueDoer: Opt[Pat] = None
+  //private def trueDoer: Pat = anyTrueDoer getOrDie "TyE0TRUEEDTR"
+
   private def siteId = tx.siteId
   override def anySiteId = Some(tx.siteId)
   private lazy val site: SiteIdHostnames = dao.theSite()
@@ -111,7 +125,7 @@ case class NotificationGenerator(
   def generateForNewPost(page: Page, newPost: Post, sourceAndHtml: Opt[SourceAndHtml],
         anyNewModTask: Opt[ModTask], doingModTasks: Seq[ModTask] = Nil,
         skipMentions: Bo = false,
-        postAuthor: Opt[Pat] = None): Notifications = {
+        postAuthor: Opt[Pat] = None, trueAuthor: Opt[Pat] = None): Notifications = {
 
     require(page.id == newPost.pageId, "TyE74KEW9")
     require(anyNewModTask.isEmpty || doingModTasks.isEmpty, "TyE056KWH5")
@@ -129,7 +143,8 @@ case class NotificationGenerator(
         return generatedNotifications
     })
 
-    anyAuthor = postAuthor orElse Some(tx.loadTheParticipant(newPost.createdById))
+    val theAuthor = postAuthor getOrElse tx.loadTheParticipant(newPost.createdById)
+    anyAuthor = Some(theAuthor)
 
     if (core.isDevOrTest) postAuthor foreach { postAuthorArg =>
       val postAuthorInDb = tx.loadTheParticipant(newPost.createdById)
@@ -156,7 +171,7 @@ case class NotificationGenerator(
         _genOneNotfMaybe(
               NotificationType.NewPostReviewTask,
               to = staffUser,
-              from = anyAuthor,
+              from = theAuthor,
               about = newPost,
               isAboutModTask = true)
       }
@@ -167,6 +182,11 @@ case class NotificationGenerator(
       // until later, when staff has reviewed it and made it visible.
       // We've notified staff already, above, so they can take a look.
       dieIf(anyNewModTask.isEmpty, "TyE0REVTSK")  // [703RK2]
+      return generatedNotifications
+    }
+
+    val theApprover = tx.loadParticipant(approverId) getOrElse {
+      bugWarn("TyENTF0APRVR", s"Approver $approverId missing")
       return generatedNotifications
     }
 
@@ -194,10 +214,16 @@ case class NotificationGenerator(
           : Unit = {
       for {
         replyingToPost <- ancestorsCloseFirst
-        // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
-        if replyingToPost.createdById != newPost.createdById // not replying to oneself
-        // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
-        if approverId != replyingToPost.createdById // the approver has already read newPost
+
+        // Not replying to oneself
+        if replyingToPost.createdById != theAuthor.id
+
+        // The approver has already read newPost. So if the author-of-the-replyingToPost
+        // is the same as the approver (of newPost), then, skip that author.
+        if replyingToPost.createdById != theApprover.id
+
+        // COULD_OPTIMIZE: Load authors of all ancestor posts in one query (possibly
+        // filtered by not-author-id, not notifying oneself).
         replyingToUser <- tx.loadParticipant(replyingToPost.createdById)
       } {
         // (If the replying-to-post is by a group (currently cannot happen), and someone in the group
@@ -205,7 +231,7 @@ case class NotificationGenerator(
         // do about that.)
         _makeAboutPostNotfs(
               notfType, about = newPost, inCategoryId = page.categoryId, replyingToUser,
-              sentFrom = anyAuthor)
+              sentFrom = theAuthor)
       }
     }
 
@@ -253,12 +279,10 @@ case class NotificationGenerator(
 
       for {
         userOrGroup: MembVb <- mentionedMembers
-        // Right now ignore self-mentions. Later, allow? Could work like a personal to-do item?
-        // Then would have to remove a db constraint. Could do later. Right now feels best
-        // to keep it so it'll catch bugs.
+        // Ignore self-mentions. Maybe could allow, to create a personal to-do item? But
+        // probably it's better to use bookmarks, for that? (Adding a to-do bookmark.)
         // If mentioning a group that one is a member of, one shouldn't and won't be notified (5ABKRW2).
-        // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
-        if userOrGroup.id != newPost.createdById  // poster mentions henself?
+        if userOrGroup.id != theAuthor.id  // poster mentions henself?
         if !notfCreatedAlreadyTo(userOrGroup.id)
         // Authz checks that we won't notify people outside a private chat
         // about any mentions (because they cannot see the chat). [PRIVCHATNOTFS]
@@ -268,7 +292,7 @@ case class NotificationGenerator(
               about = newPost,
               inCategoryId = page.categoryId,
               sendTo = userOrGroup,
-              sentFrom = Some(author))
+              sentFrom = author)
       }
     }
 
@@ -489,7 +513,8 @@ case class NotificationGenerator(
 
 
   /*
-  def generateForDeletedPost(page: Page, post: Post, skipMentions: Boolean): Notifications = {
+  def generateForDeletedPost(deleter: Pat, page: Page, post: Post, skipMentions: Bo)
+          : Notifications = {
     dieIf(!skipMentions, "EsE6YKG567", "Unimplemented: deleting mentions")
     anyAuthor = Some(tx.loadTheUser(post.createdById))
     Notifications(
@@ -508,26 +533,22 @@ case class NotificationGenerator(
           pageBody.createdById: ${pageBody.createdById}""")
 
     unimplementedIf(pageBody.approvedById.isEmpty, "Unapproved private message? [EsE7MKB3]")
-    ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
-    anyAuthor = Some(tx.loadTheParticipant(pageBody.createdById))
+
+    anyAuthor = Some(sender)
+
     val patIdsToLoad = toUserIds.filter(id =>
-          // Normally enough.
-          id != sender.id &&
-          // But if is an anonym, compare true id too.  ANON_UNIMPL, review elsewhere this file
-          id != sender.trueId2.trueId)
+          // Quick check 1 — normally enough (most forums don't have
+          // many anonyms or pseudonyms).
+          id != sender.id)
+          // Quick check 2: If the sender is an anonym, but the recipient is not.
+          // id != sender.trueId2.trueId)
     val patsToMaybeNotify = tx.loadParticipants(patIdsToLoad)
     patsToMaybeNotify foreach { user =>
-      if (user.trueId2.trueId == sender.trueId2.trueId) {
-        // `user` is sender's own anonym.  Don't notify the sender — hen is
-        // apparently replying to a comment by hens own anonym, or sth like that.
-      }
-      else {
-        _makeAboutPostNotfs(
-            // But what if is 2 ppl chat — then would want to incl 1st message instead? Because
-            // the first (the Orig Post) is just an auto gen "this is a chat" or sth text.
+      _makeAboutPostNotfs(
+            // But what if is 2 ppl chat?  [private_chats]  Then would want to incl the 1st
+            // message instead?  The Orig Post is just an auto gen "this is a chat"?
             NotificationType.Message, about = pageBody, inCategoryId = None, sendTo = user,
-                    sentFrom = Some(sender))
-      }
+                    sentFrom = sender)
     }
     generatedNotifications
   }
@@ -536,26 +557,31 @@ case class NotificationGenerator(
   private def _makeAboutPostNotfs(
         notfType: NotificationType,
         about: Post,
-        inCategoryId: Option[CategoryId],
-        sendTo: Participant,
-        sentFrom: Option[Participant] = None, // default is post author
+        inCategoryId: Opt[CatId],
+        sendTo: Pat,
+        sentFrom: Pat,
         minNotfLevel: NotfLevel = NotfLevel.Hushed): Unit = {
 
-    // Don't gen notfs e.g. if sbd assigns a task to themself.
-    if (sentFrom.map(_.id) is sendTo.id)
-      return
+    val aboutPost = about
 
-    // legacy variable names CLEAN_UP but not now
-    val toUserMaybeGroup = sendTo match {
-      case a: Anonym =>
-        // Race, ok: The anon might just have been altered somehow, but doesn't matter
-        // if e.g. hens preferences are 0.01 seconds out of date. (Since we're notifying
-        // `a`, hen already exists, so we cannot not find `a`. (Until maybe [hard_deletes])
-        dao.getTheParticipant(a.anonForPatId)
-      case o => o
+    // Don't gen notfs e.g. if sbd assigns a task to themself,  [notfs_trueid_check]
+    // or if someone replies to their own alias.
+    if (sentFrom.trueId2.trueId == sendTo.trueId2.trueId) {
+      avoidDuplEmailToUserIds += sendTo.id
+      avoidDuplEmailToUserIds += sendTo.trueId2.trueId
+      return
     }
 
-    val newPost = about
+    // legacy variable names CLEAN_UP but not now
+    val toUserMaybeGroup = sendTo
+    val toTruePat = sendTo match {
+      case a: Anonym =>
+        tx.loadParticipant(a.anonForPatId) getOrElse {
+          bugWarn("TyE0TRUE037", s"True user gone? Anon: $a")
+          return
+        }
+      case o => o
+    }
 
     if (sentToUserIds.contains(toUserMaybeGroup.id))
       return
@@ -575,13 +601,17 @@ case class NotificationGenerator(
     // will know for sure that the people hen could mention when composing the post,
     // will get mentioned. But the way things work now, if a mentioned person changes hens
     // priv prefs before the post gets approved, then, the mention might get removed here.
+    //
+    // Better [not_use_true_users] to not leak one's identity?
+    //
     if (isMention && !author.mayMention(toUserMaybeGroup))
       return
 
     // [filter_dms]
+    // Better [not_use_true_users] to not leak one's identity?
     if (isDirMsg && !author.mayMessage(toUserMaybeGroup)) {
       bugWarn("TyEBADMSG39546", s"Message sent although wasn't allowed to? From: ${
-            author.id}, to: ${toUserMaybeGroup.id}.")
+            author.trueId2}, to: ${toUserMaybeGroup.trueId2}.")
       return
     }
 
@@ -594,9 +624,17 @@ case class NotificationGenerator(
     // (If this is a group and it may not see the post, then don't generate any
     // notfs on behalf of this group, even if there're individual group *members*
     // who may see the post (because of other groups they're in). [5AKTG7374])
-    tx.loadPageMeta(newPost.pageId) getOrDie "TyE05WKSJF3" // <— for troubleshooting? Or what's this?
-    val (maySeePost, whyNot) = dao.maySeePost(newPost, Some(toUserMaybeGroup),
-        maySeeUnlistedPages = true)(tx)
+    //
+    // If toUserMaybeGroup is a pseudonym, can be better to [not_use_true_users],
+    // so as not to let the new post author guess who the recipient is, based on
+    // whether or not they could read the message?
+    // But this depends! [pseudonym_types] [pseudonyms_later]
+    //
+    // However if toUserMaybeGroup is an *anonym*, then, since anons are per page,
+    // it's fine to use the access permissions of the underlying true user.
+    //
+    val (maySeePost, whyNot) = dao.maySeePost(
+          aboutPost, Some(toTruePat), maySeeUnlistedPages = true)(tx)
     if (!maySeePost.may)
       return
 
@@ -626,14 +664,13 @@ case class NotificationGenerator(
               notfType,
               to = toGroup,
               from = sentFrom,
-              about = newPost)
+              about = aboutPost)
 
         // Find ids of group members to notify, and excl the sender henself:  (5ABKRW2)
 
-        ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
-        var groupMembers = tx.loadGroupMembers(groupId).filter(_.id != newPost.createdById)
+        var groupMembers = tx.loadGroupMembers(groupId).filter(m => m.id != sentFrom.id)
 
-        // Only users and groups can be gruop members.
+        // Only users, pseudonyms and groups can be gruop members.
         dieIf(groupMembers.exists(_.isGuestOrAnon), "TyE7ABK402")
 
         // If loading e.g. the AllMembers group, all higher trust level groups get loaded too,
@@ -669,6 +706,8 @@ case class NotificationGenerator(
       // Move these may-mention and may-message tests to the  toUserMaybeGroup.isGroup
       // if branch above? No need to be done here again if is not-a-group? [.move_may]
       // -------
+      // Maybe better [not_use_true_users], so can't guess who is who depending
+      // on if you can mention them or not.
       // (If sendTo is a group, and author may mention that group, but author may not
       // mention group member toPat, then what? For now, skip such mentions.
       // Maybe depends: sometimes, if pat is an overworked admin, hen wants no notification.
@@ -693,7 +732,7 @@ case class NotificationGenerator(
       COULD; NotfLevel.Hushed // Also consider the type of notf: is it a direct message? Then send
       // if >= Hushed. If is a subthread indirect reply? Then don't send if == Hushed.
 
-      val notfLevels = tx.loadPageNotfLevels(toUserId, newPost.pageId, inCategoryId)
+      val notfLevels = tx.loadPageNotfLevels(toUserId, aboutPost.pageId, inCategoryId)
       val usersMoreSpecificLevel =
         notfLevels.forPage.orElse(notfLevels.forCategory).orElse(notfLevels.forWholeSite)
       val skipBecauseMuted = usersMoreSpecificLevel is NotfLevel.Muted
@@ -704,7 +743,7 @@ case class NotificationGenerator(
               notfType,
               to = toPat,
               from = sentFrom,
-              about = newPost)
+              about = aboutPost)
       }
     }
   }
@@ -832,17 +871,17 @@ case class NotificationGenerator(
 
       // If the person who is changing assignees, is watching the category (or a page or
       // whole site), then don't notify han about the changes (han already knows).
-      if (notfType.isAboutAssignees && sentFrom.trueId2.trueId == member.trueId2.trueId)
+      if (notfType.isAboutAssignees && sentFrom.id == member.id)
         return ()
 
-      ANON_UNIMPL // excl real author id — aboutPost.createdById might be an anon.
-      if (member.id == aboutPost.createdById)
+      // If replying to oneself? — But then the `if` just above isn't needed.
+      if (member.id == sentFrom.id)
         return ()
 
       UX; COULD // NotificationType.NewPage instead? Especially if: isEmbDiscFirstReply.
       _genOneNotfMaybe(
             notfType,
-            from = Some(sentFrom),
+            from = sentFrom,
             to = member,
             about = aboutPost,
             generatedWhy = notfPref.why)
@@ -855,8 +894,13 @@ case class NotificationGenerator(
 
   /** Creates and deletes mentions, if '@username's are added/removed by this edit.
     */
-  def generateForEdits(oldPost: Post, editedPost: Post, anyNewSourceAndHtml: Opt[SourceAndHtml])
+  def generateForEdits(editor: Pat, oldPost: Post, editedPost: Post,
+        anyNewSourceAndHtml: Opt[SourceAndHtml])
         : Notifications = {
+
+    anyAuthor = Some(editor)
+    BUG // Harmless: Don't notify the approver. [dont_notify]
+
     val newPost = editedPost ; RENAME
 
     BUG; SHOULD; REFACTOR // [5BKR03] Load users already mentioned — from the database, not
@@ -889,8 +933,11 @@ case class NotificationGenerator(
         return Notifications.None  // or: return generatedNotifications? the same?
     }
 
-    // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
-    anyAuthor = Some(tx.loadTheParticipant(newPost.createdById))
+    /* Later, if  newPost.lastApprovedEditById is empty: {  [upd_last_apr_editor]
+      warnDevDie("TyE4GKF0B2", s"""s$siteId: lastApprovedEditById is None although
+            there's an approved edit. Post id ${newPost.id}""")
+      return Notifications.None
+    } */
 
     anyNewTextAndHtml foreach { textAndHtml =>
       require(newPost.approvedSource is textAndHtml.text,
@@ -918,6 +965,8 @@ case class NotificationGenerator(
     val newMentionsIncludesAll: Bo = mentionsAllInChannel(newMentions)
     val oldMentionsIncludesAll: Bo = mentionsAllInChannel(oldMentions)
 
+    // Could use `trueDoer` instead, but is that risky? What if only admins may mention groups,
+    // and there's just one admin.  [not_use_true_users]
     lazy val mayAddGroup: Bo =
       mayMentionGroups(author)
 
@@ -962,7 +1011,8 @@ case class NotificationGenerator(
     // Create mentions.
     for {
       mentionedMember <- mentionsCreatedForUsers
-      if mentionedMember.id != newPost.createdById
+      // (Might still be a self-mention via a group one is a member of.)
+      if mentionedMember.id != author.id
     } {
       BUG // harmless. might mention people again, if previously mentioned directly,
       // and now again via a @group_mention. See REFACTOR above.
@@ -973,7 +1023,8 @@ case class NotificationGenerator(
             about = newPost,
             inCategoryId = pageMeta.flatMap(_.categoryId),
             sendTo = mentionedMember,
-            sentFrom = Some(author))
+            // We don't want to show their true id
+            sentFrom = author)
     }
 
     generatedNotifications
@@ -993,31 +1044,34 @@ case class NotificationGenerator(
 
     _makeAboutPostNotfs(
           NotificationType.OneLikeVote, about = post, inCategoryId = inCategoryId,
-          sendTo = upvotedPostAuthor, sentFrom = Some(voter))
+          sendTo = upvotedPostAuthor, sentFrom = voter)
 
     generatedNotifications
   }
 
 
-  def generateForTags(post: Post, tagsAdded: Set[TagLabel]): Notifications = {
+  def generateForTags(post: Post, postAuthor: Pat, tagsAdded: Set[TagLabel]): Notifications = {
     val userIdsWatching = tx.listUsersWatchingTags(tagsAdded)
     val userIdsNotified = tx.listUsersNotifiedAboutPost(post.id)
     val userIdsToNotify = userIdsWatching -- userIdsNotified
     val usersToNotify = tx.loadParticipants(userIdsToNotify.to[immutable.Seq])
     val pageMeta = tx.loadPageMeta(post.pageId)
-    anyAuthor = Some(tx.loadTheParticipant(post.createdById))
+    anyAuthor = Some(postAuthor)
     for {
       user <- usersToNotify
-      // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
-      if user.id != post.createdById
+      if user.id != postAuthor.id
     } {
       // This is about the new (from the notf recipient's point of view) post,
       // so the notf is from the post author, not from the one who added the tag
       // (unless hen is the author).
+      // [notf_from_who] Or mention both the author *and* the person adding the tag?
+      //
+      BUG // harmless: We should skip the tagger — han knows aobut the new tag. [dont_notify]
       _makeAboutPostNotfs(
             NotificationType.PostTagged, about = post,
             inCategoryId = pageMeta.flatMap(_.categoryId),
-            sendTo = user)
+            sendTo = user,
+            sentFrom = postAuthor)
     }
     generatedNotifications
   }
@@ -1034,20 +1088,20 @@ case class NotificationGenerator(
     for (pat <- assigneesAdded) {
       _makeAboutPostNotfs(
             NotfType.Assigned, about = postBef, inCategoryId = anyCatId,
-            sendTo = pat, sentFrom = Some(changedBy))
+            sendTo = pat, sentFrom = changedBy)
     }
 
     for (pat <- assigneesRemoved) {
       _makeAboutPostNotfs(
             NotfType.Unassigned, about = postBef, inCategoryId = anyCatId,
-            sendTo = pat, sentFrom = Some(changedBy))
+            sendTo = pat, sentFrom = changedBy)
     }
 
     // Notify the post author.  (_makeAboutPostNotfs() won't send dupl notfs,
     // and won't notify people who can (no longer) see the page.)
     _makeAboutPostNotfs(
           NotfType.AssigneesChanged, about = postBef, inCategoryId = anyCatId,
-          sendTo = postAuthor, sentFrom = Some(changedBy))
+          sendTo = postAuthor, sentFrom = changedBy)
 
     // Does it make sense to notify the previous assignees, about more assignees
     // now having been added or removed? Let's wait, not important — not often
@@ -1069,7 +1123,7 @@ case class NotificationGenerator(
   private def _genOneNotfMaybe(
         notfType: NotfType,
         to: Pat,
-        from: Opt[Pat] = None,
+        from: Pat,
         about: Post,
         // generatedAt: Opt[When] = None,
         generatedWhy: St = "",
@@ -1079,16 +1133,18 @@ case class NotificationGenerator(
 
     val aboutPost = about
     val toPat = to
-    val fromPat: Pat = from getOrElse tx.loadTheParticipant(aboutPost.createdById)
-    val fromPatTrueId: TrueId = fromPat.trueId2
+    val fromPat = from
 
-    dieIf(toPat.id == fromPat.id, "TyE4S602MRD5",
-          s"s$siteId: Notf to self, id: ${toPat.id}, about post id ${aboutPost.id}")
+    if (toPat.id == fromPat.id) {
+      bugWarn("TyE4S602MRD5", s"Notf to self, id: ${toPat.trueId2}, about post ${aboutPost.id}")
+      return ()
+    }
 
-    // If the notification is to or from an anon, the anon(s) might be the sender's
-    // own anonym(s). Then, don't generate any notf.
-    if (toPat.trueId2.trueId == fromPatTrueId.trueId) {
+    // If the notification is to or from an alias (anonym or pseudonym), the alias
+    // might be the sender's own alias.  Then, don't generate any notf.  [notfs_trueid_check]
+    if (toPat.trueId2.trueId == fromPat.trueId2.trueId) {
       avoidDuplEmailToUserIds += toPat.id
+      avoidDuplEmailToUserIds += toPat.trueId2.trueId
       return ()
     }
 
@@ -1121,12 +1177,15 @@ case class NotificationGenerator(
     notfsToCreate += Notification.NewPost(
           notfType,
           id = newNotfId,
-          // Need to send notf to one's true account, not to any anonym. So use trueId.
-          // But if is pseudonym, then, send to the pseudonym? [pseudonyms_later]
-          toUserId = toPat.trueId2.trueId,
-          // Do *not* use trueId here though, because then any anonymous sender,
-          // would get revealed.  TESTS_MISSING  ANON_UNIMPL  TyTNOTFFROMANON
+          // It's nice to see what notifications a pseudonym of one's own has gotten, ...
+          toUserId = toPat.id,
+          // ... And also nice to see all one's notifications — to one's true user,
+          // and all pseudonyms and anonyms, at once.
+          toTrueId = toPat.trueId2.anyTrueId,
+          // TESTS_MISSING  ANON_UNIMPL  TyTNOTFFROMANON
           byUserId = fromPat.id,
+          byTrueId = fromPat.trueId2.anyTrueId,
+
           createdAt = aboutPost.createdAt,
           uniquePostId = aboutPost.id,
           smtpMsgIdPrefix = aboutPost.smtpMsgIdPrefix.map(_ + s".${toPat.id}.$newNotfId"),
