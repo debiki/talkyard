@@ -35,7 +35,7 @@ Compile / dependencyOverrides ++= {
       "com.google.code.gson" % "gson" % "2.8.8",
       "com.google.errorprone" % "error_prone_annotations" % "2.21.1",
       "com.google.guava" % "failureaccess" % "1.0.1",
-      "com.google.guava" % "guava" % "32.1.3-jre",
+      "com.google.guava" % "guava" % "33.2.1-jre",
       "com.google.guava" % "listenablefuture" % "9999.0-empty-to-avoid-conflict-with-guava",
       "com.google.j2objc" % "j2objc-annotations" % "2.8",
       "com.lambdaworks" % "scrypt" % "1.4.0",
