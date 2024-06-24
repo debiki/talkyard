@@ -419,7 +419,7 @@ object Rdb {
     val sqlArray: js.Array = rs.getArray(column)
     if (sqlArray eq null) return None
     val javaArray = sqlArray.getArray.asInstanceOf[Array[String]]
-    Some(javaArray.to[Vector])
+    Some(javaArray.to(Vector))
   }
 
   def getArrayOfInt32(rs: js.ResultSet, column: St): ImmSeq[i32] = {
@@ -431,7 +431,7 @@ object Rdb {
     val sqlArray: js.Array = rs.getArray(column)
     if (sqlArray eq null) return None
     val javaArray = sqlArray.getArray.asInstanceOf[Array[Integer]]
-    Some(javaArray.to[Vec].map(_.toInt))
+    Some(javaArray.to(Vec).map(_.toInt))
   }
 
   /** Make sure no array contains any null — just because I then don't know what'll
@@ -455,8 +455,8 @@ object Rdb {
       System.out.println(s"classNameOf(item): ${classNameOf(item)}")
     } */
     WOULD_OPTIMIZE // Can skip to[Vec], do that at the end instead? And skip toInt, or?
-    val vecOfJavaArrays = javaArrayAsArr.to[Vec]
-    val vecOfVec = vecOfJavaArrays.map(_.asInstanceOf[Array[_]].to[Vec].map(_.asInstanceOf[Int]))
+    val vecOfJavaArrays = javaArrayAsArr.to(Vec)
+    val vecOfVec = vecOfJavaArrays.map(_.asInstanceOf[Array[_]].to(Vec).map(_.asInstanceOf[Int]))
     Some(vecOfVec)
   }
 

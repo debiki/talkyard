@@ -87,7 +87,7 @@ class SearchQueryParserSpec extends AnyFreeSpec with must.Matchers {
   class TestDao extends debiki.dao.TestReadOnlySiteDao {
 
     override def getTagTypesByNamesOrSlugs(tagNames: Iterable[St]): imm.Seq[Opt[TagType]] = {
-      tagNames.to[Vec] map { tagName =>
+      tagNames.to(Vec) map { tagName =>
         (tagName match {
           case "tagOne" => Some(TagTypeOne)  // 101, by display name
           case "tag-one" => Some(TagTypeOne) // 101, by url slug
@@ -127,7 +127,7 @@ class SearchQueryParserSpec extends AnyFreeSpec with must.Matchers {
     }
 
     override def getCatsBySlugs(catNames: Iterable[St]): imm.Seq[Opt[Cat]] =
-      catNames.to[Vec] map { catName =>
+      catNames.to(Vec) map { catName =>
         categorySlugToId(catName) map { catId =>
           val catMock = Mockito.mock(classOf[Category])
           when(catMock.id).thenReturn(catId)
@@ -136,7 +136,7 @@ class SearchQueryParserSpec extends AnyFreeSpec with must.Matchers {
       }
 
     override def getMembersByUsernames(usernames: Iterable[Username]): imm.Seq[Opt[Member]] = {
-      usernames.to[Vec] map { un =>
+      usernames.to(Vec) map { un =>
         val anyPatId = un match {
           case "userOne" => Some(10001)
           case "userTwo" => Some(10002)

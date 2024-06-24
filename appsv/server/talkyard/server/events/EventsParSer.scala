@@ -61,7 +61,7 @@ object EventsParSer {
       val otherPageIds: MutArrBuf[PageId] = (events collect {
         case ev: PageEvent if ev.eventType != PageEventType.PageCreated =>
           ev.pageId
-      }).to[MutArrBuf]
+      }).to(MutArrBuf)
 
       val postIds: ImmSeq[PostId] = events collect {
         case ev: PostEvent => ev.postId

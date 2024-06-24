@@ -27,6 +27,7 @@ import scala.collection.mutable
 import play.api.libs.json.JsObject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import scala.IterableOnce
 
 
 package object core {
@@ -2078,7 +2079,7 @@ package object core {
     * and: https://www.michaelpollmeier.com/
     *                        execute-scala-futures-in-serial-one-after-the-other-non-blocking
     */
-  def runFuturesSequentially[I, R](items: TraversableOnce[I])(
+  def runFuturesSequentially[I, R](items: IterableOnceIterableOnce[I])(
         fn: I => Future[R])(execCtx: ExecutionContext): Future[immutable.Seq[R]] = {
     val futureResults = items.foldLeft(Future.successful[List[R]](Nil)) {
       (futureResultsThisFar: Future[List[R]], nextItem: I) =>

@@ -853,7 +853,7 @@ object RdbUtil {
     val frequentPoster2Id = getOptionalInt(resultSet, "frequent_poster_2_id")
     val frequentPoster3Id = getOptionalInt(resultSet, "frequent_poster_3_id")
     val frequentPosterIds = (frequentPoster1Id.toSeq ++ frequentPoster2Id.toSeq ++
-      frequentPoster3Id.toSeq).to[immutable.Seq]
+      frequentPoster3Id.toSeq).to(immutable.Seq)
 
     PageMeta(
       pageId = if (pageId ne null) pageId else resultSet.getString("PAGE_ID"),
