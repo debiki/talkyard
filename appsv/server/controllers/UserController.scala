@@ -938,7 +938,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // Later, load data for many pages:  [many_ifr_my_page_data]
     val pageIdsSeq: ImmSeq[PageId] =
           if (pageIds.indexOf(',') == -1) ImmSeq(pageIds)
-          else pageIds.split(',').to[ImmSeq]
+          else pageIds.split(',').to(ImmSeq)
    // For now:
     val anyMeAndStuff: Opt[MeAndStuff] = loadMyPageDataImpl(request, pageIdsSeq.head)
     val stuffJsOb = anyMeAndStuff.map(_.stuffForMe.toJson(dao))

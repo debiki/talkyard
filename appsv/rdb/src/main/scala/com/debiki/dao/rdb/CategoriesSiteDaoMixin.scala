@@ -62,7 +62,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       ancestors += nextCategory.get
       nextCategory = nextCategory.get.parentId.flatMap(categoriesById.get)
     }
-    ancestors.to[immutable.Seq]
+    ancestors.to(immutable.Seq)
   }
 
 

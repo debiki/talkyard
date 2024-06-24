@@ -862,7 +862,7 @@ object JsX {   RENAME // to JsonPaSe
   def JsTagTypeArray(tagTypes: Iterable[TagType], inclRefId: Bo, inclCreatedBy: Bo = false)
           : JsArray = {
     JsArray(tagTypes.map(tt => JsTagTypeMaybeRefId(
-          tt, inclRefId = inclRefId, inclCreatedBy = inclCreatedBy)).to[Vec])
+          tt, inclRefId = inclRefId, inclCreatedBy = inclCreatedBy)).to(Vec))
   }
 
 

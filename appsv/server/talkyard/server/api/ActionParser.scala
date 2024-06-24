@@ -183,7 +183,7 @@ case class ActionParser(dao: SiteDao, mayDoOnlyAs: Opt[Pat], mab: MessAborter) {
       Try(JsX.parseTagParam(jOb, whatPage)) getOrIfFailure { ex =>
         return Bad(s"Tag nr $nr: ${ex.getMessage}")
       }
-    }).to[Vec]
+    }).to(Vec)
   }
 
 }

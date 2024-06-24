@@ -344,11 +344,11 @@ class TextAndHtmlMaker(
         usernameMentions = usernameMentions ++ more.usernameMentions,
         uploadRefs = uploadRefs ++ more.uploadRefs,
         // CLEAN_UP this  toSet  toSeq  makes no sense.
-        externalLinks = (externalLinks.toSet ++ more.externalLinks.toSet).to[immutable.Seq],
+        externalLinks = (externalLinks.toSet ++ more.externalLinks.toSet).to(immutable.Seq),
         internalLinks = internalLinks ++ more.internalLinks,
         extLinkDomains = extLinkDomains ++ more.extLinkDomains,
         extLinkIpAddresses = (extLinkIpAddresses.toSet ++
-              more.extLinkIpAddresses.toSet).to[immutable.Seq],
+              more.extLinkIpAddresses.toSet).to(immutable.Seq),
         embeddedOriginOrEmpty = embeddedOriginOrEmpty,
         followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs)

@@ -460,7 +460,7 @@ abstract class PageParts {
       }
       ancestors.append(theCurPost)
     }
-    ancestors.to[Vec]
+    ancestors.to(Vec)
   }
 
 
