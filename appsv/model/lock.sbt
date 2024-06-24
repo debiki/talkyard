@@ -22,7 +22,7 @@ Compile / dependencyOverrides ++= {
       "com.typesafe.play" % "play-functional_2.12" % "2.9.4",
       "com.typesafe.play" % "play-json_2.12" % "2.9.4",
       "commons-beanutils" % "commons-beanutils" % "1.9.4",
-      "commons-codec" % "commons-codec" % "1.16.1",
+      "commons-codec" % "commons-codec" % "1.17.0",
       "commons-collections" % "commons-collections" % "3.2.2",
       "commons-digester" % "commons-digester" % "2.1",
       "commons-io" % "commons-io" % "2.15.1",
