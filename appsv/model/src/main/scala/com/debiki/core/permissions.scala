@@ -123,6 +123,7 @@ case class PermsOnPages(  // [exp] ok use. Missing, fine: may_see_private_flagge
   mayCreatePage: Opt[Bo] = None,
   mayPostComment: Opt[Bo] = None,
   maySee: Opt[Bo] = None,
+  // Wants index: pages_i_authorid_catid_createdat_pageid
   maySeeOwn: Opt[Bo] = None) {
 
   // maySeeIfEmbeddedAlthoughLoginRequired  [emb_login_req]

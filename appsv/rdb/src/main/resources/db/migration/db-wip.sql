@@ -64,6 +64,21 @@ alter domain  alnum_plusdashdot_arr_d add
 -- Odd, last_approved_edit_at can be not null, also if  approved_at is null.
 -- Harmless but maybe surprising in the future.
 
+-- For listing pages by someone in a specific category. Helpful, for categories where
+-- one may post topics, but not see others' posts.  That is:
+--    PermsOnPages(
+--      mayCreatePage = true,
+--      mayPostComment = true,
+--      maySee = false  <——
+--      maySeeOwn = true  <——
+--      ...)
+
+create index  pages_i_authorid_catid_createdat_pageid  on  pages3 (
+      site_id, author_id, category_id, created_at desc, page_id desc);
+
+-- No longer needed.  Same as pages_i_createdby_catid but only on: (site_id, author_id).
+drop index dw2_pages_createdby__i;
+
 
 --=============================================================================
 --  Upload refs
