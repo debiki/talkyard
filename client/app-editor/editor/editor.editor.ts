@@ -130,14 +130,23 @@ export const listUsernamesTrigger = {
 
 interface EditorState {
   inFrame?: DiscWin,
-  inFrameStore?: DiscStore;
+  inFrameStore?: DiscStore & Origins;
   store: Store;
   visible: boolean;
   replyToPostNrs: PostNr[];
   anyPostType?: PostType;
+
+  // If posting anonymously or using a pseudonym.
   doAsAnon?: MaybeAnon;
+
+  // Any pseudonyms and anonyms pat can choose among, when posting. ("Opts" = options)
   myAliasOpts?: MaybeAnon[]
+
+  // Properties of the page where the post will appear. [_new_disc_props] Can be different
+  // than `store.curDiscProps`, if composing a new page in a category with different
+  // settings than the forum homepage. So, can't use `EditorState.store.discProps`.
   discProps?: DiscPropsDerived;
+
   authorId?: PatId; // remove?
   editorsCategories?: Category[];
   editorsPageId?: PageId;
@@ -214,7 +223,7 @@ export const Editor = createFactory<any, EditorState>({
   },
 
 
-  getDiscStore(): DiscStore {
+  getDiscStore(): DiscStore & Origins {
     const state: EditorState = this.state;
     return state.inFrameStore || state.store; // [many_embcom_iframes]
   },
@@ -226,7 +235,7 @@ export const Editor = createFactory<any, EditorState>({
   /// we just return the React store of the current window as is (which is then
   /// the top window).
   ///
-  getOrCloneDiscStore(inFrame?: DiscWin): DiscStore {
+  getOrCloneDiscStore(inFrame?: DiscWin): DiscStore & Origins {
     if (!eds.isInIframe) {
       // @ifdef DEBUG
       dieIf(inFrame, 'TyE507MWEG25');
@@ -245,7 +254,7 @@ export const Editor = createFactory<any, EditorState>({
     // `inFrame` is sometimes available before this.state has been updated, so
     // try to use it first.
     const state: EditorState = this.state;
-    const discFrameStore: Partial<DiscStore> =
+    const discFrameStore: Partial<DiscStore & Origins> =
         inFrame?.theStore || (    // [ONESTORE]  [many_embcom_iframes]
               state.inFrame ? state.inFrame.theStore : (
                   // This'd be weird, would mean the comments iframe was deleted
@@ -264,17 +273,30 @@ export const Editor = createFactory<any, EditorState>({
     // And 2) so that the data won't get changed at any time by code in the other iframe
     // — React.js wouldn't like that.
     //
-    let storeClone: DiscStore;
+    let storeClone: DiscStore & Origins;
     try {
-      storeClone = _.cloneDeep({  // [clone_origin_too]?
+      // [break_out_clone_store_fn]?
+      storeClone = _.cloneDeep({
+        // SessWinStore
         me: discFrameStore.me,
+
+        // Origins
         embeddedOriginOrEmpty: discFrameStore.embeddedOriginOrEmpty,
+        anyCdnOrigin: discFrameStore.anyCdnOrigin,
+        anyUgcOrigin: discFrameStore.anyUgcOrigin,
+        pubSiteId: discFrameStore.pubSiteId,
+
+        // DiscStore
         currentPage: discFrameStore.currentPage,
         currentPageId: discFrameStore.currentPageId,
         currentCategories: discFrameStore.currentCategories,
         curCatsById: {}, // updated below (actually not needed? feels better, oh well)
         usersByIdBrief: discFrameStore.usersByIdBrief || {},
         pagesById: {},  // updated below
+
+        curPersonaOptions: discFrameStore.curPersonaOptions,
+        curDiscProps: discFrameStore.curDiscProps,
+        indicatedPersona: discFrameStore.indicatedPersona,
       });
       storeClone.curCatsById = groupByKeepOne(storeClone.currentCategories, c => c.id);
     }
@@ -884,7 +906,7 @@ export const Editor = createFactory<any, EditorState>({
     // with only the editor).
     // We'll then clone the parts we need of that other store, and remember
     // in this.state.inFrameStore.
-    const discStore: DiscStore = this.getOrCloneDiscStore(inFrame);
+    const discStore: DiscStore & Origins = this.getOrCloneDiscStore(inFrame);
 
     if (inclInReply && postNrs.length) {
       // This means we've started replying to a post, and then clicked Reply
@@ -952,7 +974,7 @@ export const Editor = createFactory<any, EditorState>({
       postType = PostType.Flat;
     }
 
-    let inFrameStore: DiscStore | U;
+    let inFrameStore: (DiscStore & Origins) | U;
     if (eds.isInEmbeddedEditor && inFrame?.eds) {
       // [many_embcom_iframes]
       inFrameStore = discStore;
@@ -964,14 +986,6 @@ export const Editor = createFactory<any, EditorState>({
 
     const editorsPageId = discStore.currentPageId || eds.embeddedPageId;
 
-    // Annoying! Try to get rid of eds.embeddedPageId? So can remove discStore2.
-    const discStore2: DiscStore = { ...discStore, currentPageId: editorsPageId };
-
-    const discProps: DiscPropsDerived = page_deriveLayout(
-            discStore.currentPage, discStore, LayoutFor.PageNoTweaks);
-
-    const choosenAnon = anon.maybeChooseAnon({ store: discStore2, discProps, postNr });
-
     const newState: Partial<EditorState> = {
       inFrame,
       inFrameStore,
@@ -981,9 +995,7 @@ export const Editor = createFactory<any, EditorState>({
       // [editorsNewLazyPageRole] = PageRole.EmbeddedComments if eds.isInEmbeddedEditor?
       replyToPostNrs: postNrs,
       text: state.text || makeDefaultReplyText(discStore, postNrs),
-      myAliasOpts: choosenAnon.myAliasOpts,
-      doAsAnon: choosenAnon.doAsAnon,
-      discProps,
+      discProps: discStore.curDiscProps,
     };
 
     this.showEditor(newState);
@@ -995,7 +1007,6 @@ export const Editor = createFactory<any, EditorState>({
 
     const draftType = postType === PostType.BottomComment ?
         DraftType.ProgressPost : DraftType.Reply;
-
 
     const draftLocator: DraftLocator = {
       draftType,
@@ -1011,7 +1022,6 @@ export const Editor = createFactory<any, EditorState>({
     if (eds.embeddedPageAltId) {
       draftLocator.discussionId = eds.embeddedPageAltId;  // [draft_diid]
     }
-
 
     let writingWhat = WritingWhat.ReplyToNotOriginalPost;
     if (_.isEqual([BodyNr], postNrs)) writingWhat = WritingWhat.ReplyToOriginalPost;
@@ -1037,7 +1047,7 @@ export const Editor = createFactory<any, EditorState>({
       eds.embeddingUrl = inFrame.eds.embeddingUrl;
       eds.embeddedPageAltId = inFrame.eds.embeddedPageAltId;
       delete eds.lazyCreatePageInCatId; // page already exists
-      const inFrameStore: DiscStore = this.getOrCloneDiscStore(inFrame);
+      const inFrameStore: DiscStore & Origins = this.getOrCloneDiscStore(inFrame);
       const newState: Partial<EditorState> = { inFrame, inFrameStore };
       this.setState(newState);
     }
@@ -1050,7 +1060,7 @@ export const Editor = createFactory<any, EditorState>({
       const draft: Draft | U = response.draft;
 
       // In case the draft was created when one wasn't logged in, then, now, set a user id.
-      const discStore: DiscStore = this.getDiscStore();
+      const discStore: DiscStore & Origins = this.getDiscStore();
       if (draft && discStore.me) {
         draft.byUserId = discStore.me.id;
       }
@@ -1059,30 +1069,45 @@ export const Editor = createFactory<any, EditorState>({
       // gets a new postNr. Then do what? Show a "this post was moved to: ..." dialog?
       dieIf(postNr !== response.postNr, 'TyE23GPKG4');
 
-      const editorsDiscStore: DiscStore = { ...discStore, currentPageId: response.pageId };
-      const discProps: DiscPropsDerived = page_deriveLayout(
-              discStore.currentPage, discStore, LayoutFor.PageNoTweaks);
+      // If showing any which-persona message, it should appear close to the edit button
+      // just clicked. So, find its coordinates. — But this won't work if the editor is in its
+      // own iframe. Then, we need to load the draft, and get the edit button coordinates, in the
+      // comments iframe, show the `chooseEditorPersona()` in the comments iframe, and
+      // pass the result to the editor iframe. [find_persona_diag_atRect]
+      // Right now, anon blog comments not supported anyway. [anon_blog_comments]
+      //
+      let atRect = { top: 100, left: 100, right: 200, bottom: 200 };
+      if (!inFrame) {
+        // Later: Use  `cloneEventTargetRect(mouse-click-event)`  instead.
+        const elm: HElm | N = $first(`#post-${postNr} + .esPA .dw-a-edit`);
+        if (elm) {
+          atRect = elm.getBoundingClientRect();
+        }
+        else {
+          // The post just disappeared?   D_DIE
+          // Let's just use the above hardcoded `atRect` for now.
+        }
+      }
 
-      // Should [clone_origin_too] and change editorsDiscStore to type ... & Origins?
-      const choosenAnon = anon.maybeChooseAnon({ store: editorsDiscStore, discProps, postNr });
+      persona.chooseEditorPersona({ store: discStore, postNr, draft, atRect }, doAsOpts => {
+        const newState: Partial<EditorState> = {
+          anyPostType: null,
+          editorsCategories: discStore.currentCategories, // [many_embcom_iframes]
+          editorsPageId: response.pageId,
+          editingPostNr: postNr,
+          editingPostUid: response.postUid,
+          editingPostRevisionNr: response.currentRevisionNr,
+          text: draft ? draft.text : response.currentText,
+          onDone: onDone,
+          draftStatus: DraftStatus.NothingHappened,
+          draft,
+          doAsAnon: doAsOpts.doAsAnon,
+          myAliasOpts: doAsOpts.myAliasOpts,
+          discProps: discStore.curDiscProps,
+        };
 
-      const newState: Partial<EditorState> = {
-        anyPostType: null,
-        editorsCategories: discStore.currentCategories, // [many_embcom_iframes]
-        editorsPageId: response.pageId,
-        editingPostNr: postNr,
-        editingPostUid: response.postUid,
-        editingPostRevisionNr: response.currentRevisionNr,
-        text: draft ? draft.text : response.currentText,
-        onDone: onDone,
-        draftStatus: DraftStatus.NothingHappened,
-        draft,
-        doAsAnon: choosenAnon.doAsAnon,
-        myAliasOpts: choosenAnon.myAliasOpts,
-        discProps,
-      };
-
-      this.showEditor(newState);
+        this.showEditor(newState);
+      });
     });
   },
 
@@ -1120,16 +1145,16 @@ export const Editor = createFactory<any, EditorState>({
 
     const text = state.text || '';
 
+    // Bit dupl code. [_new_disc_props]
     const futurePage: PageDiscPropsSource = {
       categoryId,
       pageRole: newPageRole,
     };
 
     // Props for the future page, with settings inherited from the ancestor categories.
+    // (Can't use `store.curDiscProps` — it's for the forum homepage, not the new page.)
     const discProps: DiscPropsDerived = page_deriveLayout(
             futurePage, store, LayoutFor.PageNoTweaks);
-
-    const choosenAnon = anon.maybeChooseAnon({ store, discProps });
 
     const newState: Partial<EditorState> = {
       discProps,
@@ -1142,8 +1167,6 @@ export const Editor = createFactory<any, EditorState>({
       text: text,
       showSimilarTopics: true,
       searchResults: null,
-      doAsAnon: choosenAnon.doAsAnon,
-      myAliasOpts: choosenAnon.myAliasOpts,
     };
 
     this.showEditor(newState);
@@ -1332,26 +1355,56 @@ export const Editor = createFactory<any, EditorState>({
         }
       }
 
-      logD("Setting draft and guidelines: !!anyDraft: " + !!anyDraft +
-          " !!draft: " + !!draft +
-          " !!anyGuidelines: " + !!anyGuidelines);
-      const newState: Partial<EditorState> = {
-        draft,
-        draftStatus: DraftStatus.NothingHappened,
-        text: draft ? draft.text : '',
-        title: draft ? draft.title : '',
-        // For now, skip guidelines, for blog comments — they would break e2e tests,
-        // and maybe are annoying?
-        guidelines: eds.isInIframe ? undefined : anyGuidelines,
-      };
-      if (draft && draft.doAsAnon) {
-        // TESTS_MISSING  TyTANONDFLOAD
-        newState.doAsAnon = draft.doAsAnon;
-      }
-      this.setState(newState, () => {
-        this.focusInputFields();
-        this.scrollToPreview = true;
-        this.updatePreviewSoon();
+
+      // Post anonymously?
+      // If new forum page, use its props.
+      const discStore0: DiscStore = inFrameStore || state.store;
+      const discStore: DiscStore = { ...discStore0, curDiscProps: state.discProps }
+
+      // Open any persona dialog, where? This'll be good enough for now. Later,
+      // this find-atRect code will be moved to the more-bundle and discussion iframe
+      // anyway. [find_persona_diag_atRect]
+      const selector = draftLocator.postNr && !state.inFrame
+              ? `#post-${draftLocator.postNr} + .esPA .dw-a-reply`
+              : '.s_E_DoingRow';
+      const elm: HElm | N = $first(selector);
+      const atRect = elm ? elm.getBoundingClientRect() :
+                { top: 100, left: 100, right: 200, bottom: 200 }; // whatever
+
+      // TESTS_MISSING  TyTANONDFLOAD  draft
+      logD("Maybe choosing persona...");
+      persona.choosePosterPersona({ me: discStore.me, origins: state.store, discStore,
+                postNr: draftLocator.postNr, draft, atRect },
+                (doAsOpts: DoAsAndOpts | 'CANCEL') => {
+
+        const state: EditorState = this.state;
+        if (this.isGone || !state.visible) return;
+
+        if (doAsOpts === 'CANCEL') {
+          this.clearAndCloseFineIfGone({ keepDraft: !!draft, upToDateDraft: draft });
+          return;
+        }
+
+        logD("Setting draft and guidelines: !!anyDraft: " + !!anyDraft +
+            " !!draft: " + !!draft +
+            " !!anyGuidelines: " + !!anyGuidelines);
+        const newState: Partial<EditorState> = {
+          draft,
+          draftStatus: DraftStatus.NothingHappened,
+          text: draft ? draft.text : '',
+          title: draft ? draft.title : '',
+          myAliasOpts: doAsOpts.myAliasOpts,
+          doAsAnon: doAsOpts.doAsAnon,
+          // For now, skip guidelines, for blog comments — they would break e2e tests,
+          // and maybe are annoying?
+          guidelines: eds.isInIframe ? undefined : anyGuidelines,
+        };
+
+        this.setState(newState, () => {
+          this.focusInputFields();
+          this.scrollToPreview = true;
+          this.updatePreviewSoon();
+        });
       });
     };
 
@@ -1437,6 +1490,21 @@ export const Editor = createFactory<any, EditorState>({
   // in a modal dialog instead — guidelines are supposedly fairly important.
   perhapsShowGuidelineModal: function() {
     const state: EditorState = this.state;
+
+    // For now: If anon comments, for sensitive discussions (rather than
+    // temp anon, for ideation), tell the user that anon comments are
+    // experimental.  (Since this code will be removed later, we might as well
+    // place it here. Works, & it's just for now.)
+    if (state.doAsAnon && !this._hasShownAnonTips) {
+      const isTempAnon = state.doAsAnon.anonStatus === AnonStatus.IsAnonCanAutoDeanon;
+      if (!isTempAnon) {
+        this._hasShownAnonTips = true;
+        setTimeout(function() {
+          debiki2.help.openHelpDialogUnlessHidden(anonExperimentalMsg);
+        }, 0);
+      }
+    }
+
     if (!this.refs.guidelines || state.showGuidelinesInModal)
       return;
 
@@ -1610,7 +1678,76 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   changeCategory: function(categoryId: CategoryId) {
-    this.setState({ newForumTopicCategoryId: categoryId });
+    const state: EditorState = this.state;
+    const me: Me = state.store.me;
+
+    // ----- Derive disc props
+
+    // Changing category, might change discussion properties, e.g. if anonymity is allowed.
+    // Bit dupl code. [_new_disc_props]
+
+    const futurePage: PageDiscPropsSource = {
+      categoryId,
+      pageRole: state.newPageRole,
+    };
+
+    const discProps: DiscPropsDerived = page_deriveLayout(
+            futurePage, state.store, LayoutFor.PageNoTweaks);
+
+    // ----- Can be anonymous?
+
+    // Could [ask_if_needed] which persona to use, if can't be the same in the new cat?
+    const newDoAsOpts = persona.choosePosterPersona({
+            me, origins: state.store, discStore: { ...state.store, curDiscProps: discProps }});
+
+    if (!any_isDeepEqIgnUndef(newDoAsOpts.doAsAnon, state.doAsAnon)) {
+      // Was but won't be anonymous? Then, inform the user – so they won't mistakenly
+      // post something anonymously, they thought, but appears under their real name.
+      // If was-using/will-use a pseudonym, need to edit the `msg` below. [pseudonyms_later]
+      // (`false` means oneself, not anon. Will refactor [oneself_0_false])
+      const canBeAnon = newDoAsOpts.myAliasOpts.some(x => x !== false);
+      const wasAnon = !!state.doAsAnon;  // [oneself_0_false]
+      const willBeAnon = !!newDoAsOpts.doAsAnon; // [oneself_0_false]
+      const msg = willBeAnon
+            ? (wasAnon
+                // Less important, but still good to know: (and happens very rarely)
+                ? "This category has different anonymity settings"  // I18N & just below
+                : "You are anonymous in this category, by default")
+            :  (canBeAnon
+                // UX, COULD: Would be good if Anonymous remained as the selected option,
+                // if the category allows anonymity.
+                ? "You aren't anonymous by default, in this category"
+                : "You cannot be anonymous in this category");
+
+      // Show `msg` in a notification box under the "Create new topic [anonymously v]"
+      // text & button, but not at the very left edge – add some margin:
+      const doingRowElm = document.getElementsByClassName('s_E_DoingRow');
+      if (doingRowElm.length) {
+        const atRect = doingRowElm[0].getBoundingClientRect();
+        atRect.x = atRect.x + 75;
+        morekit.openSimpleProxyDiag({ atRect, showCloseButton: false,
+            // It can be important that people read this text, and don't accidentally
+            // close the dialog.
+            closeOnClickOutside: false,
+            body: r.p({}, msg),
+            });
+      }
+    }
+
+    // ----- Update state
+
+    const newState: Partial<EditorState> = {
+      discProps,
+      newForumTopicCategoryId: categoryId,
+      doAsAnon: newDoAsOpts.doAsAnon,
+      myAliasOpts: newDoAsOpts.myAliasOpts,
+    };
+
+    // (Currently no need to patch the main store, by calling call onEditorOpen() – the
+    // EditorStorePatch doesn't need any of the Partial<EditorState> fields above —
+    // those fields are for the not-yet-existing page, not for the current store.)
+
+    this.setState(newState);
   },
 
   changeNewForumPageRole: function(pageRole: PageRole) {
@@ -1993,7 +2130,7 @@ export const Editor = createFactory<any, EditorState>({
 
   postChatMessage: function() {
     const state: EditorState = this.state;
-    // ANON_UNIMPL: send state.doAsAnon,
+    // [anon_chats]: send state.doAsAnon,
     ReactActions.insertChatMessage(state.text, state.draft, () => {
       this.callOnDoneCallback(true);
       this.clearAndCloseFineIfGone();
@@ -2589,6 +2726,7 @@ export const Editor = createFactory<any, EditorState>({
 
     // By default, anon posts are disabled, and the "post as ..." dropdown left out.
 
+    // Break out component? [choose_alias_btn]
     let maybeAnonymously: RElm | U;
     if (!me.isAuthenticated) {
       // Only logged in users can post anonymously. (At least for now.)
@@ -2598,14 +2736,14 @@ export const Editor = createFactory<any, EditorState>({
           // a draft, as anon, but then an admin changed the settings, so cannot
           // be anon any more.  Then it's nevertheless ok to continue, anonymously.
           // (That's what "continue" in NeverAlways.NeverButCanContinue means.)
-          // ANON_UNIMPL, UNPOLITE, SHOULD add some server side check, so no one toggles
-          // this in the browser only, and the server accepts?  [derive_node_props_on_server]
-          // But pretty harmless.
-          state.doAsAnon) {
+          // (There's a server side check [derive_node_props_on_server], in case of
+          // misbehaving clients, or sbd taking really long until they submit a post,
+          // and an admin disables anon comments in between.)
+          state.doAsAnon) {  // [oneself_0_false]
       maybeAnonymously =
-          Button({ className: 'c_AliasB', ref: 'aliasB', onClick: () => {
-            const atRect = reactGetRefRect(this.refs.aliasB);
-            anon.openAnonDropdown({ atRect, open: true, 
+          Button({ className: 'c_AliasB', onClick: (event: MouseEvent) => {
+            const atRect = cloneEventTargetRect(event);
+            persona.openAnonDropdown({ atRect, open: true,
                 curAnon: state.doAsAnon, me,
                 myAliasOpts: state.myAliasOpts,
                 discProps: state.discProps,
@@ -2618,7 +2756,7 @@ export const Editor = createFactory<any, EditorState>({
                   this.updatePreviewSoon();
                 } });
           } },
-          anon.whichAnon_titleShort(state.doAsAnon, { me }),
+          persona.whichAnon_titleShort(state.doAsAnon, { me }),
           ' ', r.span({ className: 'caret' }));
     }
 
@@ -3076,6 +3214,38 @@ export function DraftStatusInfo(props: { draftStatus: DraftStatus, draftNr: numb
 }
 
 
+// Later, when more tested:  Remove this message,  and show instead a warning/tips
+// only to mods & admins, since when they're in Anonymous mode, they can (as of now)
+// still see some things only they can see, e.g. unapproved comments. And by e.g.
+// approving & replying anonymously to a to others not-visible unapproved comment,
+// they might accidentally reveal that their anonymous comments are by a mod or admin.
+// (If a comment got approved & visible, and then there's an anonymous reply a second
+// later.) [deanon_risk] [mod_deanon_risk]
+//
+// Even later, an intro guide that explains anon comments? [anon_comts_guide]
+//
+const anonExperimentalMsg: HelpMessage = {
+  id: 'TyHANOX1',
+  version: 1,
+  isWarning: true,
+  // Can be important to read this (and not close by mistake).
+  closeOnClickOutside: false,
+  // Let's show it many times, until they tick "Hide this tips".
+  defaultHide: false,
+  content: rFr({},
+      r.h3({} ,
+        "You're anonymous  (hopefully)"),  // the space "  " before the '(' is a &thinsp;.
+      r.p({},
+        "Do ", r.b({}, "not"), " write anything sensitive!"),
+      r.p({},
+        "Anonymous comments are pretty new. There might be bugs"),
+      r.p({ style: { marginLeft: '2em' }},
+        "— including ways to find out who you are."),
+      r.br(),
+      r.p({},
+        "Anyway.  Look in the upper right corner — you should see the text " +
+        "\"Anonymous\", if you're in an anonymous section of this forum.")),
+};
 
 //------------------------------------------------------------------------------
    }

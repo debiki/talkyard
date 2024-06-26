@@ -354,7 +354,7 @@ case class Draft(
   deletedAt: Option[When] = None,
   topicType: Option[PageType] = None,
   postType: Option[PostType] = None,
-  doAsAnon: Opt[WhichAnon],
+  doAsAnon: Opt[WhichAliasId],
   title: String,
   text: String) {
 

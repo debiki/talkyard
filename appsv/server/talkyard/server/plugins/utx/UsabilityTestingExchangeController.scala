@@ -93,7 +93,7 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, tyC
           deleteDraftNr = None,
           reqrAndCreator = request.reqrTargetSelf,
           spamRelReqStuff = request.spamRelatedStuff,
-          doAsAnon = None,
+          asAlias = None,
           discussionIds = Set.empty,
           embeddingUrl = None,
           refId = None)

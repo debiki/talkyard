@@ -1433,8 +1433,8 @@ case class SitePatchParser(context: TyContext) {
         return Bad(s"Bad DraftLocator json: ${ex.getMessage} [TyE603KUTDGJ]")
       }
 
-      UNTESTED; TESTS_MISSING // exp imp anons?  True ids are incl in json dumps?
-      val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(jsObj) getOrIfBad { prob =>
+      UNTESTED; TESTS_MISSING // exp imp anons?  True ids are incl in json dumps? [export_privid]
+      val doAsAnon: Opt[WhichAliasId] = parser.parseDoAsAnonField(jsObj) getOrIfBad { prob =>
         return Bad(s"Bad anon params: $prob [TyEANONPARDFT]")
       }
 

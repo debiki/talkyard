@@ -41,7 +41,11 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def upsertDraft: Action[JsValue] = PostJsonAction(RateLimits.DraftSomething,
-        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = MaxPostSize) {
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = MaxPostSize,
+        // We remember which persona this draft should be posted as, independently
+        // of any current persona mode (since there's a post-as dropdown in the
+        // editor that can be set to sth else than any current persona mode). [_See_ignoreAlias]
+        ignoreAlias = true) {
         request: JsonPostRequest =>
     upsertDraftImpl(request.body, request)
   }
@@ -51,7 +55,9 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: TyContext)
     */
   def upsertDraftBeacon: Action[String] = PostTextAction(
         RateLimits.DraftSomething,
-        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = MaxPostSize) { request =>
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = MaxPostSize,
+        // _See_ignoreAlias in upsertDraft() above.
+        ignoreAlias = true) { request =>
     val bodyXsrfTokenRemoved = request.body.dropWhile(_ != '\n') // [7GKW20TD]
     val json = Json.parse(bodyXsrfTokenRemoved)
     upsertDraftImpl(json, request)
@@ -108,21 +114,27 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: TyContext)
       if (draft.isReply) {
         val postType = draft.postType getOrDie "TyER35SKS02GU"
         throwNoUnless(Authz.mayPostReply(
-          request.theUserAndLevels, dao.getOnesGroupIds(requester),
-          postType, pageMeta, Vector(post), dao.getAnyPrivateGroupTalkMembers(pageMeta),
-          inCategoriesRootLast = categoriesRootLast,
-          tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXK3M2")
+              request.theUserAndLevels, asAlias = None, dao.getOnesGroupIds(requester),
+              postType, pageMeta, Vector(post), dao.getAnyPrivateGroupTalkMembers(pageMeta),
+              inCategoriesRootLast = categoriesRootLast,
+              tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXK3M2")
       }
       else {
-        val anyOtherAuthor =
-              if (post.createdById == requester.id) None
-              else dao.getParticipant(post.createdById)
+        // Won't need later, when true id stored in posts3/nodes_t? [posts3_true_id]
+        val postAuthor: Pat =
+              if (post.createdById == requester.id) requester
+              else dao.getParticipant(post.createdById) getOrDie "TyE2FLU58"
+        val pageAuthor =
+              if (pageMeta.authorId == requester.id) requester
+              else dao.getTheParticipant(pageMeta.authorId)
         throwNoUnless(Authz.mayEditPost(
-          request.theUserAndLevels, dao.getOnesGroupIds(requester),
-          post, otherAuthor = anyOtherAuthor, pageMeta,
-          dao.getAnyPrivateGroupTalkMembers(pageMeta),
-          inCategoriesRootLast = categoriesRootLast,
-          tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "TyEZBXK3M3")
+              request.theUserAndLevels, asAlias = None, dao.getOnesGroupIds(requester),
+              post, postAuthor = postAuthor, pageMeta, pageAuthor = pageAuthor,
+              dao.getAnyPrivateGroupTalkMembers(pageMeta),
+              inCategoriesRootLast = categoriesRootLast,
+              tooManyPermissions = dao.getPermsOnPages(categoriesRootLast),
+              // We're just saving a draft, can choose an ok alias later if needed.
+              ignoreAlias = true), "TyEZBXK3M3")
       }
     }
     else {
@@ -194,14 +206,14 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def deleteDrafts: Action[JsValue] = PostJsonAction(RateLimits.DraftSomething,
-        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 1000) {
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 1000, ignoreAlias = true) {
         request: JsonPostRequest =>
     deleteDraftsImpl(request.body, request)
   }
 
 
   def deleteDraftsBeacon: Action[String] = PostTextAction(RateLimits.DraftSomething,
-        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 1000) {
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 1000, ignoreAlias = true) {
         request: ApiRequest[String] =>
     val bodyXsrfTokenRemoved = request.body.dropWhile(_ != '\n') // [7GKW20TD]
     val json = Json.parse(bodyXsrfTokenRemoved)

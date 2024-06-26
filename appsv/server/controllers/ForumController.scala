@@ -118,7 +118,10 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def saveCategory: Action[JsValue] = AdminPostJsonAction(maxBytes = 5000) { request =>
+  def saveCategory: Action[JsValue] = AdminPostJsonAction(maxBytes = 5000,
+        // It's annoying if, when edit anonymity settings, one needs to enter Self mode.
+        // And feels pretty obvious that one isn't editing the category settings anonymously.
+        ignoreAlias = true) { request =>
     BUG // fairly harmless in this case: The lost update bug.
 
     import request.{dao, body, requester}

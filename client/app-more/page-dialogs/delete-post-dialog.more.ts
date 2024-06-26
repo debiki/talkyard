@@ -31,11 +31,11 @@ const ModalFooter = rb.ModalFooter;
 
 let deletePostDialog;
 
-export function openDeletePostDialog(post: Post, at: Rect) {
+export function openDeletePostDialog(ps: { post: Post, at: Rect, doAsAnon?: MaybeAnon }) {
   if (!deletePostDialog) {
     deletePostDialog = ReactDOM.render(DeletePostDialog(), utils.makeMountNode());
   }
-  deletePostDialog.open(post, at);
+  deletePostDialog.open(ps);
 }
 
 
@@ -48,11 +48,12 @@ const DeletePostDialog = createComponent({
     };
   },
 
-  open: function(post: Post, at: Rect) {
+  open: function(ps: { post: Post, at: Rect, doAsAnon?: MaybeAnon }) {
     this.setState({
       isOpen: true,
-      post: post,
-      atRect: at,
+      post: ps.post,
+      atRect: ps.at,
+      doAsAnon: ps.doAsAnon,
       windowWidth: window.innerWidth,
     });
   },
@@ -62,7 +63,7 @@ const DeletePostDialog = createComponent({
   },
 
   doDelete: function() {
-    ReactActions.deletePost(this.state.post.nr, this._delRepls, this.close);
+    ReactActions.deletePost(this.state.post.nr, this._delRepls, this.state.doAsAnon, this.close);
   },
 
   render: function () {

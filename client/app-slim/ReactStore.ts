@@ -839,6 +839,22 @@ ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffFo
     }, 0);
   }
 
+  // ----- Personas [update_personas]
+
+  // Later, if remembering any persona mode across page reloads, and different
+  // browser tabs: [remember_persona_mode]
+  // const asPersona = Server.getPersonaCookie();
+  // if (asPersona) {
+  //   store.me.usePersona = asPersona;
+  // }
+
+  // Remember which aliases pat has used when posting or voting on the current page,
+  // so we can know who pat wants to be now, or if we need to ask.
+  // Do here, after `me.usePersona`, unapproved posts and access restricted cats inited.
+  store_updatePersonaOpts(store);
+
+  // ----- Websocket
+
   debiki2.pubsub.subscribeToServerEvents(store.me);
   store.quickUpdate = false;
 };
@@ -1103,6 +1119,8 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   // Add or update the post itself.
   page.postsByNr[post.nr] = post;
 
+  // Should remember any new persona, if new post? Or earlier, when adding pat? [update_personas]
+
   const layout: DiscPropsDerived = page_deriveLayout(page, store, LayoutFor.PageWithTweaks);
 
   // In case this is a new post, update its parent's child id list.
@@ -1173,7 +1191,7 @@ function voteOnPost(action: {
     doWhat: 'DeleteVote' | 'CreateVote',
     voteType: PostVoteType,
     postNr: PostNr,
-    voter: Pat}) {
+    voter: Pat}) { // CLEAN_UP: redundant, already in the storePatch.yourAnon, or is `me`.
 
   const postNr: PostNr = action.postNr;
 
@@ -1186,14 +1204,32 @@ function voteOnPost(action: {
   }
 
   if (action.doWhat === 'CreateVote') {
+    const voter: Pat = action.voter;
     votes.push({
       // The voter might be the current user's anonym, so we need the voter id.
-      byId: action.voter.id,
+      byId: voter.id,
       type: action.voteType,
     });
+
+    // The voter might be a just-now lazy-created anonym – then remember it. [lazy_anon_voter]
+    if (voter.isAnon && voter.anonForId) {
+      // @ifdef DEBUG
+      dieIf(!voter.anonStatus, 'TyE206MLP4');
+      // Page id currently not added server side, so skip: [see_own_alias]
+      // dieIf(voter.anonOnPageId !== myPageData.pageId, 'TyE206MLP5');
+      // @endif
+
+      const isNewAnon = !myPageData.knownAnons.find(a => a.id === voter.id);
+      if (isNewAnon) {
+        myPageData.knownAnons.push(voter as KnownAnonym);
+      }
+    }
   }
   else {
     _.remove(votes, v => v.type === action.voteType);
+
+    // (We could update myPageData.knownAnons, if this vote was the only thing
+    // the anon has done on the page. But not really needed.)
   }
 
   // If this vote is the user's first action on the page, and han is voting
@@ -1737,6 +1773,7 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
 
   if (storePatch.me) {
     // [redux] modifying the store in place, again.
+    let personaBefore = store.me.usePersona;
     let patchedMe: Myself | U;
     if (eds.isInIframe) {
       // Don't forget [data about pat] loaded by other frames.  [mny_ifr_pat_dta]
@@ -1744,6 +1781,7 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
         const sessWin = getMainWin();
         const sessStore: SessWinStore = sessWin.theStore;
         if (_.isObject(sessStore.me)) {
+          personaBefore ||= sessStore.me.usePersona;
           patchedMe = me_merge(sessStore.me, store.me, storePatch.me);  // [emb_ifr_shortcuts]
           sessStore.me = _.cloneDeep(patchedMe);
         }
@@ -1756,6 +1794,12 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
       patchedMe = _.assign(store.me || {} as Myself, storePatch.me);
     }
     store.me = patchedMe;
+
+    // Maybe later: [remember_persona_mode]
+    // const personaAfter = patchedMe.usePersona;
+    // if (!any_isDeepEqIgnUndef(personaBefore, personaAfter)) {
+    //   Server.setPersonaCookie(personaAfter);
+    // }
   }
 
   // ----- Drafts
@@ -1956,16 +2000,16 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
     store_relayoutPageInPlace(store, currentPage, layoutAfter);
   }
 
+  // ----- Posts, new or edited?
+
   // Update the current page.
   if (!storePatch.pageVersionsByPageId) {
     // No page. Currently storePatch.usersBrief is for the current page (but there is none)
     // so ignore it too.
-    return;
   }
-
-  // ----- Posts, new or edited?
-
-  _.each(store.pagesById, patchPage);
+  else {
+    _.each(store.pagesById, patchPage);
+  }
 
   function patchPage(page: Page) {
     const storePatchPageVersion = storePatch.pageVersionsByPageId[page.pageId];
@@ -1999,6 +2043,10 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
       Server.markCurrentPageAsSeen();
     }
   }
+
+  // [update_personas], here after both comments & the user's persona mode
+  // have been patched.
+  store_updatePersonaOpts(store);
 }
 
 
@@ -2200,6 +2248,12 @@ function showNewPage(ps: ShowNewPageParams) {
   // Like:  addLocalStorageDataTo(me, isNewPage = true);
   addMyDraftPosts(store, store.me.myCurrentPageData);
 
+  // ----- Personas [update_personas]
+
+  // Remember which aliases pat has used when posting or voting on the current page,
+  // so we can know who pat wants to be now, or if we need to ask.
+  store_updatePersonaOpts(store);
+
   // ----- Misc & "hacks"
 
   // Make Back button work properly.
@@ -2224,6 +2278,96 @@ function showNewPage(ps: ShowNewPageParams) {
 
   // When done rendering, replace date ISO strings with pretty dates.
   setTimeout(debiki2.page.Hacks.processPosts);
+}
+
+
+/// REFACTOR: Split this fn into two:  store_updateDiscProps(), and  store_updatePersonaOpts()?
+/// The former makes sense also if not logged in; the latter does not (in effect, a "big noop").
+///
+function store_updatePersonaOpts(store: Store) {
+  if (!store.userSpecificDataAdded)
+    return;
+
+  const me = store.me;
+
+  // Later: The server incls this in the show-page response?  [fetch_alias]
+  const myPersonasThisPage: MyPersonasThisPage =
+          disc_findMyPersonas(store, { forWho: me });
+
+  // Use which category properties?
+  // If we're on a forum homepage, and viewing topics in an anonymous-by-default
+  // category, we'd want the persona options to include posting-anonymously,
+  // so we need that category's properties.
+  const isSectionPage = !store.currentPage ? false : isSection(store.currentPage.pageRole);
+  const listingCat = store.listingCatId && store.currentCategories.find(
+                                              c => c.id === store.listingCatId);
+  const discProps: DiscPropsDerived | U = isSectionPage
+          ? (listingCat
+              ? // We're on a forum homepage, looking at a specific category to see
+                // topics in that cat.
+                cat_deriveLayout(listingCat, store, LayoutFor.PageNoTweaks)
+              : // If we don't have access to the category (then, `listingCat` missing).
+                // Or on initial page load, until startStuff() more done.
+                // Or if on  All Cats  page:  [site_disc_props]
+                undefined)
+          : (store.currentPage
+              ? page_deriveLayout(store.currentPage, store, LayoutFor.PageNoTweaks)
+              : // [pseudonyms_later]  Let people switch to a pseudonym also when they
+                // post direct messages?  Look at a whole-site-default setting, to know
+                // if that should be allowed or not? [site_disc_props]
+                // (Since then they're on a user profile page, which
+                // isn't a discussion page so `currentPage` is absent.)
+                undefined);  // if no page
+
+  const anonsRecommended = discProps && discProps.comtsStartAnon >= NeverAlways.Recommended;
+
+  const switchedToPseudonym = false; // [pseudonyms_later]
+  const switchedToAnonStatus: AnonStatus | NU = me.usePersona && me.usePersona.anonStatus;
+  const switchedToSelf = me.usePersona && (me.usePersona as Oneself).self;
+
+  const curPersonaOptions =
+          findPersonaOptions({ myPersonasThisPage, me, discProps });
+
+  const numOpts = curPersonaOptions.optsList.length;
+  const firstOpt: PersonaOption = curPersonaOptions.optsList[0];
+
+  let debug = false;
+  // @ifdef DEBUG
+  debug = true;
+  dieIf(numOpts < 1, 'TyEPSLS2M63');
+  // @endif
+
+  const mode: PersonaMode | U =
+          !me.id ? undefined : (
+          switchedToSelf ? { self: true } satisfies PersonaMode : (
+          switchedToAnonStatus ? { anonStatus: switchedToAnonStatus } satisfies PersonaMode : (
+          switchedToPseudonym ? die('TyE206MFKG') as any : (
+          // Anon or self, if we've been that before on this page?
+          firstOpt.alias.isAnon ?
+                  { anonStatus: firstOpt.alias.anonStatus } satisfies PersonaMode : (
+          firstOpt.isSelf ? (
+                // If can't use, hasn't used, and hasn't switched to any alias,
+                // then, don't show any persona info – it's more likely off-topic
+                // and confusing.
+                numOpts <= 1 ? undefined : { self: true } satisfies PersonaMode) : (
+          anonsRecommended ? { anonStatus: discProps.newAnonStatus } satisfies PersonaMode :
+                // Dead code? Either `isSelf` or `isAnon` above should be tue.
+                (debug ? die(`TyE206SWl4`) : undefined)
+          // Could show "Self" if anons allowed, but not recommended?
+          // anonsAllowed ? { autoSelf: true } satisfies PersonaMode : undefined
+          ))))));
+
+  store.me.myCurrentPageData.myPersonas = myPersonasThisPage;
+  store.curDiscProps = discProps;
+
+  if (mode) {
+    store.curPersonaOptions = curPersonaOptions;
+    store.indicatedPersona = mode;
+  }
+  else {
+    delete store.curPersonaOptions;
+    delete store.indicatedPersona;
+  }
 }
 
 
@@ -2317,6 +2461,7 @@ function watchbar_copyUnreadStatusFromTo(old: Watchbar, newWatchbar: Watchbar) {
 function makeStranger(store: Store): Myself {
   const stranger = {
     dbgSrc: '5BRCW27',
+    id: Pats.NoPatId,
     isStranger: true,
     trustLevel: TrustLevel.Stranger,
     threatLevel: ThreatLevel.HopefullySafe,

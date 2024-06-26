@@ -66,16 +66,6 @@ const PageToolsDialog = createComponent({
     ReactActions.unpinPage(this.close);
   },
 
-  deletePage: function() {
-    const store: Store = this.state.store;
-    ReactActions.deletePages([store.currentPageId], this.close);
-  },
-
-  undeletePage: function() {
-    const store: Store = this.state.store;
-    ReactActions.undeletePages([store.currentPageId], this.close);
-  },
-
   render: function () {
     const store: Store = this.state.store;
     const me: Myself = store.me;
@@ -88,8 +78,8 @@ const PageToolsDialog = createComponent({
     //let selectPostsButton = !store_canSelectPosts(store) ? null :
       //Button({ onClick: this.selectPosts }, "Select posts");
 
-    let pinPageButton;
-    let pinPageDialog;
+    let pinPageButton: RElm | U;
+    let pinPageDialog: RElm | U;
     if (store_canPinPage(store)) {
       pinPageDialog = PinPageDialog(_.assign({ ref: 'pinPageDialog' }, childProps));
       pinPageButton =
@@ -101,10 +91,12 @@ const PageToolsDialog = createComponent({
       Button({ onClick: this.unpinPage, className: 'e_UnpinPg'  }, "Unpin Topic");
 
     const deletePageButton = !store_canDeletePage(store) ?  null :
-      Button({ onClick: this.deletePage, className: 'e_DelPg' }, "Delete Topic");
+      DeletePageBtn({ pageIds: [store.currentPageId], store,
+            verb: Verbosity.Full, close: this.close });
 
     const undeletePageButton = !store_canUndeletePage(store) ?  null :
-      Button({ onClick: this.undeletePage, className: 'e_RstrPg' }, "Restore Topic");
+      DeletePageBtn({ pageIds: [store.currentPageId], store, undel: true,
+            verb: Verbosity.Full, close: this.close });
 
     const idsAndUrlsButton = page.pageRole !== PageRole.EmbeddedComments || !me.isAdmin ?  null :
       Button({ onClick: () => openPageIdsUrlsDialog(page.pageId), className: 'e_PgIdsUrls' },

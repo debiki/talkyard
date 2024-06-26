@@ -106,6 +106,10 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   def theReqer: Pat = theUser  // shorter, better
   def reqr: Pat = theUser  // better
 
+  def anyAliasPat: Opt[WhichAliasPat] =
+    die("TyEUSINGALIAS", "Cannot use an anonym or pseudonym when doing this")
+
+
   def tenantId: SiteId = dao.siteId
   def siteId: SiteId = dao.siteId
   def isDefaultSite: Boolean = siteId == globals.defaultSiteId
@@ -130,6 +134,11 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   /** The target is the requester hanself. */
   def reqrTargetSelf: AnyReqrAndTgt = reqer match {
     case None => ReqrStranger(theBrowserIdData)
+    case Some(theReqr) => ReqrAndTgt(theReqr, theBrowserIdData, target = theReqr)
+  }
+
+  def theReqrTargetSelf: ReqrAndTgt = reqer match {
+    case None => throwForbidden("TyE0LGDIN2", "Not logged in")
     case Some(theReqr) => ReqrAndTgt(theReqr, theBrowserIdData, target = theReqr)
   }
 

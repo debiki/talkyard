@@ -290,7 +290,7 @@ object RdbUtil {
 
     def createdAt = getWhen(rs, "u_created_at")
     val emailNotfPrefs = {
-      if (isGuestId(userId))
+      if (isGuestId(userId) && anonStatus.isEmpty)
         _toEmailNotfs(rs.getString("g_email_notfs"))
       else
         _toEmailNotfs(rs.getString("u_email_notfs"))
@@ -313,8 +313,7 @@ object RdbUtil {
           createdAt = createdAt,
           anonForPatId = getInt32(rs, "u_true_id_c"),
           anonStatus = anonStatus.get,
-          anonOnPageId = getString(rs, "u_anon_on_page_id_st_c"),
-      )
+          anonOnPageId = getString(rs, "u_anon_on_page_id_st_c"))
     }
     else if (isGuestId(userId)) {
       Guest(

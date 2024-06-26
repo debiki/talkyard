@@ -4376,7 +4376,7 @@ export class TyE2eTestBrowser {
       },
 
       editTitle: (title: string) => {
-        this.waitAndSetValue('#e2eTitleInput', title);
+        this.waitAndSetValue('.c_TtlE_TtlI', title);
       },
 
       save: () => {

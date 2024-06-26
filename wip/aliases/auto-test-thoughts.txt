@@ -1,0 +1,64 @@
+    Category:
+      Anons always:
+
+      Self selected:
+        Anons allowed / recommended:
+
+      Pseudonym selected:
+        Anons allowed / recommended:
+
+      Anonym selected:
+        Anons allowed / recommended:
+
+      Nothing selected:
+        Anons allowed:
+        Anons recommended:
+
+
+    Page:
+      Self selected:
+        Has anon already:
+          Anons allowed:
+          Anons recommended:
+          Anons always:
+
+        Has no anon:
+          Anons allowed:
+          Anons recommended:
+          Anons always:
+
+
+      Pseudonym selected:
+        Has anon already:
+          Anons allowed:
+          Anons recommended:
+          Anons always:
+
+        Has no anon:
+          Anons allowed:
+          Anons recommended:
+          Anons always:
+
+
+      Anonym selected:
+        Has anon already:
+          Anons allowed:
+          Anons recommended:
+          Anons always:
+
+        Has no anon:
+          Anons allowed:
+          Anons recommended:
+          Anons always:
+
+      Nothing selected:
+        Has anon already:
+          Anons allowed:
+          Anons recommended:
+          Anons always:
+
+        Has no anon:
+          Anons allowed:
+          Anons recommended:
+          Anons always:
+

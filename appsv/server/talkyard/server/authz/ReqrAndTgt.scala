@@ -24,6 +24,9 @@ sealed trait AnyReqrAndTgt {
     */
   def otherTarget: Opt[Pat] = None
 
+  /** If the requester and target are not the same user. */
+  def areNotTheSame: Bo = false
+
   /** For casting the requester to admin, to invoke admin-only functions.
     * But if the requester is *not* an admin, then, this fn aborts the request,
     * the server replies Forbidden.
@@ -51,14 +54,17 @@ sealed trait AnyReqrAndTgt {
 }
 
 
-/** Requester and target. Or, RENAME "target" to "principal"?
-  * And rename this class to  ReqrAndPrin  for "requester and principal",
+/** Requester and target. Or, RENAME "target" to "principal"?  [rename_2_principal]
+  * "Prin" is an abbreviation for 1) "principal" and 2) "principle" — let's use "prin"?
+  * See: https://www.merriam-webster.com/dictionary/prin
+  *
+  * And RENAME this class to  ReqrAndPrin  for "requester and principal",
   * and instead of "tgt", use "prin" everywhere. (It's ok to abbreviate
   * more commonly used words, and "principal" will be "everywhere")
   *
-  * The requester (the participant doing the request), and the target of the request,
-  * are usually the same. For example, a user configures their own settings,
-  * or looks at a page, or replies to a post. ("Principal" is a better word!)
+  * The requester (the participant doing the request) and the principal
+  * are usually the same. For example, a user configures *hans own* settings,
+  * or looks at a page, or replies to a post.
   *
   * But admins and mods can do things on behalf of others. For example, the requester
   * can be an admin, who configures notification settings for another user,
@@ -92,7 +98,7 @@ sealed trait ReqrAndTgt extends AnyReqrAndTgt {
     if (target.id == reqr.id) None // not an *other* target, but the *same* as reqr
     else Some(target)
 
-  def areNotTheSame: Bo = target.id != reqr.id
+  override def areNotTheSame: Bo = target.id != reqr.id
 }
 
 

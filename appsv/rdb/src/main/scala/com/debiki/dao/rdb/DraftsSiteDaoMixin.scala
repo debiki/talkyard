@@ -111,8 +111,8 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
       locator.postId.orNullInt,
       draft.postType.map(_.toInt).orNullInt,
       locator.toUserId.orNullInt,
-      draft.doAsAnon.flatMap(_.anySameAnonId.map(_.toInt)).orNullInt,
-      draft.doAsAnon.flatMap(_.anyNewAnonStatus.map(_.toInt)).orNullInt,
+      draft.doAsAnon.flatMap(_.anySameAliasId.map(_.toInt)).orNullInt,
+      draft.doAsAnon.flatMap(_.anyAnonStatus.map(_.toInt)).orNullInt,
       draft.title,
       draft.text))
   }
@@ -215,7 +215,7 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
 
     Draft(
       byUserId = getInt(rs, "by_user_id"),
-      doAsAnon = parseWhichAnon(rs),
+      doAsAnon = parseWhichAliasId(rs),
       draftNr = getInt(rs, "draft_nr"),
       forWhat = draftLocator,
       createdAt = getWhen(rs, "created_at"),
@@ -228,21 +228,26 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  /** Sync w talkyard.server.parser.parseWhichAnonJson().
+  /** Sync w talkyard.server.parser.parseWhichAliasIdJson().
     */
-  def parseWhichAnon(rs: js.ResultSet): Opt[WhichAnon] = {
+  private def parseWhichAliasId(rs: js.ResultSet): Opt[WhichAliasId] = {
     val sameAnonId = getOptInt(rs, "post_as_id_c")
+
+    // Would need to remember  anonStatus  in new_anon_status_c, to  [chk_alias_status]
+    // be able to check if the alias still has the same status as when the user
+    // started composing the draft. (If different, could notify han.)
+    //
     // PostgreSQL custom domain  anonym_status_d  has verified that the value is valid.
     val newAnonStatus = AnonStatus.fromOptInt(getOptInt(rs, "new_anon_status_c"))
     dieIf(sameAnonId.isDefined && newAnonStatus.isDefined, "TyE6023RAKJ5",
             "Both  post_as_id_c  and  new_anon_status_c  non-null")
     if (sameAnonId.isDefined) {
-      Some(WhichAnon.SameAsBefore(sameAnonId.get))
+      Some(WhichAliasId.SameAnon(sameAnonId.get))
     }
     else if (newAnonStatus.isDefined) {
       val anonStatus = newAnonStatus.get
       if (anonStatus == AnonStatus.NotAnon) return None
-      Some(WhichAnon.NewAnon(anonStatus))
+      Some(WhichAliasId.LazyCreatedAnon(anonStatus))
     }
     else {
       None

@@ -414,6 +414,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
                         // So it's missing [save_mod_br_inf]. But not missing when called
                         // from this.moderatePostInstantly(). Oh well.
                         browserIdData = BrowserIdData.Missing),
+                  asAlias = None, // [anon_mods]
                   tx, staleStuff).updatedPost
           }
           else {
@@ -525,7 +526,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
             // If staff deletes many posts by this user, mark it as a moderate threat?
             // That'll be done from inside update-because-deleted fn below. [DETCTHR]
             else if (taskIsForBothTitleAndBody) {
-              deletePagesImpl(Seq(pageId), reqr)(tx, staleStuff)
+              deletePagesImpl(Seq(pageId), reqr, asAlias = None /*[anon_mods]*/)(tx, staleStuff)
               // Posts not individually deleted, instead, whole page gone // [62AKDN46]
               (Seq.empty, Some(pageId))
             }

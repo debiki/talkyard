@@ -298,23 +298,78 @@ anonymous comments,
 anons:
   partly impl:
             - tests/app/debiki/dao/AnonymAppSpec.scala
+  Make work again, and code review:
+            - tests/e2e-wdio7/specs/alias-anons-basic.2br.f.e2e.ts
+            - tests/e2e-wdio7/specs/alias-anons-true-mixed.2br.f.e2e.ts
   TESTS_MISSING:
+            - See  ../wip/aliases/auto-test-thoughts.txt
+            - Anon mode, send priv msg?
+            - Callers of  checkAliasOrThrowForbidden() & getAliasOrTruePat() [misc_alias_tests]
             - Anons for drafts, UNTSETED.
             - Load anon drafts, restore as anon. TyTANONDFLOAD
             - Cannot move anon post to other page.  TyTMOVANONCOMT
             - Notfs from anons (comments, votes, more?), don't include real user name  TyTNOTFFROMANON
-            - UNTESTED; TESTS_MISSING // exp imp anons?  True ids are incl in json dumps?
-            - Different anon statuses: Comts start anon / NeverAlways.AlwaysButCanContinue / etc
+            - UNTESTED; TESTS_MISSING // exp imp anons?
+                  True ids are incl in json dumps? [export_privid]
             - Can't vote many times using different personas TyTALIVOTES
+            - Reuse anons: At most one per page & person [one_anon_per_page].
+                Verify cannot create many, by opening many browser tabs
+                & posting one anon comment in each?
             - Edit & update the draft.  TyTEDUPDDFT04
             - Save anon draft, reuse an anon.  TyTDFTREUSEANON.
+            - Save draft using the wrong alias —  should work, but needs to choose an
+                    ok alias before actually posting (not just saving a draft).
+                - When editing own post  TyTDRAFTALI
+                - When editing sbd else's post
             - Edit comment as anon: Anon name in new edit revision, & email notfs. TyTANONEDIT
             - Post pages as anon
-            - Accept/unaccept answer
-            - Close/reopen page
-            - Delete/undelete own page
-            - Rename page
-            - Change page status   PageTitleSettingsController
+            - Post page as anon,
+                    edit as self
+                    alter as self
+            - Post page as self
+                    edit as anon
+                    alter as anon
+            - Post comment as anon
+                    edit as self
+                    alter as self
+            - Post comment as self
+                    edit as anon
+                    alter as anon
+            - Change own anon post to wiki & back
+                 others' not/anon post to wiki & back as anon / not-anon oneself
+            - Edit other's page text
+            - Alter other's page  TyTALIALTERPG,  PageTitleSettingsController
+            - Alter =   
+                - Accept/unaccept answer
+                - Close/reopen page
+                - Delete/undelete own anon page
+                - Delete/undelete own anon comment
+                - Rename page
+                - Change page type, doing status, answer
+                - Move to other category, where:
+                    - Alias allowed
+                    - Alias not allowed
+            - Start composing new topic, change to/from anon cat, see Post As ...
+              appear/disappear, and "You cannot be anonymous ..." etc info diags pop up.
+            - Reply to oneself on anon-rec page where's been anon elsewhere —> self, etc
+            - Reply anonly, go to sbd's profile page, compose priv msg: Should become oneself
+            - Anon-by-def page, start composig a reply (as anon), cancel, go to sbd's profile page,
+                  compose priv msg: Should now post as oneself (not anon any more).
+            - Edit history: Proper names (e.g. Anon, not one's true name) shown?
+                - Comments
+                - Page title
+                - Orig post
+            - Different anon statuses: Comts start anon / NeverAlways.AlwaysButCanContinue / etc
+            - Page with both Perm Anon and Temp Anon comments: [dif_anon_status]
+                - Like-vote OP, gets to choose: Perm Anon or Temp Anon, or Self
+                - Temp Anon in temp anon sub thread
+                - Perm Anon in perm anon sub thread
+            - Can't move anon comments to other pages
+            - Persona indicator updated properly when: (lots of combinations!)
+                starting on anon never / allowed / recommened / always page,
+                  - navigating to anon recommended cat, then to not-anon
+                  - navigating to not-anon cat, then recommended cat, then not-anon
+                  back to anon / not-anon page
             - ... and more
 
 different users -

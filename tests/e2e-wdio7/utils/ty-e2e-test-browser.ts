@@ -4921,7 +4921,7 @@ export class TyE2eTestBrowser {
       },
 
       editTitle: async (title: string) => {
-        await this.waitAndSetValue('#e2eTitleInput', title);
+        await this.waitAndSetValue('.c_TtlE_TtlI', title);
       },
 
       save: async () => {

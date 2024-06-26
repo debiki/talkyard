@@ -29,12 +29,14 @@ import java.{util => ju}
 import play.api.mvc._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
+import EdSecurity.PersonaHeaderName
 import EdSecurity.AvoidCookiesHeaderName
 import scala.collection.mutable
 import play.api.http.{HeaderNames => p_HNs}
 import play.api.mvc.{Results => p_Results}
 import talkyard.server.TyLogging
 import talkyard.server.authn.MinAuthnStrength
+import JsonUtils.{parseOptSt, asJsObject, parseOptJsObject, parseOptBo}
 
 
 /** Play Framework Actions for requests to Talkyard's HTTP API.
@@ -58,11 +60,14 @@ class PlainApiActions(
         isGuestLogin: Bo = false,
         isLogin: Bo = false,
         authnUsersOnly: Bo = false,
+        canUseAlias: Bo = false,
+        ignoreAlias: Bo = false,
         avoidCookies: Bo = false,
         skipXsrfCheck: Bo = false,
         ): ActionBuilder[ApiRequest, B] =
     PlainApiActionImpl(parser, rateLimits, minAuthnStrength = minAuthnStrength,
         authnUsersOnly = authnUsersOnly,
+        canUseAlias = canUseAlias, ignoreAlias = ignoreAlias,
         allowAnyone = allowAnyone, isLogin = isLogin, isGuestLogin = isGuestLogin,
         avoidCookies = avoidCookies, skipXsrfCheck = skipXsrfCheck)
 
@@ -70,12 +75,14 @@ class PlainApiActions(
           rateLimits: RateLimits,
           parser: BodyParser[B],
           minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
+          canUseAlias: Bo = false, ignoreAlias: Bo = false,
           ): ActionBuilder[ApiRequest, B] =
-    PlainApiActionImpl(parser, rateLimits, minAuthnStrength, staffOnly = true)
+    PlainApiActionImpl(parser, rateLimits, minAuthnStrength, staffOnly = true,
+          canUseAlias = canUseAlias, ignoreAlias = ignoreAlias)
 
-  def PlainApiActionAdminOnly[B](rateLimits: RateLimits, parser: BodyParser[B])
-        : ActionBuilder[ApiRequest, B] =
-    PlainApiActionImpl(parser, rateLimits, adminOnly = true)
+  def PlainApiActionAdminOnly[B](rateLimits: RateLimits, parser: BodyParser[B],
+        ignoreAlias: Bo = false): ActionBuilder[ApiRequest, B] =
+    PlainApiActionImpl(parser, rateLimits, adminOnly = true, ignoreAlias = ignoreAlias)
 
   def PlainApiActionApiSecretOnly[B](whatSecret: WhatApiSecret, rateLimits: RateLimits,
         parser: BodyParser[B])
@@ -104,6 +111,8 @@ class PlainApiActions(
         adminOnly: Boolean = false,
         staffOnly: Boolean = false,
         authnUsersOnly: Bo = false,
+        canUseAlias: Bo = false,
+        ignoreAlias: Bo = false,
         allowAnyone: Boolean = false,  // try to delete 'allowAnyone'? REFACTOR
         avoidCookies: Boolean = false,
         isGuestLogin: Bo = false,
@@ -112,6 +121,9 @@ class PlainApiActions(
         viaApiSecretOnly: Opt[WhatApiSecret] = None,
         skipXsrfCheck: Bo = false): ActionBuilder[ApiRequest, B] =
       new ActionBuilder[ApiRequest, B] {
+
+    // Can't both use and ignore.
+    assert(!(canUseAlias && ignoreAlias), "TyE5LFG8M2")
 
     val isUserLogin = isLogin // rename later
     dieIf(isGuestLogin && isUserLogin, "TyE306RJU243")
@@ -546,9 +558,13 @@ class PlainApiActions(
     private def runBlockIfAuthOk[A](request: Request[A], site: SiteBrief, dao: SiteDao,
           anyUserMaybeSuspended: Option[Participant],
           anyTySession: Opt[TySession], sidStatus: SidStatus,
-          xsrfOk: XsrfOk, browserId: Option[BrowserId], block: ApiRequest[A] => Future[Result])
+          xsrfOk: XsrfOk, browserId: Option[BrowserId],
+          block: ApiRequest[A] => Future[Result])
           : Future[Result] = {
+
       val siteId = site.id
+
+      // ----- User suspended?
 
       if (anyUserMaybeSuspended.exists(_.isAnon)) {
         // Client side bug?
@@ -587,6 +603,8 @@ class PlainApiActions(
               // And reset ones password. [email_lgi_susp]
               None
             }
+
+      // ----- Valid request?
 
       // Re the !superAdminOnly test: Do allow access for superadmin endpoints,
       // so they can reactivate this site, in case this site is the superadmin site itself.
@@ -647,6 +665,8 @@ class PlainApiActions(
         dieUnless(anyTySession.exists(_.part4Absent), "TyE70MWEG25SM")
       }
 
+      // ----- For super admins?
+
       if (superAdminOnly) {
         globals.config.superAdmin.siteIdString match {
           case Some(siteId) if site.id.toString == siteId =>
@@ -698,6 +718,8 @@ class PlainApiActions(
               throwLoginAsSuperAdmin(request)
         }
       }
+
+      // ----- Authenticated and approved?
 
       if (authnUsersOnly) {
         if (!anyUser.exists(_.isUserNotGuest))
@@ -753,8 +775,121 @@ class PlainApiActions(
         }
       }
 
+      // ----- Anonymity?
+
+      val anyPersonaHeaderVal: Opt[St] =
+            if (ignoreAlias) {
+              // This reqest is on behalf of the true user, even if han has switched
+              // to Anonymous mode or to a pseudonym.
+              // E.g. to track one's reading progress [anon_read_progr].
+              None
+            }
+            else {
+              // The user might have swithecd to Anonymous mode  [alias_mode],
+              // or han is anonymous automatically.
+              request.headers.get(PersonaHeaderName)
+            }
+
+      // [parse_pers_mode_hdr]  (Could break out function.)
+      val anyAliasPat: Opt[WhichAliasPat] = anyPersonaHeaderVal flatMap { headerVal: St =>
+        import play.api.libs.json.{JsObject, JsValue, Json}
+        val personaJs: JsValue = scala.util.Try(Json.parse(headerVal)) getOrElse {
+          throwBadRequest("TyEPERSOJSON", s"Invalid $PersonaHeaderName json")
+        }
+        val personaJo: JsObject = asJsObject(personaJs, s"Header $PersonaHeaderName")
+        val reqr = anyUser.getOrElse(throwForbidden("TyEPERSSTRA",
+              "Can't specify persona when not logged in"))
+
+        val mightModify = request.method != "GET" && request.method != "OPTIONS"
+
+        // If this endpoint modifies something (e.g. posts or edits a comment), but
+        // doesn't support using anonyms or pseudonyms, we'll reject the request —
+        // otherwise the modification(s) would be done as the true user (which would be
+        // no good, since the user thinks han is using an alias).
+        val rejectIfAlias = mightModify && !canUseAlias
+
+        // For safety: [persona_indicator_chk]  If no persona selected, but the browser
+        // shows "ones_username —> Anonymous" (because one has been anonymous before
+        // on the current page, or it's recommended), then, the browser sends
+        //     { indicated: { self: true } | { anonStatus: ...} }
+        // as persona mode json.
+        val anyIndicatedJo: Opt[JsObject] = parseOptJsObject(personaJo, "indicated")
+        val anyChoosenJo: Opt[JsObject] = parseOptJsObject(personaJo, "choosen")
+        val isAmbiguous: Opt[Bo] = parseOptBo(personaJo, "ambiguous")
+
+        val numFields = personaJo.value.size
+        val numKnownFields = anyIndicatedJo.oneIfDefined + anyChoosenJo.oneIfDefined +
+                                isAmbiguous.oneIfDefined
+
+        throwBadReqIf(numFields > numKnownFields, "TyEPERSUNKFLD",
+              s"${numFields - numKnownFields} unknown persona json fields in: ${
+              personaJo.value.keySet}")
+
+        throwBadReqIf(anyChoosenJo.isDefined && anyIndicatedJo.isDefined,
+              "TyEPERSCHOIND", "Both choosen and indicated")
+
+        throwBadReqIf(anyChoosenJo.isDefined && isAmbiguous.is(true),
+              "TyEPERSCHOAMB", "The choosen one is not ambiguous")
+
+        if (rejectIfAlias) {
+          // If the browser has indicated  [persona_indicator] to the user that they're
+          // currently anonymous or using a pseudonym, but if this endpoint doesn't
+          // support that, then, we should not continue.
+          anyIndicatedJo foreach { indicatedJo =>
+            // Doing things as oneself is fine, also for endpoints that don't support aliases.
+            val anyIsSelf = parseOptBo(indicatedJo, "self")
+            val ok = anyIsSelf is true
+            throwForbiddenIf(!ok, "TyEPERSONAUNSUP1", o"""You cannot yet do this anonymously
+                  — you need to enter Yourself mode, to do this, right now.""")
+          }
+          // Apart from the above test, we actually ignore any indicated persona —
+          // the persona to use, is instead in the request body. (This makes it
+          // possible to do one-off things as some other persona, if f.ex. you visit
+          // an old discussion where you were using an old pseudonym, and want to
+          // reply once as that old pseudonym, without having to enter and
+          // then leave persona mode as that pseudonym. See the [choose_persona] fns.)
+          // (We do consider any explicitly choosen Persona Mode though — see
+          // `anyAliasId` and `anyAliasPat` just below.)
+        }
+
+        val anyAliasId: Opt[WhichAliasId] = anyChoosenJo flatMap { jo =>
+          talkyard.server.parser.parseWhichAliasIdJson(jo) getOrIfBad { prob =>
+            throwBadReq("TyEPERSHDRJSN", s"Bad persona header json: $prob")
+          }
+        }
+
+        val anyAliasPat: Opt[WhichAliasPat] = anyAliasId flatMap {
+          case WhichAliasId.Oneself =>
+            None // oneself is the default
+          case which: WhichAliasId.SameAnon =>
+            val anon = dao.getTheParticipant(which.sameAnonId).asAnonOrThrow
+            // If, later on, the requester and principal can be different,  [alias_4_principal]
+            // we should compare w the principal's id instead.
+            throwForbiddenIf(anon.anonForPatId != reqr.id,
+                  "TyE0YOURANON02", "No your anonym in persona header")
+            Some(WhichAliasPat.SameAnon(anon))
+          case which: WhichAliasId.LazyCreatedAnon =>
+            Some(WhichAliasPat.LazyCreatedAnon(which.anonStatus))
+        }
+
+        // If the user is trying to do / change something, using an
+        // alias — but this endpoint doesn't currently support that, then,
+        // reject this request. Better than suddenly & surprisingly doing
+        // something as the user hanself (not anonymously).
+        throwForbiddenIf(rejectIfAlias && anyAliasPat.isDefined,
+              "TyEPERSONAUNSUP2", o"""You cannot yet do this anonymously
+              — you need to leave Anonymous mode, to do this, right now.""")
+
+        anyAliasPat
+      }
+
+      // ----- Construct request (Ty's wrapper)
+
       val apiRequest = ApiRequest[A](
-        site, anyTySession, sidStatus, xsrfOk, browserId, anyUser, dao, request)
+            site, anyTySession, sidStatus, xsrfOk, browserId, anyUser,
+            dao, request)(anyAliasPat, mayUseAlias = canUseAlias)
+
+      // ----- Rate limits, tracing
 
       rateLimiter.rateLimit(rateLimits, apiRequest)
 
@@ -772,10 +907,18 @@ class PlainApiActions(
         if (user.isModerator) tracerSpan.setTag("isModerator", true)
       }
 
+      // ----- Run request handler
+
       val timer = globals.metricRegistry.timer(request.path)
       val timerContext = timer.time()
       var result = try {
-        block(apiRequest)
+
+        // Invoke the request handler, do the actually interesting thing.
+        val res = block(apiRequest)
+
+        devDieIf(canUseAlias && !apiRequest.aliasRead, "TyEALIAS0READ", "Forgot to use alias")
+        devDieIf(!canUseAlias && apiRequest.aliasRead, "TyEALIASREAD2", "Tried to use alias")
+        res
       }
       catch {
         // case ProblemException ?  NEXT [ADMERRLOG] + tracer tag?
@@ -797,6 +940,8 @@ class PlainApiActions(
       finally {
         timerContext.stop()
       }
+
+      // ----- Handle async errors
 
       result.onComplete({
         case Success(_) =>

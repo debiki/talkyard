@@ -145,16 +145,23 @@ function makeReplyBtnTitle(store: Store, post: Post) {
 export const PostActions = createComponent({
   displayName: 'PostActions',
 
-  onAcceptAnswerClick: function() {
-    morebundle.maybeChooseModAlias({ store: this.props.store, atRect: undefined },
-            (choices: ChoosenAnon) => {
-      ReactActions.acceptAnswer(this.props.post.uniqueId, choices.doAsAnon);
+  onAcceptAnswerClick: function(event: MouseEvent) {
+    const atRect: Rect = cloneEventTargetRect(event);
+    // A [pick_persona_click_handler] could save a few lines of code?
+    morebundle.chooseEditorPersona({ store: this.props.store, atRect, isInstantAction: true },
+            (doAsOpts: DoAsAndOpts) => {
+      const pageId = Server.getPageId();
+      const postId = this.props.post.uniqueId;
+      ReactActions.acceptAnswer({ pageId, postId, doAsAnon: doAsOpts.doAsAnon });
     });
   },
-  onUnacceptAnswerClick: function() {
-    morebundle.maybeChooseModAlias({ store: this.props.store, atRect: undefined },
-            (choices: ChoosenAnon) => {
-      ReactActions.unacceptAnswer(choices.doAsAnon);
+
+  onUnacceptAnswerClick: function(event: MouseEvent) {
+    const atRect: Rect = cloneEventTargetRect(event);
+    morebundle.chooseEditorPersona({ store: this.props.store, atRect, isInstantAction: true },
+            (doAsOpts: DoAsAndOpts) => {
+      const pageId = Server.getPageId();
+      ReactActions.unacceptAnswer({ pageId, doAsAnon: doAsOpts.doAsAnon });
     });
   },
 
@@ -557,8 +564,8 @@ const MoreVotesDropdownModal = createComponent({
     const atRect = cloneEventTargetRect(event);
     const post: Post = this.state.post;
     loginIfNeededThen(LoginReason.LoginToDisagree, post.nr, () => {
-      toggleVote(this.state.store, post, PostVoteType.Disagree, !this.hasVoted(PostVoteType.Disagree), atRect);
-      this.closeSoon();
+      toggleVote(this.state.store, post, PostVoteType.Disagree, !this.hasVoted(PostVoteType.Disagree),
+            atRect, this.closeSoon);
     });
   },
   onBuryClick: function(event: MouseEvent) {
@@ -566,16 +573,16 @@ const MoreVotesDropdownModal = createComponent({
     const post: Post = this.state.post;
     // Not visible unless logged in.
     // [anon_mods]
-    toggleVote(this.state.store, post, PostVoteType.Bury, !this.hasVoted(PostVoteType.Bury), atRect);
-    this.closeSoon();
+    toggleVote(this.state.store, post, PostVoteType.Bury, !this.hasVoted(PostVoteType.Bury),
+            atRect, this.closeSoon);
   },
   onUnwantedClick: function(event: MouseEvent) {
     const atRect = cloneEventTargetRect(event);
     const post: Post = this.state.post;
     // Not visible unless logged in.
     // [anon_mods]
-    toggleVote(this.state.store, post, PostVoteType.Unwanted, !this.hasVoted(PostVoteType.Unwanted), atRect);
-    this.closeSoon();
+    toggleVote(this.state.store, post, PostVoteType.Unwanted, !this.hasVoted(PostVoteType.Unwanted),
+            atRect, this.closeSoon);
   },
 
   makeVoteButtons: function() {
@@ -633,7 +640,8 @@ const MoreVotesDropdownModal = createComponent({
 });
 
 
-function toggleVote(store: Store, post: Post, voteType: PostVoteType, toggleOn: Bo, atRect: Rect) {
+function toggleVote(store: Store, post: Post, voteType: PostVoteType, toggleOn: Bo, atRect: Rect,
+        closeSoon?: () => V) {
   const page: Page = store.currentPage;
   let action: 'DeleteVote' | 'CreateVote';
   let postNrsRead: PostNr[];
@@ -654,13 +662,21 @@ function toggleVote(store: Store, post: Post, voteType: PostVoteType, toggleOn: 
   };
 
   if (toggleOn) {
-    morebundle.maybeChooseAnon({ store, postNr: post.nr, atRect }, (choices: ChoosenAnon) => {
-      data.doAsAnon = choices.doAsAnon;
+    morebundle.choosePosterPersona({ me: store.me, origins: store,
+            discStore: store, postNr: post.nr, atRect,
+            }, (doAsOpts: DoAsAndOpts | 'CANCEL') => {
+      if (closeSoon) closeSoon();
+      if (doAsOpts === 'CANCEL')
+        return;
+      data.doAsAnon = doAsOpts.doAsAnon;
       save();
     });
   }
   else {
     // The server will delete the vote, no matter which one of pat's aliases (if any) voted.
+    // Later: Incl the id of the alias who voted, if one can create be > 1 anonym/alias
+    // per page. [one_anon_per_page].
+    if (closeSoon) closeSoon();
     save();
   }
 
@@ -769,8 +785,15 @@ const MoreDropdownModal = createComponent({
     this.close();
   },
 
-  onDeleteClick: function(event) {
-    morebundle.openDeletePostDialog(this.state.post, this.state.buttonRect);
+  onDeleteClick: function(event: MouseEvent) {
+    const atRect: Rect = cloneEventTargetRect(event);
+    const state = this.state;
+    const post: Post = state.post;
+    morebundle.chooseEditorPersona({ store: state.store, postNr: post.nr, atRect,
+            isInstantAction: true }, (doAsOpts: DoAsAndOpts) => {
+      morebundle.openDeletePostDialog({ post: this.state.post,
+            at: atRect, doAsAnon: doAsOpts.doAsAnon });
+    });
     this.close();
   },
 

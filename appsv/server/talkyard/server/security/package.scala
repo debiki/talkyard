@@ -181,6 +181,9 @@ object EdSecurity {
     */
   private val XsrfTokenHeaderName = "X-XSRF-TOKEN"
 
+  //private val PersonaCookieName = "TyCoPersona"
+  val PersonaHeaderName = "X-Ty-Persona"
+
   private val BrowserIdCookieName = "dwCoBrId"
 
   def tooLowEntropy(value: St): Bo = {
@@ -1419,6 +1422,9 @@ class EdSecurity(globals: Globals) {
     throwNotFound("TyE404_" + suffix, "Not found")
   }
 
+  /** Throws 404 Not Found if pat may not see the post, or 403 Forbidden if
+    * han may see it, but lacks permissions to do whatever han is up to.
+    */
   def throwNoUnless(mayMaybe: MayMaybe, errorCode: String): Unit = {
     import MayMaybe._
     mayMaybe match {

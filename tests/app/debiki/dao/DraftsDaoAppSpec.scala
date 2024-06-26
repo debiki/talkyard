@@ -416,7 +416,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
             createdAt = now,
             forWhat = locator,
             postType = Some(PostType.Normal),
-            doAsAnon = Some(WhichAnon.NewAnon(AnonStatus.IsAnonCanAutoDeanon)),
+            doAsAnon = Some(WhichAliasId.LazyCreatedAnon(AnonStatus.IsAnonCanAutoDeanon)),
             title = "",
             text = DraftSixAnonReplyText)
 

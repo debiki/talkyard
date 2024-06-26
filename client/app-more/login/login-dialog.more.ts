@@ -199,6 +199,7 @@ const LoginDialog = createClassAndFactory({
     getSetCookie('dwCoMayCreateUser', null);
     getSetCookie('dwCoOAuth2State', null);
     getSetCookie('esCoImp', null);
+    //getSetCookie('TyCoPersona', null);
 
     if (!eds.isInLoginWindow) {
       // We're in a login popup, not in a dedicated "full screen" login window.

@@ -1,11 +1,10 @@
 package talkyard.server
 
 import com.debiki.core._
-import com.debiki.core.Prelude.dieIf
-import debiki.JsonUtils.parseOptJsObject
-import debiki.EdHttp.throwBadReq
+import com.debiki.core.Prelude._
+import debiki.JsonUtils.{parseOptBo, parseOptInt32, parseOptJsObject}
 import org.scalactic.{Bad, Good, Or}
-import play.api.libs.json.JsObject
+import play.api.libs.json.{JsObject, JsValue, JsFalse}
 
 
 /** Parsers and serializers, e.g. from-to JSON or from PASETO token claims.
@@ -56,51 +55,83 @@ package object parser {
   }
 
 
-  def parseDoAsAliasJsonOrThrow(jOb: JsObject): Opt[WhichAnon] = {
-    parseWhichAnonJson(jOb) getOrIfBad { prob =>
-      throwBadReq("TyEBADALIAS", s"Bad doAsAnon params: $prob")
+  val DoAsAnonFieldName = "doAsAnon"
+
+
+  def parseDoAsAnonField(jOb: JsObject): Opt[WhichAliasId] Or ErrMsg = {
+    import play.api.libs.json.JsDefined
+    (jOb \ DoAsAnonFieldName) match {
+      case jsDef: JsDefined => parseWhichAliasIdJson(jsDef.value)
+      case _ => Good(None)
     }
   }
 
 
-  val DoAsAnonFieldName = "doAsAnon"
+  /** Sync w  parseWhichAliasId(..)  in com.debiki.dao.rdb. */
+  def parseWhichAliasIdJson(jsVal: JsValue): Opt[WhichAliasId] Or ErrMsg = {
+    val doAsJsOb: JsObject = jsVal match {
+      case jOb: JsObject => jOb
+      case JsFalse => return Good(Some(WhichAliasId.Oneself))  // [oneself_0_false]
+      case x => return Bad(s"Bad persona json, got a: ${classNameOf(x)}  [TyEPERSJSN]")
+    }
 
-  /** Sync w  parseWhichAnon(..)  in com.debiki.dao.rdb. */
-  def parseWhichAnonJson(jsOb: JsObject): Opt[WhichAnon] Or ErrMsg = {
-    import debiki.JsonUtils.parseOptInt32
+    val numFields = doAsJsOb.value.size
+    if (numFields > 2)
+      return Bad(s"Too many which-persona json fields: ${doAsJsOb.toString}  [TyEPERSFIELDS1]")
 
-    val doAsJsOb = parseOptJsObject(jsOb, DoAsAnonFieldName, falseAsNone = true) getOrElse {
-      return Good(None)
+    val self: Opt[Bo] = parseOptBo(doAsJsOb, "self")
+    if (self is true) {
+      // Any ambiguities because of unknown fields?
+      if (numFields > 1)
+        return Bad(s"Too many fields in a { self: true } which-persona json object, this: ${
+                  doAsJsOb.toString}  [TyEPERSFIELDS2]")
+      return Good(Some(WhichAliasId.Oneself))
     }
 
     val sameAnonId: Opt[AnonId] = parseOptInt32(doAsJsOb, "sameAnonId")
+    val lazyCreate: Bo = parseOptBo(doAsJsOb, "lazyCreate") getOrElse false
+    val createNew_tst: Bo = parseOptBo(doAsJsOb, "createNew_tst") getOrElse false
 
-    val newAnonStatus: Opt[AnonStatus] = parseOptInt32(doAsJsOb, "newAnonStatus") map { int =>
-      if (int == AnonStatus.NotAnon.IntVal)
+    // Later, when pseudonyms implemented, anonStatus might be absent. [pseudonyms_later]
+    val anyAnonStatus: Opt[AnonStatus] = parseOptInt32(doAsJsOb, "anonStatus") map { int =>
+      if (int == AnonStatus.NotAnon.IntVal) {
+        if (numFields > 1)
+          return Bad(s"Anon fields, but anonStatus is NotAnon  [TyEPERS0ANON]")
+
         return Good(None)
+      }
 
       AnonStatus.fromInt(int) getOrElse {
-        return Bad(s"Invalid newAnonStatus: $int")
+        return Bad(s"Invalid anonStatus: $int  [TyEPERSANONSTS]")
       }
     }
 
-    if (sameAnonId.isDefined && newAnonStatus.isDefined)
-      return Bad("Both sameAnonId and newAnonStatus specified")
+    anyAnonStatus match {
+      case None =>
+        if (numFields > 0)
+          return Bad("anonStatus missing but there are anon fields  [TyEPERS0ANONSTS]")
 
-    Good {
-      if (sameAnonId.isDefined) {
-        val id = sameAnonId.get
-        if (id > Pat.MaxAnonId)
-          return Bad(s"Bad anon id: $id, it's > MaxAnonId = ${Pat.MaxAnonId} [TyEBADANIDJSN]")
+        return Good(None)
 
-        Some(WhichAnon.SameAsBefore(id))
-      }
-      else if (newAnonStatus.isDefined) {
-        Some(WhichAnon.NewAnon(newAnonStatus.get))
-      }
-      else {
-        None
-      }
+      case Some(anonStatus) =>
+        if (sameAnonId.isDefined) {
+          val id = sameAnonId.get
+          if (id > Pat.MaxAnonId)
+            return Bad(s"Bad anon id: $id, it's > MaxAnonId = ${Pat.MaxAnonId}  [TyEPERSANONID]")
+
+          COULD // remember anonStatus and verify later, when looking up the anon,
+          // that it has the same anonStatus. [chk_alias_status]
+          Good(Some(WhichAliasId.SameAnon(id)))
+        }
+        else if (lazyCreate) {
+          Good(Some(WhichAliasId.LazyCreatedAnon(anonStatus)))
+        }
+        else if (createNew_tst) {
+          Bad("Unimplemented: createNew_tst  [TyEPERSUNIMP]")
+        }
+        else {
+          Bad("Anon fields missing: Reuse or create anon?  [TyEPERS0FLDS]")
+        }
     }
   }
 }

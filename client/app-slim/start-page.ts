@@ -282,6 +282,7 @@ function renderPageInBrowser() {
   debiki2.processTimeAgo(numPosts > 20 ? '.dw-ar-p-hd' : '');
   const timeAfterTimeAgo = performance.now();
 
+  // (Also calls ReactStore.activateMyself().)
   debiki2.ReactStore.activateVolatileData();
   const timeAfterUserData = performance.now();
 

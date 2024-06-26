@@ -333,7 +333,7 @@ const AboutAnon = React.createFactory<AboutAnonymProps>(function(props) {
       r.div({ className: 'dw-about-user-actions' },
         LinkButton({ href: linkToUserProfilePage(anon) }, t.aud.ViewComments)),
       r.p({},
-        t.Anonym)));
+        anonStatus_toStr(anon.anonStatus))));
 });
 
 

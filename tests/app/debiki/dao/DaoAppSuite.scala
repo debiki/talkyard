@@ -374,15 +374,14 @@ class DaoAppSuite(
   def createPage2(pageRole: PageType, titleTextAndHtml: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, authorId: UserId, browserIdData: BrowserIdData,
         dao: SiteDao, anyCategoryId: Option[CategoryId] = None,
-        doAsAnon: Opt[WhichAnon.NewAnon] = None,
+        asAlias: Opt[WhichAliasPat.LazyCreatedAnon] = None,
         extId: Option[ExtId] = None, discussionIds: Set[AltPageId] = Set.empty): CreatePageResult = {
     dao.createPageSkipAuZ(
       pageRole, PageStatus.Published, anyCategoryId = anyCategoryId, withTags = Nil,
       anyFolder = Some("/"), anySlug = Some(""),
       title = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
       showId = true, deleteDraftNr = None, Who(authorId, browserIdData), dummySpamRelReqStuff,
-      doAsAnon = doAsAnon,
-      discussionIds = discussionIds, extId = extId)
+      asAlias = asAlias, discussionIds = discussionIds, extId = extId)
   }
 
 

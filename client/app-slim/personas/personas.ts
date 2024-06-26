@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="more-prelude.more.ts" />
+/// <reference path="../prelude.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
 
-/// disc_findAnonsToReuse()
+/// disc_findMyPersonas()
 ///
 /// If pat is posting a reply anonymously, then, if han has posted or voted earlier
 /// anonymously on the same page, usually han wants hens new reply, to be
@@ -65,23 +65,21 @@
 /// *elsewhere* in the same discussion. So that anon is still in the list of anons
 /// pat might want to use again, on this page.
 ///
-export function disc_findAnonsToReuse(discStore: DiscStore, ps: {
-            forWho: Pat | Me | U, startAtPostNr?: PostNr }): MyPatsOnPage {
+export function disc_findMyPersonas(discStore: DiscStore, ps: {
+            forWho: Pat | Me | U, startAtPostNr?: PostNr }): MyPersonasThisPage {
 
-  const result: MyPatsOnPage = {
+  const result: MyPersonasThisPage = {
     sameThread: [],
     outsideThread: [],
     byId: {},
   };
 
   const forWho: Pat | Me | U = ps.forWho;
-  if (!forWho)
+  if (!forWho || !forWho.id)
     return result;
 
-  const forWhoId: PatId = ps.forWho.id;
   const curPage: Page | U = discStore.currentPage;
-
-  if (!forWhoId || !curPage)
+  if (!curPage)
     return result;
 
   // ----- Same thread
@@ -90,6 +88,8 @@ export function disc_findAnonsToReuse(discStore: DiscStore, ps: {
   // in the path from ps.startAtPostNr and back towards the orig post.
   // (patsAnon2002, patHenself, and patsAnon2001 in the example above (i.e. in
   // the docs comment to this fn)).
+  // (Much later: Should fetch from server, if page big – an 999 comments long thread
+  // – maybe not all comments in the middle were included by the server?  [fetch_alias])
 
   const startAtPost: Post | U = ps.startAtPostNr && curPage.postsByNr[ps.startAtPostNr];
   const nrsSeen = {};
@@ -112,7 +112,7 @@ export function disc_findAnonsToReuse(discStore: DiscStore, ps: {
       break;
     nrsSeen[nextPost.nr] = true;
 
-    // Bit dupl code:  [.find_anons]
+    // Bit dupl code:  [_find_anons]
 
     // We might have added this author, already.
     if (result.byId[nextPost.authorId])
@@ -122,8 +122,8 @@ export function disc_findAnonsToReuse(discStore: DiscStore, ps: {
     if (!author)
       continue; // would be a bug somewhere, or a rare & harmless race? Oh well.
 
-    const postedAsSelf = author.id === forWhoId;
-    const postedAnonymously = author.anonForId === forWhoId;
+    const postedAsSelf = author.id === forWho.id;
+    const postedAnonymously = author.anonForId === forWho.id;
 
     if (postedAsSelf || postedAnonymously) {
       // This places pat's most recently used anons first.
@@ -142,6 +142,10 @@ export function disc_findAnonsToReuse(discStore: DiscStore, ps: {
         if (result.byId[voterId])
           continue;
         const voter: Pat = discStore.usersByIdBrief[voterId];
+        // Sometimes voters are lazy-created and added. Might be some bug. [lazy_anon_voter]
+        // @ifdef DEBUG
+        dieIf(!voter, `Voter ${voterId} missing [TyE502SRKJ5]`);
+        // @endif
         myAliasesInThread.push(voter);
         result.byId[voter.id] = voter;
       }
@@ -167,7 +171,7 @@ export function disc_findAnonsToReuse(discStore: DiscStore, ps: {
     if (nrsSeen[post.nr])
       return;
 
-    // Bit dupl code:  [.find_anons]
+    // Bit dupl code:  [_find_anons]
 
     // Each anon pat has used, is to be included at most once.
     if (result.byId[post.authorId])
@@ -177,8 +181,8 @@ export function disc_findAnonsToReuse(discStore: DiscStore, ps: {
     if (!author)
       return;
 
-    const postedAsSelf = author.id === forWhoId;
-    const postedAnonymously = author.anonForId === forWhoId;
+    const postedAsSelf = author.id === forWho.id;
+    const postedAnonymously = author.anonForId === forWho.id;
 
     if (postedAsSelf || postedAnonymously) {
       myAliasesOutsideThread.push(author);
@@ -221,6 +225,306 @@ export function disc_findAnonsToReuse(discStore: DiscStore, ps: {
   return result;
 }
 
+
+
+/// Makes a list of personas pat can use, for replying or voting. The first
+/// item in the list is the one to use by default, and if it's unclear what
+/// pat might want, sets `PersonaOptions.isAmbiguous` in the response to true.
+///
+/// Ambiguity matrix:
+///
+///   D = the persona in the left column is automatically used (has priority).
+///   d = We'll ask which persona pat wants to use, and this persona (the one in
+///       the left column) is the default, listed first.
+///       Not totally implemented for the editor though?
+///   - = ignored, doesn't have priority
+///   A = ambiguous, should ask the user
+///  (AP = ambiguous, should ask and update the Preferred-persona-on-page.
+///       But not implemented – means A instead, for now.)
+///
+///                              None Thread (PrfOnP) Page  Recom   Pers Mode
+///                         None  n/a      -      -      -      -      -
+///            Persona in Thread*   D    n/a      A      d      D      d
+///  (Preferred Persona on Page)**  D      d    n/a      D      D      d
+///              Persona on Page    D      -      -    n/a      D      A
+///          Recommended Persona    d      -      -      -     n/a     -
+///         Persona mode persona    D      A      A      A      D    n/a
+///
+///   * "Persona in Thread" means that pat has replied or voted earlier in the same
+///     page, same sub thread, as that persona. Example:
+///
+///       A comment by Alice
+///       `—> A comment by this user as anonym A   <—— this persona (anonym A) is in
+///           |                                        `MyPersonasThisPage.sameThread`
+///           `—> A comment by Bob
+///               `—> Here our user starts replying to Bob,
+///                   and findPersonaOptions() gets called.
+///                   Our user likely wants to reply as anonym A again.
+///       Some other comment, same page but not same sub thread
+///       `—> A reply
+///           `——> A comment by our      <— this persona (the user hanself) is
+///                user, as hanself         in  `MyPersonasThisPage.outsideThread`, and
+///                                         that's "Persona on Page" in the table above
+///
+///   ** "Preferred Persona on Page" is if in the future it'll be possible to
+///      remember "Always use this persona, on this page" — so won't have to choose,
+///      repeatedly. But maybe that's just an over complicated idea.
+///
+export function findPersonaOptions(ps: {
+        // Missing, if on a forum homepage (no discussions directly on such pages).
+        myPersonasThisPage?: MyPersonasThisPage,
+        me: Me,
+        // Missing, if on an auto generated page (rather than a discussion page).
+        // Would be good with site-default props [site_disc_props] instead of `undefined`.
+        discProps?: DiscPropsDerived,
+        }): PersonaOptions {
+
+  const dp: DiscPropsDerived | U = ps.discProps;
+  const anonsAllowed = dp && dp.comtsStartAnon >= NeverAlways.Allowed;
+  const anonsRecommended = dp && dp.comtsStartAnon >= NeverAlways.Recommended;
+  //nst pseudonymsRecommended = false; // [pseudonyms_later]
+  const mustBeAnon = dp  && dp.comtsStartAnon >= NeverAlways.AlwaysButCanContinue;
+  const newAnonStatus = dp && dp.newAnonStatus;
+  const selfRecommended = !anonsRecommended; // later: dp.comtsStartAnon <= AllowedMustChoose
+
+  // @ifdef DEBUG
+  dieIf(anonsAllowed && !newAnonStatus, `[TyE4WJE281]`);
+  dieIf(anonsRecommended && !anonsAllowed, `[TyE4WJE282]`);
+  dieIf(mustBeAnon && !anonsRecommended, `[TyE4WJE282]`);
+  // @endif
+
+  const myPersThisPage: MyPersonasThisPage | U = ps.myPersonasThisPage;
+  const me = ps.me;
+
+  const result: PersonaOptions = { isAmbiguous: false, optsList: [] };
+  let selfAdded = false;
+  let anonFromPropsAdded = false;
+  let modePersonaAdded = false;
+  let recommendedAdded = false;
+
+  // ----- Personas from the current discussion
+
+  if (!myPersThisPage) {
+    // We're on a forum homeage, or user profile page, or sth like that, which
+    // itself has no discussions or comments.
+  }
+  else {
+    // We're on some discussion page, with comments, authors, votes.
+
+    // Same sub thread has priority – so we continue replying as the same person,
+    // won't become sbd else in the middle of a thread.
+    for (let ix = 0; ix < myPersThisPage.sameThread.length; ++ix) {
+      const pat = myPersThisPage.sameThread[ix];
+      const opt: PersonaOption = {
+        alias: pat,
+        doAs: patToMaybeAnon(pat, me),
+        // The first item is who pat most recently replied or voted as, in the relevant sub thread.
+        isBestGuess: ix === 0,
+        inSameThread: true,
+      }
+      initOption(opt);
+      result.optsList.push(opt);
+    }
+
+    // Thereafter, elsewhere on the same page, but not in the same sub thread.
+    for (let ix = 0; ix < myPersThisPage.outsideThread.length; ++ix) {
+      const pat = myPersThisPage.outsideThread[ix];
+      const opt: PersonaOption = {
+        alias: pat,
+        doAs: patToMaybeAnon(pat, me),
+        isBestGuess:
+            !myPersThisPage.sameThread.length &&
+            // If pat has commented using different aliases on this page, we can't
+            // know which one is the best guess?  Maybe the most recently used one?
+            // Or the most frequently used one? Who knows.
+            myPersThisPage.outsideThread.length === 1,
+        onSamePage: true,
+      }
+      initOption(opt);
+      result.optsList.push(opt);
+    }
+  }
+
+  // ----- Persona mode
+
+  // The user might be in e.g. anon mode also on pages without any discussions.
+
+  if (me.usePersona && !modePersonaAdded) {
+    let opt: PersonaOption;
+    if (me.usePersona.self) {
+      opt = {
+        alias: me,
+        doAs: false, // not anon, be oneself [oneself_0_false]
+        isFromMode: true,
+        isSelf: true,
+      };
+      if (mustBeAnon) {
+        opt.isNotAllowed = true;
+      }
+      if (selfRecommended) {
+        opt.isRecommended = true;
+        recommendedAdded = true;
+      }
+      selfAdded = true;
+    }
+    else if (me.usePersona.anonStatus) {
+      // Since not added above (!modePersonaAdded), this'd be a new anon.
+      const anonStatus = me.usePersona.anonStatus;
+      const anonPat = anon_create({ anonStatus, anonForId: me.id });
+      opt = {
+        alias: anonPat,
+        doAs: patToMaybeAnon(anonPat, me),
+        isFromMode: true,
+      };
+      if (!anonsAllowed) {
+        opt.isNotAllowed = true;
+      }
+      if (anonStatus === newAnonStatus) {
+        if (anonsRecommended) {
+          opt.isRecommended = true;
+          recommendedAdded = true;
+        }
+        opt.isFromProps = true;
+        anonFromPropsAdded = true;  // [dif_anon_status]
+      }
+    }
+    else {
+      // [pseudonyms_later] ?
+    }
+
+    result.optsList.push(opt);
+  }
+
+  // Are there more than two persona options? Then we don't know which one to use.
+  //
+  // (We ignore additional options added below. Only any Persona Mode option (added above),
+  // and personas pat has been on the current page (also added above), can make us unsure
+  // about who pat wants to be now.  But not just because anonymity or posting as oneself
+  // is the default / recommended on the page.)
+  //
+  result.isAmbiguous = result.optsList.length >= 2;
+
+  // Add Anonymous as an option, if not done already.
+  if (!anonFromPropsAdded && anonsAllowed) {
+    const anonPat = anon_create({ anonStatus: newAnonStatus, anonForId: me.id });
+    const opt: PersonaOption = {
+      alias: anonPat,
+      doAs: patToMaybeAnon(anonPat, me),
+    };
+    if (!recommendedAdded && anonsRecommended) {
+      // (It's the recommended type of anon — we created it with newAnonStatus just above.)
+      opt.isRecommended = true;
+      recommendedAdded = true;
+    }
+    result.optsList.push(opt);
+
+    // If not in alias mode, maybe it's good to tell the user that han can be anonymous
+    // if han wants? – No, this feels just annoying. If someone started commenting
+    // on a page as hanself, then it's pretty pointless to suddenly have han replaced by
+    // "Anon 123" in subsequent comments, when "everyone" can guess who Anon 123 is anyway.
+    // if (ambiguities2.aliases.length >= 2 && !me.usePersona && anonsRecommended) {
+    //   ambiguities2.isAmbiguous = true;
+    // }
+  }
+
+  // Add oneself as an option, if not done already. (But don't consider this an ambiguity.)
+  if (!selfAdded && !mustBeAnon) {
+    const opt: PersonaOption = {
+      alias: me,
+      doAs: false, // not anon [oneself_0_false]
+      isSelf: true,
+    };
+    if (!recommendedAdded && selfRecommended) {
+      opt.isRecommended = true;
+      recommendedAdded = true;
+    }
+    result.optsList.push(opt);
+  }
+
+  result.optsList.sort((a: PersonaOption, b: PersonaOption) => {
+    if (a.isNotAllowed !== b.isNotAllowed)
+      return a.isNotAllowed ? +1 : -1; // place `a` last
+
+    if (a.isBestGuess !== b.isBestGuess)
+      return a.isBestGuess ? -1 : +1; // place `a` first
+
+    if (a.isFromMode !== b.isFromMode)
+      return a.isFromMode ? -1 : +1;
+
+    if (a.isRecommended !== b.isRecommended)
+      return a.isRecommended ? -1 : +1;
+
+    if (a.isSelf !== b.isSelf)
+      return a.isSelf ? -1 : +1;
+  })
+
+  function initOption(opt: PersonaOption) {
+    const pat: Pat = opt.alias;
+    const isMe = pat.id === me.id;
+    const isAnonFromProps = pat.anonStatus && pat.anonStatus === newAnonStatus;
+
+    if (isMe) {
+      opt.isSelf = true;
+      selfAdded = true;
+      result.hasBeenSelf = true;
+    }
+
+    if (pat.isAnon) {
+      // (opt.isAnon not needed —  opt.alias.isAnon is enough.)
+      if (isAnonFromProps) {
+        opt.isFromProps = true;
+        anonFromPropsAdded = true;  // [dif_anon_status]
+      }
+      result.hasBeenAnon = true;
+    }
+
+    // if (...) [pseudonyms_later]
+
+    // Is the same persona as any current Persona Mode?
+    if (me.usePersona) {
+      const isSelfFromMode = me.usePersona.self && isMe;
+      const isAnonFromMode = me.usePersona.anonStatus === pat.anonStatus && pat.anonStatus;
+      if (isSelfFromMode || isAnonFromMode) {
+        opt.isFromMode = true;
+        modePersonaAdded = true;
+      }
+    }
+
+    // Any persona mode anonym, might not be of the recommended anonymity status. [dif_anon_status]
+    // But one from the category properties, would be.
+    if ((isAnonFromProps && anonsRecommended) || (isMe && selfRecommended)) {
+      opt.isRecommended = true;
+      recommendedAdded = true;
+    }
+
+    if ((pat.isAnon && !anonsAllowed) || (isMe && mustBeAnon)) {
+      opt.isNotAllowed = true;
+    }
+  }
+
+  return result;
+}
+
+
+export function patToMaybeAnon(p: Pat | KnownAnonym | NewAnon, me: Me): MaybeAnon {
+  if ((p as WhichAnon).createNew_tst) {
+    // Then `p` is a WhichAnon already, not a Pat.
+    return p as NewAnon;
+  }
+
+  const pat = p as Pat;
+
+  if (pat.id === me.id) {
+    return false; // means not anon, instead, oneself [oneself_0_false]
+  }
+  else if (pat.id === Pats.FutureAnonId) {
+    // Skip `NewAnon.createNew_tst` for now. [one_anon_per_page]
+    return { anonStatus: pat.anonStatus, lazyCreate: true } satisfies LazyCreatedAnon;
+  }
+  else {
+    return { anonStatus: pat.anonStatus, sameAnonId: pat.id } as SameAnon;
+  }
+}
 
 
 //------------------------------------------------------------------------------

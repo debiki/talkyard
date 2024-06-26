@@ -939,20 +939,6 @@ package object core {
   }
 
 
-  /*
-  sealed abstract class AnonLevel(val IntVal: i32) { def toInt: i32 = IntVal }
-  object AnonLevel {
-    case object NotAnon extends AnonLevel(10)
-    case object AnonymPerPage extends AnonLevel(50)
-
-    def fromInt(value: i32): Opt[AnonLevel] = Some(value match {
-      case NotAnon.IntVal => NotAnon
-      case AnonymPerPage.IntVal => AnonymPerPage
-      case _ => return None
-    })
-  }*/
-
-
 
   /** A bitfield. Currently only None, 65535 = IsAnonOnlySelfCanDeanon
     * and 2097151 = IsAnonCanAutoDeanon are supported.
@@ -1080,24 +1066,83 @@ package object core {
   }
 
 
-  sealed abstract class WhichAnon() {
-    require(anySameAnonId.isDefined != anyNewAnonStatus.isDefined, "TyE6G0FM2TF3")
+  /** For before an alias has been looked up — we know only its id. Or,
+    * if it's a lazy-created anon, we don't know its id (doesn't yet exist),
+    * instead, we only know what type of anon it's going to be, that is, its
+    * future anon status (currently, either temporarily anonymous,
+    * for ideation, or permanently, for sensitive discussions).
+    */
+  sealed abstract class WhichAliasId() {
+    // Remove later. [chk_alias_status]
+    require(anySameAliasId.isEmpty || anyAnonStatus.isEmpty, "TyE6G0FM2TF3")
 
-    // Either ...
-    def anyNewAnonStatus: Opt[AnonStatus] = None
-    // ... or.
-    def anySameAnonId: Opt[AnonId] = None
+    def anyAnonStatus: Opt[AnonStatus]
+    def anySameAliasId: Opt[AnonId]
   }
 
-  object WhichAnon {
-    case class NewAnon(anonStatus: AnonStatus) extends WhichAnon {
-      require(anonStatus != AnonStatus.NotAnon, "WhichAnon is NotAnon [TyE2MC06Y8G]")
-      override def anyNewAnonStatus: Opt[AnonStatus] = Some(anonStatus)
+
+  object WhichAliasId {
+
+    /** For doing sth as oneself (even if anonymity is the default) — "Yourself Mode". */
+    case object Oneself extends WhichAliasId {
+      def anySameAliasId: Opt[AnonId] = None
+      def anyAnonStatus: Opt[AnonStatus] = None
     }
 
-    case class SameAsBefore(sameAnonId: PatId) extends WhichAnon {
-      override def anySameAnonId: Opt[AnonId] = Some(sameAnonId)
+    // Later:  [pseudonyms_later]
+    //case class SamePseudonym(sameAliasId: PatId) extends WhichAliasId with SameAlias {
+    //  def anySameAliasId: Opt[PatId] = Some(sameAliasId)
+    //  def anyAnonStatus: Opt[AnonStatus] = None
+    //}
+
+    COULD // add   anonStatus, error if mismatch? [chk_alias_status]
+    case class SameAnon(sameAnonId: PatId) extends WhichAliasId {
+      require(sameAnonId <= Pat.MaxAnonId, s"Not an anon id: $sameAnonId")
+      def anySameAliasId: Opt[AnonId] = Some(sameAnonId)
+      def anyAnonStatus: Opt[AnonStatus] = None
     }
+
+    case class LazyCreatedAnon(anonStatus: AnonStatus) extends WhichAliasId {
+      require(anonStatus != AnonStatus.NotAnon, "WhichAliasId.anonStatus is NotAnon [TyE2M068G]")
+      def anySameAliasId: Opt[AnonId] = None
+      def anyAnonStatus: Opt[AnonStatus] = Some(anonStatus)
+    }
+  }
+
+
+  /** For after the alias has been looked up by any id, when we have an Anonym or Pseudonym,
+    * not just an id. (Or still just a to-be-lazy-created anonym, with a future anon status.)
+    */
+  sealed trait WhichAliasPat {
+    def anyPat: Opt[Pat]
+  }
+
+
+  object WhichAliasPat {
+    // Later:  [pseudonyms_later]
+    // Create a Pseudonym class? Pat / PatBr has unnecessary stuff, e.g. sso id.
+    //case class SamePseudonym(pseudonym: Pseudonym) extends WhichAliasPat {
+    //  def anyPat: Opt[Pat] = Some(pseudonym)
+    //}
+
+    case class SameAnon(anon: Anonym) extends WhichAliasPat {
+      def anyPat: Opt[Pat] = Some(anon)
+    }
+
+    /** Reuses any already existing anonym with the same anon status,
+      * on the same page.
+      *
+      * If there're many, on the relevant page, then what? Throw an error?
+      * Can't happen, yet, because [one_anon_per_page].
+      */
+    case class LazyCreatedAnon(anonStatus: AnonStatus) extends WhichAliasPat {
+      def anyPat: Opt[Pat] = None // might not yet exist
+    }
+
+    // Let's not support creating more than one anonym per user & page, for now.
+    //case class NewAnon(anonStatus: AnonStatus) extends WhichAliasPat {
+    //  def anyPat: Opt[Pat] = None
+    //}
   }
 
 
@@ -2067,6 +2112,7 @@ package object core {
 
 
   implicit class RichBoolean(underlying: Boolean) {
+    // (For find-by-similar-name: "oneIfTrue".)
     def toZeroOne: i32 = if (underlying) 1 else 0
   }
 

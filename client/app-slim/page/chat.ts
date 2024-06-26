@@ -176,13 +176,15 @@ const ChatMessage = createComponent({
   edit: function() {
     this.setState({ isEditing: true });
     const post: Post = this.props.post;
+    // Later: Pass alias, if any.  [anon_chats]
     editor.openToEditPostNr(post.nr, (wasSaved, text) => {
       this.setState({ isEditing: false });
     });
   },
 
-  delete_: function(event) {
-    morebundle.openDeletePostDialog(this.props.post, cloneEventTargetRect(event));
+  delete_: function(event: MouseEvent) {
+    // Later: [anon_chats].
+    morebundle.openDeletePostDialog({ post: this.props.post, at: cloneEventTargetRect(event) });
   },
 
   render: function() {

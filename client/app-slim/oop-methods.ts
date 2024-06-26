@@ -198,6 +198,7 @@ export function pageNotfPrefTarget_findEffPref(
   // unapproved replies (and edit them).
   // The real fix would be to include a `MyPageData.iHaveReplied` field server side?
   // Like so: ownPrefs.myDataByPageId[target.pageId].iHaveReplied ?
+  // That's also needed for finding out which alias (if any) to use. [fetch_alias]
   const anyReplyByPat =
           _.find(store.pagesById[target.pageId]?.postsByNr,   // [On1]
               (p: Post) => p.authorId === store.me.id);
@@ -688,9 +689,13 @@ export function member_isBuiltIn(member: Member): Bo {
 
 
 // Dupl code [disp_name]
-export function pat_name(pat: Me | Pat): St {
+export function pat_name(patOrLazyAnon: Me | Pat | LazyCreatedAnon | NewAnon): St {
+  if (patOrLazyAnon.anonStatus)
+    return anonStatus_toStr(patOrLazyAnon.anonStatus);  // [anon_2_str]
+
   // Or prioritize username? Did, in the annon posts branch:
   // if (pat.username) return '@' + pat.username;
+  const pat = patOrLazyAnon as Pat;
   return pat.fullName || (pat.username ? '@' + pat.username : "_no_name_");
 }
 
@@ -764,6 +769,60 @@ export function pat_mayEditTags(me: Me, ps: { forPost?: Post, forPat?: Pat,
                         // + || isOwnPost for own post?
 }
 
+
+
+// Anonyms
+//----------------------------------
+
+
+export function anon_create(ps: { anonForId: UserId, anonStatus: AnonStatus,
+        isMe?: true }): FutureAnon {
+  const fullName = anonStatus_toStr(ps.anonStatus) + (ps.isMe ? " (you)" : '');  // I18N
+  return {
+    id: Pats.FutureAnonId,
+    anonForId: ps.anonForId,
+    fullName,
+    isAnon: true,
+    anonStatus: ps.anonStatus,
+  } satisfies FutureAnon;
+}
+
+
+export function anonStatus_toStr(anonStatus: AnonStatus, verb: Verbosity = Verbosity.Brief): St {
+  //  [dif_anon_status]
+  if (anonStatus === AnonStatus.IsAnonCanAutoDeanon)
+    return verb >= Verbosity.Full ? "Temporarily Anonymous" : (  // I18N [anon_2_str]
+            verb >= Verbosity.Brief ? "Temp Anonymous" : (
+            verb >= Verbosity.Terse ? "Temp Anon" :
+            "Temp")); // Verbosity.VeryTerse
+
+  let prefix = '';
+  // @ifdef DEBUG
+  prefix = "P"; // for "Permanently". Nice in dev mode.
+  // @endif
+  if (anonStatus === AnonStatus.IsAnonOnlySelfCanDeanon)
+    return prefix + (verb >= Verbosity.Brief ? "Anonymous" : (  // I18N
+                      verb >= Verbosity.Terse ? "Anonym" :
+                      "Anon")); // Verbosity.VeryTerse
+
+  // Unknown status.
+  return `TyEUNKANSTA-${anonStatus}`;
+}
+
+
+// Persona mode
+//----------------------------------
+
+export function persMode_toStr(mode: PersonaMode, verb: Verbosity): St {
+  return mode.pat ?
+              // This might be pretty long! Not Verbosity.Brief at all, depending
+              // on the name. [pseudonyms_later]
+              mode.pat.username || mode.pat.fullName : (
+          mode.self ? (verb <= Verbosity.Terse ? "Self" : "Yourself") : (  // I18N
+          mode.anonStatus ? anonStatus_toStr(mode.anonStatus, verb) :
+          // Unknown mode.
+          "TyEUNKPERMODE"));
+}
 
 
 // Settings
@@ -1300,7 +1359,7 @@ export function store_makeNewPostPreviewPatch(store: Store, page: Page,
   // make an anonym with '?' as sequence number appear.
   const authorId = doAsAnon ? doAsAnon.sameAnonId || Pats.FutureAnonId : store.me.id;
   const previewPost = store_makePreviewPost({
-      authorId, parentPostNr, safePreviewHtml, newPostType, isEditing: true });
+      authorId, doAsAnon, parentPostNr, safePreviewHtml, newPostType, isEditing: true });
   return page_makePostPatch(page, previewPost);
 }
 
@@ -1353,8 +1412,8 @@ export function store_makePostForDraft(authorId: PatId, draft: Draft): Post | Nl
   // For now, use the CommonMark source instead.
 
   const previewPost = store_makePreviewPost({
-      authorId, parentPostNr, unsafeSource: draft.text, newPostType: postType,
-      isForDraftNr: draft.draftNr || true });
+      authorId, doAsAnon: draft.doAsAnon, parentPostNr, unsafeSource: draft.text,
+      newPostType: postType, isForDraftNr: draft.draftNr || true });
   return previewPost;
 }
 
@@ -1379,6 +1438,7 @@ export function post_makePreviewIdNr(parentNr: PostNr, newPostType: PostType): P
 
 interface MakePreviewParams {
   authorId: PatId;
+  doAsAnon?: MaybeAnon;
   parentPostNr?: PostNr;
   safePreviewHtml?: string;
   unsafeSource?: string;
@@ -1391,7 +1451,7 @@ interface MakePreviewParams {
 
 
 function store_makePreviewPost({
-    authorId, parentPostNr, safePreviewHtml, unsafeSource,
+    authorId, doAsAnon, parentPostNr, safePreviewHtml, unsafeSource,
     newPostType, isForDraftNr, isEditing }: MakePreviewParams): Post {
 
   dieIf(!newPostType, "Don't use for edit previews [TyE4903KS]");
@@ -1403,6 +1463,7 @@ function store_makePreviewPost({
   const previewPost: Post = {
     isPreview: true,
     isForDraftNr,
+    doAsAnon,
     isEditing,
 
     uniqueId: previewPostIdNr,
@@ -1883,12 +1944,6 @@ function deriveLayoutImpl(page: PageDiscPropsSource, cat: Cat, store: DiscStore,
 }
 
 
-export function page_authorId(page: Page): PatId | U {
-  const origPost = page.postsByNr[BodyNr];
-  return origPost && origPost.authorId;
-}
-
-
 export function page_isClosedUnfinished(page: Page | Topic): Bo {
   return page_isClosed(page) && !page_isSolved(page) && !page_isDone(page);
 }
@@ -2032,6 +2087,7 @@ export function page_canChangeCategory(page: Page): boolean {
 export function page_mostRecentPostNr(page: Page): number {
   // BUG not urgent. COULD incl the max post nr in Page, so even if not yet loaded,
   // we'll know its nr, and can load and scroll to it, from doUrlFragmentAction().
+  // Related to: [fetch_alias]
   let maxNr = -1;
   _.values(page.postsByNr).forEach((post: Post) => {  // COULD use _.reduce instead
     maxNr = Math.max(post.nr, maxNr);

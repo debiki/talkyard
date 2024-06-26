@@ -617,6 +617,21 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
+  def loadAnyAnon(userId: UserId, pageId: PageId, anonStatus: AnonStatus): Opt[Anonym] = {
+    val query = s"""
+          select $UserSelectListItemsNoGuests
+          from users3 u
+          where site_id = ?
+            and true_id_c = ?
+            and anon_on_page_id_st_c = ?
+            and anonym_status_c = ? """
+    val values = List(siteId.asAnyRef, userId.asAnyRef, pageId, anonStatus.toInt.asAnyRef)
+    // One or none: Should be at most [one_anon_per_page] of the same type (anon status).
+    runQueryFindOneOrNone(query, values, rs =>
+          getParticipant(rs).asAnonOrThrow)
+  }
+
+
   def insertMember(user: UserInclDetails) {
     try {
       runUpdate("""

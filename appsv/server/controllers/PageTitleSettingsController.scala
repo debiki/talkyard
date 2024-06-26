@@ -45,9 +45,10 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
 
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
 
-  def editTitleSaveSettings: Action[JsValue] = PostJsonAction(RateLimits.EditPost, maxBytes = 2000) {
+  def editTitleSaveSettings: Action[JsValue] = PostJsonAction(RateLimits.EditPost,
+          maxBytes = 2000, canUseAlias = true) {
         request: JsonPostRequest =>
-    import request.{body, dao, theRequester => trueEditor}
+    import request.{body, dao, theRequester => trueEditor} // [alias_4_principal]
 
     val pageJo = asJsObject(request.body, "the request body")
     CLEAN_UP // use JsonUtils below, not '\'.
@@ -91,8 +92,10 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
       PageDoingStatus.fromInt(value) getOrElse throwBadArgument("TyE2ABKR04", "doingStatus")
     }
 
-    TESTS_MISSING // & ren to  doAsAlias
-    val doAsAnon = parser.parseDoAsAliasJsonOrThrow(pageJo)
+    TESTS_MISSING // TyTALIALTERPG
+    val asAlias: Opt[WhichAliasPat] =
+          SiteDao.checkAliasOrThrowForbidden(pageJo, trueEditor, request.anyAliasPat,
+              mayCreateAnon = false)(dao)
 
     val hasManuallyEditedSlug = anySlug.exists(slug => {
       // The user interface currently makes impossible to post a new slug, without a page title.
@@ -116,25 +119,31 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     val changesOnlyTypeOrStatus =
           // If we got the page id (required, always present) and exactly one more field, ...
           (pageJo.value.size == 2
-                // Except for the doAsAnon field which is off-topic
+                // Except for the asAlias field which is off-topic
                 || pageJo.value.size == 3 && pageJo.\(parser.DoAsAnonFieldName).isDefined
                 )  &&
           // ... and it is the page type or doing status, then, pat is trying to change,
           // well, only the type or doing status.  Nothing else.
           (anyNewDoingStatus.isDefined || anyNewRole.isDefined)
 
-    val anyOtherAuthor =
-          if (oldMeta.authorId == trueEditor.id) None
-          else Some(dao.getTheParticipant(oldMeta.authorId))
+    // Above, mayCreateAnon = false, so any anonym would already exist.
+    dieIf(asAlias.exists(_.anyPat.isEmpty), "TyE5FML28PW")
+
+    val pageAuthor =
+          if (oldMeta.authorId == trueEditor.id) trueEditor
+          else dao.getTheParticipant(oldMeta.authorId)
 
     // AuthZ check 1/3:
+    // (Similar to throwIfMayNotAlterPage(): Authz.mayEditPage() is inlined here
+    // so we can reuse some arguments, e.g. requestersGroupIds.)
     // Could skip authz check 2/3 below: [.dbl_auz] ?
     val oldCatsRootLast = dao.getAncestorCategoriesRootLast(oldMeta.categoryId)
     val requestersGroupIds = dao.getOnesGroupIds(trueEditor)
     throwNoUnless(Authz.mayEditPage(
           pageMeta = oldMeta,
           pat = trueEditor,
-          otherAuthor = anyOtherAuthor,
+          asAlias = asAlias,
+          pageAuthor = pageAuthor,
           groupIds = requestersGroupIds,
           pageMembers = dao.getAnyPrivateGroupTalkMembers(oldMeta),
           catsRootLast = oldCatsRootLast,
@@ -162,9 +171,11 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     throwForbiddenIf(forumViewChanged && pageTypeAfter != PageType.Forum,
           "TyE0FORMPGE", "Can only edit these properties for forum pages")
 
-    // [choose_alias] [deanon_risk]
-    if (!trueEditor.isStaff || doAsAnon.isDefined) {
-      val who = (trueEditor.isStaff && doAsAnon.isDefined) ? "Anonyms" | "You"
+    // Would be confusing if anyone could change the comment order.
+    // If anonyms could do things only mods may do, others could guess
+    // that the anon is a mod. [deanon_risk]
+    if (!trueEditor.isStaff || asAlias.isDefined) {
+      val who = trueEditor.isStaff ? "Anonyms" | "You"
       throwForbiddenIf(
           anyComtOrder.isSomethingButNot(oldMeta.comtOrder),
           "TyEXCMTORD", s"$who may not change the comment sort order")
@@ -174,59 +185,10 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
           "TyEXCMTNST", s"$who may not change the comment nesting max depth")
     }
 
-    val isEditorsAnonsPage = doAsAnon.exists(_.anySameAnonId.is(oldMeta.authorId))
-    val isEditorsOwnPage = trueEditor.id == oldMeta.authorId
-
-    if (doAsAnon.isDefined) {
-      if (isEditorsAnonsPage) {
-        // Fine. If you create a page anonymously, you can close/reopen it,
-        // mark it as solved, etc, using the same anonym.
-      }
-      else if (isEditorsOwnPage) {
-        // It's the trueEditor's page, but han created it using hans real account.
-        // Disallow, so others won't know that `doAsAnon` is the same person.
-        throwForbidden("TyECHPGUSINGALIAS",
-              s"You cannot alter this page as anonym ${doAsAnon
-              } — you created it using your real account, ${trueEditor.nameParaId}")
-      }
-      else if (anyOtherAuthor.exists(_.trueId2.trueId == trueEditor.id)) {
-        // It's the trueEditor's page, but han created it using _another_ anonym
-        // or pseudonym.  `doAsAnon` is the wrong anonym. Disallow, so others can't
-        // know that the two aliases (anyOtherAuthor and doAsAnon) are in fact
-        // the same person. [deanon_risk]
-        throwForbidden("TyECHPGWRONGALIAS",
-              s"You cannot alter this page as anonym ${doAsAnon
-              } — you created it as ${anyOtherAuthor.get.nameParaId}")
-      }
-      else {
-        // This must be beore the `isStaff` test — anonymous moderation [anon_mods] is
-        // not yet suppored. (If the same anon was reused, others might see that
-        // that anon is a moderator.)
-        throwForbidden("TyECHOTRPGSANO",
-              "You cannot alter other people's pages anonymously" + (
-                  trueEditor.isStaffOrCoreMember ?  // [deanon_risk]
-                        " even if you're a moderator or core member" | ""))
-      }
-    }
-    else if (trueEditor.isStaff || isEditorsOwnPage) {
-      // Fine. Moderators can edit pages they have access too, and others can
-      // edit pages they created themselves.
-      // (Maybe later there will be more [granular_perms].)
-    }
-    else if (changesOnlyTypeOrStatus && trueEditor.isStaffOrCoreMember) {
-      // Fine: Core members can alter page type, or mark pages as solved or closed.
-    }
-    else {
-      throwForbidden("TyECHOTRPGS", "You may not alter other people's pages")
-    }
-
-    // If anonyms or pseudonyms could do the things in this block (e.g. change page slug
-    // or folder, change layout),  if the true user is an admin,  then,
-    // others could guess who the anonym is.  [deanon_risk] [choose_alias]
-    // (Since probably there are just a few admins, and if there might be some meta message
-    // about what was done by the anonym, who must thus be one of the admins.)
-    if (!trueEditor.isAdmin || doAsAnon.isDefined) {
-      val prefix = doAsAnon.isDefined ? "Anonyms cannot" | "Only admins can"
+    // If anonyms or pseudonyms could do things only admins can do (e.g. change page slug
+    // or folder, change layout), others could guess that the anon is an admin.  [deanon_risk]
+    if (!trueEditor.isAdmin || asAlias.isDefined) {
+      val prefix = trueEditor.isAdmin ? "Anonyms cannot" | "Only admins can"
 
       // Forum page URL.
       throwForbiddenIf(hasManuallyEditedSlug,
@@ -299,7 +261,8 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
       // move it, in a separate step.)
       val newTextAndHtml = dao.textAndHtmlMaker.forTitle(newTitle)
       request.dao.editPostIfAuth(pageId = pageId, postNr = PageParts.TitleNr, deleteDraftNr = None,
-            request.who, request.spamRelatedStuff, newTextAndHtml, doAsAnon)
+            request.who, // [alias_4_principal]
+            request.spamRelatedStuff, newTextAndHtml, asAlias)
     }}
 
     // Load old section page id before changing it.
@@ -336,17 +299,23 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     // allow that, but only if no *additional* people then gets to see the page.
     // (But if fewer, that's ok.) — There'll also be [alterPage] maybe move page permissions.
     //
-    // [deanon_risk] If the page author, or hans anonym, appear in a page changelog, then,
-    // others can guess they're the same? (If only few people have access to the destination
-    // category).
+    // COULD check if may use alias in the new cat, so cannot move a page  [move_anon_page]
+    // with anon comments to a category where anon comments are disabled?  Let's wait.
+    //
+    // [deanon_risk] If few people have access to both the old and new category, then, it's
+    // simpler for others to guess who a [pseudonym who moves the page] is.  [pseudonyms_later]
+    // And if one could move one's anonymous page using one's true id (but one cannot,
+    // see [true_0_ed_alias]), then, others could also guess that the anon and oneself is
+    // the same (otherwise, why would one have been able to move it (unless is e.g. a mod)).
     //
     if (newMeta.categoryId != oldMeta.categoryId) {
+      // (Similar to throwIfMayNotAlterPage().)
       val newCatsRootLast = dao.getAncestorCategoriesRootLast(newMeta.categoryId)
       throwNoUnless(Authz.mayEditPage(
             pageMeta = newMeta,
             pat = trueEditor,
-            // asAlias =  — Check if [may_use_alias] in the new category   DO_AS_ALIAS
-            otherAuthor = anyOtherAuthor,
+            asAlias = asAlias,
+            pageAuthor = pageAuthor,
             groupIds = requestersGroupIds,
             pageMembers = dao.getAnyPrivateGroupTalkMembers(newMeta),
             catsRootLast = newCatsRootLast,
@@ -360,7 +329,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
 
       val aliasOrTrue: Pat = SiteDao.getAliasOrTruePat(truePat = trueEditor, pageId = pageId,
-            doAsAnon, mayCreateAnon = false)(tx, IfBadAbortReq)
+            asAlias, mayCreateAnon = false)(tx, IfBadAbortReq)
 
       if (addsNewDoingStatusMetaPost) {
         dao.addMetaMessage(aliasOrTrue, s" marked this topic as ${newMeta.doingStatus}", pageId, tx)

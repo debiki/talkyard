@@ -94,7 +94,7 @@ export const GroupList = function(member: UserDetailsStatsGroups, groupsMaySee: 
 export const Expandable = (
       props: { header: any, onHeaderClick: any, isOpen?: boolean,
         className?: string, openButtonId?: string },
-      ...children) => {
+      ...children): RElm => {
 
   let body = !props.isOpen ? null :
     r.div({ className: 's_Expandable_Body' }, children);
@@ -114,6 +114,27 @@ export const Expandable = (
       body))
 };
 
+
+
+// Wouldn't it be better with a [pick_persona_click_handler]?
+export function DeletePageBtn(ps: { pageIds: PageId[], store: Store, undel?: true,
+        verb?: Verbosity, close: () => V }): RElm {
+
+  const page = ps.verb > Verbosity.Full ? " page" : '';
+  const title = (ps.undel ? "Undelete" : "Delete") + page;  // I18N
+
+  return Button({ className: ps.undel ? 'e_UndelPgB' : 'e_DelPgB',
+        onClick: (event: MouseEvent) => {
+          const atRect = cloneEventTargetRect(event);
+          persona.chooseEditorPersona({ store: ps.store, atRect,
+                  isInstantAction: true }, (doAsOpts: DoAsAndOpts) => {
+            const delOrUndel = ps.undel ? ReactActions.undeletePages : ReactActions.deletePages;
+            delOrUndel({
+                  pageIds: ps.pageIds, doAsAnon: doAsOpts.doAsAnon }, ps.close);
+          });
+        } },
+      title);
+}
 
 //------------------------------------------------------------------------------
    }

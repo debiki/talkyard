@@ -355,7 +355,7 @@ class MailerActor(
         emailMaybeWrongAddr.sentTo
       }
       else {
-        val anyPp = emailMaybeWrongAddr.toUserId.flatMap(siteDao.getParticipant)
+        val anyPp = emailMaybeWrongAddr.toUserId.flatMap(id => siteDao.getParticipant(id))
         anyPp.map(_.email) getOrElse emailMaybeWrongAddr.sentTo
       }
 

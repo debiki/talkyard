@@ -494,6 +494,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def insertAnonym(anonym: Anonym): U
 
+  def loadAnyAnon(userId: UserId, pageId: PageId, anonStatus: AnonStatus): Opt[Anonym]
+
   def nextMemberId: UserId
   def insertMember(user: UserInclDetails): Unit
 

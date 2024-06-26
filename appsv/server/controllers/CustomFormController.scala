@@ -95,7 +95,7 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: TyCont
           deleteDraftNr = None,
           reqrAndCreator = request.reqrTargetSelf,
           spamRelReqStuff = request.spamRelatedStuff,
-          doAsAnon = None,
+          asAlias = None,
           discussionIds = Set.empty,
           embeddingUrl = None,
           refId = None)

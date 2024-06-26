@@ -86,10 +86,15 @@ And  t_  —>  i_  for 'id' attr.
 s_w-X = wraps an X, i.e., somewhere inside, there's an X. Or "'W'ith a X inside".
 w_X   = wraps X. Always a class, not an id.
 
+0I18N:  Internationalization not needed (0 = zero = not), that is, no need to
+  translate to different languages – only English is fine for now. (Typically because
+  the message is for admins only, who are supposed to know some English.)
+
 In-the-middle or at-a-word-end abbreviations: (but not at the start of the selector)
 Ab  = about
 Adm = admin
 Aft = after
+Ali = alias (anonym or pseudonym)
 Alw = allow(ed)
 Ann, An = announcement, also see SAn: Server Announcement
 Asg  = assign
@@ -180,6 +185,7 @@ Nv  = navigation, e.g. NvLs_Ln = Navigation-List Link
 Nw  = new
 Op  = Original post
 Ord = order
+Par = parenhtesis? Maybe sth else too
 Pat = participant
 Pb  = pagebar
 Pf  = preference, e.g. NfPfs = notification preferences

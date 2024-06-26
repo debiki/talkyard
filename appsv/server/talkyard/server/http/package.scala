@@ -18,6 +18,7 @@
 package talkyard.server
 
 import com.debiki.core._
+import com.debiki.core.Prelude.devDieIf
 import debiki.dao.SiteDao
 import talkyard.server.security.{BrowserId, SidStatus, XsrfOk}
 import play.api.http.{HeaderNames => play_HeaderNames}
@@ -103,7 +104,19 @@ package object http {
     browserId: Opt[BrowserId],
     user: Opt[Pat],
     dao: SiteDao,
-    request: p_Request[A]) extends DebikiRequest[A] {
+    request: p_Request[A],
+    )(private val _aliasPat: Opt[WhichAliasPat], private val mayUseAlias: Bo)
+     extends DebikiRequest[A] {
+
+    private var _aliasRead: Bo = false
+
+    def aliasRead: Bo = _aliasRead
+
+    override def anyAliasPat: Opt[WhichAliasPat] = {
+      devDieIf(!mayUseAlias, "TyEALIASREAD1", "Trying to use an alias, not allowed here")
+      _aliasRead = true
+      _aliasPat
+    }
   }
 
 

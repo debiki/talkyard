@@ -944,7 +944,7 @@ trait UserDao {
       case ParsedRef.ExternalId(extId) =>
         getParticipantByExtId(extId)
       case ParsedRef.TalkyardId(tyId) =>
-        tyId.toIntOption flatMap getParticipant
+        tyId.toIntOption.flatMap(id => getParticipant(id))
       case ParsedRef.UserId(id) =>
         val pat = getParticipant(id)
         returnBadUnlessIsUser(pat)
@@ -1006,7 +1006,10 @@ trait UserDao {
   }
 
 
-  def getParticipant(userId: UserId): Option[Participant] = {
+  def getParticipant(userId: UserId, anyTx: Opt[SiteTx] = None): Opt[Pat] = {
+    anyTx foreach { tx =>
+      return tx.loadParticipant(userId)
+    }
     memCache.lookup[Participant](
       patKey(userId),
       orCacheAndReturn = {

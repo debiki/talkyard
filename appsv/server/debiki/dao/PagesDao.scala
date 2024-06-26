@@ -75,7 +75,6 @@ trait PagesDao {
         anyFolder: Option[String], anySlug: Option[String], title: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
         spamRelReqStuff: SpamRelReqStuff,
-        doAsAnon: Opt[WhichAnon.NewAnon] = None, // make non-optional?
         discussionIds: Set[AltPageId] = Set.empty, embeddingUrl: Option[String] = None,
         extId: Option[ExtId] = None,
         ): PagePathWithId = {
@@ -86,7 +85,7 @@ trait PagesDao {
           bodyTextAndHtml = bodyTextAndHtml, showId = showId,
           deleteDraftNr = deleteDraftNr, byWho = byWho,
           spamRelReqStuff = spamRelReqStuff,
-          doAsAnon = doAsAnon,
+          asAlias = None,
           discussionIds = discussionIds, embeddingUrl = embeddingUrl,
           extId = extId,
           ).path
@@ -109,7 +108,7 @@ trait PagesDao {
         bodyTextAndHtml: TextAndHtml, showId: Bo, deleteDraftNr: Opt[DraftNr],
         reqrAndCreator: AnyReqrAndTgt,
         spamRelReqStuff: SpamRelReqStuff,
-        doAsAnon: Opt[WhichAnon.NewAnon] = None,
+        asAlias: Opt[WhichAliasPat],
         discussionIds: Set[AltPageId] = Set.empty,
         embeddingUrl: Opt[St] = None,
         refId: Opt[RefId] = None,
@@ -134,8 +133,20 @@ trait PagesDao {
     // See docs in docs/ty-security.adoc [api_do_as].
 
     TESTS_MISSING
+    // Dupl permission check, below? [dupl_prem_chk]
     throwNoUnless(Authz.mayCreatePage(
-          reqrAndLevels, getOnesGroupIds(reqrAndLevels.anyUser getOrElse UnknownParticipant),
+          reqrAndLevels,
+          asAlias =
+              if (reqrAndCreator.areNotTheSame) {
+                // Then the alias is for the user who will be the page author, [4_doer_not_reqr]
+                // not for the HTTP request requester.
+                None
+              }
+              else {
+                // The requester is the creator, so any alias is also the requester's.
+                asAlias
+              },
+          getOnesGroupIds(reqrAndLevels.anyUser getOrElse UnknownParticipant),
           pageType, PostType.Normal, pinWhere = None,
           anySlug = anySlug, anyFolder = anyFolder,
           inCategoriesRootLast = catsRootLast,
@@ -149,7 +160,7 @@ trait PagesDao {
           TESTS_MISSING; COULD_OPTIMIZE // don't load user again [2WKG06SU]
           val creatorAndLevels: UserAndLevels = readTx(loadUserAndLevels(creatorWho, _))
           throwNoUnless(Authz.mayCreatePage(
-                creatorAndLevels, getOnesGroupIds(creatorAndLevels.user),
+                creatorAndLevels, asAlias, getOnesGroupIds(creatorAndLevels.user),
                 pageType, PostType.Normal, pinWhere = None,
                 anySlug = anySlug, anyFolder = anyFolder,
                 inCategoriesRootLast = catsRootLast,
@@ -169,7 +180,7 @@ trait PagesDao {
           bodyTextAndHtml = bodyTextAndHtml, showId = showId, deleteDraftNr = deleteDraftNr,
           byWho = createdByWho,
           spamRelReqStuff,
-          doAsAnon,
+          asAlias,
           discussionIds = discussionIds,
           embeddingUrl = embeddingUrl,
           extId = refId)
@@ -181,7 +192,7 @@ trait PagesDao {
         anyFolder: Option[String], anySlug: Option[String], title: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
         spamRelReqStuff: SpamRelReqStuff,
-        doAsAnon: Opt[WhichAnon.NewAnon] = None, // make non-optional?
+        asAlias: Opt[WhichAliasPat],
         discussionIds: Set[AltPageId] = Set.empty, embeddingUrl: Option[String] = None,
         extId: Option[ExtId] = None,
         ): CreatePageResult = {
@@ -227,7 +238,7 @@ trait PagesDao {
                 pinWhere = None,
                 byWho,
                 Some(spamRelReqStuff),
-                doAsAnon,
+                asAlias,
                 discussionIds = discussionIds,
                 embeddingUrl = embeddingUrl,
                 extId = extId)(tx, staleStuff)
@@ -246,7 +257,7 @@ trait PagesDao {
 
   /** Returns (PagePath, body-post, any-review-task)
     *
-    * @param doAsAnon — must be a new anonym, since anons are per page, and this page is new.
+    * @param asAlias — must be a new anonym, since anons are per page, and this page is new.
     */
   def createPageImpl(pageRole: PageType,
       pageStatus: PageStatus,
@@ -261,7 +272,7 @@ trait PagesDao {
       pinWhere: Option[PinPageWhere] = None,
       byWho: Who,
       spamRelReqStuff: Option[SpamRelReqStuff],
-      doAsAnon: Opt[WhichAnon.NewAnon] = None,
+      asAlias: Opt[WhichAliasPat] = None,
       hidePageBody: Boolean = false,
       layout: Option[PageLayout] = None,
       bodyPostType: PostType = PostType.Normal,
@@ -289,8 +300,9 @@ trait PagesDao {
     //val authzCtx = ForumAuthzContext(Some(author), groupIds, permissions)  ?  [5FLK02]
     val settings = loadWholeSiteSettings(tx)
 
+    // Dupl permission check [dupl_prem_chk] when called via createPageIfAuZ()?
     dieOrThrowNoUnless(Authz.mayCreatePage(  // REFACTOR COULD pass a pageAuthzCtx instead [5FLK02]
-      realAuthorAndLevels, groupIds,
+      realAuthorAndLevels, asAlias, groupIds,
       pageRole, bodyPostType, pinWhere, anySlug = anySlug, anyFolder = anyFolder,
       inCategoriesRootLast = categoryPath,
       permissions), "EdE5JGK2W4")
@@ -310,10 +322,10 @@ trait PagesDao {
     val (
       reviewReasons: Seq[ReviewReason],
       shallApprove: Boolean) =
-        throwOrFindReviewNewPageReasons(realAuthorAndLevels, pageRole, tx)
+        throwOrFindReviewNewPageReasons(realAuthorAndLevels, pageRole, tx)  // [mod_deanon_risk]
 
     val approvedById =
-      if (realAuthor.isStaff) {
+      if (realAuthor.isStaff) {  // [mod_deanon_risk]
         dieIf(!shallApprove, "EsE2UPU70")
         Some(realAuthor.id)
       }
@@ -358,28 +370,9 @@ trait PagesDao {
     val titleUniqueId = tx.nextPostId()
     val bodyUniqueId = titleUniqueId + 1
 
-    TESTS_MISSING // Dupl code. [get_anon] check all other too.
-    val authorMaybeAnon =
-          if (doAsAnon.forall(!_.anonStatus.isAnon)) {
-            realAuthor
-          }
-          else {
-            throwForbiddenIf(doAsAnon.exists(_.isInstanceOf[WhichAnon.SameAsBefore]),
-                  "TyE5FWMJL30P", "There're no anons to reuse on a new page")
-            // Dupl code. [mk_new_anon]
-            val anonymId = tx.nextGuestId
-            val anonym = Anonym(
-                  id = anonymId,
-                  createdAt = tx.now,
-                  anonStatus = doAsAnon.getOrDie("TyE7MF26F").anonStatus,
-                  anonForPatId = realAuthorId,
-                  anonOnPageId = pageId)
-            // We'll insert the anonym before the page exists, but there's a
-            // foreign key: pats_t.anon_on_page_id_st_c, so defer constraints:
-            tx.deferConstraints()
-            tx.insertAnonym(anonym)
-            anonym
-          }
+    val authorMaybeAnon: Pat = SiteDao.getAliasOrTruePat(
+          truePat = realAuthor, pageId = pageId, asAlias, mayReuseAnon = false,
+          isCreatingPage = true)(tx, IfBadAbortReq)
 
     val titlePost = Post.createTitle(
       uniqueId = titleUniqueId,
@@ -401,7 +394,7 @@ trait PagesDao {
       approvedById = approvedById)
       .copy(
         bodyHiddenAt = ifThenSome(hidePageBody, now.toJavaDate),
-        bodyHiddenById = ifThenSome(hidePageBody, authorMaybeAnon.id), 
+        bodyHiddenById = ifThenSome(hidePageBody, authorMaybeAnon.id),
         bodyHiddenReason = None) // add `hiddenReason` function parameter?
 
     var nextTagId: TagId =
@@ -460,7 +453,7 @@ trait PagesDao {
       if (spamRelReqStuff.isEmpty || !globals.spamChecker.spamChecksEnabled) None
       else if (settings.userMustBeAuthenticated) None
       else if (!canStrangersSeePagesInCat_useTxMostly(anyCategoryId, tx)) None
-      else if (!SpamChecker.shallCheckSpamFor(realAuthorAndLevels)) None
+      else if (!SpamChecker.shallCheckSpamFor(realAuthorAndLevels)) None  // [mod_deanon_risk]
       else {
         // The uri is now sth like /-/create-page. Change to the path to the page
         // we're creating.
@@ -624,23 +617,24 @@ trait PagesDao {
   }
 
 
-  def ifAuthAcceptAnswer(pageId: PageId, postUniqueId: PostId, reqerTrueId: TrueId,
-        browserIdData: BrowserIdData): Option[ju.Date] = {
+  def ifAuthAcceptAnswer(pageId: PageId, postUniqueId: PostId, reqrAndDoer: ReqrAndTgt,
+        browserIdData: BrowserIdData, asAlias: Opt[WhichAliasPat]): Opt[ju.Date] = {
+    unimplIf(reqrAndDoer.areNotTheSame, "Accepting answer on behalf of sbd else")
+
     val answeredAt = writeTx { (tx, staleStuff) =>
-      val user = tx.loadTheParticipant(reqerTrueId.curId)
+
+      val user = tx.loadTheParticipant(reqrAndDoer.reqrId) // reqr & doer are the same, see above
       val oldMeta = tx.loadThePageMeta(pageId)
+
+      COULD_OPTIMIZE // Check see-post & alter-page at the same time, 1 fn call.
+      throwIfMayNotSeePost2(ThePost.WithId(postUniqueId), reqrAndDoer)(tx)
+      throwIfMayNotAlterPage(user, asAlias, oldMeta, changesOnlyTypeOrStatus = true, tx)
+
       if (!oldMeta.pageType.canBeSolved)
         throwBadReq("DwE4KGP2", "This page is not a question so no answer can be selected")
 
-      ANON_UNIMPL; BUG // This prevents anons from accepting answers to their own
-      // questions? [anon_pages]
-      throwForbiddenIf(!user.isStaffOrCoreMember && user.id != oldMeta.authorId,
-            "TyE8JGY3", "Only core members and the topic author can accept an answer")
-
-      // Pat might no longer be allowed to see the page — maybe it's been deleted,
-      // or moved to a private category. [may0_see_own]
-      SECURITY // minor: Should be may-not-see-post.
-      throwIfMayNotSeePage(oldMeta, Some(user))(tx)
+      val doingAs: Pat = SiteDao.getAliasOrTruePat(
+            user, pageId = pageId, asAlias, mayCreateAnon = false)(tx, IfBadAbortReq)
 
       val post = tx.loadThePost(postUniqueId)
       throwBadRequestIf(post.isDeleted, "TyE4BQR20", "That post has been deleted, cannot mark as answer")
@@ -661,13 +655,14 @@ trait PagesDao {
             version = oldMeta.version + 1)
 
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+      addMetaMessage(doingAs, s" accepted an answer", pageId, tx)  // I18N
       staleStuff.addPageId(pageId, memCacheOnly = true)
 
       val auditLogEntry = AuditLogEntry(
             siteId = siteId,
             id = AuditLogEntry.UnassignedId,
             didWhat = AuditLogEntryType.PageAnswered,
-            doerTrueId = reqerTrueId,
+            doerTrueId = doingAs.trueId2,
             doneAt = tx.now.toJavaDate,
             browserIdData = browserIdData,
             pageId = Some(pageId),
@@ -684,12 +679,12 @@ trait PagesDao {
       // If a trusted member thinks the answer is ok, then, maybe resolving
       // any review mod tasks for the answer — and the question too.
       // Test:  modn-from-disc-page-review-after.2browsers  TyTE2E603RKG4.TyTE2E50ARMS
-      if (user.isStaffOrTrustedNotThreat) {
-        maybeReviewAcceptPostByInteracting(post, moderator = user,
+      if (doingAs.isStaffOrTrustedNotThreat) {
+        maybeReviewAcceptPostByInteracting(post, moderator = doingAs,
               ReviewDecision.InteractAcceptAnswer)(tx, staleStuff)
 
         tx.loadOrigPost(pageId).getOrBugWarn("TyE205WKT734") { origPost =>
-          maybeReviewAcceptPostByInteracting(origPost, moderator = user,
+          maybeReviewAcceptPostByInteracting(origPost, moderator = doingAs,
                 ReviewDecision.InteractAcceptAnswer)(tx, staleStuff)
         }
       }
@@ -701,17 +696,20 @@ trait PagesDao {
   }
 
 
-  def ifAuthUnacceptAnswer(pageId: PageId, reqerTrueId: TrueId,
-          browserIdData: BrowserIdData): U = {
-    readWriteTransaction { tx =>
-      val user = tx.loadTheParticipant(reqerTrueId.curId)
-      val oldMeta = tx.loadThePageMeta(pageId)
-      ANON_UNIMPL; BUG // This prevents anons from un-accepting answers? [anon_pages]
-      throwForbiddenIf(!user.isStaffOrCoreMember && user.id != oldMeta.authorId,
-            "TyE2GKUB4", "Only core members and the topic author can unaccept an answer")
+  def ifAuthUnacceptAnswer(pageId: PageId, reqrAndDoer: ReqrAndTgt,
+          browserIdData: BrowserIdData, asAlias: Opt[WhichAliasPat]): U = {
 
-      // Pat might no longer be allowed to see the page. [may0_see_own]
-      throwIfMayNotSeePage(oldMeta, Some(user))(tx)
+    unimplIf(reqrAndDoer.areNotTheSame, "Unaccepting answer on behalf of sbd else")
+
+    readWriteTransaction { tx =>
+      val user = tx.loadTheParticipant(reqrAndDoer.reqrId)
+      val oldMeta = tx.loadThePageMeta(pageId)
+
+      throwIfMayNotAlterPage(user, asAlias, oldMeta, changesOnlyTypeOrStatus = true, tx)
+      // (Don't require user to be able to see the current answer —  maybe it's been deleted.)
+
+      val doingAs: Pat = SiteDao.getAliasOrTruePat(user, pageId = pageId, asAlias,
+            mayCreateAnon = false)(tx, IfBadAbortReq)
 
       // Dupl line. [4UKP58B]
       val newMeta = oldMeta.copy(answeredAt = None, answerPostId = None, closedAt = None,
@@ -721,7 +719,7 @@ trait PagesDao {
             siteId = siteId,
             id = AuditLogEntry.UnassignedId,
             didWhat = AuditLogEntryType.PageUnanswered,
-            doerTrueId = reqerTrueId,
+            doerTrueId = doingAs.trueId2,
             doneAt = tx.now.toJavaDate,
             browserIdData = browserIdData,
             pageId = Some(pageId),
@@ -731,13 +729,14 @@ trait PagesDao {
             postNr = None)
 
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+      addMetaMessage(doingAs, s" unaccepted an answer", pageId, tx)  // I18N
       tx.insertAuditLogEntry(auditLogEntry)
     }
     refreshPageInMemCache(pageId)
   }
 
 
-  def ifAuthTogglePageClosed(pageId: PageId, reqr: ReqrId, asAlias: Opt[WhichAnon])
+  def ifAuthTogglePageClosed(pageId: PageId, reqr: ReqrId, asAlias: Opt[WhichAliasPat])
           : Opt[ju.Date] = {
     val now = globals.now()
     val newClosedAt = readWriteTransaction { tx =>
@@ -746,7 +745,10 @@ trait PagesDao {
 
       TESTS_MISSING
 
-      throwIfMayNotSeePage(oldMeta, Some(user))(tx)
+      throwIfMayNotAlterPage(user, asAlias, oldMeta, changesOnlyTypeOrStatus = true, tx)
+
+      val doingAs: Pat = SiteDao.getAliasOrTruePat(user, pageId = pageId, asAlias,
+            mayCreateAnon = false)(tx, IfBadAbortReq)
 
       throwBadRequestIf(oldMeta.isDeleted,
           "TyE0CLSPGDLD", s"Cannot close or reopen deleted pages")
@@ -754,24 +756,11 @@ trait PagesDao {
       throwBadRequestIf(!oldMeta.pageType.canClose,
           "DwE4PKF7", s"Cannot close pages of type ${oldMeta.pageType}")
 
-      val aliasOrTrue: Pat = SiteDao.getAliasOrTruePat(truePat = user, pageId = pageId,
-            asAlias, mayCreateAnon = false)(tx, IfBadAbortReq)
-
-      val isAuthor = aliasOrTrue.id == oldMeta.authorId
-
-      if (!isAuthor) {
-        throwForbiddenIf(!user.isStaffOrCoreMember,
-              "TyE5JPK7", "Only core members and the topic author can close / reopen")
-
-        // Later: Allow, but use a separate anon for moderator actions. [anon_mods] [deanon_risk]
-        throwForbiddenIf(aliasOrTrue.isAlias,
-              "TyE4PGR02P", "Can't open/close sbd else's page anonymously")
-      }
-
       val (newClosedAt: Option[ju.Date], didWhat: String) = oldMeta.closedAt match {
         case None => (Some(now.toJavaDate), "closed")
         case Some(_) => (None, "reopened")
       }
+
       val newMeta = oldMeta.copy(
         closedAt = newClosedAt,
         version = oldMeta.version + 1,
@@ -783,13 +772,13 @@ trait PagesDao {
             didWhat =
                   if (newMeta.isClosed) AuditLogEntryType.PageClosed
                   else AuditLogEntryType.PageReopened,
-            doerTrueId = reqr.trueId,
+            doerTrueId = doingAs.trueId2,
             doneAt = tx.now.toJavaDate,
             browserIdData = reqr.browserIdData,
             pageId = Some(pageId))
 
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
-      addMetaMessage(aliasOrTrue, s" $didWhat this topic", pageId, tx)
+      addMetaMessage(doingAs, s" $didWhat this topic", pageId, tx)
       tx.insertAuditLogEntry(auditLogEntry)
 
       newClosedAt
@@ -799,27 +788,40 @@ trait PagesDao {
   }
 
 
-  def deletePagesIfAuth(pageIds: Seq[PageId], reqr: ReqrId, undelete: Bo): U = {
+  def deletePagesIfAuth(pageIds: Seq[PageId], reqr: ReqrId, asAlias: Opt[WhichAliasPat],
+          undelete: Bo): U = {
+    // Anonyms are per page, so we can't delete many pages at a time, if asAlias is an anonym.
+    throwForbiddenIf(asAlias.isDefined && pageIds.size != 1,
+          "TyEALIMANYPAGES", s"Can delete only one page at a time, when using an alias. I got ${
+              pageIds.size} pages")
+
     writeTx { (tx, staleStuff) =>
-      // SHOULD LATER: [4GWRQA28] If is sub community (= forum page), delete the root category too,
-      // so all topics in the sub community will get deleted.
+      // Later: [4GWRQA28] If is a sub community (= forum page), delete the root category too,
+      // so all topics in the sub community will get deleted. [subcomms]
       // And remove the sub community from the watchbar's Communities section.
       // (And if undeleting the sub community, undelete the root category too.)
-      deletePagesImpl(pageIds, reqr, undelete = undelete)(tx, staleStuff)
+      deletePagesImpl(pageIds, reqr, asAlias, undelete = undelete)(tx, staleStuff)
     }
     refreshPagesInMemCache(pageIds.toSet)
   }
 
 
-  def deletePagesImpl(pageIds: Seq[PageId], reqr: ReqrId, undelete: Bo = false)(
-          tx: SiteTx, staleStuff: StaleStuff): U = {
+  def deletePagesImpl(pageIds: Seq[PageId], reqr: ReqrId, asAlias: Opt[WhichAliasPat],
+          undelete: Bo = false)(tx: SiteTx, staleStuff: StaleStuff): U = {
 
     BUG; SHOULD // delete notfs or mark deleted?  [notfs_bug]  [nice_notfs]
     // But don't delete any review tasks — good if staff reviews, if a new
     // member posts something trollish, people react, then hen deletes hens page.
     // Later, if undeleting, then restore the notfs? [undel_posts]
 
-    val deleter = tx.loadTheParticipant(reqr.id)
+    val trueDeleter = tx.loadTheParticipant(reqr.id) // [alias_4_principal]
+
+    dieIf(asAlias.isDefined && pageIds.size != 1,
+          "TyEALIMANYPGS2", s"Alias deleting ${pageIds.size} != 1 pages")
+
+    val deleterPersona: Pat = SiteDao.getAliasOrTruePat(
+          truePat = trueDeleter, pageId = pageIds(0), asAlias,
+          mayCreateAnon = false)(tx, IfBadAbortReq)
 
     for {
       pageId <- pageIds
@@ -827,23 +829,25 @@ trait PagesDao {
       // Hmm but trying to delete a deleted *post*, throws an error. [5WKQRH2]
       if pageMeta.isDeleted == undelete
     } {
+      SHOULD // use Authz and  mayDeletePage  instead? [authz_may_del] [granular_perms]
+
       // Mods may not delete pages they cannot see — maybe admins have
       // their own internal discussions.
-      throwIfMayNotSeePage(pageMeta, Some(deleter))(tx)
+      throwIfMayNotSeePage(pageMeta, Some(trueDeleter))(tx)
 
       // Ordinary members may only delete their own pages, before others have replied.
       // Sync with client side. [who_del_pge]
-      ANON_UNIMPL // This prevents anons from deleting their pages? [anon_pages]  (authorId
-      // is the anon, reqr.id is the true id != the anon.)
-      if (!deleter.isStaff) {
-        throwForbiddenIf(pageMeta.authorId != reqr.id,
+      if (!deleterPersona.isStaff) {
+        // (This message is misleading if trying to delete one's own post, using the wrong
+        // alias. But let's fix by using  Authz & mayDeletePage  instead? [authz_may_del])
+        throwForbiddenIf(pageMeta.authorId != deleterPersona.id,
                 "TyEDELOTRSPG_", "May not delete other people's pages")
 
         // Shouldn't have been allowed to see sbd else's deleted page.
-        val deletedOwn = pageMeta.deletedById.is(reqr.id) &&
-                pageMeta.authorId == reqr.id
-        dieIf(undelete && !deletedOwn, "TyEUNDELOTRS",
-              s"s$siteId: User ${reqr.id} may not undelete sbd else's page $pageId")
+        val deletedOwn = pageMeta.deletedById.is(deleterPersona.id) &&
+                pageMeta.authorId == deleterPersona.id
+        dieIf(undelete && !deletedOwn, "TyEUNDELOTRS", s"s$siteId: User ${
+              deleterPersona.nameParaId} may not undelete sbd else's page $pageId")
 
         // When there are replies, the UX should send a request to delete the
         // orig post only — but not the whole page. (Unless is staff, then can delete
@@ -855,14 +859,14 @@ trait PagesDao {
       }
 
       if ((pageMeta.pageType.isSection || pageMeta.pageType == PageType.CustomHtmlPage) &&
-          !deleter.isAdmin)
+          !deleterPersona.isAdmin)
         throwForbidden("EsE5GKF23_", "Only admin may (un)delete sections and HTML pages")
 
       val baseAuditEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.DeletePage,
-        doerTrueId = reqr.trueId,
+        doerTrueId = deleterPersona.trueId2,
         doneAt = tx.now.toJavaDate,
         browserIdData = reqr.browserIdData,
         pageId = Some(pageId),
@@ -879,7 +883,7 @@ trait PagesDao {
         else {
           (pageMeta.copy(
                 deletedAt = Some(tx.now.toJavaDate),
-                deletedById = Some(deleter.id),
+                deletedById = Some(deleterPersona.id),
                 version = pageMeta.version + 1),
             baseAuditEntry)
         }
@@ -908,7 +912,7 @@ trait PagesDao {
       tx.loadOrigPost(pageMeta.pageId) foreach { origPost =>
         TESTS_MISSING
         val postAuthor = tx.loadTheParticipant(origPost.createdById)
-        updateSpamCheckTaskBecausePostDeleted(origPost, postAuthor, deleter = deleter, tx)
+        updateSpamCheckTaskBecausePostDeleted(origPost, postAuthor, deleter = deleterPersona, tx)
       }
 
       tx.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
@@ -927,7 +931,7 @@ trait PagesDao {
       staleStuff.addPageId(pageId, memCacheOnly = true)
 
       val un = undelete ? "un" | ""
-      addMetaMessage(deleter, s" ${un}deleted this topic", pageId, tx)
+      addMetaMessage(deleterPersona, s" ${un}deleted this topic", pageId, tx)
     }
   }
 

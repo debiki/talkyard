@@ -43,7 +43,8 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   import context.security.throwNoUnless
 
 
-  def createPage: Action[JsValue] = PostJsonAction(RateLimits.CreateTopic, maxBytes = 20 * 1000) {
+  def createPage: Action[JsValue] = PostJsonAction(
+        RateLimits.CreateTopic, maxBytes = 20 * 1000, canUseAlias = true) {
         request =>
     import request.{dao, theRequester => requester}
     // Similar to Do API with CreatePageParams. [create_page]
@@ -62,14 +63,9 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val bodyText = (body \ "pageBody").as[String]
     val showId = (body \ "showId").asOpt[Boolean].getOrElse(true)
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
-    val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(body) getOrIfBad { prob =>
-      throwBadReq("TyEANONPARCRPG", s"Bad anon params: $prob")
-    }
-    val doAsNewAnon: Opt[WhichAnon.NewAnon] = doAsAnon map {
-      case _new: WhichAnon.NewAnon => _new
-      case _: WhichAnon.SameAsBefore => throwBadReq("TyE5MWE2J8", o"""Cannot keep
-            reusing an old anonym, when creating a new page. Anonyms are per page.""")
-    }
+    val asAlias: Opt[WhichAliasPat] =
+            SiteDao.checkAliasOrThrowForbidden(body, requester, request.anyAliasPat,
+                mayReuseAnon = false)(dao)
 
     val postRenderSettings = dao.makePostRenderSettings(pageRole)
     val bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(bodyText,
@@ -103,9 +99,9 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
           bodyTextAndHtml = bodyTextAndHtml,
           showId = showId,
           deleteDraftNr = deleteDraftNr,
-          reqrAndCreator = request.reqrTargetSelf,
+          reqrAndCreator = request.reqrTargetSelf, // [alias_4_principal]
           spamRelReqStuff = request.spamRelatedStuff,
-          doAsAnon = doAsNewAnon,
+          asAlias = asAlias,
           discussionIds = Set.empty,
           embeddingUrl = None,
           refId = None)
@@ -271,61 +267,75 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   */
 
 
-  def acceptAnswer: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) {
-        request =>
-    val pageId = (request.body \ "pageId").as[PageId]
-    val postUniqueId = (request.body \ "postId").as[PostId]   // id not nr
-
-    // DO_AS_ALIAS !
-    ANON_UNIMPL /* If created a page as anon, would accept it as anon too?  [anon_pages] So need:
-    val doAsAnon: Opt[WhichAnon.SameAsBefore] = parser.parseWhichAnonJson(body) ...
-            case _new: WhichAnon.NewAnon => throwBadReq(..., o"""Cannot create
-            a new anonym, when accepting an answer. Should instead use the anonym
-            that posted the page in the first place.""")  */
+  def acceptAnswer: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100,
+        canUseAlias = true) { request =>
+    import request.{dao, reqr}
+    val body = asJsObject(request.body, "acceptAnswer request body")
+    val pageId = parseSt(body, "pageId")
+    val postId = parseInt32(body, "postId")   // id not nr
+    val asAlias: Opt[WhichAliasPat] =
+          SiteDao.checkAliasOrThrowForbidden(body, reqr, request.anyAliasPat,
+                mayCreateAnon = false)(dao)
 
     val acceptedAt: Option[ju.Date] = request.dao.ifAuthAcceptAnswer(
-          pageId, postUniqueId, request.theReqerTrueId, request.theBrowserIdData)
+          pageId, postId, request.theReqrTargetSelf, // [alias_4_principal]
+          request.theBrowserIdData, asAlias)
     OkSafeJsValue(JsLongOrNull(acceptedAt.map(_.getTime)))
   }
 
 
-  def unacceptAnswer: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) {
-        request =>
-    // DO_AS_ALIAS !
-    ANON_UNIMPL // Need:  doAsAnon: Opt[WhichAnon.SameAsBefore] ?   [anon_pages]
-    val body = asJsObject(request.body, "Page-closed request body")
+  def unacceptAnswer: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100,
+        canUseAlias = true) { request =>
+    import request.{dao, reqr}
+    val body = asJsObject(request.body, "unacceptAnswer request body")
     val pageId = parseSt(body, "pageId")
-    val asAlias = parser.parseDoAsAliasJsonOrThrow(body)
-    request.dao.ifAuthUnacceptAnswer(pageId, request.theReqerTrueId, request.theBrowserIdData)
+    val asAlias: Opt[WhichAliasPat] =
+          SiteDao.checkAliasOrThrowForbidden(body, reqr, request.anyAliasPat,
+              mayCreateAnon = false)(dao)
+
+    dao.ifAuthUnacceptAnswer(
+            pageId, request.theReqrTargetSelf, // [alias_4_principal]
+            request.theBrowserIdData, asAlias)
     Ok
   }
 
 
-  def togglePageClosed: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) {
-        request =>
+  def togglePageClosed: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100,
+          canUseAlias = true) { request =>
+    import request.{dao, reqr}
     val body = asJsObject(request.body, "Page-closed request body")
     val pageId = parseSt(body, "pageId")
-    val asAlias = parser.parseDoAsAliasJsonOrThrow(body)
-    val closedAt: Option[ju.Date] = request.dao.ifAuthTogglePageClosed(
-          pageId, request.reqrIds, asAlias)
-    TESTS_MISSING // DO_AS_ALIAS
-    //ANON_UNIPL // Need:  doAsAnon: Opt[WhichAnon.SameAsBefore] ?   [anon_pages]
+    val asAlias: Opt[WhichAliasPat] =
+          SiteDao.checkAliasOrThrowForbidden(body, reqr, request.anyAliasPat,
+              mayCreateAnon = false)(dao)
+
+    val closedAt: Opt[ju.Date] =
+          dao.ifAuthTogglePageClosed(pageId, request.reqrIds, asAlias) // [alias_4_principal]
+
     OkSafeJsValue(JsLongOrNull(closedAt.map(_.getTime)))
   }
 
+
   def deletePages: Action[JsValue] = PostJsonAction(
-          RateLimits.TogglePage, maxBytes = 1000) { request =>
-    val pageIds = (request.body \ "pageIds").as[Seq[PageId]]
-    ANON_UNIMPL // ! Need:  doAsAnon: Opt[WhichAnon.SameAsBefore] ?   [anon_pages]
-    request.dao.deletePagesIfAuth(pageIds, request.reqrIds, undelete = false)
+          RateLimits.TogglePage, maxBytes = 1000, canUseAlias = true) { req =>
+    import req.dao
+    val body = asJsObject(req.body, "Delete pages request body")
+    val pageIds = (body \ "pageIds").as[Seq[PageId]]
+    val asAlias = SiteDao.checkAliasOrThrowForbidden(
+          body, req.reqr, req.anyAliasPat, mayCreateAnon = false)(dao)
+    dao.deletePagesIfAuth(pageIds, req.reqrIds, asAlias, undelete = false)
     Ok
   }
 
+
   def undeletePages: Action[JsValue] = PostJsonAction(
-          RateLimits.TogglePage, maxBytes = 1000) { request =>
-    val pageIds = (request.body \ "pageIds").as[Seq[PageId]]
-    ANON_UNIMPL // ! Need:  doAsAnon: Opt[WhichAnon.SameAsBefore] ?   [anon_pages]
-    request.dao.deletePagesIfAuth(pageIds, request.reqrIds, undelete = true)
+          RateLimits.TogglePage, maxBytes = 1000, canUseAlias = true) { req =>
+    import req.dao
+    val body = asJsObject(req.body, "Undelete pages request body")
+    val pageIds = (body \ "pageIds").as[Seq[PageId]]
+    val asAlias = SiteDao.checkAliasOrThrowForbidden(
+          body, req.reqr, req.anyAliasPat, mayCreateAnon = false)(dao)
+    dao.deletePagesIfAuth(pageIds, req.reqrIds, asAlias, undelete = true)
     Ok
   }
 
@@ -334,7 +344,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
         request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val userIds = (request.body \ "userIds").as[Set[UserId]]
-    // Later, need:  doAsAnon: Opt[WhichAnon.SameAsBefore] ?  [anon_priv_msgs]
+    // Later, also:  SiteDao.checkAliasOrThrowForbidden ?  [anon_priv_msgs]
     request.dao.addUsersToPage(userIds, pageId, request.who)
     Ok
   }
@@ -344,7 +354,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
         maxBytes = 100) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val userIds = (request.body \ "userIds").as[Set[UserId]]
-    // Later, need:  doAsAnon: Opt[WhichAnon.SameAsBefore] ?  [anon_priv_msgs]
+    // Later, also: SiteDao.checkAliasOrThrowForbidden ?  [anon_priv_msgs]
     request.dao.removeUsersFromPage(userIds, pageId, request.who)
     Ok
   }
