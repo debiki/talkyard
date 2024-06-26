@@ -431,34 +431,7 @@ trait AuthzSiteDaoMixin {
     if (!seePageResult.maySee)
       return (MaySeeOrWhyNot.NopeUnspecified, s"${seePageResult.debugCode}-ABX94WN_")
 
-    maySeePostIfMaySeePage(ppt, post)
-  }
-
-
-  def maySeePostIfMaySeePage(pat: Opt[Pat], post: Post): (MaySeeOrWhyNot, St) = {
-    val ppt = pat
-
-    MOVE // to Authz, should be a pure fn.
-    CLEAN_UP // Dupl code, this stuff repeated in Authz.mayPostReply. [8KUWC1]
-
-    // Below: Since the requester may see the page, it's ok if hen learns
-    // if a post has been deleted or it never existed? (Probably hen can
-    // figure that out anyway, just by looking for holes in the post nr
-    // sequence.)
-
-    // Staff may see all posts, if they may see the page. [5I8QS2A]
-    def isStaffOrAuthor =
-      ppt.exists(_.isStaff) || ppt.exists(_.id == post.createdById)
-
-    if (post.isDeleted && !isStaffOrAuthor)
-      return (MaySeeOrWhyNot.NopePostDeleted, "6PKJ2RU-Post-Deleted")
-
-    if (!post.isSomeVersionApproved && !isStaffOrAuthor)
-      return (MaySeeOrWhyNot.NopePostNotApproved, "6PKJ2RW-Post-0Apr")
-
-    // Later: else if is meta discussion ... [METADISC]
-
-    (MaySeeOrWhyNot.YesMaySee, "")
+    Authz.maySeePostIfMaySeePage(ppt, post)
   }
 
 

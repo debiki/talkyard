@@ -369,6 +369,30 @@ object Authz {
   }
 
 
+  def maySeePostIfMaySeePage(pat: Opt[Pat], post: Post): (MaySeeOrWhyNot, St) = {
+    CLEAN_UP // Dupl code, this stuff repeated in Authz.mayPostReply. [8KUWC1]
+
+    // Below: Since the requester may see the page, it's ok if hen learns
+    // if a post has been deleted or it never existed? (Probably hen can
+    // figure that out anyway, just by looking for holes in the post nr
+    // sequence.)
+
+    // Staff may see all posts, if they may see the page. [5I8QS2A]
+    def isStaffOrAuthor =
+          pat.exists(_.isStaff) || pat.exists(_.id == post.createdById)
+
+    if (post.isDeleted && !isStaffOrAuthor)
+      return (MaySeeOrWhyNot.NopePostDeleted, "6PKJ2RU-Post-Deleted")
+
+    if (!post.isSomeVersionApproved && !isStaffOrAuthor)
+      return (MaySeeOrWhyNot.NopePostNotApproved, "6PKJ2RW-Post-0Apr")
+
+    // Later: else if is meta discussion ... [METADISC]
+
+    (MaySeeOrWhyNot.YesMaySee, "")
+  }
+
+
   /** Sync w ts:  store_mayIReply()
     */
   def mayPostReply(
