@@ -51,6 +51,10 @@ case class CreatePageResult(
   * SECURITY SHOULD either continue creating review tasks for new users, until they've been
   * reviewed and we know the user is safe. Or block the user from posting more comments,
   * until his/her first ones have been reviewed.
+  *
+  * REFACTOR: Split into  CreatePageDao  and  AlterPageDao.  [pg_ctrl_dao]
+  * Merge  PageTitleSettingsController into AlterPageDao,  except for HTTP req
+  * handling which could be merged into PageController?
   */
 trait PagesDao {
   self: SiteDao =>

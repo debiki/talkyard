@@ -38,7 +38,7 @@ import talkyard.server.JsX.{JsPageMeta, JsStringOrNull}
   * which layout to use, <html><head><title> and description.
   *
   * MOVE to PageController, right?  It's confusing to have 2 controllers that do
-  * almost the same things.
+  * almost the same things.  [pg_ctrl_dao]
   */
 class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   extends TyController(cc, edContext) {
