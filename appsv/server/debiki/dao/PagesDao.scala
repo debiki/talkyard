@@ -76,7 +76,7 @@ trait PagesDao {
         extId: Option[ExtId] = None,
         ): PagePathWithId = {
     val withTags = Nil
-    createPage2(pageRole, pageStatus = pageStatus, anyCategoryId = anyCategoryId, withTags,
+    createPageSkipAuZ(pageRole, pageStatus = pageStatus, anyCategoryId = anyCategoryId, withTags,
           anyFolder = anyFolder, anySlug = anySlug, title = title,
           bodyTextAndHtml = bodyTextAndHtml, showId = showId,
           deleteDraftNr = deleteDraftNr, byWho = byWho,
@@ -139,7 +139,7 @@ trait PagesDao {
             "TyE_CRPG_TGT_PERMS")
     }
 
-    createPage2(
+    createPageSkipAuZ(
           pageType, pageStatus, anyCategoryId = inCatId, withTags,
           anyFolder = anyFolder, anySlug = anySlug, title,
           bodyTextAndHtml = bodyTextAndHtml, showId = showId, deleteDraftNr = deleteDraftNr,
@@ -152,7 +152,7 @@ trait PagesDao {
   }
 
   @deprecated("Merge with  createPageIfAuZ?")
-  def createPage2(pageRole: PageType, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
+  def createPageSkipAuZ(pageRole: PageType, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
         withTags: ImmSeq[TagTypeValue],
         anyFolder: Option[String], anySlug: Option[String], title: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,

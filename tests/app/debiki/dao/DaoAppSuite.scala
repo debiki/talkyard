@@ -360,7 +360,7 @@ class DaoAppSuite(
   }
 
 
-  REMOVE; CLEAN_UP // use createPage2 instead, and rename it to createPage().
+  REMOVE; CLEAN_UP // use createPageSkipAuZ instead, and rename it to createPage().
   def createPage(pageRole: PageType, titleTextAndHtml: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, authorId: UserId, browserIdData: BrowserIdData,
         dao: SiteDao, anyCategoryId: Option[CategoryId] = None,
@@ -376,7 +376,7 @@ class DaoAppSuite(
         dao: SiteDao, anyCategoryId: Option[CategoryId] = None,
         doAsAnon: Opt[WhichAnon.NewAnon] = None,
         extId: Option[ExtId] = None, discussionIds: Set[AltPageId] = Set.empty): CreatePageResult = {
-    dao.createPage2(
+    dao.createPageSkipAuZ(
       pageRole, PageStatus.Published, anyCategoryId = anyCategoryId, withTags = Nil,
       anyFolder = Some("/"), anySlug = Some(""),
       title = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
