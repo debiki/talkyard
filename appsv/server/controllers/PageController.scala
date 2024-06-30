@@ -20,6 +20,7 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
+import debiki.dao.CreatePageResult
 import debiki.EdHttp._
 import debiki.JsonUtils._
 import debiki.dao.SiteDao
@@ -40,6 +41,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   extends TyController(cc, edContext) {
 
   import context.security.throwNoUnless
+
 
   def createPage: Action[JsValue] = PostJsonAction(RateLimits.CreateTopic, maxBytes = 20 * 1000) {
         request =>
@@ -68,7 +70,6 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
       case _: WhichAnon.SameAsBefore => throwBadReq("TyE5MWE2J8", o"""Cannot keep
             reusing an old anonym, when creating a new page. Anonyms are per page.""")
     }
-    // val anonStatus = parseOptInt32(body, "anonStatus").flatMap(AnonStatus.fromInt)
 
     val postRenderSettings = dao.makePostRenderSettings(pageRole)
     val bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(bodyText,
@@ -91,20 +92,25 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
       throwForbidden("DwE8GKE4", "No category specified")
     }
 
-    val categoriesRootLast = dao.getAncestorCategoriesRootLast(anyCategoryId)
+    val res: CreatePageResult = dao.createPageIfAuZ(
+          pageRole,
+          pageStatus,
+          inCatId = anyCategoryId,
+          withTags = Nil, // later
+          anyFolder = anyFolder,
+          anySlug = anySlug,
+          title = titleSourceAndHtml,
+          bodyTextAndHtml = bodyTextAndHtml,
+          showId = showId,
+          deleteDraftNr = deleteDraftNr,
+          reqrAndCreator = request.reqrTargetSelf,
+          spamRelReqStuff = request.spamRelatedStuff,
+          doAsAnon = doAsNewAnon,
+          discussionIds = Set.empty,
+          embeddingUrl = None,
+          refId = None)
 
-    throwNoUnless(Authz.mayCreatePage(  // [dupl_api_perm_check]  use createPageIfAuZ() instead CLEAN_UP
-      request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
-      pageRole, PostType.Normal, pinWhere = None, anySlug = anySlug, anyFolder = anyFolder,
-      inCategoriesRootLast = categoriesRootLast,
-      tooManyPermissions = dao.getPermsOnPages(categories = categoriesRootLast)),
-      "EdE5KW20A")
-
-    val pagePath = dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,
-          anySlug, titleSourceAndHtml, bodyTextAndHtml, showId, deleteDraftNr = deleteDraftNr,
-          request.who, request.spamRelatedStuff, doAsAnon = doAsNewAnon)
-
-    OkSafeJson(Json.obj("newPageId" -> pagePath.pageId))
+    OkSafeJson(Json.obj("newPageId" -> res.path.pageId))
   }
 
 

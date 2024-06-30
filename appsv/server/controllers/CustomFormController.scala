@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
+import debiki.dao.CreatePageResult
 import talkyard.server._
 import talkyard.server.authz.Authz
 import javax.inject.Inject
@@ -83,12 +84,25 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: TyCont
     val category = request.dao.getCategoryBySlug(categorySlug).getOrThrowBadArgument(
         "EsE0FYK42", s"No category with slug: $categorySlug")
 
-    val pagePath = request.dao.createPage(pageType, PageStatus.Published, Some(category.id),
-      anyFolder = None, anySlug = None, titleSourceAndHtml, bodyTextAndHtml,
-      showId = true, deleteDraftNr = None,
-      request.who, request.spamRelatedStuff)
+    val res: CreatePageResult = dao.createPageIfAuZ(
+          pageType,
+          PageStatus.Published,
+          inCatId = Some(category.id),
+          withTags = Nil,
+          anyFolder = None,
+          anySlug = None,
+          title = titleSourceAndHtml,
+          bodyTextAndHtml = bodyTextAndHtml,
+          showId = true,
+          deleteDraftNr = None,
+          reqrAndCreator = request.reqrTargetSelf,
+          spamRelReqStuff = request.spamRelatedStuff,
+          doAsAnon = None,
+          discussionIds = Set.empty,
+          embeddingUrl = None,
+          refId = None)
 
-    OkSafeJson(Json.obj("newPageId" -> pagePath.pageId))
+    OkSafeJson(Json.obj("newPageId" -> res.path.pageId))
   }
 
 

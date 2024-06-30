@@ -24,7 +24,7 @@ import com.debiki.core.PageParts.FirstReplyNr
 import com.debiki.core.Participant.SystemUserId
 import debiki._
 import debiki.EdHttp._
-import talkyard.server.authz.{Authz, ReqrAndTgt}
+import talkyard.server.authz.{Authz, ReqrAndTgt, ReqrStranger, AnyReqrAndTgt}
 import talkyard.server.spam.SpamChecker
 import java.{util => ju}
 import scala.collection.immutable
@@ -75,6 +75,7 @@ trait PagesDao {
         discussionIds: Set[AltPageId] = Set.empty, embeddingUrl: Option[String] = None,
         extId: Option[ExtId] = None,
         ): PagePathWithId = {
+    dieIf(!globals.isOrWasTest, "TyE306MGJCW2") // see deprecation note above
     val withTags = Nil
     createPageSkipAuZ(pageRole, pageStatus = pageStatus, anyCategoryId = anyCategoryId, withTags,
           anyFolder = anyFolder, anySlug = anySlug, title = title,
@@ -102,15 +103,24 @@ trait PagesDao {
         withTags: ImmSeq[TagTypeValue],
         anyFolder: Opt[St], anySlug: Opt[St], title: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Bo, deleteDraftNr: Opt[DraftNr],
-        reqrAndCreator: ReqrAndTgt,
+        reqrAndCreator: AnyReqrAndTgt,
         spamRelReqStuff: SpamRelReqStuff,
-        doAsAnon: Opt[WhichAnon.NewAnon] = None, // make non-optional?
+        doAsAnon: Opt[WhichAnon.NewAnon] = None,
         discussionIds: Set[AltPageId] = Set.empty,
         embeddingUrl: Opt[St] = None,
         refId: Opt[RefId] = None,
         ): CreatePageResult = {
 
-    val reqrAndLevels = readTx(loadUserAndLevels(reqrAndCreator.reqrToWho, _))
+    // [dupl_load_lvls]
+    val reqrAndLevels: AnyUserAndLevels = reqrAndCreator match {
+      case rt: ReqrAndTgt =>
+        readTx(loadUserAndLevels(rt.reqrToWho, _))
+      case _: ReqrStranger =>
+        val threatLevel = this.readTx(this.loadThreatLevelNoUser(
+              reqrAndCreator.browserIdData, _))
+        StrangerAndThreatLevel(threatLevel)
+    }
+
     val catsRootLast = getAncestorCategoriesSelfFirst(inCatId)
     val tooManyPermissions = getPermsOnPages(categories = catsRootLast)
 
@@ -119,31 +129,41 @@ trait PagesDao {
     // Both the requester and the creator need the mayCreatePage() permission. [2_perm_chks]
     // See docs in docs/ty-security.adoc [api_do_as].
 
-    // [dupl_api_perm_check]
+    TESTS_MISSING
     throwNoUnless(Authz.mayCreatePage(
-          reqrAndLevels, getOnesGroupIds(reqrAndLevels.user),
+          reqrAndLevels, getOnesGroupIds(reqrAndLevels.anyUser getOrElse UnknownParticipant),
           pageType, PostType.Normal, pinWhere = None,
           anySlug = anySlug, anyFolder = anyFolder,
           inCategoriesRootLast = catsRootLast,
           tooManyPermissions),
           "TyE_CRPG_REQR_PERMS")
 
-    if (reqrAndCreator.areNotTheSame) {
-      val creatorAndLevels = readTx(loadUserAndLevels(reqrAndCreator.targetToWho, _))
-      throwNoUnless(Authz.mayCreatePage(
-            creatorAndLevels, getOnesGroupIds(creatorAndLevels.user),
-            pageType, PostType.Normal, pinWhere = None,
-            anySlug = anySlug, anyFolder = anyFolder,
-            inCategoriesRootLast = catsRootLast,
-            tooManyPermissions),
-            "TyE_CRPG_TGT_PERMS")
+    val createdByWho: Who = reqrAndCreator match {
+      case theReqrAndCreator: ReqrAndTgt =>
+        val creatorWho = theReqrAndCreator.targetToWho
+        if (theReqrAndCreator.areNotTheSame) {
+          TESTS_MISSING; COULD_OPTIMIZE // don't load user again [2WKG06SU]
+          val creatorAndLevels: UserAndLevels = readTx(loadUserAndLevels(creatorWho, _))
+          throwNoUnless(Authz.mayCreatePage(
+                creatorAndLevels, getOnesGroupIds(creatorAndLevels.user),
+                pageType, PostType.Normal, pinWhere = None,
+                anySlug = anySlug, anyFolder = anyFolder,
+                inCategoriesRootLast = catsRootLast,
+                // (This includes permissions for both the requester and target users, and
+                // everyone else, but mayCreatePage() uses only those of the creator.)
+                tooManyPermissions),
+                "TyE_CRPG_TGT_PERMS")
+        }
+        creatorWho
+      case _ =>
+        Who(TrueId(UnknownUserId), reqrAndCreator.browserIdData, isAnon = false)
     }
 
     createPageSkipAuZ(
           pageType, pageStatus, anyCategoryId = inCatId, withTags,
           anyFolder = anyFolder, anySlug = anySlug, title,
           bodyTextAndHtml = bodyTextAndHtml, showId = showId, deleteDraftNr = deleteDraftNr,
-          byWho = reqrAndCreator.targetToWho,
+          byWho = createdByWho,
           spamRelReqStuff,
           doAsAnon,
           discussionIds = discussionIds,
@@ -151,7 +171,7 @@ trait PagesDao {
           extId = refId)
   }
 
-  @deprecated("Merge with  createPageIfAuZ?")
+
   def createPageSkipAuZ(pageRole: PageType, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
         withTags: ImmSeq[TagTypeValue],
         anyFolder: Option[String], anySlug: Option[String], title: TitleSourceAndHtml,

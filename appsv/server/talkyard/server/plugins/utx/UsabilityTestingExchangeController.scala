@@ -20,6 +20,7 @@ package talkyard.server.plugins.utx
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
+import debiki.dao.CreatePageResult
 import debiki.EdHttp._
 import talkyard.server._
 import talkyard.server.http.ApiRequest
@@ -79,9 +80,23 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, tyC
     val category = request.dao.getCategoryBySlug(categorySlug).getOrThrowBadArgument(
       "EsE0FYK42", s"No category with slug: $categorySlug")
 
-    val pagePath = request.dao.createPage(pageType, PageStatus.Published, Some(category.id),
-      anyFolder = None, anySlug = None, titleSourceAndHtml, bodyTextAndHtml,
-      showId = true, deleteDraftNr = None, request.who, request.spamRelatedStuff)
+    val res: CreatePageResult = dao.createPageIfAuZ(
+          pageType,
+          PageStatus.Published,
+          inCatId = Some(category.id),
+          withTags = Nil,
+          anyFolder = None,
+          anySlug = None,
+          title = titleSourceAndHtml,
+          bodyTextAndHtml = bodyTextAndHtml,
+          showId = true,
+          deleteDraftNr = None,
+          reqrAndCreator = request.reqrTargetSelf,
+          spamRelReqStuff = request.spamRelatedStuff,
+          doAsAnon = None,
+          discussionIds = Set.empty,
+          embeddingUrl = None,
+          refId = None)
 
     Ok
   }

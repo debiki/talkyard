@@ -165,20 +165,20 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   def theReqerId: PatId = theRequesterId // shorter, nice
   def theReqerTrueId: TrueId = theUser.trueId2
 
-  def userAndLevels: AnyUserAndThreatLevel = {
-    val threatLevel = user match {
+  // [dupl_load_lvls]
+  def userAndLevels: AnyUserAndLevels = {
+    user match {
       case Some(user) =>
-        COULD_OPTIMIZE // this loads the user again (2WKG06SU)
-        val userAndLevels = theUserAndLevels
-        userAndLevels.threatLevel
+        COULD_OPTIMIZE // this loads the user again [2WKG06SU]
+        theUserAndLevels
       case None =>
-        dao.readOnlyTransaction(dao.loadThreatLevelNoUser(theBrowserIdData, _))
+        val threatLevel = dao.readTx(dao.loadThreatLevelNoUser(theBrowserIdData, _))
+        StrangerAndThreatLevel(threatLevel)
     }
-    AnyUserAndThreatLevel(user, threatLevel)
   }
 
   def theUserAndLevels: UserAndLevels = {
-    COULD_OPTIMIZE // cache levels + user in dao (2WKG06SU), + don't load user again
+    COULD_OPTIMIZE // cache levels + user in dao [2WKG06SU], + don't load user again
     dao.readOnlyTransaction(dao.loadUserAndLevels(who, _))
   }
 

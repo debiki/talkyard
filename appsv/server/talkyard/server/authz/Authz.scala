@@ -201,7 +201,7 @@ object Authz {
 
 
   def mayCreatePage(
-    userAndLevels: UserAndLevels,
+    userAndLevels: AnyUserAndLevels,
     groupIds: immutable.Seq[GroupId],
     pageRole: PageType,
     bodyPostType: PostType,
@@ -211,10 +211,10 @@ object Authz {
     inCategoriesRootLast: immutable.Seq[Category],
     tooManyPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
 
-    val user = userAndLevels.user
+    val anyUser: Opt[Pat] = userAndLevels.anyUser
 
     val mayWhat = checkPermsOnPages(
-          Some(user), groupIds, pageMeta = None, pageMembers = None,
+          anyUser, groupIds, pageMeta = None, pageMembers = None,
           catsRootLast = inCategoriesRootLast, tooManyPermissions)
 
     def isPrivate = pageRole.isPrivateGroupTalk && groupIds.nonEmpty &&
@@ -230,7 +230,7 @@ object Authz {
     if (!mayWhat.mayCreatePage && !isPrivate)
       return NoMayNot(s"EdEMN0CR-${mayWhat.debugCode}", "May not create a page in this category")
 
-    if (!user.isStaff) {
+    if (!anyUser.exists(_.isStaff)) {
       if (inCategoriesRootLast.isEmpty && !isPrivate)
         return NoMayNot("EsEM0CRNOCAT", "Only staff may create pages outside any category")
 
@@ -520,16 +520,15 @@ object Authz {
 
 
   def maySubmitCustomForm(
-    userAndLevels: AnyUserAndThreatLevel,
+    userAndLevels: AnyUserAndLevels,
     groupIds: immutable.Seq[GroupId],
     pageMeta: PageMeta,
     inCategoriesRootLast: immutable.Seq[Category],
     tooManyPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
 
-    val user = userAndLevels.user
-
     val mayWhat = checkPermsOnPages(
-          user, groupIds, Some(pageMeta), None, catsRootLast = inCategoriesRootLast,
+          userAndLevels.anyUser, groupIds,
+          Some(pageMeta), None, catsRootLast = inCategoriesRootLast,
           tooManyPermissions)
 
     if (mayWhat.maySee isNot true)

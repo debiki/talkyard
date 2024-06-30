@@ -1101,6 +1101,12 @@ package object core {
   }
 
 
+  sealed abstract class AnyUserAndLevels {
+    def anyUser: Opt[Pat]
+    def trustLevel: TrustLevel
+    def threatLevel: ThreatLevel
+  }
+
   /**
     * @param user, (RENAME to patOrPseudonym?) — the id of the requester, can be a pseudonym. But not an anonym.
     * @param trustLevel — if patOrPseudonym is a pseudonym, then this is the pseudonym's
@@ -1111,13 +1117,17 @@ package object core {
     user: Pat,
     trustLevel: TrustLevel,
     threatLevel: ThreatLevel,
-  ) {
+  ) extends AnyUserAndLevels {
+    def anyUser = Some(user)
     def id: UserId = user.id
     def isStaff: Boolean = user.isStaff
     def nameHashId: String = user.nameHashId
   }
 
-  case class AnyUserAndThreatLevel(user: Option[Participant], threatLevel: ThreatLevel)
+  case class StrangerAndThreatLevel(threatLevel: ThreatLevel) extends AnyUserAndLevels {
+    def anyUser: Opt[Pat] = None
+    def trustLevel: TrustLevel = TrustLevel.Stranger
+  }
 
 
   sealed trait OrderBy { def isDescending: Boolean = false }
