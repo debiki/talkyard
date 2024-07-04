@@ -6500,7 +6500,7 @@ export class TyE2eTestBrowser {
         }
       },
 
-      assertMetaPostTextMatches: async (postNr: PostNr, text: St) => {
+      assertMetaPostTextMatches: async (postNr: PostNr, text: St | RegExp) => {
         await this.assertTextMatches(`#post-${postNr} .s_MP_Text`, text)
       },
 
