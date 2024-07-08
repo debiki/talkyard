@@ -2341,6 +2341,20 @@ interface IdentityProviderSecretConf extends IdentityProviderPubFields {
 // =========================================================================
 
 
+/// For rendering a (A) text/image circle with one's first letter or tiny profile pic.
+interface AvatarProps {
+  user: BriefUser
+  origins: Origins
+  size?: AvatarSize
+  title?: any
+  hidden?: Bo
+  showIsMine?: Bo
+  ignoreClicks?: Bo
+  clickOpensUserProfilePage?: Bo
+  key?: St | Nr;
+}
+
+
 /// For rendering a new page.
 interface ShowNewPageParams {
   newPage: Page;  // | AutoPage;
