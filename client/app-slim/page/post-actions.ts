@@ -633,7 +633,6 @@ const MoreVotesDropdownModal = createComponent({
 });
 
 
-// CLEAN_UP use enum PostVoteType for voteType, instead of string.
 function toggleVote(store: Store, post: Post, voteType: PostVoteType, toggleOn: Bo, atRect: Rect) {
   const page: Page = store.currentPage;
   let action: 'DeleteVote' | 'CreateVote';
@@ -646,21 +645,31 @@ function toggleVote(store: Store, post: Post, voteType: PostVoteType, toggleOn: 
     postNrsRead = findPostNrsRead(page.postsByNr, post);
   }
 
-  morebundle.maybeChooseAnon({ store, postNr: post.nr, atRect }, (choices: ChoosenAnon) => {
-    const data = {
-      pageId: store.currentPageId,
-      postNr: post.nr,
-      vote: voteType,
-      action,
-      postNrsRead,
-      doAsAnon: choices.doAsAnon,
-    };
+  const data: SaveVotePs = {
+    pageId: store.currentPageId,
+    postNr: post.nr,
+    vote: voteType,
+    action,
+    postNrsRead,
+  };
 
+  if (toggleOn) {
+    morebundle.maybeChooseAnon({ store, postNr: post.nr, atRect }, (choices: ChoosenAnon) => {
+      data.doAsAnon = choices.doAsAnon;
+      save();
+    });
+  }
+  else {
+    // The server will delete the vote, no matter which one of pat's aliases (if any) voted.
+    save();
+  }
+
+  function save() {
     debiki2.Server.saveVote(data, function(storePatch: StorePatch) {
       const by = storePatch.yourAnon || me_toBriefUser(store.me);
       ReactActions.vote(storePatch, action, voteType, post.nr, by);
     });
-  });
+  }
 }
 
 

@@ -256,6 +256,16 @@ interface Vote {
 }
 
 
+interface SaveVotePs {
+  pageId: PageId,
+  postNr: PostNr,
+  vote: PostVoteType,
+  action: 'DeleteVote' | 'CreateVote',
+  postNrsRead: PostNr[],
+  doAsAnon?: MaybeAnon,
+}
+
+
 interface DraftLocator {
   draftType: DraftType;
   categoryId?: number;

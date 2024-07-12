@@ -69,6 +69,7 @@ object DbDao {
   object BadPasswordException extends QuickMessageException("Bad password")
   object UserDeletedException extends QuickMessageException("User deleted")
 
+  RENAME // to DuplicateActionEx?
   case object DuplicateVoteException extends RuntimeException("Duplicate vote")
 
   class PageNotFoundException(message: String) extends RuntimeException(message)

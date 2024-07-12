@@ -305,6 +305,7 @@ anons:
             - Notfs from anons (comments, votes, more?), don't include real user name  TyTNOTFFROMANON
             - UNTESTED; TESTS_MISSING // exp imp anons?  True ids are incl in json dumps?
             - Different anon statuses: Comts start anon / NeverAlways.AlwaysButCanContinue / etc
+            - Can't vote many times using different personas TyTALIVOTES
             - Edit & update the draft.  TyTEDUPDDFT04
             - Save anon draft, reuse an anon.  TyTDFTREUSEANON.
             - Edit comment as anon: Anon name in new edit revision, & email notfs. TyTANONEDIT

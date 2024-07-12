@@ -1812,14 +1812,7 @@ export function fetchLinkPreview(url: St, inline: Bo, /* later: curPageId: PageI
 }
 
 
-export function saveVote(data: {
-    pageId: PageId,
-    postNr: PostNr,
-    vote: PostVoteType,
-    action: 'DeleteVote' | 'CreateVote',
-    postNrsRead: PostNr[],
-    doAsAnon?: MaybeAnon,
-}, onDone: (storePatch: StorePatch) => Vo) {
+export function saveVote(data: SaveVotePs, onDone: (storePatch: StorePatch) => V) {
   // Specify altPageId and embeddingUrl, so any embedded page can be created lazily. [4AMJX7]
   // @ifdef DEBUG
   dieIf(data.pageId && data.pageId !== EmptyPageId && data.pageId !== getPageId(), 'TyE2ABKSY7');
