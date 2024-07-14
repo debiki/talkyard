@@ -2553,6 +2553,7 @@ interface PatsToAddRemove {
 
 interface ExplainingTitleText {
   iconUrl?: St;
+  img?: any; // RElm;
   title: any; // St | RElm; —> compil err in server & blog comments bundles
   text?: any; // St | RElm;
   key?: any;
