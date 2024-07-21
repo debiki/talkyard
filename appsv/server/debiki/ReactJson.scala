@@ -498,7 +498,7 @@ class JsonMaker(dao: SiteDao) {
     val site = dao.theSite()
     val idps = dao.getSiteCustomIdentityProviders(onlyEnabled = true)
 
-    val jsonObj = Json.obj(
+    var jsonObj = Json.obj(
       "dbgSrc" -> "PgToJ",
       // These render params need to be known client side, so the page can be rendered in exactly
       // the same way, client side. Otherwise React can mess up the html structure, & things = broken.
@@ -533,6 +533,16 @@ class JsonMaker(dao: SiteDao) {
       // For now:
       "tagTypesById" -> JsObject(tagTypes.map(tt => tt.id.toString -> JsTagType(tt))),
       "pagesById" -> Json.obj(page.id -> pageJsonObj))
+
+    // If listing topics, we've set `store.topics` to the topic list (just above),
+    // but the client also wants to know for which category we're listing topics.
+    // (Pat might be listing topics in a sub category in the forum. Currently, the
+    // server side renderer always lists recently active topics in *all* forum
+    // categories though.)
+    if (page.pageType == PageType.Forum) {
+      devDieIf(anyCurCatId.isEmpty, "TyE2GPS7N3")
+      anyCurCatId.foreach(id => jsonObj += "listingCatId" -> JsNumber(id))
+    }
 
     val reactStoreJsonString = jsonObj.toString()
 

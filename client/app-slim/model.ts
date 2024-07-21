@@ -1236,6 +1236,18 @@ interface Store extends Origins, DiscStore, PartialEditorStoreState {
   publicCategories: Category[];   // RENAME [concice_is_nice] pubCats
   newCategorySlug: string; // for temporarily highlighting a newly created category
   topics?: Topic[];
+
+  // Says which category we're listing topics in, if we're on a forum homepage (or
+  // other topic index page). Could be the forum root category, or a base category,
+  // or sub category, or sub sub ...).
+  //
+  // This is good to know, when composing a new forum topic, because new topics inherit
+  // some properties from the currently listed category. For example, if you're on a
+  // forum homepage, and view an anonymous-by-default category and click Create Topic,
+  // the new topic will be anonymous.
+  //
+  listingCatId?: CatId;
+
   user: Myself; // try to remove, use 'me' instead:
   me: Myself;
   userSpecificDataAdded?: boolean; // is always false, server side
@@ -2002,6 +2014,8 @@ interface StorePatch
 
   publicCategories?: Category[];
   restrictedCategories?: Category[];
+
+  listingCatId?: CatId;
 
   pageVersionsByPageId?: { [pageId: string]: PageVersion };
   postsByPageId?: { [pageId: string]: Post[] };

@@ -1679,10 +1679,15 @@ export function loadForumCategoriesTopics(forumPageId: St, topicFilter: St,
 // Change the reply
 // 'users' field to 'usersBrief', no, 'patsBr'? 'Tn = Tiny, Br = Brief, Vb = Verbose?  [.get_n_patch]
 export function loadForumTopics(categoryId: CatId, orderOffset: OrderOffset,
-    onOk: (resp: LoadTopicsResponse) => Vo) {
+      onOk: (resp: LoadTopicsResponse) => V) {
   const url = '/-/list-topics?categoryId=' + categoryId + '&' +
       ServerApi.makeForumTopicsQueryParams(orderOffset);
-  getAndPatchStore(url, onOk);  // [2WKB04R]
+  return get(url, function(resp: LoadTopicsResponse) {
+    // (Alternatively, the server could incl `listingCatId` in its response.)
+    const patch: StorePatch = { ...resp.storePatch, listingCatId: categoryId };
+    ReactActions.patchTheStore(patch);  // [2WKB04R]
+    onOk(resp);
+  });
 }
 
 

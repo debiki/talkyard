@@ -1809,6 +1809,11 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
     addBackRecentTopicsInPl(oldCurCats, store.curCatsById);
   }
 
+  // If we're on a forum homepage (or other topic index page), and selected a different
+  // forum category to list topics in.
+  if (storePatch.listingCatId)
+    store.listingCatId = storePatch.listingCatId;
+
   // ----- Tag types
 
   // @ifdef DEBUG
@@ -1876,6 +1881,9 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
     dieIf(store.currentPageId !== currentPage.pageId, 'EdE7GBW2');
     currentPage.pageId = storePatch.newlyCreatedPageId;
     store.currentPageId  = storePatch.newlyCreatedPageId;
+    // This not needed though – we didn't jump to a different page; we just got an
+    // id for the current page, which didn't exist but now does.
+    //store.currentPage = currentPage;  // not needed
 
     // This'll make the page indexed by both EmptyPageId and newlyCreatedPageId:
     // (Could remove the NoPageId key? But might cause some bug?)
@@ -2045,9 +2053,16 @@ function showNewPage(ps: ShowNewPageParams) {
 
   delete store.curPageTweaks;
 
+  if (isSection(newPage)) {
+    store.listingCatId = newPage.categoryId;
+  }
+  else {
+    delete store.listingCatId;
+  }
+
   // Forget any topics from the original page load. Maybe we're now in a different sub community,
   // or some new topics have been created. Better reload.
-  store.topics = null;
+  delete store.topics;
 
   let myData: MyPageData;
   if (ps.me) {
