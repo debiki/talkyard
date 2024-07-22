@@ -266,7 +266,7 @@ export const Editor = createFactory<any, EditorState>({
     //
     let storeClone: DiscStore;
     try {
-      storeClone = _.cloneDeep({
+      storeClone = _.cloneDeep({  // [clone_origin_too]?
         me: discFrameStore.me,
         embeddedOriginOrEmpty: discFrameStore.embeddedOriginOrEmpty,
         currentPage: discFrameStore.currentPage,
@@ -1063,6 +1063,7 @@ export const Editor = createFactory<any, EditorState>({
       const discProps: DiscPropsDerived = page_deriveLayout(
               discStore.currentPage, discStore, LayoutFor.PageNoTweaks);
 
+      // Should [clone_origin_too] and change editorsDiscStore to type ... & Origins?
       const choosenAnon = anon.maybeChooseAnon({ store: editorsDiscStore, discProps, postNr });
 
       const newState: Partial<EditorState> = {
