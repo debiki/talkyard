@@ -66,7 +66,7 @@ object Dependencies {
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
 
     val apacheCommonsEmail = "org.apache.commons" % "commons-email" % "1.5"
-    val apacheCommonsLang3 = "org.apache.commons" % "commons-lang3" % "3.14.0"
+    val apacheCommonsLang3 = "org.apache.commons" % "commons-lang3" % "3.15.0"
 
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
