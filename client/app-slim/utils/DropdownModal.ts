@@ -224,6 +224,7 @@ export const DropdownModal = createComponent({
     const props: DropdownProps = this.props;
     let content;
     if (props.show) {
+      // Need one more <div> to be able to use float: right for the close [x]? [close_cross_css]
       const closeButton = !props.showCloseButton ? null :
         r.div({ className: 'esDropModal_CloseB esCloseCross', onClick: props.onHide });
 

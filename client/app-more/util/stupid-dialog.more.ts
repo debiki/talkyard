@@ -64,6 +64,7 @@ export function openDefaultStupidDialog(stuff: StupidDialogStuff) {
 }
 
 
+// Much later: Remove, and [replace_stupid_diag_w_simple_proxy_diag].
 export const StupidDialog = createComponent({
   displayName: 'StupidDialog',
 

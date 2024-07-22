@@ -2598,6 +2598,16 @@ interface ExplainingListItemProps extends ExplainingTitleText {
 }
 
 
+interface SimpleProxyDiagParams extends ProxyDiagParams {
+  body: any // RElm
+  primaryButtonTitle?: any // RElm
+  secondaryButonTitle?: any // RElm
+  closeButtonTitle?: any;
+  onPrimaryClick?: () => V
+  onCloseOk?: (whichBtn: Nr) => V;
+}
+
+
 interface ProxyDiagParams extends SharedDiagParams {
   atRect: Rect; // required (optional in SharedDiagParams)
   flavor?: DiagFlavor;
@@ -2615,8 +2625,6 @@ interface DropdownProps extends SharedDiagParams {
   show: Bo;
   showCloseButton?: true;
   //bottomCloseButton?: true; — not yet impl
-  onHide: () => Vo;
-  closeOnClickOutside?: false; // default true
   onContentClick?: (event: MouseEvent) => Vo;
   atX?: Nr;
   atY?: Nr;
@@ -2629,6 +2637,8 @@ interface SharedDiagParams {
   atRect?: Rect;
   pullLeft?: Bo;
   allowFullWidth?: Bo;
+  closeOnClickOutside?: false; // default true
+  onHide?: () => V;
 }
 
 

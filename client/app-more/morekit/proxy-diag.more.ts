@@ -35,6 +35,37 @@ interface ProxyDiagState {
 let setDropdownStateFromOutside: U | ((_: ProxyDiagState | N) => V);
 
 
+// Much later, support all StupidDialogStuff, and [replace_stupid_diag_w_simple_proxy_diag].
+//
+export function openSimpleProxyDiag(ps: SimpleProxyDiagParams) {
+  openProxyDiag({ ...ps, flavor: DiagFlavor.Dropdown }, closeDiag => {
+
+    const primaryButton = PrimaryButton({ className: 'e_SPD_OkB',
+          ref: (e: HElm | N) => e && e.focus(),
+          onClick: () => {
+            closeDiag();
+            if (ps.onPrimaryClick) ps.onPrimaryClick();
+            if (ps.onCloseOk) ps.onCloseOk(1);
+          }},
+          ps.primaryButtonTitle || t.Okay);
+
+    const secondaryButton = !ps.secondaryButonTitle ? null : Button({
+              onClick: () => {
+                closeDiag();
+                if (ps.onCloseOk) ps.onCloseOk(2);
+              },
+              className: 'e_SPD_2ndB' },
+            ps.secondaryButonTitle);
+
+    return rFr({},
+        r.div({ style: { marginBottom: '2em' }}, ps.body),
+        r.div({ style: { float: 'right' }},
+          primaryButton,
+          secondaryButton));
+  });
+}
+
+
 export function openProxyDiag(params: ProxyDiagParams, childrenFn: (close: () => V) => RElm) {
   if (!setDropdownStateFromOutside) {
     ReactDOM.render(ProxyDiag(), utils.makeMountNode());
@@ -61,8 +92,11 @@ const ProxyDiag = React.createFactory<{}>(function() {
 
   const state: ProxyDiagState = diagState;
   const ps: ProxyDiagParams = state.params;
-  const close = () => setDiagState(null);
   const flavorClass = ps.flavor === DiagFlavor.Dropdown ? 'c_PrxyD-Drpd ' : '';
+  const close = () => {
+    setDiagState(null);
+    if (diagState.params.onHide) diagState.params.onHide();
+  };
 
   return utils.DropdownModal({
         show: true,
@@ -74,6 +108,7 @@ const ProxyDiag = React.createFactory<{}>(function() {
         className: ps.contentClassName,
         allowFullWidth: ps.allowFullWidth,
         showCloseButton: ps.showCloseButton !== false,
+        closeOnClickOutside: ps.closeOnClickOutside,
         // bottomCloseButton: not yet impl
         onContentClick: !ps.closeOnButtonClick ? null : (event: MouseEvent) => {
           // Don't close if e.g. clicking a <p>, maybe to select text — only if

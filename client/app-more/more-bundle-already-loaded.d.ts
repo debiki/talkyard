@@ -32,6 +32,7 @@ declare namespace debiki2 {
 
   namespace morekit {
     function openProxyDiag(ps: ProxyDiagParams, childrenFn: (close: () => V) => RElm);
+    function openSimpleProxyDiag(ps: ProxyDiagParams & { body: RElm });
   }
 
   var Expandable;
