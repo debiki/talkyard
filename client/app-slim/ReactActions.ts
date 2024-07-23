@@ -1578,6 +1578,18 @@ function loadAndShowNewPage(newUrlPath: St, history: ReactRouterHistory) {
     const pats = _.values(newStore.usersByIdBrief);
     const pubCats = newStore.publicCategories;
 
+    // COULD_OPTIMIZE  If listing recently active topics, they're already
+    // included in the page json:
+    //  - newStore.topics,
+    //  - newStore.me.restrictedTopics
+    //  - newStore.me.restrictedTopicsUsers
+    // Add them to the store, as is done here: [add_restr_topics], then, can skip
+    // a request to the server to list recent topics.
+    //
+    // Currently we do add `newStore.me.restrictedCategories` (see
+    // store_addRestrictedCurCatsInPl()) – otherwise access restricted pages
+    // wouldn't render (would be category missing errors).
+
     // This'll trigger ReactStore onChange() event; everything will redraw to show the new page.
     showNewPage({
       newPage,

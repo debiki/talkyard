@@ -789,6 +789,8 @@ ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffFo
   // Show the user's own unapproved posts, or all, for admins.
   store_addAnonsAndUnapprovedPosts(store, myPageData);  // TyTE2E603SKD
 
+  // Add any topics not included in the cached json, because they're access
+  // restricted (but the current user can see them). [add_restr_topics]
   if (_.isArray(store.topics)) {
     const currentPage: Page = store.currentPage;
     store.topics = store.topics.concat(store.me.restrictedTopics);
@@ -2081,6 +2083,8 @@ function showNewPage(ps: ShowNewPageParams) {
   const oldCurCats = store.currentCategories;
   store_initCurCatsFromPubCats(store);
 
+  // Could add access restricted topics & users too  [add_restr_topics],
+  // iff we're listing the most recently active topics.
   if (ps.me) {
     store_addRestrictedCurCatsInPl(store, ps.me.restrictedCategories);
     // Not needed? But anyway, less confusing if is updated too:
