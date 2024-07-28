@@ -1411,6 +1411,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
     SECURITY // Later: skip authors of hidden / deleted / private comments.  [priv_comts]
+    // & bookmarks, once implemented. [dont_list_bookmarkers]
     // Or if some time in the future there will be "hidden" accounts  [private_pats]
     // — someone who don't want strangers and new members to see hens profile —
     // then, would need to exclude those accounts here.
