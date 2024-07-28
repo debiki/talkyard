@@ -51,18 +51,21 @@ sealed trait AnyReqrAndTgt {
 }
 
 
-/** Requester and target.
+/** Requester and target. Or, RENAME "target" to "principal"?
+  * And rename this class to  ReqrAndPrin  for "requester and principal",
+  * and instead of "tgt", use "prin" everywhere. (It's ok to abbreviate
+  * more commonly used words, and "principal" will be "everywhere")
   *
   * The requester (the participant doing the request), and the target of the request,
   * are usually the same. For example, a user configures their own settings,
-  * or looks at a page, or replies to a post.
+  * or looks at a page, or replies to a post. ("Principal" is a better word!)
   *
   * But admins and mods can do things on behalf of others. For example, the requester
   * can be an admin, who configures notification settings for another user,
-  * or for a group — that other user or group, is then the target user.
+  * or for a group — that other user or group, is then the principal (or "target").
   *
   * (The browser info, e.g. ip addr, is about the requester's browser.  — The
-  * target user might not be at their computer at all, or might be a bot or group.)
+  * principal might not be at their computer at all, or might be a bot or group.)
   *
   * (Short name: "Reqr", "Tgt", because these requester-and-target classes will be
   * frequently used — namely in *all* request handling code, eventually?)
