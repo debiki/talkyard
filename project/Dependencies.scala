@@ -111,7 +111,7 @@ object Dependencies {
     val logbackCore = "ch.qos.logback" % "logback-core" % "1.3.14"
 
     // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
-    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.4"
+    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "8.0"
     //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
 
     // The ElasticSearch client uses Log4j. log4j-api already included, but not -core.
