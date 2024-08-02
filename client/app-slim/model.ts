@@ -1356,6 +1356,47 @@ type PropsFromRefs<Type> = {
 
 
 // RENAME to DiscLayoutDerived?  There's an interface Layout_not_in_use too (below) merging all layouts.
+/// Discussion properties, intherited from the page, ancestor categories, site defaults,
+/// built-in defaults.
+///
+/// The `from` fields says from where each property got inherited, so admins can know what
+/// they might want to change, if sth isn't to their satisfaction.
+///
+/// Example: {
+///   comtOrder: 3,
+///   comtNesting: -1,
+///   comtsStartHidden :2,
+///   comtsStartAnon: 3,        <——  modified, and
+///   opStartsAnon:2,
+///   newAnonStatus: 65535,     <——  modified ...
+///   pseudonymsAllowed: 2,
+///   from: {
+///     comtsStartAnon: {
+///       // ... in this category:
+///       id: 5,
+///       parentId: 1,
+///       name: "AA",
+///       ...
+///       comtsStartAnon: 3,     <——  category setting changed
+///       newAnonStatus: 65535,
+///       ...
+///     },
+///     newAnonStatus: {
+///       // Same category, again: (just an example)
+///       id:5,
+///       parentId: 1,
+///       ...
+///       comtsStartAnon: 3,
+///       newAnonStatus":65535,    <——
+///       ...
+///     },
+///     comtOrder: "BuiltIn",
+///     comtNesting: "BuiltIn",
+///     comtsStartHidden: "BuiltIn",
+///     opStartsAnon: "BuiltIn",
+///     pseudonymsAllowed: "BuiltIn",
+///  }
+/// }'
 interface DiscPropsDerived extends DiscPropsBase {
   from: DiscPropsComesFrom;
 }
