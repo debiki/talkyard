@@ -34,7 +34,7 @@ Compile / dependencyOverrides ++= {
       "org.apache.tika" % "tika-core" % "2.9.2",
       "org.checkerframework" % "checker-qual" % "3.37.0",
       "org.flywaydb" % "flyway-core" % "5.0.7",
-      "org.owasp.encoder" % "encoder" % "1.2.3",
+      "org.owasp.encoder" % "encoder" % "1.3.0",
       "org.postgresql" % "postgresql" % "42.6.2",
       "org.scalactic" % "scalactic_2.12" % "3.2.18",
       "org.slf4j" % "slf4j-api" % "2.0.10"
