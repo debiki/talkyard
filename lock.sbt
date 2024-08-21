@@ -171,7 +171,7 @@ Compile / dependencyOverrides ++= {
       "org.ow2.asm" % "asm-commons" % "5.0.3",
       "org.ow2.asm" % "asm-tree" % "5.0.3",
       "org.ow2.asm" % "asm-util" % "5.0.3",
-      "org.owasp.encoder" % "encoder" % "1.2.3",
+      "org.owasp.encoder" % "encoder" % "1.3.1",
       "org.postgresql" % "postgresql" % "42.6.2",
       "org.reactivestreams" % "reactive-streams" % "1.0.4",
       "org.scala-lang.modules" % "scala-collection-compat_2.12" % "2.11.0",
