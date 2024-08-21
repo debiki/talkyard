@@ -2882,7 +2882,7 @@ trait PostsDao {
       if (postToMove.nr == PageParts.TitleNr || postToMove.nr == PageParts.BodyNr)
         throwForbidden("EsE7YKG25_", "Cannot move page title or body")
 
-      val postAuthor = tx.loadTheUser(postToMove.createdById)
+      val postAuthor = tx.loadTheParticipant(postToMove.createdById)
 
       val newParentPost = tx.loadPost(newParent) getOrElse throwForbidden(
         "EsE7YKG42_", "New parent post not found")
