@@ -9,14 +9,14 @@ for table_name in $(docker-compose exec -T rdb psql -c '\d' talkyard talkyard \
    | awk '{ print $3 }')
 do
     docker-compose exec -T rdb psql talkyard talkyard -c '\d '"$table_name" \
-          | tee ./docs/db-schema-dump/$table_name.txt
+          | tee ./docs/db-schema/$table_name.txt
 done
 
 # Custom domains, with and without comments:
 docker-compose exec -T rdb psql talkyard talkyard -c '\dD+' \
-          | tee ./docs/db-schema-dump/domains.txt
+          | tee ./docs/db-schema/domains.txt
 docker-compose exec -T rdb psql talkyard talkyard -c '\dD' \
-          | tee ./docs/db-schema-dump/domains-no-comments.txt
+          | tee ./docs/db-schema/domains-no-comments.txt
 ```
 
 Details:  \d lists all tables and sequences, this format:
