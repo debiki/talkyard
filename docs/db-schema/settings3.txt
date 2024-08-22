@@ -130,6 +130,8 @@
  ai_conf_c                             | jsonb_ste16000_d        |           |          | 
  enable_online_status_c                | boolean                 |           |          | 
  follow_links_to_c                     | text_nonempty_ste2000_d |           |          | 
+ own_domains_c                         | text_nonempty_ste2000_d |           |          | 
+ authn_diag_conf_c                     | jsonb_ste8000_d         |           |          | 
 Indexes:
     "settings3_site_category" UNIQUE, btree (site_id, category_id) WHERE category_id IS NOT NULL
     "settings3_site_page" UNIQUE, btree (site_id, page_id) WHERE page_id IS NOT NULL

@@ -219,6 +219,8 @@ Referenced by:
     TABLE "links_t" CONSTRAINT "links_toppid_r_pps" FOREIGN KEY (site_id_c, to_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
     TABLE "notifications3" CONSTRAINT "notfs_aboutpat_r_pats" FOREIGN KEY (site_id, about_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
     TABLE "notifications3" CONSTRAINT "notfs_bypat_r_pats" FOREIGN KEY (site_id, by_user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "notifications3" CONSTRAINT "notfs_bytrueid_r_pats" FOREIGN KEY (site_id, by_true_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "notifications3" CONSTRAINT "notfs_totrueid_r_pats" FOREIGN KEY (site_id, to_true_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
     TABLE "notices_t" CONSTRAINT "notices_r_pats" FOREIGN KEY (site_id_c, to_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
     TABLE "notifications3" CONSTRAINT "ntfs_touser_r_people" FOREIGN KEY (site_id, to_user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
     TABLE "page_notf_prefs_t" CONSTRAINT "pagenotfprefs_r_people" FOREIGN KEY (site_id, pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
@@ -244,8 +246,8 @@ Referenced by:
     TABLE "page_users3" CONSTRAINT "pageusers_joinedby_r_people" FOREIGN KEY (site_id, joined_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
     TABLE "page_users3" CONSTRAINT "pageusers_kickedby_r_people" FOREIGN KEY (site_id, kicked_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
     TABLE "page_users3" CONSTRAINT "pageusers_user_r_people" FOREIGN KEY (site_id, user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    TABLE "post_actions3" CONSTRAINT "patnoderels_fromtrueid_r_pats" FOREIGN KEY (site_id, from_true_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
     TABLE "post_actions3" CONSTRAINT "patnodesinrels_addedbyid_r_pats" FOREIGN KEY (site_id, added_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
-    TABLE "post_actions3" CONSTRAINT "patnodesinrels_aspatid_r_pats" FOREIGN KEY (site_id, as_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
     TABLE "users3" CONSTRAINT "pats_trueid_r_pats" FOREIGN KEY (site_id, true_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
     TABLE "perms_on_pages3" CONSTRAINT "permsonpages_r_people" FOREIGN KEY (site_id, for_people_id) REFERENCES users3(site_id, user_id) DEFERRABLE
     TABLE "post_actions3" CONSTRAINT "postacs_createdby_r_people" FOREIGN KEY (site_id, from_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE

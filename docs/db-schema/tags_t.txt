@@ -14,7 +14,7 @@
  val_url_c       | http_url_ste_250_d             |           |          | 
  val_jsonb_c     | jsonb_ste1000_d                |           |          | 
  val_i32_b_c     | i32_d                          |           |          | 
- val_f64_b_c     | i32_d                          |           |          | 
+ val_f64_b_c     | f64_d                          |           |          | 
 Indexes:
     "tags_p_id" PRIMARY KEY, btree (site_id_c, id_c)
     "tags_u_id_patid" UNIQUE CONSTRAINT, btree (site_id_c, id_c, on_pat_id_c)
