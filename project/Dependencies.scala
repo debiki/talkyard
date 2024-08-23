@@ -128,7 +128,7 @@ object Dependencies {
     // 1.8.1 exists now.
     val jaegertracing = "io.jaegertracing" % "jaeger-client" % "0.35.5"   // scala-steward:off
 
-    val metrics4Scala = "nl.grons" %% "metrics4-scala" % "4.2.9"
+    val metrics4Scala = "nl.grons" %% "metrics4-scala" % "4.3.2"
 
 
     // ----- Decoding JWT:s
