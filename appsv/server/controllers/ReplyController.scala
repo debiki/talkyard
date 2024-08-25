@@ -104,7 +104,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
       embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
       followLinks = false)
 
-    val result = dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
+    val result = dao.insertReplySkipAuZ(textAndHtml, pageId = pageId, replyToPostNrs,
       postType, deleteDraftNr, request.who, request.spamRelatedStuff, doAsAnon)
 
     var responseJson: JsObject = result.storePatchJson

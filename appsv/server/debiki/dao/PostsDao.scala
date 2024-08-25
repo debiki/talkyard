@@ -105,14 +105,14 @@ trait PostsDao {
             "TyEM0REPLY2")
     }
 
-    this.insertReply(textAndHtml, pageId = pageId, replyToPostNrs = replyToPostNrs,
+    this.insertReplySkipAuZ(textAndHtml, pageId = pageId, replyToPostNrs = replyToPostNrs,
           postType, deleteDraftNr = deleteDraftNr,
           byWho = reqrAndReplyer.targetToWho, spamRelReqStuff,
           anonHow, refId = refId, withTags)
   }
 
 
-  def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
+  def insertReplySkipAuZ(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
         postType: PostType, deleteDraftNr: Option[DraftNr],
         byWho: Who, spamRelReqStuff: SpamRelReqStuff,
         anonHow: Opt[WhichAnon] = None, refId: Opt[RefId] = None,
@@ -754,7 +754,7 @@ trait PostsDao {
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE592MWP2")
 
     // Chat messages currently cannot be anonymous. [anon_chats]
-    // Note: Farily similar to insertReply() a bit above. [4UYKF21]
+    // Note: Farily similar to insertReplySkipAuZ() a bit above. [4UYKF21]
     val authorAndLevels = loadUserAndLevels(who, tx)
     val author: Pat = authorAndLevels.user
 

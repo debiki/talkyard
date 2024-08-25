@@ -53,15 +53,13 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: TyCont
 
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
-    // (A bit weird, here we authz with Authz.maySubmitCustomForm(), but later in
-    // PostsDao.insertReply via Authz.mayPostReply() — but works okay.)
     throwNoUnless(Authz.maySubmitCustomForm(
       request.userAndLevels, dao.getGroupIdsOwnFirst(request.user),
       pageMeta, inCategoriesRootLast = categoriesRootLast,
       tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdE2TE4A0")
 
-    request.dao.insertReply(textAndHtml, pageId, Set.empty, PostType.CompletedForm,
+    request.dao.insertReplySkipAuZ(textAndHtml, pageId, Set.empty, PostType.CompletedForm,
         deleteDraftNr = None, request.whoOrUnknown, request.spamRelatedStuff)
     Ok
   }

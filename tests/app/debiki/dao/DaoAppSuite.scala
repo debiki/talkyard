@@ -391,7 +391,7 @@ class DaoAppSuite(
     val textAndHtml =
       if (skipNashorn) textAndHtmlMaker.testBody(text)
       else textAndHtmlMaker.forBodyOrComment(text)
-    dao.insertReply(textAndHtml, pageId,
+    dao.insertReplySkipAuZ(textAndHtml, pageId,
       replyToPostNrs = Set(parentNr getOrElse PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
       Who(TrueId(memberId), browserIdData), dummySpamRelReqStuff).post
   }
