@@ -59,6 +59,16 @@ const storeEventListeners: StoreEventListener[] = [];
 // Read-only hooks based store state. WOULD REFACTOR make it read-write and delete ReactActions,
 // and remove EventEmitter too? [4WG20ABG2]  Have all React code use `useStoreState`
 // instead of that old "flux" stuff.
+//
+// This is similar to useReducer() and accessing the state via useContext() — see:
+// https://react.dev/learn/scaling-up-with-reducer-and-context,
+// `useStoreState()` corresponds to `useTasks()` in their example.
+// Hmm, they've separated only-*using*-the-state and *changing* the state into
+// `useTasks()` and `useTasksDispatch()`.  Then it could be nice if `useStoreState()`
+// also was only for *using* the state — which is how it already works actually,
+// I'll just need to remove the can't-use-anyway `setState()` return value.
+// And a new hook function, `useStoreActions()` for *doing* things?
+//
 export function useStoreState(): [Store, () => void] {
   const [state, setState] = React.useState<Store>(store);
 
