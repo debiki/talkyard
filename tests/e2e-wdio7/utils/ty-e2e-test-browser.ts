@@ -3654,16 +3654,16 @@ export class TyE2eTestBrowser {
 
         deletePage: async () => {
           await this.waitAndClick('.dw-a-tools');
-          await this.waitUntilDoesNotMove('.e_DelPg');
-          await this.waitAndClick('.e_DelPg');
+          await this.waitUntilDoesNotMove('.e_DelPgB');
+          await this.waitAndClick('.e_DelPgB');
           await this.waitUntilModalGone();
           await this.topic.waitUntilPageDeleted();
         },
 
         restorePage: async () => {
           await this.waitAndClick('.dw-a-tools');
-          await this.waitUntilDoesNotMove('.e_RstrPg');
-          await this.waitAndClick('.e_RstrPg');
+          await this.waitUntilDoesNotMove('.e_UndelPgB');
+          await this.waitAndClick('.e_UndelPgB');
           await this.waitUntilModalGone();
           await this.topic.waitUntilPageRestored();
         },
@@ -4921,7 +4921,7 @@ export class TyE2eTestBrowser {
       },
 
       editTitle: async (title: string) => {
-        await this.waitAndSetValue('.c_TtlE_TtlI', title);
+        await this.waitAndSetValue('.c_TtlE_TtlI input', title);
       },
 
       save: async () => {
