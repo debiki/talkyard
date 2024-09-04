@@ -706,6 +706,7 @@ interface HelpMessage {
   version: number;
   content: any;
   defaultHide?: boolean;
+  closeOnClickOutside?: false; // default true
   doAfter?: () => void;
   type?: number;
   className?: string;
