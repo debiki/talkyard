@@ -1543,21 +1543,21 @@ export function listDrafts(userId: UserId,
 
 
 export function loadNotifications(userId: UserId, upToWhenMs: number,
-      success: (notfs: Notification[]) => void, error: () => void) {
+      onOk: (notfs: Notification[]) => void, error: () => void) {
   const query = '?userId=' + userId + '&upToWhenMs=' + upToWhenMs;
-  get('/-/load-notifications' + query, success, error);
+  get('/-/load-notifications' + query, (resp: NotfSListResponse) => onOk(resp.notfs), error);
 }
 
 
 export function markNotfsRead() {
-  postJsonSuccess('/-/mark-all-notfs-as-seen', (notfs) => {
+  postJsonSuccess('/-/mark-all-notfs-as-seen', (resp: NotfSListResponse) => {
     // Should be the same as [7KABR20], server side.
     const myselfPatch: MyselfPatch = {
       numTalkToMeNotfs: 0,
       numTalkToOthersNotfs: 0,
       numOtherNotfs: 0,
       thereAreMoreUnseenNotfs: false,
-      notifications: notfs,
+      notifications: resp.notfs,
     };
     ReactActions.patchTheStore({ me: myselfPatch });
   }, null, {});

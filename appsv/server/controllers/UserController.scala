@@ -1176,10 +1176,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def loadNotificationsImpl(userId: UserId, upToWhen: Option[When], request: DebikiRequest[_])
+  private def loadNotificationsImpl(userId: UserId, upToWhen: Opt[When], req: DebikiRequest[_])
         : mvc.Result = {
-    val notfsAndCounts = request.dao.loadNotificationsSkipReviewTasks(userId, upToWhen, request.who)
-    OkSafeJson(notfsAndCounts.notfsJson)
+    val notfsAndCounts = req.dao.loadNotificationsSkipReviewTasks(userId, upToWhen, req.who)
+    OkSafeJson(Json.obj("notfs" -> notfsAndCounts.notfsJson)) // ts: NotfSListResponse
   }
 
 

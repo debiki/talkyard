@@ -3042,6 +3042,11 @@ interface TerminateSessionsResponse {
 }
 
 
+interface NotfSListResponse {
+  notfs: Notification[]
+}
+
+
 // COULD also load info about whether the user may apply and approve the edits.
 interface LoadDraftAndTextResponse {
   pageId: PageId;
