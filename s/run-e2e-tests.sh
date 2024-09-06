@@ -706,6 +706,7 @@ function runAllE2eTests {
   # Single Sign-On, embedded comments:
   $r s/wdio-7     --only embcom.sso.token-direct-w-logout-url.2br.ec --cd -i $args
   $r s/wdio-7     --only embcom.sso.token-in-cookie.2br.ec --cd -i $args
+  $r s/wdio-7     --only embcom.sso.redir-page.2br.ec --cd -i $args
 
   # Many comments iframes:
   $r s/wdio-7     --only embcom.manyframes.basic.2br --cd -i $args

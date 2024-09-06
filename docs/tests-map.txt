@@ -285,9 +285,12 @@ single-sign-on:  (3093533)
 sso, embedded comments, [_embcom_sso],
 embedded comments sso,
 blog comments sso:
-            - embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1
+            - embcom.sso.token-direct-w-logout-url.2br.ec  TyTE2EEMBSSO1
+                - combining with  direct SSO:  TyT306MRG2
             - embcom.sso.token-in-cookie.2br.ec  TyTE2EEMBSSO2
             - embcom.manyframes.js-api.sso.2br.ec  TyTEMANYEMBDISAPISSO
+  redirect whole embedding page to sso server:
+            - embcom.sso.redir-page.2br.ec.e2e.ts  TyTE2EEMBSSO3.TyTEMBSSOREDIR
 
 impersonate:
           - impersonate-post-as-other.2browsers  TyT502KNG24

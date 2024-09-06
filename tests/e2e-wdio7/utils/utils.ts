@@ -281,7 +281,7 @@ export function makeEmbeddedCommentsHtml(ps: { pageName: string, discussionId?: 
       localHostname?: string, color?: string, bgColor: string, htmlToPaste?: string,
       talkyardConsiderQueryParams?: St[],
       authnToken?: St | Ay, authnTokenCookie?: St | Ay,
-      talkyardLogLevel?: St | Nr, appendExtraHtml?:  St  }): St {
+      talkyardLogLevel?: St | Nr, ssoHow?: St, appendExtraHtml?:  St  }): St {
     // Dupl code [046KWESJJLI3].
     dieIf(!!ps.localHostname && !!ps.htmlToPaste, 'TyE502PK562');
     dieIf(!ps.localHostname && !ps.htmlToPaste, 'TyE7FHQJ45X');
@@ -299,6 +299,8 @@ export function makeEmbeddedCommentsHtml(ps: { pageName: string, discussionId?: 
             `talkyardLogLevel=${ps.talkyardLogLevel}`;
     const ignQueryParams = !ps.talkyardConsiderQueryParams ? '' :
             `talkyardConsiderQueryParams = ${JSON.stringify(ps.talkyardConsiderQueryParams)};`;
+    const ssoHowParam = !ps.ssoHow ? '' :
+            `talkyardSsoHow = ${JSON.stringify(ps.ssoHow)};`;
 
     // Dupl code [_authn_tokn_html].
     const authnTokenCookieScript = !ps.authnTokenCookie ? '' : `
@@ -331,6 +333,7 @@ authnTokenScript + `
 talkyardServerUrl='${settings.scheme}://${ps.localHostname}.localhost';
 ${talkyardLogLevel}
 ${ignQueryParams}
+${ssoHowParam}
 </script>
 <script async defer src="${settings.scheme}://${ps.localHostname}.localhost/-/talkyard-comments.js"></script>
 <div class="talkyard-comments" ${discIdAttr} ${catRefAttr} style="margin-top: 45px;"></div>

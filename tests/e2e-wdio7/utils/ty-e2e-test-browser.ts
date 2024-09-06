@@ -7006,6 +7006,10 @@ export class TyE2eTestBrowser {
 
       __flagPostSelector: '.icon-flag',  // for now, later: e_...
 
+      /// needToClickMore:
+      /// If not logged in, there aren't many buttons to click, and the Flag button
+      /// is therefore visible directly, rather than "hidden" in the More hamburger dropdown.
+      ///
       clickFlagPost: async (postNr: PostNr, opts: { needToClickMore?: false } = {}) => {
         if (opts.needToClickMore !== false) {
           // Flag button is inside the More dialog.
