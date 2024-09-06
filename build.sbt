@@ -34,7 +34,7 @@ import _root_.sbtbuildinfo.BuildInfoPlugin.autoImport._
 //       com.typesafe.play:play-ahc-ws_2.12:2.9.2
 //       com.typesafe.play:play-server_2.12:2.9.2
 //
-ThisBuild / scalaVersion := "2.12.19"
+ThisBuild / scalaVersion := "2.12.20"
 
 
 // Show unchecked and deprecated warnings, in this project and its modules.
