@@ -7,7 +7,17 @@ The secret should be a hex string. If there's any error, then, right now,
 the program exists and prints just nothing (crickets!), or maybe some cryptic
 Rust error message.
 
-But what's this for?
+
+Install Rust and Cargo, see: https://www.rust-lang.org/tools/install (as of Aug 2024).
+Then, do:  (in this folder, i.e. modules/paseto-cmd/)
+
+    cargo build
+
+That generates `modules/paseto-cmd/target/debug/paseto-cmd`. The debug build is
+all we need, see `encryptLocalPasetoV2Token()`  in ../../tests/e2e-wdio7/utils/utils.ts .
+
+
+But why?
 
 This is for blog comments Single Sign-On (SSO) e2e tests. Then, need to generate
 PASETO tokens, but the only Javascript library that supports v2.local tokens

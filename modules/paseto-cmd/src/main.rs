@@ -10,9 +10,9 @@ fn main() {
    let args: Vec<String> = env::args().collect();
 
   // Later, handle & print errors: (rather than just unwrap & crash)
-  if let Err(e) = gen_token(args) {
-    eprintln!("{}", e);
-  }
+  //if let Err(e) = gen_token(args) {
+  //  eprintln!("{}", e);
+  //}
 
   let key_as_hex: &String = &args[1];
   let key: Vec<u8> = decode_hex(key_as_hex).unwrap();
