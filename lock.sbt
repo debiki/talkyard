@@ -123,7 +123,7 @@ Compile / dependencyOverrides ++= {
       "org.apache.httpcomponents" % "httpcore" % "4.4.5",
       "org.apache.httpcomponents" % "httpcore-nio" % "4.4.5",
       "org.apache.logging.log4j" % "log4j-api" % "2.17.2",
-      "org.apache.logging.log4j" % "log4j-core" % "2.17.2",
+      "org.apache.logging.log4j" % "log4j-core" % "2.24.0",
       "org.apache.lucene" % "lucene-analyzers-common" % "7.7.3",
       "org.apache.lucene" % "lucene-backward-codecs" % "7.7.3",
       "org.apache.lucene" % "lucene-core" % "7.7.3",
