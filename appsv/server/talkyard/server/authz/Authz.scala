@@ -908,7 +908,7 @@ object Authz {
           // got changed, and thereafter the user submitted an anon comment which
           // was previously allowed but now isn't.)
           // (Throw or set mayWhat to false?  [throw_or_may_not])
-          throwForbidden("TyEM0MKANON", "You cannot be anonymous in this category (any longer)")
+          throwForbidden("TyEM0MKANON_", "You cannot be anonymous in this category (any longer)")
         case _: WhichAliasPat.SameAnon =>
           // ... But it's ok to continue replying as an already existing anonym —
           // that's the "can continue" in `NeverAlways.NeverButCanContinue`.

@@ -348,14 +348,15 @@ class DaoAppSuite(
   def editCategory(cat: Cat, permissions: ImmSeq[PermsOnPages],
           browserIdData: BrowserIdData, dao: SiteDao,
           newParentId: Opt[CatId] = None,
-          newSectPageId: Opt[PageId] = None): Cat = {
+          newSectPageId: Opt[PageId] = None,
+          comtsStartAnon: Opt[Opt[NeverAlways]] = None,
+          ): Cat = {
     var catToSave = CategoryToSave.initFrom(cat)
-    newParentId map { parCatId =>
-      catToSave = catToSave.copy(parentId = parCatId)
-    }
-    newSectPageId map { sectPageId =>
-      catToSave = catToSave.copy(sectionPageId = sectPageId)
-    }
+    catToSave = catToSave.copy(
+          parentId = newParentId.getOrElse(catToSave.parentId),
+          sectionPageId = newSectPageId.getOrElse(catToSave.sectionPageId),
+          comtsStartAnon = comtsStartAnon.getOrElse(catToSave.comtsStartAnon),
+          )
     dao.editCategory(catToSave, permissions, who = Who.System)
   }
 

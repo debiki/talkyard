@@ -370,6 +370,11 @@ anons:
                   - navigating to anon recommended cat, then to not-anon
                   - navigating to not-anon cat, then recommended cat, then not-anon
                   back to anon / not-anon page
+            - Anon posts enabled
+                - tests/app/debiki/dao/AnonymAppSpec.scala  TyTANON0ENBL TyEM0MKANON_
+                - in one cat, not in another
+                - in sub cat
+                - on specific page
             - ... and more
 
 different users -
