@@ -95,7 +95,8 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyConte
     * endpoint, which logs it, so we'll get to know about client side errors.
     */
   def logBrowserErrors: Action[JsValue] = PostJsonAction(
-        RateLimits.BrowserError, MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 10000) {
+        RateLimits.BrowserError, MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 10000,
+        ignoreAlias = true) {
         request =>
     val allErrorMessages = request.body.as[Seq[String]]
     // If there are super many errors, perhaps all of them is the same error. Don't log too many.

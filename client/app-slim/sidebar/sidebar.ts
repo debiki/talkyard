@@ -241,6 +241,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
 
     // Find 1) all unread comments, sorted in the way they appear on the page
     // And 2) all visible comments.
+    // Should fetch from server, if page big. [fetch_alias]
     const addRecursively = (postNrs: number[]) => {
       _.each(postNrs, (postNr) => {
         const post: Post = page.postsByNr[postNr];
@@ -281,7 +282,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     const rootPost = page.postsByNr[store.rootPostId];
     addRecursively(rootPost.childNrsSorted);
 
-    _.each(page.postsByNr, (child: Post, childId) => {
+    _.each(page.postsByNr, (child: Post) => {
       if (child.postType === PostType.Flat) {
         addPost(child);
       }
@@ -407,7 +408,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
           title = ''; // "People here recently:"  // I18N, unimplemented
         }
         else {
-          const titleText = isChat ? t.cb.UsersInThisChat : t.cb.UsersInThisTopic;
+          const titleText = isChat ? t.cb.UsersInThisChat : t.cb.UsersInThisTopic; // [users_here]
           title = r.div({},
             titleText,
             r.span({ className: 'esCtxbar_onlineCol' }, t.Online));

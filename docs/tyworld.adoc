@@ -138,13 +138,22 @@ A new post gets a new id and can work as the new id for a new flag of the same t
 
 == Anonyms and Pseudonyms
 
+Also see: ../wip/aliases/wip.txt. This section here in tyworld.adoc is out-of-date!
+
 === Anonyms posts
 
 When you anonymously, then, a new anonym (anonymous user) is created, for you,
-to use on that particular page. You can't use it outside that page
+to use in the current discussion, on that specific page. You can't use it outside that page
 (instead, another then gets created).  Anon comments cannot be moved to
 other pages, and aren't visible to others (only to yourself) in the activity
 list on your user profile page, or in your posts counts. [list_anon_posts]
+
+Currently, you can have only one anonym persona per page [one_anon_per_page].
+(Actually, you can have more, if someone moves the page between categories that use
+different types of anonyms (temporary anonyms or permanent anonyms), and you post
+anonymous comments of each type. In such cases, you can have one anonym
+per page and anonym type (`AnonStatus`))  It'd be confusing if people could create many
+anonymous users and pretend to be many people, in a single discussion.
 
 The software remembers if you want to be anonymous or not, per
 discussion page, by looking at your previous comments in that discussion
@@ -169,10 +178,11 @@ Categories can be 1) always-anonymous, or 2) anon by default, or
 3) real account by default but anon posts allowed. Or 4) anon posts
 not allowed (only real accounts). Edit: See `[NeverAlways]`.
 
-A category can be configured to get _de-anonymized_ after a while (!).
-That is, say two weeks after a new page has been posted in that category,
-the real usernames are shown so everyone can see who wrote what.
-
+Not implemented: If, when enabling anonymity in a category, the admin selects
+_Better ideas & decisions_ as the purpose (but not _Sensitive Discussions_), then,
+the category can be configured to get _de-anonymized_ after a while (!).
+For example, two weeks after a new page has been posted in that category,
+the real usernames get shown so everyone can see who wrote what.
 In such categories, before posting, there's an obtrusive info box about this,
 so everyone will know how it works.
 
@@ -209,8 +219,12 @@ your pseudonym's comments surprisingly often or infrequently — then, your pseu
 could get a different reputation than your main account. Although you're
 the same person.  `[pseudonyms_trust]`
 
+Possibly, there'll be different types of pseudonyms. See
+../wip/aliases/wip.txt [pseudonym_types].
+
 === Tech notes
 
+Not impl, and this'll change:
 Implementation wise, to show notifications from all one's pseudonyms,
 Talkyard does one lookup per pseudonym. So that's why you cannot
 have hundereds of pseudonyms (because then this'd be slow).

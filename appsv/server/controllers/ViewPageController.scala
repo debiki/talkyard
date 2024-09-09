@@ -247,8 +247,10 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
   }
 
 
+  /** Ignores any [persona_mode].  See [anon_read_progr].
+    */
   def markPageAsSeen(pageId: PageId): Action[JsValue] = PostJsonAction(NoRateLimits,
-        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 2) { request =>
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 2, ignoreAlias = true) { request =>
     CHECK_AUTHN_STRENGTH
     request.dao.getAnyWatchbar(request.theReqerId) foreach { watchbar =>
       val newWatchbar = watchbar.markPageAsSeen(pageId)

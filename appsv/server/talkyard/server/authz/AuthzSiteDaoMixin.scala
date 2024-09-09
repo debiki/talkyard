@@ -20,7 +20,7 @@ package talkyard.server.authz
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.{MemCacheKey, SiteDao, CacheOrTx}
-import debiki.EdHttp.throwNotFound
+import debiki.EdHttp.{throwNotFound, throwForbidden, throwForbiddenIf}
 import MayMaybe.{NoMayNot, NoNotFound, Yes}
 import talkyard.server.http._
 import scala.collection.immutable
@@ -36,7 +36,7 @@ trait AuthzSiteDaoMixin {
     */
   self: SiteDao =>
 
-  import context.security.throwIndistinguishableNotFound
+  import context.security.{throwNoUnless, throwIndistinguishableNotFound}
 
 
   def deriveEffPatPerms(groupIdsAnyOrder: Iterable[GroupId]): EffPatPerms = {
@@ -219,14 +219,16 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  def throwIfMayNotSeePage2(pageId: PageId, reqrTgt: ReqrAndTgt, checkOnlyReqr: Bo = false
-          )(anyTx: Opt[SiteTx]): U = {
+  /** @return the page meta — the caller sort of always needs it.
+    */
+  def throwIfMayNotSeePage2(pageId: PageId, reqrTgt: AnyReqrAndTgt, checkOnlyReqr: Bo = false
+          )(anyTx: Opt[SiteTx]): PageMeta = {
     val pageMeta: PageMeta =
           anyTx.map(_.loadPageMeta(pageId)).getOrElse(getPageMeta(pageId)) getOrElse {
             throwIndistinguishableNotFound(s"TyEM0SEEPG1")
           }
     {
-      val seePageResult = maySeePageImpl(pageMeta, Some(reqrTgt.reqr), anyTx)
+      val seePageResult = maySeePageImpl(pageMeta, reqrTgt.anyReqr, anyTx)
       if (!seePageResult.maySee)
         throwIndistinguishableNotFound(s"TyEM0SEEPG2-${seePageResult.debugCode}")
     }
@@ -234,10 +236,16 @@ trait AuthzSiteDaoMixin {
     if (reqrTgt.areNotTheSame && !checkOnlyReqr) {
       COULD_OPTIMIZE // Getting categories and permissions a 2nd time here.
       val res2 = maySeePageImpl(pageMeta, reqrTgt.otherTarget, anyTx)
-      if (!res2.maySee)
-        throwNotFound(s"TyEM0SEEPG3-${res2.debugCode}",
-              o"${reqrTgt.target.nameParaId} may not see page $pageId")
+      if (!res2.maySee) {
+        // (It's ok with a more detailed Not Fond message —  we already know that the
+        // requester can see the page, so han can figure out that `otherTarget`
+        // can't see it, in any case.)
+        throwNotFound(s"TyEM0SEEPG3-${res2.debugCode}", s"${reqrTgt.otherTarget.getOrDie(
+              "TyE70SKJF4").nameParaId} may not see page $pageId")
+      }
     }
+
+    pageMeta
   }
 
 
@@ -320,8 +328,13 @@ trait AuthzSiteDaoMixin {
         getAnyPrivateGroupTalkMembers(pageMeta)
       }
 
-    Authz.maySeePage(pageMeta, authzContext.requester, authzContext.groupIdsUserIdFirst, memberIds,
-        categories, authzContext.tooManyPermissions, maySeeUnlisted) match {
+    val pageAuthor = this.getParticipant(pageMeta.authorId, anyTx) getOrElse {
+      return NotSeePage("TyE0PGAUTHOR2")
+    }
+
+    Authz.maySeePage(pageMeta, authzContext.requester,
+          authzContext.groupIdsUserIdFirst, pageAuthor = pageAuthor, memberIds,
+          categories, authzContext.tooManyPermissions, maySeeUnlisted) match {
       case Yes => PageCtx(categories)
       case mayNot: NoMayNot => NotSeePage(mayNot.code)
       case mayNot: NoNotFound => NotSeePage(mayNot.debugCode)
@@ -431,34 +444,7 @@ trait AuthzSiteDaoMixin {
     if (!seePageResult.maySee)
       return (MaySeeOrWhyNot.NopeUnspecified, s"${seePageResult.debugCode}-ABX94WN_")
 
-    maySeePostIfMaySeePage(ppt, post)
-  }
-
-
-  def maySeePostIfMaySeePage(pat: Opt[Pat], post: Post): (MaySeeOrWhyNot, St) = {
-    val ppt = pat
-
-    MOVE // to Authz, should be a pure fn.
-    CLEAN_UP // Dupl code, this stuff repeated in Authz.mayPostReply. [8KUWC1]
-
-    // Below: Since the requester may see the page, it's ok if hen learns
-    // if a post has been deleted or it never existed? (Probably hen can
-    // figure that out anyway, just by looking for holes in the post nr
-    // sequence.)
-
-    // Staff may see all posts, if they may see the page. [5I8QS2A]
-    def isStaffOrAuthor =
-      ppt.exists(_.isStaff) || ppt.exists(_.id == post.createdById)
-
-    if (post.isDeleted && !isStaffOrAuthor)
-      return (MaySeeOrWhyNot.NopePostDeleted, "6PKJ2RU-Post-Deleted")
-
-    if (!post.isSomeVersionApproved && !isStaffOrAuthor)
-      return (MaySeeOrWhyNot.NopePostNotApproved, "6PKJ2RW-Post-0Apr")
-
-    // Later: else if is meta discussion ... [METADISC]
-
-    (MaySeeOrWhyNot.YesMaySee, "")
+    Authz.maySeePostIfMaySeePage(ppt, post)
   }
 
 
@@ -474,6 +460,28 @@ trait AuthzSiteDaoMixin {
           _maySeePostImpl(ThePost.Here(post), Some(requester), anyTx = None)
     if (!result.may)
       throwIndistinguishableNotFound(s"TyEM0REVTSK-$debugCode")
+  }
+
+
+  def throwIfMayNotAlterPage(user: Pat, asAlias: Opt[WhichAliasPat], pageMeta: PageMeta,
+         changesOnlyTypeOrStatus: Bo, tx: SiteTx): U = {
+    val pageAuthor =
+          if (pageMeta.authorId == user.id) user
+          else this.getTheParticipant(pageMeta.authorId)
+
+    val catsRootLast = this.getAncestorCategoriesSelfFirst(pageMeta.categoryId)
+    val requestersGroupIds = this.getOnesGroupIds(user)
+    throwNoUnless(Authz.mayEditPage(
+          pageMeta = pageMeta,
+          pat = user,
+          asAlias = asAlias,
+          pageAuthor = pageAuthor,
+          groupIds = requestersGroupIds,
+          pageMembers = this.getAnyPrivateGroupTalkMembers(pageMeta),
+          catsRootLast = catsRootLast,
+          tooManyPermissions = this.getPermsOnPages(catsRootLast),
+          changesOnlyTypeOrStatus = changesOnlyTypeOrStatus,
+          maySeeUnlisted = true), "TyE0ALTERPGP01")
   }
 
 

@@ -28,14 +28,34 @@
    namespace debiki2.Server {
 //------------------------------------------------------------------------------
 
-const d: any = { i: debiki.internal };
-
 const BadNameOrPasswordErrorCode = '_TyE403BPWD';
 const NoPasswordErrorCode = '_TyMCHOOSEPWD';
 
 const XsrfTokenHeaderName = 'X-XSRF-TOKEN'; // CLEAN_UP rename to X-Ty-Xsrf-Token
 const SessionIdHeaderName = 'X-Ty-Sid';
 const AvoidCookiesHeaderName = 'X-Ty-Avoid-Cookies';
+//const PersonaCookieName = "TyCoPersona";
+const PersonaHeaderName = 'X-Ty-Persona';
+
+
+// Mayble later. [remember_persona_mode]
+/*
+export function setpersonacookie(asPersona: Oneself | LazyCreatedAnon | N) {
+  // Or remember in local storage instead?
+  getSetCookie(PersonaCookieName, asPersona ? JSON.stringify(asPersona) : null);
+}
+
+export function getPersonaCookie(): Oneself | LazyCreatedAnon | NU {
+  const cookieVal: St | N = getCookie(PersonaCookieName);
+  if (!cookieVal) return undefined;
+  const persona = JSON.parse(cookieVal);
+  // @ifdef DEBUG
+  dieIf(!(persona as Oneself).self && !(persona as LazyCreatedAnon).anonStatus,
+        `Bad persona cookie value: [[ ${cookieVal} ]] [TyE320JVMR4]`);
+  // @endif
+  return persona;
+}
+*/
 
 export function getPageId(): PageId | U {   // move elsewhere?
   return !isNoPage(eds.embeddedPageId) ? eds.embeddedPageId : // [4HKW28]
@@ -754,6 +774,11 @@ export function addAnyNoCookieHeaders(headers: { [headerName: string]: St }) {  
   const typs: PageSession = mainWin.typs;
   const currentPageXsrfToken: St | U = typs.xsrfTokenIfNoCookies;
   const currentPageSid: St | U = typs.weakSessionId;
+  const asPersona: WhichPersona | NU = mainWin.theStore && mainWin.theStore.me.usePersona;
+  const curPersonaOptions: PersonaOptions | U =
+          mainWin.theStore && mainWin.theStore.curPersonaOptions;
+  const indicatedPersona: PersonaMode | U =
+          mainWin.theStore && mainWin.theStore.indicatedPersona;
 
   if (!win_canUseCookies(mainWin)) {
     headers[AvoidCookiesHeaderName] = 'Avoid';
@@ -766,7 +791,59 @@ export function addAnyNoCookieHeaders(headers: { [headerName: string]: St }) {  
   if (currentPageSid) {
     headers[SessionIdHeaderName] = currentPageSid;
   }
+
+  // ----- Persona mode?
+
+  // Any Persona Mode is included in each request, so a cookie would have been a good idea
+  // — but cookies are often blocked, nowadays, if in an iframe (embedded comments).  So,
+  // let's use a header instead.
+  const personaHeaderVal: St | U =
+        // If the user has choosen to use a persona, e.g. a pseudonym.
+        asPersona ? persModeToHeaderVal('choosen', asPersona) : (
+        // If the user is automatically anonymous, e.g. because of category settings,
+        // or because they replied anonymously before on the same page.
+        // For a server side safety check, so won't accidentally do sth as oneself.
+        // [persona_indicator_chk]
+        indicatedPersona ? persModeToHeaderVal(
+              'indicated', indicatedPersona, curPersonaOptions.isAmbiguous) :
+        // No alias in use.
+        // Pat has not entered Anonymous or Self mode, and isn't anonymous by default.
+        undefined);
+
+  if (personaHeaderVal) {
+    headers[PersonaHeaderName] = personaHeaderVal;
+  }
 }
+
+
+/// Won't stringify any not-needed fields in `mode`.
+/// Parsed by the server here: [parse_pers_mode_hdr].
+///
+/// Json in a header value is ok — all visible ascii chars are ok, see:
+///   https://www.rfc-editor.org/rfc/rfc7230#section-3.2
+///
+function persModeToHeaderVal(field: 'choosen' | 'indicated', mode: WhichPersona | PersonaMode,
+        ambiguous?: Bo): St {
+  //D_DIE_IF(isVal(mode.anonStatus) && !_.isNumber(mode.anonStatus), 'TyEANONSTATUSNAN');
+  const modeValue: WhichPersona =
+          mode.self ? { self : true } : (
+          mode.anonStatus ? { anonStatus: mode.anonStatus, lazyCreate: true } : (
+          // [pseudonyms_later]
+          'TyEUNKINDPERS' as any));
+  const obj = {} as any;
+  obj[field] = modeValue;
+  if (ambiguous) obj.ambiguous = true;
+  return JSON.stringify(obj as PersonaHeaderVal);
+}
+
+
+type PersonaHeaderVal =
+      { choosen: PersonaHeaderValVal } |
+      { indicated: PersonaHeaderValVal; ambiguous?: true };
+
+type PersonaHeaderValVal =
+      { self: true } |
+      { anonStatus: AnonStatus, lazyCreate: true };
 
 
 function appendE2eAndForbiddenPassword(url: string) {
@@ -1543,21 +1620,21 @@ export function listDrafts(userId: UserId,
 
 
 export function loadNotifications(userId: UserId, upToWhenMs: number,
-      success: (notfs: Notification[]) => void, error: () => void) {
+      onOk: (notfs: Notification[]) => void, error: () => void) {
   const query = '?userId=' + userId + '&upToWhenMs=' + upToWhenMs;
-  get('/-/load-notifications' + query, success, error);
+  get('/-/load-notifications' + query, (resp: NotfSListResponse) => onOk(resp.notfs), error);
 }
 
 
 export function markNotfsRead() {
-  postJsonSuccess('/-/mark-all-notfs-as-seen', (notfs) => {
+  postJsonSuccess('/-/mark-all-notfs-as-seen', (resp: NotfSListResponse) => {
     // Should be the same as [7KABR20], server side.
     const myselfPatch: MyselfPatch = {
       numTalkToMeNotfs: 0,
       numTalkToOthersNotfs: 0,
       numOtherNotfs: 0,
       thereAreMoreUnseenNotfs: false,
-      notifications: notfs,
+      notifications: resp.notfs,
     };
     ReactActions.patchTheStore({ me: myselfPatch });
   }, null, {});
@@ -1679,10 +1756,15 @@ export function loadForumCategoriesTopics(forumPageId: St, topicFilter: St,
 // Change the reply
 // 'users' field to 'usersBrief', no, 'patsBr'? 'Tn = Tiny, Br = Brief, Vb = Verbose?  [.get_n_patch]
 export function loadForumTopics(categoryId: CatId, orderOffset: OrderOffset,
-    onOk: (resp: LoadTopicsResponse) => Vo) {
+      onOk: (resp: LoadTopicsResponse) => V) {
   const url = '/-/list-topics?categoryId=' + categoryId + '&' +
       ServerApi.makeForumTopicsQueryParams(orderOffset);
-  getAndPatchStore(url, onOk);  // [2WKB04R]
+  return get(url, function(resp: LoadTopicsResponse) {
+    // (Alternatively, the server could incl `listingCatId` in its response.)
+    const patch: StorePatch = { ...resp.storePatch, listingCatId: categoryId };
+    ReactActions.patchTheStore(patch);  // [2WKB04R]
+    onOk(resp);
+  });
 }
 
 
@@ -1807,14 +1889,7 @@ export function fetchLinkPreview(url: St, inline: Bo, /* later: curPageId: PageI
 }
 
 
-export function saveVote(data: {
-    pageId: PageId,
-    postNr: PostNr,
-    vote: PostVoteType,
-    action: 'DeleteVote' | 'CreateVote',
-    postNrsRead: PostNr[],
-    doAsAnon?: MaybeAnon,
-}, onDone: (storePatch: StorePatch) => Vo) {
+export function saveVote(data: SaveVotePs, onDone: (storePatch: StorePatch) => V) {
   // Specify altPageId and embeddingUrl, so any embedded page can be created lazily. [4AMJX7]
   // @ifdef DEBUG
   dieIf(data.pageId && data.pageId !== EmptyPageId && data.pageId !== getPageId(), 'TyE2ABKSY7');
@@ -2155,12 +2230,13 @@ export function hidePostInPage(postNr: number, hide: boolean, success: (postAfte
 }
 
 
-export function deletePostInPage(postNr: number, repliesToo: boolean,
-      success: (deletedPost) => void) {
-  postJsonSuccess('/-/delete-post', success, {
+export function deletePostInPage(postNr: PostNr, repliesToo: Bo, doAsAnon: MaybeAnon | U,
+      onOk: (deletedPost) => V) {
+  postJsonSuccess('/-/delete-post', onOk, {
     pageId: getPageId(),
     postNr: postNr,
     repliesToo: repliesToo,
+    doAsAnon,
   });
 }
 
@@ -2311,26 +2387,30 @@ export function loadPageJson(path: string, success: (response) => void) {
 }
 
 
-export function acceptAnswer(postId: PostNr, doAsAnon: MaybeAnon,
+export function acceptAnswer(ps: { pageId: PageId, postId: PostId, doAsAnon: MaybeAnon },
         onOk: (answeredAtMs: Nr) => V) {
-  postJsonSuccess('/-/accept-answer', onOk, { pageId: getPageId(), postId, doAsAnon });
+  postJsonSuccess('/-/accept-answer', onOk, ps);
 }
 
 
-export function unacceptAnswer(doAsAnon: MaybeAnon, onOk: () => V) {
-  postJsonSuccess('/-/unaccept-answer', onOk, { pageId: getPageId(), doAsAnon });
+export function unacceptAnswer(ps: { pageId: PageId, doAsAnon: MaybeAnon }, onOk: () => V) {
+  postJsonSuccess('/-/unaccept-answer', onOk, ps);
 }
 
-export function togglePageClosed(doAsAnon: MaybeAnon, onOk: (closedAtMs: Nr) => V) {
-  postJsonSuccess('/-/toggle-page-closed', onOk, { pageId: getPageId(), doAsAnon });
+
+export function togglePageClosed(ps: { pageId: PageId, doAsAnon: MaybeAnon },
+        onOk: (closedAtMs: Nr) => V) {
+  postJsonSuccess('/-/toggle-page-closed', onOk, ps);
 }
 
-export function deletePages(pageIds: PageId[], success: () => void) {
-  postJsonSuccess('/-/delete-pages', success, { pageIds: pageIds });
+
+export function deletePages(ps: { pageIds: PageId[], doAsAnon: MaybeAnon }, onOk: () => V) {
+  postJsonSuccess('/-/delete-pages', onOk, ps);
 }
 
-export function undeletePages(pageIds: PageId[], success: () => void) {
-  postJsonSuccess('/-/undelete-pages', success, { pageIds: pageIds });
+
+export function undeletePages(ps: { pageIds: PageId[], doAsAnon: MaybeAnon }, onOk: () => V) {
+  postJsonSuccess('/-/undelete-pages', onOk, ps);
 }
 
 

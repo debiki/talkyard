@@ -75,8 +75,10 @@ class TyController(cc: ControllerComponents, val context: TyContext)
   def GetActionRateLimited(
         rateLimits: RateLimits = RateLimits.ExpensiveGetRequest,
         minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
-        allowAnyone: Boolean = false)(f: GetRequest => Result): Action[Unit] =
-    PlainApiAction(cc.parsers.empty, rateLimits, minAuthnStrength, allowAnyone = allowAnyone)(f)
+        allowAnyone: Bo = false, canUseAlias: Bo = false, ignoreAlias: Bo = false,
+        )(f: GetRequest => Result): Action[Unit] =
+    PlainApiAction(cc.parsers.empty, rateLimits, minAuthnStrength, allowAnyone = allowAnyone,
+          canUseAlias = canUseAlias, ignoreAlias = ignoreAlias)(f)
 
   def StaffGetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiActionStaffOnly(NoRateLimits, cc.parsers.empty)(f)
@@ -106,19 +108,25 @@ class TyController(cc: ControllerComponents, val context: TyContext)
           skipXsrfCheck = skipXsrfCheck)(f)
 
   def AsyncPostJsonAction(rateLimits: RateLimits, maxBytes: i32,
+        canUseAlias: Bo = false, ignoreAlias: Bo = false,
         allowAnyone: Bo = false, isGuestLogin: Bo = false, avoidCookies: Bo = false)(
         f: JsonPostRequest => Future[Result]): Action[JsValue] =
     PlainApiAction(cc.parsers.json(maxLength = maxBytes),
-          rateLimits, allowAnyone = allowAnyone, isGuestLogin = isGuestLogin,
+          rateLimits, allowAnyone = allowAnyone,
+          canUseAlias = canUseAlias, ignoreAlias = ignoreAlias,
+          isGuestLogin = isGuestLogin,
           avoidCookies = avoidCookies).async(f)
 
   def PostJsonAction(rateLimits: RateLimits,
         minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
         maxBytes: Int,
+        canUseAlias: Bo = false, ignoreAlias: Bo = false,
         allowAnyone: Boolean = false, isLogin: Boolean = false)(
         f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiAction(cc.parsers.json(maxLength = maxBytes),
-        rateLimits, minAuthnStrength, allowAnyone = allowAnyone, isLogin = isLogin)(f)
+        rateLimits, minAuthnStrength, allowAnyone = allowAnyone,
+        canUseAlias = canUseAlias, ignoreAlias = ignoreAlias,
+        isLogin = isLogin)(f)
 
   def AsyncUserPostJsonAction(rateLimits: RateLimits, maxBytes: i32,
         avoidCookies: Bo = false)(
@@ -126,40 +134,45 @@ class TyController(cc: ControllerComponents, val context: TyContext)
     PlainApiAction(cc.parsers.json(maxLength = maxBytes),
       rateLimits, authnUsersOnly = true, avoidCookies = avoidCookies).async(f)
 
-  def UserPostJsonAction(rateLimits: RateLimits, maxBytes: i32)(
+  def UserPostJsonAction(rateLimits: RateLimits, maxBytes: i32, ignoreAlias: Bo = false)(
         f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiAction(cc.parsers.json(maxLength = maxBytes),
-      rateLimits, authnUsersOnly = true)(f)
+      rateLimits, authnUsersOnly = true, ignoreAlias = ignoreAlias)(f)
 
   def PostTextAction(rateLimits: RateLimits,
         minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
-        maxBytes: Int, allowAnyone: Boolean = false)(
+        maxBytes: Int, allowAnyone: Bo = false, ignoreAlias: Bo = false)(
         f: ApiRequest[String] => Result): Action[String] =
     PlainApiAction(cc.parsers.text(maxLength = maxBytes),
-      rateLimits, minAuthnStrength, allowAnyone = allowAnyone)(f)
+      rateLimits, minAuthnStrength, allowAnyone = allowAnyone, ignoreAlias = ignoreAlias)(f)
 
   SECURITY // add rate limits for staff too. Started, use  StaffPostJsonAction2  below.
   def StaffPostJsonAction(
         minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
-        maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
+        maxBytes: i32, canUseAlias: Bo = false, ignoreAlias: Bo = false,
+        )(f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiActionStaffOnly(
-      NoRateLimits, cc.parsers.json(maxLength = maxBytes), minAuthnStrength)(f)
+        NoRateLimits, cc.parsers.json(maxLength = maxBytes), minAuthnStrength,
+        canUseAlias = canUseAlias, ignoreAlias = ignoreAlias)(f)
 
   def StaffPostJsonAction2(
         rateLimits: RateLimits, minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
-        maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
+        maxBytes: i32, canUseAlias: Bo = false, ignoreAlias: Bo = false)
+        (f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiActionStaffOnly(
-      rateLimits, cc.parsers.json(maxLength = maxBytes), minAuthnStrength)(f)
+        rateLimits, cc.parsers.json(maxLength = maxBytes), minAuthnStrength,
+        canUseAlias = canUseAlias, ignoreAlias = ignoreAlias)(f)
 
   SECURITY // add rate limits for admins — use AdminPostJsonAction2, then remove this & rm '2' from name.
-  def AdminPostJsonAction(maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
+  def AdminPostJsonAction(maxBytes: i32, ignoreAlias: Bo = false,
+        )(f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiActionAdminOnly(
-      NoRateLimits, cc.parsers.json(maxLength = maxBytes))(f)
+      NoRateLimits, cc.parsers.json(maxLength = maxBytes), ignoreAlias = ignoreAlias)(f)
 
-  def AdminPostJsonAction2(rateLimits: RateLimits, maxBytes: Int)(
+  def AdminPostJsonAction2(rateLimits: RateLimits, maxBytes: Int, ignoreAlias: Bo = false)(
         f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiActionAdminOnly(
-      rateLimits, cc.parsers.json(maxLength = maxBytes))(f)
+      rateLimits, cc.parsers.json(maxLength = maxBytes), ignoreAlias = ignoreAlias)(f)
 
   def ApiSecretPostJsonAction(whatSecret: WhatApiSecret, rateLimits: RateLimits, maxBytes: i32)(
         f: JsonPostRequest => Result): Action[JsValue] =

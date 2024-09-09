@@ -401,7 +401,7 @@ class LinksAppSpec extends DaoAppSuite {
     "Links from deleted *pages* are ignored  TyT7RD3LM5" - {
       "Delete page A".inWriteTx(daoSite1) { (tx, staleStuff) =>
         daoSite1.deletePagesImpl(
-              Seq(pageA.id), systemWho)(tx, staleStuff)
+              Seq(pageA.id), systemWho, asAlias = None)(tx, staleStuff)
       }
 
       "Now only pages B, C and D links to Z".inReadTx(daoSite1) { tx =>
@@ -433,7 +433,7 @@ class LinksAppSpec extends DaoAppSuite {
 
     "Undelete page A".inWriteTx(daoSite1) { (tx, staleStuff) =>
       daoSite1.deletePagesImpl(
-            Seq(pageA.id), systemWho, undelete = true)(tx, staleStuff)
+            Seq(pageA.id), systemWho, asAlias = None, undelete = true)(tx, staleStuff)
     }
 
     "Undelete category".inWriteTx(daoSite1) { (tx, staleStuff) =>
@@ -467,7 +467,7 @@ class LinksAppSpec extends DaoAppSuite {
 
     "Delete page Z".inWriteTx(daoSite1) { (tx, staleStuff) =>
       daoSite1.deletePagesImpl(
-            Seq(pageZ.id), systemWho, undelete = true)(tx, staleStuff)
+            Seq(pageZ.id), systemWho, asAlias = None, undelete = true)(tx, staleStuff)
     }
 
     "Can find links to deleted page Z".inReadTx(daoSite1) { tx =>

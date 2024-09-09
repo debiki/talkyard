@@ -455,7 +455,7 @@ const PatTopPanel = createComponent({
 
     let isWhatInfo: St | N = null;
     if (user.isAnon) {
-      isWhatInfo = t.Anonym || "Anonym";
+      isWhatInfo = anonStatus_toStr(user.anonStatus);
     }
     else if (isGuest(user)) {
       isWhatInfo = t.upp.isGuest;

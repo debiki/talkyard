@@ -129,10 +129,13 @@ class GetController @Inject()(cc: ControllerComponents, edContext: TyContext)
           case Some(page: PagePathAndMeta) =>
             COULD_OPTIMIZE // will typically always be same cat, for emb cmts.
             val categories = dao.getAncestorCategoriesRootLast(page.categoryId)
+            // COULD_OPTIMIZE [list_by_alias]
+            val author = dao.getParticipant(page.meta.authorId).getOrDie("TyE502WTJT4")
             val may = talkyard.server.authz.Authz.maySeePage(  // _access_control
                   page.meta,
                   user = authzCtx.requester,
                   groupIds = authzCtx.groupIdsUserIdFirst,
+                  pageAuthor = author,
                   pageMembers = Set.empty, // getAnyPrivateGroupTalkMembers(page.meta),
                   catsRootLast = categories,
                   tooManyPermissions = authzCtx.tooManyPermissions,

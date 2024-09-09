@@ -74,12 +74,30 @@ class AnonymAppSpec extends DaoAppSuite(
       userTwoS1 = createPasswordUser("mm33ww77", site1.dao, trustLevel = TrustLevel.BasicMember)
     }
 
-    "Try post anonymously — but anon posts are disabled, by default" in {
+    "Try post anonymously — but anon posts not enabled, request rejected  TyTANON0ENBL" in {
+      val dao = site1.dao
+      val ex = intercept[ResultException] {
+        createPage2(PageType.Discussion, dao.textAndHtmlMaker.forTitle("Anon Test"),
+            bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment("Test anon post."),
+            authorId = userOneS1.id, browserIdData, dao, anyCategoryId = Some(catA.id),
+            asAlias = Some(WhichAliasPat.LazyCreatedAnon(AnonStatus.IsAnonOnlySelfCanDeanon)))
+      }
+      ex.getMessage must include("TyEM0MKANON_")
+    }
+
+    "Enable anon posts" in {
+      val dao = site1.dao
+      editCategory(catA, createCatAResult.permissionsWithIds,
+            browserIdData, dao,
+            comtsStartAnon = Some(Some(NeverAlways.Recommended)))
+    }
+
+    "Try post anonymously — now anon posts are enabled" in {
       val dao = site1.dao
       createPageResult = createPage2(PageType.Discussion, dao.textAndHtmlMaker.forTitle("Anon Test"),
             bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment("Test anon post."),
             authorId = userOneS1.id, browserIdData, dao, anyCategoryId = Some(catA.id),
-            doAsAnon = Some(WhichAnon.NewAnon(AnonStatus.IsAnonOnlySelfCanDeanon)))
+            asAlias = Some(WhichAliasPat.LazyCreatedAnon(AnonStatus.IsAnonOnlySelfCanDeanon)))
       pageId = createPageResult.id
     }
 

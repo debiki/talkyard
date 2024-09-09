@@ -67,7 +67,7 @@ case class ActionDoer(dao: SiteDao, reqrInf: ReqrInf, mab: MessAborter) {
                   params.pageType, PageStatus.Published, inCatId = Some(cat.id), tags,
                   anyFolder = None, anySlug = params.urlSlug, titleSourceAndHtml,
                   bodyTextAndHtml, showId = true, deleteDraftNr = None, reqrTgt,
-                  spamRelReqStuff = SystemSpamStuff, doAsAnon = None, refId = params.refId)
+                  spamRelReqStuff = SystemSpamStuff, asAlias = None, refId = params.refId)
         Json.obj(
             "pageId" -> result.path.pageId,
             "pagePath" -> result.path.value)
@@ -82,7 +82,7 @@ case class ActionDoer(dao: SiteDao, reqrInf: ReqrInf, mab: MessAborter) {
               dao.insertReplyIfAuZ(
                   textAndHtml, pageId = pageMeta.pageId, replyToPostNrs = params.parentNr.toSet,
                   params.postType, deleteDraftNr = None, reqrTgt,
-                  spamRelReqStuff = SystemSpamStuff, anonHow = None, refId = params.refId,
+                  spamRelReqStuff = SystemSpamStuff, asAlias = None, refId = params.refId,
                   tags)  // ooops forgot_to_use
         Json.obj(
             "postNr" -> result.post.nr,

@@ -55,8 +55,8 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def doSearch(): Action[JsValue] = AsyncPostJsonAction(RateLimits.FullTextSearch, maxBytes = 1000) {
-        request: JsonPostRequest =>
+  def doSearch(): Action[JsValue] = AsyncPostJsonAction(RateLimits.FullTextSearch,
+        maxBytes = 1000, ignoreAlias = true) { request: JsonPostRequest =>
     import request.dao
 
     val rawQuery = (request.body \ "rawQuery").as[String]

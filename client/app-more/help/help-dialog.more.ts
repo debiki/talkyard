@@ -37,6 +37,8 @@ let helpDialog;
 
 function getHelpDialog() {
   if (!helpDialog) {
+    // Apparently, if you're somewhere in a React componentDidUpdate() handler, then,
+    // `helpDialog` becomes null. Then you can wrap getHelpDialog() in setTimeout().
     helpDialog = ReactDOM.render(HelpDialog(), utils.makeMountNode());
   }
   return helpDialog;
@@ -86,6 +88,9 @@ const HelpDialog = createComponent({
         onChange: (event) => this.setState({ hideNextTime: event.target.checked }),
         label: "Hide this tips" });
 
+    const maybeClose =
+        !message || message.closeOnClickOutside === false ? undefined : this.close;
+
     content = !content ? null :
         ModalBody({ className: message.className },
           r.div({ className: 'esHelpDlg_body_wrap'},
@@ -95,7 +100,7 @@ const HelpDialog = createComponent({
               PrimaryButton({ onClick: this.close, className: 'e_HelpOk' }, "Okay"))));
 
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esHelpDlg' },
+      Modal({ show: this.state.isOpen, onHide: maybeClose, dialogClassName: 'esHelpDlg' },
        content));
   }
 });

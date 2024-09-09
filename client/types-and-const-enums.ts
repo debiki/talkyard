@@ -755,6 +755,17 @@ const enum DiagFlavor {
 }
 
 
+const enum Verbosity {
+  // Can be nice for [power_users], e.g. "T" or "TA" for "Temporarily Anonymous",
+  // and they'd know what it means.
+  //Letters = 1,
+  VeryTerse = 2,
+  Terse = 3,
+  Brief = 4,
+  Full = 6,
+}
+
+
 const enum Time {
   OneDayInMillis = 24 * 3600 * 1000,
 }

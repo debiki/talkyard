@@ -32,9 +32,11 @@ const MaxSlugLength = 100;  // sync with Scala [MXPGSLGLN]
 interface TitleEditorPops {
   closeEditor: () => V;
   store: Store;
+  doAsOpts?: DoAsAndOpts;
 }
 
 interface TitleEditorState {
+  doAsOpts?: DoAsAndOpts;
   categoryId: CatId;
   pageRole: PageRole;
   editorScriptsLoaded?: Bo;
@@ -65,6 +67,7 @@ export const TitleEditor = createComponent({
     return {
       pageRole: page.pageRole,
       categoryId: page.categoryId,
+      doAsOpts: _.clone(props.doAsOpts),
     };
   },
 
@@ -188,6 +191,7 @@ export const TitleEditor = createComponent({
       htmlTagCssClasses: state.htmlTagCssClasses,
       htmlHeadTitle: state.htmlHeadTitle,
       htmlHeadDescription: state.htmlHeadDescription,
+      doAsAnon: state.doAsOpts?.doAsAnon,
     };
     return settings;
   },
@@ -207,6 +211,33 @@ export const TitleEditor = createComponent({
     if (!state.editorScriptsLoaded) {
       // The title is not shown, so show some whitespace to avoid the page jumping upwards.
       return r.div({ style: { height: 80 }});
+    }
+
+    // Break out component? [choose_alias_btn]
+    let maybeAnonymously: RElm | U;
+    if (!me.isAuthenticated || !state.doAsOpts) {
+      // Only logged in users can post anonymously. (At least for now.)
+    }
+    else if (store.curDiscProps?.comtsStartAnon >= NeverAlways.Allowed ||
+          state.doAsOpts.doAsAnon) {  // [oneself_0_false]
+      maybeAnonymously = rFr({},
+          r.span({ className: 's_E_DoingWhat' }, "Edit title and page: "),  // I18N
+          Button({ className: 'c_AliasB', onClick: (event: MouseEvent) => {
+            const atRect = cloneEventTargetRect(event);
+            persona.openAnonDropdown({ atRect, open: true,
+                curAnon: state.doAsOpts.doAsAnon, me,
+                myAliasOpts: state.doAsOpts.myAliasOpts,
+                discProps: store.curDiscProps,
+                saveFn: (doAsAnon: MaybeAnon) => {
+                  const newState: Partial<TitleEditorState> = { doAsOpts: {
+                    doAsAnon,
+                    myAliasOpts: state.doAsOpts.myAliasOpts
+                  }};
+                  this.setState(newState);
+                } });
+          } },
+          persona.whichAnon_titleShort(state.doAsOpts.doAsAnon, { me }),
+          ' ', r.span({ className: 'caret' })));
     }
 
     let layoutAndSettings: RElm | U;
@@ -368,7 +399,8 @@ export const TitleEditor = createComponent({
 
     return (
       r.div({ className: 'dw-p-ttl-e' },
-        Input({ type: 'text', ref: 'titleInput', className: 'dw-i-title', id: 'e2eTitleInput',
+        maybeAnonymously,
+        Input({ type: 'text', ref: 'titleInput', className: 'c_TtlE_TtlI',
             defaultValue: titlePost.unsafeSource, onChange: this.onTitleChanged }),
         r.div({ className: 'form-horizontal' }, selectCategoryInput),
         r.div({ className: 'form-horizontal' }, selectTopicType),

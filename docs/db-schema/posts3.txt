@@ -65,10 +65,12 @@
  index_prio_c             | index_prio_d                |           |          | 
  private_status_c         | private_status_d            |           |          | 
  creator_status_c         | creator_status_d            |           |          | 
+ order_c                  | f32_d                       |           |          | 
 Indexes:
     "dw2_posts_id__p" PRIMARY KEY, btree (site_id, unique_post_id)
     "dw2_posts_page_postnr__u" UNIQUE, btree (site_id, page_id, post_nr)
     "posts_u_extid" UNIQUE, btree (site_id, ext_id)
+    "posts_u_patid_pageid_parentnr_if_bookmark_0deld" UNIQUE, btree (site_id, created_by_id, page_id, parent_nr) WHERE type::smallint = 51 AND deleted_status = 0
     "dw2_posts_approvedbyid__i" btree (site_id, approved_by_id) WHERE approved_by_id IS NOT NULL
     "dw2_posts_closedbyid__i" btree (site_id, closed_by_id) WHERE closed_by_id IS NOT NULL
     "dw2_posts_collapsedbyid__i" btree (site_id, collapsed_by_id) WHERE collapsed_by_id IS NOT NULL
@@ -84,6 +86,8 @@ Indexes:
     "posts_i_createdat_id" btree (site_id, created_at DESC, unique_post_id DESC)
     "posts_i_createdby_createdat_id" btree (site_id, created_by_id, created_at DESC, unique_post_id DESC)
     "posts_i_lastapprovedat_0deld" btree (site_id, GREATEST(approved_at, last_approved_edit_at)) WHERE approved_at IS NOT NULL AND deleted_status = 0
+    "posts_i_patid_createdat_postid_if_bookmark_0deld" btree (site_id, created_by_id, created_at, unique_post_id) WHERE type::smallint = 51 AND deleted_status = 0
+    "posts_i_patid_createdat_postid_if_bookmark_deld" btree (site_id, created_by_id, created_at, unique_post_id) WHERE type::smallint = 51 AND deleted_status <> 0
     "posts_i_privatepatsid" btree (site_id, private_pats_id_c) WHERE private_pats_id_c IS NOT NULL
 Check constraints:
     "dw2_posts__c_approved" CHECK ((approved_rev_nr IS NULL) = (approved_at IS NULL) AND (approved_rev_nr IS NULL) = (approved_by_id IS NULL) AND (approved_rev_nr IS NULL) = (approved_source IS NULL))
@@ -111,11 +115,15 @@ Check constraints:
     "dw2_posts_multireply__c_num" CHECK (multireply::text ~ '^([0-9]+,)*[0-9]+$'::text)
     "dw2_posts_parent__c_not_title" CHECK (parent_nr <> 0)
     "posts__c_first_rev_by_creator" CHECK (curr_rev_by_id = created_by_id OR curr_rev_nr > 1)
+    "posts_c_bookmark_neg_nr" CHECK (type::smallint <> 51 OR post_nr <= '-1001'::integer)
+    "posts_c_bookmark_not_appr" CHECK (type::smallint <> 51 OR approved_at IS NULL)
     "posts_c_currevnr_not_for_imp" CHECK (curr_rev_nr < 2000000000)
     "posts_c_extid_ok" CHECK (is_valid_ext_id(ext_id))
     "posts_c_id_not_for_imp" CHECK (unique_post_id < 2000000000)
     "posts_c_nr_not_for_imp" CHECK (post_nr < 2000000000)
+    "posts_c_order_only_bookmarks_for_now" CHECK (order_c IS NULL OR type::smallint = 51)
     "posts_c_parentnr_not_for_imp" CHECK (parent_nr < 2000000000)
+    "posts_c_privatecomt_neg_nr" CHECK (private_status_c IS NULL OR post_nr <= '-1001'::integer)
 Foreign-key constraints:
     "posts_approvedby_r_people" FOREIGN KEY (site_id, approved_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
     "posts_closedby_r_people" FOREIGN KEY (site_id, closed_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE

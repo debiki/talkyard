@@ -389,7 +389,8 @@ declare namespace debiki2 {
   function user_isTrustMinNotThreat(me: UserInclDetails | Myself, trustLevel: TrustLevel): boolean;
   //function threatLevel_toString(threatLevel: ThreatLevel): [St, St];
   function threatLevel_toElem(threatLevel: ThreatLevel);
-  function pat_name(pat: Me | Pat): St;
+  function persMode_toStr(mode: PersonaMode, verb: Verbosity): St;
+  function pat_name(pat: Me | Pat | LazyCreatedAnon | NewAnon): St;
   function pat_isMe(pat: UserInclDetails | Me | Pat | PatId): pat is Me;
   function pat_isMember(pat: UserInclDetails | Me | Pat | PatId): Bo;
   var isGuest;
@@ -401,11 +402,18 @@ declare namespace debiki2 {
   function store_maySendDirectMessageTo(store: Store, user: UserInclDetails): boolean;
   function pat_isBitAdv(pat: PatVb | Me): Bo;
   function pat_isMoreAdv(pat: PatVb | Me): Bo;
+  function anonStatus_toStr(anonStatus: AnonStatus, verb?: Verbosity): St;
   var page_isGroupTalk;
 
   function store_getAuthorOrMissing(store: DiscStore, post: Post): Pat;
   function store_getUserOrMissing(store: DiscStore, userId: PatId, errorCode2?: St): Pat;
-  var store_thisIsMyPage;
+  function store_thisIsMyPage(store: DiscStore): Bo;
+  function disc_findMyPersonas(discStore: DiscStore, ps: {
+                forWho: Pat | Me | U, startAtPostNr?: PostNr }): MyPersonasThisPage;
+
+  function findPersonaOptions(ps: { myPersonasThisPage?: MyPersonasThisPage, me: Me,
+        discProps: DiscPropsDerived }): PersonaOptions;
+  function patToMaybeAnon(p: Pat | KnownAnonym | NewAnon, me: Me): MaybeAnon;
 
   function draftType_toPostType(draftType: DraftType): PostType | U;
   function postType_toDraftType(postType: PostType): DraftType | U;
@@ -511,7 +519,7 @@ declare namespace debiki2 {
   function timeExact(whenMs: number, clazz?: string);
 
   namespace avatar {
-    var Avatar;
+    function Avatar(props: AvatarProps): RElm;
   }
 
   function pageNotfPrefTarget_findEffPref(target: PageNotfPrefTarget, store: Store, ownPrefs: OwnPageNotfPrefs): EffPageNotfPref;

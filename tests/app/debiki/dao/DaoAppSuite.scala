@@ -348,19 +348,20 @@ class DaoAppSuite(
   def editCategory(cat: Cat, permissions: ImmSeq[PermsOnPages],
           browserIdData: BrowserIdData, dao: SiteDao,
           newParentId: Opt[CatId] = None,
-          newSectPageId: Opt[PageId] = None): Cat = {
+          newSectPageId: Opt[PageId] = None,
+          comtsStartAnon: Opt[Opt[NeverAlways]] = None,
+          ): Cat = {
     var catToSave = CategoryToSave.initFrom(cat)
-    newParentId map { parCatId =>
-      catToSave = catToSave.copy(parentId = parCatId)
-    }
-    newSectPageId map { sectPageId =>
-      catToSave = catToSave.copy(sectionPageId = sectPageId)
-    }
+    catToSave = catToSave.copy(
+          parentId = newParentId.getOrElse(catToSave.parentId),
+          sectionPageId = newSectPageId.getOrElse(catToSave.sectionPageId),
+          comtsStartAnon = comtsStartAnon.getOrElse(catToSave.comtsStartAnon),
+          )
     dao.editCategory(catToSave, permissions, who = Who.System)
   }
 
 
-  REMOVE; CLEAN_UP // use createPage2 instead, and rename it to createPage().
+  REMOVE; CLEAN_UP // use createPageSkipAuZ instead, and rename it to createPage().
   def createPage(pageRole: PageType, titleTextAndHtml: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, authorId: UserId, browserIdData: BrowserIdData,
         dao: SiteDao, anyCategoryId: Option[CategoryId] = None,
@@ -374,15 +375,14 @@ class DaoAppSuite(
   def createPage2(pageRole: PageType, titleTextAndHtml: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, authorId: UserId, browserIdData: BrowserIdData,
         dao: SiteDao, anyCategoryId: Option[CategoryId] = None,
-        doAsAnon: Opt[WhichAnon.NewAnon] = None,
+        asAlias: Opt[WhichAliasPat.LazyCreatedAnon] = None,
         extId: Option[ExtId] = None, discussionIds: Set[AltPageId] = Set.empty): CreatePageResult = {
-    dao.createPage2(
+    dao.createPageSkipAuZ(
       pageRole, PageStatus.Published, anyCategoryId = anyCategoryId, withTags = Nil,
       anyFolder = Some("/"), anySlug = Some(""),
       title = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
       showId = true, deleteDraftNr = None, Who(authorId, browserIdData), dummySpamRelReqStuff,
-      doAsAnon = doAsAnon,
-      discussionIds = discussionIds, extId = extId)
+      asAlias = asAlias, discussionIds = discussionIds, extId = extId)
   }
 
 
@@ -391,7 +391,7 @@ class DaoAppSuite(
     val textAndHtml =
       if (skipNashorn) textAndHtmlMaker.testBody(text)
       else textAndHtmlMaker.forBodyOrComment(text)
-    dao.insertReply(textAndHtml, pageId,
+    dao.insertReplySkipAuZ(textAndHtml, pageId,
       replyToPostNrs = Set(parentNr getOrElse PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
       Who(TrueId(memberId), browserIdData), dummySpamRelReqStuff).post
   }

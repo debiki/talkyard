@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
+import debiki.dao.CreatePageResult
 import talkyard.server._
 import talkyard.server.authz.Authz
 import javax.inject.Inject
@@ -52,15 +53,13 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: TyCont
 
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
-    // (A bit weird, here we authz with Authz.maySubmitCustomForm(), but later in
-    // PostsDao.insertReply via Authz.mayPostReply() — but works okay.)
     throwNoUnless(Authz.maySubmitCustomForm(
       request.userAndLevels, dao.getGroupIdsOwnFirst(request.user),
       pageMeta, inCategoriesRootLast = categoriesRootLast,
       tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdE2TE4A0")
 
-    request.dao.insertReply(textAndHtml, pageId, Set.empty, PostType.CompletedForm,
+    request.dao.insertReplySkipAuZ(textAndHtml, pageId, Set.empty, PostType.CompletedForm,
         deleteDraftNr = None, request.whoOrUnknown, request.spamRelatedStuff)
     Ok
   }
@@ -83,12 +82,25 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: TyCont
     val category = request.dao.getCategoryBySlug(categorySlug).getOrThrowBadArgument(
         "EsE0FYK42", s"No category with slug: $categorySlug")
 
-    val pagePath = request.dao.createPage(pageType, PageStatus.Published, Some(category.id),
-      anyFolder = None, anySlug = None, titleSourceAndHtml, bodyTextAndHtml,
-      showId = true, deleteDraftNr = None,
-      request.who, request.spamRelatedStuff)
+    val res: CreatePageResult = dao.createPageIfAuZ(
+          pageType,
+          PageStatus.Published,
+          inCatId = Some(category.id),
+          withTags = Nil,
+          anyFolder = None,
+          anySlug = None,
+          title = titleSourceAndHtml,
+          bodyTextAndHtml = bodyTextAndHtml,
+          showId = true,
+          deleteDraftNr = None,
+          reqrAndCreator = request.reqrTargetSelf,
+          spamRelReqStuff = request.spamRelatedStuff,
+          asAlias = None,
+          discussionIds = Set.empty,
+          embeddingUrl = None,
+          refId = None)
 
-    OkSafeJson(Json.obj("newPageId" -> pagePath.pageId))
+    OkSafeJson(Json.obj("newPageId" -> res.path.pageId))
   }
 
 

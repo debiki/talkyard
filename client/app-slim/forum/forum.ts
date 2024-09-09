@@ -988,6 +988,7 @@ const LoadAndListTopics = createFactory({
     // can continue reading at the top of the newly loaded topics.
     $byId('esPageColumn').classList.add('s_NoScrlAncr');
 
+    // This updates `store.listingCatId`.
     Server.loadForumTopics(categoryId, orderOffset, (response: LoadTopicsResponse) => { // (4AB2D)
       if (this.isGone) return;
       let topics: any = isNewView ? [] : (this.state.topics || []);

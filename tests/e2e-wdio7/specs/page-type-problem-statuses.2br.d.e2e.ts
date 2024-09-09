@@ -28,7 +28,7 @@ const mariasOpReplyReply = 'mariasOpReplyReply';
 
 // .Last_status_change post nr will be 5, and the first answer will be 5 + 1:
 const okaySolutionPostNr = 6;
-const optimalSolutionPostNr = 7;
+const optimalSolutionPostNr = 6 + 2;
 
 describe("page-type-problem-statuses.2br.d  TyT602AKK73", () => {
 
@@ -139,10 +139,13 @@ describe("page-type-problem-statuses.2br.d  TyT602AKK73", () => {
   });
 
   it(`But Maria can — it's her page. She selects her comment as the solution`, async () => {
+    // Generates meta comment nr = okaySolutionPostNr + 1: "@maria accepted an answer"
     await mariasBrowser.topic.selectPostNrAsAnswer(okaySolutionPostNr);
   });
 
   it(`Maria posts an even better solution`, async () => {
+    // Becomes nr = okaySolutionPostNr + 2.
+    assert.eq(optimalSolutionPostNr, okaySolutionPostNr + 2);
     await mariasBrowser.complex.replyToOrigPost(`Do it three times`)
   });
 
@@ -188,7 +191,6 @@ describe("page-type-problem-statuses.2br.d  TyT602AKK73", () => {
   });
 
   it(`Corax, wisely, selects as solution Maria's best comment  TyTCORECAN`, async () => {
-    assert.eq(optimalSolutionPostNr, okaySolutionPostNr + 1);
     await corax_brB.topic.selectPostNrAsAnswer(optimalSolutionPostNr);
   });
 

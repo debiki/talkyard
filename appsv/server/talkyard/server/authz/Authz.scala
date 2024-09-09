@@ -19,6 +19,7 @@ package talkyard.server.authz
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.EdHttp.throwForbidden
 import scala.collection.immutable
 import MayMaybe._
 import MayWhat._
@@ -201,7 +202,8 @@ object Authz {
 
 
   def mayCreatePage(
-    userAndLevels: UserAndLevels,
+    userAndLevels: AnyUserAndLevels,
+    asAlias: Opt[WhichAliasPat],
     groupIds: immutable.Seq[GroupId],
     pageRole: PageType,
     bodyPostType: PostType,
@@ -211,10 +213,12 @@ object Authz {
     inCategoriesRootLast: immutable.Seq[Category],
     tooManyPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
 
-    val user = userAndLevels.user
+    val anyUser: Opt[Pat] = userAndLevels.anyUser
 
     val mayWhat = checkPermsOnPages(
-          Some(user), groupIds, pageMeta = None, pageMembers = None,
+          anyUser, asAlias = asAlias, groupIds,
+          // Doesnt' yet exist.
+          pageMeta = None, pageAuthor = None, pageMembers = None,
           catsRootLast = inCategoriesRootLast, tooManyPermissions)
 
     def isPrivate = pageRole.isPrivateGroupTalk && groupIds.nonEmpty &&
@@ -230,7 +234,7 @@ object Authz {
     if (!mayWhat.mayCreatePage && !isPrivate)
       return NoMayNot(s"EdEMN0CR-${mayWhat.debugCode}", "May not create a page in this category")
 
-    if (!user.isStaff) {
+    if (!anyUser.exists(_.isStaff)) {
       if (inCategoriesRootLast.isEmpty && !isPrivate)
         return NoMayNot("EsEM0CRNOCAT", "Only staff may create pages outside any category")
 
@@ -271,13 +275,21 @@ object Authz {
     pageMeta: PageMeta,
     user: Opt[Pat],
     groupIds: immutable.Seq[GroupId],
+    pageAuthor: Pat,
     pageMembers: Set[UserId],
     catsRootLast: immutable.Seq[Cat],
     tooManyPermissions: immutable.Seq[PermsOnPages],
     maySeeUnlisted: Bo = true): MayMaybe = {
 
     val mayWhat = checkPermsOnPages(
-          user, groupIds, Some(pageMeta), Some(pageMembers),
+          user,
+          // [pseudonyms_later] Maybe should matter, for pseudonyms? If a pseudonym
+          // gets added to a group, maybe it's good if one's true user cannot
+          // accidentally post in a new category, just because one's pseudonym got
+          // added there? [deanon_risk]  But for a start, simpler to just not
+          // support granting permissions to pseuonyms.
+          asAlias = None, // doesn't matter when deriving `maySee`
+          groupIds, Some(pageMeta), pageAuthor = Some(pageAuthor), Some(pageMembers),
           catsRootLast = catsRootLast, tooManyPermissions,
           maySeeUnlisted = maySeeUnlisted)
 
@@ -298,16 +310,17 @@ object Authz {
   /** If pat may edit the page title & body, and settings e.g. page type,
     * and open/close it, delete/undeleted, move to another category.
     *
-    * @param otherAuthor the page author, if it's someone else than `pat` — needed,
-    *   so we can check if `pat` is actually the true author (if `otherAuthor` is hans alias).
-    *   Confusing param name? Maybe simpler to rename to `pageAuthor` and always include,
-    *   also if same as `pat`?
-    *   Or better:   [_pass_alias]  ?
+    * @param pat The user or guest who wants to edit the page.
+    * @param asAlias If pat is editing the page anonymously or pseudonymously.
+    * @param pageAuthor Needed, to know if `pat` is actually the true page author,
+    *     but maybe created the page anonymously or pseudonymously, using alias `asAlias`.
+    * @param groupIds `pat`s group ids.
     */
   def mayEditPage(
         pageMeta: PageMeta,
         pat: Pat,
-        otherAuthor: Opt[Pat],
+        asAlias: Opt[WhichAliasPat],
+        pageAuthor: Pat,
         groupIds: immutable.Seq[GroupId],
         pageMembers: Set[UserId],
         catsRootLast: immutable.Seq[Cat],
@@ -315,31 +328,44 @@ object Authz {
         changesOnlyTypeOrStatus: Bo,
         maySeeUnlisted: Bo): MayMaybe = {
 
+    // Any `asAlias` "inherits" may-see-page permissions from the real user (`pat`).
     val mayWhat = checkPermsOnPages(
-          Some(pat), groupIds, Some(pageMeta), Some(pageMembers),
+          Some(pat), asAlias = asAlias, groupIds = groupIds, Some(pageMeta),
+          pageAuthor = Some(pageAuthor), pageMembers = Some(pageMembers),
           catsRootLast = catsRootLast, tooManyPermissions,
-          maySeeUnlisted = maySeeUnlisted, otherAuthor = otherAuthor)
+          maySeeUnlisted = maySeeUnlisted)
 
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"TyEM0SEE2-${mayWhat.debugCode}")
 
-    val isOwnPage = _isOwn(pat, authorId = pageMeta.authorId, otherAuthor)
+    val (isOwnPage, ownButWrongAlias) =  _isOwn(pat, asAlias, postAuthor = pageAuthor)
 
     // For now, Core Members can change page type and doing status, if they
     // can see the page (which we checked just above).  Later, this will be
-    // the [alterPage] permission.
+    // the [alterPage] permission. [granular_perms]
     if (changesOnlyTypeOrStatus && pat.isStaffOrCoreMember) {
       // Fine (skip the checks below).
     }
     else if (isOwnPage) {
-      // Do this check in mayEditPost() too?  [.mayEditOwn]
+      // Do this check in mayEditPost() too?  [.mayEditOwn] [granular_perms]
+      BUG // Too restrictive: Might still be ok to edit, if `mayEditPage`.
       if (!mayWhat.mayEditOwn)
         return NoMayNot(s"TyEM0EDOWN-${mayWhat.debugCode}", "")
+
+      // Fine, may edit — if using the correct alias, see _checkDeanonRiskOfEdit().
     }
+    // else if (is mind map) — doesn't matter here
+    // else if (is wiki) — doesn't matter (mayEditWiki is only for the page text,
+    //                      but not the title, page type, category etc)
     else {
       if (!mayWhat.mayEditPage)
         return NoMayNot(s"TyEM0EDPG-${mayWhat.debugCode}", "")
     }
+
+    _checkDeanonRiskOfEdit(isOwn = isOwnPage, ownButWrongAlias = ownButWrongAlias,
+          asAlias = asAlias) foreach { mayNot =>
+            return mayNot
+          }
 
     // [wiki_perms] Maybe the whole page, and not just each post individually,
     // could be wiki-editable? Then those with wiki-edit-permissions,
@@ -356,8 +382,8 @@ object Authz {
 
   def maySeeCategory(authzCtx: ForumAuthzContext, catsRootLast: immutable.Seq[Category])
         : MayWhat = {
-    checkPermsOnPages(authzCtx.requester, authzCtx.groupIdsUserIdFirst,
-          pageMeta = None, pageMembers = None, catsRootLast = catsRootLast,
+    checkPermsOnPages(authzCtx.requester, asAlias = None, authzCtx.groupIdsUserIdFirst,
+          pageMeta = None, pageAuthor = None, pageMembers = None, catsRootLast = catsRootLast,
           authzCtx.tooManyPermissions, maySeeUnlisted = false)
   }
 
@@ -369,10 +395,39 @@ object Authz {
   }
 
 
+  def maySeePostIfMaySeePage(pat: Opt[Pat], post: Post): (MaySeeOrWhyNot, St) = {
+    CLEAN_UP // Dupl code, this stuff repeated in Authz.mayPostReply. [8KUWC1]
+
+    // Below: Since the requester may see the page, it's ok if hen learns
+    // if a post has been deleted or it never existed? (Probably hen can
+    // figure that out anyway, just by looking for holes in the post nr
+    // sequence.)
+
+    // Staff may see all posts, if they may see the page. [5I8QS2A]
+    ANON_UNIMPL // if post.createdById  is pat's own alias, han is the author and can see it.
+    // Don't fix now — wait until true author id is incl in posts3/nodes_t? [posts3_true_id]
+    def isStaffOrAuthor =
+          pat.exists(_.isStaff) || pat.exists(_.id == post.createdById)
+
+    // Later, [priv_comts]: Exclude private sub threads, also if is staff.
+
+    if (post.isDeleted && !isStaffOrAuthor)
+      return (MaySeeOrWhyNot.NopePostDeleted, "6PKJ2RU-Post-Deleted")
+
+    if (!post.isSomeVersionApproved && !isStaffOrAuthor)
+      return (MaySeeOrWhyNot.NopePostNotApproved, "6PKJ2RW-Post-0Apr")
+
+    // Later: else if is meta discussion ... [METADISC]
+
+    (MaySeeOrWhyNot.YesMaySee, "")
+  }
+
+
   /** Sync w ts:  store_mayIReply()
     */
   def mayPostReply(
     userAndLevels: UserAndLevels,
+    asAlias: Opt[WhichAliasPat],
     groupIds: immutable.Seq[GroupId],
     postType: PostType,
     pageMeta: PageMeta,
@@ -383,11 +438,16 @@ object Authz {
 
     val user = userAndLevels.user
 
-    SHOULD // be check-perms-on pageid + postnr, not just page
+    SHOULD // check perms on post too, not just page.  Need post author. [posts3_true_id]
     val mayWhat = checkPermsOnPages(
-          Some(user), groupIds, Some(pageMeta),
-          Some(privateGroupTalkMemberIds), catsRootLast = inCategoriesRootLast,
-          tooManyPermissions)
+          Some(user), asAlias = asAlias, groupIds,
+          Some(pageMeta),
+          // ANON_UNIMPL: Needed, for maySeeOwn [granular_perms], and later, if there'll be
+          // a mayReplyOnOwn permission?
+          // But let's wait until true author id is incl in posts3/nodes_t. [posts3_true_id]
+          pageAuthor = None,
+          pageMembers = Some(privateGroupTalkMemberIds),
+          catsRootLast = inCategoriesRootLast, tooManyPermissions)
 
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"TyEM0RE0SEE_-${mayWhat.debugCode}")
@@ -431,35 +491,54 @@ object Authz {
   */
 
 
+  /** Used also for pages, if editing the *text*.
+    * Otherwise, for pages, mayEditPage() is used, e.g. to alter page type or
+    * move the page to another category.
+    *
+    * @param ignoreAlias Helpful when just loading the source text to show in
+    *   the editor — later, pat can choose [a persona to use for editing the post]
+    *   that is allowed to edit it.
+    * @param pageAuthor Needed, because of the `maySeeOwn` and `mayEditOwn` permissions.
+    * @param postAuthor Needed, because of the `mayEditOwn`.
+    */
   def mayEditPost(
-    userAndLevels: UserAndLevels,
+    userAndLevels: UserAndLevels,  // CLEAN_UP: just use Pat instead?
+    asAlias: Opt[WhichAliasPat],
     groupIds: immutable.Seq[GroupId],
     post: Post,
-    otherAuthor: Opt[Pat],
+    postAuthor: Pat,
     pageMeta: PageMeta,
+    pageAuthor: Pat,
     privateGroupTalkMemberIds: Set[UserId],
     inCategoriesRootLast: immutable.Seq[Category],
-    tooManyPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
-
-    if (post.isDeleted)
-      return NoNotFound("TyEM0EDPOSTDELD")
+    tooManyPermissions: immutable.Seq[PermsOnPages],
+    ignoreAlias: Bo = false,
+    ): MayMaybe = {
 
     val user = userAndLevels.user
+
+    if (post.isDeleted && !user.isStaff)
+      return NoNotFound("TyEM0EDPOSTDELD")
+
     val mayWhat = checkPermsOnPages(
-          Some(user), groupIds, Some(pageMeta),
-          Some(privateGroupTalkMemberIds), catsRootLast = inCategoriesRootLast,
+          Some(user), asAlias = asAlias, groupIds, Some(pageMeta),
+          pageAuthor = Some(pageAuthor),
+          pageMembers = Some(privateGroupTalkMemberIds), catsRootLast = inCategoriesRootLast,
           tooManyPermissions)
 
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"TyEM0ED0SEE-${mayWhat.debugCode}")
 
-    val isOwnPost = _isOwn(user, authorId = post.createdById, otherAuthor)
+    val (isOwnPost, ownButWrongAlias) = _isOwn(user, asAlias, postAuthor = postAuthor)
+    var mayBecauseWiki = false
 
     if (isOwnPost) {
-      // Fine, may edit.
+      // Fine, may edit — if using the correct alias, see _checkDeanonRiskOfEdit().
+
       // But shouldn't:  isOwnPost && mayWhat[.mayEditOwn] ?  (2020-07-17)
     }
     else if (pageMeta.pageType == PageType.MindMap) {  // [0JUK2WA5]
+      BUG // Too restrictive: Might still be ok to edit, if `mayEditWiki.
       if (!mayWhat.mayEditPage)
         return NoMayNot("TyEM0ED0YOURMINDM", "You may not edit other people's mind maps")
     }
@@ -467,7 +546,8 @@ object Authz {
       // Fine, may edit.  But exclude titles, for now. Otherwise, could be
       // surprising if an attacker renames a page to sth else, and edits it,
       // and the staff don't realize which page got edited, since renamed?
-      // I think titles aren't wikifiable at all, currently, anyway.
+      // I think titles aren't wikifiable at all, currently, anyway. [alias_ed_wiki]
+      mayBecauseWiki = true
     }
     else if (post.isOrigPost || post.isTitle) {
       if (!mayWhat.mayEditPage)
@@ -476,7 +556,24 @@ object Authz {
     // Later: else if is meta discussion ... [METADISC]
     else {
       if (!mayWhat.mayEditComment)
-        return NoMayNot("EdEM0ED0YOURPOST", "You may not edit other people's posts")
+        return NoMayNot("EdEM0ED0YOURPOST", "You may not edit other people's comments")
+    }
+
+    if (ignoreAlias) {
+      // Skip the deanon risk check. (Pat is e.g. just *loading* the source text
+      // of something to edit — then, not important to specify the correct alias, since
+      // not modifying anything.
+    }
+    else if (mayBecauseWiki) {
+      // The problem that others might guess that your anonym is you, if you
+      // edit [a post originally posted as yourself] anonymously, doesn't apply to
+      // wiki posts, since "everyone" can edit wiki posts.  [deanon_risk]
+    }
+    else {
+      _checkDeanonRiskOfEdit(isOwn = isOwnPost, ownButWrongAlias = ownButWrongAlias,
+            asAlias = asAlias) foreach { mayNot =>
+              return mayNot
+            }
     }
 
     Yes
@@ -485,6 +582,7 @@ object Authz {
 
   def mayFlagPost(
     member: User,
+    // asAlias — anonymous flags not yet supported
     groupIds: immutable.Seq[GroupId],
     post: Post,
     pageMeta: PageMeta,
@@ -508,7 +606,10 @@ object Authz {
 
     SHOULD // be maySeePost pageid, postnr, not just page
     val mayWhat = checkPermsOnPages(
-          Some(member), groupIds, Some(pageMeta),
+          Some(member), asAlias = None, groupIds, Some(pageMeta),
+          // Needed for maySeeOwn? [granular_perms]
+          // Wait until true author id in posts3/nodes_t. [posts3_true_id]
+          pageAuthor = None,
           Some(privateGroupTalkMemberIds), catsRootLast = inCategoriesRootLast,
           tooManyPermissions)
 
@@ -520,16 +621,17 @@ object Authz {
 
 
   def maySubmitCustomForm(
-    userAndLevels: AnyUserAndThreatLevel,
+    userAndLevels: AnyUserAndLevels,
+    // asAlias — not supported
     groupIds: immutable.Seq[GroupId],
     pageMeta: PageMeta,
     inCategoriesRootLast: immutable.Seq[Category],
     tooManyPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
 
-    val user = userAndLevels.user
-
     val mayWhat = checkPermsOnPages(
-          user, groupIds, Some(pageMeta), None, catsRootLast = inCategoriesRootLast,
+          userAndLevels.anyUser, asAlias = None, groupIds,
+          Some(pageMeta), pageAuthor = None, pageMembers = None,
+          catsRootLast = inCategoriesRootLast,
           tooManyPermissions)
 
     if (mayWhat.maySee isNot true)
@@ -562,14 +664,21 @@ object Authz {
     */
   private def checkPermsOnPages(
     user: Opt[Pat],
+    asAlias: Opt[WhichAliasPat],
     groupIds: immutable.Seq[GroupId],
     pageMeta: Opt[PageMeta],
+    pageAuthor: Opt[Pat],
     pageMembers: Opt[Set[UserId]],
     catsRootLast: immutable.Seq[Category],
     tooManyPermissions: immutable.Seq[PermsOnPages],
     maySeeUnlisted: Bo = true,
-    otherAuthor: Opt[Pat] = None,
     ): MayWhat = {
+
+    require(pageMeta.isDefined || pageAuthor.isEmpty, "TyEAUTHORMETA")
+
+    val anyAnonAlias: Opt[Anonym] = asAlias.flatMap(_.anyPat.flatMap(_.asAnonOrNone))
+    require(anyAnonAlias.forall(_.anonForPatId == user.getOrDie("TyEALI0USR").id),
+          "Anon true id != user id  [TyEANONFORID]")  // [throw_or_may_not]
 
     // Admins, but not moderators, have access to everything.
     // Why not mods? Can be good with a place for members to bring up problems
@@ -580,15 +689,13 @@ object Authz {
 
     val isStaff = user.exists(_.isStaff)
 
-    val isOwnPage = user.exists(u => pageMeta exists { page =>
-      _isOwn(u, authorId = page.authorId, otherAuthor)
-
-      // Won't work, if creating as anon and then editing as oneself?:
-      // user.exists(_.id == m.authorId) || doAsAlias.exists(_.id == m.authorId)
-      //
-      // But it's good if that won't work?  [deanon_risk]  Let's use  `useAlias: Opt[Anonym]`
-      // instead of `otherAuthor` ?   [_pass_alias]
-    })
+    // (We ignore `_ownPageWrongAlias`, because it's about the *page* but we might be
+    // interested in a comment on the page. Instead, the caller looks at the comment or
+    // page. [alias_0_ed_others])
+    //
+    val (isOwnPage, _ownPageWrongAlias) = user.flatMap(u => pageAuthor map { thePageAuthor =>
+        _isOwn(u, asAlias, postAuthor = thePageAuthor)
+    }) getOrElse (false, false)
 
     // For now, don't let people see pages outside any category. Hmm...?
     // (<= 1 not 0: don't count the root category, no pages should be placed directly in them.)
@@ -623,6 +730,8 @@ object Authz {
               debugCode = "EdMEDOWNMINDM")
 
       // Only page participants may see things like private chats. [PRIVCHATNOTFS]
+      // Later: If some page members are aliases,  [anon_priv_msgs][anon_chats]
+      // need to consider true ids.
       if (meta.pageType.isPrivateGroupTalk) {
         val thePageMembers: Set[MembId] = pageMembers getOrDie "EdE2SUH5G"
         val theUser = user getOrElse {
@@ -668,9 +777,15 @@ object Authz {
       // — and thereafter, an admin sets the page author to someone else. Then,
       // the user should not able to see or undelete the page any longer.
       // Tests:  delete-pages.2br  TyTE2EDELPG602
-      val deletedOwnPage = user exists { theUser =>
-        pageMeta.exists(p => p.authorId == theUser.id && p.deletedById.is(theUser.id))
-      }
+      val deletedOwnPage = isOwnPage && user.exists({ theUser =>
+        pageMeta.exists(page =>
+              // Pat deleted the page as hanself?
+              page.deletedById.is(theUser.id) ||
+              // Pat deleted the page using an alias? — Since its pat's page (`isOwnPage`),
+              // the page author must be pat's alias. Don't think needed: [posts3_true_id]
+              pageAuthor.exists(a => page.deletedById.is(a.id)))
+      })
+
       if (!deletedOwnPage)
         return MayWhat.mayNotSee("TyEPAGEDELD_")
     }
@@ -761,30 +876,131 @@ object Authz {
       mayWhat = mayWhat.copyAsDeleted
     }
 
+    // If it's the wrong alias, it's still ok for the requester to look at the thing,
+    // but han can't edit anything.
+    for (thePageMeta <- pageMeta; anon <- anyAnonAlias) {
+      // Is the anonym for this page? (We've checked `anon.anonForPatId` above already.)
+      if (anon.anonOnPageId != thePageMeta.pageId)
+        // Is it best to throw, or set mayWhat to false?  [throw_or_may_not]
+        mayWhat = mayWhat.copyAsMayNothingOrOnlySee("-TyEANONPAGEID")
+    }
+
+    // Check if page or category settings allows anonyms. [derive_node_props_on_server]
+    // [pseudonyms_later]
+    val anyComtsStartAnon: Opt[NeverAlways] =
+            pageMeta.flatMap(_.comtsStartAnon).orElse(
+                // (Root last — so, the *first* category with `.comtsStartAnon` defined,
+                // is the most specific one.)
+                catsRootLast.find(_.comtsStartAnon.isDefined).flatMap(_.comtsStartAnon))
+    val comtsStartAnon = anyComtsStartAnon getOrElse NeverAlways.NeverButCanContinue
+
+    // Later:
+    // if (comtsStartAnon.toInt <= NeverAlways.Never.toInt) {
+    //   // Can't even continue being anonymous.
+    //   throwForbiddenIf(asAlias.isDefined, ...)
+    // }
+    // else
+    if (comtsStartAnon.toInt <= NeverAlways.NeverButCanContinue.toInt) {
+      asAlias foreach {
+        case _: WhichAliasPat.LazyCreatedAnon =>
+          // Can't create new anonyms here — anon comments aren't enabled, ...
+          // (This might be a browser tab left open for long, and category settings
+          // got changed, and thereafter the user submitted an anon comment which
+          // was previously allowed but now isn't.)
+          // (Throw or set mayWhat to false?  [throw_or_may_not])
+          throwForbidden("TyEM0MKANON_", "You cannot be anonymous in this category (any longer)")
+        case _: WhichAliasPat.SameAnon =>
+          // ... But it's ok to continue replying as an already existing anonym —
+          // that's the "can continue" in `NeverAlways.NeverButCanContinue`.
+          // (So, noop.)
+      }
+    }
+    else {
+      // COULD require an alias, if `cat.comtsStartAnon >= NeverAlways.AlwaysButCanContinue`,
+      // but not really important now.
+    }
+
+
     mayWhat
   }
 
 
-  /** Says if whatever-it-is was created by `pat`, by comparing pat's id with that of
-    * the author — but that won't work, if the author is one of pat's aliases (because
-    * aliases have their own ids). Therefore, also compares with the true id of
-    * any alias author (anonym or pseudonym).
+  /** Says if a user or hans alias is the same as a post author. Or if the user
+    * is using the wrong alias:
     *
-    * Maybe remove?  [_pass_alias]
+    * Returns two bools, the first says if the post is trueUser' posts. If it is,
+    * then, the 2nd says if trueUser is using the wrong alias. Look:
+    * - (false, false) = sbd else's post
+    * - (true, false) = is trueUser's page, created under alias `asAlias` if defined.
+    * - (true, true) = problem: It's trueUser's page, but the wrong alias
+    *       (wrong alias includes specifying an alias, when originally posting as oneself).
+    * - (false, true) = can't happen: can't be both someone else's page and also
+    *     tueUser's alias' page.
+    *
+    * @param trueUser the one who wants to view/edit/alter the post, possibly using
+    *   an anonym or pseudonym `asAlias`.
+    * @param asAlias must be `trueUser`s anonym or pseudonym.
+    * @param postAuthor – so we can compare the author's true id with trueUser,
+    *   for better error messages.
     */
-  def _isOwn(pat: Pat, authorId: PatId, author: Opt[Pat]): Bo = {
-    if (pat.id == authorId) {
-      true
+  private def _isOwn(trueUser: Pat, asAlias: Opt[WhichAliasPat], postAuthor: Pat): (Bo, Bo) = {
+    val isTrueUsers = trueUser.id == postAuthor.trueId2.trueId
+    asAlias.flatMap(_.anyPat) match {
+      case None =>
+        val isByTrueUsersAlias = isTrueUsers && trueUser.id != postAuthor.id
+        // If by an alias, then, we've specified the wrong alias, namely no alias or
+        // a not-yet-created `LazyCreatedAnon`.
+        val wrongAlias = isByTrueUsersAlias
+        (isTrueUsers, wrongAlias)
+
+      case Some(alias) =>
+        require(alias.trueId2.trueId == trueUser.id, s"Not trueUser's alias. True user: ${
+              trueUser.trueId2}, alias: ${alias.trueId2} [TyE0OWNALIAS1]")
+        val correctAlias = alias.id == postAuthor.id
+        val ownButWrongAlias = isTrueUsers && !correctAlias
+        (isTrueUsers, ownButWrongAlias)
     }
-    else author.exists({
-      // BUT isn't it safer to pass  pat & patsAlias  and require that the alias is
-      // the same?  [deanon_risk]  So can't accidentally edit an anon page as oneself
-      // (one's true id) just because it's one's own anonym — which others might then guess.
-      case anon: Anonym =>
-        dieIf(anon.id != authorId, "TyE0PGAUTHOR", s"Anon ${anon.id} != author ${authorId}")
-        anon.anonForPatId == pat.id
-      case _ => false
-    })
+  }
+
+
+  /** Returns `Some(NoMayNot)` if editing the post using the persona specified
+    * (either an alias, if asAlias defined, or as oneself) would mean that others
+    * might guess that the anonym you were/are using, is actually you. [deanon_risk] 
+    */
+  private def _checkDeanonRiskOfEdit(isOwn: Bo, ownButWrongAlias: Bo,
+        asAlias: Opt[WhichAliasPat]): Opt[NoMayNot] = {
+
+    // If true user U wrote something as hanself, han should edit it as hanself (as U).
+    // Otherwise others might guess that [U's anonym or pseudonym doing the edits], is U.
+    //
+    ANON_UNIMPL // [mods_ed_own_anon] If user U can edit the page as hanself for
+    // *other reasons than* `mayWhat.mayEditOwn`, then, that _is_ok. For example,
+    // if U is a mod, then, others can see that han can edit the page because han is
+    // a mod — and they can't conclude that han and [the anonym who posted the page]
+    // are the same.  Not yet impl though. Currently, need to continue editing
+    // anonymously (also if U is admin / mod).
+    //
+    if (ownButWrongAlias)
+      return Some(asAlias.isEmpty
+          ? NoMayNot("TyEM0ALIASEDTRUE", // [true_0_ed_alias]
+            // (This _is_ok, actually — if pat is a mod or admin. See comment above.)
+            o"""You're trying to edit your post as yourself, but you posted it
+                      anonymously. Then you should edit it anonymously too.""")
+          | NoMayNot("TyEM0TRUEEDALIAS",
+            // [pseudonyms_later] Need to edit this message, if might be the wrong
+            // pseudonym, not an anonym, that tries to edit.
+            o"""You're trying to edit your own post anonymously, but you posted it
+                      as yourself. Then you should edit it as yourself too."""))
+
+    // Typically, only few users, say, moderators, can edit *other* people's posts.
+    // So, if a mod edits others' posts anonymously, the others could guess that the
+    // anonym is one of the moderators, that's no good. [alias_0_ed_others]
+    if (!isOwn && asAlias.isDefined)
+      return Some(NoMayNot("TyEM0ALIASEDOTHR",
+                    "You cannot edit other people's pages anonymously, as of now"))
+
+    // Fine. Posted as oneself, is editing as oneself. Or posted as anon, edits as anon.
+    None
   }
 
 }
@@ -890,7 +1106,18 @@ case class MayWhat(
     mayDeletePage = false,
     mayDeleteComment = false,
     mayCreatePage = false,
-    mayPostComment = false)
+    mayPostComment = false,
+    debugCode = debugCode + "-CPDELD")
+
+  /** Sets everything to false (no-you-may-not), except for `maySee` and `maySeeOwn` which
+    * are left as-is.
+    */
+  def copyAsMayNothingOrOnlySee(debugCode: St): MayWhat =
+    MayWhat().copy( // everything false by default
+          maySee = maySee,
+          maySeeOwn = maySeeOwn,
+          debugCode = this.debugCode + debugCode)
+
 }
 
 

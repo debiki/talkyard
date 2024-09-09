@@ -78,3 +78,21 @@ $sideSpace = 20px;
 
 .esExplDrp_entry_sub
   margin: 8px 20px 16px;
+
+// If there's an image/icon to the left of the tilte & text.
+.esExplDrp_entry:has(.esExplDrp_entry_img) button
+  display: flex;
+  // The images a bit function as padding-left, so reduce from $sideSpace = 20px
+  // to just .esDropModal_header's padding-left = 11px. [proxy_diag_padding]
+  padding-left: 11px;
+
+.esExplDrp_entry_img
+  flex: 0
+
+  .esAvtr
+    position: static;
+    margin-right: 15px;
+
+.esExplDrp_entry_TtlTxt
+  flex: 1
+

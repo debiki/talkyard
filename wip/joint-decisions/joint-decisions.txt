@@ -8,7 +8,7 @@ If cannot trust all admins, then, optionally (forum wide settings) require many 
 to agree (e.g. two), and notify all other admins, if wants to do any of:
 
 - Impersonating anyone.  [imp_notfs]
-- See who an anonymous user or pseudonym is
+- See who an anonymous user or pseudonym is  [see_alias]
 - Looking at email addresses or IP addresses in email logs, request logs, audit logs
   (e.g. when this anonym got a reply, to what email address did the notification get sent?).
 - Changing any related forum setting.

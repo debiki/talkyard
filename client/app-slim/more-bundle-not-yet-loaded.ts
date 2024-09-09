@@ -58,19 +58,26 @@ export function showCreateUserDialog(params: CreateUserParams) {
 }
 
 
-export function maybeChooseModAlias(ps: MaybeChooseAnonPs, then?: (_: ChoosenAnon) => V) {
+export function chooseEditorPersona(ps: ChooseEditorPersonaPs, then?: (_: DoAsAndOpts) => V) {
   Server.loadMoreScriptsBundle(() => {
-    anon.maybeChooseModAlias(ps, then);
+    persona.chooseEditorPersona(ps, then);
   });
 }
 
 
-export function maybeChooseAnon(ps: MaybeChooseAnonPs, then: (_: ChoosenAnon) => V) {
+export function choosePosterPersona(ps: ChoosePosterPersonaPs,
+          then: (_: DoAsAndOpts | 'CANCEL') => V) {
   Server.loadMoreScriptsBundle(() => {
-    anon.maybeChooseAnon(ps, then);
+    persona.choosePosterPersona(ps, then);
   });
 }
 
+export function openPersonaInfoDiag(ps: { atRect: Rect, isSectionPage: Bo,
+        me: Me, personaOpts: PersonaOptions, discProps: DiscPropsDerived }): V {
+  Server.loadMoreScriptsBundle(() => {
+    persona.openPersonaInfoDiag(ps);
+  });
+}
 
 export function openAboutUserDialog(who: number | string | BriefUser, at, extraInfo?: string) {
   Server.loadMoreScriptsBundle(() => {
@@ -99,9 +106,9 @@ export function openAddPeopleDialog(ps: { curPatIds?: PatId[], curPats?: Pat[],
 }
 
 
-export function openDeletePostDialog(post: Post, at: Rect) {
+export function openDeletePostDialog(ps: { post: Post, at: Rect, doAsAnon?: MaybeAnon }) {
   Server.loadMoreScriptsBundle(() => {
-    debiki2.pagedialogs.openDeletePostDialog(post, at);
+    debiki2.pagedialogs.openDeletePostDialog(ps);
   });
 }
 

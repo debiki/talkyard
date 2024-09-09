@@ -57,7 +57,7 @@ class ReviewStuffAppSuite(randomString: String)
 
     def testAdminsRepliesApproved(adminId: UserId, pageId: PageId) {
       for (i <- 1 to 10) {
-        val result = dao.insertReply(textAndHtmlMaker.testBody(s"reply_9032372 $r, i = $i"), pageId,
+        val result = dao.insertReplySkipAuZ(textAndHtmlMaker.testBody(s"reply_9032372 $r, i = $i"), pageId,
           replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
           Who(adminId, browserIdData), dummySpamRelReqStuff)
         result.post.isCurrentVersionApproved mustBe true
@@ -66,7 +66,7 @@ class ReviewStuffAppSuite(randomString: String)
     }
 
     def reply(memberId: UserId, text: String): InsertPostResult = {
-      dao.insertReply(textAndHtmlMaker.testBody(text), thePageId,
+      dao.insertReplySkipAuZ(textAndHtmlMaker.testBody(text), thePageId,
         replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
         Who(memberId, browserIdData), dummySpamRelReqStuff)
     }

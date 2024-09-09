@@ -4,12 +4,12 @@ Alias = anonym or pseudonym
 
 Intro:
 
-- Anonyms are per page. This is safer — can't track a single anonym accross different
-  conversations. And more social? In that, if you want, you can show who you
-  actually are, in one discussion, while staying anonymous in all others.
+- Anonyms are per page. [one_anon_per_page] This is safer — can't track a single anonym
+  accross different conversations. And more social? In that, if you want, you can show
+  who you actually are, in one discussion, while remaining anonymous in all others.
   And good for ideation: Anonymous, temporarily. See the Ideation section.
 - Pseduonyms (a.k.a pen names) can be reused accross pages and categories.
-  They are more social, but less "safe".
+  They are more social, but less "safe". (Not implemented.)
 - Both anonyms and pseudonyms inherit (some of) the permissions of the underlying
   true user. (Later, this will be more configurable? But not initially?)
   See [pseudonym_types] below.
@@ -30,35 +30,53 @@ then, this is a big box of butterflies!
 Left to do
 -----------------------
 
-Quick:
+Now:
+  - Save persona mode in ... localStorage? Cookie? [remember_persona_mode]
+  - [hide_peoples_dates]  [deanon_risk]
+  - Notifications: List notifications to all one's aliases (anonyms & pseudonyms),
+    not just to oneself. [list_alias_things] [posts3_true_id]
+  - Actions: List comments & pages by one's aliases, on one's recent comment page
+    (but of course others, not even mods or admins, can see this). [list_by_alias]
+  - Bind anonForPatId to ... Unknown user id? for now, in json dumps. [export_privid]
+
+
+Later, quick:
   - RENAME // to ...ByTrueId?
     val anonsByRealId = anons.groupBy(_.anonForPatId)
-
-  - Code review:
-    - tests/e2e-wdio7/specs/alias-anons-basic.2br.f.e2e.ts
-    - tests/e2e-wdio7/specs/alias-anons-true-mixed.2br.f.e2e.ts
+  - Rename def getAliasOrTruePat()  to getPersona()?  And "nnnMaybeAnon" to "nnnPersona"?
 
 Minor & medium:
-  - Notifications: List notifications to all one's aliases (anonyms & pseudonyms),
-    not just to oneself. [list_alias_things]
-  - Actions: List comments & pages by one's aliases, on one's recent comment page
-    (but of course others, not even mods or admins, can see this).
-  - Authz.scala:  [_pass_alias] [deanon_risk]
-  - Reuse getAliasOrTruePat() everywhere  [get_anon]
-  - Accept/unaccept answer
-  - Close/reopen page
-  - Delete/undelete own page
-  - Rename page
-  - mayEditPage(.., asAlias, ...) in PageTitleSettingsController  [may_use_alias]
-  - Flag (report) things anonymously?
-  - Search for all DO_AS_ALIAS
+
+  - Remember post-as-oneself in drafts3, use post_as_id_c, and,
+  - Remember anon status, also when reusing anons, in drafts3.
+  - Verify anonStatus is correct, when reusing an anon or resuming a draft  [chk_alias_status]
+
+  - Button title: "Post as yourself", "Post anonymously]",  in >= anon-allowed cats.
+  - Require 2 clicks to choose anon, but not at the same coordinates? [deanon_risk] [mouse_slip]
+
+  - Let aliases edit wikis [alias_ed_wiki] (normally, editing
+      others' posts anonymously isn't allowed)
+  - wikify-dialog.more.ts  choose persona  (if posted as anon, should wikify as same anon)
+  - Flag (report) things anonymously? [anon_flags]
   - Search for all ANON_UNIMPL
+  - Better error messages: [alias_ux] [dif_anon_status]
+  - All audit log  doerTrueId   should be like:  doingAs.trueId2  not  reqr.trueId2
+  - Let mods & admins edit their own anon posts as themselves?  See [true_0_ed_alias]
+    and [mods_ed_own_anon] in _checkDeanonRiskOfEdit().
 
-(Also see: [anon_pages])
+  - An optional intro guide that explains anon comments? [anon_comts_guide]
+    Like the admin intro tour, but about anon comments & votes, and for everyone.
+    See  `staffTours: StaffTours`  in ../../client/app-staff/admin/staff-tours.staff.ts.
 
-Later:
+  - Also maybe show a dialog if a mod or admin edits group settings or helps someone
+    configure their settings: Clarify that such changes aren't anonymous.
+    Basically any changes on the user and group profile pages.
+
+Even later:
+  - A [see_alias] permission, so can choose to see who an anonym is,
+       or can vote to see who an anon is.
   - Ask the server which alias to use, instead of deriving client side [fetch_alias]
-    e.g. if the page is big?  Also prevents any misbehaving clients.
+    e.g. if the page is big?
   - Incl true id in json dumps, depending on site sensitivity settings  [export_privid]
     Maybe add sth like talkyard.server.parser.JsonConf that says if any doerId.privId
     should be included or not?  SensitiveConf or PrivacyConf maybe?
@@ -70,22 +88,39 @@ Later:
   - Think about anonymous votes and how many have read this-or-that comment,
     when the same person visits & comments sometimes as hanself, sometimes
     using an alias.  See: PagePopularityCalculator  [alias_vote_stats]
+    Answer: If sensitive discussions, each anonym has the same weight (doesn't matter who
+    the true user is).  And if ideation, and temporary anon comments: Then, votes might even
+    be hidden (to prevent anchoring bias and social biases), and later, when showing
+    people's votes, people aren't temp-anonymous any more anyway (so, can calculate
+    page popularity as usual).
   - [pseudonyms_later] [pseudonyms_trust]
-  - [anon_priv_msgs][anon_chats]
+  - Later: Anonymous chat messages? [anon_chats]
   - [sql_true_id_eq]
     Look at later, realted to anonyms and pseudonyms (looking up on both true id & anon id).
+  - Anonymous/pseudonymous direct messages [anon_priv_msgs]. (Disabled by default?)
+  - Panic button
+  - Ask which persona to use, if changing category when composing new topic. [ask_if_needed]
+    (Not that important, now there's an info message.)
+  - Pass doer (usually the author)  and  trueDoer  to NotificationGenerator,
+    so won't need to lookup inside.    [notf_pass_doer]
 
 Tests missing:
   /^alias/  in test-map.txt.
 
 Large:
-  - Alias selector (see below)
-  - Dim buttons
+  - Alias selector (see below) ... Oh, now implemented alraedy.
+
+  - Dim buttons  [_dim_buttons] (that you cannot click if in Anon mode — but this requires
+    the client to somehow reproduce all can-do-what permission calculations the server does,
+    and for both (!)  oneself (does a button appear at all),  and one's current persona
+    (should the button be dimmed, that is, one can click it using one's real account,
+    but not as one's current persona).
 
   - Anonymous moderator actions  [anon_mods]:  Let mods do things anonymously,
     but using different per-page-&-user anons, so no one can see if
     replies by an anon, are in fact by one of the mods (if that anon later did
-    sth only mods can do). — Look at all `getAliasOrTruePat()` and [get_anon].
+    sth only mods can do). — Look at all `getAliasOrTruePat()`.
+    Or maybe post-as-group is better, all that's needed? (see just below)
 
   - Group aliases / post as group?  [group_pseudonyms]
     So many people can post, using the same name.
@@ -98,12 +133,22 @@ Much later:
   - More anonymous modes, e.g. one that doesn't remember who an anonym is — not in email logs,
     audit logs, etc.
 
+Skip?:
+  - Anonymous embedded comments. Not that important — can comment as a guest instead?
+    Would need to ask which persona to use, in the comments iframe, before opening editor,
+    so can show dialog next to the reply/edit btns.
+  - Optionally disallow moving a page with anonymous comments, to a category
+    where anon comments aern't allowed.
+    See:  mayEditPage(.., asAlias, ...) in PageTitleSettingsController  [move_anon_page]
+  - One person with [many_anons_per_page].  (Except for anonymous moderation, but maybe
+    a shared moderator pseudonym is better.)
+
 
 For sensitive discussions
 =======================
 
 
-Alias selector  [alias_mode] [choose_alias]
+Alias selector  [persona_mode] [alias_mode]
 -----------------------
 A preferred-alias selector in one's upper right username menu, which determines
 which of one's aliases gets used, in places where one can post as:
@@ -114,23 +159,19 @@ which of one's aliases gets used, in places where one can post as:
 If you comment or vote on a page where you have used another alias that the one
 currently selected (in the alias selector),  then, Talkyard asks:
   "You previously commented here as X,  but you've activated pseudonym Y.
-    Continue commenting as X?   [yes, as X  /  no, as Y  /  cancel]"
+    Continue commenting as:  X?   Y?  [Cancel]"
 
-And, since Y is a somewhat unlikely answer, then dobuble check:
+And, since Y is a somewhat unlikely answer, dobuble check:  (not impl)  [mouse_slip]
   "Ok, you'll appear as Y   [yes, fine  /  no, cancel]"
-
-Or, if the current mode is Anonymous, and you visit a discussion where you've
-replied as yourself previously, and you hit Reply, then, a dialog:
-
-   "Continue using your real name in this discussion? [y / n]
-   You're in Anonymous mode but on this page you've used your real name previously."
 
 (Might seem as if this double check question is an extra step, but it'll almost
 never happen that anyone replies as X and later on what to continue as Y in the
 same discussion. — Maybe shouldn't even be allowed; could be a config setting.)
 
+Or, if the current mode is Anonymous, and you visit a discussion where you've
+replied as yourself previously, then the choose-persona dialog appears too.
 
-Dim buttons
+Dim buttons  [_dim_buttons]
 -----------------------
 When a not-oneself alias has been selected, then, all buttons that don't work
 with alias mode, could be dimmed a bit?  For example, if one is a moderator,
@@ -171,12 +212,12 @@ Think about
   Can even make sense with different types of pseudonyms?
     - One "type" that has the same access permissions as one's true account?
     - Another that doesn't inherit anything from one's true account?
-      But can instead be granted permissions independently of one's true account.
+      But can optionally be granted permissions independently of one's true account.
       This, though, is more like a completely separate account, but you access it
       by first logging in to your true account, then switching accounts.
 
 
-Guessing who is who?  [deanon_risk]
+Guessing who is who?  [deanon_risk] [mod_deanon_risk]
 -----------------------
 - People's slightly unique writing style can be a "problem", can be mitigated by letting
   an AI transform all anon comments to a similar writing style.
@@ -184,8 +225,10 @@ Guessing who is who?  [deanon_risk]
   comments from the same time span, otherwise just silence the whole night. Repeated a few
   times, then, easy to make a good guess about who posted the anon comments. — Mitigated
   by hiding last-active-at & posted-at timestamps, or making timestamps coarse-grained,
-  e.g. showing only day or week (but not hour and minute).
+  e.g. showing only day or week (but not hour and minute). [hide_peoples_dates]
 - Inherits permissions — see [pseudonym_types] below.
+    - Posting anonymously in a category few people have access too.
+    - Anonymously moving a page from one access restricted cat to another.
 - 9999 more things...
 
 When posting anonymously, often safer to [not_use_true_users]' permissions.
@@ -203,19 +246,11 @@ Lots of work
   good guesses about who the pseudonyms are?
 - If repeatedly doing very different things that few others can do,
   using the same pseudonym, then what? Calculate total % likelihood that someone
-  correctly guesses their true identidy, looking at all past actions, and if too high,
+  correctly guesses their true identity, looking at all past actions
+  (can use AI and spend a bunch of lifetimes, researching this?), and if too high,
   consider switching to a new pseudonym?  — Maybe simpler to just suggest that
   the user switches to a new pseudonym after N time units or M interactions/comments.
 
-
-Would be nice
------------------------
-- Pass doer (usually the author)  and  trueDoer  to NotificationGenerator,
-  so won't need to lookup inside.    [notf_pass_doer]
-
-
-Unnecessary
------------------------
 - If an admin Alice impersonates Bob, then, even if Bob's list of aliases are hidden
   (so Alice can't see them),  it can still be partly possible for Alice to figure out
   which aliases are Bob's aliases — by looking at when Bob did *not* get notified about
@@ -227,8 +262,11 @@ Unnecessary
   to impersonate anyone  (say, >= 2 admins need to agree) combined with
   impersonation notifications  [imp_notfs].
 
-- One person with [many_anons_per_page].  (Except for anonymous moderation, but maybe
-  a shared moderator pseudonym is better.)
+  Or, hide notifications, if impersonating. Maybe could be different impersonation
+  capabilities, e.g. see true user's comments / see anon comments. Can be nice if
+  it's possible for an admin to help sbd out by impersonating their account and
+  figure out why sth doesn't work, *without* any chance that the admin accidentally
+  learns who that person are, anonymously.
 
 
 For ideation

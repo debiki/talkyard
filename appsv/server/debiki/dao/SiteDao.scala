@@ -31,9 +31,11 @@ import scala.collection.immutable
 import talkyard.server.TyContext
 import talkyard.server.authz.MayMaybe
 import talkyard.server.notf.NotificationGenerator
+import talkyard.server.parser
 import talkyard.server.pop.PagePopularityDao
 import talkyard.server.pubsub.{PubSubApi, StrangerCounterApi}
 import talkyard.server.summaryemails.SummaryEmailsDao
+import play.api.libs.json.JsObject
 import org.scalactic.{ErrorMessage, Or}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
@@ -895,51 +897,129 @@ object SiteDao extends TyLogging {
   }
 
 
-  /** If the requester is doing sth anonymously (e.g. anon comments or votes),
+  /** For rejecting a request early, if an invalid alias is specified,
+    * while `getAliasOrTruePat()` (below) is used later, in a db tx, to get or lazy-create
+    * the alias.
+    *
+    * @param reqBody If a persona is specified in the request body, it overrides
+    *   any persona mode. [choose_persona]
+    * @param reqr The person doing the thing. Rename to 'prin(cipal)'? [rename_2_principal]
+    * @param modeAlias Any persona mode alias (e.g. if entering Anonymous Mode).
+    * @param mayCreateAnon If editing one's old comment, should reuse the same anon
+    *   as when posting the comment; may not create a new.
+    * @param mayReuseAnon If creating a new page, there's no anonym on that page
+    *   to reuse, yet.
+    */
+  def checkAliasOrThrowForbidden(reqBody: JsObject, reqr: Pat, modeAlias: Opt[WhichAliasPat],
+          mayCreateAnon: Bo = true, mayReuseAnon: Bo = true,
+          )(dao: SiteDao): Opt[WhichAliasPat] = {
+
+    TESTS_MISSING // [misc_alias_tests], check callers
+
+    // Any 'doAsAnon' in the request json body telling us which persona to use?
+    val anyAliasIdInReqBody: Opt[WhichAliasId] =
+          parser.parseDoAsAnonField(reqBody) getOrIfBad { prob =>
+            throwBadReq("TyEPERSBDYJSN", s"Bad persona req body json: $prob")
+          }
+
+    // The actual anonym or pseudonym, after having looked up by id.
+    val anyAliasPatInReqBody: Opt[Opt[WhichAliasPat]] = anyAliasIdInReqBody map {
+      case WhichAliasId.Oneself =>
+        // Any alias should be the *principal*'s alias, not the requester's — but
+        // currently the requester and principal are the same, for all endpoints that
+        // support persona mode, see  [alias_4_principal].
+        None
+
+      case sa: WhichAliasId.SameAnon =>
+        throwForbiddenIf(!mayReuseAnon, "TyEREUSEANON", "Cannot reuse anonym here")
+        val anon = dao.getTheParticipant(sa.sameAnonId).asAnonOrThrow
+        throwForbiddenIf(anon.anonForPatId != reqr.id,
+              "TyE0YOURANON01", "No your anonym")
+        Some(WhichAliasPat.SameAnon(anon))
+
+      case n: WhichAliasId.LazyCreatedAnon =>
+        throwForbiddenIf(!mayCreateAnon, "TyENEWANON1", "Cannot create anonym now")
+        Some(WhichAliasPat.LazyCreatedAnon(n.anonStatus))
+    }
+
+    // if  anyAliasPatInReqBody.get != modeAlias  {
+    //   Noop. It's ok if any Persona Mode alias is different from any alias in the
+    //   request body. Then, one can switch to Persona Mode, but still do one-off
+    //   things as sbd else if in an old discussion one was sbd else.
+    // }
+
+    anyAliasPatInReqBody getOrElse modeAlias
+  }
+
+
+
+  /** Gets or lazy-creates the specified alias, or just returns the user hanself (`truePat`).
+    *
+    * If the requester is doing sth anonymously (e.g. anon comments or votes),
     * looks up & returns the anonymous user. Or creates a new anonymous user if
-    * needed.  Otherwise just returns `truePat`.
+    * needed.
     *
     * @param truePat The true person behind any anonym or pseudonym.
     * @param pageId Anonyms are per page, each one is restricted to a single page.
-    * @param doAsAlias The anonym or pseudonym to use.
+    * @param asAlias The anonym or pseudonym to use.
     * @param mayCreateAnon If the author of a page closes it or reopens it etc,
-    *   han cannot create a new anonym to do that.
+    *   han cannot create a new anonym to do that. Han needs to reuse the same
+    *   persona, as when creating the page. (Otherwise others can guess that
+    *   the real person and any anonym of hans are the same —  if they both can
+    *   alter the same page. [deanon_risk])
     */
-  def getAliasOrTruePat(truePat: Pat, pageId: PageId, doAsAlias: Opt[WhichAnon],
-          mayCreateAnon: Bo, isCreatingPage: Bo = false)(tx: SiteTx, mab: MessAborter): Pat = {
-    // Dupl code. [get_anon]
-    if (doAsAlias.isEmpty)
+  def getAliasOrTruePat(truePat: Pat, pageId: PageId, asAlias: Opt[WhichAliasPat],
+          mayCreateAnon: Bo = true, mayReuseAnon: Bo = true, isCreatingPage: Bo = false,
+          )(tx: SiteTx, mab: MessAborter): Pat = {
+    TESTS_MISSING // [misc_alias_tests], of callers.
+
+    if (asAlias.isEmpty)
       return truePat
 
-    doAsAlias.get match {
-      case WhichAnon.SameAsBefore(anonId) =>
-        val anon = tx.loadTheParticipant(anonId).asAnonOrThrow
-        if (anon.anonForPatId != truePat.trueId2.trueId)
-          mab.abortDeny("TyE0YOURANON", "No your alias")
+    asAlias.get match {
+      case WhichAliasPat.SameAnon(anonOtherTx) =>
+        if (!mayReuseAnon)
+          mab.abort("TyEOLDANON2", "Cannot reuse anonym now")
+
+        // (Maybe we don't actually need to reload the anon. Oh well.)
+        val anon: Anonym = tx.loadTheParticipant(anonOtherTx.id).asAnonOrThrow
+        if (anon.anonForPatId != truePat.id)
+          mab.abortDeny("TyE0YOURANON2", "No your anon")
 
         anon
 
-      case WhichAnon.NewAnon(anonStatus) =>
-        if (!mayCreateAnon)
-          mab.abort("TyENEWANON02", "Cannot create new anonym now")
+      case WhichAliasPat.LazyCreatedAnon(anonStatus: AnonStatus) =>
+        if (!anonStatus.isAnon)
+          return truePat
 
-        // Dupl code. [mk_new_anon]
-        val anonymId = tx.nextGuestId
-        val anonym = Anonym(
-              id = anonymId,
+        if (!mayCreateAnon)
+          mab.abort("TyENEWANON2", "Cannot create new anonym now")
+
+        // Reuse any already existing anonym [one_anon_per_page] — at most one per page
+        // and person, for now.
+        val anyAnon = tx.loadAnyAnon(truePat.id, pageId = pageId, anonStatus)
+        anyAnon foreach { anon =>
+          dieIf(anon.anonForPatId != truePat.id, "TyE7L02SLP3")
+          return anon
+        }
+
+        val anonId = tx.nextGuestId
+        val newAnon = Anonym(
+              id = anonId,
               createdAt = tx.now,
               anonStatus = anonStatus,
               anonForPatId = truePat.id,
               anonOnPageId = pageId)
 
-        // We might insert a new anonym before the page exists, but there's a foreign key
+        // We might insert the anonym before the page exists, but there's a foreign key
         // from anons to pages:  pats_t.anon_on_page_id_st_c,  so defer constraints.
         if (isCreatingPage) {
           tx.deferConstraints()
         }
 
-        tx.insertAnonym(anonym)
-        anonym
+        tx.insertAnonym(newAnon)
+        newAnon
     }
   }
+
 }

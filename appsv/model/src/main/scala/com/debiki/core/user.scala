@@ -1024,6 +1024,10 @@ trait MemberMaybeDetails {
 }
 
 
+trait Alias {
+  def aliasForPatId: PatId
+}
+
 
 case class Anonym(
   id: AnonId,
@@ -1032,12 +1036,18 @@ case class Anonym(
   anonForPatId: MembId,
   anonOnPageId: PageId,
   // deanonymizedById: Opt[MembId],  // later
-  ) extends Pat with GuestOrAnon with Someone {
+  ) extends Pat with GuestOrAnon with Someone with Alias {
 
   override def trueId2: TrueId = TrueId(id, anyTrueId = Some(anonForPatId))
+  def aliasForPatId = anonForPatId
 
   def anyUsername: Opt[St] = None
+
+  // Not that much in use — client side code shows the anon status instead   [anon_2_str]
+  // (e.g. "Temp Anonym" or "Aonymous"), in different languages.  But is used in
+  // "Written by ..." in email notifications?
   def nameOrUsername: St = "Anonym"
+
   override def anyName: Opt[St] = Some(nameOrUsername)
   override def usernameOrGuestName: St = nameOrUsername
 

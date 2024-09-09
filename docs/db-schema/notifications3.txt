@@ -21,32 +21,38 @@
  about_tag_id_c       | tag_id_d                    |           |          | 
  about_thing_type_c   | thing_type_d                |           |          | 
  about_sub_type_c     | sub_type_d                  |           |          | 
+ by_true_id_c         | pat_id_d                    |           |          | 
+ to_true_id_c         | pat_id_d                    |           |          | 
 Indexes:
-    "dw1_notfs_id__p" PRIMARY KEY, btree (site_id, notf_id)
-    "dw1_ntfs_createdat_email_undecided__i" btree (created_at) WHERE email_status = 1
-    "dw1_ntfs_emailid" btree (site_id, email_id)
-    "dw1_ntfs_postid__i" btree (site_id, about_post_id_c) WHERE about_post_id_c IS NOT NULL
-    "dw1_ntfs_seen_createdat__i" btree ((
-CASE
-    WHEN seen_at IS NULL THEN created_at + '100 years'::interval
-    ELSE created_at
-END) DESC)
+    "notfs_p_notfid" PRIMARY KEY, btree (site_id, notf_id)
     "notfs_i_aboutcat_topat" btree (site_id, about_cat_id_c, to_user_id) WHERE about_cat_id_c IS NOT NULL
     "notfs_i_aboutpage_topat" btree (site_id, about_page_id_str_c, to_user_id) WHERE about_page_id_str_c IS NOT NULL
     "notfs_i_aboutpat_topat" btree (site_id, about_pat_id_c, to_user_id) WHERE about_pat_id_c IS NOT NULL
     "notfs_i_aboutpost_patreltype_frompat_subtype" btree (site_id, about_post_id_c, action_type, by_user_id, action_sub_id) WHERE about_post_id_c IS NOT NULL
+    "notfs_i_aboutpostid" btree (site_id, about_post_id_c) WHERE about_post_id_c IS NOT NULL
     "notfs_i_abouttag_topat" btree (site_id, about_tag_id_c, to_user_id) WHERE about_tag_id_c IS NOT NULL
     "notfs_i_aboutthingtype_subtype" btree (site_id, about_thing_type_c, about_sub_type_c) WHERE about_thing_type_c IS NOT NULL
     "notfs_i_bypat" btree (site_id, by_user_id) WHERE by_user_id IS NOT NULL
-    "notfs_touser_createdat__i" btree (site_id, to_user_id, created_at DESC)
-    "notfs_touser_post__i" btree (site_id, to_user_id, about_post_id_c)
+    "notfs_i_bytrueid" btree (site_id, by_true_id_c) WHERE by_true_id_c IS NOT NULL
+    "notfs_i_createdat_but_unseen_first" btree ((
+CASE
+    WHEN seen_at IS NULL THEN created_at + '100 years'::interval
+    ELSE created_at
+END) DESC)
+    "notfs_i_createdat_if_undecided" btree (created_at) WHERE email_status = 1
+    "notfs_i_emailid" btree (site_id, email_id)
+    "notfs_i_totrueid_createdat" btree (site_id, to_true_id_c, created_at DESC) WHERE to_true_id_c IS NOT NULL
+    "notfs_i_touserid_aboutpostid" btree (site_id, to_user_id, about_post_id_c)
+    "notfs_i_touserid_createdat" btree (site_id, to_user_id, created_at DESC)
 Check constraints:
     "dw1_notfs_emailstatus__c_in" CHECK (email_status >= 1 AND email_status <= 20)
     "dw1_notfs_seenat_ge_createdat__c" CHECK (seen_at > created_at)
     "dw1_ntfs__c_action" CHECK ((action_type IS NOT NULL) = (action_sub_id IS NOT NULL))
     "dw1_ntfs_by_to__c_ne" CHECK (by_user_id::text <> to_user_id::text)
     "notfs_c_aboutthingtype_subtype_null" CHECK ((about_thing_type_c IS NULL) = (about_sub_type_c IS NULL))
+    "notfs_c_byuserid_ne_bytrueid" CHECK (by_user_id <> by_true_id_c::integer)
     "notfs_c_notftype_range" CHECK (notf_type >= 101 AND notf_type <= 999)
+    "notfs_c_touserid_ne_totrueid" CHECK (to_user_id <> to_true_id_c::integer)
     "notifications_c_id_not_for_imp" CHECK (notf_id < 2000000000)
 Foreign-key constraints:
     "notfs_aboutcat_r_cats" FOREIGN KEY (site_id, about_cat_id_c) REFERENCES categories3(site_id, id) DEFERRABLE
@@ -55,6 +61,8 @@ Foreign-key constraints:
     "notfs_aboutpost_reltype_frompat_subtype_r_patrels" FOREIGN KEY (site_id, about_post_id_c, action_type, by_user_id, action_sub_id) REFERENCES post_actions3(site_id, to_post_id_c, rel_type_c, from_pat_id_c, sub_type_c) DEFERRABLE
     "notfs_abouttag_r_tags" FOREIGN KEY (site_id, about_tag_id_c) REFERENCES tags_t(site_id_c, id_c) DEFERRABLE
     "notfs_bypat_r_pats" FOREIGN KEY (site_id, by_user_id) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "notfs_bytrueid_r_pats" FOREIGN KEY (site_id, by_true_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
+    "notfs_totrueid_r_pats" FOREIGN KEY (site_id, to_true_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
     "ntfs_post_r_posts" FOREIGN KEY (site_id, about_post_id_c) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE
     "ntfs_r_emails" FOREIGN KEY (site_id, email_id) REFERENCES emails_out3(site_id, email_id_c) DEFERRABLE
     "ntfs_r_sites" FOREIGN KEY (site_id) REFERENCES sites3(id) DEFERRABLE

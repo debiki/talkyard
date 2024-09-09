@@ -3269,16 +3269,16 @@ export class TyE2eTestBrowser {
 
         deletePage: () => {
           this.waitAndClick('.dw-a-tools');
-          this.waitUntilDoesNotMove('.e_DelPg');
-          this.waitAndClick('.e_DelPg');
+          this.waitUntilDoesNotMove('.e_DelPgB');
+          this.waitAndClick('.e_DelPgB');
           this.waitUntilModalGone();
           this.topic.waitUntilPageDeleted();
         },
 
         restorePage: () => {
           this.waitAndClick('.dw-a-tools');
-          this.waitUntilDoesNotMove('.e_RstrPg');
-          this.waitAndClick('.e_RstrPg');
+          this.waitUntilDoesNotMove('.e_UndelPgB');
+          this.waitAndClick('.e_UndelPgB');
           this.waitUntilModalGone();
           this.topic.waitUntilPageRestored();
         },
@@ -4376,7 +4376,7 @@ export class TyE2eTestBrowser {
       },
 
       editTitle: (title: string) => {
-        this.waitAndSetValue('#e2eTitleInput', title);
+        this.waitAndSetValue('.c_TtlE_TtlI input', title);
       },
 
       save: () => {

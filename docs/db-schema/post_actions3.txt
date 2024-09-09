@@ -16,14 +16,16 @@
  to_post_rev_nr_c | rev_nr_d                    |           |          | 
  dormant_status_c | dormant_status_d            |           |          | 
  val_i32_c        | i32_d                       |           |          | 
- as_pat_id_c      | pat_id_d                    |           |          | 
+ from_true_id_c   | pat_id_d                    |           |          | 
  added_by_id_c    | member_id_d                 |           |          | 
+ order_c          | f32_d                       |           |          | 
 Indexes:
     "dw2_postacs__p" PRIMARY KEY, btree (site_id, to_post_id_c, rel_type_c, from_pat_id_c, sub_type_c)
     "dw2_postacs_deletedby__i" btree (site_id, deleted_by_id) WHERE deleted_by_id IS NOT NULL
-    "dw2_postacs_page_byuser" btree (site_id, page_id, from_pat_id_c)
+    "patnoderels_i_pageid_frompatid" btree (site_id, page_id, from_pat_id_c)
+    "patnoderels_i_pageid_fromtrueid" btree (site_id, page_id, from_true_id_c) WHERE from_true_id_c IS NOT NULL
     "patnodesinrels_i_addedbyid" btree (site_id, added_by_id_c) WHERE added_by_id_c IS NOT NULL
-    "patnodesinrels_i_aspatid" btree (site_id, as_pat_id_c) WHERE as_pat_id_c IS NOT NULL
+    "patnodesinrels_i_aspatid" btree (site_id, from_true_id_c) WHERE from_true_id_c IS NOT NULL
     "patrels_i_frompat_reltype_addedat" btree (site_id, from_pat_id_c, rel_type_c, created_at DESC)
     "patrels_i_frompat_reltype_addedat_0dormant" btree (site_id, from_pat_id_c, rel_type_c, created_at DESC) WHERE dormant_status_c IS NULL
 Check constraints:
@@ -35,8 +37,8 @@ Check constraints:
     "postactions_c_postnr_not_for_imp" CHECK (post_nr < 2000000000)
     "postactions_c_subid_not_for_imp" CHECK (sub_type_c < 2000000000)
 Foreign-key constraints:
+    "patnoderels_fromtrueid_r_pats" FOREIGN KEY (site_id, from_true_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
     "patnodesinrels_addedbyid_r_pats" FOREIGN KEY (site_id, added_by_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
-    "patnodesinrels_aspatid_r_pats" FOREIGN KEY (site_id, as_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
     "postacs_createdby_r_people" FOREIGN KEY (site_id, from_pat_id_c) REFERENCES users3(site_id, user_id) DEFERRABLE
     "postacs_deletedby_r_people" FOREIGN KEY (site_id, deleted_by_id) REFERENCES users3(site_id, user_id) DEFERRABLE
     "postacs_r_posts" FOREIGN KEY (site_id, to_post_id_c) REFERENCES posts3(site_id, unique_post_id) DEFERRABLE

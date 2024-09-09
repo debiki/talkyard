@@ -295,9 +295,12 @@ html.c_Html-EdLeft #esPageColumn
     margin-top: 0;
 
 
-.esTB_SearchBtn
-  padding: 2px 5px 0px 4px;
+.DW.DW.DW .esTB_SearchBtn
+  padding: 5px 5px 5px 4px
   margin: 0;
+  vertical-align: middle;
+
+.esTB_SearchBtn
   .icon-search
     color: hsl(0, 0%, 50%);
     font-size: 21px;
@@ -357,19 +360,22 @@ html.c_Html-EdLeft #esPageColumn
         opacity: 1;
 
   .esAvtrName_you,
-  .esAvtrName_name
+  .esAvtrName_name,
+  .esAvtrName_Anon
     color: #666;
     letter-spacing: 0.2px;
     vertical-align: middle;
     font-size: 13.5px;
 
   // Replace the user's perhaps long username with "You" if screen too narrow.
-  .esAvtrName_you
+  .esAvtrName_you,
+  .esAvtrName_Anon
     display: none;
   @media (max-width: 640px)
     .esAvtrName_name
       display: none;
-    .esAvtrName_you
+    .esAvtrName_you,
+    .esAvtrName_Anon
       display: inline-block;
   @media (max-width: 480px)
     .esAvtrName_you
@@ -477,10 +483,16 @@ $snoozeIconSize = 28px;
   position: relative;
   top: 1px;
 
+// What's this? Adds padding without breaking right-alignment with things below in
+// <divs> of the same width?
 .esMyMenu
   padding-right: 6px;
   position: relative;
   right: -6px;
+
+// Dim one's true account, if using an alias (so the alias becomes more prominent).
+.s_MMB.n_AliOn
+  opacity: 0.83;
 
 .esMyMenu .esAvtr
   margin-right: 5px;
@@ -513,6 +525,32 @@ $snoozeIconSize = 28px;
     position: absolute;
     left: 0;
     top: 6px;
+
+.c_Tb_AliAw
+  font-size: 150%;
+  margin: 0 -6px 0 4px;
+  @media (max-width: 640px)
+    margin: 0 -9px 0 0px;
+
+.DW .c_Tb_Ali.s_MMB.btn
+  padding: 16px 6px;
+  margin-left: -6px; // cancel padding (+padding -margin —> button larger)
+
+.c_Tb_Ali-Switched.btn
+  font-weight: bold;
+  text-decoration: underline;
+  text-underline-offset: 6px;
+
+// Make [the question mark indicating an alias ambiguity] simpler to spot.
+.c_AliAmbig
+  font-size: 110%;
+  vertical-align: middle;
+
+.c_PersInfD_Bs
+  margin: 23px 0px 9px;
+  .btn
+    margin: 0 15px 10px 0;
+
 
 .esTopbar
   position: relative;
@@ -587,12 +625,15 @@ html.esSidebarsOverlayPage
   .s_Tb_CuNv,
   .s_Tb_Pg_Cs,
   .s_Tb_MyBs
-    margin-top: 15px;
+    margin-top: 17px;
 
 .s_Tb
   .s_Tb_MyBs
     white-space: nowrap;
     .btn
+      vertical-align: baseline;
+      padding-top: 2px;
+      line-height: 1;
       border-radius: 0;
       border: none;
 

@@ -544,9 +544,14 @@ trait CategoriesDao {
     // just because all most-recent-pages are e.g. hidden.
     val filteredPages = pagesInclForbidden filter { page =>
       val categories = getAncestorCategoriesRootLast(page.categoryId)
+      val pageAuthor = getParticipant(page.meta.authorId)
       COULD_OPTIMIZE // Do for all pages in the same cat at once?  [authz_chk_mny_pgs]
+      COULD_OPTIMIZE // Lazy-load e.g. page author and members — usually not needed.
+      COULD_OPTIMIZE // Don't load author — instead, compare directly with  [list_by_alias]
+                      // posts3 & pages3.true_author_id_c / true_owner_id_c
       val may = talkyard.server.authz.Authz.maySeePage(
             page.meta,
+            pageAuthor = pageAuthor.getOrDie("TyE402SKJF4"),
             user = authzCtx.requester,
             groupIds = authzCtx.groupIdsUserIdFirst,
             pageMembers = getAnyPrivateGroupTalkMembers(page.meta),

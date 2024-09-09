@@ -26,7 +26,16 @@ interface TalkyardTranslations {
   AddComment?: string;
   Admin: string;
   AdvSearch: string;
+  // Wrap all these "Temp", "Temp Anon", "Perma.. Anon.." in an `anon: {...}` obj, [anon_2_str]
+  // so they'll end up next to each other?
+  //Temp?: string;
+  //TempAnon?: string;
+  //TempAnonym?: string;
+  //TemporarilyAnonymous?: string;
+  //Anon?: string;
   Anonym?: string;
+  //Anonymous?: string;
+  //PermanentlyAnonymous?: string;
   Away: string;
   Back: string;
   BlogN: string;

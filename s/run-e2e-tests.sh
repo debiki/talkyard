@@ -535,6 +535,13 @@ function runAllE2eTests {
   $r s/wdio-7 --only may-see-email-adrs.2br.d --cd -i $args
 
 
+  # Aliases (anonyms, pseudonyms)
+  # ------------
+
+  #$r s/wdio-7 --only alias-anons-true-mixed.2br.f --cd -i $args
+  #$r s/wdio-7 --only alias-anons-basic.2br.f --cd -i $args
+
+
   # API
   # ------------
 

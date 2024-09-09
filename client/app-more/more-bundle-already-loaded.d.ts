@@ -32,6 +32,7 @@ declare namespace debiki2 {
 
   namespace morekit {
     function openProxyDiag(ps: ProxyDiagParams, childrenFn: (close: () => V) => RElm);
+    function openSimpleProxyDiag(ps: ProxyDiagParams & { body: RElm });
   }
 
   var Expandable;
@@ -73,7 +74,7 @@ declare namespace debiki2.pagedialogs {
 
   function openAddPeopleDialog(ps: { curPatIds?: PatId[], curPats?: Pat[],
         mayClear?: Bo, onChanges: (PatsToAddRemove) => Vo });
-  function openDeletePostDialog(post: Post, at: Rect);
+  function openDeletePostDialog(ps: { post: Post, at: Rect, doAsAnon?: MaybeAnon });
   function openFlagDialog(postId: PostId, at: Rect);
   function openMovePostsDialog(store: Store, post: Post, closeCaller, at: Rect);
   function openSeeWrenchDialog();
@@ -87,18 +88,17 @@ declare namespace debiki2.pagedialogs {
   function getProgressBarDialog();
 }
 
-declare namespace debiki2.anon {
-  function maybeChooseModAlias(ps: MaybeChooseAnonPs, then?: (res: ChoosenAnon) => V);
-  function maybeChooseAnon(ps: MaybeChooseAnonPs, then?: (_: ChoosenAnon) => V): ChoosenAnon;
-  function openAnonDropdown(ps: ChooseAnonDlgPs): V;
+declare namespace debiki2.persona {
+  function chooseEditorPersona(ps: ChooseEditorPersonaPs, then?: (_: DoAsAndOpts) => V): V;
+  function choosePosterPersona(ps: ChoosePosterPersonaPs, then?: (_: DoAsAndOpts | 'CANCEL') => V)
+        : DoAsAndOpts;
+  function openAnonDropdown(ps: ChoosePersonaDlgPs): V;
   function whichAnon_titleShort(doAsAnon: MaybeAnon, ps: { me: Me, pat?: Pat }): RElm;
   function whichAnon_title(doAsAnon: MaybeAnon, ps: { me: Me, pat?: Pat }): St | RElm;
   function whichAnon_descr(doAsAnon: MaybeAnon, ps: { me: Me, pat?: Pat }): St | RElm;
-}
 
-declare namespace debiki2 {
-  function disc_findAnonsToReuse(discStore: DiscStore, ps: {
-            forWho: Pat | Me | U, startAtPostNr?: PostNr }): MyPatsOnPage;
+  function openPersonaInfoDiag(ps: { atRect: Rect, isSectionPage: Bo,
+        me: Me, personaOpts: PersonaOptions, discProps: DiscPropsDerived }): V;
 }
 
 declare namespace debiki2.subcommunities {

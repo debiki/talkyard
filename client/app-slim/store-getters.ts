@@ -35,7 +35,7 @@ export function pat_isAuthorOf(pat: Me | Pat, post: Post, patsById: PpsById): Bo
   // @ifdef DEBUG
   dieIf(!post, 'TyE2065MRTJ3');
   // @endif
-  // If pat typeof Me, and not logged in, .id is undefined.
+  // If pat typeof Me, and not logged in, pat.id is Pats.NoPatId == 0, zero.
   if (!pat.id || !post) return false;
   // If pat used hens real account (or if pat is an anonym and the post author too).
   if (pat.id === post.authorId) return true;
@@ -45,7 +45,7 @@ export function pat_isAuthorOf(pat: Me | Pat, post: Post, patsById: PpsById): Bo
 }
 
 
-export function store_thisIsMyPage(store: Store): boolean {
+export function store_thisIsMyPage(store: DiscStore): Bo {
   const page: Page = store.currentPage;
   if (!page || !store.me.id) return false;
   const me: Me = store.me;
@@ -75,14 +75,14 @@ export function store_getAuthorOrMissing(store: DiscStore, post: Post): Pat {
   }
 
   // If replying using a new anonym, its future id is not yet konw:
+  // (This happens when *previewing* one's first anonymous comments on a page. Once
+  // the comment gets saved, an anonym is created and gets an id.)
   if (post.authorId === Pats.FutureAnonId) {
-    return {
-       id: Pats.FutureAnonId,
-       // We don't know for sure what name sequence number this anonym will get,
-       // so let's use '?' instead of A1 or A2 etc.
-       fullName: "Anonym (you)",
-       isAnon: true,
-    };
+    // @ifdef DEBUG
+    dieIf(!post.doAsAnon, 'TyE6032SKGN4');
+    // @endif
+    const anonStatus = post.doAsAnon && post.doAsAnon.anonStatus;
+    return anon_create({ anonStatus, anonForId: store.me.id, isMe: true });
   }
 
   const user = store_getUserOrMissing(store, post.authorId);
@@ -108,7 +108,7 @@ export function store_getUserOrMissing(store: DiscStore, userId: PatId,
       // so it'll be easier to debug-find-out that something is amiss.
       fullName: `□ missing, id: ${userId} [EsE4FK07_]`,
       isMissing: true,
-    };
+    } satisfies Pat;
   }
   return user;
 }
@@ -129,6 +129,7 @@ export function store_getUsersOnThisPage(store: Store): BriefUser[] {
   const page: Page = store.currentPage;
   const users: BriefUser[] = [];
   _.each(page.postsByNr, (post: Post) => {
+    // Isn't this [On2]? Or rather num-authors*num-posts?
     if (_.every(users, u => u.id !== post.authorId)) {
       const user = store_getAuthorOrMissing(store, post);
       users.push(user);
@@ -195,15 +196,14 @@ export function store_canDeletePage(store: Store): Bo {
           !isSection(page.pageRole) || store_numSubCommunities(store) > 1);
   return someoneCanDelete && (
           isStaff(store.me) || (
-          page_authorId(page) === store.me.id &&
-              page.numRepliesVisible == 0));
+          store_thisIsMyPage(store) && page.numRepliesVisible == 0));
 }
 
 
 export function store_canUndeletePage(store: Store): Bo {
   const page: Page = store.currentPage;
   const pat = store.me;
-  return !!page.pageDeletedAtMs && (isStaff(pat) || page_authorId(page) === pat.id);
+  return !!page.pageDeletedAtMs && (isStaff(pat) || store_thisIsMyPage(store));
                         // later, change to:  page.deletedById === pat.id
 }
 // -------
@@ -253,6 +253,7 @@ export function store_numSubCommunities(store: Store): number {
 
 
 export function store_thereAreFormReplies(store: Store): boolean {
+  // Should fetch from server, if page big.  [fetch_alias]
   const page: Page = store.currentPage;
   return _.some(page.postsByNr, (post: Post) => {
     return post.postType === PostType.CompletedForm;

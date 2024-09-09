@@ -37,22 +37,25 @@ export function resetAvatars() {
 }
 
 
-export const Avatar = createComponent({
+export const Avatar = createFactory<AvatarProps, {}>({
   displayName: 'Avatar',
 
-  onClick: function(event) {
+  onClick: function(event: MouseEvent) {
     event.stopPropagation();
     event.preventDefault();
-    morebundle.openAboutUserDialog(this.props.user.id, event.target, this.props.title);
+    const props: AvatarProps = this.props;
+    morebundle.openAboutUserDialog(props.user.id, event.target, props.title);
   },
 
   tiny: function() {
-    return !this.props.size || this.props.size === AvatarSize.Tiny;
+    const props: AvatarProps = this.props;
+    return !props.size || props.size === AvatarSize.Tiny;
   },
 
   makeTextAvatar: function() {
-    const user: BriefUser = this.props.user;
-    const hidden: boolean = this.props.hidden;
+    const props: AvatarProps = this.props;
+    const user: BriefUser = props.user;
+    const hidden = props.hidden;
     let result = textAvatarsByUserId[user.id];
     if (result)
       return result;
@@ -157,9 +160,9 @@ export const Avatar = createComponent({
   },
 
   render: function() {
-    const props = this.props;
-    const user: BriefUser | MemberInclDetails = this.props.user;
-    const ignoreClicks = this.props.ignoreClicks ||
+    const props: AvatarProps = this.props;
+    const user: BriefUser | MemberInclDetails = props.user;
+    const ignoreClicks = props.ignoreClicks ||
         // The user is unknow when rendering the author avatar, in
         // the new reply preview, if we haven't logged in. [305KGWGH2]
         user.id === UnknownUserId;
@@ -179,16 +182,16 @@ export const Avatar = createComponent({
     if (largestPicPath) {
       // If we don't know the hash path to the avatar of the requested size, then use another size.
       let picPath;
-      if (this.props.size === AvatarSize.Medium) {
+      if (props.size === AvatarSize.Medium) {
         picPath = largestPicPath;
       }
-      else if (this.props.size === AvatarSize.Small) {
+      else if (props.size === AvatarSize.Small) {
         picPath = smlPath || tnyPath || medPath;
       }
       else {
         picPath = tnyPath || smlPath || medPath;
       }
-      const origins: Origins = this.props.origins;
+      const origins: Origins = props.origins;
       content = r.img({ src: linkToUpload(origins, picPath) });
     }
     else {
@@ -200,8 +203,8 @@ export const Avatar = createComponent({
       }
     }
     let title = user.username || user.fullName;
-    if (this.props.title) {
-      title += ' — ' + this.props.title;
+    if (props.title) {
+      title += ' — ' + props.title;
     }
 
     if (props.showIsMine) {
@@ -215,7 +218,7 @@ export const Avatar = createComponent({
     const elemName = ignoreClicks ? 'span' : 'a';
     const elemFn = <any> r[elemName];
     const href = ignoreClicks ? null : linkToUserProfilePage(user);
-    const onClick = ignoreClicks || this.props.clickOpensUserProfilePage ?
+    const onClick = ignoreClicks || props.clickOpensUserProfilePage ?
         null : this.onClick;
 
     return (

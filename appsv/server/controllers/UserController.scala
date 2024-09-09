@@ -524,7 +524,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def setPrimaryEmailAddresses: Action[JsValue] =
-        PostJsonAction(RateLimits.AddEmailLogin, maxBytes = 300) { request =>
+        PostJsonAction(RateLimits.AddEmailLogin, maxBytes = 300, ignoreAlias = true) { request =>
     import request.{dao, body, theRequester => requester}
     // SECURITY maybe send an email and verify with the old address that changing to the new is ok?
 
@@ -552,8 +552,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def addUserEmail: Action[JsValue] = PostJsonAction(RateLimits.AddEmailLogin, maxBytes = 300) {
-        request =>
+  def addUserEmail: Action[JsValue] = PostJsonAction(RateLimits.AddEmailLogin, maxBytes = 300,
+        ignoreAlias = true) { request =>
     import request.{dao, body, theRequester => requester}
 
     val userId = (body \ "userId").as[UserId]
@@ -588,7 +588,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def resendEmailAddrVerifEmail: Action[JsValue] = PostJsonAction(
-        RateLimits.ConfirmEmailAddress, maxBytes = 300) { request =>
+        RateLimits.ConfirmEmailAddress, maxBytes = 300, ignoreAlias = true) { request =>
 
     import request.{dao, body, theRequester => requester}
 
@@ -730,8 +730,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def removeUserEmail: Action[JsValue] = PostJsonAction(RateLimits.AddEmailLogin, maxBytes = 300) {
-        request =>
+  def removeUserEmail: Action[JsValue] = PostJsonAction(RateLimits.AddEmailLogin, maxBytes = 300,
+        ignoreAlias = true) { request =>
     import request.{dao, body, theRequester => requester}
 
     val userId = (body \ "userId").as[UserId]
@@ -1013,8 +1013,17 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def trackReadingProgress: Action[JsValue] = PostJsonAction(RateLimits.TrackReadingActivity,
-        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 1000) { request =>
+  /** Ignores any [persona_mode] — the purpose is to help the true user remember what
+    * han has read, regardless of they're anonymous or not for the moment. And others
+    * can't access hans reading progress. [anon_read_progr]
+    */
+  def trackReadingProgress: Action[JsValue] = PostJsonAction(
+        RateLimits.TrackReadingActivity,
+        MinAuthnStrength.EmbeddingStorageSid12,
+        maxBytes = 1000,
+        ignoreAlias = true,
+        ) { request =>
+
     import request.{dao, theRequester}
     val readMoreResult = trackReadingProgressImpl(request, request.body)
     val result =
@@ -1045,7 +1054,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   /** In the browser, navigator.sendBeacon insists on sending plain text. So need this text handler.
     */
   def trackReadingProgressText: Action[String] = PostTextAction(RateLimits.TrackReadingActivity,
-        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 1000) { request =>
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 1000, ignoreAlias = true) { request =>
     val bodyXsrfTokenRemoved = request.body.dropWhile(_ != '\n') // [7GKW20TD]
     val json = Json.parse(bodyXsrfTokenRemoved)
     trackReadingProgressImpl(request, json)
@@ -1157,7 +1166,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def toggleTips: Action[JsValue] = UserPostJsonAction(RateLimits.TrackReadingActivity,
-        maxBytes = 200) { request =>
+        maxBytes = 200, ignoreAlias = true) { request =>
     import request.{dao, body, theRequester => requester}
     val tipsId: Opt[St] = parseOptSt(body, "tipsId")
     val hide: Bo = parseBo(body, "hide")
@@ -1176,22 +1185,22 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def loadNotificationsImpl(userId: UserId, upToWhen: Option[When], request: DebikiRequest[_])
+  private def loadNotificationsImpl(userId: UserId, upToWhen: Opt[When], req: DebikiRequest[_])
         : mvc.Result = {
-    val notfsAndCounts = request.dao.loadNotificationsSkipReviewTasks(userId, upToWhen, request.who)
-    OkSafeJson(notfsAndCounts.notfsJson)
+    val notfsAndCounts = req.dao.loadNotificationsSkipReviewTasks(userId, upToWhen, req.who)
+    OkSafeJson(Json.obj("notfs" -> notfsAndCounts.notfsJson)) // ts: NotfSListResponse
   }
 
 
   def markAllNotfsAsSeen(): Action[JsValue] = PostJsonAction(RateLimits.MarkNotfAsSeen,
-        maxBytes = 200) { request =>
+        maxBytes = 200, ignoreAlias = true) { request =>
     request.dao.markAllNotfsAsSeen(request.theUserId)
     loadNotificationsImpl(request.theUserId, upToWhen = None, request)
   }
 
 
   def markNotificationAsSeen(): Action[JsValue] = PostJsonAction(RateLimits.MarkNotfAsSeen,
-        maxBytes = 200) { request =>
+        maxBytes = 200, ignoreAlias = true) { request =>
     import request.{dao, theRequesterId}
     val notfId = (request.body \ "notfId").as[NotificationId]
     dao.markNotificationAsSeen(theRequesterId, notfId)
@@ -1200,7 +1209,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def snoozeNotifications(): Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
-        maxBytes = 200) { request =>
+        maxBytes = 200, ignoreAlias = true) { request =>
     import request.{dao, theRequesterId}
     val untilWhen: Option[When] =
           (request.body \ "untilMins").as[JsValue] match {
@@ -1215,7 +1224,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def saveContentNotfPref: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
-          MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 500) { request =>
+          MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 500, ignoreAlias = true,
+          ) { request =>
     import request.{dao, theRequester => requester}
     val body = request.body
     val memberId = (body \ "memberId").as[MemberId]
@@ -1407,20 +1417,15 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
           RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddingStorageSid12) { request =>
     import request.{dao, requester}
 
-    val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4Z0B8P5")
-    val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
-
     SECURITY // Later: skip authors of hidden / deleted / private comments.  [priv_comts]
+    // & bookmarks, once implemented. [dont_list_bookmarkers]
     // Or if some time in the future there will be "hidden" accounts  [private_pats]
     // — someone who don't want strangers and new members to see hens profile —
     // then, would need to exclude those accounts here.
 
     CHECK_AUTHN_STRENGTH  // disallow if just sid part 1+2 but not embedded page
 
-    throwNoUnless(Authz.maySeePage(
-      pageMeta, request.user, dao.getGroupIdsOwnFirst(request.user),
-      dao.getAnyPrivateGroupTalkMembers(pageMeta), categoriesRootLast,
-      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
+    dao.throwIfMayNotSeePage2(pageId, request.reqrTargetSelf)(anyTx = None)
 
     // Also load deleted anon12345 members. Simpler, and they'll typically be very few or none. [5KKQXA4]
     COULD // load groups too, so it'll be simpler to e.g. mention @support.
@@ -1465,7 +1470,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   /** maxBytes = 3000 because the about text might be fairly long.
     */
   def saveAboutMemberPrefs: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
-        maxBytes = 3000) { request =>
+        maxBytes = 3000, ignoreAlias = true) { request =>
     val prefs = aboutMemberPrefsFromJson(request.body)
     _quickThrowUnlessMayEditPrefs(prefs.userId, request.theRequester)
     request.dao.saveAboutMemberPrefsIfAuZ(prefs, request.who)
@@ -1478,7 +1483,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def saveAboutGroupPreferences: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
-        maxBytes = 3000) { request =>
+        maxBytes = 3000,
+        // ignoreAlias = true, — or do care? Groups != oneself, maybe some admin
+        // might believe they'd be editing the group settings anonymously?
+        ) { request =>
     import request.{dao, theRequester => requester}
     val prefs = aboutGroupPrefsFromJson(request.body)
     if (!requester.isAdmin)
@@ -1506,7 +1514,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def saveUiPreferences: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
-        maxBytes = 3000) { request =>
+        maxBytes = 3000, ignoreAlias = true) { request =>
     import request.{body, dao, theRequester => requester}
     val memberId = (body \ "memberId").as[UserId]
     val prefs = (body \ "prefs").as[JsObject]
@@ -1578,7 +1586,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def saveMemberPrivacyPrefs: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
-        maxBytes = 100) { request =>
+        maxBytes = 100, ignoreAlias = true) { request =>
     val userId = parseInt32(request.body, "userId")
     val prefs: MemberPrivacyPrefs = JsX.memberPrivacyPrefsFromJson(request.body)
     _quickThrowUnlessMayEditPrefs(userId, request.theRequester)

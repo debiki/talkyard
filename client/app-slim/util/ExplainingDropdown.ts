@@ -81,6 +81,15 @@ export var ExplainingListItem = createComponent({
 
     const elemFn = isButton ? r.button : (props.linkTo ? LinkUnstyled : r.a);
 
+    let imgTitleText = rFr({},
+          r.div({ className: 'esExplDrp_entry_title' }, entry.title),
+          r.div({ className: 'esExplDrp_entry_expl' }, entry.text));
+    if (props.img) {
+      imgTitleText = rFr({},
+            r.div({ className: 'esExplDrp_entry_img' }, props.img),
+            r.div({ className: 'esExplDrp_entry_TtlTxt' }, imgTitleText));
+    }
+
     return (
       r.li({ className: 'esExplDrp_entry' + activeClass + disabledClass },
         elemFn.apply(this, [
@@ -96,8 +105,7 @@ export var ExplainingListItem = createComponent({
                 },
                 tabIndex: props.tabIndex || 1000,
             },
-            r.div({ className: 'esExplDrp_entry_title' }, entry.title),
-            r.div({ className: 'esExplDrp_entry_expl' }, entry.text)]),
+            imgTitleText]),
         subStuff));
   },
 });

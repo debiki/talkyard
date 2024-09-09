@@ -262,31 +262,31 @@ export function unpinPage(success: () => void) {
 }
 
 
-export function deletePages(pageIds: PageId[], success: () => void) {
-  Server.deletePages(pageIds, () => {
-    success();
+export function deletePages(ps: { pageIds: PageId[], doAsAnon: MaybeAnon }, onOk: () => V) {
+  Server.deletePages(ps, () => {
+    onOk();
     // CLEAN_UP  REFACTOR  use patchTheStore( StorePatch.deletedPageIds )  instead
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.DeletePages,
-      pageIds: pageIds,
+      pageIds: ps.pageIds,
     });
   });
 }
 
 
-export function undeletePages(pageIds: PageId[], success: () => void) {
-  Server.undeletePages(pageIds, () => {
-    success();
+export function undeletePages(ps: { pageIds: PageId[], doAsAnon: MaybeAnon }, onOk: () => V) {
+  Server.undeletePages(ps, () => {
+    onOk();
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.UndeletePages,
-      pageIds: pageIds,
+      pageIds: ps.pageIds,
     });
   });
 }
 
 
-export function togglePageClosed(doAsAnon: MaybeAnon, onDone?: () => V) {
-  Server.togglePageClosed(doAsAnon, (closedAtMs) => {
+export function togglePageClosed(ps: { pageId: PageId, doAsAnon: MaybeAnon }, onDone?: () => V) {
+  Server.togglePageClosed(ps, (closedAtMs) => {
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.TogglePageClosed,
       closedAtMs: closedAtMs
@@ -298,19 +298,19 @@ export function togglePageClosed(doAsAnon: MaybeAnon, onDone?: () => V) {
 }
 
 
-export function acceptAnswer(postId: number, doAsAnon: MaybeAnon) {
-  Server.acceptAnswer(postId, doAsAnon, (answeredAtMs) => {
+export function acceptAnswer(ps: { pageId: PageId, postId: PostId, doAsAnon: MaybeAnon }) {
+  Server.acceptAnswer(ps, (answeredAtMs) => {
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.AcceptAnswer,
       answeredAtMs: answeredAtMs,
-      answerPostUniqueId: postId,
+      answerPostUniqueId: ps.postId,
     });
   });
 }
 
 
-export function unacceptAnswer(doAsAnon: MaybeAnon) {
-  Server.unacceptAnswer(doAsAnon, () => {
+export function unacceptAnswer(ps: { pageId: PageId, doAsAnon: MaybeAnon }) {
+  Server.unacceptAnswer(ps, () => {
     unacceptAnswerClientSideOnly();
   });
 }
@@ -392,9 +392,10 @@ export function setPostHidden(postNr: number, hide: boolean, success?: () => voi
 }
 
 
-export function deletePost(postNr: number, repliesToo: boolean, success: () => void) {
-  Server.deletePostInPage(postNr, repliesToo, (response: { deletedPost, answerGotDeleted }) => {
-    success();
+export function deletePost(postNr: PostNr, repliesToo: Bo,
+          doAsAnon: MaybeAnon | U, onOk: () => V) {
+  Server.deletePostInPage(postNr, repliesToo, doAsAnon, (response: { deletedPost, answerGotDeleted }) => {
+    onOk();
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.UpdatePost,
       post: response.deletedPost
@@ -997,6 +998,8 @@ function markAnyNotificationAsSeen(postNr: number) {
 }
 
 
+// A separate function here, so accessible also via embedded iframes (rather than
+// inlined in editor.editor.ts)
 export function onEditorOpen(ps: EditorStorePatch, onDone?: () => void) {
   if (eds.isInEmbeddedEditor) {
     sendToCommentsIframe(['onEditorOpen', ps]);
@@ -1577,6 +1580,18 @@ function loadAndShowNewPage(newUrlPath: St, history: ReactRouterHistory) {
     const newPage = newStore.pagesById[pageId];
     const pats = _.values(newStore.usersByIdBrief);
     const pubCats = newStore.publicCategories;
+
+    // COULD_OPTIMIZE  If listing recently active topics, they're already
+    // included in the page json:
+    //  - newStore.topics,
+    //  - newStore.me.restrictedTopics
+    //  - newStore.me.restrictedTopicsUsers
+    // Add them to the store, as is done here: [add_restr_topics], then, can skip
+    // a request to the server to list recent topics.
+    //
+    // Currently we do add `newStore.me.restrictedCategories` (see
+    // store_addRestrictedCurCatsInPl()) – otherwise access restricted pages
+    // wouldn't render (would be category missing errors).
 
     // This'll trigger ReactStore onChange() event; everything will redraw to show the new page.
     showNewPage({

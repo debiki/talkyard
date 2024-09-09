@@ -188,7 +188,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
       val pageTwoId = createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Page Two"),
         textAndHtmlMaker.testBody("Body two."), SystemUserId, browserIdData, dao)
-      val postOnPageTwo = dao.insertReply(textAndHtmlMaker.testBody("Post on page 2."), pageTwoId,
+      val postOnPageTwo = dao.insertReplySkipAuZ(textAndHtmlMaker.testBody("Post on page 2."), pageTwoId,
         replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
         Who(SystemUserId, browserIdData = browserIdData), dummySpamRelReqStuff).post
 
@@ -256,7 +256,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
       val pageTwoId = createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Page Two"),
         textAndHtmlMaker.testBody("Body two."), SystemUserId, browserIdData, dao)
-      val postOnPageTwo = dao.insertReply(textAndHtmlMaker.testBody("Post on page 2."), pageTwoId,
+      val postOnPageTwo = dao.insertReplySkipAuZ(textAndHtmlMaker.testBody("Post on page 2."), pageTwoId,
         replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
         Who(SystemUserId, browserIdData = browserIdData), dummySpamRelReqStuff).post
 
@@ -299,7 +299,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       lastReplyOrigPage.nr mustBe (otherPost.nr + 1)
 
       info("can add replies to the new page")
-      val lastPostPageTwo = dao.insertReply(textAndHtmlMaker.testBody("Last post, page 2."), pageTwoId,
+      val lastPostPageTwo = dao.insertReplySkipAuZ(textAndHtmlMaker.testBody("Last post, page 2."), pageTwoId,
         replyToPostNrs = Set(maxNewNr), PostType.Normal, deleteDraftNr = None,
         Who(SystemUserId, browserIdData),
         dummySpamRelReqStuff).post
@@ -316,7 +316,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
       val pageTwoId = createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Page Two"),
         textAndHtmlMaker.testBody("Body two."), SystemUserId, browserIdData, dao)
-      val postOnPageTwo = dao.insertReply(textAndHtmlMaker.testBody("Post on page 2."), pageTwoId,
+      val postOnPageTwo = dao.insertReplySkipAuZ(textAndHtmlMaker.testBody("Post on page 2."), pageTwoId,
         replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
         Who(SystemUserId, browserIdData = browserIdData), dummySpamRelReqStuff).post
 

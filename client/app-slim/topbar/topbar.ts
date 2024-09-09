@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="../../macros/macros.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../ReactActions.ts" />
 /// <reference path="../links.ts" />
@@ -30,6 +31,7 @@
 /// <reference path="../page/cats-or-home-link.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
+/// <reference path="../personas/PersonaIndicator.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.topbar {
@@ -316,16 +318,31 @@ export const TopBar = createComponent({
     const otherNotfs = makeNotfIcon('other', me.numOtherNotfs);
 
     let isImpersonatingClass = '';
-    let impersonatingStrangerInfo;
+    let impersonatingStrangerInfo: St | U;
     if (store.isImpersonating) {
       isImpersonatingClass = ' s_MMB-IsImp';
       if (!me.isLoggedIn) {
         isImpersonatingClass += ' s_MMB-IsImp-Stranger';
-        impersonatingStrangerInfo = "Viewing as stranger"; // (skip i18n, is for staff)
+        impersonatingStrangerInfo = "Viewing as stranger"; // (0I18N, is for staff)
         // SECURITY COULD add a logout button, so won't need to first click stop-viewing-as,
         // and then also click Logout. 2 steps = a bit risky, 1 step = simpler, safer.
       }
     }
+
+
+    // ------- Alias info
+
+    // Shows if we're anonymous or have switched to any pseudonym.
+
+    const aliasInfo: RElm | N = !store.userSpecificDataAdded ? null :
+            personas.PersonaIndicator({ store, isSectionPage });
+
+    // @ifdef DEBUG
+    // COULD_OPTIMIZE: This actually happens —  we're rerendering at least once too much?
+    //dieIf(me.usePersona && !aliasInfo, 'TyE60WMJLS256');
+    // @endif
+
+    // ------- Username  (click opens: ../../app-more/topbar/my-menu.more.ts)
 
     const myAvatar = !me.isLoggedIn ? null :
         avatar.Avatar({ user: me, origins: store, ignoreClicks: true });
@@ -351,10 +368,11 @@ export const TopBar = createComponent({
 
     const avatarNameDropdown = !me.isLoggedIn && !impersonatingStrangerInfo ? null :
       utils.ModalDropdownButton({
-          // RENAME 'esMyMenu' to 's_MMB' (my-menu button).
-          className: 'esAvtrName esMyMenu s_MMB' + isImpersonatingClass,  // CLEAN_UP RENAME to s_MMB
+          // RENAME 'esMyMenu' to 'c_MMB' (my-menu button).
+          className: 'esAvtrName esMyMenu s_MMB' +  // CLEAN_UP RENAME to c_MMB
+                       isImpersonatingClass +
+                       (me.usePersona ? ' n_AliOn' : ''),
           dialogClassName: 's_MM',
-          ref: 'myMenuButton',
           showCloseButton: true,
           bottomCloseButton: true,
           // MyMenu might list many notifications, and people Command-Click to open
@@ -375,7 +393,8 @@ export const TopBar = createComponent({
             talkToMeNotfs,
             talkToOthersNotfs,
             otherNotfs,
-            snoozeIcon) },
+            snoozeIcon,
+            ) },
         MyMenuContentComponent({ store }));
 
 
@@ -533,7 +552,9 @@ export const TopBar = createComponent({
           // We don't know when CSS hides or shows the 2nd row, so better to
           // include always.
           toolsButton,
-          avatarNameDropdown);
+          avatarNameDropdown,
+          aliasInfo && r.span({ className: 'c_Tb_AliAw' }, "→ "),
+          aliasInfo);
           // No:
           //(!use2Rows || justOneRow) && toolsButton,
           //(!use2Rows || justOneRow) && avatarNameDropdown);

@@ -142,6 +142,7 @@ regardless of how they inherited permissions from other groups.
 
 [granular_perms]
 E.g. may-see-others'-sessions. Currently only amdins may, but sometimes, good if mods could too?
+Also see: [wiki_perms]
 
 [tags]
 Nice props / tags in Gerrit: https://chromium-review.googlesource.com/c/v8/v8/+/2537690
@@ -214,6 +215,7 @@ Can start at 21 = lightweight mod, 22 = mod, 23 = admin, 24 = owner?
 Should there be a move-page-perm, not just alter-page?
 
 [power_mod]
+[power_users]
 
 [inherit_group_priv_prefs]
 One should inherit privacy and noise settings from one's closest trust level group,

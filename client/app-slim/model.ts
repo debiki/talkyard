@@ -256,6 +256,16 @@ interface Vote {
 }
 
 
+interface SaveVotePs {
+  pageId: PageId,
+  postNr: PostNr,
+  vote: PostVoteType,
+  action: 'DeleteVote' | 'CreateVote',
+  postNrsRead: PostNr[],
+  doAsAnon?: MaybeAnon,
+}
+
+
 interface DraftLocator {
   draftType: DraftType;
   categoryId?: number;
@@ -283,7 +293,7 @@ interface DraftDeletor {
 
 interface Draft {
   byUserId: UserId;
-  doAsAnon?: MaybeAnon;  // not yet impl [doAsAnon_draft]
+  doAsAnon?: MaybeAnon;
   draftNr: DraftNr;
   forWhat: DraftLocator;
   createdAt: WhenMs;
@@ -363,11 +373,17 @@ interface ShowPostOpts extends ScrollIntoViewOpts {
 
 interface Post {
   // Client side only ------
+  // [drafts_as_posts] Later, the drafts3 table will get deleted, and drafts moved to
+  // posts3 / nodes_t instead. These fields are in fact for drafts / previews:
+
   // If this post / these changes don't yet exist — it's a preview.
   isPreview?: boolean;
   // Is a number if the draft has been saved server side (then the server has
   // assigned it a number).
   isForDraftNr?: DraftNr | true;
+  // If this post is a draft and we need to lazy-create an anonym, this tells us what type
+  // of anonym: temporarily or permanently anonymous (its AnonStatus).
+  doAsAnon?: MaybeAnon,
   // If we're editing this post right now.
   isEditing?: boolean;
   // -----------------------
@@ -485,6 +501,10 @@ interface MyPageData {
 
   // For the current page only.
   marksByPostId: { [postId: number]: any }; // sleeping BUG: probably using with Nr (although the name implies ID), but should be ID
+
+  // Needed for deriving Store.curPersonaOptions.
+  // Currently derived client side. Later: The server can include in response. [fetch_alias]
+  myPersonas?: MyPersonasThisPage;
 }
 
 
@@ -505,13 +525,16 @@ interface OwnPageNotfPrefs {  // RENAME to MembersPageNotfPrefs?
 
 // Extend Pat, set id to a new StrangerId if not logged in?
 type Myself = Me; // renaming to Me
-interface Me extends OwnPageNotfPrefs {   // + extends Pat?
+interface Me extends OwnPageNotfPrefs, Pat {
   dbgSrc?: string;
   // This is not the whole session id — it's the first 16 chars only [sid_part1];
   // the remaining parts have (a lot) more entropy than necessary.
   mySidPart1?: St | N;
-  id?: UserId;
-  //useAlias?: Pat;  // maybe?  [alias_mode]  and this.id is one's true id
+  // Is Pats.NoPatId (0, zero) for strangers, so this Me interface fullfills the Pat interface.
+  id: PatId;
+
+  usePersona?: Oneself | LazyCreatedAnon | N;
+
   isStranger?: Bo;
   // missing?: isGuest?: Bo
   isGroup?: boolean; // currently always undefined (i.e. false)
@@ -706,6 +729,7 @@ interface HelpMessage {
   version: number;
   content: any;
   defaultHide?: boolean;
+  closeOnClickOutside?: false; // default true
   doAfter?: () => void;
   type?: number;
   className?: string;
@@ -1195,6 +1219,8 @@ interface SessWinStore {
 /// Can be 1) the main ('top') browser win (incl topbar, editor, sidebars etc), or
 /// 2) a copy of the store in an embedded comments iframe.  [many_embcom_iframes]
 ///
+/// Maybe should [break_out_clone_store_fn]?
+///
 interface DiscStore extends SessWinStore {
   currentPage?: Page;
   currentPageId?: PageId;
@@ -1202,6 +1228,11 @@ interface DiscStore extends SessWinStore {
   curCatsById: { [catId: CatId]: Cat };
   usersByIdBrief: { [userId: number]: Pat };  // = PatsById
   pagesById: { [pageId: string]: Page };
+
+  // Derived client side from: MyPageData.myPersonas and Me.usePersona.
+  curPersonaOptions?: PersonaOptions  // ? move to SessWinStore ?
+  curDiscProps?: DiscPropsDerived
+  indicatedPersona?: PersonaMode      // ? move to SessWinStore ?
 }
 
 
@@ -1235,6 +1266,18 @@ interface Store extends Origins, DiscStore, PartialEditorStoreState {
   publicCategories: Category[];   // RENAME [concice_is_nice] pubCats
   newCategorySlug: string; // for temporarily highlighting a newly created category
   topics?: Topic[];
+
+  // Says which category we're listing topics in, if we're on a forum homepage (or
+  // other topic index page). Could be the forum root category, or a base category,
+  // or sub category, or sub sub ...).
+  //
+  // This is good to know, when composing a new forum topic, because new topics inherit
+  // some properties from the currently listed category. For example, if you're on a
+  // forum homepage, and view an anonymous-by-default category and click Create Topic,
+  // the new topic will be anonymous.
+  //
+  listingCatId?: CatId;
+
   user: Myself; // try to remove, use 'me' instead:
   me: Myself;
   userSpecificDataAdded?: boolean; // is always false, server side
@@ -1356,6 +1399,47 @@ type PropsFromRefs<Type> = {
 
 
 // RENAME to DiscLayoutDerived?  There's an interface Layout_not_in_use too (below) merging all layouts.
+/// Discussion properties, intherited from the page, ancestor categories, site defaults,
+/// built-in defaults.
+///
+/// The `from` fields says from where each property got inherited, so admins can know what
+/// they might want to change, if sth isn't to their satisfaction.
+///
+/// Example: {
+///   comtOrder: 3,
+///   comtNesting: -1,
+///   comtsStartHidden :2,
+///   comtsStartAnon: 3,        <——  modified, and
+///   opStartsAnon:2,
+///   newAnonStatus: 65535,     <——  modified ...
+///   pseudonymsAllowed: 2,
+///   from: {
+///     comtsStartAnon: {
+///       // ... in this category:
+///       id: 5,
+///       parentId: 1,
+///       name: "AA",
+///       ...
+///       comtsStartAnon: 3,     <——  category setting changed
+///       newAnonStatus: 65535,
+///       ...
+///     },
+///     newAnonStatus: {
+///       // Same category, again: (just an example)
+///       id:5,
+///       parentId: 1,
+///       ...
+///       comtsStartAnon: 3,
+///       newAnonStatus":65535,    <——
+///       ...
+///     },
+///     comtOrder: "BuiltIn",
+///     comtNesting: "BuiltIn",
+///     comtsStartHidden: "BuiltIn",
+///     opStartsAnon: "BuiltIn",
+///     pseudonymsAllowed: "BuiltIn",
+///  }
+/// }'
 interface DiscPropsDerived extends DiscPropsBase {
   from: DiscPropsComesFrom;
 }
@@ -1528,52 +1612,21 @@ type PpsById = { [ppId: number]: Participant };  // RENAME to PatsById
 
 
 interface Anonym extends GuestOrAnon {
-  isAnon: true;
+  anonStatus: AnonStatus
+  //anonOnPageId: PageId; // not yet incl server side
+  isAnon: true;  // REMOVE
   isGuest?: false;  // = !isAuthenticated — no!  BUG RISK ensure ~isGuest isn't relied on
                                          // anywhere, to "know" it's a user / group
 }
 
 
 interface KnownAnonym extends Anonym {
-  isAnon: true;
   anonForId: PatId;
-  anonStatus: AnonStatus;
-  anonOnPageId: PageId;
 }
 
-/// `false` means don't-do-anonymously, use one's real account instead.
-type MaybeAnon = WhichAnon | false;
 
-// For choosing an anonym. Maybe rename to ChooseAnon? Or ChoosenAnon / SelectedAnon?
-interface WhichAnon {
-  sameAnonId?: PatId;  // Either this ...
-  anonStatus?: AnonStatus; // and this,
-  newAnonStatus?: AnonStatus; // ... or this.
-}
-
-interface SameAnon extends WhichAnon {
-  sameAnonId: PatId;
-  anonStatus: AnonStatus.IsAnonOnlySelfCanDeanon | AnonStatus.IsAnonCanAutoDeanon;
-  newAnonStatus?: U;
-}
-
-interface NewAnon extends WhichAnon {
-  sameAnonId?: U;
-  newAnonStatus: AnonStatus.IsAnonOnlySelfCanDeanon | AnonStatus.IsAnonCanAutoDeanon;
-}
-
-/* Confusing!  type MaybeAnon   above, is better?
-interface NotAnon extends WhichAnon {
-  sameAnonId?: U;
-  newAnonStatus?: U;
-  anonStatus: AnonStatus.NotAnon;
-} */
-
-interface MyPatsOnPage {
-  // Each item can be an anonym or pseudonym of pat, or pat henself. No duplicates.
-  sameThread: Pat[];
-  outsideThread: Pat[]
-  byId: { [patId: PatId]: Pat | SameAnon }
+interface FutureAnon extends KnownAnonym {
+  id: Pats.FutureAnonId,
 }
 
 
@@ -1710,6 +1763,204 @@ interface PatVvb extends UserInclDetailsWithStats {
   groupIdsMaySee: UserId[];
 }
 type UserDetailsStatsGroups = PatVvb; // old name
+
+
+
+// =========================================================================
+// Personas
+// =========================================================================
+
+
+/// Anonyms, pseudonyms, and oneself, are personas.
+///
+interface WhichPersona {
+  self?: Bo
+  anonStatus?: AnonStatus;
+}
+
+
+interface Oneself extends WhichPersona {
+  self: true
+  anonStatus?: U;
+};
+
+
+/// Anonyms and pseudonyms are aliases. (But oneself is not an alias.)
+///
+interface AsAlias extends WhichPersona {
+  self?: false
+}
+
+
+interface SamePseudonym extends AsAlias {
+  pseudonymId: UserId;
+  anonStatus?: U;
+}
+
+
+/// `false` means don't-do-anonymously, use one's real account instead.
+/// REFACTOR: Use `Oneself` instead of `false`? Better: just use type WhichPersona?
+/// Here: [oneself_0_false] and at maaany other places.
+type MaybeAnon = WhichAnon | false;
+
+/// Which anonym to use (if any) when doing something, e.g. posting a comment.
+/// See [one_anon_per_page] in tyworld.adoc.
+///
+interface WhichAnon extends AsAlias {
+  anonStatus: AnonStatus
+  sameAnonId?: PatId  // either this
+  lazyCreate?: Bo     // or this
+  createNew_tst?: Bo  // or this
+}
+
+/// The anonym with id `sameAnonId` should be looked up server side, and reused.
+///
+interface SameAnon extends WhichAnon {
+  sameAnonId: PatId  // RENAME to just `id`?
+  lazyCreate?: false
+  createNew_tst?: false
+}
+
+/// If there's an anonym with the same `anonStatus`, on the same page, for the
+/// same user, then, that anonym should be reused (the server looks in the database
+/// to find out, see `SiteTransaction.loadAnyAnon()`). Otherwise, a new created.
+///
+interface LazyCreatedAnon extends WhichAnon {
+  sameAnonId?: U
+  lazyCreate: true
+  createNew_tst?: U
+}
+
+/// Always creates a new anonym, even if one exists with the same status.
+/// Not currently in use. [one_anon_per_page]
+interface NewAnon extends WhichAnon {
+  sameAnonId?: U
+  lazyCreate?: false
+  createNew_tst: true
+}
+
+
+interface MyPersonasThisPage {
+  // Each item can be an anonym or pseudonym of pat, or pat hanself. No duplicates.
+  sameThread: Pat[];
+  // Pats in `sameThread` are not also in `outsideThread` (not needed).
+  outsideThread: Pat[]
+  byId: { [patId: PatId]: Pat }
+}
+
+
+/// Which anonyms and pseudonyms, and oneself, the user can choose among when
+/// posting something or voting, or editing. Is just one item, if anonyms and pseudonyms
+/// haven't been enabled: the user hanself.
+///
+interface PersonaOptions {
+  // If we should ask the user which persona they want to use, before
+  // doing anything (e.g. voting or commenting). So they don't accidentally
+  // use the wrong persona.
+  isAmbiguous: Bo
+
+  // If has commented or voted or sth as oneself, on the current page.
+  hasBeenSelf?: Bo
+  // If has commented or voted or sth anonymously, on the current page.
+  // Could split into two: `hasBeenTempAnon` and `hasBeenPermAnon`, [dif_anon_status]
+  // (or even some kind of Set, if there'll be many anon status types).
+  hasBeenAnon?: Bo
+  hasBeenPseudo?: Bo
+
+  // Never empty — would be oneself, if nothing else.
+  optsList: PersonaOption[]
+}
+
+
+interface PersonaOption {
+  alias: Pat /*me*/ | KnownAnonym | FutureAnon // | Pseudonym
+  // RENAME to whichPersonaId?
+  doAs: MaybeAnon;
+  isBestGuess?: Bo  // then should be first in PersonaOptions.list.
+  inSameThread?: Bo
+  onSamePage?: Bo
+  // If is from any Persona Mode, e.g. Anonymous Mode.
+  isFromMode?: Bo
+  // If is from the category or page properties.
+  isFromProps?: Bo
+  // If recommended by the cat or page properties.
+  isRecommended?: Bo
+  // If persona not allowed, e.g. anon comments used to be enabled and we posted an
+  // anonymous comment, but anon comments then got disabled.
+  isNotAllowed?: Bo
+  isSelf?: Bo
+}
+
+// Exactly one set.
+type PersonaMode = { pat?: Pat, self?: true, anonStatus?: AnonStatus };
+
+
+/// The persona the user has choosen to use, and the ones han can choose among (can
+/// depend on the current page, since anonyms are per page).
+///
+interface DoAsAndOpts {
+  doAsAnon: MaybeAnon
+  /// Which participants the current usr can choose among: hanself (`false`),
+  /// hans anonyms and pseudonyms.
+  /// CLEAN_UP: Is this field really needed? Can't `PersonaOptions.optsList` be used
+  /// instead somehow? (`optsList.map(_.doAs)`) should be the same as `myAliasOpts`.
+  myAliasOpts: MaybeAnon[]  // [ali_opts_only_needed_here]
+}
+
+
+/// For choosing which persona to use, if editing / altering a comment or a page.
+///
+interface ChooseEditorPersonaPs {
+  // [Origins_needed_for_avatar_images].
+  store: DiscStore & Origins
+  postNr?: PostNr
+  atRect: Rect
+  draft?: Draft
+  isInstantAction?: true
+}
+
+
+/// For choosing which persona to use, when posting comments or pages, or voting.
+///
+interface ChoosePosterPersonaPs {
+  atRect?: Rect
+  me: Me
+  // [Origins_needed_for_avatar_images] — so can show one's pseudonyms' avatars (which
+  // might be images hosted by a CDN — origin needed) if listing pseudonyms (to select one).
+  origins: Origins
+  // Might be different from the current store — if pat is composing a new page in
+  // a category with different settings (`DiscPropsDerived`) than the forum root category.
+  // CLEAN_UP: `store: DiscStore & Origins` instead, like in ChooseEditorPersonaPs?
+  discStore: DiscStore
+  postNr?: PostNr
+  draft?: Draft
+}
+
+
+/// A dropdown for choosing which persona to use (e.g. if posting anonymous comments).
+///
+/// CLEAN_UP: Would it be possible/better to use ChooseEditorPersonaPs or
+/// ChoosePosterPersonaPs instead?
+///
+interface ChoosePersonaDlgPs {
+  atRect: Rect;
+  open?: Bo;
+  pat?: Pat;
+  me: Me,
+  // Any currently selected alias.
+  curAnon?: MaybeAnon;
+  // Which anonyms and pseudonyms to list in the choose-alias menu. (The options.)
+  myAliasOpts?: MaybeAnon[];
+  discProps: DiscPropsDerived;
+  saveFn: (_: MaybeAnon) => V;
+}
+
+
+
+// =========================================================================
+//
+// =========================================================================
+
 
 interface CreateUserParams {
   idpName?: St;
@@ -1960,6 +2211,8 @@ interface StorePatch
 
   publicCategories?: Category[];
   restrictedCategories?: Category[];
+
+  listingCatId?: CatId;
 
   pageVersionsByPageId?: { [pageId: string]: PageVersion };
   postsByPageId?: { [pageId: string]: Post[] };
@@ -2300,6 +2553,20 @@ interface IdentityProviderSecretConf extends IdentityProviderPubFields {
 // =========================================================================
 
 
+/// For rendering a (A) text/image circle with one's first letter or tiny profile pic.
+interface AvatarProps {
+  user: BriefUser
+  origins: Origins
+  size?: AvatarSize
+  title?: any
+  hidden?: Bo
+  showIsMine?: Bo
+  ignoreClicks?: Bo
+  clickOpensUserProfilePage?: Bo
+  key?: St | Nr;
+}
+
+
 /// For rendering a new page.
 interface ShowNewPageParams {
   newPage: Page;  // | AutoPage;
@@ -2353,40 +2620,6 @@ interface AuthnDlgIf {
         callback?: () => Vo, preventClose?: Bo) => Vo;
   getDoAfter: () => [() => U | U, St | U];
   close: () => Vo;
-}
-
-
-/// If clicking e.g. Like, one might need to choose if the like vote should
-/// be anonymous or not.
-interface MaybeChooseAnonPs {
-  store: DiscStore
-  discProps?: DiscPropsDerived
-  postNr?: PostNr
-  atRect?: Rect
-}
-
-interface ChoosenAnon {
-  doAsAnon: MaybeAnon
-  /// Which participants the current usr can choose among: hanself (`false`),
-  /// hans anonyms and pseudonyms.
-  myAliasOpts: MaybeAnon[]
-}
-
-
-/// A dropdown for choosing which anonym to use (e.g. if posting anonymous comments).
-/// DlgPs = dialog parameters, hmm.
-///
-interface ChooseAnonDlgPs {
-  atRect: Rect;
-  open?: Bo;
-  pat?: Pat;
-  me: Me,
-  // Any currently selected alias.
-  curAnon?: MaybeAnon;
-  // Which anonyms and pseudonyms to list in the choose-alias menu. (The options.)
-  myAliasOpts?: MaybeAnon[];
-  discProps: DiscPropsDerived;
-  saveFn: (_: MaybeAnon) => V;
 }
 
 
@@ -2512,6 +2745,7 @@ interface PatsToAddRemove {
 
 interface ExplainingTitleText {
   iconUrl?: St;
+  img?: any; // RElm;
   title: any; // St | RElm; —> compil err in server & blog comments bundles
   text?: any; // St | RElm;
   key?: any;
@@ -2542,10 +2776,20 @@ interface ExplainingListItemProps extends ExplainingTitleText {
 }
 
 
+interface SimpleProxyDiagParams extends ProxyDiagParams {
+  body: any // RElm
+  primaryButtonTitle?: any // RElm
+  secondaryButonTitle?: any // RElm
+  closeButtonTitle?: any;
+  onPrimaryClick?: () => V
+  onCloseOk?: (whichBtn: Nr) => V;
+}
+
+
 interface ProxyDiagParams extends SharedDiagParams {
   atRect: Rect; // required (optional in SharedDiagParams)
   flavor?: DiagFlavor;
-  showCloseButton?: Bo; // default true
+  showCloseButton?: Bo; // default true,  RENAME to showCloseCross? (upper right corner)
   dialogClassName?: St;
   contentClassName?: St;
   closeOnButtonClick?: Bo; // default false
@@ -2559,8 +2803,6 @@ interface DropdownProps extends SharedDiagParams {
   show: Bo;
   showCloseButton?: true;
   //bottomCloseButton?: true; — not yet impl
-  onHide: () => Vo;
-  closeOnClickOutside?: false; // default true
   onContentClick?: (event: MouseEvent) => Vo;
   atX?: Nr;
   atY?: Nr;
@@ -2573,6 +2815,8 @@ interface SharedDiagParams {
   atRect?: Rect;
   pullLeft?: Bo;
   allowFullWidth?: Bo;
+  closeOnClickOutside?: false; // default true
+  onHide?: () => V;
 }
 
 
@@ -2972,6 +3216,11 @@ interface ListSessionsResponse {
 
 interface TerminateSessionsResponse {
   terminatedSessions: Session[];
+}
+
+
+interface NotfSListResponse {
+  notfs: Notification[]
 }
 
 

@@ -72,7 +72,7 @@ function openAnonPurposeDiag(ps: DiscLayoutDiagState) {
               dialogClassName: 'e_AnonPurpD' },
       (closeDiag) => {
 
-    const layout: DiscPropsSource | NU = ps.layout;
+    const layout: DiscPropsSource = ps.layout;
 
     let diagTitle: St | RElm | U;
     let sensitiveItem: RElm | U;
@@ -86,7 +86,7 @@ function openAnonPurposeDiag(ps: DiscLayoutDiagState) {
     function makeItem(itemValue: AnonStatus, e2eClass: St): RElm {
       let active: Bo;
       let title: St | RElm;
-      active = itemValue === ps.layout.newAnonStatus;
+      active = itemValue === layout.newAnonStatus;
       title = anonPurpose_title(itemValue);
 
       return ExplainingListItem({

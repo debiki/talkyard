@@ -360,9 +360,12 @@ export const Title = createComponent({
     return { editingPageId: null };
   },
 
-  editTitle: function() {
+  editTitle: function(event: MouseEvent) {
     const store: Store = this.props.store;
-    this.setState({ editingPageId: store.currentPageId });
+    const atRect = cloneEventTargetRect(event);
+    morebundle.chooseEditorPersona({ store, atRect, postNr: TitleNr }, doAsOpts => {
+      this.setState({ editingPageId: store.currentPageId, doAsOpts });
+    });
   },
 
   closeEditor: function() {
@@ -428,6 +431,7 @@ export const Title = createComponent({
     if (this.state.editingPageId) {
       const editorProps = _.clone(this.props);
       editorProps.closeEditor = this.closeEditor;
+      editorProps.doAsOpts = this.state.doAsOpts;
       contents = morebundle.TitleEditor(editorProps);
     }
     else {

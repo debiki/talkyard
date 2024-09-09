@@ -20,6 +20,7 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
+import debiki.dao.SiteDao
 import debiki.EdHttp._
 import debiki.JsonUtils.asJsObject
 import talkyard.server.linkpreviews.{LinkPreviewRenderer, PreviewResult, LinkPreviewProblem}
@@ -28,6 +29,7 @@ import talkyard.server.{TyContext, TyController}
 import talkyard.server.parser
 import javax.inject.Inject
 import play.api.mvc.{Action, ControllerComponents}
+import com.debiki.core.Prelude.JsEmptyObj2
 import play.api.libs.json._
 import EditController._
 import scala.concurrent.ExecutionContext
@@ -142,17 +144,26 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4JBR01")
     val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdE0DK9WY3")
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
-    val anyOtherAuthor =
-          if (post.createdById == requester.id) None
-          else dao.getParticipant(post.createdById)
+
+    // Won't need later, when true id stored in posts3/nodes_t? [posts3_true_id]
+    val postAuthor: Pat =
+          if (post.createdById == requester.id) requester
+          else dao.getParticipant(post.createdById) getOrElse throwNotFound(
+                  "TyEATR0FND03", s"Author of post ${post.id} missing")
+    val pageAuthor =
+          if (pageMeta.authorId == requester.id) requester
+          else dao.getTheParticipant(pageMeta.authorId)
 
     CHECK_AUTHN_STRENGTH
 
     throwNoUnless(Authz.mayEditPost(
-      request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
-      post, otherAuthor = anyOtherAuthor, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
-      inCategoriesRootLast = categoriesRootLast,
-      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
+          request.theUserAndLevels, asAlias = None, dao.getOnesGroupIds(request.theUser),
+          post, postAuthor = postAuthor, pageMeta, pageAuthor = pageAuthor,
+          dao.getAnyPrivateGroupTalkMembers(pageMeta),
+          inCategoriesRootLast = categoriesRootLast,
+          tooManyPermissions = dao.getPermsOnPages(categoriesRootLast),
+          // We're just loading the draft text
+          ignoreAlias = true), "EdEZBXKSM2")
 
     val draftLocator = DraftLocator(
       DraftType.Edit,
@@ -181,7 +192,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
   /** Edits posts.
     */
   def edit: Action[JsValue] = PostJsonAction(RateLimits.EditPost,
-        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = MaxPostSize) {
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = MaxPostSize, canUseAlias = true) {
         request: JsonPostRequest =>
     import request.{dao, theRequester => requester}
     val body = asJsObject(request.body, "request body")
@@ -190,10 +201,10 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val anyPostId: Option[PostId] = (body \ "postId").asOpt[PostId]
     val newText = (body \ "text").as[String]
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
+
     TESTS_MISSING // Do as anon  TyTANONEDIT
-    val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(body) getOrIfBad { prob =>
-      throwBadReq("TyEANONPARED", s"Bad anon params: $prob")
-    }
+    val asAlias: Opt[WhichAliasPat] =
+          debiki.dao.SiteDao.checkAliasOrThrowForbidden(body, requester, request.anyAliasPat)(dao)
 
     if (postNr == PageParts.TitleNr)
       throwForbidden("DwE5KEWF4", "Edit the title via /-/edit-title-save-settings instead")
@@ -219,13 +230,20 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     CHECK_AUTHN_STRENGTH
 
-    val anyOtherAuthor =
-          if (post.createdById == requester.id) None
-          else dao.getParticipant(post.createdById)
+    // Won't need later, when true id stored in posts3/nodes_t? [posts3_true_id]
+    val postAuthor: Pat =
+          if (post.createdById == requester.id) requester
+          else dao.getParticipant(post.createdById) getOrElse throwNotFound(
+                "TyEATR0FND05", s"Author of post ${post.id} missing")
+    val pageAuthor =
+          if (pageMeta.authorId == requester.id) requester
+          else dao.getTheParticipant(pageMeta.authorId)
 
+    // [dupl_ed_perm_chk]?
     throwNoUnless(Authz.mayEditPost(
-      request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
-      post, otherAuthor = anyOtherAuthor, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
+      request.theUserAndLevels, asAlias, groupIds = dao.getOnesGroupIds(request.reqr),
+      post, postAuthor = postAuthor, pageMeta, pageAuthor = pageAuthor,
+      dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
       tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdE4JBTYE8")
 
@@ -241,7 +259,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
       followLinks = postNr == PageParts.BodyNr && pageMeta.pageType.shallFollowLinks)
 
     request.dao.editPostIfAuth(pageId = pageId, postNr = postNr, deleteDraftNr = deleteDraftNr,
-          request.who, request.spamRelatedStuff, newTextAndHtml, doAsAnon)
+          request.who, // [alias_4_principal]
+          request.spamRelatedStuff, newTextAndHtml, asAlias)
 
     OkSafeJson(dao.jsonMaker.postToJson2(postNr = postNr, pageId = pageId,
       includeUnapproved = true))
@@ -358,11 +377,12 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def deletePost: Action[JsValue] = PostJsonAction(RateLimits.DeletePost,
-        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 5000) { request =>
-    import request.dao
-    val pageId = (request.body \ "pageId").as[PageId]
-    val postNr = (request.body \ "postNr").as[PostNr]
-    val repliesToo = (request.body \ "repliesToo").asOpt[Boolean] getOrElse false
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 5000, canUseAlias = true) { req =>
+    import req.dao
+    val body = asJsObject(req.body, "Delete post request body")
+    val pageId = (body \ "pageId").as[PageId]
+    val postNr = (body \ "postNr").as[PostNr]
+    val repliesToo = (body \ "repliesToo").asOpt[Boolean] getOrElse false
 
     val action =
       if (repliesToo) PostStatusAction.DeleteTree
@@ -370,7 +390,10 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     CHECK_AUTHN_STRENGTH
 
-    val result = dao.changePostStatus(postNr, pageId = pageId, action, request.reqrIds)
+    val asAlias = SiteDao.checkAliasOrThrowForbidden(
+          body, req.reqr, req.anyAliasPat, mayCreateAnon = false)(dao)
+
+    val result = dao.changePostStatus(postNr, pageId = pageId, action, req.reqrIds, asAlias)
 
     OkSafeJson(Json.obj(
       "answerGotDeleted" -> result.answerGotDeleted,
@@ -378,7 +401,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
         // COULD: don't include post in reply? It'd be annoying if other unrelated changes
         // were loaded just because the post was toggled open? [5GKU0234]
         dao.jsonMaker.postToJson2(
-          postNr = postNr, pageId = pageId, includeUnapproved = request.theUser.isStaff)))
+          postNr = postNr, pageId = pageId, includeUnapproved = req.theUser.isStaff)))
   }
 
 

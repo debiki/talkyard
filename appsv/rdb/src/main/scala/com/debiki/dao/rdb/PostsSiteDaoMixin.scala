@@ -1291,30 +1291,60 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       case vote: PostVote =>
         insertPostActionImpl(
               postId = vote.uniqueId, pageId = vote.pageId, postNr = vote.postNr,
-          actionType = vote.voteType, doerId = vote.doerId, doneAt = vote.doneAt)
+              actionType = vote.voteType, doerId = vote.doerId, doneAt = vote.doneAt,
+              manyOk = false)
       case flag: PostFlag =>
         insertPostActionImpl(
               postId = flag.uniqueId, pageId = flag.pageId, postNr = flag.postNr,
-          actionType = flag.flagType, doerId = flag.doerId, doneAt = flag.doneAt)
+              actionType = flag.flagType, doerId = flag.doerId, doneAt = flag.doneAt,
+              manyOk = true)
       case rel: PatNodeRel[_] =>
         // This covers owner-of  (or will owner-of be in pat_node_multi_rels_t?),
         // author-of and assigned-to.
         // (The other approach: PostVote and PostFlag, above, is deprecated.)
         insertPostActionImpl(
               postId = rel.uniqueId, pageId = rel.pageId, postNr = rel.postNr,
-              actionType = rel.relType, doerId = rel.fromPatId, doneAt = rel.addedAt)
+              actionType = rel.relType, doerId = rel.fromPatId, doneAt = rel.addedAt,
+              manyOk = false)
     }
   }
 
 
   private def insertPostActionImpl(postId: PostId, pageId: PageId, postNr: PostNr,
-        actionType: PostActionType, doerId: PatIds, doneAt: When) {
-    val statement = """
+        actionType: PostActionType, doerId: PatIds, doneAt: When, manyOk: Bo) {
+
+    val subTypeOne: i32 = 1
+
+    // Has the same person done this already (e.g. voted), using another persona?
+    if (!manyOk) {
+      // Let's run a `select`, so we'll know for sure what's wrong. If we instead
+      // use `insert into ... where not exists (...)`, we can't know if 0 updated rows
+      // is because of duplicated actions, or a SQL query or values bug.
+      TESTS_MISSING // TyTALIVOTES
+      val query = s"""
+          select * from post_actions3
+          where  site_id = ?
+              and  to_post_id_c = ?
+              and  rel_type_c = ?
+              and  (from_pat_id_c = ?  or  from_true_id_c = ?)
+              and  sub_type_c = $subTypeOne
+              -- Let's skip, for now — otherwise might run into conflicts, if
+              -- undoing the deletion of a vote?
+              -- and  deleted_at is null
+          limit 1 """
+      val values = List(siteId.asAnyRef, postId.asAnyRef, toActionTypeInt(actionType),
+            doerId.trueId.asAnyRef, doerId.trueId.asAnyRef)
+      runQueryFindMany(query, values, rs => {
+        throw DbDao.DuplicateVoteException
+      })
+    }
+
+    val statement = s"""
       insert into post_actions3(site_id, to_post_id_c, page_id, post_nr, rel_type_c,
           from_pat_id_c, from_true_id_c,
           created_at, sub_type_c)
-      values (?, ?, ?, ?, ?, ?, ?, ?, 1)
-      """
+      values (?, ?, ?, ?, ?, ?, ?, ?, $subTypeOne) """
+
     val values = List[AnyRef](siteId.asAnyRef, postId.asAnyRef, pageId, postNr.asAnyRef,
           toActionTypeInt(actionType), doerId.pubId.asAnyRef,
           doerId.anyTrueId.orNullInt32, doneAt.asTimestamp)

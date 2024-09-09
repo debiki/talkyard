@@ -20,6 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import talkyard.server.search._
+import talkyard.server.authz.Authz
 import talkyard.server.authz.AuthzCtxOnForum
 import scala.collection.{mutable => mut}
 import scala.collection.immutable.Seq
@@ -127,7 +128,7 @@ trait SearchDao {
       val hitsAndPostsMaySee: Seq[(SearchHit, Post)] = hits flatMap { hit =>
         postsById.get(hit.postId) flatMap { post =>
           val (seePost, debugCode) =
-                maySeePostIfMaySeePage(reqr, post)
+                Authz.maySeePostIfMaySeePage(reqr, post)
           if (!seePost.may) None
           else Some(hit -> post)
         }

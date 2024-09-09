@@ -19,6 +19,7 @@
  text              | character varying           |           | not null | 
  new_anon_status_c | anonym_status_d             |           |          | 
  post_as_id_c      | pat_id_d                    |           |          | 
+ order_c           | f32_d                       |           |          | 
 Indexes:
     "drafts_byuser_nr_p" PRIMARY KEY, btree (site_id, by_user_id, draft_nr)
     "drafts_byuser_deldat_i" btree (site_id, by_user_id, deleted_at DESC) WHERE deleted_at IS NOT NULL

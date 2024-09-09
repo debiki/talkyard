@@ -112,15 +112,19 @@ const ChangePageDialog = createComponent({
     const savePage = (changes: EditPageRequestData) => {
       // E.g. EditPageRequestData.showId and .htmlTagCssClasses can be edited by admins only,
       // and should be grayed out if one is in Anon Mode for example? [alias_mode]
-      anon.maybeChooseModAlias({ store, atRect: state.atRect }, (choices: ChoosenAnon) => {
+      // (A [pick_persona_click_handler] could save a few lines of code?)
+      persona.chooseEditorPersona({ store, atRect: state.atRect, isInstantAction: true },
+              (choices: DoAsAndOpts) => {
         ReactActions.editTitleAndSettings({ ...changes, doAsAnon: choices.doAsAnon },
                 this.close, null);
       });
     }
 
     const togglePageClosed = () => {
-      anon.maybeChooseModAlias({ store, atRect: state.atRect }, (choices: ChoosenAnon) => {
-        ReactActions.togglePageClosed(choices.doAsAnon, this.close);
+      persona.chooseEditorPersona({ store, atRect: state.atRect, isInstantAction: true },
+              (choices: DoAsAndOpts) => {
+        const pageId = Server.getPageId();
+        ReactActions.togglePageClosed({ pageId, doAsAnon: choices.doAsAnon }, this.close);
       });
     };
 
@@ -294,23 +298,14 @@ const ChangePageDialog = createComponent({
         deletePageListItem = rFr({},
             r.div({ className: 's_ExplDrp_Ttl' }, "Delete page" + '?'),  // I18N
             r.div({ className: 's_ExplDrp_ActIt' },
-              Button({ className: 'e_DelPgB',
-                  onClick: () => {
-                    // ANON_UNIMPL Do as (mod) alias?
-                    ReactActions.deletePages([page.pageId], this.close);
-                  } },
-                "Delete")));  // I18N
+              DeletePageBtn({ pageIds: [page.pageId], store, close: this.close })));
       }
       else if (store_canUndeletePage(store)) {  // [.store_or_state_pg]
         undeletePageListItem = rFr({},
             r.div({ className: 's_ExplDrp_Ttl' }, "Undelete page" + '?'),  // I18N
             r.div({ className: 's_ExplDrp_ActIt' },
-              Button({ className: 'e_UndelPgB',
-                  onClick: () => {
-                    // ANON_UNIMPL Do as (mod) alias?
-                    ReactActions.undeletePages([page.pageId], this.close);
-                  } },
-                "Undelete")));  // I18N
+              DeletePageBtn({ pageIds: [store.currentPageId], store,
+                    undel: true, close: this.close })));
       }
     }
 

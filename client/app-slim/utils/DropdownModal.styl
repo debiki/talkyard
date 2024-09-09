@@ -17,6 +17,8 @@
       max-width: 560px; // or annoyingly wide. [dropdown_width]
 
 .esDropModal_CloseB
+  // This doesn't work well: sometimes overlaps long contents.
+  // Wouldn't float: right be better? But need one extra <div>?  [close_cross_css]
   position: absolute;
   right: 0;
   top: 0;
@@ -36,7 +38,7 @@
 .esDropModal_header
   font-style: italic;
   font-size: 14px;
-  margin: 14px 0 4px 11px;
+  margin: 14px 0 4px 11px; // [proxy_diag_padding]
   &:first-child
     margin-top: 3px;
 

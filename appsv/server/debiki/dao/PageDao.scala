@@ -34,6 +34,8 @@ case class PageDao(override val id: PageId, settings: AllSettings,
       transaction: SiteTransaction, anyDao: Opt[SiteDao])
   extends Page {
 
+  assert(id ne null)
+
   def sitePageId = SitePageId(transaction.siteId, id)
 
   var _path: Option[PagePathWithId] = null
@@ -99,6 +101,7 @@ case class PagePartsDao(
   anyDao: Opt[SiteDao] = None,
   ) extends PageParts {
 
+  assert(pageId ne null)
 
   private var _meta: Option[PageMeta] = null
 

@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import collection.immutable
 import debiki._
 import debiki.EdHttp._
+import debiki.dao.SiteDao
 import debiki.JsonUtils.{asJsObject, parseInt32}
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
@@ -51,7 +52,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
     *   postIdsRead: [1, 9, 53, 82]
     */
   def handleVotes: Action[JsValue] = PostJsonAction(RateLimits.RatePost,
-          MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 500) {
+          MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 500, canUseAlias = true) {
           request: JsonPostRequest =>
     import request.{dao, theRequester => requester}
     val body = asJsObject(request.body, "votes request body")
@@ -69,9 +70,8 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val actionStr = (body \ "action").as[String]
     val postNrsReadSeq = (body \ "postNrsRead").asOpt[immutable.Seq[PostNr]]
 
-    val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(body) getOrIfBad { prob =>
-      throwBadReq("TyEANONPARVO", s"Bad anon params: $prob")
-    }
+    val asAlias: Opt[WhichAliasPat] =
+          SiteDao.checkAliasOrThrowForbidden(body, requester, request.anyAliasPat)(dao)
 
     val postNrsRead = postNrsReadSeq.getOrElse(Nil).toSet
 
@@ -106,7 +106,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     CHECK_AUTHN_STRENGTH
 
-    val reqrTgt = request.reqrTargetSelf.denyUnlessLoggedIn()
+    val reqrTgt = request.reqrTargetSelf.denyUnlessLoggedIn() // [alias_4_principal]
 
     var anyNewAnon: Opt[Anonym] = None
 
@@ -115,7 +115,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
     }
     else {
       anyNewAnon = dao.addVoteIfAuZ(pageId, postNr, voteType, reqrAndVoter = reqrTgt,
-            voterIp = Some(request.ip), postNrsRead, doAsAnon)
+            voterIp = Some(request.ip), postNrsRead, asAlias)
     }
 
     RACE // Fine, harmless.

@@ -29,6 +29,7 @@ import org.scalactic.{Bad, Good, Or}
 
 import com.debiki.core.Notification.NewPost
 import play.api.libs.json._
+import talkyard.server.parser.DoAsAnonFieldName
 
 import scala.collection.immutable
 import scala.util.matching.Regex
@@ -178,25 +179,6 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
-  /*  rm
-  def JsAnon(anon: Anonym, inclRealId: Bo = false): JsObject = {  // ts: Anonym
-    var json = Json.obj(
-          "id" -> JsNumber(anon.id),
-          "isAnon" -> JsTrue,
-          "isEmailUnknown" -> JsTrue,  // or skip?
-          )
-    if (inclRealId) {
-      json += "anonForId" -> JsNumber(anon.anonForPatId)
-      //json += "anonOnPageId" -> JsString(anon.anonOnPageId),
-      json += "anonStatus" -> JsNumber(anon.anonStatus.toInt)
-    }
-    if (anon.isGone) {
-      json += "isGone" -> JsTrue
-    }
-    json
-  } */
-
-
   def JsUserOrNull(user: Option[Participant]): JsValue =  // RENAME to JsParticipantOrNull
     user.map(JsUser(_)).getOrElse(JsNull)
 
@@ -223,9 +205,11 @@ object JsX {   RENAME // to JsonPaSe
 
   /** If 'user' is an anonym or pseudonym, then, hens true id is *not* included, unless
     * toShowForPatId is hens true id  (or, later, if toShowForPatId has permission to
-    * see anonyms ANON_UNIMPL).  That is, if the person requesting to see a page,
+    * see anonyms  [see_alias]).  That is, if the person requesting to see a page,
     * is the the same the ano/pseudony, then, the ano/pseudonym's true id is included
     * so that that person can see hens own anonym(s).
+    *
+    * ts: Pat and subclasses, e.g. Guest, Anonym.
     */
   def JsUser(user: Pat, tags: Seq[Tag] = Nil, toShowForPatId: Opt[PatId] = None): JsObject = {  //RENAME to JsPat, ts: Pat
     var json = JsPatNameAvatar(user)
@@ -233,22 +217,20 @@ object JsX {   RENAME // to JsonPaSe
       json += "avatarSmallHashPath" -> JsString(uploadRef.hashPath)
     }
 
-    if (user.isAnon) {
-      json += "isAnon" -> JsTrue
-      // If this anonym is user `toShowForPatId`s own anonym, include details — so
-      // that user can see it's hens own anonym.
-      toShowForPatId foreach { showForPatId: PatId =>
-        user match {
-          case anon: Anonym =>
-            if (anon.anonForPatId == showForPatId) {
-              // [see_own_alias]
-              json += "anonForId" -> JsNumber(anon.anonForPatId)
-              //on += "anonOnPageId" -> JsString(anon.anonOnPageId),
-              json += "anonStatus" -> JsNumber(anon.anonStatus.toInt)
-            }
-          case x => die(s"An isAnon pat isn't an Anonym, it's an: ${classNameOf(x)}")
+    if (user.isAnon) user match {
+      case anon: Anonym =>
+        json += "isAnon" -> JsTrue  ; REMOVE // ?, maybe anonStatus is enough
+        json += "anonStatus" -> JsNumber(anon.anonStatus.toInt)
+        // If this anonym is user `toShowForPatId`s own anonym, include details — so
+        // that user can see it's hens own anonym.
+        toShowForPatId foreach { showForPatId: PatId =>
+          if (anon.anonForPatId == showForPatId) {
+            // [see_own_alias]
+            json += "anonForId" -> JsNumber(anon.anonForPatId)
+            //on += "anonOnPageId" -> JsString(anon.anonOnPageId),
+          }
         }
-      }
+      case x => die(s"An isAnon pat isn't an Anonym, it's an: ${classNameOf(x)}")
     }
     else if (user.isGuest) {
       json += "isGuest" -> JsTrue
@@ -1165,7 +1147,7 @@ object JsX {   RENAME // to JsonPaSe
     draft.map(JsDraft).getOrElse(JsNull)
 
   def JsDraft(draft: Draft): JsObject = {
-    Json.obj(
+    var res = Json.obj(
       "byUserId" -> draft.byUserId,
       "draftNr" -> draft.draftNr,
       "forWhat" -> JsDraftLocator(draft.forWhat),
@@ -1176,6 +1158,33 @@ object JsX {   RENAME // to JsonPaSe
       "postType" -> JsNumberOrNull(draft.postType.map(_.toInt)),
       "title" -> JsString(draft.title),
       "text" -> JsString(draft.text))
+    draft.doAsAnon foreach { whichAlias =>
+      res += DoAsAnonFieldName -> JsWhichAliasId(whichAlias)
+    }
+    res
+  }
+
+
+  def JsWhichAliasId(which: WhichAliasId): JsObject = {
+    import WhichAliasId._
+    which match {
+      case Oneself =>
+        Json.obj(
+            "self" -> true)
+      case SameAnon(anonId: PatId) =>
+        Json.obj(
+            "sameAnonId" -> JsNumber(anonId),
+            // Later, also incl: (but not yet saved in db, for drafts)  [chk_alias_status]
+            //"anonStatus" -> anon.anonStatus
+            )
+      case LazyCreatedAnon(anonStatus: AnonStatus) =>
+        Json.obj(
+            "anonStatus" -> JsNumber(anonStatus.toInt),
+            "lazyCreate" -> JsTrue)
+      // Maybe later, also:
+      // case NewAnon(anonStatus: AnonStatus) =>
+      //    "createNew_tst" -> ...
+    }
   }
 
 
