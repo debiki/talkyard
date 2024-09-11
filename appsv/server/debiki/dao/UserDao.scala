@@ -1001,8 +1001,8 @@ trait UserDao {
   }
 
 
-  def getTheParticipant(userId: UserId): Participant = {
-    getParticipant(userId).getOrElse(throw UserNotFoundException(userId))
+  def getTheParticipant(userId: UserId, anyTx: Opt[SiteTx] = None): Participant = {
+    getParticipant(userId, anyTx).getOrElse(throw UserNotFoundException(userId))
   }
 
 

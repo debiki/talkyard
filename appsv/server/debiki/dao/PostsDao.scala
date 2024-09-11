@@ -77,6 +77,9 @@ trait PostsDao {
 
     val pageMeta = this.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound(
           "TyE5FKW20", showErrCodeAnyway = reqrAndReplyer.reqrIsAdmin)
+    val pageAuthor =
+          if (pageMeta.authorId == reqrAndReplyer.reqr.id) reqrAndReplyer.reqr
+          else this.getTheParticipant(pageMeta.authorId)
 
     val catsRootLast = this.getAncestorCategoriesSelfFirst(pageMeta.categoryId)
     val tooManyPermissions = getPermsOnPages(categories = catsRootLast)
@@ -94,8 +97,8 @@ trait PostsDao {
           reqrAndLevels,
           // See [4_doer_not_reqr].
           asAlias = if (reqrAndReplyer.areNotTheSame) None else asAlias,
-          this.getOnesGroupIds(reqrAndLevels.user),
-          postType, pageMeta, replyToPosts, privTalkMembers,
+          groupIds = this.getOnesGroupIds(reqrAndLevels.user),
+          postType, pageMeta, pageAuthor = pageAuthor, replyToPosts, privTalkMembers,
           inCategoriesRootLast = catsRootLast, tooManyPermissions),
           "TyEM0REPLY1")
 
@@ -103,7 +106,7 @@ trait PostsDao {
       val replyerAndLevels = readTx(this.loadUserAndLevels(reqrAndReplyer.targetToWho, _))
       throwNoUnless(Authz.mayPostReply(
             replyerAndLevels, asAlias, this.getOnesGroupIds(replyerAndLevels.user),
-            postType, pageMeta, replyToPosts, privTalkMembers,
+            postType, pageMeta, pageAuthor = pageAuthor, replyToPosts, privTalkMembers,
             inCategoriesRootLast = catsRootLast, tooManyPermissions),
             "TyEM0REPLY2")
     }
@@ -186,9 +189,12 @@ trait PostsDao {
     val authorMaybeAnon: Pat = SiteDao.getAliasOrTruePat(
           truePat = realAuthor, pageId = pageId, asAlias)(tx, IfBadAbortReq)
 
+    val pageAuthor = tx.loadTheParticipant(page.meta.authorId)
+
     dieOrThrowNoUnless(Authz.mayPostReply(
       realAuthorAndLevels, asAlias /* _not_same_tx, ok */, realAuthorAndGroupIds,
-      postType, page.meta, replyToPosts, tx.loadAnyPrivateGroupTalkMembers(page.meta),
+      postType, page.meta, pageAuthor = pageAuthor,
+      replyToPosts, tx.loadAnyPrivateGroupTalkMembers(page.meta),
       tx.loadCategoryPathRootLast(page.meta.categoryId, inclSelfFirst = true),
       tx.loadPermsOnPages()), "EdEMAY0RE")
 
@@ -658,14 +664,16 @@ trait PostsDao {
 
       SHOULD_OPTIMIZE // don't load all posts [2GKF0S6], because this is a chat, could be too many.
       val page = newPageDao(pageId, tx)
+      val pageAuthor = tx.loadTheParticipant(page.meta.authorId)
       val replyToPosts = Nil // currently cannot reply to specific posts, in the chat. [7YKDW3]
       val asAlias = None // [anon_chats]
 
       dieOrThrowNoUnless(Authz.mayPostReply(
-        authorAndLevels, asAlias = asAlias, tx.loadGroupIdsMemberIdFirst(author),
-        PostType.ChatMessage, page.meta, Nil, tx.loadAnyPrivateGroupTalkMembers(page.meta),
-        tx.loadCategoryPathRootLast(page.meta.categoryId, inclSelfFirst = true),
-        tx.loadPermsOnPages()), "EdEMAY0CHAT")
+          authorAndLevels, asAlias = asAlias, groupIds = tx.loadGroupIdsMemberIdFirst(author),
+          PostType.ChatMessage, page.meta, pageAuthor = pageAuthor,
+          replyToPosts = Nil, tx.loadAnyPrivateGroupTalkMembers(page.meta),
+          tx.loadCategoryPathRootLast(page.meta.categoryId, inclSelfFirst = true),
+          tx.loadPermsOnPages()), "EdEMAY0CHAT")
 
       val (reviewReasons: Seq[ReviewReason], _) =
         throwOrFindNewPostReviewReasons(page.meta, authorAndLevels, tx)

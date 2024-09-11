@@ -113,9 +113,13 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
       if (draft.isReply) {
         val postType = draft.postType getOrDie "TyER35SKS02GU"
+        val pageAuthor =
+              if (pageMeta.authorId == requester.id) requester
+              else dao.getTheParticipant(pageMeta.authorId)
         throwNoUnless(Authz.mayPostReply(
               request.theUserAndLevels, asAlias = None, dao.getOnesGroupIds(requester),
-              postType, pageMeta, Vector(post), dao.getAnyPrivateGroupTalkMembers(pageMeta),
+              postType, pageMeta, pageAuthor = pageAuthor,
+              Vector(post), dao.getAnyPrivateGroupTalkMembers(pageMeta),
               inCategoriesRootLast = categoriesRootLast,
               tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXK3M2")
       }

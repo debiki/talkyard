@@ -431,6 +431,7 @@ object Authz {
     groupIds: immutable.Seq[GroupId],
     postType: PostType,
     pageMeta: PageMeta,
+    pageAuthor: Pat,
     replyToPosts: immutable.Seq[Post],
     privateGroupTalkMemberIds: Set[UserId],
     inCategoriesRootLast: immutable.Seq[Category],
@@ -442,10 +443,7 @@ object Authz {
     val mayWhat = checkPermsOnPages(
           Some(user), asAlias = asAlias, groupIds,
           Some(pageMeta),
-          // ANON_UNIMPL: Needed, for maySeeOwn [granular_perms], and later, if there'll be
-          // a mayReplyOnOwn permission?
-          // But let's wait until true author id is incl in posts3/nodes_t. [posts3_true_id]
-          pageAuthor = None,
+          pageAuthor = Some(pageAuthor),
           pageMembers = Some(privateGroupTalkMemberIds),
           catsRootLast = inCategoriesRootLast, tooManyPermissions)
 
@@ -852,8 +850,10 @@ object Authz {
       // then, pat may not see it, or any sub cat.  [see_sub_cat]
       if (mayWhatThisCat.maySee isNot true) {
         // But maySeeOwn=true has precedence over maySee=false.
-        if (isOwnPage && mayWhatThisCat.maySeeOwn) {
-          // Fine, continue.
+        if ((isOwnPage || pageMeta.isEmpty) && mayWhatThisCat.maySeeOwn) {
+          // Fine: Either it's our own page (which we may see), or no page specified — then
+          // we may still see the category.
+          mayWhatThisCat = mayWhatThisCat.copy(maySee = Some(true))
         }
         else
           return mayWhatThisCat
@@ -1037,6 +1037,8 @@ case class MayWhat(
   mayCreatePage: Bo = false,
   mayPostComment: Bo = false,
   maySee: Opt[Bo] = None,
+  // Used to derive maySee: if is own page, and maySeeOwn, then, maySee becomest Some(true).
+  // Is that a bit weird? Works for now.
   maySeeOwn: Bo = false,
   // maySeePagesOneIsMembOf: Bo = false
   // mayListUnlistedCat

@@ -510,6 +510,7 @@ function runAllE2eTests {
 
   $r s/wdio --only group-permissions-similar-topics.2br.mtime $args
   $r s/wdio --only permissions-edit-wiki-posts.2browsers $args
+  #$r s/wdio-7 --only permissions-see-own.2br.f.e2e $args  # _see_own
 
   # Do after the search and access permission tests above.  [.more_cat_tests]
   $r s/wdio --only categories-delete.2br $args
@@ -540,6 +541,7 @@ function runAllE2eTests {
 
   #$r s/wdio-7 --only alias-anons-true-mixed.2br.f --cd -i $args
   #$r s/wdio-7 --only alias-anons-basic.2br.f --cd -i $args
+  #$r s/wdio-7 --only alias-anons-see-own.2br.f --cd -i $args  # _see_own
 
 
   # API

@@ -76,6 +76,9 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
     REMOVE // these 3 vals, once we're using dao.insertReplyIfAuZ() instead of
     // doing authz here in this fn.
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE5FKW20")
+    val pageAuthor =
+          if (pageMeta.authorId == requester.id) requester
+          else dao.getTheParticipant(pageMeta.authorId)
     val replyToPosts = dao.loadPostsAllOrError(pageId, replyToPostNrs) getOrIfBad { missingPostNr =>
       throwNotFound(s"Post nr $missingPostNr not found", "EdEW3HPY08")
     }
@@ -85,8 +88,9 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     CLEAN_UP // [dupl_re_authz_chk]  and see the REM OVE just above too, and COU LD below.
     throwNoUnless(Authz.mayPostReply(
-      request.theUserAndLevels, asAlias, dao.getOnesGroupIds(request.theUser),
-      postType, pageMeta, replyToPosts, dao.getAnyPrivateGroupTalkMembers(pageMeta),
+      request.theUserAndLevels, asAlias, dao.getOnesGroupIds(requester),
+      postType, pageMeta, pageAuthor = pageAuthor,
+      replyToPosts, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
       tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)),
       "TyEM0REPLY_")
@@ -119,7 +123,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   def handleChatMessage: Action[JsValue] = PostJsonAction(RateLimits.PostReply,
         maxBytes = MaxPostSize) { request =>
-    import request.{body, dao}
+    import request.{body, dao, reqr}
     val pageId = (body \ "pageId").as[PageId]
     val text = (body \ "text").as[String].trim
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
@@ -132,12 +136,16 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val pageMeta = dao.getPageMeta(pageId) getOrElse {
       throwIndistinguishableNotFound("EdE7JS2")
     }
+    val pageAuthor =
+          if (pageMeta.authorId == reqr.id) reqr
+          else dao.getTheParticipant(pageMeta.authorId)
     val replyToPosts = Nil  // currently cannot reply to specific posts, in the chat [7YKDW3]
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.mayPostReply(
       request.theUserAndLevels, asAlias = None, dao.getOnesGroupIds(request.theMember),
-      PostType.ChatMessage, pageMeta, replyToPosts, dao.getAnyPrivateGroupTalkMembers(pageMeta),
+      PostType.ChatMessage, pageMeta, pageAuthor = pageAuthor,
+      replyToPosts, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
       tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdEHDETG4K5")
