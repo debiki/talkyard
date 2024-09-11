@@ -193,7 +193,7 @@ const ChatChannels = createComponent({
   },
 
   createChatChannel: function() {
-    login.loginIfNeeded(LoginReason.LoginToChat, location.toString(), () => {
+    login.loginIfNeeded(LoginReason.LoginToChat, '', () => {
       if (this.isGone) return;
       Server.listCategoriesAllSections((categories: Category[]) => {
         if (this.isGone) return;

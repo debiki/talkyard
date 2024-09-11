@@ -45,7 +45,7 @@ export function activateAnyCustomForm() {
         Server.submitCustomFormAsNewTopic(formData);
       }
       else if (doWhat.value === 'SignUp') {
-        login.loginIfNeeded(LoginReason.SignUp, location.toString());
+        login.loginIfNeeded(LoginReason.SignUp, '');
       }
       else if (doWhat.value === 'SignUpSubmitUtx') {  // [plugin]
         login.loginIfNeeded(LoginReason.SignUp, '/-/redir-to-my-last-topic', function() {

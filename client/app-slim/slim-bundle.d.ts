@@ -282,7 +282,7 @@ declare namespace debiki2 {
     function loginIfNeededReturnToPost(
         loginReason: LoginReason, postNr: PostNr, success?: () => Vo, willCompose?: Bo);
 
-    function loginIfNeeded(loginReason, returnToUrl: string, onDone?: () => void);
+    function loginIfNeeded(loginReason: LoginReason, pathOrHash: St, onOk?: () => V);
     function openLoginDialogToSignUp(purpose);
     function openLoginDialog(purpose);
 

@@ -1121,6 +1121,11 @@ embedded comments:
   post 1st comment, edit:   TESTS_MISSING
     when unapproved:
     auto approved:
+  compose before
+    login:
+            - embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048
+    signup:
+            - TESTS_MISSING  TyTEMBCOMPBEFLGI  # missing, right?
   vote before page exists:
           - embcom.vote-bef-page-exists.1br  TyT2AKBS056
   config notf prefs before page exists:

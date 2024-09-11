@@ -1347,6 +1347,7 @@ interface SettingsVisibleClientSide extends TopicInterfaceSettings, SettingsDisc
   doubleTypePassword?: boolean;         // default: false
   ssoUrl?: string;                      // default: undefined
   ssoShowEmbAuthnBtns?: ShowEmbAuthnBtnsBitf;  // default: undef —> All
+  // RENAME `enableSso` to `enableTysOwnSso`? & Could be a version nr, not just a bool?
   enableSso?: boolean;                  // default: undefined —> false
   ssoWillRedirAfterLogout?: Bo;         // default: undef —> false
   rememberEmbSess?: Bo;                 // default: undef —> true

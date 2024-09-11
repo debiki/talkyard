@@ -16,8 +16,8 @@
  */
 
 /// <reference path="../links.ts" />
+// (Why does this behave as -already-loaded.ts? Oh well. [_5BKRF020])
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
-// or should be ...already-loaded ? (5BKRF020)
 
 //------------------------------------------------------------------------------
    namespace debiki2.login {
@@ -48,70 +48,115 @@ export function getAuthnNonce(): St | U {
 
 
 // From before React.js.  Gah! This needs to be refactored :-/  Try to remove this field.
-export let anyContinueAfterLoginCallback = null;
+export let anyContinueAfterLoginCallback: (() => V) | U;
 
 
+/// If login needed, redirects to `postNr` only if the user was signing up and had
+/// to click an email verification link (the redirect link is then in the email addr
+/// verification email).  Otherwise, runs `onOk()`.
+///
 export function loginIfNeededReturnToPost(
-      loginReason: LoginReason, postNr: PostNr, success: () => void,
-      willCompose?: boolean) {
+      loginReason: LoginReason, postNr: PostNr, onOk: () => V, willCompose?: Bo) {
   // If posting a progress post, then, after login, scroll to the bottom, so one
   // can click that button again — it's at the bottom.
   const anchor = loginReason === LoginReason.PostProgressPost
       ? FragActionHashScrollToBottom
-      : (postNr < FirstReplyNr ? '' : (
+      : (postNr < FirstReplyNr
+          ?
+            // UX COULD: Here it could be nice, if in embedded comments, scroll down to
+            // the comments section?  [scroll_to_emb_comts]
+            ''
+          : (
           // We use 'comment-' for embedded comments; they start on nr 1 = post 2. [2PAWC0]
-          eds.isInEmbeddedCommentsIframe
+          // (Hopefully the embedding website has no elems with ids like 'comment-NNN'.)
+          eds.isInIframe
               ? FragParamCommentNr + (postNr - 1)
               : FragParamPostNr + postNr));
 
-  loginIfNeededReturnToAnchor(loginReason, anchor, success, willCompose);
+  loginIfNeededImpl(loginReason, anchor, true, onOk, willCompose);
 }
 
 
+/// Same as `loginIfNeededReturnToPost()` above, but goes to `anchor` (a #hash-fragment)
+/// after any signup, instead of to a post nr.
+///
 export function loginIfNeededReturnToAnchor(
-      loginReason: LoginReason, anchor: string, success?: () => void, willCompose?: boolean) {
-  const returnToUrl = makeReturnToPageHashForVerifEmail(anchor);
-  success = success || function() {};
+      loginReason: LoginReason, anchor: St, onOk?: () => V, willCompose?: Bo) {
+  loginIfNeededImpl(loginReason, anchor, true, onOk, willCompose);
+}
+
+
+/// If login needed, always redirects to `path` afterwards and ignores `onOk()`.
+///
+export function loginIfNeeded(loginReason: LoginReason, path: St, onOk?: () => V,
+     willCompose?: Bo) {
+  loginIfNeededImpl(loginReason, path, false, onOk, willCompose);
+}
+
+
+function loginIfNeededImpl(loginReason: LoginReason, pathOrHash: St, redirFromEmailOnly: Bo,
+      onOk?: () => V, willCompose?: Bo) {
+
+  onOk = onOk || function() {};
   const store: Store = ReactStore.allData();
   const me: Myself = store.me;
-  if (me.isLoggedIn || (willCompose && ReactStore.mayComposeBeforeSignup())) {
-    success();
-  }
-  else if (eds.isInIframe) {
-    // ... or only if isInSomeEmbCommentsIframe()?
 
-    anyContinueAfterLoginCallback = success;
+  // No login needed, or not until later when submitting any comment?
+  if (me.isLoggedIn || (willCompose && ReactStore.mayComposeBeforeSignup())) {
+    onOk();
+    return;
+  }
+
+  const returnToUrl: St = redirFromEmailOnly
+          ? makeReturnToPageHashForVerifEmail(pathOrHash)
+          : (eds.embeddingUrl || location.toString()) + pathOrHash;
+
+  // _Make_SSO url here?  And if sth, then, can redir.
+  // Pass  anchor   or  pathOrHash (just path?)   and if there's a SSO url,
+  // then can use  %-encoded  return-to paths + hash:
+  //
+  //   returnToOrigin
+  //   returnToRelUrl  (relative origin)
+
+  // But prefix the  returnToOrigin with  "check_is_legit:"  to force the SSO
+  // server to verify that the origin is legit, before redirecting anyone to there
+  // — so there won't be any pishing attacks.
+
+  // And if   ssoHow = 'RedirEmbeddingPage', then, do that the 1st thing.
+
+
+  if (eds.isInIframe) {
+    // TESTS_MISSING: Compose comment before logging in? Then, we'd be  TyTEMBCOMPBEFLGI
+    // in the *editor* iframe, now, rather than the *comments* iframe.
+
+    anyContinueAfterLoginCallback = onOk;
 
     // Don't open a dialog inside the iframe; open a popup instead.
-    // Need to open the popup here immediately, before loading any scripts, because if
-    // not done immediately after mouse click, the popup gets blocked (in Chrome at least).
-    // And when opening in a popup, we don't need any more scripts here in the main win anyway.
+    // Need to open the popup here immediately, because if not done immediately after
+    // mouse click, the popup gets blocked (in Chrome at least).
+    //
+    // (This'll call `LoginController.showLoginPopup()` in the app server, to show:
+    // ../../../appsv/server/views/authn/authnPage.scala.html  in a popup.
+    // The popup calls  `debiki2.login.getLoginDialog().openToSignUp()`.  That's similar to
+    // the else case below, but in a popup, [_popup_or_not], with no SSO and not admin area.)
+    //
     const url = origin() + '/-/login-popup?mode=' + loginReason +   // [2ABKW24T]
       '&isInLoginPopup&returnToUrl=' + returnToUrl;
     d.i.createLoginPopup(url);
   }
   else {
-    loginIfNeeded(loginReason, returnToUrl, success);
-  }
-}
-
-
-// Later, merge with loginIfNeededReturnToAnchor() above, and rename to loginIfNeeded, and use only
-// that fn always — then will work also in iframe (will open popup).
-export function loginIfNeeded(loginReason: LoginReason, returnToUrl: St, onOk?: () => Vo,
-     willCompose?: Bo) {
-  if (ReactStore.getMe().isLoggedIn || (willCompose && ReactStore.mayComposeBeforeSignup())) {
-    if (onOk) onOk();
-  }
-  else {
     goToSsoPageOrElse(returnToUrl, loginReason, onOk, function() {
       Server.loadMoreScriptsBundle(() => {
+        // (This is similar to above [_popup_or_not], but in the main win, not in a popup.)
+
         // People with an account, are typically logged in already, and won't get to here often.
         // Instead, most people here, are new users, so show the signup dialog.
         // But when creating a new site, one logs in as admin (NeedToBeAdmin) if one
         // clicked the link (verified one's admin email), but then tries to log in in
         // another browser.
-        // (Why won't this result in a compil err? (5BKRF020))
+
+        // (Why won't this result in a compil err? We're including:
+        // ../more-bundle-not-yet-loaded.ts  only,  not ...-already-loaded.ts. [_5BKRF020])
         const diag = debiki2.login.getLoginDialog();
         const logInOrSignUp = loginReason === LoginReason.NeedToBeAdmin ?
                   diag.openToLogIn : diag.openToSignUp;
@@ -124,6 +169,7 @@ export function loginIfNeeded(loginReason: LoginReason, returnToUrl: St, onOk?: 
 
 
 export function openLoginDialogToSignUp(purpose: LoginReason) {
+  // _Make_SSO url here? And pass to goToSsoPage...()  ?
   goToSsoPageOrElse(location.toString(), purpose, null, function() {
     Server.loadMoreScriptsBundle(() => {
       debiki2.login.getLoginDialog().openToSignUp(purpose);
@@ -133,6 +179,7 @@ export function openLoginDialogToSignUp(purpose: LoginReason) {
 
 
 export function openLoginDialog(purpose: LoginReason) {
+  // _Make_SSO url here? And pass to goToSsoPage...()  ?
   goToSsoPageOrElse(location.toString(), purpose, null, function() {
     Server.loadMoreScriptsBundle(() => {
       debiki2.login.getLoginDialog().openToLogIn(purpose);
@@ -142,7 +189,7 @@ export function openLoginDialog(purpose: LoginReason) {
 
 
 function goToSsoPageOrElse(returnToUrl: St, toDoWhat: LoginReason | U,
-        doAfterLogin: () => void | U, orElse: () => void) {
+        doAfterLogin: (() => V) | U, orElse: () => V): V {
   // Dupl code? [SSOINSTAREDIR]
   const store: Store = ReactStore.allData();
   const anySsoUrl: St | U = makeSsoUrl(store, returnToUrl);
@@ -156,11 +203,15 @@ function goToSsoPageOrElse(returnToUrl: St, toDoWhat: LoginReason | U,
     // stay on the same page, and navigate away to the IDP only in a popup win,
     // so the editor stays open and one can submit the reply, after login.
     if (store.settings.enableSso) {
+      // This is Ty's own SSO.
+
       // Harmless bug: If session & local storage don't work, this redirect will
       // destroy the browser authn nonce.  [br_authn_nonce]
       location.assign(anySsoUrl);  // backw compat, see above
     }
     else {
+      // This is SSO too, but using some standard like OAuth2 (not Ty's own).
+
       // This'll trigger the [SSOINSTAREDIR] code in login-dialog.more.ts — the
       // SSO url then gets reconstructed, so we don't need to include it here.
       // BUT, sleeping BUG: we should incl the authn nonce!  [br_authn_nonce]
@@ -181,6 +232,10 @@ function goToSsoPageOrElse(returnToUrl: St, toDoWhat: LoginReason | U,
 }
 
 
+// Constructs a url to an external SSO server to which the browser should be sent
+// to log in.  Included in this url, is a return-to-url, so, after login,
+// the exteral SSO server knows where to send the user next.
+//
 // forTySsoTest: If we're on the Ty SSO test page, and should only generate
 // a SSO url if Talkyard's own SSO is in use (but not any external OIDC or OAuth2 IDP).
 //
@@ -207,13 +262,13 @@ export function makeSsoUrl(store: Store, returnToUrlMaybeMagicRedir: St,
   // The SSO endpoint needs to check the return to full URL or origin against a white list
   // to verify that the request isn't a phishing attack — i.e. someone who sets up a site
   // that looks exactly like the external website where Single Sign-On happens,
-  // or looks exactly like the Talkyard forum, and uses $[returnTo...} to redirect
+  // or looks exactly like the Talkyard forum, and uses ${returnTo...} to redirect
   // to the phishing site. — That's why the full url and the origin params have
   // Dangerous in their names.
   //   Usually there'd be just one entry in the "white list", namely the address to the
   // Talkyard forum. And then, better use `${talkyardPathQueryEscHash}` instead. However,
-  // can be many Talkyard origins, if there's also a blog with embedded comments,
-  // or more than one forum, which all use the same SSO login page.
+  // can be many origins, if there's also a blog with embedded comments (e.g. blog.company.com),
+  // or more than one forum (e.g. forum.company.com), which all use the same SSO login page.
   const ssoUrlWithReturn = talkyardSsoUrl
       ? (talkyardSsoUrl
         .replace('${talkyardUrlDangerous}', returnToUrl)
@@ -229,14 +284,14 @@ export function makeSsoUrl(store: Store, returnToUrlMaybeMagicRedir: St,
 }
 
 
-function makeReturnToPageHashForVerifEmail(hash) {
+function makeReturnToPageHashForVerifEmail(hash: St): St {
   // The magic '__Redir...' string tells the server to use the return-to-URL only if it
   // needs to send an email address verification email (it'd include the return
   // to URL on a welcome page show via a link in the email).
   // '__dwHash__' is an encoded hash that won't be lost when included in a GET URL.
   // The server replaces it with '#' later on.
   // If we're showing embedded comments in an <iframe>, use the embedding page's url.
-  const pageUrl = eds.embeddingUrl ? eds.embeddingUrl : window.location.toString();
+  const pageUrl = eds.embeddingUrl || window.location.toString();
   let returnToUrl = '_RedirFromVerifEmailOnly_' + pageUrl.replace(/#.*/, '');
   if (hash) {
     hash = hash.replace(/^#/, '');
@@ -246,7 +301,7 @@ function makeReturnToPageHashForVerifEmail(hash) {
 }
 
 
-export function continueAfterLogin(anyReturnToUrl?: string) {
+export function continueAfterLogin(anyReturnToUrl?: St) {
   // Minor clean up: Use guard clauses, instead of nested ifs.
 
   if (eds.isInLoginWindow) {

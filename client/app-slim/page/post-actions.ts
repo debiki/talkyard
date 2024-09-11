@@ -228,7 +228,7 @@ export const PostActions = createComponent({
     const atRect = cloneEventTargetRect(event);
     const store: Store = this.props.store;
     const post: Post = this.props.post;
-    loginIfNeededThen(LoginReason.LoginToLike, post.nr, () => {
+    login.loginIfNeededReturnToPost(LoginReason.LoginToLike, post.nr, () => {
       if (this.isGone) return;
       const toggleOn = !me_hasVoted(store.me, post.nr, PostVoteType.Like);
       toggleVote(this.props.store, post, PostVoteType.Like, toggleOn, atRect);
@@ -563,7 +563,7 @@ const MoreVotesDropdownModal = createComponent({
   onWrongClick: function(event: MouseEvent) {
     const atRect = cloneEventTargetRect(event);
     const post: Post = this.state.post;
-    loginIfNeededThen(LoginReason.LoginToDisagree, post.nr, () => {
+    login.loginIfNeededReturnToPost(LoginReason.LoginToDisagree, post.nr, () => {
       toggleVote(this.state.store, post, PostVoteType.Disagree, !this.hasVoted(PostVoteType.Disagree),
             atRect, this.closeSoon);
     });
@@ -975,15 +975,11 @@ const MoreDropdownModal = createComponent({
 
 
 function flagPost(post: Post, at: Rect) {
-  loginIfNeededThen(LoginReason.LoginToFlag, post.nr, () => {
+  login.loginIfNeededReturnToPost(LoginReason.LoginToFlag, post.nr, () => {
     morebundle.openFlagDialog(post.nr, at);
   });
 }
 
-
-function loginIfNeededThen(loginToWhat: LoginReason, postNr: PostNr, success: () => Vo) {
-  login.loginIfNeededReturnToPost(loginToWhat, postNr, success);
-}
 
 //------------------------------------------------------------------------------
    }

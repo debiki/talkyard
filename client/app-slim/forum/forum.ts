@@ -550,8 +550,12 @@ const ForumButtons = createComponent({
   },
 
   createTopic: function(category: Category) {
-    const anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
-    login.loginIfNeeded(LoginReason.CreateTopic, anyReturnToUrl, () => {
+    // Remember any #composeTopic action (FragActionType.ComposeTopic), so we'll
+    // continue composing, after having signed up (if needed) and clicked any
+    // email verification link.  TESTS_MISSING  TyTFRAGCOMPTO
+    const loc = window.location;
+    const returnToRelativeUrl = loc.pathname + loc.search + loc.hash.replace(/#/, '__dwHash__');
+    login.loginIfNeeded(LoginReason.CreateTopic, returnToRelativeUrl, () => {
       if (this.isGone) return;
       const newTopicTypes = category.newTopicTypes || [];
       if (newTopicTypes.length === 0) {

@@ -918,6 +918,9 @@ function onMessage(event) {
       //
       // Log in via the first comments iframe only — otherwise there'd be races
       // and unnecessarily many server requests.
+      // (Probably better to not incl any token or secret in any url (as is however
+      // done with e.g. `htmlClassParam`, see  [emb_comts_url_params]), so they won't
+      // end up in any request logs somewhere.)
       //
       if (authnTried) {
         // Noop.
@@ -1100,6 +1103,7 @@ function onMessage(event) {
       if (eventData.goTo) {
         // For SSO-logout, we need to redirect this parent win  [sso_redir_par_win]
         // to the logout url.
+        logM(`Going to: ${eventData.goTo}`);
         location.assign(eventData.goTo);
       }
       break;
