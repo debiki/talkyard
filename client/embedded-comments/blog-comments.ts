@@ -47,6 +47,13 @@ interface WindowWithTalkyardProps {
   talkyardReloadCommentsAndEditor: () => void;
   talkyardAddCommentsIframe: (ps: { appendInside: HElm, discussionId: St }) => HElm;
   talkyardForgetRemovedCommentIframes: () => Vo;
+  talkyardUiLanguage?: St;
+
+  // Either 'RedirPage' or 'PopupWin'. The former redirects the embedding page to
+  // the SSO login page. The latter shows a login popup (the default).
+  // ('RedirPage' rather than 'redirPage' is more consistent with the naming in
+  // ../../tests/e2e-wdio7/pub-api.ts .)
+  talkyardSsoHow?: St;
 }
 
 // Later: SSO and HMAC via https://pasteo.io? https://paseto.io/rfc/  [blog_comments_sso]
@@ -140,6 +147,8 @@ const insecureSomethingErrMsg = insecureTyIframeProbl ? (
         ) : */  '');
 
 const considerQueryParams = windowWithTalkyardProps.talkyardConsiderQueryParams;
+
+const ssoHow = windowWithTalkyardProps.talkyardSsoHow;
 
 // For automatic Single Sign-On with PASETO authn tokens, either in a variable,
 // or a cookie (cookie better? So not incl in html, although encrypted).
@@ -571,8 +580,11 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
 
   const logLevelParam = talkyardLogLevel ? `&logLevel=${talkyardLogLevel}` : '';
 
-  const allUrlParams =
+  const ssoHowParam = ssoHow ? `&ssoHow=${ssoHow}` : '';
+
+  const allUrlParams =  // [emb_comts_url_params]
           edPageIdParam + discIdParam + catRefParam + embeddingUrlParam +
+          ssoHowParam +
           htmlClassParam + logLevelParam + scriptVersionQueryParam;
 
   var commentsIframeUrl = serverOrigin + '/-/embedded-comments?' + allUrlParams;
@@ -1031,6 +1043,13 @@ function onMessage(event) {
       debiki.Utterscroll.stopScrolling(eventData);
       break;
       */
+    case 'ssoRedir':
+      // Redirect to the SSO server. In the url, there's parameters that tells the
+      // SSO server about the current url, so it (the server) can redirect the user
+      // back here after login.  [sso_redir_par_win]
+      logD(`Going to SSO page: ${eventData}`);
+      location.assign(eventData);
+      break;
 
     case 'authnErr':
       logW(`Error logging in using ${eventData.prettyMethod}. ` +

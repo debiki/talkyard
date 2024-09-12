@@ -3322,6 +3322,7 @@ interface UserPresenceWsMsg {
 
 
 // These variables are initialized in a certain <head><script>.  [5JWKA27]
+// Not always from the server — e.g. `ssoHow` is from any embedding page (e.g. blog post).
 
 interface ServerVars {
   doWhat: 'Noop' | 'StartPage' | 'ResetPwd';
@@ -3390,6 +3391,8 @@ interface ServerVars {
 
   // When creating new site.
   baseDomain?: string;
+
+  ssoHow?: 'RedirPage' | 'LoginPopup' | St // or sth else (invalid)
 
   newPasswordData?: NewPasswordData;
 }

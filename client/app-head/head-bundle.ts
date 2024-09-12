@@ -181,6 +181,7 @@ if (_narrow) {
 // see: https://stackoverflow.com/a/979995/694469  for more details.
 try {
   var _searchParams = new URLSearchParams(location.search);
+  var _ssoHow = _searchParams.get('ssoHow');
   var _class = _searchParams.get('htmlClass');
   if (_class) {
     _doc.className += ' ' + _class.replace(/[^a-zA-Z0-9_-]/g, ' ');
@@ -286,6 +287,7 @@ if (!eds.isInEmbeddedEditor) {
   loadGlobalStaffScript: @{ tpi.globals.loadGlobalStaffScript.toString },
   */
 
+eds.ssoHow = _ssoHow;
 
 // Backw compat CLEAN_UP convert old js code in these 'namespaces' to Typescript instead [4KSWPY]
 // RENAME to tyd ("Talkyard Dynamic" things, like is-sth-ready promises?, remove 'internal' and 'v0'

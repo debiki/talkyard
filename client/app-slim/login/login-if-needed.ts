@@ -73,7 +73,7 @@ export function loginIfNeededReturnToPost(
               ? FragParamCommentNr + (postNr - 1)
               : FragParamPostNr + postNr));
 
-  loginIfNeededImpl(loginReason, anchor, true, onOk, willCompose);
+  loginIfNeededImpl(loginReason, anchor, null, true, onOk, willCompose);
 }
 
 
@@ -82,7 +82,7 @@ export function loginIfNeededReturnToPost(
 ///
 export function loginIfNeededReturnToAnchor(
       loginReason: LoginReason, anchor: St, onOk?: () => V, willCompose?: Bo) {
-  loginIfNeededImpl(loginReason, anchor, true, onOk, willCompose);
+  loginIfNeededImpl(loginReason, anchor, null, true, onOk, willCompose);
 }
 
 
@@ -90,12 +90,12 @@ export function loginIfNeededReturnToAnchor(
 ///
 export function loginIfNeeded(loginReason: LoginReason, path: St, onOk?: () => V,
      willCompose?: Bo) {
-  loginIfNeededImpl(loginReason, path, false, onOk, willCompose);
+  loginIfNeededImpl(loginReason, null, path, false, onOk, willCompose);
 }
 
 
-function loginIfNeededImpl(loginReason: LoginReason, pathOrHash: St, redirFromEmailOnly: Bo,
-      onOk?: () => V, willCompose?: Bo) {
+function loginIfNeededImpl(loginReason: LoginReason, toHash: St, toPath: St,
+      redirFromEmailOnly: Bo, onOk?: () => V, willCompose?: Bo) {
 
   onOk = onOk || function() {};
   const store: Store = ReactStore.allData();
@@ -107,25 +107,27 @@ function loginIfNeededImpl(loginReason: LoginReason, pathOrHash: St, redirFromEm
     return;
   }
 
-  const returnToUrl: St = redirFromEmailOnly
-          ? makeReturnToPageHashForVerifEmail(pathOrHash)
-          : (eds.embeddingUrl || location.toString()) + pathOrHash;
+  const makeReturnToUrl = (): St => {
+    // This can't happen, currently. And, currently, `toPath` is a Talkyard URL path,
+    // not a path for any embedding website.
+    dieIf(toPath && eds.embeddingUrl, 'TyEREDIREMBNGPATH');
 
-  // _Make_SSO url here?  And if sth, then, can redir.
-  // Pass  anchor   or  pathOrHash (just path?)   and if there's a SSO url,
-  // then can use  %-encoded  return-to paths + hash:
-  //
-  //   returnToOrigin
-  //   returnToRelUrl  (relative origin)
+    let url = toPath ? location.origin + toPath : eds.embeddingUrl || location.toString();
 
-  // But prefix the  returnToOrigin with  "check_is_legit:"  to force the SSO
-  // server to verify that the origin is legit, before redirecting anyone to there
-  // — so there won't be any pishing attacks.
+    // (This can be a Talkyard hash, e.g. #post-123. But can also be  #comment-123 and
+    // that's for the embedd*ing* website and Talkyard's script there, which looks at
+    // the hash and scrolls to that comment in Ty's blog comments iframe.)
+    if (toHash) {
+      url = url.replace(/#.*/, '') + toHash;
+    }
+    return url;
+  }
 
-  // And if   ssoHow = 'RedirEmbeddingPage', then, do that the 1st thing.
+  const returnToUrl_new = makeReturnToUrl();
+  const returnToUrl_legacy = redirFromEmailOnly ?
+            makeReturnToPageHashForVerifEmail(toHash) : returnToUrl_new;
 
-
-  if (eds.isInIframe) {
+  if (eds.isInIframe && eds.ssoHow !== 'RedirPage') {
     // TESTS_MISSING: Compose comment before logging in? Then, we'd be  TyTEMBCOMPBEFLGI
     // in the *editor* iframe, now, rather than the *comments* iframe.
 
@@ -141,11 +143,11 @@ function loginIfNeededImpl(loginReason: LoginReason, pathOrHash: St, redirFromEm
     // the else case below, but in a popup, [_popup_or_not], with no SSO and not admin area.)
     //
     const url = origin() + '/-/login-popup?mode=' + loginReason +   // [2ABKW24T]
-      '&isInLoginPopup&returnToUrl=' + returnToUrl;
+      '&isInLoginPopup&returnToUrl=' + returnToUrl_legacy;
     d.i.createLoginPopup(url);
   }
   else {
-    goToSsoPageOrElse(returnToUrl, loginReason, onOk, function() {
+    goToSsoPageOrElse(returnToUrl_new, returnToUrl_legacy, onOk, function() {
       Server.loadMoreScriptsBundle(() => {
         // (This is similar to above [_popup_or_not], but in the main win, not in a popup.)
 
@@ -161,7 +163,7 @@ function loginIfNeededImpl(loginReason: LoginReason, pathOrHash: St, redirFromEm
         const logInOrSignUp = loginReason === LoginReason.NeedToBeAdmin ?
                   diag.openToLogIn : diag.openToSignUp;
         logInOrSignUp(
-              loginReason, returnToUrl, onOk || function() {});
+              loginReason, returnToUrl_legacy, onOk || function() {});
       });
     });
   }
@@ -169,8 +171,7 @@ function loginIfNeededImpl(loginReason: LoginReason, pathOrHash: St, redirFromEm
 
 
 export function openLoginDialogToSignUp(purpose: LoginReason) {
-  // _Make_SSO url here? And pass to goToSsoPage...()  ?
-  goToSsoPageOrElse(location.toString(), purpose, null, function() {
+  goToSsoPageOrElse(location.toString(), null, null, function() {
     Server.loadMoreScriptsBundle(() => {
       debiki2.login.getLoginDialog().openToSignUp(purpose);
     });
@@ -179,8 +180,7 @@ export function openLoginDialogToSignUp(purpose: LoginReason) {
 
 
 export function openLoginDialog(purpose: LoginReason) {
-  // _Make_SSO url here? And pass to goToSsoPage...()  ?
-  goToSsoPageOrElse(location.toString(), purpose, null, function() {
+  goToSsoPageOrElse(location.toString(), null, null, function() {
     Server.loadMoreScriptsBundle(() => {
       debiki2.login.getLoginDialog().openToLogIn(purpose);
     });
@@ -188,21 +188,25 @@ export function openLoginDialog(purpose: LoginReason) {
 }
 
 
-function goToSsoPageOrElse(returnToUrl: St, toDoWhat: LoginReason | U,
+function goToSsoPageOrElse(returnToUrl: St, returnToUrl_legacy: St | N,
         doAfterLogin: (() => V) | U, orElse: () => V): V {
   // Dupl code? [SSOINSTAREDIR]
   const store: Store = ReactStore.allData();
-  const anySsoUrl: St | U = makeSsoUrl(store, returnToUrl);
+  const anySsoUrl: St | U = makeSsoUrl(store, returnToUrl, returnToUrl_legacy);
   if (anySsoUrl) {
     // Currently Talkyard's own SSO opens in the same window (not in a popup win)
     // — let's keep that behavior, for backw compatibility.
-    // Maybe one day will be a conf val?
+    // Maybe one day will be a conf val?  [[Upd 2024: Yes now there is: 'RedirPage',
+    // so blog comments can redirect the whole embedd*ing* page.]]
     // However, let custom IDP SSO open in a popup — this works better
     // with embedded comments, [2ABKW24T]
     // and if logging in because sumbitting a reply — then, it's nice to
     // stay on the same page, and navigate away to the IDP only in a popup win,
     // so the editor stays open and one can submit the reply, after login.
-    if (store.settings.enableSso) {
+    if (store.settings.enableSso && eds.ssoHow === 'RedirPage') {
+      window.parent.postMessage(JSON.stringify(['ssoRedir', anySsoUrl]), eds.embeddingOrigin);
+    }
+    else if (store.settings.enableSso) {
       // This is Ty's own SSO.
 
       // Harmless bug: If session & local storage don't work, this redirect will
@@ -239,7 +243,7 @@ function goToSsoPageOrElse(returnToUrl: St, toDoWhat: LoginReason | U,
 // forTySsoTest: If we're on the Ty SSO test page, and should only generate
 // a SSO url if Talkyard's own SSO is in use (but not any external OIDC or OAuth2 IDP).
 //
-export function makeSsoUrl(store: Store, returnToUrlMaybeMagicRedir: St,
+export function makeSsoUrl(store: Store, returnToUrl_new: St, returnToUrlMagicRedir_legacy?: St | N,
       forTySsoTest?: true): St | U {
   const settings: SettingsVisibleClientSide = store.settings;
   const talkyardSsoUrl = (settings.enableSso || forTySsoTest) && settings.ssoUrl;
@@ -252,15 +256,19 @@ export function makeSsoUrl(store: Store, returnToUrlMaybeMagicRedir: St,
 
   // Remove magic text that tells the Talkyard server to redirect to the return to url,
   // only if it sends an email address verification email. (Via a link in that email.)
-  const returnToUrl = returnToUrlMaybeMagicRedir.replace('_RedirFromVerifEmailOnly_', '');
+  // Might still include a weird '__dwHash__' to encode '#' (instead of percent encoding).
+  const returnToUrl_legacy = returnToUrlMagicRedir_legacy
+          ? returnToUrlMagicRedir_legacy.replace('_RedirFromVerifEmailOnly_', '')
+          : returnToUrl_new;
 
-  const origin = location.origin;
-  const returnToPathQueryHash = returnToUrl.substr(origin.length, 9999);
+  const origin = eds.embeddingOrigin || location.origin;
+  const returnToPathQueryHash_new = returnToUrl_new.substring(origin.length);
+  const returnToPathQueryHash_legacy = returnToUrl_legacy.substring(origin.length);
 
   const [nonce, lastsAcrossReload] = login.getOrCreateAuthnNonce();
 
   // The SSO endpoint needs to check the return to full URL or origin against a white list
-  // to verify that the request isn't a phishing attack — i.e. someone who sets up a site
+  // to verify that the request isn't a [_phishing] attack — i.e. someone who sets up a site
   // that looks exactly like the external website where Single Sign-On happens,
   // or looks exactly like the Talkyard forum, and uses ${returnTo...} to redirect
   // to the phishing site. — That's why the full url and the origin params have
@@ -271,13 +279,32 @@ export function makeSsoUrl(store: Store, returnToUrlMaybeMagicRedir: St,
   // or more than one forum (e.g. forum.company.com), which all use the same SSO login page.
   const ssoUrlWithReturn = talkyardSsoUrl
       ? (talkyardSsoUrl
-        .replace('${talkyardUrlDangerous}', returnToUrl)
+        // Legacy:
+        .replace('${talkyardUrlDangerous}', returnToUrl_legacy)
         .replace('${talkyardOriginDangerous}', origin)
-        .replace('${talkyardPathQueryEscHash}', returnToPathQueryHash))
+        .replace('${talkyardPathQueryEscHash}', returnToPathQueryHash_legacy)
+
+        // Better?
+        // - Let's percent encode the parameters, instead of '__dwHash__'.
+        // - Let's prefix the origin with a reminder for the Ty SSO integration
+        //   to look at the origin and check if it's one of their origins (and not
+        //   a [_phishing] site, see above). This makes the origin parameter
+        //   invalid, so they cannot forget to look at it (then, won't work).
+        //   (In 'check_if_legit!', '!' won't get % encoded, but ':' would have been.)
+        // - Let's not say "Talkyard URL" or "Talkyard origin" — because if we're
+        //   SSO logging in to blog comments, the user won't be redirected back to
+        //   any *Talkyard* origin, but to the embedd*ing* webiste, e.g. a Ghost
+        //   blog or static website.  (If they need to know it's for Talkyard SSO,
+        //   they can add an `&isTalkyard=true` query string param themselves.)
+        .replace('${returnToOrigin}', encodeURIComponent('check_if_legit!' + origin))
+        // The external SSO server should send the user to the return-to-origin 
+        // plus this /path/and/maybe/?query=and#hash.
+        .replace('${returnToPathQueryHash}', encodeURIComponent(returnToPathQueryHash_new)))
+
         // + nonce, later  [br_authn_nonce]
       : (
         `${UrlPaths.AuthnRoot}${customSsoIdp.protocol}/${customSsoIdp.alias}` +
-            `?returnToUrl=${returnToPathQueryHash}` +
+            `?returnToUrl=${returnToPathQueryHash_legacy}` +
             `&nonce=${nonce}` );
 
   return ssoUrlWithReturn;

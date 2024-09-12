@@ -286,7 +286,8 @@ declare namespace debiki2 {
     function openLoginDialogToSignUp(purpose);
     function openLoginDialog(purpose);
 
-    function makeSsoUrl(store: Store, returnToUrl: St, forTySsoTest?: true): St;
+    function makeSsoUrl(store: Store, returnToUrl: St, returnToUrl_legacy?: St | N,
+          forTySsoTest?: true): St;
     function getOrCreateAuthnNonce(): [St, Bo];
     function getAuthnNonce(): St;
   }
