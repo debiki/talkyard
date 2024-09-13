@@ -221,7 +221,7 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
     },
 
 
-    addMmember: function(username: string): Member {
+    addMember: function(username: string): Member {
       const member = make.member(username, {});
       (site as SiteData2).members.push(member);
       return member;

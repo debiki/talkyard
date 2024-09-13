@@ -54,7 +54,7 @@ describe("api-list-query-for-topics.test.ts  TyT603AKSL25", () => {
       members: ['michael', 'maria', 'owen'],
     });
 
-    margaret = builder.addMmember('margaret');
+    margaret = builder.addMember('margaret');
     pageAaaJustAdded = builder.addPage({
       id: 'pageAaaId',
       createdAtMs: c.JanOne2020HalfPastFive + 10*1000,

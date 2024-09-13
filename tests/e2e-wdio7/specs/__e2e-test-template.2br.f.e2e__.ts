@@ -79,7 +79,7 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
     //builder.getSite().settings.allowEmbeddingFrom = embeddingOrigin;
 
     // Adding a new member:
-    const newMember: Member = builder.addMmember('hens_username');
+    const newMember: Member = builder.addMember('hens_username');
 
     // Placing Cat B in Staff Cat:
     forum.categories.catB.parentId = forum.categories.staffCat.id;
