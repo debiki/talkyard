@@ -147,6 +147,8 @@ describe(`category-perms.2br.d  TyTE2ECATPREMS01`, () => {
       it(ps.stepsTitle, async () => {});
     }
 
+    // TESTS_MISSING: Go to Maria's profile page, verify topics are/not listed?
+
     if (numTopicsVisible >= 1) {
       it(`Memah can see ${numTopicsVisible} topic(s) in the topic list`, async () => {
         await memah_brB.go2('/')

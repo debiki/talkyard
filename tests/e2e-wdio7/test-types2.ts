@@ -184,7 +184,7 @@ interface SiteData2 {   // [3SD5PB7]
   webhooks: any[]; // Webhook[];
   guests: TestGuest[];
   groups: GroupInclDetails[];
-  groupPps: any[];
+  groupPps: TestGroupPat[];
   members: Member[];
   ppStats: any[];
   ppVisitStats: any[];
@@ -304,6 +304,20 @@ interface TestMyself {
   username?: St;
   fullName?: St;
 }
+
+
+// See: SitePatchParser.readGroupParticipantOrBad()
+//
+interface TestGroupPat {
+  groupId: PatId
+  ppId: PatId
+  // For now:
+  isMember: true
+  isManager: false
+  isAdder: false
+  isBouncer: false
+}
+
 
 interface Member {   // see also TestGuest below
   id: number;

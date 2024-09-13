@@ -5462,11 +5462,14 @@ export class TyE2eTestBrowser {
           await this.waitUntilGone(`.s_PoP-Grp-${groupId}`);
         },
 
-        addGroup: async (groupName: St) => {
+        /// `group`: A group, or it's full name.
+        addGroup: async (group: GroupInclDetails | St) => {
           await this.waitAndClick('.s_CD_Sec_AddB');
           await this.waitAndClick('.s_PoP-Select-Grp .e_SelGrpB');
           await this.waitAndClickSelectorWithText(
-              '.esDropModal_content .esExplDrp_entry', groupName);
+              '.esDropModal_content .esExplDrp_entry',
+              _.isString(group) ? group
+                                : group.fullName || '@' + group.username);
         },
 
         setMay: async (what: PermName, groupId: UserId, may: Bo) => {
@@ -10448,7 +10451,7 @@ export class TyE2eTestBrowser {
       },
 
       editPageBody: async (newText: string, opts: { append?: Bo, textAfterIs?: St,
-              textAfterMatches?: St } = {}) => {
+              textAfterMatches?: St | RegExp } = {}) => {
         await this.topic.clickEditOrigPost();
         await this.editor.editText(newText, opts);
         await this.editor.save();

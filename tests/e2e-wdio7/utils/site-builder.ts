@@ -243,6 +243,27 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
     },
 
 
+    addGroup: function(username: string): GroupInclDetails {
+      const group = make.group(username, {});
+      (site as SiteData2).groups.push(group);
+      return group;
+    },
+
+
+    addGroupPat: function(group: GroupInclDetails, member: Pat): TestGroupPat {
+      const groupPat: TestGroupPat = {
+        groupId: group.id,
+        ppId: member.id,
+        isMember: true,
+        isManager: false,
+        isAdder: false,
+        isBouncer: false,
+      };
+      (site as SiteData2).groupPps.push(groupPat);
+      return groupPat;
+    },
+
+
     addLoadTestGooseUsers: function(ps: { howMany: number, nextNr: Nr, trustLevel: Nr }): Member[] {
       const newUsers = [];
       for (let nr = ps.nextNr; nr < ps.nextNr + ps.howMany; ++nr) {

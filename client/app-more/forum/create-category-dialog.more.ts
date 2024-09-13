@@ -634,7 +634,7 @@ const CatSecurity = createClassAndFactory({
       }
     });
     // Start with zero additional permissions, so the group won't accidentally
-    // get any unintended permission. [_no_extra_def_perms] TyTNEWCAT0PERMS
+    // get any unintended permission. [_no_extra_def_perms] TyTNEWPERMSEMPTY
     // (We don't know which group, yet. The admin will choose a grop from the
     // `SelectGroupDropdown()`.)
     const newPerm = noPermsOnPages(newPermId, Groups.NoUserId, category.id);
