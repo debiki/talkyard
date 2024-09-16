@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { IsWhere, E2eAuthor, E2eVote, isWhere_isInIframe } from '../test-types';
+import { IsWhere, E2eAuthor, E2eVote, isWhere_isInIframe, PermName } from '../test-types';
 import { ServerSays } from '../test-types2';
 import { SiteType, NewSiteOwnerType } from '../test-constants';
 
@@ -5431,6 +5431,26 @@ export class TyE2eTestBrowser {
       },
 
       securityTab: {
+        _mkSel: (what: PermName, groupId: PatId, disabled?: 'ShouldBeDisabled'): St => {
+          let permClass: St;
+          switch (what) {
+            case 'EditOthersTopics': permClass = 's_PoP_Ps_P_EdPg'; break;
+            case 'EditOthersReplies': permClass = 's_PoP_Ps_P_EdCm'; break;
+            case 'EditWikis': permClass = 's_PoP_Ps_P_EdWk'; break;
+            case 'EditOwn': permClass = 's_PoP_Ps_P_EdOwn'; break;
+            case 'DeleteOthersTopics': permClass = 's_PoP_Ps_P_DlPg'; break;
+            case 'DeleteOthersReplies': permClass = 's_PoP_Ps_P_DlCm'; break;
+            case 'CreatePages': permClass = 's_PoP_Ps_P_CrPg'; break;
+            case 'PostReplies': permClass = 's_PoP_Ps_P_Re'; break;
+            case 'SeeOthers': permClass = 's_PoP_Ps_P_See'; break;
+            case 'SeeOwn': permClass = 's_PoP_Ps_P_SeeOwn'; break;
+            default: die('TyE03FLMR25');
+          }
+          const dotDis = disabled ? '.disabled' : '';
+          const brackDis = disabled ? '[disabled]' : '';
+          return `.s_PoP-Grp-${groupId} .${permClass} .checkbox${dotDis} input${brackDis}`;
+        },
+
         switchGroupFromTo: async (fromGroupName: St, toGroupName: St) => {
           await this.waitAndClickSelectorWithText('.s_PoP_Un .e_SelGrpB', fromGroupName);
           await this.waitAndClickSelectorWithText(
@@ -5449,24 +5469,25 @@ export class TyE2eTestBrowser {
               '.esDropModal_content .esExplDrp_entry', groupName);
         },
 
-        setMayCreate: async (groupId: UserId, may: Bo) => {
-          // For now, just click once
-          await this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_CrPg input`);
+        setMay: async (what: PermName, groupId: UserId, may: Bo) => {
+          const sel = this.categoryDialog.securityTab._mkSel(what, groupId);
+          await this.setCheckbox(sel, may);
         },
 
-        setMayReply: async (groupId: UserId, may: Bo) => {
-          // For now, just click once
-          await this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_Re input`);
+        getMay: async (what: PermName, groupId: UserId, disabled?: 'ShouldBeDisabled'): Pr<Bo> => {
+          const sel = this.categoryDialog.securityTab._mkSel(what, groupId, disabled);
+          await this.waitForVisible(sel);
+          return await (await this.$(sel)).isSelected();
         },
 
-        setMayEditWiki: async (groupId: UserId, may: Bo) => {
-          // For now, just click once
-          await this.waitAndClick(`li.s_PoP:last-child .s_PoP_Ps_P_EdWk input`);  // for now
-        },
-
-        setMaySee: async (groupId: UserId, may: Bo) => {
-          // For now, just click once
-          await this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_See input`);
+        assertMay: async (what: PermName, groupId: UserId, may: Bo, disabled?: 'ShouldBeDisabled'): Pr<V> => {
+          const actual = await this.categoryDialog.securityTab.getMay(what, groupId, disabled);
+          if (may) {
+            tyAssert.that(actual, `Group ${groupId} can't ${what} (but they should be able to)`);
+          }
+          else {
+            tyAssert.not(actual, `Group ${groupId} can ${what} (but they should not be able to)`);
+          }
         },
       }
     }

@@ -163,7 +163,7 @@ describe(`categories-basic.3br.d   TyTCATSBASIC`, () => {
     await owen.categoryDialog.fillInFields({ name: WastelandCategoryNameOnlyStaffCreate });
     await owen.categoryDialog.setNotUnlisted();
     await owen.categoryDialog.openSecurityTab();
-    await owen.categoryDialog.securityTab.setMayCreate(c.EveryoneId, false);
+    await owen.categoryDialog.securityTab.setMay('CreatePages', c.EveryoneId, false);
     await owen.categoryDialog.submit();
   });
 
@@ -209,8 +209,8 @@ describe(`categories-basic.3br.d   TyTCATSBASIC`, () => {
     await owen.forumButtons.clickEditCategory();
     await owen.categoryDialog.fillInFields({ name: WastelandCategoryNameStaffOnly });
     await owen.categoryDialog.openSecurityTab();
-    await owen.categoryDialog.securityTab.setMayReply(c.EveryoneId, false);
-    await owen.categoryDialog.securityTab.setMaySee(c.EveryoneId, false);
+    await owen.categoryDialog.securityTab.setMay('PostReplies', c.EveryoneId, false);
+    await owen.categoryDialog.securityTab.setMay('SeeOthers', c.EveryoneId, false);
     await owen.categoryDialog.submit();
   });
 
