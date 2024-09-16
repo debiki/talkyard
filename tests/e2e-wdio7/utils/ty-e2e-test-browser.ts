@@ -5431,7 +5431,7 @@ export class TyE2eTestBrowser {
       },
 
       securityTab: {
-        _mkSel: (what: PermName, groupId: PatId, disabled?: 'ShouldBeDisabled'): St => {
+        _mkSel: (what: PermName, groupId: PatId, shouldBeDisabled?: 'ShouldBeDisabled'): St => {
           let permClass: St;
           switch (what) {
             case 'EditOthersTopics': permClass = 's_PoP_Ps_P_EdPg'; break;
@@ -5446,8 +5446,8 @@ export class TyE2eTestBrowser {
             case 'SeeOwn': permClass = 's_PoP_Ps_P_SeeOwn'; break;
             default: die('TyE03FLMR25');
           }
-          const dotDis = disabled ? '.disabled' : '';
-          const brackDis = disabled ? '[disabled]' : '';
+          const dotDis = shouldBeDisabled ? '.disabled' : '';
+          const brackDis = shouldBeDisabled ? '[disabled]' : '';
           return `.s_PoP-Grp-${groupId} .${permClass} .checkbox${dotDis} input${brackDis}`;
         },
 
@@ -7513,6 +7513,15 @@ export class TyE2eTestBrowser {
           }, {
             message: () => `Waiting for ${num} backlinks, num now: ${numNow}`,
           });
+        },
+
+        getBacklinkUrlsAndTitles: async (): Pr<{ url: St, title: St }[]> => {
+          const res = await this.__waitAndGetThingsInList('.s_InLns_Ln', {}, async (e) => {
+                  const url = await e.getAttribute('href');
+                  const title = await e.getText();
+                  return { url, title };
+                });
+          return res;
         },
 
         isLinkedFromPageId: async (pageId: PageId): Pr<Bo> => {

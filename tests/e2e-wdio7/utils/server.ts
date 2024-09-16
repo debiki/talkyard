@@ -396,7 +396,16 @@ function addAdminNotice(ps: { siteId: SiteId, noticeId: Nr }) {
 
 
 async function getLastEmailSenTo(siteId: SiteId, email: St, dontWait?: 'DontWait')
-        : Pr<EmailSubjectBody | Nl> {
+        : Pr<EmailSubjectBody | N> {
+  const res = await waitGetLastEmailsSentTo(siteId, email, -1, dontWait);
+  return res ? res[0] : null;
+}
+
+
+/// (atLeast = -1 returns only the very last email, even if there are more. Legacy.)
+///
+async function waitGetLastEmailsSentTo(siteId: SiteId, email: St, atLeast: Nr, dontWait?: 'DontWait')
+        : Pr<EmailSubjectBody[]> {
   if (!email || email.indexOf('@') <= 0 || email.indexOf('@') >= email.length - 2) {
     die(`Not an email address: '${email}'  [TyE4MQEJ9MS2]`);
   }
@@ -404,7 +413,16 @@ async function getLastEmailSenTo(siteId: SiteId, email: St, dontWait?: 'DontWait
     const response = await getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
       '&siteId=' + siteId);
     const lastEmails = JSON.parse(response.body).emails;
-    if (lastEmails.length) {
+
+    if (atLeast >= 1) {
+      if (lastEmails.length >= atLeast) {
+        logMessage(`${email} has gotten ${lastEmails.length} emails, >= ${atLeast}.`);
+        return lastEmails;
+      }
+      logMessage(`${email} has gotten ${lastEmails.length} emails, waiting for >= ${atLeast}`);
+    }
+    else if (atLeast !== -1) die('TyE306EVCHF');
+    else if (lastEmails.length) {
       logMessage(`${email} has gotten ${lastEmails.length} emails:`);
       for (let i = 0; i < lastEmails.length; ++i) {
         const oneLastEmail = lastEmails[i];
@@ -412,8 +430,9 @@ async function getLastEmailSenTo(siteId: SiteId, email: St, dontWait?: 'DontWait
             i === lastEmails.length - 1 ? " <— the last one, returning it" : ''));
       }
       const lastEmail = lastEmails[lastEmails.length - 1];
-      return lastEmail;
+      return [lastEmail];
     }
+
     // Internal functions can specify 'DontWait', if they pause themselves.
     if (dontWait !== 'DontWait') {
       await wdioBrowserA.pause(500 - 100); // 100 ms for a request, perhaps?
@@ -879,7 +898,8 @@ export default {
   deleteRedisKey,
   getTestCounters,
   addAdminNotice,
-  getLastEmailSenTo,  // RENAME waitGetLastEmailsSentTo
+  getLastEmailSenTo,  // RENAME waitGetLastEmailSentTo
+  waitGetLastEmailsSentTo,
   countLastEmailsSentTo,
   getEmailsSentToAddrs,
   sendIncomingEmailWebhook,
