@@ -111,11 +111,11 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
       //maxPostsPendApprBefore: 0,
       numFirstPostsToReview: 0,
     });
-    builder.getSite().pageNotfPrefs = [{
+    builder.getSite().pageNotfPrefs.push({
       memberId: forum.members.owen.id,
       notfLevel: c.TestPageNotfLevel.Muted,
       wholeSite: true,
-    }];
+    });
 
     // Enable API.
     builder.settings({ enableApi: true });

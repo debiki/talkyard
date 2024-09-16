@@ -60,6 +60,7 @@ function makeEmptySite(ps: { okInitEarly?: boolean } = {}): SiteData {
   categories: [],
   tags: [],
   types: [],
+  pageNotfPrefs: [],
   pages: [],
   pagePaths: [],
   posts: [],
