@@ -2588,6 +2588,7 @@ export class TyE2eTestBrowser {
       let items: T[] | U;
       let len: Nr | St = `?`;
       await this.waitUntil(async () => {
+        logBoring(`Hoping for ${j2s(ps)} list items: ${listItemSelector} ...`);
         const elms: WElm[] = await this.$$(listItemSelector);
         len = elms.length;
         if (!isOkMany(len, ps))
@@ -2597,7 +2598,22 @@ export class TyE2eTestBrowser {
           return await fn(e);
         });
 
-        items = await Promise.all(promises);
+        // Webdriverio v7 keeps retrying automatically, it seems: it can start logging
+        //   "Request encountered a stale element - terminating request"
+        // forever until timeout after 30s. Let's retry sooner:
+        const tooSlowPromise = new Promise(resolve => {
+          setTimeout(resolve, 3000, 'TOO_SLOW');
+        });
+        const itemsOrTimeout =
+                await Promise.race([Promise.all(promises), tooSlowPromise]);
+
+        if (itemsOrTimeout === 'TOO_SLOW') {
+          logMessage(`Promises.all(...) is taking too long. ${promises.length
+                } \`fn(e: WElm)\` promises. Aborting. [TyM4GMW20K]`);
+          return false;
+        }
+
+        items = itemsOrTimeout as T[];  // `promises` resolved is type T[]
         return true;
       }, {
         ...ps,
@@ -5152,25 +5168,16 @@ export class TyE2eTestBrowser {
 
       assertTopicTitlesAreAndOrder: async (titles: St[]) => {
         // If there's a React component change, the elems go stale, so try a few times.
-        // But will that really help? Seems wdio 7 got stuck in an internal loop, printing:
-        //    "[0-0] 2023-09-09T07:11:52.390Z WARN webdriver:
-        //         Request encountered a stale element - terminating request"
-        // all the time. [E2EBUG]
         await utils.tryManyTimes(`Checking topic titles and order`, 3, async () => {
-          // Or use  this.waitAndGetListTexts()  instead?
-          const els = await this.$$(this.forumTopicList.titleSelector);
+          const actualTitles = await this.waitAndGetListTexts(this.forumTopicList.titleSelector);
+          logBoring(`Found ${actualTitles.length} titles, comparing with expected ...`);
           for (let i = 0; i < titles.length; ++i) {
             const titleShouldBe = titles[i];
-            const actualTitleElem = els[i];
-            if (!actualTitleElem) {
-              assert.ok(false, `Title ix ${i} missing, should be: "${titleShouldBe}"`);
-            }
-            const actualTitle = await actualTitleElem.getText();
-            if (titleShouldBe !== actualTitle) {
-              assert.ok(false,
-                      `Title ix ${i} is: "${actualTitle}", should be: "${titleShouldBe}"`);
-            }
+            const actualTitle = actualTitles[i];
+            tyAssert.ok(!!actualTitle, `Title ix ${i} missing, should be: "${titleShouldBe}"`);
+            tyAssert.eq(actualTitle, titleShouldBe, `Title ix ${i}`);
           }
+          tyAssert.eq(actualTitles.length, titles.length, `Too many titles: ${j2s(actualTitles)}`);
         });
       },
 
