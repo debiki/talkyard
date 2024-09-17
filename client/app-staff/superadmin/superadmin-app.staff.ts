@@ -273,9 +273,10 @@ const SiteTableRow = createComponent({
   },
 
   changeStatus: function(newStatus: SiteStatus) {
-    const site: SASite = _.clone(this.props.site);
-    site.status = newStatus;
-    Server.updateSites([site]);
+    const site: SASite = this.props.site;
+    const patch: SASitePatch = pluckPatch(site);
+    patch.status = newStatus;
+    Server.updateSites([patch]);
   },
 
   reindex: function() {
@@ -284,16 +285,17 @@ const SiteTableRow = createComponent({
   },
 
   saveNotesAndFlags: function() {
-    const site: SASite = _.clone(this.props.site);
+    const site: SASite = this.props.site;
+    const patch: SASitePatch = pluckPatch(site);
     const state: SiteTableRowState = this.state;
-    site.rdbQuotaMiBs = state.rdbQuotaMiBs;
-    site.fileQuotaMiBs = state.fileQuotaMiBs;
-    site.readLimsMult = state.readLimsMult;
-    site.logLimsMult = state.logLimsMult;
-    site.createLimsMult = state.createLimsMult;
-    site.superStaffNotes = state.newNotes;
-    site.featureFlags = state.newFeatureFlags;
-    Server.updateSites([site]);
+    patch.rdbQuotaMiBs = state.rdbQuotaMiBs;
+    patch.fileQuotaMiBs = state.fileQuotaMiBs;
+    patch.readLimsMult = state.readLimsMult;
+    patch.logLimsMult = state.logLimsMult;
+    patch.createLimsMult = state.createLimsMult;
+    patch.superStaffNotes = state.newNotes;
+    patch.featureFlags = state.newFeatureFlags;
+    Server.updateSites([patch]);
   },
 
   render: function() {
@@ -492,6 +494,22 @@ const SiteTableRow = createComponent({
           saveBtn)));
   }
 });
+
+
+function pluckPatch(site: SASite): SASitePatch {
+  return {
+    id: site.id,
+    status: site.status,
+    superStaffNotes: site.superStaffNotes,
+    rdbQuotaMiBs: site.rdbQuotaMiBs,
+    fileQuotaMiBs: site.fileQuotaMiBs,
+    readLimsMult: site.readLimsMult,
+    logLimsMult: site.logLimsMult,
+    createLimsMult: site.createLimsMult,
+    featureFlags: site.featureFlags,
+  };
+}
+
 
 //------------------------------------------------------------------------------
    }

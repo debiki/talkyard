@@ -2963,6 +2963,21 @@ interface SASite {
 }
 
 
+/// For updating an SASite (but not for purging it).
+///
+interface SASitePatch {  // Scala: case class SuperAdminSitePatch
+  id: SiteId
+  status: SiteStatus
+  superStaffNotes?: St
+  rdbQuotaMiBs?: Nr
+  fileQuotaMiBs?: Nr
+  readLimsMult: Nr | N
+  logLimsMult: Nr | N
+  createLimsMult: Nr | N
+  featureFlags: St
+}
+
+
 interface Rect {
   top: number;
   left: number;
