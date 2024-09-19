@@ -145,7 +145,8 @@ object ImageUtils {
 
   val MimeTypeJpeg = "image/jpeg"
 
-  def throwUnlessJpegWithSideBetween(file: jio.File, which: String, minSide: Int, maxSide: Int): Unit = {
+  def throwUnlessJpegWithSideBetween(file: jio.File, which: St,
+          minSide: i32, maxSide: i32): U = {
     // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8. Instead, use Tika.
     // (This detects mime type based on actual document content, not just the suffix.) dupl [7YKW23]
     val tika = new org.apache.tika.Tika()

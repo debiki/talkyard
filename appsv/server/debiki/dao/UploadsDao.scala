@@ -49,7 +49,7 @@ trait UploadsDao {
     * directory, if stored on localhost (some file systems don't want 99999 files in a
     * single directory).
     */
-  def addUploadedFile(uploadedFileName: String, tempFile: jio.File, uploadedById: TrueId,
+  def addUploadedFile(uploadedFileName: St, tempFile: jio.File, uploadedById: TrueId,
         browserIdData: BrowserIdData): UploadRef = {
 
     // Over quota? [fs_quota]
@@ -363,10 +363,11 @@ object UploadsDao {
   private val Log4 = math.log(4)
 
 
-  def makeHashPath(file: jio.File, dotSuffix: String): String = {
+  def makeHashPath(file: jio.File, dotSuffix: St): St = {
     // (It's okay to truncate the hash, see e.g.:
     // http://crypto.stackexchange.com/questions/9435/is-truncating-a-sha512-hash-to-the-first-160-bits-as-secure-as-using-sha1 )
-    val hashCode = guava.io.Files.hash(file, guava.hash.Hashing.sha256)
+    val hashCode: guava.hash.HashCode =
+          guava.io.Files.asByteSource(file).hash(guava.hash.Hashing.sha256)
     val hashString = base32lowercaseEncoder.encode(hashCode.asBytes) take HashLength
     makeHashPath(file.length().toInt, hashString, dotSuffix)
   }
