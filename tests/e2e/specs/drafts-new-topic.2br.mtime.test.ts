@@ -172,7 +172,7 @@ describe("drafts-new-topic  TyT5BR20P4", () => {
     mariasBrowser.userProfilePage.draftsEtc.waitUntilNumDraftsListed(1);
   });
 
-  it("She clicks it", () => {
+  it("She clicks it  TyTFRAGACT", () => {
     mariasBrowser.userProfilePage.draftsEtc.openDraftIndex(1);
   });
 

@@ -1918,7 +1918,12 @@ url api,
 frag action api,
 url frag action api,
 links like: http://site.localhost/forum/#composeTopic&category=slug:ideas
-          - TESTS_MISSING,  search for  enum FragActionType.
+            - TESTS_MISSING
+            - Not finished:
+               frag-action-compose-topic.2br.f  TyTFRAGCOMPTO, search for  enum FragActionType.
+  open drafts, linkToDraftSource():
+            - drafts-new-topic  TyT5BR20P4.TyTFRAGACT
+
 
 api,
 webhooks:  [.webhooks_api]
