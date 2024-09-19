@@ -157,6 +157,16 @@ def mainSettings = List(
   version := appVersion,
   libraryDependencies ++= appDependencies,
 
+  // Silence warnings about Ty's own deprecated stuff, so they won't clutter the
+  // build output and make any actually important warnings disappear in the noise.
+  // It's quick to search for "@deprecated" in Ty's own source code, if / when needed.
+  scalacOptions += (
+      """-Wconf:cat=deprecation&origin=talkyard\..*:silent"""
+          + """,cat=deprecation&origin=controllers\..*:silent"""
+          + """,cat=deprecation&origin=com\.debiki\..*:silent"""
+          + """,cat=deprecation&origin=debiki\..*:silent"""
+          + """,cat=deprecation&origin=ed\..*:silent"""),
+
   // Place tests in ./tests/app/ instead of ./test/, because there're other tests in
   // ./tests/, namely security/ and e2e/, and having both ./test/ and ./tests/ seems confusing.
   // RENAME to ./tests/appsv? (since ./app is now ./appsv)
