@@ -407,6 +407,7 @@ describe(`category-perms.2br.d  TyTE2ECATPREMS01`, () => {
     await owen_brA.forumButtons.clickEditCategory();
     await owen_brA.categoryDialog.openSecurityTab();
     await owen_brA.categoryDialog.securityTab.addGroup(c.EveryoneFullName);
+    await owen_brA.categoryDialog.securityTab.setMay('SeeOthers', c.EveryoneId, true);
     await owen_brA.categoryDialog.submit();
   });
 

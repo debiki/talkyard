@@ -742,7 +742,6 @@ categories:
           - backlinks-basic.2br.d  TyTINTLNS54824.TyTDELCATBLNS
   permissions:   (1QRY7)
             - category-perms.2br.d  TyTE2ECATPREMS01
-            - perms-see-own.2br.f
             - cats-perf-many.2br.d  TyTECATPREFMNY.TyTPRIVCATS
             - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
             - link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837.TyT0ACSPG043

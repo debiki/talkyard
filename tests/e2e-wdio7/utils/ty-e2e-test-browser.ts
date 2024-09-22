@@ -1121,13 +1121,16 @@ export class TyE2eTestBrowser {
 
 
     async waitForNewUrl() {
+      let newUrl: St | U;
       assert.ok(!!this._currentUrl, "Please call this.#br.rememberCurrentUrl() first [EsE7JYK24]");
       await this.waitUntil(async () => {
-        return this._currentUrl !== await this.#br.getUrl();
+        newUrl = await this.#br.getUrl()
+        return this._currentUrl !== newUrl;
       }, {
         message: `Waiting for new URL, currently at: ${this._currentUrl}`
       });
       delete this._currentUrl;
+      return newUrl;
     }
 
 

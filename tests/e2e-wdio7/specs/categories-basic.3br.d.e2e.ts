@@ -66,6 +66,7 @@ describe(`categories-basic.3br.d   TyTCATSBASIC`, () => {
 
   var mariasFirstTopicTitle = "Marias topic";
   var mariasFirstTopicText = "Marias text text text.";
+  let mariasPageUrl: St;
 
   it("Maria creates a topic, in the new category", async () => {
     await maria.forumButtons.clickCreateTopic();
@@ -73,7 +74,7 @@ describe(`categories-basic.3br.d   TyTCATSBASIC`, () => {
     await maria.editor.editText(mariasFirstTopicText);
     await maria.rememberCurrentUrl();
     await maria.editor.save();
-    await maria.waitForNewUrl();
+    mariasPageUrl = await maria.waitForNewUrl();
     // Ensure ancestor Wasteland visible.
     await maria.assertPageTitleMatches(mariasFirstTopicTitle);
     await maria.assertPageBodyMatches(mariasFirstTopicText);
@@ -204,13 +205,22 @@ describe(`categories-basic.3br.d   TyTCATSBASIC`, () => {
     await maria.assertPageTitleMatches("Mons Only Staff Create Topic");
   });
 
-  it("Owen sets the category to staff only", async () => {
+  it("Owen edits the category", async () => {
     await owen.go2(idAddress.origin + '/latest/wasteland');
     await owen.forumButtons.clickEditCategory();
+  });
+
+  it("... sets it to staff only", async () => {
     await owen.categoryDialog.fillInFields({ name: WastelandCategoryNameStaffOnly });
     await owen.categoryDialog.openSecurityTab();
     await owen.categoryDialog.securityTab.setMay('PostReplies', c.EveryoneId, false);
     await owen.categoryDialog.securityTab.setMay('SeeOthers', c.EveryoneId, false);
+  });
+  it("... but forgets to un-tick See-Own", async () => {
+    assert.not(await owen.categoryDialog.securityTab.getMay('SeeOthers', c.EveryoneId));
+    assert.that(await owen.categoryDialog.securityTab.getMay('SeeOwn', c.EveryoneId));
+  });
+  it("... saves", async () => {
     await owen.categoryDialog.submit();
   });
 
@@ -223,6 +233,59 @@ describe(`categories-basic.3br.d   TyTCATSBASIC`, () => {
     await owen.assertNthTextMatches('.e2eF_T', 2, /Wasteland Staff Only/);
     await owen.assertNthTextMatches('.e2eF_T', 3, /Wasteland Staff Only/);
   });
+
+
+  it("Maria still sees the category in the category list", async () => {
+    await maria.go2(idAddress.origin + '/categories');
+    await maria.waitForVisible(DefaultCategorySelector);
+    await maria.waitForMyDataAdded();
+    // Uncategorized, and Wasteland
+    await maria.forumCategoryList.waitForNumCategoriesVisible(2);
+    assert.that(await maria.isVisible(WastelandCategorySelector));  // (410RKE5)
+  });
+
+  it("... but only her own topic  TyTSEEOWN", async () => {
+    let titles = await maria.forumCategoryList.getTopicTitles(1);
+    assert.deepEq(titles, []); // no topics in Uncategorized, nr 1
+    titles = await maria.forumCategoryList.getTopicTitles(2);
+    assert.deepEq(titles, [mariasFirstTopicTitle]);
+  });
+
+  it("... can access the cateogry", async () => {
+    await maria.forumCategoryList.openCategory(WastelandCategoryNameStaffOnly);
+  });
+
+  it("... sees only her own topic  TyTSEEOWN", async () => {
+    await maria.forumTopicList.waitForTopics();
+    await maria.forumTopicList.assertTopicTitlesAreAndOrder([mariasFirstTopicTitle]);
+  });
+
+  it("... can't post new topics", async () => {
+    await maria.forumButtons.assertNoCreateTopicButton();
+  });
+
+  it("... cannot access Mons page", async () => {
+    await maria.go2(urlToMonsPage);
+    await maria.assertNotFoundError();
+  });
+
+  it("... but can access her own  TyTSEEOWN", async () => {
+    await maria.go2(mariasPageUrl);
+    await maria.assertPageTitleMatches(mariasFirstTopicTitle);
+  });
+
+
+
+  it("Owen edits the category again", async () => {
+    await owen.forumButtons.clickEditCategory();
+  });
+
+  it("... removes See-Own for Everyone  TyTSEEOWN", async () => {
+    await owen.categoryDialog.openSecurityTab();
+    await owen.categoryDialog.securityTab.setMay('SeeOwn', c.EveryoneId, false);
+    await owen.categoryDialog.submit();
+  });
+
 
   it("Mons sees it and can create a 2nd topic", async () => {
     await mons.go2(idAddress.origin + '/categories');
@@ -244,7 +307,12 @@ describe(`categories-basic.3br.d   TyTCATSBASIC`, () => {
   it("... and cannot access pages in it", async () => {
     await maria.go2(urlToMonsPage);
     await maria.assertNotFoundError();
-    await maria.go2(urlToMonsPage3);
+    await maria.go2(urlToMonsPage3); // note: '...3'
+    await maria.assertNotFoundError();
+  });
+
+  it("... not her own page either, any mor", async () => {
+    await maria.go2(mariasPageUrl);
     await maria.assertNotFoundError();
   });
 
