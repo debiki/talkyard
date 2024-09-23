@@ -45,6 +45,7 @@ const selinaAutnhMsg = {
   },
 };
 
+// Inited later. [_init_data_user]
 let selinaWithMariasEmailAuthnMsg = _.cloneDeep(selinaAutnhMsg);
 
 
@@ -119,13 +120,15 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.ec  TyTE2EEMBSSO1`, () => {
       // Exclude Maria's name, so we'll know that 'maria_ssoid' really gets used
       // to look up the correct user, and we'll se username "Maria" although
       // not specified here.  [.lookup_by_ssoid]
+      // username: ... – no, skip
+      // fullName: ... — skip
       ssoId: 'maria_ssoid',
       isEmailAddressVerified: true,
       primaryEmailAddress: maria.emailAddress,
     };
 
     selina_brB = brB;
-    selinaWithMariasEmailAuthnMsg.data.user = {
+    selinaWithMariasEmailAuthnMsg.data.user = {  // [_init_data_user]
       ...mariaExtUser,
       ssoId: selinaExtUser.ssoId,
     };

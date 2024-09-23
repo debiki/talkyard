@@ -75,7 +75,11 @@ class RenderContentActor(
     // COULD SECURITY DoS attack: Want to enqueue this case last-in-first-out, per page & params, so won't
     // rerender the page more than once, even if is in the queue many times (with different hashes).
     // Can that be done with Akka actors in some simple way?
-    case (sitePageId: SitePageId, paramsAndHash: Opt[RenderParamsAndFreshHash]) =>
+    case (sitePageId: SitePageId, paramsAndHash0: Opt[Any]) =>
+      val paramsAndHash: Opt[RenderParamsAndFreshHash] = paramsAndHash0 flatMap {
+        case p: RenderParamsAndFreshHash => Some(p)
+        case x => logger.warn(o"""Bad type: ${classNameOf(x)} [TyE5FL205F]""") ; None
+      }
       // The page has 1) been modified, or accessed and was out-of-date.  [4KGJW2]
       // Or 2) edited and uncached, and now it's being rerendered in advance (but
       // no one asked for it exactly now — paramsAndHash is None).  [7BWTWR2]

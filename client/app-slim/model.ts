@@ -1347,6 +1347,7 @@ interface SettingsVisibleClientSide extends TopicInterfaceSettings, SettingsDisc
   doubleTypePassword?: boolean;         // default: false
   ssoUrl?: string;                      // default: undefined
   ssoShowEmbAuthnBtns?: ShowEmbAuthnBtnsBitf;  // default: undef —> All
+  // RENAME `enableSso` to `enableTysOwnSso`? & Could be a version nr, not just a bool?
   enableSso?: boolean;                  // default: undefined —> false
   ssoWillRedirAfterLogout?: Bo;         // default: undef —> false
   rememberEmbSess?: Bo;                 // default: undef —> true
@@ -2963,6 +2964,21 @@ interface SASite {
 }
 
 
+/// For updating an SASite (but not for purging it).
+///
+interface SASitePatch {  // Scala: case class SuperAdminSitePatch
+  id: SiteId
+  status: SiteStatus
+  superStaffNotes?: St
+  rdbQuotaMiBs?: Nr
+  fileQuotaMiBs?: Nr
+  readLimsMult: Nr | N
+  logLimsMult: Nr | N
+  createLimsMult: Nr | N
+  featureFlags: St
+}
+
+
 interface Rect {
   top: number;
   left: number;
@@ -3306,6 +3322,7 @@ interface UserPresenceWsMsg {
 
 
 // These variables are initialized in a certain <head><script>.  [5JWKA27]
+// Not always from the server — e.g. `ssoHow` is from any embedding page (e.g. blog post).
 
 interface ServerVars {
   doWhat: 'Noop' | 'StartPage' | 'ResetPwd';
@@ -3374,6 +3391,8 @@ interface ServerVars {
 
   // When creating new site.
   baseDomain?: string;
+
+  ssoHow?: 'RedirPage' | 'LoginPopup' | St // or sth else (invalid)
 
   newPasswordData?: NewPasswordData;
 }

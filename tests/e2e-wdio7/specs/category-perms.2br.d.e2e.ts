@@ -147,6 +147,8 @@ describe(`category-perms.2br.d  TyTE2ECATPREMS01`, () => {
       it(ps.stepsTitle, async () => {});
     }
 
+    // TESTS_MISSING: Go to Maria's profile page, verify topics are/not listed?
+
     if (numTopicsVisible >= 1) {
       it(`Memah can see ${numTopicsVisible} topic(s) in the topic list`, async () => {
         await memah_brB.go2('/')
@@ -405,6 +407,7 @@ describe(`category-perms.2br.d  TyTE2ECATPREMS01`, () => {
     await owen_brA.forumButtons.clickEditCategory();
     await owen_brA.categoryDialog.openSecurityTab();
     await owen_brA.categoryDialog.securityTab.addGroup(c.EveryoneFullName);
+    await owen_brA.categoryDialog.securityTab.setMay('SeeOthers', c.EveryoneId, true);
     await owen_brA.categoryDialog.submit();
   });
 

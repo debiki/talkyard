@@ -138,7 +138,7 @@ sealed abstract class SiteStatus(val IntValue: i32) {
 }
 
 
-case class SuperAdminSitePatch(
+case class SuperAdminSitePatch(  // ts: interface SASitePatch
   siteId: SiteId,
   newStatus: SiteStatus,
   newNotes: Opt[St],

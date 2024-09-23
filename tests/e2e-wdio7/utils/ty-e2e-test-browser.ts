@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { IsWhere, E2eAuthor, E2eVote, isWhere_isInIframe } from '../test-types';
+import { IsWhere, E2eAuthor, E2eVote, isWhere_isInIframe, PermName } from '../test-types';
 import { ServerSays } from '../test-types2';
 import { SiteType, NewSiteOwnerType } from '../test-constants';
 
@@ -1121,13 +1121,16 @@ export class TyE2eTestBrowser {
 
 
     async waitForNewUrl() {
+      let newUrl: St | U;
       assert.ok(!!this._currentUrl, "Please call this.#br.rememberCurrentUrl() first [EsE7JYK24]");
       await this.waitUntil(async () => {
-        return this._currentUrl !== await this.#br.getUrl();
+        newUrl = await this.#br.getUrl()
+        return this._currentUrl !== newUrl;
       }, {
         message: `Waiting for new URL, currently at: ${this._currentUrl}`
       });
       delete this._currentUrl;
+      return newUrl;
     }
 
 
@@ -2588,6 +2591,7 @@ export class TyE2eTestBrowser {
       let items: T[] | U;
       let len: Nr | St = `?`;
       await this.waitUntil(async () => {
+        logBoring(`Hoping for ${j2s(ps)} list items: ${listItemSelector} ...`);
         const elms: WElm[] = await this.$$(listItemSelector);
         len = elms.length;
         if (!isOkMany(len, ps))
@@ -2597,7 +2601,22 @@ export class TyE2eTestBrowser {
           return await fn(e);
         });
 
-        items = await Promise.all(promises);
+        // Webdriverio v7 keeps retrying automatically, it seems: it can start logging
+        //   "Request encountered a stale element - terminating request"
+        // forever until timeout after 30s. Let's retry sooner:
+        const tooSlowPromise = new Promise(resolve => {
+          setTimeout(resolve, 3000, 'TOO_SLOW');
+        });
+        const itemsOrTimeout =
+                await Promise.race([Promise.all(promises), tooSlowPromise]);
+
+        if (itemsOrTimeout === 'TOO_SLOW') {
+          logMessage(`Promises.all(...) is taking too long. ${promises.length
+                } \`fn(e: WElm)\` promises. Aborting. [TyM4GMW20K]`);
+          return false;
+        }
+
+        items = itemsOrTimeout as T[];  // `promises` resolved is type T[]
         return true;
       }, {
         ...ps,
@@ -5152,25 +5171,16 @@ export class TyE2eTestBrowser {
 
       assertTopicTitlesAreAndOrder: async (titles: St[]) => {
         // If there's a React component change, the elems go stale, so try a few times.
-        // But will that really help? Seems wdio 7 got stuck in an internal loop, printing:
-        //    "[0-0] 2023-09-09T07:11:52.390Z WARN webdriver:
-        //         Request encountered a stale element - terminating request"
-        // all the time. [E2EBUG]
         await utils.tryManyTimes(`Checking topic titles and order`, 3, async () => {
-          // Or use  this.waitAndGetListTexts()  instead?
-          const els = await this.$$(this.forumTopicList.titleSelector);
+          const actualTitles = await this.waitAndGetListTexts(this.forumTopicList.titleSelector);
+          logBoring(`Found ${actualTitles.length} titles, comparing with expected ...`);
           for (let i = 0; i < titles.length; ++i) {
             const titleShouldBe = titles[i];
-            const actualTitleElem = els[i];
-            if (!actualTitleElem) {
-              assert.ok(false, `Title ix ${i} missing, should be: "${titleShouldBe}"`);
-            }
-            const actualTitle = await actualTitleElem.getText();
-            if (titleShouldBe !== actualTitle) {
-              assert.ok(false,
-                      `Title ix ${i} is: "${actualTitle}", should be: "${titleShouldBe}"`);
-            }
+            const actualTitle = actualTitles[i];
+            tyAssert.ok(!!actualTitle, `Title ix ${i} missing, should be: "${titleShouldBe}"`);
+            tyAssert.eq(actualTitle, titleShouldBe, `Title ix ${i}`);
           }
+          tyAssert.eq(actualTitles.length, titles.length, `Too many titles: ${j2s(actualTitles)}`);
         });
       },
 
@@ -5424,6 +5434,26 @@ export class TyE2eTestBrowser {
       },
 
       securityTab: {
+        _mkSel: (what: PermName, groupId: PatId, shouldBeDisabled?: 'ShouldBeDisabled'): St => {
+          let permClass: St;
+          switch (what) {
+            case 'EditOthersTopics': permClass = 's_PoP_Ps_P_EdPg'; break;
+            case 'EditOthersReplies': permClass = 's_PoP_Ps_P_EdCm'; break;
+            case 'EditWikis': permClass = 's_PoP_Ps_P_EdWk'; break;
+            case 'EditOwn': permClass = 's_PoP_Ps_P_EdOwn'; break;
+            case 'DeleteOthersTopics': permClass = 's_PoP_Ps_P_DlPg'; break;
+            case 'DeleteOthersReplies': permClass = 's_PoP_Ps_P_DlCm'; break;
+            case 'CreatePages': permClass = 's_PoP_Ps_P_CrPg'; break;
+            case 'PostReplies': permClass = 's_PoP_Ps_P_Re'; break;
+            case 'SeeOthers': permClass = 's_PoP_Ps_P_See'; break;
+            case 'SeeOwn': permClass = 's_PoP_Ps_P_SeeOwn'; break;
+            default: die('TyE03FLMR25');
+          }
+          const dotDis = shouldBeDisabled ? '.disabled' : '';
+          const brackDis = shouldBeDisabled ? '[disabled]' : '';
+          return `.s_PoP-Grp-${groupId} .${permClass} .checkbox${dotDis} input${brackDis}`;
+        },
+
         switchGroupFromTo: async (fromGroupName: St, toGroupName: St) => {
           await this.waitAndClickSelectorWithText('.s_PoP_Un .e_SelGrpB', fromGroupName);
           await this.waitAndClickSelectorWithText(
@@ -5435,31 +5465,35 @@ export class TyE2eTestBrowser {
           await this.waitUntilGone(`.s_PoP-Grp-${groupId}`);
         },
 
-        addGroup: async (groupName: St) => {
+        /// `group`: A group, or it's full name.
+        addGroup: async (group: GroupInclDetails | St) => {
           await this.waitAndClick('.s_CD_Sec_AddB');
           await this.waitAndClick('.s_PoP-Select-Grp .e_SelGrpB');
           await this.waitAndClickSelectorWithText(
-              '.esDropModal_content .esExplDrp_entry', groupName);
+              '.esDropModal_content .esExplDrp_entry',
+              _.isString(group) ? group
+                                : group.fullName || '@' + group.username);
         },
 
-        setMayCreate: async (groupId: UserId, may: Bo) => {
-          // For now, just click once
-          await this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_CrPg input`);
+        setMay: async (what: PermName, groupId: UserId, may: Bo) => {
+          const sel = this.categoryDialog.securityTab._mkSel(what, groupId);
+          await this.setCheckbox(sel, may);
         },
 
-        setMayReply: async (groupId: UserId, may: Bo) => {
-          // For now, just click once
-          await this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_Re input`);
+        getMay: async (what: PermName, groupId: UserId, disabled?: 'ShouldBeDisabled'): Pr<Bo> => {
+          const sel = this.categoryDialog.securityTab._mkSel(what, groupId, disabled);
+          await this.waitForVisible(sel);
+          return await (await this.$(sel)).isSelected();
         },
 
-        setMayEditWiki: async (groupId: UserId, may: Bo) => {
-          // For now, just click once
-          await this.waitAndClick(`li.s_PoP:last-child .s_PoP_Ps_P_EdWk input`);  // for now
-        },
-
-        setMaySee: async (groupId: UserId, may: Bo) => {
-          // For now, just click once
-          await this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_See input`);
+        assertMay: async (what: PermName, groupId: UserId, may: Bo, disabled?: 'ShouldBeDisabled'): Pr<V> => {
+          const actual = await this.categoryDialog.securityTab.getMay(what, groupId, disabled);
+          if (may) {
+            tyAssert.that(actual, `Group ${groupId} can't ${what} (but they should be able to)`);
+          }
+          else {
+            tyAssert.not(actual, `Group ${groupId} can ${what} (but they should not be able to)`);
+          }
         },
       }
     }
@@ -7006,6 +7040,10 @@ export class TyE2eTestBrowser {
 
       __flagPostSelector: '.icon-flag',  // for now, later: e_...
 
+      /// needToClickMore:
+      /// If not logged in, there aren't many buttons to click, and the Flag button
+      /// is therefore visible directly, rather than "hidden" in the More hamburger dropdown.
+      ///
       clickFlagPost: async (postNr: PostNr, opts: { needToClickMore?: false } = {}) => {
         if (opts.needToClickMore !== false) {
           // Flag button is inside the More dialog.
@@ -7481,6 +7519,15 @@ export class TyE2eTestBrowser {
           }, {
             message: () => `Waiting for ${num} backlinks, num now: ${numNow}`,
           });
+        },
+
+        getBacklinkUrlsAndTitles: async (): Pr<{ url: St, title: St }[]> => {
+          const res = await this.__waitAndGetThingsInList('.s_InLns_Ln', {}, async (e) => {
+                  const url = await e.getAttribute('href');
+                  const title = await e.getText();
+                  return { url, title };
+                });
+          return res;
         },
 
         isLinkedFromPageId: async (pageId: PageId): Pr<Bo> => {
@@ -10407,7 +10454,7 @@ export class TyE2eTestBrowser {
       },
 
       editPageBody: async (newText: string, opts: { append?: Bo, textAfterIs?: St,
-              textAfterMatches?: St } = {}) => {
+              textAfterMatches?: St | RegExp } = {}) => {
         await this.topic.clickEditOrigPost();
         await this.editor.editText(newText, opts);
         await this.editor.save();

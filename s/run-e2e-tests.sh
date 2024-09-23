@@ -364,6 +364,9 @@ function runAllE2eTests {
   $r s/wdio --only drafts-chat-adv-ed.2browsers $args
   $r s/wdio --only drafts-delete $args
 
+  # Wip:
+  # $r s/wdio-7 --only frag-action-compose-topic.2br.f.wip.ts --cd -i
+
   $r s/wdio --only delete-pages.2br $args
 
   $r s/wdio-7 --only move-posts-same-page.2br.d --cd -i $args
@@ -510,6 +513,7 @@ function runAllE2eTests {
 
   $r s/wdio --only group-permissions-similar-topics.2br.mtime $args
   $r s/wdio --only permissions-edit-wiki-posts.2browsers $args
+  #$r s/wdio-7 --only perms-see-own.2br.f $args --cd -i  # _see_own
 
   # Do after the search and access permission tests above.  [.more_cat_tests]
   $r s/wdio --only categories-delete.2br $args
@@ -540,6 +544,7 @@ function runAllE2eTests {
 
   #$r s/wdio-7 --only alias-anons-true-mixed.2br.f --cd -i $args
   #$r s/wdio-7 --only alias-anons-basic.2br.f --cd -i $args
+  #$r s/wdio-7 --only alias-anons-see-own.2br.f --cd -i $args  # _see_own
 
 
   # API
@@ -551,7 +556,7 @@ function runAllE2eTests {
   $r s/wdio-7 --only api-upsert-posts.2br.d --cd -i $args
 
   $r s/wdio-7 --only api-search-full-text.1br.f --cd -i $args
-  $r s/wdio --only api-list-query-for-topics-popular-first $args
+  $r s/wdio-7 --only api-list-query-for-topics-popular-first --cd -i $args
   $r s/wdio --only api-list-query-for-topics-recent-etc-first $args
   $r s/wdio --only api-list-query-for-posts $args
  #$r s/wdio --only api-list-query-for-events $args
@@ -706,6 +711,7 @@ function runAllE2eTests {
   # Single Sign-On, embedded comments:
   $r s/wdio-7     --only embcom.sso.token-direct-w-logout-url.2br.ec --cd -i $args
   $r s/wdio-7     --only embcom.sso.token-in-cookie.2br.ec --cd -i $args
+  $r s/wdio-7     --only embcom.sso.redir-page.2br.ec --cd -i $args
 
   # Many comments iframes:
   $r s/wdio-7     --only embcom.manyframes.basic.2br --cd -i $args

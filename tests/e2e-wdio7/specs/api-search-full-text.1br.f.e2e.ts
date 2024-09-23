@@ -335,6 +335,12 @@ describe(`api-search-full-text.1br.f  TyT70ADNEFTD36`, () => {
   it("... makes it public: adds the Everyone group  TyT69WKTEJG4", async () => {
     await owensBrowser.categoryDialog.securityTab.addGroup(c.EveryoneFullName);
   });
+  it("... grants the See permissions", async () => {
+    await owensBrowser.categoryDialog.securityTab.setMay('SeeOthers', c.EveryoneId, true);
+  });
+  it("... See-Own then gets ticked automatically  TEST MAP", async () => {
+    assert.ok(await owensBrowser.categoryDialog.securityTab.getMay('SeeOwn', c.EveryoneId));
+  });
   it("... saves", async () => {
     await owensBrowser.categoryDialog.submit();
   });

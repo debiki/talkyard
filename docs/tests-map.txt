@@ -285,9 +285,12 @@ single-sign-on:  (3093533)
 sso, embedded comments, [_embcom_sso],
 embedded comments sso,
 blog comments sso:
-            - embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1
+            - embcom.sso.token-direct-w-logout-url.2br.ec  TyTE2EEMBSSO1
+                - combining with  direct SSO:  TyT306MRG2
             - embcom.sso.token-in-cookie.2br.ec  TyTE2EEMBSSO2
             - embcom.manyframes.js-api.sso.2br.ec  TyTEMANYEMBDISAPISSO
+  redirect whole embedding page to sso server:
+            - embcom.sso.redir-page.2br.ec.e2e.ts  TyTE2EEMBSSO3.TyTEMBSSOREDIR
 
 impersonate:
           - impersonate-post-as-other.2browsers  TyT502KNG24
@@ -743,6 +746,16 @@ categories:
             - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
             - link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837.TyT0ACSPG043
             - link-previews-internal-to-cats-not-see.2br.f  TyTE2ELN2CAT
+    new cat security config:
+            - perms-see-own.2br.f   TyTPERMSEEOWN.TyTDEFCATPERMS & TyTSTAFDEFPERMS
+    new group perms security config:
+            - perms-see-own.2br.f   TyTPERMSEEOWN.TyTNEWPERMSEMPTY
+    see-own:
+            - perms-see-own.2br.f   TyTPERMSEEOWN  CR_MISSING
+            - categories-basic.3br.d   TyTCATSBASIC.TyTSEEOWN
+      move cat & back:
+            - TESTS_MISSING: Move away: Doesn't inherit.  Move back: does.
+                But there are other such tests? Not so important.
     topics on cats list page:
             - category-perms.2br.d  TyTE2ECATPREMS01.TyTSEECATTOPS
             - cats-perf-many.2br.d  TyTECATPREFMNY.TyTSEECATTOPS
@@ -969,6 +982,8 @@ link previews:
   to page/post one may not see:
     restricted category:
           - link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837
+    see-own category:
+            - perms-see-own.2br.f  TyTPERMSEEOWN.TyTLNSEEOWN
     private message:
     private chat:
     whisper post:
@@ -993,6 +1008,8 @@ internal links:  # (687295)
           - TESTS_MISSING
   to category:
             - link-previews-internal-to-cats-not-see.2br.d  TyTE2ELN2CAT
+  see-own category:
+            - perms-see-own.2br.f  TyTPERMSEEOWN.TyTLNSEEOWN
 
 discussion -
   users on page:
@@ -1121,6 +1138,11 @@ embedded comments:
   post 1st comment, edit:   TESTS_MISSING
     when unapproved:
     auto approved:
+  compose before
+    login:
+            - embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048
+    signup:
+            - TESTS_MISSING  TyTEMBCOMPBEFLGI  # missing, right?
   vote before page exists:
           - embcom.vote-bef-page-exists.1br  TyT2AKBS056
   config notf prefs before page exists:
@@ -1896,7 +1918,12 @@ url api,
 frag action api,
 url frag action api,
 links like: http://site.localhost/forum/#composeTopic&category=slug:ideas
-          - TESTS_MISSING,  search for  enum FragActionType.
+            - TESTS_MISSING
+            - Not finished:
+               frag-action-compose-topic.2br.f  TyTFRAGCOMPTO, search for  enum FragActionType.
+  open drafts, linkToDraftSource():
+            - drafts-new-topic  TyT5BR20P4.TyTFRAGACT
+
 
 api,
 webhooks:  [.webhooks_api]
@@ -1935,6 +1962,9 @@ export and restore:  (impexp)
   overwrite current site:
             - embcom.expimpjson.restore-overwrite-site-same-domain.2br  TyT5WKTJL025
             - embcom.expimpjson.restore-overwrite-site-new-domain.2br  TyT603KNF62
+  exp imp groups & members:
+    import:
+            - perms-see-own.2br.f   TyTPERMSEEOWN.TyTIMPGROUP
   exp imp images:
             - embcom.expimpjson.create-site-exp-json.2br  [402KGS4RQ]
   sanitize html:

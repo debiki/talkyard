@@ -1209,6 +1209,9 @@ sealed trait MemberInclDetails extends ParticipantInclDetails {  RENAME // to Me
     */
   def uiPrefs: Option[JsObject]
 
+  // Later:
+  //def modConf: Opt[JsObject]  // the  pats_t/users3.mod_conf_c  column
+
   def copyPrefs(uiPrefs: Opt[JsObject] = null, privPrefs: MemberPrivacyPrefs = null): MemberVb = {
     this match {
       case thiz: GroupVb =>

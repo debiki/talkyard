@@ -282,11 +282,12 @@ declare namespace debiki2 {
     function loginIfNeededReturnToPost(
         loginReason: LoginReason, postNr: PostNr, success?: () => Vo, willCompose?: Bo);
 
-    function loginIfNeeded(loginReason, returnToUrl: string, onDone?: () => void);
+    function loginIfNeeded(loginReason: LoginReason, pathOrHash: St, onOk?: () => V);
     function openLoginDialogToSignUp(purpose);
     function openLoginDialog(purpose);
 
-    function makeSsoUrl(store: Store, returnToUrl: St, forTySsoTest?: true): St;
+    function makeSsoUrl(store: Store, returnToUrl: St, returnToUrl_legacy?: St | N,
+          forTySsoTest?: true): St;
     function getOrCreateAuthnNonce(): [St, Bo];
     function getAuthnNonce(): St;
   }

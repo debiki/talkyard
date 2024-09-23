@@ -73,7 +73,7 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
     //builder.getSite().settings.allowEmbeddingFrom = embeddingOrigin;
 
     // Adding a new member:
-    const newMember: Member = builder.addMmember('hens_username');
+    const newMember: Member = builder.addMember('hens_username');
 
     const newPage: PageJustAdded = builder.addPage({
       id: 'extraPageId',

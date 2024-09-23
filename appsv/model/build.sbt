@@ -21,6 +21,4 @@ libraryDependencies ++= Seq(
   Dependencies.Libs.scalaTest,
 )
 
-scalacOptions += "-deprecation"
-
 compileOrder := CompileOrder.JavaThenScala

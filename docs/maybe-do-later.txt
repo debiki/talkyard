@@ -142,6 +142,7 @@ regardless of how they inherited permissions from other groups.
 
 [granular_perms]
 E.g. may-see-others'-sessions. Currently only amdins may, but sometimes, good if mods could too?
+Or a mayReplyOnOwn permission? Maybe never.
 Also see: [wiki_perms]
 
 [tags]

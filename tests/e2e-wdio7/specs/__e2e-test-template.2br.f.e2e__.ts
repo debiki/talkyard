@@ -79,7 +79,7 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
     //builder.getSite().settings.allowEmbeddingFrom = embeddingOrigin;
 
     // Adding a new member:
-    const newMember: Member = builder.addMmember('hens_username');
+    const newMember: Member = builder.addMember('hens_username');
 
     // Placing Cat B in Staff Cat:
     forum.categories.catB.parentId = forum.categories.staffCat.id;
@@ -111,11 +111,11 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
       //maxPostsPendApprBefore: 0,
       numFirstPostsToReview: 0,
     });
-    builder.getSite().pageNotfPrefs = [{
+    builder.getSite().pageNotfPrefs.push({
       memberId: forum.members.owen.id,
       notfLevel: c.TestPageNotfLevel.Muted,
       wholeSite: true,
-    }];
+    });
 
     // Enable API.
     builder.settings({ enableApi: true });

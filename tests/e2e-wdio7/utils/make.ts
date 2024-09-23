@@ -51,6 +51,7 @@ function makeEmptySite(ps: { okInitEarly?: boolean } = {}): SiteData {
     companyFullName: "E2E Test Org",
   },
   groups: [],
+  groupPps: [],
   members: [],
   identities: [],
   guests: [],
@@ -60,6 +61,7 @@ function makeEmptySite(ps: { okInitEarly?: boolean } = {}): SiteData {
   categories: [],
   tags: [],
   types: [],
+  pageNotfPrefs: [],
   pages: [],
   pagePaths: [],
   posts: [],
@@ -361,6 +363,19 @@ export function minion(ps: { oneWordNameAndNumber: string,
       emailVerifiedAtMs: DefaultCreatedAtMs,
       passwordHash: "cleartext:pub-min020",
       password: "pub-min020",
+    };
+}
+
+
+export function group(username: string, template: Partial<GroupInclDetails> = {})
+        : GroupInclDetails {
+    return {
+      id: getAndBumpNextUserId(),
+      isGroup: true,
+      username,
+      fullName: undefined,
+      createdAtMs: DefaultCreatedAtMs,
+      ...template,
     };
 }
 

@@ -133,11 +133,11 @@ const EditCategoryDialog = createClassAndFactory({
       });
     }
     else {
-      const categoryId = -1; // then the server will give it a >= 1 id  [4GKWSR1]
+      const catIdMin1 = -1; // then the server will give it a >= 1 id  [4GKWSR1]
       Server.loadGroups((groups: Group[]) => {
         if (this.isGone) return;
         const newCategory: CategoryPatch = {
-          id: categoryId,
+          id: catIdMin1,
           extId: '',
           parentId: store.currentPage.categoryId,
           sectionPageId: store.currentPageId,
@@ -157,10 +157,16 @@ const EditCategoryDialog = createClassAndFactory({
           canChangeDefault: true,
           category: newCategory,
           groups: groups,
+          // Sync these default perms with Scala code. [7KFWY025]
           permissions: [
-            defaultPermsOnPages(-11, Groups.EveryoneId, categoryId, false),
-            defaultPermsOnPages(-12, Groups.FullMembersId, categoryId, false),
-            defaultPermsOnPages(-13, Groups.StaffId, categoryId, true)],
+            defaultNewCatPerms(-11, Groups.EveryoneId, catIdMin1, false),
+            // Full members can edit wikis, by default. Apart from that, it is safer if
+            // un-ticking an Everyone group permission, removes it from Full Members
+            // too, and only Staff have permissions explicitly granted to themselves.
+            // [_no_extra_def_perms] [DEFMAYEDWIKI]
+            { ...noPermsOnPages(-12, Groups.FullMembersId, catIdMin1), mayEditWiki: true },
+            // But staff have all permissions explicitly granted to it.  TyTSTAFDEFPERMS
+            defaultNewCatPerms(-13, Groups.StaffId, catIdMin1, true)],
         } as EditCatDiagState);
       });
     }
@@ -582,18 +588,25 @@ const CatSettings = createClassAndFactory({
 
 
 
-function defaultPermsOnPages(newPermId: PermissionId, forWhoId: PeopleId,
-        categoryId: CategoryId, isStaff: boolean): PermsOnPage {
+function noPermsOnPages(newPermId: PermissionId, forWhoId: PeopleId,
+        categoryId: CatId): PermsOnPage {
   return {
     id: newPermId,
     forPeopleId: forWhoId,
     onCategoryId: categoryId,
+  };
+}
+
+
+function defaultNewCatPerms(newPermId: PermissionId, forWhoId: PeopleId,
+        categoryId: CatId, isStaff: Bo): PermsOnPage {
+  return {
+    ...noPermsOnPages(newPermId, forWhoId, categoryId),
     // Setting these to false is not currently supported. [2LG5F04W]
-    // Sync these default perms with Scala code. [7KFWY025]
     mayEditPage: isStaff || undefined,
     mayEditComment: isStaff || undefined,
     mayEditWiki: isStaff || forWhoId >= Groups.FullMembersId, // [DEFMAYEDWIKI]
-    // If someone sees hen's own post, hen would probably get angry if hen couldn't edit it?
+    // If someone sees hans own post, han would probably get angry if han couldn't edit it?
     // And staff probably expects everyone to be allowed to edit their own posts, by default?
     // So, 'true' by default.
     mayEditOwn: true,
@@ -620,7 +633,11 @@ const CatSecurity = createClassAndFactory({
         newPermId = p.id - 1;
       }
     });
-    const newPerm = defaultPermsOnPages(newPermId, Groups.NoUserId, category.id, false);
+    // Start with zero additional permissions, so the group won't accidentally
+    // get any unintended permission. [_no_extra_def_perms] TyTNEWPERMSEMPTY
+    // (We don't know which group, yet. The admin will choose a grop from the
+    // `SelectGroupDropdown()`.)
+    const newPerm = noPermsOnPages(newPermId, Groups.NoUserId, category.id);
     this.props.updatePermissions(permissions.concat(newPerm));
   },
 

@@ -77,3 +77,15 @@ export interface E2eVote {
 }
 
 
+export type PermName =
+        'EditOthersTopics' |
+        'EditOthersReplies' |
+        'EditWikis' |
+        'EditOwn' |
+        'DeleteOthersTopics' |
+        'DeleteOthersReplies' |
+        'CreatePages' |
+        'PostReplies' |
+        'SeeOthers' |
+        'SeeOwn';
+

@@ -45,7 +45,10 @@ export const NameLoginBtns = createComponent({
   },
 
   onLoginClick: function() {
-    login.loginIfNeededReturnToAnchor(this.props.purpose || LoginReason.LoginToLogin, '');
+    login.loginIfNeededReturnToAnchor(this.props.purpose || LoginReason.LoginToLogin,
+        // Wouldo it be nice to, if in embedded comments, scroll down to the comments
+        // section after login?  [scroll_to_emb_comts]
+        '');
   },
 
   onLogoutClick: function() {

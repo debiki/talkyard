@@ -322,6 +322,7 @@ export var CreateUserDialogContent = createClassAndFactory({
     }
     else if (props.afterLoginCallback || (
           anyReturnToUrl && !eds.isInLoginPopup &&
+          // We should not redirect here, if we should redirect from verification emails *only*.
           anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1)) {
       const returnToUrl = anyReturnToUrl.replace(/__dwHash__/, '#');
       const currentUrl = window.location.toString();

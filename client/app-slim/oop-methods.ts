@@ -917,6 +917,8 @@ export function settings_selectTopicType(settings: SettingsVisibleClientSide, me
 
 
 export function store_isFeatFlagOn(store: Store, featureFlag: St, defaultOn?: Bo): Bo {
+  // A bit weird: If a flag is off, `_.includes(..)` will set both `isOn` and `isOff`. But
+  // the last line:  `isOn && !isOff`  becomes false, so it works. Oh well.
   const offFlag = '0' + featureFlag;
   const isOn = defaultOn ||
           _.includes(store.siteFeatureFlags, featureFlag) ||

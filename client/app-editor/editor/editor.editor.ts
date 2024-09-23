@@ -2159,6 +2159,8 @@ export const Editor = createFactory<any, EditorState>({
 
   ifNewPostLooksOk: function(titleErrorMessage, textErrorMessage, ifOkFn: () => Vo) {
     const state: EditorState = this.state;
+    const store: Store = state.store;
+
     let errors = '';
     if (titleErrorMessage && isBlank(state.title)) {
       errors += titleErrorMessage;
@@ -2177,7 +2179,8 @@ export const Editor = createFactory<any, EditorState>({
     // Haven't updated the tests — many would fail, if "That's a short ..." dialogs pop up.
     // Also, skip for staff users (if they write something short, it's probably ok)
     // — later, this'll be per group settings; see pats_t.mod_conf_c.
-    const skipProbl = isAutoTestSite() || user_isStaffOrCoreMember(state.store.me);
+    const skipProbl = isAutoTestSite() || user_isStaffOrCoreMember(state.store.me) ||
+            !store_isFeatFlagOn(store, 'ffShortPostTips', true)
 
     const titleLen = state.title.trim().length;
     const textLen = state.text.trim().length;

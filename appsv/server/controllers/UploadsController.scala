@@ -30,7 +30,7 @@ import play.api._
 import play.api.libs.Files
 import play.api.libs.json.{JsString, JsValue, Json}
 import play.api.mvc._
-
+import play.api.mvc.MultipartFormData.FilePart
 
 /** Uploads files and serves uploaded files.
   */
@@ -137,22 +137,24 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: TyContext
     if (files.length != 1)
       throwBadRequest("EdE7UYMF3", s"Use the multipart form data key name 'file' please")
 
-    val file = files.head
+    val filePart: FilePart[Files.TemporaryFile] = files.head
 
     // This far, in this endpoint, we've verified only that size <= maxBytesLargeFile.
     // However, the upload limit might be lower, for this user or this site.
     // We've checked this already [upl_sz_ck] — let's double check, and this
     // time, there're no form-data boundaries.
 
-    _throwForbiddenMaybe(Some(file.filename), sizeBytes = file.fileSize, request)
+    _throwForbiddenMaybe(Some(filePart.filename), sizeBytes = filePart.fileSize, request)
+
+    val file: jio.File = filePart.ref.path.toFile
 
     val uploadRef = dao.addUploadedFile(
-      file.filename, file.ref.file, request.theReqerTrueId, request.theBrowserIdData)
+          filePart.filename, file, request.theReqerTrueId, request.theBrowserIdData)
 
     // Delete the temporary file. (It will be gone already, if we couldn't optimize it,
     // i.e. make it smaller, because then we've moved it to the uploads dir (rather than
     // a smaller compressed copy). Deleting file ref although gone already, doesn't do anything.)
-    file.ref.delete()
+    filePart.ref.delete()
 
     // Don't use OkSafeJson here because Dropzone doesn't understand the safe-JSON prefix.
     Ok(JsString(uploadRef.url)) as JSON
@@ -193,17 +195,24 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: TyContext
       throwBadRequest("EdE35UY0", o"""Upload three images please: a tiny, a small and a medium
         sized avatar image — instead I got $numFilesUploaded files""")
 
-    val tinyFile = multipartFormData.files.find(_.key == "images[tiny]") getOrElse {
+    val fileParts: Seq[FilePart[Files.TemporaryFile]] =
+          multipartFormData.files
+
+    val tinyFilePart = fileParts.find(_.key == "images[tiny]") getOrElse {
       throwBadRequest("EdE8GYF2", o"""Upload a tiny size avatar image please""")
     }
 
-    val smallFile = multipartFormData.files.find(_.key == "images[small]") getOrElse {
+    val smallFilePart = fileParts.find(_.key == "images[small]") getOrElse {
       throwBadRequest("EdE4YF21", o"""Upload a small size avatar image please""")
     }
 
-    val mediumFile = multipartFormData.files.find(_.key == "images[medium]") getOrElse {
+    val mediumFilePart = fileParts.find(_.key == "images[medium]") getOrElse {
       throwBadRequest("EdE8YUF2", o"""Upload a medium size avatar image please""")
     }
+
+    val tinyFile = tinyFilePart.ref.path.toFile
+    val smallFile = smallFilePart.ref.path.toFile
+    val mediumFile = mediumFilePart.ref.path.toFile
 
     def throwIfTooLarge(whichFile: String, file: jio.File, maxBytes: Int): Unit = {
       val length = file.length
@@ -211,13 +220,13 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: TyContext
         throwForbidden("DwE7YMF2", s"The $whichFile is too large: $length bytes, max is: $maxBytes")
     }
 
-    throwIfTooLarge("tiny avatar image", tinyFile.ref.file, MaxAvatarTinySizeBytes)
-    throwIfTooLarge("small avatar image", smallFile.ref.file, MaxAvatarSmallSizeBytes)
-    throwIfTooLarge("medium avatar image", mediumFile.ref.file, MaxAvatarMediumSizeBytes)
+    throwIfTooLarge("tiny avatar image", tinyFile, MaxAvatarTinySizeBytes)
+    throwIfTooLarge("small avatar image", smallFile, MaxAvatarSmallSizeBytes)
+    throwIfTooLarge("medium avatar image", mediumFile, MaxAvatarMediumSizeBytes)
 
-    ImageUtils.throwUnlessJpegWithSideBetween(tinyFile.ref.file, "Tiny", 20, 35)
-    ImageUtils.throwUnlessJpegWithSideBetween(smallFile.ref.file, "Small", 40, 60)
-    ImageUtils.throwUnlessJpegWithSideBetween(mediumFile.ref.file, "Medium", 150, 800)
+    ImageUtils.throwUnlessJpegWithSideBetween(tinyFile, "Tiny", 20, 35)
+    ImageUtils.throwUnlessJpegWithSideBetween(smallFile, "Small", 40, 60)
+    ImageUtils.throwUnlessJpegWithSideBetween(mediumFile, "Medium", 150, 800)
 
     // First add metadata entries for the files and move them in place.
     // Then, if there were no errors, update the user so that it starts using the new
@@ -226,18 +235,18 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: TyContext
     // (since they're unused) — deleting them is not yet implemented though [9YMU2Y].
 
     val tinyAvatarRef = request.dao.addUploadedFile(
-      tinyFile.filename, tinyFile.ref.file, request.theReqerTrueId, request.theBrowserIdData)
+      tinyFilePart.filename, tinyFile, request.theReqerTrueId, request.theBrowserIdData)
 
     val smallAvatarRef = request.dao.addUploadedFile(
-      smallFile.filename, smallFile.ref.file, request.theReqerTrueId, request.theBrowserIdData)
+      smallFilePart.filename, smallFile, request.theReqerTrueId, request.theBrowserIdData)
 
     val mediumAvatarRef = request.dao.addUploadedFile(
-      mediumFile.filename, mediumFile.ref.file, request.theReqerTrueId, request.theBrowserIdData)
+      mediumFilePart.filename, mediumFile, request.theReqerTrueId, request.theBrowserIdData)
 
     // Delete the temporary files.
-    tinyFile.ref.delete()
-    smallFile.ref.delete()
-    mediumFile.ref.delete()
+    tinyFilePart.ref.delete()
+    smallFilePart.ref.delete()
+    mediumFilePart.ref.delete()
 
     // Now the images are in place in the uploads dir, and we've created metadata entries.
     // We just need to link the user to the images:

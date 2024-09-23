@@ -818,10 +818,11 @@ object ForumDao {
     * (Of course admins can change this, for their own site.)  [DEFMAYEDWIKI]
     * Sync with dupl code in Typescript. [7KFWY025]
     */
-  def makeFullMembersDefaultCategoryPerms(categoryId: CategoryId): PermsOnPages =
-    makeEveryonesDefaultCategoryPerms(categoryId).copy(
-          forPeopleId = Group.FullMembersId,
-          mayEditWiki = Some(true))
+  def makeFullMembersDefaultCategoryPerms(catId: CatId): PermsOnPages = PermsOnPages(
+    id = NoPermissionId,
+    forPeopleId = Group.FullMembersId,
+    onCategoryId = Some(catId),
+    mayEditWiki = Some(true))
 
 
   // Sync with dupl code in Typescript. [7KFWY025]
