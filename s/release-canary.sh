@@ -166,7 +166,8 @@ popd
 # [.must_be_dev_regular]
 git tag $release_version_tag_w_branch tyse-$release_version_tag-dev
 
-git push origin $release_version_tag_w_branch
+# I've named the origin 'public' so it's simpler to remember that it's public.
+git push public $release_version_tag_w_branch
 
 set +x
 echo
