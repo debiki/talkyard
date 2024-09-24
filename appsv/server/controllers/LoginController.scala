@@ -26,7 +26,7 @@ import javax.inject.Inject
 import play.api.libs.json.{JsNull, JsString, Json}
 import play.api.mvc._
 import talkyard.server.TyLogging
-import talkyard.server.authn.LoginReason
+import talkyard.server.authn.{LoginReason, MinAuthnStrength}
 import talkyard.server.JsX
 
 
@@ -37,6 +37,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   import context.globals
   import context.security.DiscardingSessionCookies
+  import context.plainApiActions.PlainApiAction
   import LoginController._
 
 
@@ -124,18 +125,22 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   /** Clears session cookies and ends the session server side too; unsubscribes
     * from any websockets channel.
+    *
+    * (Using `PlainApiAction` instead of `GetActionAllowAnyone` so can set `ignoreAlias`.)
     */
-  def logout(currentUrlPath: Opt[St]): Action[U] = GetActionAllowAnyone { request =>
-    SECURITY // optionally log out from all devices?
+  def logout_get_post(currentUrlPath: Opt[St]): Action[U] = PlainApiAction(
+        cc.parsers.empty, RateLimits.NoRateLimits, MinAuthnStrength.EmbeddingStorageSid12,
+        allowAnyone = true, ignoreAlias = true) { request =>
     doLogout(request, redirectIfMayNotSeeUrlPath = currentUrlPath,
           wasImpersonating = false)
   }
 
 
-  def doLogout(request: GetRequest, redirectIfMayNotSeeUrlPath: Opt[St],
+  def doLogout(request: ApiRequest[_], redirectIfMayNotSeeUrlPath: Opt[St],
           wasImpersonating: Bo): Result = {
     import request.{dao, requester, siteSettings}
 
+    SECURITY // optionally log out from all devices?
     AUDIT_LOG // session id destruction
 
     requester foreach { theRequester =>

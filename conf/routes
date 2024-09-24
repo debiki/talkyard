@@ -21,8 +21,8 @@
 
 GET   /-/login                  controllers.LoginController.showLoginPage(as: Option[String], to: Option[String])
 GET   /-/login-popup            controllers.LoginController.showLoginPopup(mode: Int, returnToUrl)
-GET   /-/logout                 controllers.LoginController.logout(currentUrlPath: Option[String])
-POST  /-/logout                 controllers.LoginController.logout(currentUrlPath: Option[String])
+GET   /-/logout                 controllers.LoginController.logout_get_post(currentUrlPath: Option[String])
+POST  /-/logout                 controllers.LoginController.logout_get_post(currentUrlPath: Option[String])
 POST  /-/resend-owner-email-addr-verif-email controllers.LoginController.resendSiteOwnerAddrVerifEmail
 
 # REFACTOR Would like to remove, use  /-/authn/password/
