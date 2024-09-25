@@ -34,29 +34,27 @@ export const UserSummary = createFactory({
     if (!stats)
       return r.p({}, "This user's statistics is not publicly visible.");
 
+    function mkStat(val: Nr | NU, text: St | RElm, isDuration?: Bo): RElm | N {
+      if (!isVal(val)) return null;
+      const valStr = isDuration ? moment.duration({ seconds: val }).humanize() : val;
+      return r.li({ className: 's_UP_Stats_Stat' }, valStr, text);
+    }
+
     return (
      r.div({ className: 's_UP_Act_Stats' },
        r.h2({}, "Statistics"),
        r.ul({},
-         r.li({ className: 's_UP_Stats_Stat' },
-           stats.numDaysVisited + " days visited"),
-         r.li({ className: 's_UP_Stats_Stat' },
-           moment.duration({ seconds: stats.numSecondsReading }).humanize() + " spent reading"),
-         r.li({ className: 's_UP_Stats_Stat' },
-           userStats_totalNumPostsRead(stats) + " posts read"),
-         r.li({ className: 's_UP_Stats_Stat' },
-           stats.numLikesGiven + " likes given"),
-         r.li({ className: 's_UP_Stats_Stat' },
-           stats.numLikesReceived + " likes received"),
-         r.li({ className: 's_UP_Stats_Stat' },
-           (stats.numChatTopicsCreated + stats.numDiscourseTopicsCreated) + " topics created"),
-         r.li({ className: 's_UP_Stats_Stat' },
-           stats.numDiscourseRepliesPosted + " replies posted"),
-         r.li({ className: 's_UP_Stats_Stat' },
-           stats.numChatMessagesPosted + " chat messages posted"),
-         !stats.numSolutionsProvided ? null : r.li({ className: 's_UP_Stats_Stat' },
-           stats.numSolutionsProvided + " solutions ",
-             r.span({ className: 'icon-ok-circled' })))));
+         mkStat(stats.numDaysVisited, " days visited"),
+         mkStat(stats.numSecondsReading, " spent reading", true),
+         mkStat(userStats_totalNumPostsRead(stats), " posts read"),
+         mkStat(stats.numLikesGiven, " likes given"),
+         mkStat(stats.numLikesReceived, " likes received"),
+         mkStat(stats.numChatTopicsCreated + stats.numDiscourseTopicsCreated, " topics created"),
+         mkStat(stats.numDiscourseRepliesPosted, " replies posted"),
+         mkStat(stats.numChatMessagesPosted, " chat messages posted"),
+         !stats.numSolutionsProvided ? null : mkStat(
+              stats.numSolutionsProvided,
+              rFr({}, " solutions ", r.span({ className: 'icon-ok-circled' }))))));
   }
 });
 

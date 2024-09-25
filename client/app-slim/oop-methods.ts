@@ -2215,14 +2215,18 @@ export function threatLevel_toElem(threatLevel: ThreatLevel) {
 // User stats
 //----------------------------------
 
-export function userStats_totalNumPosts(stats: UserStats): number {
+export function userStats_totalNumPosts(stats: UserStats | NU): Nr | N {
+  // Either _none_or_all.
+  if (!stats || !isVal(stats.numChatMessagesPosted)) return null;
   return stats.numChatMessagesPosted + stats.numChatTopicsCreated +
-      stats.numDiscourseRepliesPosted + stats.numDiscourseTopicsCreated;
+          stats.numDiscourseRepliesPosted + stats.numDiscourseTopicsCreated;
 }
 
-export function userStats_totalNumPostsRead(stats: UserStats): number {
+export function userStats_totalNumPostsRead(stats: UserStats | NU): Nr | N {
+  // Either _none_or_all should be present.
+  if (!stats || !isVal(stats.numChatMessagesRead)) return null;
   return stats.numChatMessagesRead + stats.numChatTopicsEntered +
-    stats.numDiscourseRepliesRead + stats.numDiscourseTopicsEntered;
+          stats.numDiscourseRepliesRead + stats.numDiscourseTopicsEntered;
 }
 
 

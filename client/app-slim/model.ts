@@ -996,8 +996,8 @@ interface MaintWork {
 ///
 interface VolatileDataFromServer {
   maintWork?: MaintWork;
-  usersOnline: Pat[];
-  numStrangersOnline: Nr;
+  usersOnline: Pat[] | N;
+  numStrangersOnline: Nr | N;
   me?: Me;
   stuffForMe?: StuffForMe;
   // Sometimes, on embedded comments pages, privacy tools and settings remove cookies.  [NOCOOKIES]
@@ -1357,6 +1357,13 @@ interface SettingsVisibleClientSide extends TopicInterfaceSettings, SettingsDisc
   enableTags?: boolean;                 // default: false for now, true later when impl.
   enableChat?: boolean;                 // default: true
   enableDirectMessages?: boolean;       // default: true
+  enableAnonSens?: Bo                   // default: false
+
+  // Don't use directly — instead, check if `Store.userIdsOnline` and
+  // `VolatileDataFromServer.usersOnline` are null, to be sure they aren't
+  // accidentally included by the server. (Included only for a [presence_assertion].)
+  enablePresence?: Bo                   // default: true
+
   enableSimilarTopics?: boolean;        // default: depends on config file, later: true
   showSubCommunities?: boolean;         // default: false
   navConf?: BrowserCode;                // default: {}

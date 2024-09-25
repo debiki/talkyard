@@ -106,10 +106,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     this.setState({
       store: newStore,
     });
-    if (newStore.isContextbarOpen && newStore.me.id &&
-        newStore.me.id !== this.state.lastLoadedOnlineUsersAsId) {
-      this.loadOnlineUsers();
-    }
+    this.maybeLoadOnlineUsers(newStore);
   },
 
   showRecent: function() {
@@ -159,9 +156,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   componentDidMount: function() {
     const store: Store = this.state.store;
     keymaster('s', this.toggleSidebarOpen);
-    if (store.isContextbarOpen && this.state.lastLoadedOnlineUsersAsId !== store.me.id) {
-      this.loadOnlineUsers();
-    }
+    this.maybeLoadOnlineUsers();
   },
 
   componentWillUnmount: function() {
@@ -182,8 +177,21 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     // if is-2d then: this.updateSizeAndPosition2d(event);
   },
 
-  loadOnlineUsers: function() {
-    const store: Store = this.state.store;
+  maybeLoadOnlineUsers: function(anyNewStore?: Store) {
+    const store: Store = anyNewStore || this.state.store;
+
+    // Online users list not visible, or disabled?
+    if (!store.isContextbarOpen || !store.userIdsOnline)
+      return;
+
+    // Not logged in? Then likely won't care who's online or not.
+    if (!store.me.id)
+      return;
+
+    // List already loaded?
+    if (store.me.id === this.state.lastLoadedOnlineUsersAsId)
+      return;
+
     this.setState({ lastLoadedOnlineUsersAsId: store.me.id });
     // Skip for now, because now I'm including all online users are included in the page html.
     //Server.loadOnlineUsers();
@@ -354,9 +362,21 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
 
     //var unreadBtnTitle = commentsFound ? 'Unread (' + commentsFound.unread.length + ')' : null;
     const starredBtnTitle = commentsFound ? `${t.Bookmarks} (${commentsFound.starred.length})` : null;
-    const usersBtnTitle = usersHere.areChatChannelMembers || usersHere.areTopicContributors
-        ? `${t.Users} (${numOnlineTextSlash + usersHere.users.length})`
-        : `${t.Users} (${usersHere.numOnline})`;
+
+    const specificPage = usersHere.areChatChannelMembers || usersHere.areTopicContributors;
+    const anyUsersBtnTitle: St | N = (
+        // If the presence feature is enabled, we'll include a num-online count.
+        store.userIdsOnline
+          ? (specificPage
+              // List users on current page, and indicate which ones are online?
+              ? `${t.Users} (${numOnlineTextSlash + usersHere.users.length})`
+              // List users in the whole forum, and indicate which ones are online?
+              : `${t.Users} (${usersHere.numOnline})`)
+          : (specificPage
+              // List users on current page, but without any is-online indicators.
+              ? t.Users
+              // List no users. Not a specific page, & presence disabled, don't know who's online.
+              : null));
 
     // COULD show a "Recent searches" on the search results page. Click a recent search, to
     // use it again.
@@ -395,12 +415,17 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
             this.onPostClick);
         break;
       case 'Users':
-        let numOnlineStrangers = store.numOnlineStrangers;
+        let numOnlineStrangers: Nr | N = store.numOnlineStrangers;
+        const seeOnlineDisabled = "See-online feature disabled."; // 0I18N, just temporary
         if (page.pageRole === PageRole.Forum) {
-          title = t.cb.UsersOnlineForum;
+          title = store.userIdsOnline ? t.cb.UsersOnlineForum :
+                    // Can happen when toggling off the presence feature? [settings_race]
+                    // UX: This isn't great, what to do instead when moving from one page to
+                    // another, but the currently selected tab doesn't "work" at the other page?
+                    seeOnlineDisabled;
         }
         else if (!usersHere.areChatChannelMembers && !usersHere.areTopicContributors) {
-          title = t.cb.UsersOnline;
+          title = store.userIdsOnline ? t.cb.UsersOnline : seeOnlineDisabled; // [settings_race]
         }
         else if (page.pageRole === PageRole.JoinlessChat) {
           // Then, list the most recent people who posted in the chat?
@@ -410,10 +435,10 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
         else {
           const titleText = isChat ? t.cb.UsersInThisChat : t.cb.UsersInThisTopic; // [users_here]
           title = r.div({},
-            titleText,
-            r.span({ className: 'esCtxbar_onlineCol' }, t.Online));
+              titleText,
+              store.userIdsOnline && r.span({ className: 'esCtxbar_onlineCol' }, t.Online));
           // Don't show num online strangers, when listing post authors for the current topic only.
-          numOnlineStrangers = 0;
+          numOnlineStrangers = null;
         }
         usersClass = ' active';
         listItems = makeUsersContent(store, usersHere.users, store.me.id, numOnlineStrangers);
@@ -508,9 +533,9 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
           recentButton,
           unreadButton,
           starredButton,
-          r.button({ className: 'e_CtxBarB btn btn-default' + usersClass,
+          anyUsersBtnTitle && r.button({ className: 'e_CtxBarB btn btn-default' + usersClass,
                 onClick: this.showUsers },
-              usersBtnTitle),
+              anyUsersBtnTitle),
           adminGuideButton);
     }
     else {
@@ -521,7 +546,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
             recentButton,
             unreadButton,
             starredButton,
-            MenuItem({ onClick: this.showUsers }, usersBtnTitle),
+            anyUsersBtnTitle && MenuItem({ onClick: this.showUsers }, anyUsersBtnTitle),
             adminGuideButton));
     }
 
@@ -607,7 +632,7 @@ function makeCommentsContent(comments: Post[], currentPostNr: PostNr, store: Sto
 
 
 function makeUsersContent(store: Store, users: BriefUser[], myId: UserId,
-      numOnlineStrangers: number) {
+      numOnlineStrangers: Nr | N) {
   // List the current user first, then online users, then others.
   // COULD: list alphabetically, so one can scan and find one's friends by name easily
   users.sort((a, b) => {
@@ -625,14 +650,18 @@ function makeUsersContent(store: Store, users: BriefUser[], myId: UserId,
         r.span({ className: 'esPresence_thatsYou' }, ' — ' + t.cb.thatsYou) : null;
     currentUserIsStranger = currentUserIsStranger && user.id !== myId;
     const isUserOnline = store_isUserOnline(store, user.id);
-    const presenceClass = isUserOnline ? 'active' : 'away';
-    const presenceTitle = isUserOnline ? t.Active : t.Away;
+
+    // Presence feature enabled?
+    const presEna: Object | NU = store.userIdsOnline;
+    const presenceClass = !presEna ? '' : (isUserOnline ? 'esPresence-active' : 'esPresence-away');
     return (
-        r.div({ key: user.id, className: 'esPresence esPresence-' + presenceClass,
-            onClick: (event) => morebundle.openAboutUserDialog(user.id, event.target) },
+        r.div({ key: user.id, className: 'esPresence ' + presenceClass,
+            onClick: (event: MouseEvent) =>
+                morebundle.openAboutUserDialog(user.id, event.target) },
           avatar.AvatarAndName({ user, origins: store, ignoreClicks: true }),
           thatsYou,
-          r.span({ className: 'esPresence_icon', title: presenceTitle })));
+          presEna && r.span({ className: 'esPresence_icon',
+                          title: isUserOnline ? t.Active : t.Away })));
   });
 
   if (numOnlineStrangers) {

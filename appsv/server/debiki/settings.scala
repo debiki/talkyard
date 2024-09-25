@@ -741,12 +741,6 @@ case class EffectiveSettings(
           blockListText = emailDomainBlacklist, allowByDefault = true)
   }
 
-  // Rename (to just enableAnonSens )
-  def sensitiveAnonDisc: Bo = enableAnonSens
-
-  // Rename (to just enablePresence)
-  def maySeePresence: Bo = enablePresence
-
 
   /** Finds any invalid setting value, or invalid settings configurations.
     */
@@ -756,6 +750,11 @@ case class EffectiveSettings(
     if (enableAnonSens && enablePresence) {
       // [deanon_risk] [anon_sens_0_presence]
       probs.append("Can't enable both 1) Sensitive Anonymous Discussions and 2) Presence")
+    }
+
+    if (enableAnonSens && !showCategories) {
+      // For now, anon sensitive discussions are configured per category. [anon_purp_per_cat]
+      probs.append("Can't enable Sensitive Anonymous Discussions when not using categories")
     }
 
     if (probs.isEmpty) None

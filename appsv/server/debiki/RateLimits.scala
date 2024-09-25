@@ -313,6 +313,9 @@ object RateLimits {
   val ReadsFromCache = ReadsFromDb  // for now
 
 
+  val ReadsFromCacheALot = ReadsFromDb  // for now
+
+
   object AdminWritesToDb extends RateLimits {
     val key = "AdWr"
     val what = "sent too many resource consuming HTTP requests"

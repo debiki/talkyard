@@ -283,6 +283,7 @@ const UserList = createFactory<any>({
               r.th({}, "Email"),
               actionHeader,
               r.th({}, "Last seen"),
+              r.th({}, "Last posted"),
               r.th({}, "Topics viewed"),
               r.th({}, "Time spent reading"),
               r.th({}, "Num posts"),
@@ -327,17 +328,17 @@ const UserRow = createFactory<any>({
     const user: UserInclDetailsWithStats = this.props.user;
     const nowMs: WhenMs = this.props.now;
 
-    let actions;
+    let actions: RElm | U;
     if (this.props.whichUsers !== 'WaitingUsers') {
       // Don't show any actions.
     }
     else if (this.state.wasJustApproved || this.state.wasJustRejected) {
-      actions = rFragment({},
+      actions = rFr({},
         this.state.wasJustApproved ? "Approved. " : "Rejected. ",
         Button({ onClick: this.undoApproveOrReject, className: 'e_UndoApprRjctB' }, "Undo"));
     }
     else {
-      actions = rFragment({},
+      actions = rFr({},
           Button({ onClick: this.approveUser, className: 'e_ApproveUserB' }, "Approve"),
           Button({ onClick: this.rejectUser, className: 'e_RejectUserB'  }, "Reject"));
     }
@@ -347,7 +348,7 @@ const UserRow = createFactory<any>({
         : null;
 
     const usernameElem = r.span({ className: 'dw-username' }, user.username);
-    let fullNameElem;
+    let fullNameElem: RElm | U;
     if (user.fullName) {
       fullNameElem = r.span({ className: 'dw-fullname' }, ' (' + user.fullName + ')');
     }
@@ -356,7 +357,7 @@ const UserRow = createFactory<any>({
     const isDeactivated = !!user.deactivatedAt;
     const isDeleted = !!user.deletedAt;
 
-    const modifiers = rFragment({},
+    const modifiers = rFr({},
         user.isApproved !== false ? null :
             r.span({ className: 's_A_Us_UsL_U_Modif' }, " — rejected"),
         !isStaff(user) ? null :
@@ -374,22 +375,31 @@ const UserRow = createFactory<any>({
     const emailNotVerified = !user.email || user.emailVerifiedAtMs ? null :
       r.span({ className: 's_A_Us_UsL_U_Modif e_EmNotVerfd' }, " — not verified");
 
-    let lastSeen;
-    let topicsViewed;
-    let timeSpentReading;
-    let numPosts;
+    let lastSeen: St | NU;
+    let lastPostedAt: St | NU;
+    let topicsViewed: Nr | U;
+    let timeSpentReading: St | NU;
+    let numPosts: Nr | U;
 
     if (user.anyUserStats) {
+      // If presence disabled (!Settings.enablePresence), most info here is excluded.
+      // Sometimes it'd be good, though, if [admins_see_presence].  And sometimes we'd want to
+      // hide presence info up to when presence got (re)enabled. [see_presence_start_date]
       const s = user.anyUserStats;
-      lastSeen = debiki.prettyLetterDuration(s.lastSeenAt, nowMs);
-      topicsViewed = s.numChatTopicsEntered + s.numDiscourseTopicsEntered;
-      timeSpentReading = debiki.prettyLetterDuration(s.numSecondsReading * 1000);
-      numPosts =
+      lastSeen = !s.lastSeenAt ? null : debiki.prettyLetterDuration(s.lastSeenAt, nowMs);
+      lastPostedAt = !s.lastPostedAt ? null : debiki.prettyLetterDuration(s.lastPostedAt, nowMs);
+      // (Should be enough to check just one, when adding. Either none or all should be set.)
+      topicsViewed = !isVal(s.numChatTopicsEntered) ? null :
+                            s.numChatTopicsEntered + s.numDiscourseTopicsEntered;
+      timeSpentReading = !isVal(s.numSecondsReading) ? null :
+                            debiki.prettyLetterDuration(s.numSecondsReading * 1000);
+      numPosts = !isVal(s.numChatMessagesPosted) ? null :
           s.numChatMessagesPosted + s.numChatTopicsCreated +
           s.numDiscourseRepliesPosted + s.numDiscourseTopicsCreated;
     }
 
-    const createdAt = debiki.prettyLetterDuration(user.createdAtEpoch, nowMs);
+    const createdAt = !user.createdAtEpoch ? null :
+                            debiki.prettyLetterDuration(user.createdAtEpoch, nowMs);
 
     return (
       r.tr({},
@@ -397,6 +407,7 @@ const UserRow = createFactory<any>({
         r.td({}, user.email, emailNotVerified),
         actionsCell,
         r.td({}, lastSeen),
+        r.td({}, lastPostedAt),
         r.td({}, topicsViewed),
         r.td({}, timeSpentReading),
         r.td({}, numPosts),

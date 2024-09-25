@@ -213,10 +213,20 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: TyContext)
 
 
 
-  COULD // change rate limits — isn't expensive any more? Cached.
-  def loadOnlineUsers(): Action[U] = GetActionRateLimited(RateLimits.ExpensiveGetRequest) {
-        request =>
-    val stuff = request.dao.getUsersOnlineStuff()
+   // Not in use, for now. [0_load_onl_users]
+   private def loadOnlineUsers(): Action[U] = GetActionRateLimited(RateLimits.ReadsFromCacheALot) { req =>
+    unimpl("TyE603FKLT5")
+    import req.dao
+
+    // The client should look at the settings, and not have sent the request.
+    // (But when disabling presence, some clients might not notice immediately
+    // and try to load online users anyway. A race. That's why this is a "TyM..."
+    // not a "TyE..." response, that is, a message not an error.  [settings_race])
+    val settings = dao.getWholeSiteSettings()
+    throwForbiddenIf(!settings.enablePresence,
+        "TyM0PRESENCE", "Can't see who's online: Presence feature disabled")  // TyM(essage)
+
+    val stuff = dao.getUsersOnlineStuff()
     OkSafeJson(
       Json.obj(
         "numOnlineStrangers" -> stuff.numStrangers,

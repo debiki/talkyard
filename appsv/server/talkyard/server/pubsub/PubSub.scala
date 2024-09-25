@@ -509,6 +509,10 @@ class PubSubActor(val globals: Globals) extends Actor {
         newPresence: Presence): Unit = {
     COULD_OPTIMIZE // send just 1 WebSocket message, list many users. (5JKWQU01)
     val siteDao = globals.siteDao(siteId)
+    val settings = siteDao.getWholeSiteSettings()
+    if (!settings.enablePresence)
+      return
+
     users foreach { user =>
       val isActive = redisCacheForSite(siteId).isUserActive(user.id)
       if (isActive && newPresence != Presence.Active ||
@@ -522,6 +526,10 @@ class PubSubActor(val globals: Globals) extends Actor {
   private def publishPresenceAlways(siteId: SiteId, users: Iterable[Participant], newPresence: Presence): Unit = {
     COULD_OPTIMIZE // send just 1 WebSocket message, list many users. (5JKWQU01)
     val siteDao = globals.siteDao(siteId)
+    val settings = siteDao.getWholeSiteSettings()
+    if (!settings.enablePresence)
+      return
+
     users foreach { user =>
       publishPresenceImpl(siteDao, user, newPresence)
     }
@@ -539,11 +547,14 @@ class PubSubActor(val globals: Globals) extends Actor {
     traceLog(siteId, s"Pupl presence ${user.nameHashId}: $presence [TyDPRESCNS]")
 
     // If some time later, users can be "invisible", stop publishing their
-    // presence here.  [PRESPRIV]
+    // presence here.  [PRESPRIV]  [private_pats]
     // Compare with pages one may not see: [WATCHSEC].
 
     val tags = siteDao.getTags(forPat = Some(user.id))
     val tagTypes = siteDao.getTagTypes(tags.map(_.tagTypeId).toSet)
+
+    val settings = siteDao.getWholeSiteSettings()
+    dieIf(!settings.enablePresence, "TyEPRESENCE0382")
 
     sendWebSocketMessage(siteId, toUserIds, "presence", Json.obj( // ts: UserPresenceWsMsg
           "user" -> JsX.JsUser(user, tags),

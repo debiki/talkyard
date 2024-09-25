@@ -34,14 +34,15 @@ $sideSpace = 20px;
   cursor: pointer;
   border: 2px solid transparent;
 
-  a
+  & > a
     display: block;
     text-decoration: none;
-  a, button
+  & > a,
+  & > button
     padding: 9px $sideSpace;
     @media (max-width: 500px)
       padding-right: 0; // the DropModal has padding-right itself already [5YKF20]
-  button
+  & > button
     text-align: left; // else center
     border: none;
     background: none;
@@ -50,9 +51,11 @@ $sideSpace = 20px;
     background: hsl($uiHue, 100%, 97%);
     border: 2px solid hsl($uiHue, 100%, 78%);
 
-  &.c_Dis a
-    opacity: 0.5;
+  &.c_Dis
+    opacity: 0.74;
     cursor: default;
+    .esExplDrp_entry_title
+      display: inline-block; // otherwise cross too wide
 
 .esExplDrp_entry.active
   $bgColor = hsl($uiHue, 95%, 92%);

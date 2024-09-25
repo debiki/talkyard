@@ -73,6 +73,10 @@ Minor & medium:
     Basically any changes on the user and group profile pages.
 
 Even later:
+  - Let [admins_see_presence] if needed, although disabled if sensitive anon comts enabled.
+  - If disabling and later enabling the Presence feature, then, remember when it was enabled,
+    and continue hiding presence up until then.  E.g. show  Last-seen-at  only if
+    it's after the point in time when Presence got reenabled. [see_presence_start_date]
   - A [see_alias] permission, so can choose to see who an anonym is,
        or can vote to see who an anon is.
   - Ask the server which alias to use, instead of deriving client side [fetch_alias]

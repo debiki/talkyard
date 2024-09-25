@@ -256,10 +256,18 @@ const AdminAppComponent = createReactClass(<any> {
   },
 
   saveSettings: function() {
+    const currentSettings: Settings = this.state.currentSettings;
+    const editedSettings: Settings = this.state.editedSettings;
+    const valueOf = (getter: (s: Settings) => any) =>
+      firstDefinedOf(getter(editedSettings), getter(currentSettings));
+
     // Clone, in case the HTTP request fails.
     const toSave = { ...this.state.editedSettings };
 
     // Update dependant settings.
+    // Or better?: Add a changesToSave, which is what's shown and what'll be saved?
+    // Then, no need for similar logics here, and at other places. [_dep_settings]
+    //
     // Some settings depend on other settings. The UI updates directly to reflect such
     // dependencies, but we also need to update the data-to-save. — Shouldn't do that
     // until now, because otherwise toggling a setting on and off, could toggle the dependant
@@ -272,8 +280,16 @@ const AdminAppComponent = createReactClass(<any> {
     // be toggled on again or not (without remembering its state before, ... which would
     // mean we implemented an undo list). So, we just update the `enablePresence` UI,
     // and won't update the actual object field unti here:
-    if (toSave.enableAnonSens) {
+    if (valueOf(s => s.enableAnonSens)) {
       toSave.enablePresence = false; // [anon_sens_0_presence]
+    }
+
+    const isCatsEnabled = valueOf(s => s.showCategories);
+
+    if (!isCatsEnabled && valueOf(s => s.enableAnonSens)) {
+      // This is ok — the server will reply with an error, if trying to be anon (rather
+      // than unexpectedly using one's real name). [reject_anon_sensitive_posts]
+      toSave.enableAnonSens = false; // [anon_purp_per_cat]
     }
 
     Server.saveSiteSettings(toSave, (result) => {
@@ -1675,8 +1691,12 @@ const FeatureSettings = createFactory({
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
     const isForumEnabled = valueOf(s => s.enableForum);
+    const isCatsEnabled = valueOf(s => s.showCategories);
+    const isAnonSensEnabled = isCatsEnabled && valueOf(s => s.enableAnonSens);
     const isApiEnabled = valueOf(s => s.enableApi);
     const isApiAndCorsEnabled = isApiEnabled && valueOf(s => s.enableCors);
+
+    const anonSensDiscTitle = "Anonymous Sensitive Discussions";
 
     return (
       r.div({},
@@ -1801,6 +1821,40 @@ const FeatureSettings = createFactory({
           getter: (s: Settings) => s.enableDirectMessages,
           update: (newSettings: Settings, target) => {
             newSettings.enableDirectMessages = target.checked;
+          }
+        }),
+
+        !isForumEnabled ? null : Setting2(props, {
+          type: 'checkbox', label: `Enable ${anonSensDiscTitle}`, // [_anon_above]
+          className: 'e_EnbSensCB',
+          help: rFr({}, "Enables Anonymous Comments for Sensitive Discussions " +
+              "category setting. " +
+              "Hides people's online status and last-seen-at info.",
+              isCatsEnabled ? " (You also need to make the relevant categories anonymous.)" :
+                    r.i({}, " You first need to enable categories.")),
+          disabled: !isCatsEnabled,
+          getter: (s: Settings) => !isCatsEnabled ? false : s.enableAnonSens,  // [_dep_settings]
+          update: (newSettings: Settings, target) => {
+            newSettings.enableAnonSens = target.checked;
+          }
+        }),
+
+        !isForumEnabled ? null : Setting2(props, {
+          type: 'checkbox', label: "Enable See Online Presence",
+          className: 'e_EnbPresenceCB',
+          help: rFr({}, "Let's people see if others are online, and when they visited last time.",
+              !isAnonSensEnabled ? '' :
+                    rFr({}, r.br(), r.b({}, "Disabled"), " if ", r.i({}, anonSensDiscTitle),
+                    " (above) is enabled.")), // [_anon_above]
+          disabled: isAnonSensEnabled,
+          getter: (s: Settings) =>
+              // It's simpler to guess who's-who if you can see who's online when an
+              // anonymous comment appear, so the presence feature gets disabled, if
+              // Sensitive Anon Discs is enabled. [anon_sens_0_presence]
+              isAnonSensEnabled ? false : s.enablePresence,  // [_dep_settings]
+          getCurrent: (s:Settings) => s.enablePresence,
+          update: (newSettings: Settings, target) => {
+            newSettings.enablePresence = target.checked;
           }
         }),
 
@@ -3420,8 +3474,8 @@ function Setting2(panelProps, props, anyChildren?) {
   const defaultSettings = panelProps.defaultSettings;
 
   let editedValue = props.getter(editedSettings);
-  let currentValue = props.getter(currentSettings);
-  const defaultValue = props.getter(defaultSettings);
+  let currentValue = (props.getCurrent || props.getter)(currentSettings);
+  const defaultValue = (props.getCurrent || props.getter)(defaultSettings);
 
   let disabled = props.disabled;
 

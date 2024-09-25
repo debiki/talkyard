@@ -429,7 +429,7 @@ const PatTopPanel = createComponent({
     const store: Store = props.store;
     const user: UserDetailsStatsGroups = props.user;
     const groupsMaySee: Group[] = props.groupsMaySee;
-    const stats: UserStats | undefined = props.stats;
+    const stats: UserStats | NU = props.stats;
     const me: Myself = props.me;
     const isGone = user_isGone(user);
 
@@ -524,6 +524,8 @@ const PatTopPanel = createComponent({
     const groupList = GroupList(
         user, groupsMaySee, 's_UP_Ab_Stats_Stat_Groups_Group');
 
+    const totNumPosts: Nr | N = user.isGroup ? null : userStats_totalNumPosts(stats);
+
     // COULD prefix everything inside with s_UP_Ab(out) instead of just s_UP.
     return r.div({ className: 's_UP_Ab dw-user-bar clearfix' },
       // This + display: table-row makes the avatar image take less space,
@@ -545,14 +547,18 @@ const PatTopPanel = createComponent({
           suspendedInfo,
           deletedInfo)),
         !stats ? null : r.div({ className: 's_UP_Ab_Stats' },
-          r.div({ className: 's_UP_Ab_Stats_Stat' },
+          !stats.firstSeenAt ? null : r.div({ className: 's_UP_Ab_Stats_Stat' },
             t.upp.JoinedC + moment(stats.firstSeenAt).fromNow()),
-          r.div({ className: 's_UP_Ab_Stats_Stat' },user.isGroup ? null :
-            t.upp.PostsMadeC + userStats_totalNumPosts(stats)),
+
+          !totNumPosts ? null : r.div({ className: 's_UP_Ab_Stats_Stat' },
+            t.upp.PostsMadeC + totNumPosts),
+
           !stats.lastPostedAt ? null : r.div({ className: 's_UP_Ab_Stats_Stat' },
             t.upp.LastPostC + moment(stats.lastPostedAt).fromNow()),
-          r.div({ className: 's_UP_Ab_Stats_Stat' },
+
+          !stats.lastSeenAt ? null : r.div({ className: 's_UP_Ab_Stats_Stat' },
             t.upp.LastSeenC + moment(stats.lastSeenAt).fromNow()),
+
           r.div({ className: 's_UP_Ab_Stats_Stat' },
             t.GroupsC,
             r.ul({ className: 's_UP_Ab_Stats_Stat_Groups' },
