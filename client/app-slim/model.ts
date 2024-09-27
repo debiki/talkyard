@@ -2371,6 +2371,8 @@ interface Settings extends TopicInterfaceSettings, SettingsDiscPropsOldNames {
   enableTags: boolean;
   enableChat: boolean;
   enableDirectMessages: boolean;
+  enableAnonSens: Bo
+  enablePresence: Bo
   enableSimilarTopics: boolean;
   enableCors: boolean;
   allowCorsFrom: String;

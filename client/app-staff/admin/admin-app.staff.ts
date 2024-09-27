@@ -256,7 +256,27 @@ const AdminAppComponent = createReactClass(<any> {
   },
 
   saveSettings: function() {
-    Server.saveSiteSettings(this.state.editedSettings, (result) => {
+    // Clone, in case the HTTP request fails.
+    const toSave = { ...this.state.editedSettings };
+
+    // Update dependant settings.
+    // Some settings depend on other settings. The UI updates directly to reflect such
+    // dependencies, but we also need to update the data-to-save. — Shouldn't do that
+    // until now, because otherwise toggling a setting on and off, could toggle the dependant
+    // settings once, but not toggle them back. This could be unexpected, and result in
+    // admins configuring things not-as-they-want.
+    //
+    // Example: An admin toggles `enableAnonSens` on. This changes `enablePresence`
+    // to false in the UI. But if the actual data-to-save was changed too, then, if the
+    // admin later toggles `enableAnonSens` off, we wouldn't know if `enablePresence` should
+    // be toggled on again or not (without remembering its state before, ... which would
+    // mean we implemented an undo list). So, we just update the `enablePresence` UI,
+    // and won't update the actual object field unti here:
+    if (toSave.enableAnonSens) {
+      toSave.enablePresence = false; // [anon_sens_0_presence]
+    }
+
+    Server.saveSiteSettings(toSave, (result) => {
       if (this.isGone) return;
       this.setState({
         currentSettings: result.effectiveSettings,

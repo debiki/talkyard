@@ -23,6 +23,7 @@ import play.api.libs.json._
 import scala.collection.immutable
 import debiki.EdHttp.throwBadRequest
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.{immutable => imm}
 import scala.util.matching.Regex
 import talkyard.server.JsX._
 
@@ -31,6 +32,7 @@ import talkyard.server.JsX._
 trait AllSettings extends DiscProps {
   self =>
 
+  def authnDiagConf: JsObject
   def userMustBeAuthenticated: Boolean  ; RENAME // to mustLoginToRead ?
   def userMustBeApproved: Boolean       ; RENAME // to mustLoginToContribute?
       // Need to change how it works too: in the db, set mustBeAuthenticatedToRead = true  [2KZMQ5]
@@ -234,6 +236,8 @@ trait AllSettings extends DiscProps {
     */
   def enableChat: Boolean
   def enableDirectMessages: Boolean
+  def enableAnonSens: Bo
+  def enablePresence: Bo
   def enableSimilarTopics: Boolean
 
   /** CORS means Cross-Origin Resource Sharing. */
@@ -244,6 +248,9 @@ trait AllSettings extends DiscProps {
   def showSubCommunities: Boolean  // RENAME to enableSubCommunities? Why "show"?
   def showExperimental: Boolean
   def featureFlags: String
+
+  def ownDomains: St
+  def followLinksTo: St
 
   def allowEmbeddingFrom: String
   def embeddedCommentsCategoryId: CategoryId
@@ -263,6 +270,7 @@ trait AllSettings extends DiscProps {
 
   // Pretend all settings have been edited, so they all will be included in the json.
   private def toEditedSettings = EditedSettings(
+    authnDiagConf = Some(self.authnDiagConf),
     userMustBeAuthenticated = Some(self.userMustBeAuthenticated),
     userMustBeApproved = Some(self.userMustBeApproved),
     expireIdleAfterMins = Some(self.expireIdleAfterMins),
@@ -362,6 +370,8 @@ trait AllSettings extends DiscProps {
     enableTags = Some(self.enableTags),
     enableChat = Some(self.enableChat),
     enableDirectMessages = Some(self.enableDirectMessages),
+    enableAnonSens = Some(self.enableAnonSens),
+    enablePresence = Some(self.enablePresence),
     enableSimilarTopics = Some(self.enableSimilarTopics),
     enableCors = Some(self.enableCors),
     allowCorsFrom = Some(self.allowCorsFrom),
@@ -369,6 +379,8 @@ trait AllSettings extends DiscProps {
     showSubCommunities = Some(self.showSubCommunities),
     showExperimental = Some(self.showExperimental),
     featureFlags = Some(self.featureFlags),
+    ownDomains = Some(self.ownDomains),
+    followLinksTo = Some(self.followLinksTo),
     allowEmbeddingFrom = Some(self.allowEmbeddingFrom),
     embeddedCommentsCategoryId = Some(self.embeddedCommentsCategoryId),
     htmlTagCssClasses = Some(self.htmlTagCssClasses),
@@ -399,6 +411,7 @@ object AllSettings {
   val InConfigFile = "(in config file)"
 
   def makeDefault(globals: Globals): AllSettings = new AllSettings {  // [8L4KWU02]
+    val authnDiagConf = JsEmptyObj2
     val userMustBeAuthenticated = false
     val userMustBeApproved = false
     // One year. Like Gmail and Facebook (well, they have forever, instead). A Talkyard
@@ -512,6 +525,8 @@ object AllSettings {
     val enableTags = true
     val enableChat = true
     val enableDirectMessages = true
+    val enableAnonSens = false
+    val enablePresence = true
     val enableSimilarTopics = true
     val enableCors = false
     val allowCorsFrom = ""
@@ -519,6 +534,8 @@ object AllSettings {
     val showSubCommunities = false
     val showExperimental = false
     val featureFlags = ""
+    val ownDomains = ""
+    val followLinksTo = ""
     val allowEmbeddingFrom = ""
     val embeddedCommentsCategoryId: CategoryId = NoCategoryId
     val htmlTagCssClasses = ""
@@ -547,6 +564,7 @@ case class EffectiveSettings(
     None
   }
 
+  def authnDiagConf: JsObject = firstInChain(_.authnDiagConf) getOrElse default.authnDiagConf
   def userMustBeAuthenticated: Boolean = firstInChain(_.userMustBeAuthenticated) getOrElse default.userMustBeAuthenticated
   def userMustBeApproved: Boolean = firstInChain(_.userMustBeApproved) getOrElse default.userMustBeApproved
   def expireIdleAfterMins: Int = firstInChain(_.expireIdleAfterMins) getOrElse default.expireIdleAfterMins
@@ -646,6 +664,8 @@ case class EffectiveSettings(
   def enableTags: Boolean = firstInChain(_.enableTags) getOrElse default.enableTags
   def enableChat: Boolean = firstInChain(_.enableChat) getOrElse default.enableChat
   def enableDirectMessages: Boolean = firstInChain(_.enableDirectMessages) getOrElse default.enableDirectMessages
+  def enableAnonSens: Bo = firstInChain(_.enableAnonSens) getOrElse default.enableAnonSens
+  def enablePresence: Bo = firstInChain(_.enablePresence) getOrElse default.enablePresence
   def enableSimilarTopics: Boolean = firstInChain(_.enableSimilarTopics) getOrElse default.enableSimilarTopics
   def enableCors: Boolean = firstInChain(_.enableCors) getOrElse default.enableCors
   def allowCorsFrom: String = firstInChain(_.allowCorsFrom) getOrElse default.allowCorsFrom
@@ -653,6 +673,8 @@ case class EffectiveSettings(
   def showSubCommunities: Boolean = firstInChain(_.showSubCommunities) getOrElse default.showSubCommunities
   def showExperimental: Boolean = firstInChain(_.showExperimental) getOrElse default.showExperimental
   def featureFlags: String = firstInChain(_.featureFlags) getOrElse default.featureFlags
+  def ownDomains: St = firstInChain(_.ownDomains) getOrElse default.ownDomains
+  def followLinksTo: St = firstInChain(_.followLinksTo) getOrElse default.followLinksTo
   def allowEmbeddingFrom: String = firstInChain(_.allowEmbeddingFrom) getOrElse default.allowEmbeddingFrom
   def embeddedCommentsCategoryId: CategoryId = firstInChain(_.embeddedCommentsCategoryId) getOrElse default.embeddedCommentsCategoryId
   def htmlTagCssClasses: String = firstInChain(_.htmlTagCssClasses) getOrElse default.htmlTagCssClasses
@@ -719,10 +741,25 @@ case class EffectiveSettings(
           blockListText = emailDomainBlacklist, allowByDefault = true)
   }
 
-  /** Finds any invalid setting value, or invalid settings configurations. */
-  def findAnyError: Option[String] = {
-    // Hmm ...
-    None
+  // Rename (to just enableAnonSens )
+  def sensitiveAnonDisc: Bo = enableAnonSens
+
+  // Rename (to just enablePresence)
+  def maySeePresence: Bo = enablePresence
+
+
+  /** Finds any invalid setting value, or invalid settings configurations.
+    */
+  def findAnyErrors: Opt[imm.Seq[St]] = {
+    val probs = MutArrBuf[St]()
+
+    if (enableAnonSens && enablePresence) {
+      // [deanon_risk] [anon_sens_0_presence]
+      probs.append("Can't enable both 1) Sensitive Anonymous Discussions and 2) Presence")
+    }
+
+    if (probs.isEmpty) None
+    else Some(probs.to[imm.Seq])
   }
 
 }
@@ -823,6 +860,7 @@ object Settings2 {
   def settingsToJson(editedSettings2: EditedSettings): JsObject = {
     val s = editedSettings2
     Json.obj(
+      "authnDiagConf" -> JsObjOrNull(s.authnDiagConf),
       "userMustBeAuthenticated" -> JsBooleanOrNull(s.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBooleanOrNull(s.userMustBeApproved),
       "expireIdleAfterMins" -> JsNumberOrNull(s.expireIdleAfterMins),
@@ -922,6 +960,8 @@ object Settings2 {
       "enableTags" -> JsBooleanOrNull(s.enableTags),
       "enableChat" -> JsBooleanOrNull(s.enableChat),
       "enableDirectMessages" -> JsBooleanOrNull(s.enableDirectMessages),
+      "enableAnonSens" -> JsBooleanOrNull(s.enableAnonSens),
+      "enablePresence" -> JsBooleanOrNull(s.enablePresence),
       "enableSimilarTopics" -> JsBooleanOrNull(s.enableSimilarTopics),
       "enableCors" -> JsBooleanOrNull(s.enableCors),
       "allowCorsFrom" -> JsStringOrNull(s.allowCorsFrom),
@@ -929,6 +969,8 @@ object Settings2 {
       "showSubCommunities" -> JsBooleanOrNull(s.showSubCommunities),
       "showExperimental" -> JsBooleanOrNull(s.showExperimental),
       "featureFlags" -> JsStringOrNull(s.featureFlags),
+      "ownDomains" -> JsStringOrNull(s.ownDomains),
+      "followLinksTo" -> JsStringOrNull(s.followLinksTo),
       "allowEmbeddingFrom" -> JsStringOrNull(s.allowEmbeddingFrom),
       "embeddedCommentsCategoryId" -> JsNumberOrNull(s.embeddedCommentsCategoryId),
       "htmlTagCssClasses" -> JsStringOrNull(s.htmlTagCssClasses),
@@ -945,6 +987,7 @@ object Settings2 {
   def settingsToSaveFromJson(json: JsValue, globals: Globals): SettingsToSave = {
     val d = AllSettings.makeDefault(globals)
     SettingsToSave(
+    authnDiagConf = anyJsObj(json, "authnDiagConf", d.authnDiagConf),
     userMustBeAuthenticated = anyBool(json, "userMustBeAuthenticated", d.userMustBeAuthenticated),
     userMustBeApproved = anyBool(json, "userMustBeApproved", d.userMustBeApproved),
     expireIdleAfterMins = anyInt(json, "expireIdleAfterMins", d.expireIdleAfterMins),
@@ -1048,6 +1091,8 @@ object Settings2 {
     enableTags = anyBool(json, "enableTags", d.enableTags),
     enableChat = anyBool(json, "enableChat", d.enableChat),
     enableDirectMessages = anyBool(json, "enableDirectMessages", d.enableDirectMessages),
+    enableAnonSens = anyBool(json, "enableAnonSens", d.enableAnonSens),
+    enablePresence = anyBool(json, "enablePresence", d.enablePresence),
     enableSimilarTopics = anyBool(json, "enableSimilarTopics", d.enableSimilarTopics),
     enableCors = anyBool(json, "enableCors", d.enableCors),
     allowCorsFrom = anyString(json, "allowCorsFrom", d.allowCorsFrom),
@@ -1055,6 +1100,8 @@ object Settings2 {
     showSubCommunities = anyBool(json, "showSubCommunities", d.showSubCommunities),
     showExperimental = anyBool(json, "showExperimental", d.showExperimental),
     featureFlags = anyString(json, "featureFlags", d.featureFlags),
+    ownDomains = anyString(json, "ownDomains", d.ownDomains),
+    followLinksTo = anyString(json, "followLinksTo", d.followLinksTo),
     allowEmbeddingFrom = anyString(json, "allowEmbeddingFrom", d.allowEmbeddingFrom),
     embeddedCommentsCategoryId = anyInt(json, "embeddedCommentsCategoryId", d.embeddedCommentsCategoryId),
     htmlTagCssClasses = anyString(json, "htmlTagCssClasses", d.htmlTagCssClasses),

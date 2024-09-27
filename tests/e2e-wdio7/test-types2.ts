@@ -240,8 +240,12 @@ interface TestSiteSettings {
   numFlagsToBlockNewUser?: number;
   numFlaggersToBlockNewUser?: number;
   enableForum?: Bo;
+  enableApi?: Bo;
   enableTags?: Bo;
-  enableApi?: boolean;
+  enableChat: Bo;
+  enableDirectMessages: Bo;
+  enableAnonSens: Bo
+  enablePresence: Bo
   ssoUrl?: string;
   enableSso?: boolean;
 
