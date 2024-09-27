@@ -1260,6 +1260,9 @@ interface Store extends Origins, DiscStore, PartialEditorStoreState {
   settings: SettingsVisibleClientSide;
   hideForumIntro?: boolean;
 
+  // Only present, if not logged in.
+  authnDiagConf?: AuthnDiagConf;
+
   // For all site sections, loaded lazily, and updated in a hacky way, for now, so have a look,
   // and refactor (?), before using it for anything more.
   allCategoriesHacky?: Category[];
@@ -2274,8 +2277,26 @@ interface PageTweaksStorePatch {
 }
 
 
+interface AuthnDiagConf {
+  // Config format version 0. Maybe that'll be enough forever.
+  // Let's use 'c0' not 'v0' so more unique.
+  c0?: AuthnDiagConfV0[]
+}
+
+
+interface AuthnDiagConfV0 {
+  // Later, could:
+  // langs: ['en_US', 'sv_SE' ...]  — use for these locales / languages
+  // maxWidth: 768  — if display at most this wide
+  headerText?: St
+  introHtml?: St
+  imageUrl?: St
+}
+
+
 interface Settings extends TopicInterfaceSettings, SettingsDiscPropsOldNames {
   // Signup and Login
+  authnDiagConf: AuthnDiagConf;
   expireIdleAfterMins: number;
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;

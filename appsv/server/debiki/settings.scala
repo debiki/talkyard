@@ -411,7 +411,10 @@ object AllSettings {
   val InConfigFile = "(in config file)"
 
   def makeDefault(globals: Globals): AllSettings = new AllSettings {  // [8L4KWU02]
-    val authnDiagConf = JsEmptyObj2
+    // Looks like:  { c0: [{ headerText, introHtml, imageUrl }] }
+    val authnDiagConf = Json.obj("c0" -> Json.arr(
+          Json.obj("headerText" -> "", "introHtml" -> "", "imageUrl" -> "")))
+
     val userMustBeAuthenticated = false
     val userMustBeApproved = false
     // One year. Like Gmail and Facebook (well, they have forever, instead). A Talkyard

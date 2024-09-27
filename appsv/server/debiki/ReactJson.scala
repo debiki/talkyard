@@ -577,7 +577,7 @@ class JsonMaker(dao: SiteDao) {
     val everyoneGroup = dao.getTheGroup(Group.EveryoneId)
     val idps = dao.getSiteCustomIdentityProviders(onlyEnabled = true)
 
-    val result = Json.obj(
+    var result = Json.obj(
       "dbgSrc" -> "SpecPgJ",
       "widthLayout" -> (if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
       "isEmbedded" -> false,  // what ??? Yes, if in emb editor iframe
@@ -606,6 +606,15 @@ class JsonMaker(dao: SiteDao) {
       // SHOULD incl cats here? But currently loaded via an extra req instead,
       // see:  [search_page_cats_tags]  maybe can just leave it at that.
       "publicCategories" -> JsArray())
+
+    // No need to incl authn diag text, if the person has logged in already.
+    SAVE_BANDWIDTH // Exclude enableGoogleLogin, -FacebookLogin, allowSignup, customIdps ...
+    // too, if already logged in.
+    val willBeLoginPage = !request.user.exists(_.isAuthenticated) &&
+                              siteSettings.authnDiagConf.value.nonEmpty
+    if (willBeLoginPage) {
+      result += "authnDiagConf" -> siteSettings.authnDiagConf
+    }
 
     result
   }

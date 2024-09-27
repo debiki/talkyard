@@ -572,9 +572,31 @@ const LoginDialogContent = createClassAndFactory({
             loggedInButMayNotAccess);
     }
     else {
-      content = rFragment({},
+      let customHtml: RElm | NU = null;
+      const anyConf: AuthnDiagConfV0 | NU = store.authnDiagConf?.c0[0];
+
+      // If logging in to the admin area, ignore any login dialog custom html, so any
+      // cutom html bugs won't prevent admins from logging in and fixing the bugs.
+      if (anyConf && !location.pathname.startsWith(UrlPaths.AdminArea)) {
+        // (Below, 'AuD_Cu' = "_Au_thentication _D_ialog _Cu_stomization".)
+        customHtml = r.div({ className: 'c_AuD_Cu' },
+            // If you want some HTML elements in the title, e.g. <h1>...</h1><h2>..</h2>  or <b>,
+            // you can leave headerText empty, and place the title in introHtml instead.
+            !anyConf.headerText ? null :
+                r.h1({ className: 'c_AuD_Cu_Ttl' }, anyConf.headerText),
+            !anyConf.introHtml ? null :
+                r.div({ className: 'c_AuD_Cu_Intro',
+                    // Only admins can edit this html.
+                    dangerouslySetInnerHTML: { __html: anyConf.introHtml }}),
+            !anyConf.imageUrl ? null :
+                r.figure({ className: 'c_AuD_Cu_Fig' }, r.img({ src: anyConf.imageUrl })),
+            );
+      }
+
+      content = rFr({},
         becomeOwnerInstructions,
-        !anyOpenAuth ? null : rFragment({},
+        customHtml,
+        !anyOpenAuth ? null : rFr({},
           r.p({ id: 'dw-lgi-or-login-using' },
             // "Continue with" converts better than "Sign Up" or "Log In", says
             // Facebook's brand guidelines.
@@ -584,7 +606,7 @@ const LoginDialogContent = createClassAndFactory({
             !ss.enableGoogleLogin ? null :
                 ExtIdpAuthnBtn(makeAuthnProps('icon-google', 'Google')),
             !ss.enableFacebookLogin ? null :
-                ExtIdpAuthnBtn(makeAuthnProps('icon-facebook', 'Facebook', rFragment({},
+                ExtIdpAuthnBtn(makeAuthnProps('icon-facebook', 'Facebook', rFr({},
                   // Need to follow Facebook's brand guidelines. [FBBRAND]
                   FacebookLogoImage, "Facebook"))),
             /* Twitter login won't work, until they support OAuth2. [0_twitter_aun]

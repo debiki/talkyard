@@ -1503,7 +1503,7 @@ const GroupsAndPermissionLinks = function() {
   const allMembersPermsPath = '/-/groups/all_members/permissions';
   const allMembersPrefsPath = '/-/groups/all_members/preferences/notifications';
   const categoriesPath = '/categories';
-  return r.div({ className: 'c_AA_Ss_Perms' },
+  return r.div({ className: 's_A_Ss_Inf c_AA_Ss_Perms' },
 
       // (UX: Explain category permissions first — it's short & quick to read, and hopefully
       // people will then continue reading about group permissions too, further below.
@@ -3027,12 +3027,14 @@ const CustomizePanel = createFactory({
       r.div({ className: 'esA_Ss s_A_Ss-LaF' },
         r.ul({ className: 'esAdmin_settings_nav col-sm-2 nav nav-pills nav-stacked' },
           LiNavLink({ to: bp + 'basic', id: 'e_A_Ss-LaF_Basic' }, "Basic"),
-          LiNavLink({ to: bp + 'html', id: 'e_A_Ss-LaF_Html' }, "HTML"),
+          LiNavLink({ to: bp + 'login', id: 'e_A_Ss-LaF_AuD' }, "Login Dialog"),
+          LiNavLink({ to: bp + 'html', id: 'e_A_Ss-LaF_Html' }, "Custom HTML"),
           LiNavLink({ to: bp + 'css-js', id: 'e_A_Ss-LaF_CssJs' }, "CSS and JS")),
         r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
           Switch({},
             // [React_Router_v51] skip render(), use hooks and useParams instead.
             Route({ path: bp + 'basic', render: () => CustomizeBasicPanel(childProps) }),
+            Route({ path: bp + 'login', render: () => CustomizeLoginPanel(childProps) }),
             Route({ path: bp + 'html', render: () => CustomizeHtmlPanel(childProps) }),
             Route({ path: bp + 'css-js', render: () => CustomizeCssJsPanel(childProps) })),
             )));
@@ -3324,6 +3326,77 @@ const CustomizeBasicPanel = createFactory({
 });
 
 
+const CustomizeLoginPanel = React.createFactory<any>(function(props) {
+
+  const currentSettings: Settings = props.currentSettings;
+  const editedSettings: Settings = props.editedSettings;
+
+  const valueOf = (getter: (s: Settings) => any) =>
+    firstDefinedOf(getter(editedSettings), getter(currentSettings));
+
+  return (
+    r.div({ className: 'form-horizontal esAdmin_customize' },
+
+      r.div({ className: 's_A_Ss_Inf' },
+        r.h2({ className: 'col-sm-offset- s_A_Ss_S_Ttl'},
+          "Login Dialog"),
+
+        r.p({},
+          "Here you can add a title and intro text to the login dialog. " +
+          "It'll be publicly visible."),
+
+        r.p({},
+          "To view the dialog without logging out yourself, open an incognito browser window, " +
+          "e.g. click Ctrl+Shift+N if you use Chrome, and go to ", r.samp({}, location.origin),
+          ". (After you've saved any changes.)"),
+
+        r.p({},
+          "(But all changes are ignored if you login at /-/admin/ — in case you mess something up " +
+          "and somehow break the login dialog.)"),
+        ),
+
+      Setting2(props, {
+        label: "Login dialog title",
+        className: 'e_CuAuD_Ttl',
+        getter: (s: Settings) => s.authnDiagConf?.c0[0].headerText,
+        update: (newSettings: Settings, target) => {
+          // [_dupl_authn_diag_setter]
+          const anyCurConf: AuthnDiagConf | U = valueOf(s => s.authnDiagConf);
+          const curConf: AuthnDiagConfV0 = anyCurConf?.c0[0] || {};
+          newSettings.authnDiagConf = { c0: [{ ...curConf, headerText: target.value }] };
+        }
+      }),
+
+      Setting2(props, {
+        type: 'textarea', label: "Login intro text",
+        className: 'e_CuAuD_Intro',
+        help: rFr({}, "Here you can explain who this forum is for, and how it's " +
+              "helpful to them. You can use HTML."),
+        getter: (s: Settings) => s.authnDiagConf?.c0[0].introHtml,
+        update: (newSettings: Settings, target) => {
+          // [_dupl_authn_diag_setter]
+          const anyCurConf: AuthnDiagConf | U = valueOf(s => s.authnDiagConf);
+          const curConf: AuthnDiagConfV0 = anyCurConf?.c0[0] || {};
+          newSettings.authnDiagConf = { c0: [{ ...curConf, introHtml: target.value }] };
+        }
+      }),
+
+      Setting2(props, {
+        label: "Login dialog image",
+        className: 'e_CuAuD_Img',
+        help: rFr({}, "An image URL, e.g. your company or university building " +
+                "or logo, or office cat."),
+        getter: (s: Settings) => s.authnDiagConf?.c0[0].imageUrl,
+        update: (newSettings: Settings, target) => {
+          // [_dupl_authn_diag_setter]
+          const anyCurConf: AuthnDiagConf | U = valueOf(s => s.authnDiagConf);
+          const curConf: AuthnDiagConfV0 = anyCurConf?.c0[0] || {};
+          newSettings.authnDiagConf = { c0: [{ ...curConf, imageUrl: target.value }] };
+        }
+      }),
+      ));
+});
+
 
 const CustomizeHtmlPanel = createFactory({
   displayName: 'CustomizeHtmlPanel',
@@ -3331,7 +3404,7 @@ const CustomizeHtmlPanel = createFactory({
   render: function() {
     const props = this.props;
     const currentSettings: Settings = props.currentSettings;
-    let navConfJsonExeption;
+    let navConfJsonExeption: St | NU;
 
     return (
       r.div({ className: 'form-horizontal esAdmin_customize' },
@@ -3488,6 +3561,8 @@ function Setting2(panelProps, props, anyChildren?) {
     disabled = true;
   }
 
+  const editedAndDifferent = isDef(editedValue) && editedValue !== currentValue;
+
   const effectiveValue = firstDefinedOf(editedValue, currentValue);
 
   dieIf(props.onChange, 'EsE3GUK02');
@@ -3506,7 +3581,7 @@ function Setting2(panelProps, props, anyChildren?) {
   if (props.type === 'textarea') props.className += ' s_A_Ss_S-Textarea';
   props.wrapperClassName = 'col-sm-9 esAdmin_settings_setting';
 
-  if (isDefined2(editedValue)) props.wrapperClassName += ' esAdmin_settings_setting-unsaved';
+  if (editedAndDifferent) props.wrapperClassName += ' esAdmin_settings_setting-unsaved';
   if (disabled) props.wrapperClassName += ' disabled';
 
   if (props.type === 'checkbox') {
@@ -3532,8 +3607,8 @@ function Setting2(panelProps, props, anyChildren?) {
   const field = props.type === 'checkbox' ? 'checked' : 'value';
   const event = { target: {} };
 
-  let undoChangesButton;
-  if (isDefined2(editedValue)) {
+  let undoChangesButton: RElm | U;
+  if (editedAndDifferent) {
     undoChangesButton = Button({ className: 'col-sm-offset-3 esAdmin_settings_setting_btn',
       disabled, onClick: props.undo || (() => {
         event.target[field] = currentValue;
@@ -3542,7 +3617,7 @@ function Setting2(panelProps, props, anyChildren?) {
   }
 
   // Show the Reset button only if there's no Undo button — both at the same time looks confusing.
-  let resetToDefaultButton;
+  let resetToDefaultButton: RElm | U;
   if (!undoChangesButton && effectiveValue !== defaultValue && props.canReset !== false) {
     resetToDefaultButton = Button({ className: 'col-sm-offset-3 esAdmin_settings_setting_btn',
       disabled, onClick: props.reset || (() => {
