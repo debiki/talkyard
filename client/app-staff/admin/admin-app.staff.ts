@@ -1558,6 +1558,10 @@ const SpamFlagsSettings = createFactory({
 
     const LargeNumber = 9999;
 
+    // Some settings actually haven't been implemented server side. Let's hide them here (but
+    // keep the Typescript code so easy to add back later).
+    const isImpl = false;
+
     return (
       r.div({},
         !currentSettings.akismetApiKey ? null :  // currently, needs server side key
@@ -1584,6 +1588,7 @@ const SpamFlagsSettings = createFactory({
           }
         }),
 
+        !isImpl ? null :
         Setting2(props, { type: 'number', min: 0, max: LargeNumber,
           label: "Num minutes to calm down",
           help: "If someone gets his/her post hidden because of flags, s/he might get angry. " +
@@ -1632,6 +1637,7 @@ const SpamFlagsSettings = createFactory({
           }
         }),
 
+        !isImpl ? null :
         Setting2(props, { type: 'checkbox', indent: true,
           label: "Notify staff if new user blocked",
           help:
@@ -1643,6 +1649,7 @@ const SpamFlagsSettings = createFactory({
           }
         }),
 
+        !isImpl ? null :
         Setting2(props, { type: 'number', min: 0, max: LargeNumber, indent: true,
           label: "Trusted member flag weight",
           help: r.span({},
@@ -1660,6 +1667,7 @@ const SpamFlagsSettings = createFactory({
           }
         }),
 
+        !isImpl ? null :
         Setting2(props, { type: 'number', min: 0, max: LargeNumber, indent: true,
           label: "Core member flag weight",
           help: r.span({},
