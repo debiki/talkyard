@@ -3608,7 +3608,7 @@ function Setting2(panelProps, props, anyChildren?) {
   const event = { target: {} };
 
   let undoChangesButton: RElm | U;
-  if (editedAndDifferent) {
+  if (editedAndDifferent && !disabled) {
     undoChangesButton = Button({ className: 'col-sm-offset-3 esAdmin_settings_setting_btn',
       disabled, onClick: props.undo || (() => {
         event.target[field] = currentValue;
@@ -3618,7 +3618,7 @@ function Setting2(panelProps, props, anyChildren?) {
 
   // Show the Reset button only if there's no Undo button — both at the same time looks confusing.
   let resetToDefaultButton: RElm | U;
-  if (!undoChangesButton && effectiveValue !== defaultValue && props.canReset !== false) {
+  if (!undoChangesButton && effectiveValue !== defaultValue && props.canReset !== false && !disabled) {
     resetToDefaultButton = Button({ className: 'col-sm-offset-3 esAdmin_settings_setting_btn',
       disabled, onClick: props.reset || (() => {
         event.target[field] = defaultValue;
