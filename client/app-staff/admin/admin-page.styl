@@ -25,10 +25,11 @@
 
 // Info block: Title and text that explain some settings below.
 .s_A_Ss_Inf
-  margin: 0 0 35px 23px;
+  margin: 0 0 27px 23px;
   padding-right: 15px;
-  &:first-child
-    margin-top: -20px;
+
+  .s_A_Ss_S_Ttl
+    padding-top: 0;  // try to remove outside _Inf too?
 
 .s_A_Ss_S_Ttl
   margin-top: 25px;
@@ -44,8 +45,9 @@
 .s_A_Ss_S .checkbox
   margin-bottom: 8px;
 
-.s_A_Ss_S input[type="text"]
-  width: 370px;   // or too small
+.s_A_Ss_S input[type="text"],
+.s_A_Ss_S input:not([type])  // the default is 'text', if type absent
+  width: 375px;   // or too small
   max-width: 95%; // or too wide, on narrow phones
 
 .s_A_Ss_AlwCrsFrm .input-group textarea
@@ -112,6 +114,10 @@
     margin-bottom: 0;
   .control-label
     padding-top: 17px; // 7 -> 17 because of padding-top below [930KPU12]
+
+.esAdmin_settings
+  .c_Cross
+    opacity: 0.6
 
 .esAdmin_settings_nav
   background: #eee;

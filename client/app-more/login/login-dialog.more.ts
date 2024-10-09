@@ -30,6 +30,13 @@ const ModalBody = rb.ModalBody;
 const ModalFooter = rb.ModalFooter;
 
 
+export function isSocialLoginEnabled(settings: SettingsVisibleClientSide | Settings): Bo {
+  const ss = settings;
+  return ss.enableGoogleLogin || ss.enableFacebookLogin || ss.enableTwitterLogin ||
+        ss.enableGitHubLogin || ss.enableLinkedInLogin;
+}
+
+
 let loginDialog;
 
 
@@ -541,9 +548,7 @@ const LoginDialogContent = createClassAndFactory({
     //const customIdpBtnFirst = !customIdp ? false :
     //        customIdp.guiOrder < 0;  // undef < 0  is false
 
-    const anyOpenAuth = customIdps.length || ss.enableGoogleLogin ||
-        ss.enableFacebookLogin || ss.enableTwitterLogin || ss.enableGitHubLogin ||
-        ss.enableLinkedInLogin;
+    const anyOpenAuth = customIdps.length || isSocialLoginEnabled(ss);
 
     const canUseCustomIdps = ss.customIdps?.length;
     const useOnlyCustomIdps = ss.useOnlyCustomIdps && canUseCustomIdps;
@@ -574,10 +579,12 @@ const LoginDialogContent = createClassAndFactory({
     else {
       let customHtml: RElm | NU = null;
       const anyConf: AuthnDiagConfV0 | NU = store.authnDiagConf?.c0[0];
+      const anyIntro = anyConf && (anyConf.headerText || anyConf.introHtml || anyConf.imageUrl);
+      const isStaffSpace = location.pathname.startsWith(UrlPaths.AdminArea)
 
       // If logging in to the admin area, ignore any login dialog custom html, so any
       // cutom html bugs won't prevent admins from logging in and fixing the bugs.
-      if (anyConf && !location.pathname.startsWith(UrlPaths.AdminArea)) {
+      if (anyIntro && !isStaffSpace) {
         // (Below, 'AuD_Cu' = "_Au_thentication _D_ialog _Cu_stomization".)
         customHtml = r.div({ className: 'c_AuD_Cu' },
             // If you want some HTML elements in the title, e.g. <h1>...</h1><h2>..</h2>  or <b>,
@@ -593,14 +600,36 @@ const LoginDialogContent = createClassAndFactory({
             );
       }
 
+      const confOr = (custom: St | U, def: St): St | N => {
+        if (isStaffSpace || !custom) return def;
+        if (custom === '-') return null;  // [dash_hides_label]
+        return custom;
+      }
+
+      const conf = anyConf || {};
+
+      // "Continue with" converts better than "Sign Up" or "Log In", says
+      // Facebook's brand guidelines.
+      const continueWithDots: St = confOr(conf.continueWithCta, t.ld.ContinueWithDots);
+
+      const orCreateAccountOrLogIn: St | N =
+        isForFirstOwner || isSignUp && !allowLocalSignup ? null : (
+          anyOpenAuth
+              ? (isSignUp
+                  ? (isGuestSignUp ? confOr(conf.orTypeGuestNameCta, t.ld.OrTypeName) :
+                        confOr(conf.orCreateAcctCta, t.ld.OrCreateAcctHere))
+                  : confOr(conf.orLogInCta, t.ld.OrLogIn))
+              : (isSignUp
+                  ? (isGuestSignUp ? confOr(conf.guestNameCta, t.ld.YourNameQ) :
+                        confOr(conf.signUpCta, t.ld.SignUp))
+                  : confOr(conf.logInCta, t.ld.LogIn)));
+
       content = rFr({},
         becomeOwnerInstructions,
         customHtml,
         !anyOpenAuth ? null : rFr({},
-          r.p({ id: 'dw-lgi-or-login-using' },
-            // "Continue with" converts better than "Sign Up" or "Log In", says
-            // Facebook's brand guidelines.
-            t.ld.ContinueWithDots),
+          !continueWithDots ? null : r.p({ id: 'dw-lgi-or-login-using' },
+              continueWithDots),
           r.div({ id: 'dw-lgi-other-sites' },
             //customIdpBtnFirst && customOidcBtns,
             !ss.enableGoogleLogin ? null :
@@ -623,15 +652,8 @@ const LoginDialogContent = createClassAndFactory({
             // OpenID 1.0 since long gone, so skip:  icon-yahoo Yahoo!
             )),
 
-        isForFirstOwner || isSignUp && !allowLocalSignup ? null : (
-          r.p({ id: 'dw-lgi-or-login-using' },
-            anyOpenAuth
-              ? (isSignUp
-                  ? (isGuestSignUp ? t.ld.OrTypeName : t.ld.OrCreateAcctHere)
-                  : t.ld.OrLogIn)
-              : (isSignUp
-                  ? (isGuestSignUp ? t.ld.YourNameQ : t.ld.SignUp)
-                  : t.ld.LogIn))),
+        !orCreateAccountOrLogIn ? null : r.p({ id: 'dw-lgi-or-login-using' },
+            orCreateAccountOrLogIn),
 
         // Either:
         switchToLoginOrGuestDlg,

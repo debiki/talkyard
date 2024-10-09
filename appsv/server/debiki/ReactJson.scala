@@ -544,6 +544,16 @@ class JsonMaker(dao: SiteDao) {
       anyCurCatId.foreach(id => jsonObj += "listingCatId" -> JsNumber(id))
     }
 
+    COULD_OPTIMIZE; SAVE_BANDWIDTH // Add only if needed  [authn_diag_bandw], that is,
+    // if user not logged in.  Maybe inject at the bottom in a new <script> placeholder?
+    // (Can't do > 1 from the top, since there's people's comments in one already,
+    // which could include placeholder strings.)
+    SAVE_BANDWIDTH // Exclude enableGoogleLogin, FacebookLogin, allowSignup, customIdps ...
+    // too, if already logged in. [cached_html_loggedin_param]?
+    if (siteSettings.authnDiagConf.value.nonEmpty) {
+      jsonObj += "authnDiagConf" -> siteSettings.authnDiagConf
+    }
+
     val reactStoreJsonString = jsonObj.toString()
 
     val version = CachedPageVersion(
@@ -608,11 +618,7 @@ class JsonMaker(dao: SiteDao) {
       "publicCategories" -> JsArray())
 
     // No need to incl authn diag text, if the person has logged in already.
-    SAVE_BANDWIDTH // Exclude enableGoogleLogin, -FacebookLogin, allowSignup, customIdps ...
-    // too, if already logged in.
-    val willBeLoginPage = !request.user.exists(_.isAuthenticated) &&
-                              siteSettings.authnDiagConf.value.nonEmpty
-    if (willBeLoginPage) {
+    if (siteSettings.authnDiagConf.value.nonEmpty) {
       result += "authnDiagConf" -> siteSettings.authnDiagConf
     }
 

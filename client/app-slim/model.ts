@@ -2288,9 +2288,24 @@ interface AuthnDiagConfV0 {
   // Later, could:
   // langs: ['en_US', 'sv_SE' ...]  — use for these locales / languages
   // maxWidth: 768  — if display at most this wide
+
   headerText?: St
   introHtml?: St
   imageUrl?: St
+
+  // If OpenID configured, then, first: "Continue with ... [Google] [FB] [...]"
+  continueWithCta?: St
+  // Thereafter, one of:  "Or create account:"  /  "Or log in:".
+  orCreateAcctCta?: St
+  orLogInCta?: St
+  // If guest login enabled:  "Or type your name:"
+  orTypeGuestNameCta?: St
+
+  // If OpenID *not* configured, then, one of:  "Join" (or "Sign up")  /  "Log in".
+  signUpCta?: St
+  logInCta?: St
+  // If guest login enabled:  "Your name?"
+  guestNameCta?: St
 }
 
 

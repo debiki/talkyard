@@ -115,7 +115,7 @@ declare namespace debiki2.edithistory {
 declare namespace debiki2.login {
 
   function getLoginDialog(): AuthnDlgIf;
-
+  function isSocialLoginEnabled(settings: SettingsVisibleClientSide | Settings): Bo;
 }
 
 

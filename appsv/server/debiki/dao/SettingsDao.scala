@@ -94,7 +94,10 @@ trait SettingsDao {
 
     // This one is <= 8k (authn_diag_conf_c is jsonb_ste8000_d). Let's subtract 500 so
     // errors will happen in the app server not the database (then, better error messages).
-    checkJsonLen("authnDiagConf", _.authnDiagConf, max = 8000 - 500)
+    // But for now: Let's say 750 at most, to save bandwidth.  [authn_diag_bandw]
+    // Typically an intro text isn't more than about 100 chars. But image urls can
+    // be a bit long, say 200 chars. Anyway, 500 should be enough, let's say 750.
+    checkJsonLen("authnDiagConf", _.authnDiagConf, max = 750) // 8000 - 500)
 
     readWriteTransaction { tx =>
       val oldSettings = loadWholeSiteSettings(tx)

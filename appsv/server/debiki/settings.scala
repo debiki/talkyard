@@ -411,9 +411,20 @@ object AllSettings {
   val InConfigFile = "(in config file)"
 
   def makeDefault(globals: Globals): AllSettings = new AllSettings {  // [8L4KWU02]
-    // Looks like:  { c0: [{ headerText, introHtml, imageUrl }] }
+    // Looks like:  { c0: [{ headerText, introHtml, imageUrl, ... }] }
     val authnDiagConf = Json.obj("c0" -> Json.arr(
-          Json.obj("headerText" -> "", "introHtml" -> "", "imageUrl" -> "")))
+          Json.obj(
+            "headerText" -> "",
+            "introHtml" -> "",
+            "imageUrl" -> "",
+            "continueWithCta" -> "",
+            "orCreateAcctCta" -> "",
+            "orLogInCta" -> "",
+            "orTypeGuestNameCta" -> "",
+            "signUpCta" -> "",
+            "logInCta" -> "",
+            "guestNameCta" -> "",
+            )))
 
     val userMustBeAuthenticated = false
     val userMustBeApproved = false

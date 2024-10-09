@@ -40,6 +40,12 @@
   max-width: 300px
   margin: 23px auto 16px;
 
+// If the intro text, which is a bit lighter, is above, it looks better if "Continue with ..."
+// also is a bit lighter. So, then, change from the default (pretty black) to the below.
+// (But if there's no intro text, then it's nice if "Continue with ..." is stronger (blacker).)
+.c_AuD_Cu + #dw-lgi-or-login-using
+  color: hsl(0 0% 17%);  // a tiny bit darker than the [login_intro_color]
+
 #dw-lgi-other-sites
   text-align: center
 

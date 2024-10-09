@@ -3342,67 +3342,124 @@ const CustomizeLoginPanel = React.createFactory<any>(function(props) {
   const valueOf = (getter: (s: Settings) => any) =>
     firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
+  const userMustBeAuthenticated = valueOf(s => s.userMustBeAuthenticated);
+
+  const useOpenAuth = login.isSocialLoginEnabled(currentSettings);
+
+  const useOnlyCustomIdps = valueOf(s => s.useOnlyCustomIdps);
+  const store: Store = props.store;
+  const customIdps: IdentityProviderPubFields[] = store.settings.customIdps || [];
+  const onlyOneCustomIdp = customIdps.length === 1;
+
+  const enableTySso = valueOf(s => s.enableSso);
+  const enableTySsoOrOnlyCustIdps = enableTySso || useOnlyCustomIdps;
+
+  // If the site is public, no login page is shown to strangers. And, if clicking Log In
+  // redirects to an external login page, Ty's login dialog is never shown.
+  const dialogNeverShown = !userMustBeAuthenticated && (
+            enableTySso || useOnlyCustomIdps && onlyOneCustomIdp);
+
+  function mkLoginSetting(label: St, className: St, fieldName: (keyof AuthnDiagConfV0),
+          help?: St, type?: 'textarea') {
+    return Setting2(props, {
+        type,
+        label,
+        className,
+        help,
+        getter: (s: Settings) => {
+          const anyConf: AuthnDiagConfV0 | U = s.authnDiagConf?.c0[0];
+          return anyConf && anyConf[fieldName];
+        },
+        update: (newSettings: Settings, target) => {
+          const anyCurConf: AuthnDiagConf | U = valueOf(s => s.authnDiagConf);
+          const curConf: AuthnDiagConfV0 = anyCurConf?.c0[0] || {};
+          const newConf = { ...curConf };
+          newConf[fieldName] = target.value;
+          newSettings.authnDiagConf = { c0: [newConf] };
+        }
+      });
+  }
+
+  const andClickLogin = userMustBeAuthenticated ? '' :
+          rFr({}, ", and click ", r.b({}, "Log In"));
+
   return (
     r.div({ className: 'form-horizontal esAdmin_customize' },
 
-      r.div({ className: 's_A_Ss_Inf' },
-        r.h2({ className: 'col-sm-offset- s_A_Ss_S_Ttl'},
-          "Login Dialog"),
+      !dialogNeverShown ? null :
+        r.div({ className: 's_A_Ss_Inf' },
+          Alert({ bsStyle: 'info' },
+            r.p({}, r.b({}, "Not in use."), " You've configured external login."),
+            //r.p({}, "And, login not required, so the login dialog isn't shown.")
+            )),
 
+      r.div({ className: 's_A_Ss_Inf' + (dialogNeverShown ? ' c_Cross' : '') },
+        r.h2({ className: 's_A_Ss_S_Ttl'},
+          "Login Dialog"),
         r.p({},
           "Here you can add a title and intro text to the login dialog. " +
           "It'll be publicly visible."),
-
         r.p({},
           "To view the dialog without logging out yourself, open an incognito browser window, " +
           "e.g. click Ctrl+Shift+N if you use Chrome, and go to ", r.samp({}, location.origin),
+          andClickLogin,
           ". (After you've saved any changes.)"),
-
         r.p({},
-          "(But all changes are ignored if you login at /-/admin/ — in case you mess something up " +
-          "and somehow break the login dialog.)"),
+          "(All changes are ignored if you login at /-/admin/ — in case you manage to " +
+          "break the login dialog.)"),
         ),
 
-      Setting2(props, {
-        label: "Login dialog title",
-        className: 'e_CuAuD_Ttl',
-        getter: (s: Settings) => s.authnDiagConf?.c0[0].headerText,
-        update: (newSettings: Settings, target) => {
-          // [_dupl_authn_diag_setter]
-          const anyCurConf: AuthnDiagConf | U = valueOf(s => s.authnDiagConf);
-          const curConf: AuthnDiagConfV0 = anyCurConf?.c0[0] || {};
-          newSettings.authnDiagConf = { c0: [{ ...curConf, headerText: target.value }] };
-        }
-      }),
+      mkLoginSetting("Login dialog title", 'e_CuAuD_Ttl', 'headerText'),
 
-      Setting2(props, {
-        type: 'textarea', label: "Login intro text",
-        className: 'e_CuAuD_Intro',
-        help: rFr({}, "Here you can explain who this forum is for, and how it's " +
-              "helpful to them. You can use HTML."),
-        getter: (s: Settings) => s.authnDiagConf?.c0[0].introHtml,
-        update: (newSettings: Settings, target) => {
-          // [_dupl_authn_diag_setter]
-          const anyCurConf: AuthnDiagConf | U = valueOf(s => s.authnDiagConf);
-          const curConf: AuthnDiagConfV0 = anyCurConf?.c0[0] || {};
-          newSettings.authnDiagConf = { c0: [{ ...curConf, introHtml: target.value }] };
-        }
-      }),
+      mkLoginSetting("Login intro text", 'e_CuAuD_Intro', 'introHtml',
+            "Here you can explain who this forum is for, and how it's " +
+            "helpful to them. You can use HTML.", 'textarea'),
 
-      Setting2(props, {
-        label: "Login dialog image",
-        className: 'e_CuAuD_Img',
-        help: rFr({}, "An image URL, e.g. your company or university building " +
-                "or logo, or office cat."),
-        getter: (s: Settings) => s.authnDiagConf?.c0[0].imageUrl,
-        update: (newSettings: Settings, target) => {
-          // [_dupl_authn_diag_setter]
-          const anyCurConf: AuthnDiagConf | U = valueOf(s => s.authnDiagConf);
-          const curConf: AuthnDiagConfV0 = anyCurConf?.c0[0] || {};
-          newSettings.authnDiagConf = { c0: [{ ...curConf, imageUrl: target.value }] };
-        }
-      }),
-      ));
+      mkLoginSetting("Login dialog image", 'e_CuAuD_Img', 'imageUrl',
+            "An image URL, e.g. your company or university building " +
+            "or logo, or office cat."),
+
+      !enableTySsoOrOnlyCustIdps ? null :
+        r.div({ className: 's_A_Ss_Inf' },
+          r.p({},
+            "Ignore the stuff below. It's not in use, since you're using external login, " +
+            // If login was required, strangers would see the login dialog, and a button
+            // that would redirect them to the SSO server.  But when login not required, they
+            // instead see the forum directly (public categroies). And clicking Log In should
+            // redirect them immediately.
+            "and login not required to read.")),
+
+      r.div({ className: enableTySsoOrOnlyCustIdps ? 'c_Cross' : '' },
+        r.div({ className: 's_A_Ss_Inf' },
+          r.h3({ className: 's_A_Ss_S_Ttl'},
+            "Labels"),
+          r.p({}, "Here you can change built-in login and signup dialog labels. To remove " +
+              "a label, set it to a hyphen/minus, '", r.code({}, '-'), // [dash_hides_label]
+              "'."),
+          r.p({}, r.b({}, "Usually it's better to leave this as-is.")),
+          r.p({}, "The labels to the left, is the deault text (in English). For example, \"",
+            r.i({}, t.ld.ContinueWithDots), "\" is one of the default texts.")),
+
+        r.div({ className: !useOpenAuth ? 'c_Cross' : '' },
+          r.div({ className: 's_A_Ss_Inf' },
+            r.h4({}, "External login enabled"),
+            r.p({}, "If Gmail, Facebook etc login is enabled, you can edit these labels. " +
+              "Or if your own custom OpenAuth or OIDC login is enabled.")),
+
+          mkLoginSetting(t.ld.ContinueWithDots, '', 'continueWithCta'),
+          // UX COULD hide these two, if local accounts aren't enabled.
+          mkLoginSetting(t.ld.OrCreateAcctHere, '', 'orCreateAcctCta'),
+          mkLoginSetting(t.ld.OrLogIn, '', 'orLogInCta')),
+
+        r.div({ className: useOpenAuth ? 'c_Cross' : '' },
+          r.div({ className: 's_A_Ss_Inf' },
+            r.h4({}, "Only local accounts"),
+            r.p({}, "If Gmail, Facebook etc login isn't enabled, and you don't use " +
+                "any custom OpenAuth, you can edit these labels.")),
+
+          mkLoginSetting(t.ld.SignUp, '', 'signUpCta'),
+          mkLoginSetting(t.ld.LogIn, '', 'logInCta')),
+      )));
 });
 
 
