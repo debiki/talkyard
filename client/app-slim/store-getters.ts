@@ -125,7 +125,7 @@ export function store_getPageMembersList(store: Store): BriefUser[] {
 }
 
 
-export function store_getUsersOnThisPage(store: Store): BriefUser[] {
+function store_getUsersOnThisPage(store: Store): BriefUser[] {
   const page: Page = store.currentPage;
   const users: BriefUser[] = [];
   _.each(page.postsByNr, (post: Post) => {
@@ -139,7 +139,7 @@ export function store_getUsersOnThisPage(store: Store): BriefUser[] {
 }
 
 
-export function store_getUsersOnline(store: Store): BriefUser[] {
+function store_getUsersOnline(store: Store): BriefUser[] {
   const users = [];
   _.forOwn(store.userIdsOnline, (alwaysTrue, userIdString: string) => {
     let userId: UserId = parseInt(userIdString);

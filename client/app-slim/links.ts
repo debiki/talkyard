@@ -75,6 +75,10 @@ export function linkToAdminPageLoginSettings(): string {
   return linkToAdminPage() + 'settings/login';
 }
 
+export function linkToAdminPageFeatures(): St {
+  return linkToAdminPage() + 'settings/features';
+}
+
 export function linkToAdminApi(): string {
   return linkToAdminPage() + 'api';
 }

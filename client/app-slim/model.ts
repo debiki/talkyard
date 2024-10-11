@@ -996,8 +996,8 @@ interface MaintWork {
 ///
 interface VolatileDataFromServer {
   maintWork?: MaintWork;
-  usersOnline: Pat[];
-  numStrangersOnline: Nr;
+  usersOnline: Pat[] | N;
+  numStrangersOnline: Nr | N;
   me?: Me;
   stuffForMe?: StuffForMe;
   // Sometimes, on embedded comments pages, privacy tools and settings remove cookies.  [NOCOOKIES]
@@ -1260,6 +1260,9 @@ interface Store extends Origins, DiscStore, PartialEditorStoreState {
   settings: SettingsVisibleClientSide;
   hideForumIntro?: boolean;
 
+  // Only present, if not logged in.
+  authnDiagConf?: AuthnDiagConf;
+
   // For all site sections, loaded lazily, and updated in a hacky way, for now, so have a look,
   // and refactor (?), before using it for anything more.
   allCategoriesHacky?: Category[];
@@ -1357,6 +1360,13 @@ interface SettingsVisibleClientSide extends TopicInterfaceSettings, SettingsDisc
   enableTags?: boolean;                 // default: false for now, true later when impl.
   enableChat?: boolean;                 // default: true
   enableDirectMessages?: boolean;       // default: true
+  enableAnonSens?: Bo                   // default: false
+
+  // Don't use directly — instead, check if `Store.userIdsOnline` and
+  // `VolatileDataFromServer.usersOnline` are null, to be sure they aren't
+  // accidentally included by the server. (Included only for a [presence_assertion].)
+  enablePresence?: Bo                   // default: true
+
   enableSimilarTopics?: boolean;        // default: depends on config file, later: true
   showSubCommunities?: boolean;         // default: false
   navConf?: BrowserCode;                // default: {}
@@ -2267,8 +2277,41 @@ interface PageTweaksStorePatch {
 }
 
 
+interface AuthnDiagConf {
+  // Config format version 0. Maybe that'll be enough forever.
+  // Let's use 'c0' not 'v0' so more unique.
+  c0?: AuthnDiagConfV0[]
+}
+
+
+interface AuthnDiagConfV0 {
+  // Later, could:
+  // langs: ['en_US', 'sv_SE' ...]  — use for these locales / languages
+  // maxWidth: 768  — if display at most this wide
+
+  headerText?: St
+  introHtml?: St
+  imageUrl?: St
+
+  // If OpenID configured, then, first: "Continue with ... [Google] [FB] [...]"
+  continueWithCta?: St
+  // Thereafter, one of:  "Or create account:"  /  "Or log in:".
+  orCreateAcctCta?: St
+  orLogInCta?: St
+  // If guest login enabled:  "Or type your name:"
+  orTypeGuestNameCta?: St
+
+  // If OpenID *not* configured, then, one of:  "Join" (or "Sign up")  /  "Log in".
+  signUpCta?: St
+  logInCta?: St
+  // If guest login enabled:  "Your name?"
+  guestNameCta?: St
+}
+
+
 interface Settings extends TopicInterfaceSettings, SettingsDiscPropsOldNames {
   // Signup and Login
+  authnDiagConf: AuthnDiagConf;
   expireIdleAfterMins: number;
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
@@ -2371,6 +2414,8 @@ interface Settings extends TopicInterfaceSettings, SettingsDiscPropsOldNames {
   enableTags: boolean;
   enableChat: boolean;
   enableDirectMessages: boolean;
+  enableAnonSens: Bo
+  enablePresence: Bo
   enableSimilarTopics: boolean;
   enableCors: boolean;
   allowCorsFrom: String;

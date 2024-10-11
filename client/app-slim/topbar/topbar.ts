@@ -587,8 +587,9 @@ export const TopBar = createComponent({
     // We'll show "X users online", to encourage people to open and learn about the contextbar.
     // They'll more likely to do that, if they see a message that means "other people here too,
     // check them out".
-    let contextbarTipsDetailed;
-    let contextbarTipsBrief;
+    let contextbarTipsDetailed: St | U;
+    let contextbarTipsBrief: RElm | U;
+
     if (!usersHere) {
       // Server side — skip this. Or own data not yet activated – wait until later.
     }
@@ -601,18 +602,25 @@ export const TopBar = createComponent({
       // For now, show this dummy text, because otherwise people get confused when the
       // "X users online" text disappears:
       contextbarTipsDetailed = t.tb.RecentPosts;
-      contextbarTipsBrief = r.span({}, '0', r.span({ className: 'icon-comment-empty' }));
+      // Old: '0' — why did I include '0' (zero)? It was a placeholder for the
+      // number-of-comments? Let's skip, the icon can be enough for now.
+      contextbarTipsBrief = r.span({}, r.span({ className: 'icon-comment-empty' }));
+    }
+    else if (!store.userIdsOnline) {
+      // Presence disabled, we don't know how many are online. Just for now:
+      contextbarTipsBrief = r.span({}, r.span({ className: 'icon-comment-empty' }));
     }
     else {
       /* don't:
       var numOthers = usersHere.numOnline - (usersHere.iAmHere ? 1 : 0);
       because then people get confused when inside the contextbar they see: sth like '1 user, you'
       although when collapsed, says '0 users'. So for now: */
-      const numOthers = usersHere.numOnline;
+      const numOthers: Nr = usersHere.numOnline;
       const isChat = usersHere.areChatChannelMembers;
       contextbarTipsDetailed = numOthers + (isChat ? t.tb.NumOnlChat : t.tb.NumOnlForum);
       contextbarTipsBrief = r.span({}, '' + numOthers, r.span({ className: 'icon-user' }));
     }
+
     const contextbarTips = !contextbarTipsDetailed ? null :
         r.span({ className: 'esOpenCtxbarBtn_numOnline'},
           r.span({ className: 'detailed' }, contextbarTipsDetailed),

@@ -59,6 +59,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         site_id,
         category_id,
         page_id,
+        authn_diag_conf_c,
         user_must_be_auth,
         user_must_be_approved,
         expire_idle_after_mins,
@@ -157,6 +158,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         enable_tags,
         enable_chat,
         enable_direct_messages,
+        enable_anon_posts_c,
+        enable_online_status_c,
         enable_similar_topics,
         enable_cors,
         allow_cors_from,
@@ -164,21 +167,24 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         show_sub_communities,
         experimental,
         feature_flags,
+        own_domains_c,
+        follow_links_to_c,
         allow_embedding_from,
         embedded_comments_category_id,
         html_tag_css_classes)
-      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+      values (?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?::jsonb, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
 
     val values = List(
       siteId.asAnyRef,
       NullInt,
       NullVarchar,
+      editedSettings2.authnDiagConf.getOrElse(None).orNullJson,
       editedSettings2.userMustBeAuthenticated.getOrElse(None).orNullBoolean,
       editedSettings2.userMustBeApproved.getOrElse(None).orNullBoolean,
       editedSettings2.expireIdleAfterMins.getOrElse(None).orNullInt,
@@ -277,6 +283,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.enableTags.getOrElse(None).orNullBoolean,
       editedSettings2.enableChat.getOrElse(None).orNullBoolean,
       editedSettings2.enableDirectMessages.getOrElse(None).orNullBoolean,
+      editedSettings2.enableAnonSens.getOrElse(None).orNullBoolean,
+      editedSettings2.enablePresence.getOrElse(None).orNullBoolean,
       editedSettings2.enableSimilarTopics.getOrElse(None).orNullBoolean,
       editedSettings2.enableCors.getOrElse(None).orNullBoolean,
       editedSettings2.allowCorsFrom.getOrElse(None).trimOrNullVarchar,
@@ -284,6 +292,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.showSubCommunities.getOrElse(None).orNullBoolean,
       editedSettings2.showExperimental.getOrElse(None).orNullBoolean,
       editedSettings2.featureFlags.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.ownDomains.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.followLinksTo.getOrElse(None).trimOrNullVarchar,
       editedSettings2.allowEmbeddingFrom.getOrElse(None).trimOrNullVarchar,
       editedSettings2.embeddedCommentsCategoryId.getOrElse(None).orNullInt,
       editedSettings2.htmlTagCssClasses.getOrElse(None).trimOrNullVarchar)
@@ -308,6 +318,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     }
 
     val s = editedSettings2
+    maybeSet("authn_diag_conf_c", s.authnDiagConf.map(_.orNullJson))
     maybeSet("user_must_be_auth", s.userMustBeAuthenticated.map(_.orNullBoolean))
     maybeSet("user_must_be_approved", s.userMustBeApproved.map(_.orNullBoolean))
     maybeSet("expire_idle_after_mins", s.expireIdleAfterMins.map(_.orNullInt))
@@ -406,6 +417,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("enable_tags", s.enableTags.map(_.orNullBoolean))
     maybeSet("enable_chat", s.enableChat.map(_.orNullBoolean))
     maybeSet("enable_direct_messages", s.enableDirectMessages.map(_.orNullBoolean))
+    maybeSet("enable_anon_posts_c", s.enableAnonSens.map(_.orNullBoolean))
+    maybeSet("enable_online_status_c", s.enablePresence.map(_.orNullBoolean))
     maybeSet("enable_similar_topics", s.enableSimilarTopics.map(_.orNullBoolean))
     maybeSet("enable_cors", s.enableCors.map(_.orNullBoolean))
     maybeSet("allow_cors_from", s.allowCorsFrom.map(_.orNullVarchar))
@@ -413,6 +426,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("show_sub_communities", s.showSubCommunities.map(_.orNullBoolean))
     maybeSet("experimental", s.showExperimental.map(_.orNullBoolean))
     maybeSet("feature_flags", s.featureFlags.map(_.trimOrNullVarchar))
+    maybeSet("own_domains_c", s.ownDomains.map(_.trimOrNullVarchar))
+    maybeSet("follow_links_to_c", s.followLinksTo.map(_.trimOrNullVarchar))
     maybeSet("allow_embedding_from", s.allowEmbeddingFrom.map(_.trimOrNullVarchar))
     maybeSet("embedded_comments_category_id", s.embeddedCommentsCategoryId.map(_.orNullInt))
     maybeSet("html_tag_css_classes", s.htmlTagCssClasses.map(_.trimOrNullVarchar))
@@ -436,6 +451,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
 
   private def readSettingsFromResultSet(rs: ResultSet): EditedSettings = {
     EditedSettings(
+      authnDiagConf = getOptJsObject(rs, "authn_diag_conf_c"),
       userMustBeAuthenticated = getOptBoolean(rs, "user_must_be_auth"),
       userMustBeApproved = getOptBoolean(rs, "user_must_be_approved"),
       expireIdleAfterMins = getOptInt(rs, "expire_idle_after_mins"),
@@ -535,6 +551,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       enableTags = getOptBool(rs, "enable_tags"),
       enableChat = getOptBool(rs, "enable_chat"),
       enableDirectMessages = getOptBool(rs, "enable_direct_messages"),
+      enableAnonSens = getOptBool(rs, "enable_anon_posts_c"),
+      enablePresence = getOptBool(rs, "enable_online_status_c"),
       enableSimilarTopics = getOptBool(rs, "enable_similar_topics"),
       enableCors = getOptBool(rs, "enable_cors"),
       allowCorsFrom = getOptString(rs, "allow_cors_from"),
@@ -542,6 +560,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       showSubCommunities = getOptBool(rs, "show_sub_communities"),
       showExperimental = getOptBool(rs, "experimental"),
       featureFlags = getOptString(rs, "feature_flags"),
+      ownDomains = getOptString(rs, "own_domains_c"),
+      followLinksTo = getOptString(rs, "follow_links_to_c"),
       allowEmbeddingFrom = getOptString(rs, "allow_embedding_from"),
       embeddedCommentsCategoryId = getOptInt(rs, "embedded_comments_category_id"),
       htmlTagCssClasses = getOptString(rs, "html_tag_css_classes"),

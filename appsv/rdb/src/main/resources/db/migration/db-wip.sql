@@ -722,6 +722,7 @@ Add?:
 
 
 page_html_cache_t   —  restrict col lengths
+-- ? add:  param_logged_in_c  bool,  to inc/exclude authn diag stuff? [cached_html_loggedin_param]
 
 
 -- Remove email "identities" from identities3?

@@ -286,18 +286,21 @@ object JsX {   RENAME // to JsonPaSe
         usersById: Map[UserId, User], // CLEAN_UP remove, send back a user map instead
         groups: immutable.Seq[Group],
         callerIsAdmin: Bo, callerIsStaff: Bo = false, callerIsUserHerself: Bo = false,
+        maySeePresence: Bo, sensitiveAnonDisc: Bo,
         reqrPerms: Opt[EffPatPerms] = None,
         anyStats: Option[UserStats] = None, inclPasswordHash: Bo = false)
       : JsObject = {
+
     def callerIsStaff_ = callerIsAdmin || callerIsStaff
+    val reqrIsStaffOrSelf = callerIsStaff_ || callerIsUserHerself
+
     dieIf(inclPasswordHash && !callerIsAdmin, "TyE305KSJWG2")
+
     var userJson = Json.obj(  // MemberInclDetails  [B28JG4]
       "id" -> user.id,
       "ssoId" -> JsStringOrNull(user.ssoId),
       "externalId" -> JsStringOrNull(user.ssoId),  // deprecated 2020-03-25 [395KSH20]
       "extId" -> JsStringOrNull(user.extId),
-      "createdAtEpoch" -> JsNumber(user.createdAt.millis),  // REMOVE
-      "createdAtMs" -> JsNumber(user.createdAt.millis),  // RENAME
       "username" -> user.username,
       "fullName" -> user.fullName,
       "isAdmin" -> user.isAdmin,
@@ -317,11 +320,17 @@ object JsX {   RENAME // to JsonPaSe
       "suspendedTillMs" -> DateEpochOrNull(user.suspendedTill),  // RENAME
       "effectiveTrustLevel" -> user.effectiveTrustLevel.toInt)
 
+    if (reqrIsStaffOrSelf || maySeePresence) {
+      // Later: [see_presence_start_date]
+      userJson += "createdAtEpoch" -> JsNumber(user.createdAt.millis)  // REMOVE
+      userJson += "createdAtMs" -> JsNumber(user.createdAt.millis)  // RENAME
+      // (Don't think need not exclude deletedAt & suspendedTillMs)
+    }
+
     // Currently needs to be public, see [some_pub_priv_prefs].
     userJson = userJson.addAnyInt32("maySendMeDmsTrLv", user.privPrefs.maySendMeDmsTrLv)
     userJson = userJson.addAnyInt32("mayMentionMeTrLv", user.privPrefs.mayMentionMeTrLv)
 
-    val reqrIsStaffOrSelf = callerIsStaff_ || callerIsUserHerself
     val maySeeEmailAdrs = reqrPerms.exists(_.canSeeOthersEmailAdrs)
 
     if (reqrIsStaffOrSelf || maySeeEmailAdrs) {
@@ -378,7 +387,10 @@ object JsX {   RENAME // to JsonPaSe
       userJson += "lockedThreatLevel" -> JsNumberOrNull(user.lockedThreatLevel.map(_.toInt))
 
       anyStats foreach { stats =>
-        userJson += "anyUserStats" -> JsUserStats(stats, isStaffOrSelf = true, reqrPerms)
+        userJson += "anyUserStats" -> JsUserStats(stats, reqrPerms,
+              callerIsStaff = callerIsStaff, callerIsAdmin = callerIsAdmin,
+              callerIsUserHerself = callerIsUserHerself,
+              maySeePresence = maySeePresence, sensitiveAnonDisc = sensitiveAnonDisc)
       }
     }
 
@@ -423,26 +435,18 @@ object JsX {   RENAME // to JsonPaSe
   /** [Dupl_perms] Nowadays, could be enough with reqrPerms — and remove
     * callerIsAdmin/Staff?
     */
-  def JsUserStats(stats: UserStats, isStaffOrSelf: Bo, reqrPerms: Opt[EffPatPerms]): JsObject = {
+  def JsUserStats(stats: UserStats, reqrPerms: Opt[EffPatPerms],
+          callerIsStaff: Bo = false, callerIsAdmin: Bo,
+          callerIsUserHerself: Bo = false,
+          maySeePresence: Bo, sensitiveAnonDisc: Bo,
+          ): JsObject = {
     val tourTipsIds: immutable.Seq[String] = stats.tourTipsSeen getOrElse Nil
     var result = Json.obj(
       "userId" -> stats.userId,
-      "lastSeenAt" -> JsWhenMs(stats.lastSeenAt),
-      "lastPostedAt" -> JsWhenMsOrNull(stats.lastPostedAt),
-      "firstSeenAt" -> JsWhenMs(stats.firstSeenAtOr0),
-      "firstNewTopicAt" -> JsWhenMsOrNull(stats.firstNewTopicAt),
-      "firstDiscourseReplyAt" -> JsWhenMsOrNull(stats.firstDiscourseReplyAt),
-      "firstChatMessageAt" -> JsWhenMsOrNull(stats.firstChatMessageAt),
-      "numDaysVisited" -> stats.numDaysVisited,
-      "numSecondsReading" -> stats.numSecondsReading,
-      "numDiscourseRepliesRead" -> stats.numDiscourseRepliesRead,
       "numDiscourseRepliesPosted" -> stats.numDiscourseRepliesPosted,
-      "numDiscourseTopicsEntered" -> stats.numDiscourseTopicsEntered,
       "numDiscourseTopicsRepliedIn" -> stats.numDiscourseTopicsRepliedIn,
       "numDiscourseTopicsCreated" -> stats.numDiscourseTopicsCreated,
-      "numChatMessagesRead" -> stats.numChatMessagesRead,
       "numChatMessagesPosted" -> stats.numChatMessagesPosted,
-      "numChatTopicsEntered" -> stats.numChatTopicsEntered,
       "numChatTopicsRepliedIn" -> stats.numChatTopicsRepliedIn,
       "numChatTopicsCreated" -> stats.numChatTopicsCreated,
       "numLikesGiven" -> stats.numLikesGiven,
@@ -450,12 +454,37 @@ object JsX {   RENAME // to JsonPaSe
       "numSolutionsProvided" -> stats.numSolutionsProvided,
       )
 
-    if (isStaffOrSelf) {
+    if (maySeePresence || callerIsStaff) {
+      result += "lastPostedAt" -> JsWhenMsOrNull(stats.lastPostedAt)
+    }
+
+    // Let's skip, if only `callerIsUserHerself` but not `maySeePresence`?
+    // Otherwise looks as if *others* can see one's own presence too, if one can see
+    // it oneself.  And, lost of fields here can help others guess who an
+    // anonym is, e.g. an anon comment gets posted, and only one person has
+    // `lastSeenAt` showing a-few-seconds-ago. [deanon_risk]
+    // Later: Include only dates after when presence got enabled. [see_presence_start_date]
+    if (maySeePresence) {
+      result += "lastSeenAt" -> JsWhenMs(stats.lastSeenAt)
+      result += "firstSeenAt" -> JsWhenMs(stats.firstSeenAtOr0)
+      result += "firstNewTopicAt" -> JsWhenMsOrNull(stats.firstNewTopicAt)
+      result += "firstDiscourseReplyAt" -> JsWhenMsOrNull(stats.firstDiscourseReplyAt)
+      result += "firstChatMessageAt" -> JsWhenMsOrNull(stats.firstChatMessageAt)
+      result += "numDaysVisited" -> JsNumber(stats.numDaysVisited)
+      result += "numSecondsReading" -> JsNumber(stats.numSecondsReading)
+      result += "numDiscourseRepliesRead" -> JsNumber(stats.numDiscourseRepliesRead)
+      result += "numDiscourseTopicsEntered" -> JsNumber(stats.numDiscourseTopicsEntered)
+      result += "numChatMessagesRead" -> JsNumber(stats.numChatMessagesRead)
+      result += "numChatTopicsEntered" -> JsNumber(stats.numChatTopicsEntered)
+    }
+
+    // These can be used to guess who an anonym is. E.g. anonymity tour not seen,
+    // then, an anonymous comment appears and a person's anonymity related tour
+    // changes to seen. Or someone replies to an anonymous comment, and another
+    // user's `lastEmailedAt` changes — did that other user get a notification
+    // email, and is thus the author of the anon comment? [deanon_risk]
+    if (callerIsStaff && !sensitiveAnonDisc || callerIsUserHerself) {
       result += "tourTipsSeen" -> JsArray(tourTipsIds.map(JsString))
-      // Be careful with revealing this — in a small forum, could reveal who
-      // an anonym is (if you reply, and immediately lastEmailedAt changes,
-      // for a person you suspected was the anonym — indicating that hen got
-      // a reply notification). [deanon_risk]
       result += "lastEmailedAt" -> JsWhenMsOrNull(stats.lastEmailedAt)
       result += "lastSummaryEmailAt" -> JsWhenMsOrNull(stats.lastSummaryEmailAt)
       result += "nextSummaryEmailAt" -> JsWhenMsOrNull(stats.nextSummaryEmailAt)

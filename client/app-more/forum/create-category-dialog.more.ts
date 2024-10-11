@@ -433,7 +433,7 @@ const CatSettings = createClassAndFactory({
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label', style: { display: 'block' }},
           "Purpose:"),
-        debiki2.widgets.AnonPurposeBtn({ cat: category, store,
+        debiki2.widgets.AnonPurposeBtn({ cat: category, store,  // [anon_purp_per_cat]
             layoutFor: LayoutFor.PageNoTweaks,
             onSelect: (newProps: DiscPropsSource) => {
               this.props.updateCategory(newProps);

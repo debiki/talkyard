@@ -45,12 +45,12 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: TyContext)
   // See   /-/edit-member   controllers.UserController.editMember
 
 
-  def redirectToAdminPage(): Action[Unit] = GetAction { _ =>
+  def redirectToAdminPage(): Action[Unit] = GetActionIsLogin { _ =>
     Redirect(routes.AdminController.viewAdminPage("").url)
   }
 
 
-  def viewAdminPage(whatever: String): Action[Unit] = AsyncGetAction { apiReq =>
+  def viewAdminPage(whatever: String): Action[Unit] = AsyncGetActionIsLogin { apiReq =>
     dieIfAssetsMissingIfDevTest()
 
     if (!apiReq.user.exists(_.isStaff)) {

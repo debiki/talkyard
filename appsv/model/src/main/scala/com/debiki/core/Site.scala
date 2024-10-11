@@ -80,12 +80,22 @@ trait SiteTrait {
 
   def isTestSite: Bo = id <= Site.MaxTestSiteId
 
-  def isFeatureEnabled(ffName: St, serverFeatureFlags: St, onByDefault: Bo = false): Bo = {
+  def isFeatureEnabled(ffName: St, serverFeatureFlags: St, onByDefault: Bo = false): Bo =
+    SiteTrait.isFeatureEnabled(
+          ffName = ffName, siteFeatureFlags = featureFlags,
+          serverFeatureFlags = serverFeatureFlags, onByDefault = onByDefault)
+}
+
+
+// Move to somewhere better?
+object SiteTrait {
+  def isFeatureEnabled(ffName: St, siteFeatureFlags: St, serverFeatureFlags: St,
+          onByDefault: Bo = false): Bo = {
     val offName = "0" + ffName  // zero  — same as when disabling options in Vim
     val enabledWholeServer = serverFeatureFlags.contains(ffName)
     val disabledWholeServer = serverFeatureFlags.contains(offName)
-    val enabledThisSite = featureFlags.contains(ffName)
-    val disabledThisSite = featureFlags.contains(offName)
+    val enabledThisSite = siteFeatureFlags.contains(ffName)
+    val disabledThisSite = siteFeatureFlags.contains(offName)
     val enabledSomewhere = onByDefault || enabledWholeServer || enabledThisSite
     val disabledSomewhere = disabledWholeServer || disabledThisSite
 

@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.RateLimits.NoRateLimits
 import debiki._
+import debiki.dao.UsersOnlineStuff
 import debiki.EdHttp._
 import talkyard.server.http._
 import play.api.libs.json._
@@ -428,12 +429,14 @@ object ViewPageController {
         embeddingUrl: Option[String] = None,
         skipUsersOnline: Boolean = false, xsrfTokenIfNoCookies: Option[String] = None): Future[Result] = {
     import request.{dao, requester}
+    val settings = dao.getWholeSiteSettings()
 
     // Could do asynchronously later. COULD avoid sending back empty json fields
     // — first verify that then nothing will break though.
-    val usersOnlineStuff =
-      if (skipUsersOnline) NoUsersOnlineStuff
-      else dao.getUsersOnlineStuff()
+    // In some situations, can be good if [admins_see_presence]. Related to [joint_decisions]?
+    val usersOnlineStuff: Opt[UsersOnlineStuff] =
+          if (skipUsersOnline || !settings.enablePresence) None
+          else Some(dao.getUsersOnlineStuff())
 
     val anyMeAndRestrStuff: Opt[MeAndStuff] =
       request match {
@@ -444,8 +447,8 @@ object ViewPageController {
       }
 
     var volatileJson = Json.obj(  // ts: VolatileDataFromServer
-      "usersOnline" -> usersOnlineStuff.cachedUsersJson,
-      "numStrangersOnline" -> usersOnlineStuff.numStrangers,
+      "usersOnline" -> usersOnlineStuff.map(_.cachedUsersJson),
+      "numStrangersOnline" -> usersOnlineStuff.map(_.numStrangers),
       "me" -> JsObjOrNull(anyMeAndRestrStuff.map(_.me.meJsOb)),
       "stuffForMe" -> JsObjOrNull(anyMeAndRestrStuff.map(_.stuffForMe.toJson(dao))),
       )

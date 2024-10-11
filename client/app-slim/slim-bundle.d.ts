@@ -481,6 +481,7 @@ declare namespace debiki2 {
   function linkToUsersEmailAddrs(userIdOrUsername: UserId | string): string;
   function linkToAdminPage(): string;
   function linkToAdminPageLoginSettings(): string;
+  function linkToAdminPageFeatures(): St;
   function linkToAdminApi(): string;
   function linkToAdminPageModerationSettings(): string;
   function linkToAdminPageEmbeddedSettings(): string;
@@ -607,8 +608,8 @@ declare namespace debiki2 {
   //}
 
   // From oop-methods.ts:
-  function userStats_totalNumPosts(stats: UserStats): number;
-  function userStats_totalNumPostsRead(stats: UserStats): number;
+  function userStats_totalNumPosts(stats: UserStats | NU): Nr | N;
+  function userStats_totalNumPostsRead(stats: UserStats | NU): Nr | N;
   function trustLevel_toString(trustLevel: TrustLevel): string;
 
 }

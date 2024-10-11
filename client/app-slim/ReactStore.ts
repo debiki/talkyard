@@ -682,10 +682,12 @@ ReactStore.activateVolatileData = function() {
     }
   }
 
-  // Do the interesting thing
+  // Do the activation
   // ------------------------------
 
-  theStore_setOnlineUsers(volData.numStrangersOnline, volData.usersOnline);
+  if (volData.usersOnline) {
+    theStore_setOnlineUsers(volData.numStrangersOnline, volData.usersOnline);
+  }
 
   ReactStore.activateMyself(volData.me, volData.stuffForMe);
 
@@ -962,6 +964,9 @@ function addMyDraftPosts(store: Store, myPageData: MyPageData) {
 
 
 function theStore_setOnlineUsers(numStrangersOnline: number, usersOnline: BriefUser[]) {
+  // @ifdef DEBUG
+  dieIf(store.settings.enablePresence === false, 'TyEGOTPRESENCE'); // [presence_assertion]
+  // @endif
   store.numOnlineStrangers = numStrangersOnline;
   store.userIdsOnline = {};
   _.each(usersOnline, theStore_addOnlineUser);

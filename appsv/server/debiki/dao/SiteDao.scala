@@ -948,7 +948,18 @@ object SiteDao extends TyLogging {
     //   things as sbd else if in an old discussion one was sbd else.
     // }
 
-    anyAliasPatInReqBody getOrElse modeAlias
+    val which = anyAliasPatInReqBody getOrElse modeAlias
+
+    // Anon sensitive discussions enabled?
+    val anyAnonStatus: Opt[AnonStatus] = which.flatMap(_.anyAnonStatus)
+    // For now, safest to assume that any anon-status except for the Ideation purpose
+    // (that is, AnonStatus.IsAnonCanAutoDeanon) is sensitive discussions.
+    val isAnonSens = anyAnonStatus.exists(_ != AnonStatus.IsAnonCanAutoDeanon)
+    if (isAnonSens && !dao.getWholeSiteSettings().enableAnonSens)
+      throwForbidden("TyE0ANONSENS", // [reject_anon_sensitive_posts]
+            "Sensitive anonymous discussions aren't enabled (any longer)")
+
+    which
   }
 
 

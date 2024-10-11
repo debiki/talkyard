@@ -121,6 +121,7 @@ type RefOrId = Ref | number;
 
 
 const enum UrlPaths {
+  AdminArea = '/-/admin/',
   AdminLogin = '/-/admin-login',
   AuthnRoot = '/-/authn/',
   Groups = '/-/groups/',

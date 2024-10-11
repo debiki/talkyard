@@ -2535,11 +2535,13 @@ export function toggleTips(tips: { tipsId?: St, hide: Bo }) {
 }
 
 
+/* Not in use, for now.  [0_load_onl_users]
 export function loadOnlineUsers() {
+   TESTS_MIS SING:  Verify server won't reply, if presence disabled.
   get('/-/load-online-users', (response) => {
     ReactActions.updateOnlineUsersLists(response.numOnlineStrangers, response.onlineUsers);
   });
-}
+} */
 
 
 export function listSites() {

@@ -188,7 +188,8 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
     if (inclStaff) {
       json += "staffUsers" -> JsArray(siteStuff.staff.map { staffUser =>
         JsUserInclDetails(
-          staffUser, usersById = Map.empty, groups = Nil, callerIsAdmin = true)
+              staffUser, usersById = Map.empty, groups = Nil, callerIsAdmin = true,
+              maySeePresence = true, sensitiveAnonDisc = false)
       })
     }
     json

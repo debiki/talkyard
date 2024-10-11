@@ -23,6 +23,7 @@ import debiki._
 import debiki.EdHttp.throwBadRequest
 import debiki.EdHttp.throwBadRequestIf
 import play.api.libs.json.JsObject
+import scala.collection.{immutable => imm}
 
 
 /** Loads and saves settings for the whole website, a section of the website (e.g.
@@ -67,9 +68,10 @@ trait SettingsDao {
             "TyE406RKTP245", s"Too long: $name")
     }
 
-    def checkJsonLen(name: St, getter: SettingsToSave => Opt[Opt[JsObject]]) {
+    def checkJsonLen(name: St, getter: SettingsToSave => Opt[Opt[JsObject]],
+          max: i32 = defMaxLength) {
       val anyOptVal = getter(settingsToSave)
-      throwBadRequestIf(anyOptVal.exists(_.exists(_.toString.length > defMaxLength)),
+      throwBadRequestIf(anyOptVal.exists(_.exists(_.toString.length > max)),
             "TyE50MRTQJ2", s"Too long: $name")
     }
 
@@ -90,6 +92,13 @@ trait SettingsDao {
     checkLen("socialLinksHtml", _.socialLinksHtml)  // settings_c_sociallinkshtml_len
     checkJsonLen("navConf", _.navConf)              // settings_c_navconf_len
 
+    // This one is <= 8k (authn_diag_conf_c is jsonb_ste8000_d). Let's subtract 500 so
+    // errors will happen in the app server not the database (then, better error messages).
+    // But for now: Let's say 750 at most, to save bandwidth.  [authn_diag_bandw]
+    // Typically an intro text isn't more than about 100 chars. But image urls can
+    // be a bit long, say 200 chars. Anyway, 500 should be enough, let's say 750.
+    checkJsonLen("authnDiagConf", _.authnDiagConf, max = 750) // 8000 - 500)
+
     readWriteTransaction { tx =>
       val oldSettings = loadWholeSiteSettings(tx)
 
@@ -98,9 +107,9 @@ trait SettingsDao {
 
       tx.upsertSiteSettings(settingsToSave)
       val newSettings = loadWholeSiteSettings(tx)
-      newSettings.findAnyError foreach { error =>
+      newSettings.findAnyErrors foreach { errors: imm.Seq[St] =>
         // This'll rollback the transaction.
-        throwBadRequest("EsE40GY28", s"Bad settings: $error")
+        throwBadRequest("TyESETNGS", s"Bad settings, problems:\n - ${errors.mkString("\n - ")}")
       }
 
       lazy val admins = tx.loadAdmins()

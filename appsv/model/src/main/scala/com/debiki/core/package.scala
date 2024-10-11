@@ -1115,6 +1115,7 @@ package object core {
     */
   sealed trait WhichAliasPat {
     def anyPat: Opt[Pat]
+    def anyAnonStatus: Opt[AnonStatus]
   }
 
 
@@ -1127,6 +1128,7 @@ package object core {
 
     case class SameAnon(anon: Anonym) extends WhichAliasPat {
       def anyPat: Opt[Pat] = Some(anon)
+      def anyAnonStatus: Opt[AnonStatus] = Some(anon.anonStatus)
     }
 
     /** Reuses any already existing anonym with the same anon status,
@@ -1137,6 +1139,7 @@ package object core {
       */
     case class LazyCreatedAnon(anonStatus: AnonStatus) extends WhichAliasPat {
       def anyPat: Opt[Pat] = None // might not yet exist
+      def anyAnonStatus: Opt[AnonStatus] = Some(anonStatus)
     }
 
     // Let's not support creating more than one anonym per user & page, for now.

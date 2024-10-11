@@ -176,10 +176,14 @@ object SitePatchMaker {
         anyDump.map(_.users) getOrElse tx.loadAllUsersInclDetails().filter(!_.isBuiltIn)
       fields("members") = JsArray(   // [dump] [exp] RENAME to "users', upd e2e tests
         users.map(JsUserInclDetails(
-          _, groups = Nil, usersById = Map.empty, callerIsAdmin = true, inclPasswordHash = true)))
+              _, groups = Nil, usersById = Map.empty, callerIsAdmin = true,
+              maySeePresence = true, sensitiveAnonDisc = false,
+              inclPasswordHash = true)))
 
       val pptStats: Seq[UserStats] = anyDump.map(_.pptStats) getOrElse tx.loadAllUserStats()
-      fields("ppStats") = JsArray(pptStats.map(JsUserStats(_, isStaffOrSelf = true, reqrPerms = None)))
+      fields("ppStats") = JsArray(pptStats.map(JsUserStats(_, reqrPerms = None,
+              callerIsStaff = true, callerIsAdmin = true,
+              maySeePresence = true, sensitiveAnonDisc = false)))
 
       val pptVisitStats: Seq[UserVisitStats] =
         anyDump.map(_.pptVisitStats) getOrElse tx.loadAllUserVisitStats()

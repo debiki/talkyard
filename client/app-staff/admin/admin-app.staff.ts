@@ -256,7 +256,43 @@ const AdminAppComponent = createReactClass(<any> {
   },
 
   saveSettings: function() {
-    Server.saveSiteSettings(this.state.editedSettings, (result) => {
+    const currentSettings: Settings = this.state.currentSettings;
+    const editedSettings: Settings = this.state.editedSettings;
+    const valueOf = (getter: (s: Settings) => any) =>
+      firstDefinedOf(getter(editedSettings), getter(currentSettings));
+
+    // Clone, in case the HTTP request fails.
+    const toSave = { ...this.state.editedSettings };
+
+    // Update dependant settings.
+    // Or better?: Add a changesToSave, which is what's shown and what'll be saved?
+    // Then, no need for similar logics here, and at other places. [_dep_settings]
+    //
+    // Some settings depend on other settings. The UI updates directly to reflect such
+    // dependencies, but we also need to update the data-to-save. — Shouldn't do that
+    // until now, because otherwise toggling a setting on and off, could toggle the dependant
+    // settings once, but not toggle them back. This could be unexpected, and result in
+    // admins configuring things not-as-they-want.
+    //
+    // Example: An admin toggles `enableAnonSens` on. This changes `enablePresence`
+    // to false in the UI. But if the actual data-to-save was changed too, then, if the
+    // admin later toggles `enableAnonSens` off, we wouldn't know if `enablePresence` should
+    // be toggled on again or not (without remembering its state before, ... which would
+    // mean we implemented an undo list). So, we just update the `enablePresence` UI,
+    // and won't update the actual object field unti here:
+    if (valueOf(s => s.enableAnonSens)) {
+      toSave.enablePresence = false; // [anon_sens_0_presence]
+    }
+
+    const isCatsEnabled = valueOf(s => s.showCategories);
+
+    if (!isCatsEnabled && valueOf(s => s.enableAnonSens)) {
+      // This is ok — the server will reply with an error, if trying to be anon (rather
+      // than unexpectedly using one's real name). [reject_anon_sensitive_posts]
+      toSave.enableAnonSens = false; // [anon_purp_per_cat]
+    }
+
+    Server.saveSiteSettings(toSave, (result) => {
       if (this.isGone) return;
       this.setState({
         currentSettings: result.effectiveSettings,
@@ -1467,7 +1503,7 @@ const GroupsAndPermissionLinks = function() {
   const allMembersPermsPath = '/-/groups/all_members/permissions';
   const allMembersPrefsPath = '/-/groups/all_members/preferences/notifications';
   const categoriesPath = '/categories';
-  return r.div({ className: 'c_AA_Ss_Perms' },
+  return r.div({ className: 's_A_Ss_Inf c_AA_Ss_Perms' },
 
       // (UX: Explain category permissions first — it's short & quick to read, and hopefully
       // people will then continue reading about group permissions too, further below.
@@ -1522,6 +1558,10 @@ const SpamFlagsSettings = createFactory({
 
     const LargeNumber = 9999;
 
+    // Some settings actually haven't been implemented server side. Let's hide them here (but
+    // keep the Typescript code so easy to add back later).
+    const isImpl = false;
+
     return (
       r.div({},
         !currentSettings.akismetApiKey ? null :  // currently, needs server side key
@@ -1548,6 +1588,7 @@ const SpamFlagsSettings = createFactory({
           }
         }),
 
+        !isImpl ? null :
         Setting2(props, { type: 'number', min: 0, max: LargeNumber,
           label: "Num minutes to calm down",
           help: "If someone gets his/her post hidden because of flags, s/he might get angry. " +
@@ -1596,6 +1637,7 @@ const SpamFlagsSettings = createFactory({
           }
         }),
 
+        !isImpl ? null :
         Setting2(props, { type: 'checkbox', indent: true,
           label: "Notify staff if new user blocked",
           help:
@@ -1607,6 +1649,7 @@ const SpamFlagsSettings = createFactory({
           }
         }),
 
+        !isImpl ? null :
         Setting2(props, { type: 'number', min: 0, max: LargeNumber, indent: true,
           label: "Trusted member flag weight",
           help: r.span({},
@@ -1624,6 +1667,7 @@ const SpamFlagsSettings = createFactory({
           }
         }),
 
+        !isImpl ? null :
         Setting2(props, { type: 'number', min: 0, max: LargeNumber, indent: true,
           label: "Core member flag weight",
           help: r.span({},
@@ -1655,8 +1699,12 @@ const FeatureSettings = createFactory({
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
     const isForumEnabled = valueOf(s => s.enableForum);
+    const isCatsEnabled = valueOf(s => s.showCategories);
+    const isAnonSensEnabled = isCatsEnabled && valueOf(s => s.enableAnonSens);
     const isApiEnabled = valueOf(s => s.enableApi);
     const isApiAndCorsEnabled = isApiEnabled && valueOf(s => s.enableCors);
+
+    const anonSensDiscTitle = "Anonymous Sensitive Discussions";
 
     return (
       r.div({},
@@ -1781,6 +1829,40 @@ const FeatureSettings = createFactory({
           getter: (s: Settings) => s.enableDirectMessages,
           update: (newSettings: Settings, target) => {
             newSettings.enableDirectMessages = target.checked;
+          }
+        }),
+
+        !isForumEnabled ? null : Setting2(props, {
+          type: 'checkbox', label: `Enable ${anonSensDiscTitle}`, // [_anon_above]
+          className: 'e_EnbSensCB',
+          help: rFr({}, "Enables Anonymous Comments for Sensitive Discussions " +
+              "category setting. " +
+              "Hides people's online status and last-seen-at info.",
+              isCatsEnabled ? " (You also need to make the relevant categories anonymous.)" :
+                    r.i({}, " You first need to enable categories.")),
+          disabled: !isCatsEnabled,
+          getter: (s: Settings) => !isCatsEnabled ? false : s.enableAnonSens,  // [_dep_settings]
+          update: (newSettings: Settings, target) => {
+            newSettings.enableAnonSens = target.checked;
+          }
+        }),
+
+        !isForumEnabled ? null : Setting2(props, {
+          type: 'checkbox', label: "Enable See Online Presence",
+          className: 'e_EnbPresenceCB',
+          help: rFr({}, "Let's people see if others are online, and when they visited last time.",
+              !isAnonSensEnabled ? '' :
+                    rFr({}, r.br(), r.b({}, "Disabled"), " if ", r.i({}, anonSensDiscTitle),
+                    " (above) is enabled.")), // [_anon_above]
+          disabled: isAnonSensEnabled,
+          getter: (s: Settings) =>
+              // It's simpler to guess who's-who if you can see who's online when an
+              // anonymous comment appear, so the presence feature gets disabled, if
+              // Sensitive Anon Discs is enabled. [anon_sens_0_presence]
+              isAnonSensEnabled ? false : s.enablePresence,  // [_dep_settings]
+          getCurrent: (s:Settings) => s.enablePresence,
+          update: (newSettings: Settings, target) => {
+            newSettings.enablePresence = target.checked;
           }
         }),
 
@@ -2953,12 +3035,14 @@ const CustomizePanel = createFactory({
       r.div({ className: 'esA_Ss s_A_Ss-LaF' },
         r.ul({ className: 'esAdmin_settings_nav col-sm-2 nav nav-pills nav-stacked' },
           LiNavLink({ to: bp + 'basic', id: 'e_A_Ss-LaF_Basic' }, "Basic"),
-          LiNavLink({ to: bp + 'html', id: 'e_A_Ss-LaF_Html' }, "HTML"),
+          LiNavLink({ to: bp + 'login', id: 'e_A_Ss-LaF_AuD' }, "Login Dialog"),
+          LiNavLink({ to: bp + 'html', id: 'e_A_Ss-LaF_Html' }, "Custom HTML"),
           LiNavLink({ to: bp + 'css-js', id: 'e_A_Ss-LaF_CssJs' }, "CSS and JS")),
         r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
           Switch({},
             // [React_Router_v51] skip render(), use hooks and useParams instead.
             Route({ path: bp + 'basic', render: () => CustomizeBasicPanel(childProps) }),
+            Route({ path: bp + 'login', render: () => CustomizeLoginPanel(childProps) }),
             Route({ path: bp + 'html', render: () => CustomizeHtmlPanel(childProps) }),
             Route({ path: bp + 'css-js', render: () => CustomizeCssJsPanel(childProps) })),
             )));
@@ -3250,6 +3334,134 @@ const CustomizeBasicPanel = createFactory({
 });
 
 
+const CustomizeLoginPanel = React.createFactory<any>(function(props) {
+
+  const currentSettings: Settings = props.currentSettings;
+  const editedSettings: Settings = props.editedSettings;
+
+  const valueOf = (getter: (s: Settings) => any) =>
+    firstDefinedOf(getter(editedSettings), getter(currentSettings));
+
+  const userMustBeAuthenticated = valueOf(s => s.userMustBeAuthenticated);
+
+  const useOpenAuth = login.isSocialLoginEnabled(currentSettings);
+
+  const useOnlyCustomIdps = valueOf(s => s.useOnlyCustomIdps);
+  const store: Store = props.store;
+  const customIdps: IdentityProviderPubFields[] = store.settings.customIdps || [];
+  const onlyOneCustomIdp = customIdps.length === 1;
+
+  const enableTySso = valueOf(s => s.enableSso);
+  const enableTySsoOrOnlyCustIdps = enableTySso || useOnlyCustomIdps;
+
+  // If the site is public, no login page is shown to strangers. And, if clicking Log In
+  // redirects to an external login page, Ty's login dialog is never shown.
+  const dialogNeverShown = !userMustBeAuthenticated && (
+            enableTySso || useOnlyCustomIdps && onlyOneCustomIdp);
+
+  function mkLoginSetting(label: St, className: St, fieldName: (keyof AuthnDiagConfV0),
+          help?: St, type?: 'textarea') {
+    return Setting2(props, {
+        type,
+        label,
+        className,
+        help,
+        getter: (s: Settings) => {
+          const anyConf: AuthnDiagConfV0 | U = s.authnDiagConf?.c0[0];
+          return anyConf && anyConf[fieldName];
+        },
+        update: (newSettings: Settings, target) => {
+          const anyCurConf: AuthnDiagConf | U = valueOf(s => s.authnDiagConf);
+          const curConf: AuthnDiagConfV0 = anyCurConf?.c0[0] || {};
+          const newConf = { ...curConf };
+          newConf[fieldName] = target.value;
+          newSettings.authnDiagConf = { c0: [newConf] };
+        }
+      });
+  }
+
+  const andClickLogin = userMustBeAuthenticated ? '' :
+          rFr({}, ", and click ", r.b({}, "Log In"));
+
+  return (
+    r.div({ className: 'form-horizontal esAdmin_customize' },
+
+      !dialogNeverShown ? null :
+        r.div({ className: 's_A_Ss_Inf' },
+          Alert({ bsStyle: 'info' },
+            r.p({}, r.b({}, "Not in use."), " You've configured external login."),
+            //r.p({}, "And, login not required, so the login dialog isn't shown.")
+            )),
+
+      r.div({ className: 's_A_Ss_Inf' + (dialogNeverShown ? ' c_Cross' : '') },
+        r.h2({ className: 's_A_Ss_S_Ttl'},
+          "Login Dialog"),
+        r.p({},
+          "Here you can add a title and intro text to the login dialog. " +
+          "It'll be publicly visible."),
+        r.p({},
+          "To view the dialog without logging out yourself, open an incognito browser window, " +
+          "e.g. click Ctrl+Shift+N if you use Chrome, and go to ", r.samp({}, location.origin),
+          andClickLogin,
+          ". (After you've saved any changes.)"),
+        r.p({},
+          "(All changes are ignored if you login at /-/admin/ — in case you manage to " +
+          "break the login dialog.)"),
+        ),
+
+      mkLoginSetting("Login dialog title", 'e_CuAuD_Ttl', 'headerText'),
+
+      mkLoginSetting("Login intro text", 'e_CuAuD_Intro', 'introHtml',
+            "Here you can explain who this forum is for, and how it's " +
+            "helpful to them. You can use HTML.", 'textarea'),
+
+      mkLoginSetting("Login dialog image", 'e_CuAuD_Img', 'imageUrl',
+            "An image URL, e.g. your company or university building " +
+            "or logo, or office cat."),
+
+      !enableTySsoOrOnlyCustIdps ? null :
+        r.div({ className: 's_A_Ss_Inf' },
+          r.p({},
+            "Ignore the stuff below. It's not in use, since you're using external login, " +
+            // If login was required, strangers would see the login dialog, and a button
+            // that would redirect them to the SSO server.  But when login not required, they
+            // instead see the forum directly (public categroies). And clicking Log In should
+            // redirect them immediately.
+            "and login not required to read.")),
+
+      r.div({ className: enableTySsoOrOnlyCustIdps ? 'c_Cross' : '' },
+        r.div({ className: 's_A_Ss_Inf' },
+          r.h3({ className: 's_A_Ss_S_Ttl'},
+            "Labels"),
+          r.p({}, "Here you can change built-in login and signup dialog labels. To remove " +
+              "a label, set it to a hyphen/minus, '", r.code({}, '-'), // [dash_hides_label]
+              "'."),
+          r.p({}, r.b({}, "Usually it's better to leave this as-is.")),
+          r.p({}, "The labels to the left, is the deault text (in English). For example, \"",
+            r.i({}, t.ld.ContinueWithDots), "\" is one of the default texts.")),
+
+        r.div({ className: !useOpenAuth ? 'c_Cross' : '' },
+          r.div({ className: 's_A_Ss_Inf' },
+            r.h4({}, "External login enabled"),
+            r.p({}, "If Gmail, Facebook etc login is enabled, you can edit these labels. " +
+              "Or if your own custom OpenAuth or OIDC login is enabled.")),
+
+          mkLoginSetting(t.ld.ContinueWithDots, '', 'continueWithCta'),
+          // UX COULD hide these two, if local accounts aren't enabled.
+          mkLoginSetting(t.ld.OrCreateAcctHere, '', 'orCreateAcctCta'),
+          mkLoginSetting(t.ld.OrLogIn, '', 'orLogInCta')),
+
+        r.div({ className: useOpenAuth ? 'c_Cross' : '' },
+          r.div({ className: 's_A_Ss_Inf' },
+            r.h4({}, "Only local accounts"),
+            r.p({}, "If Gmail, Facebook etc login isn't enabled, and you don't use " +
+                "any custom OpenAuth, you can edit these labels.")),
+
+          mkLoginSetting(t.ld.SignUp, '', 'signUpCta'),
+          mkLoginSetting(t.ld.LogIn, '', 'logInCta')),
+      )));
+});
+
 
 const CustomizeHtmlPanel = createFactory({
   displayName: 'CustomizeHtmlPanel',
@@ -3257,7 +3469,7 @@ const CustomizeHtmlPanel = createFactory({
   render: function() {
     const props = this.props;
     const currentSettings: Settings = props.currentSettings;
-    let navConfJsonExeption;
+    let navConfJsonExeption: St | NU;
 
     return (
       r.div({ className: 'form-horizontal esAdmin_customize' },
@@ -3400,8 +3612,8 @@ function Setting2(panelProps, props, anyChildren?) {
   const defaultSettings = panelProps.defaultSettings;
 
   let editedValue = props.getter(editedSettings);
-  let currentValue = props.getter(currentSettings);
-  const defaultValue = props.getter(defaultSettings);
+  let currentValue = (props.getCurrent || props.getter)(currentSettings);
+  const defaultValue = (props.getCurrent || props.getter)(defaultSettings);
 
   let disabled = props.disabled;
 
@@ -3413,6 +3625,8 @@ function Setting2(panelProps, props, anyChildren?) {
     currentValue = defaultValue;
     disabled = true;
   }
+
+  const editedAndDifferent = isDef(editedValue) && editedValue !== currentValue;
 
   const effectiveValue = firstDefinedOf(editedValue, currentValue);
 
@@ -3432,7 +3646,7 @@ function Setting2(panelProps, props, anyChildren?) {
   if (props.type === 'textarea') props.className += ' s_A_Ss_S-Textarea';
   props.wrapperClassName = 'col-sm-9 esAdmin_settings_setting';
 
-  if (isDefined2(editedValue)) props.wrapperClassName += ' esAdmin_settings_setting-unsaved';
+  if (editedAndDifferent) props.wrapperClassName += ' esAdmin_settings_setting-unsaved';
   if (disabled) props.wrapperClassName += ' disabled';
 
   if (props.type === 'checkbox') {
@@ -3458,8 +3672,8 @@ function Setting2(panelProps, props, anyChildren?) {
   const field = props.type === 'checkbox' ? 'checked' : 'value';
   const event = { target: {} };
 
-  let undoChangesButton;
-  if (isDefined2(editedValue)) {
+  let undoChangesButton: RElm | U;
+  if (editedAndDifferent && !disabled) {
     undoChangesButton = Button({ className: 'col-sm-offset-3 esAdmin_settings_setting_btn',
       disabled, onClick: props.undo || (() => {
         event.target[field] = currentValue;
@@ -3468,8 +3682,8 @@ function Setting2(panelProps, props, anyChildren?) {
   }
 
   // Show the Reset button only if there's no Undo button — both at the same time looks confusing.
-  let resetToDefaultButton;
-  if (!undoChangesButton && effectiveValue !== defaultValue && props.canReset !== false) {
+  let resetToDefaultButton: RElm | U;
+  if (!undoChangesButton && effectiveValue !== defaultValue && props.canReset !== false && !disabled) {
     resetToDefaultButton = Button({ className: 'col-sm-offset-3 esAdmin_settings_setting_btn',
       disabled, onClick: props.reset || (() => {
         event.target[field] = defaultValue;

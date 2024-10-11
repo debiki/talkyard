@@ -60,6 +60,7 @@ object ContentLicense {
   * Because only edited settings need to be saved to the database.
   */
 case class EditedSettings(
+  authnDiagConf: Opt[JsObject],
   userMustBeAuthenticated: Option[Boolean],
   userMustBeApproved: Option[Boolean],
   expireIdleAfterMins: Option[Int],
@@ -159,6 +160,8 @@ case class EditedSettings(
   enableTags: Option[Boolean],
   enableChat: Option[Boolean],
   enableDirectMessages: Option[Boolean],
+  enableAnonSens: Opt[Bo],
+  enablePresence: Opt[Bo],
   enableSimilarTopics: Option[Boolean],
   enableCors: Option[Boolean],
   allowCorsFrom: Option[String],
@@ -166,6 +169,8 @@ case class EditedSettings(
   showSubCommunities: Option[Boolean],
   showExperimental: Option[Boolean],
   featureFlags: Option[String],
+  ownDomains: Opt[St],
+  followLinksTo: Opt[St],
   allowEmbeddingFrom: Option[String],
   embeddedCommentsCategoryId: Option[CategoryId],
   htmlTagCssClasses: Option[String],
@@ -211,6 +216,7 @@ object EditedSettings {
   val MaxNumFirstPosts = 10
 
   val empty: EditedSettings = EditedSettings(
+    authnDiagConf = None,
     userMustBeAuthenticated = None,
     userMustBeApproved = None,
     expireIdleAfterMins = None,
@@ -310,6 +316,8 @@ object EditedSettings {
     enableTags = None,
     enableChat = None,
     enableDirectMessages = None,
+    enableAnonSens = None,
+    enablePresence = None,
     enableSimilarTopics = None,
     enableCors = None,
     allowCorsFrom = None,
@@ -317,6 +325,8 @@ object EditedSettings {
     showSubCommunities = None,
     showExperimental = None,
     featureFlags = None,
+    ownDomains = None,
+    followLinksTo = None,
     allowEmbeddingFrom = None,
     embeddedCommentsCategoryId = None,
     htmlTagCssClasses = None,
@@ -338,6 +348,7 @@ object EditedSettings {
   * settingsToSave.title.get.get.
   */
 case class SettingsToSave(
+  authnDiagConf: Opt[Opt[JsObject]] = None,
   userMustBeAuthenticated: Option[Option[Boolean]] = None,
   userMustBeApproved: Option[Option[Boolean]] = None,
   expireIdleAfterMins: Option[Option[Int]] = None,
@@ -437,6 +448,8 @@ case class SettingsToSave(
   enableTags: Option[Option[Boolean]] = None,
   enableChat: Option[Option[Boolean]] = None,
   enableDirectMessages: Option[Option[Boolean]] = None,
+  enableAnonSens: Opt[Opt[Bo]] = None,
+  enablePresence: Opt[Opt[Bo]] = None,
   enableSimilarTopics: Option[Option[Boolean]] = None,
   enableCors: Option[Option[Boolean]] = None,
   allowCorsFrom: Option[Option[String]] = None,
@@ -444,6 +457,8 @@ case class SettingsToSave(
   showSubCommunities: Option[Option[Boolean]] = None,
   showExperimental: Option[Option[Boolean]] = None,
   featureFlags: Option[Option[String]] = None,
+  ownDomains: Opt[Opt[St]] = None,
+  followLinksTo: Opt[Opt[St]] = None,
   allowEmbeddingFrom: Option[Option[String]] = None,
   embeddedCommentsCategoryId: Option[Option[CategoryId]] = None,
   htmlTagCssClasses: Option[Option[String]] = None,

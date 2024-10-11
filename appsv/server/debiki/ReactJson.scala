@@ -544,6 +544,16 @@ class JsonMaker(dao: SiteDao) {
       anyCurCatId.foreach(id => jsonObj += "listingCatId" -> JsNumber(id))
     }
 
+    COULD_OPTIMIZE; SAVE_BANDWIDTH // Add only if needed  [authn_diag_bandw], that is,
+    // if user not logged in.  Maybe inject at the bottom in a new <script> placeholder?
+    // (Can't do > 1 from the top, since there's people's comments in one already,
+    // which could include placeholder strings.)
+    SAVE_BANDWIDTH // Exclude enableGoogleLogin, FacebookLogin, allowSignup, customIdps ...
+    // too, if already logged in. [cached_html_loggedin_param]?
+    if (siteSettings.authnDiagConf.value.nonEmpty) {
+      jsonObj += "authnDiagConf" -> siteSettings.authnDiagConf
+    }
+
     val reactStoreJsonString = jsonObj.toString()
 
     val version = CachedPageVersion(
@@ -577,7 +587,7 @@ class JsonMaker(dao: SiteDao) {
     val everyoneGroup = dao.getTheGroup(Group.EveryoneId)
     val idps = dao.getSiteCustomIdentityProviders(onlyEnabled = true)
 
-    val result = Json.obj(
+    var result = Json.obj(
       "dbgSrc" -> "SpecPgJ",
       "widthLayout" -> (if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
       "isEmbedded" -> false,  // what ??? Yes, if in emb editor iframe
@@ -606,6 +616,11 @@ class JsonMaker(dao: SiteDao) {
       // SHOULD incl cats here? But currently loaded via an extra req instead,
       // see:  [search_page_cats_tags]  maybe can just leave it at that.
       "publicCategories" -> JsArray())
+
+    // No need to incl authn diag text, if the person has logged in already.
+    if (siteSettings.authnDiagConf.value.nonEmpty) {
+      result += "authnDiagConf" -> siteSettings.authnDiagConf
+    }
 
     result
   }
@@ -1619,6 +1634,10 @@ object JsonMaker {
       json += "enableChat" -> JsBoolean(settings.enableChat)
     if (settings.enableDirectMessages != D.enableDirectMessages)
       json += "enableDirectMessages" -> JsBoolean(settings.enableDirectMessages)
+    if (settings.enableAnonSens != D.enableAnonSens)
+      json += "enableAnonSens" -> JsBoolean(settings.enableAnonSens)
+    if (settings.enablePresence != D.enablePresence)
+      json += "enablePresence" -> JsBoolean(settings.enablePresence)
     if (settings.enableSimilarTopics != D.enableSimilarTopics)
       json += "enableSimilarTopics" -> JsBoolean(settings.enableSimilarTopics)
     if (settings.showSubCommunities != D.showSubCommunities)

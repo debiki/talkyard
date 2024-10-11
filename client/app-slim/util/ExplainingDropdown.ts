@@ -61,7 +61,7 @@ export var ExplainingListItem = createComponent({
 
     // @ifdef DEBUG
     dieIf(isButton && isLink, 'TyEDBLACTN0356');
-    dieIf(!props.onClick && !props.onSelect && !props.linkTo, 'TyE0ACTN03825');
+    dieIf(!props.onClick && !props.onSelect && !props.linkTo && !props.disabled, 'TyE0ACTN03825');
     // @endif
 
     const activeClass =
@@ -80,9 +80,10 @@ export var ExplainingListItem = createComponent({
     const linkTo = props.disabled ? undefined : props.linkTo;
 
     const elemFn = isButton ? r.button : (props.linkTo ? LinkUnstyled : r.a);
+    const crossClass = props.disabled ? ' c_Cross' : '';
 
     let imgTitleText = rFr({},
-          r.div({ className: 'esExplDrp_entry_title' }, entry.title),
+          r.div({ className: 'esExplDrp_entry_title' + crossClass }, entry.title),
           r.div({ className: 'esExplDrp_entry_expl' }, entry.text));
     if (props.img) {
       imgTitleText = rFr({},

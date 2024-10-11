@@ -54,8 +54,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   val MaxEmailsPerUser: Int = 5  // also in js [4GKRDF0]
 
 
-  def listCompleteUsers(whichUsers: String): Action[Unit] = StaffGetAction { request =>
-    val settings = request.dao.getWholeSiteSettings()
+  def listCompleteUsers(whichUsers: St): Action[Unit] = StaffGetAction { req =>
+    import req.dao
+    val settings = dao.getWholeSiteSettings()
     var orderOffset: PeopleOrderOffset = PeopleOrderOffset.BySignedUpAtDesc
     var peopleFilter = PeopleFilter()
 
@@ -85,7 +86,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     val peopleQuery = PeopleQuery(orderOffset, peopleFilter)
 
-    request.dao.readOnlyTransaction { tx =>
+    dao.readTx { tx =>
       // Ok to load also deactivated users — the requester is staff.
       val membersAndStats = tx.loadUsersInclDetailsAndStats(peopleQuery)
       val members = membersAndStats.map(_._1)
@@ -96,8 +97,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       val usersJson = JsArray(membersAndStats.map(memberAndStats => {
         val member: UserInclDetails = memberAndStats._1
         val anyStats: Option[UserStats] = memberAndStats._2
-        JsUserInclDetails(member, usersById, groups = Nil, callerIsAdmin = request.theUser.isAdmin,
-          callerIsStaff = true, anyStats = anyStats)
+        JsUserInclDetails(member, usersById, groups = Nil,
+              callerIsAdmin = req.theUser.isAdmin,
+              sensitiveAnonDisc = settings.enableAnonSens,
+              maySeePresence = settings.enablePresence,
+              callerIsStaff = true, anyStats = anyStats)
       }))
       OkSafeJson(Json.obj("users" -> usersJson))
     }
@@ -158,6 +162,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
         request: DebikiRequest[_]): (JsObject, JsValue, Pat) = {
     import request.dao
 
+    val settings = dao.getWholeSiteSettings()
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
     val callerIsUserHerself = request.user.exists(_.id == userId)
@@ -165,7 +170,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val reqrPerms: EffPatPerms =
           dao.deriveEffPatPerms(request.authzContext.groupIdsEveryoneLast)
 
-    request.dao.readOnlyTransaction { tx =>
+    request.dao.readTx { tx =>
       val stats = includeStats ? tx.loadUserStats(userId) | None
       val (pptJson, pat) =
         if (Participant.isRoleId(userId)) {
@@ -175,6 +180,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
             case m: UserInclDetails =>
               JsUserInclDetails(m, Map.empty, groups, callerIsAdmin = callerIsAdmin,
                     callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself,
+                    maySeePresence = settings.enablePresence,
+                    sensitiveAnonDisc = settings.enableAnonSens,
                     reqrPerms = Some(reqrPerms))
             case g: Group =>
               jsonForGroupInclDetails(g, callerIsAdmin = callerIsAdmin,
@@ -193,7 +200,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
         }
       dieIf(pat.id != userId, "TyE36WKDJ03")
       (pptJson,
-          stats.map(JsUserStats(_, isStaffOrSelf, Some(reqrPerms))).getOrElse(JsNull),
+          stats.map(JsUserStats(_, Some(reqrPerms), callerIsStaff = callerIsStaff,
+                callerIsUserHerself = callerIsUserHerself,
+                callerIsAdmin = callerIsAdmin, maySeePresence = settings.enablePresence,
+                sensitiveAnonDisc = settings.enableAnonSens)).getOrElse(JsNull),
           pat.noDetails)
     }
   }
@@ -205,6 +215,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
         : (JsObject, JsValue, Participant) = {
     import request.{dao}
 
+    val settings = dao.getWholeSiteSettings()
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
     val reqrPerms: EffPatPerms =
@@ -254,9 +265,16 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
           val userJson = JsUserInclDetails(
                 user, Map.empty, groups, callerIsAdmin = callerIsAdmin,
                 callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself,
+                maySeePresence = settings.enablePresence,
+                sensitiveAnonDisc = settings.enableAnonSens,
                 reqrPerms = Some(reqrPerms))
           (userJson,
-              stats.map(JsUserStats(_, isStaffOrSelf, Some(reqrPerms))).getOrElse(JsNull),
+              stats.map(JsUserStats(_, Some(reqrPerms),
+                    callerIsStaff = callerIsStaff, callerIsAdmin = callerIsAdmin,
+                    callerIsUserHerself = callerIsUserHerself,
+                    maySeePresence = settings.enablePresence,
+                    sensitiveAnonDisc = settings.enableAnonSens,
+                    )).getOrElse(JsNull),
               user.noDetails)
         case group: GroupVb =>
           val groupJson = jsonForGroupInclDetails(
@@ -358,7 +376,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       }
 
       val anyStats: Option[UserStats] = tx.loadUserStats(userId)
-      val statsJson = anyStats.map(JsUserStats(_, isStaffOrSelf = true, reqrPerms = None)
+      val statsJson = anyStats.map(JsUserStats(_, reqrPerms = None,
+                    callerIsStaff = false, callerIsAdmin = false, // does'nt matter
+                    callerIsUserHerself = true,
+                    maySeePresence = true, sensitiveAnonDisc = false)
             ) getOrElse JsNull
 
       val otherEmailAddresses =
