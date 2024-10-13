@@ -76,7 +76,7 @@ interface TitleAndChatMsgsState {
   hasScrolledDown?: Bo
 }
 
-const maxToShow = 100;
+const maxToShow = 100; // [max_chat_msgs_2_show]
 const batchSize = 20;
 
 
@@ -104,6 +104,10 @@ const TitleAndLastChatMessages = createComponent({
       logD(`isAtTop: ${isAtTop}, bottom: ${isAtBottom}`);
       if (isAtTop !== isAtBottom) {
         // Later: If showing recent first, then flip Older/Newer.
+        // COULD_OPTIMIZE: This makes us try to load new messages, if scrolling up a tiny
+        // bit from the bottom, and then down. But that's unnecessary — chat msgs should
+        // be pushed via websocket. Only if one has been disconnected for a while
+        // does loading-more make sense?
         this.showMoreMessages(isAtTop ? RangeDir.Older : RangeDir.Newer);
       }
     }, {
@@ -275,6 +279,7 @@ const TitleAndLastChatMessages = createComponent({
     const skipBottomAfter = _.isNumber(state.skipTopUntil) ?
             state.skipTopUntil + maxToShow : Number.MAX_SAFE_INTEGER;
 
+    // Chat messages don't have any parent post, aren't replies to the OP. [CHATPRNT]
     const messages = [];
     let ix = 0;
 

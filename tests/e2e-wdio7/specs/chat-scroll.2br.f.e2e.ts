@@ -2,14 +2,9 @@
 
 import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
-import * as fs from 'fs';
 import server from '../utils/server';
-import * as utils from '../utils/utils';
-import * as make from '../utils/make';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/ty-e2e-test-browser';
-import settings from '../utils/settings';
-import { dieIf } from '../utils/log-and-die';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import c from '../test-constants';
 
 let brA: TyE2eTestBrowser;
@@ -20,35 +15,22 @@ let maria: Member;
 let maria_brB: TyE2eTestBrowser;
 let stranger_brB: TyE2eTestBrowser;
 
-// For embedded comments:  EMBCMTS
-// const localHostname = 'comments-for-e2e-test-embsth-localhost-8080';
-// const embeddingOrigin = 'http://e2e-test-embsth.localhost:8080';
-
 let site: IdAddress;
-let forum: TwoCatsTestForum;  // or TwoPagesTestForum or EmptyTestForum or LargeTestForum
+let forum: TwoCatsTestForum;
 
-let michaelsTopicUrl: St;
-let mariasTopicUrl: St;
 let chatPageUrl: St;
 
-const apiSecret: TestApiSecret = {
-  nr: 1,
-  userId: c.SysbotUserId,
-  createdAt: c.MinUnixMillis,
-  deletedAt: undefined,
-  isDeleted: false,
-  secretKey: 'publicE2eTestSecretKeyAbc123',
-};
+const numMsgs = 150;
+const lastMsgNr = c.FirstReplyNr + numMsgs - 1;
 
 
 
-describe(`some-e2e-test  TyTE2E1234ABC`, () => {
+describe(`chat-scroll.2br.f  TyTCHATSCROLL`, () => {
 
   it(`Construct site`, async () => {
     const builder = buildSite();
     forum = builder.addCatABForum({
-      title: "Some E2E Test",
-      categoryAExtId: 'cat_a_ext_id',
+      title: "Chat Scroll E2E",
       members: ['maria'],
     });
 
@@ -59,33 +41,21 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
       slug: 'chat-page',
       role: c.TestPageRole.JoinlessChat,
       title: "Scroll Test Chat",
-      body: "Note that you can't scroll faster than 3e10 cm per second.",
+      body: "Note that you can't scroll faster than 6e10 cm per two seconds.",
       categoryId: forum.categories.categoryA.id,
       authorId: forum.members.maria.id,
     });
 
-    for (let nr = c.FirstReplyNr; nr < c.FirstReplyNr + 150; nr += 1) {
+    // Nrs 2 (c.FirstReplyNr) .. lastMsgNr.
+    for (let nr = c.FirstReplyNr; nr <= lastMsgNr; nr += 1) {
       builder.addPost({
         page: chatPage,
         nr,
-        // parentNr: c.BodyNr, ? not needed for chats ?
+        // parentNr: c.BodyNr — not needed for chats. [CHATPRNT]
         authorId: forum.members.maria.id,
         approvedSource: `Message_nr_${nr}`,
       });
     }
-
-    // Disable notifications, or notf email counts will be off
-    // (since Owen would get emails).
-    builder.settings({
-      numFirstPostsToApprove: 0,
-      //maxPostsPendApprBefore: 0,
-      numFirstPostsToReview: 0,
-    });
-    builder.getSite().pageNotfPrefs = [{
-      memberId: forum.members.owen.id,
-      notfLevel: c.TestPageNotfLevel.Muted,
-      wholeSite: true,
-    }];
 
     brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
     brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
@@ -109,15 +79,65 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
 
   it(`Owen goes to the chat page`, async () => {
     await owen_brA.go2(chatPageUrl);
+  });
+  it(`... logs in`, async () => {
     await owen_brA.complex.loginWithPasswordViaTopbar(owen);
   });
 
+  addTestScrollSteps(() => owen_brA, "Owen");
 
-  it(`Maria too`, async () => {
-    await maria_brB.go2(chatPageUrl);
-    await maria_brB.complex.loginWithPasswordViaTopbar(maria);
-  });
+  // Is this really interesting?  Hmm, maybe not worth the time actually.
+  //it(`A stranger arrives too`, async () => {
+  //  await stranger_brB.go2(chatPageUrl);
+  //  await maria_brB.complex.loginWithPasswordViaTopbar(maria);
+  //});
 
+  // addTestScrollSteps(() => stranger_brB, "A stranger");
+
+  function addTestScrollSteps(brX: () => TyE2eTestBrowser, who: St) {
+    it(`${who} can see Message_nr_${lastMsgNr} — the most recent message`, async () => {
+      await brX().topic.waitForPostNrVisible(lastMsgNr);
+    });
+    it(`... and Message_nr_112 — that's far back is included on page load`, async () => {
+      await brX().topic.waitForPostNrVisible(112);
+    });
+    it(`... but not Message_nr_111 — need to scroll up, for it to get inserted`, async () => {
+      assert.not(await brX().topic.isPostNrVisible(111));
+    });
+    it(`... The very first message, #post-${c.FirstReplyNr}, also not visible`, async () => {
+      assert.not(await brX().topic.isPostNrVisible(c.FirstReplyNr));
+    });
+
+    it(`Han scrolls up to the top of the chat`, async () => {
+      await brX().scrollTowardsUntilAppears('.c_Chat_Top', '#post-' + c.FirstReplyNr);
+    });
+
+    it(`... but the newest (most recent) message is no longer shown`, async () => {
+      assert.not(await brX().topic.isPostNrVisible(lastMsgNr));
+    });
+
+    it(`Han scrolls down to the end of the chat`, async () => {
+      await brX().scrollTowardsUntilAppears('.c_Chat_Bottom', '#post-' + lastMsgNr);
+    });
+
+    it(`... now the oldest (at the very top) no longer shown`, async () => {
+      assert.not(await brX().topic.isPostNrVisible(c.FirstReplyNr));
+    });
+    it(`... but Message_nr_112 is visible again`, async () => {
+      await brX().topic.waitForPostNrVisible(112);
+    });
+    it(`... and Message_nr_51 is visible again
+                  — we show 100 messages: 51 – 151  [max_chat_msgs_2_show]`, async () => {
+      await brX().topic.waitForPostNrVisible(51);
+    });
+
+    it(`... not nr 50 though, that would have been 101 messages`, async () => {
+      assert.not(await brX().topic.isPostNrVisible(50));
+    });
+    it(`... and of course not nr 20 (far below 50)`, async () => {
+      assert.not(await brX().topic.isPostNrVisible(20));
+    });
+  }
 
 });
 

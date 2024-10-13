@@ -1158,6 +1158,13 @@ chat:
           - admin-review-cascade-approval.2browsers.test.ts  TyT0SKDE24.TyT052SKDGJ37
   messages not merged:
           - admin-review-cascade-approval.2browsers.test.ts  TyT0SKDE24.TyT0527X8M302
+  scroll
+    up to fetch older messages:
+            - chat-scroll.2br.f  TyTCHATSCROLL
+    down to fetch newer:
+            - TESTS_MISSING, will incl in  chat-scroll.2br.f  just above.
+    but skip deleted:
+            - TESTS_MISSING
 
 embedded comments:
   create site:
