@@ -1,16 +1,11 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('../utils/ty-assert');
-// import fs = require('fs');  EMBCMTS
-import server = require('../utils/server');
-import utils = require('../utils/utils');
+import assert from '../utils/ty-assert';
+import server from '../utils/server';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import lad = require('../utils/log-and-die');
-import c = require('../test-constants');
-
+import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/ty-e2e-test-browser';
+import c from '../test-constants';
 
 let everyonesBrowsers: TyAllE2eTestBrowsers;
 let richBrowserA: TyE2eTestBrowser;
@@ -46,9 +41,10 @@ const modyasMoreText = ' modyasMoreText';
 const topicTwoTitle = 'topicTwoTitle';
 const topicTwoBody = 'topicTwoBody';
 
-describe(`modn-from-disc-page-approve-before  TyTE2E603RTJ`, () => {
 
-  it(`construct site`, () => {
+describe(`modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ`, () => {
+
+  it(`construct site`, async () => {
     const builder = buildSite();
     forum = builder.addEmptyForum({  // or: builder.addLargeForum
       title: "Some E2E Test",
@@ -67,9 +63,9 @@ describe(`modn-from-disc-page-approve-before  TyTE2E603RTJ`, () => {
       wholeSite: true,
     }];
 
-    everyonesBrowsers = new TyE2eTestBrowser(allWdioBrowsers);
-    richBrowserA = new TyE2eTestBrowser(wdioBrowserA);
-    richBrowserB = new TyE2eTestBrowser(wdioBrowserB);
+    everyonesBrowsers = new TyE2eTestBrowser(allWdioBrowsers, 'brAll');
+    richBrowserA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    richBrowserB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
     owen = forum.members.owen;
     owensBrowser = richBrowserA;
@@ -89,188 +85,188 @@ describe(`modn-from-disc-page-approve-before  TyTE2E603RTJ`, () => {
     assert.refEq(builder.getSite(), forum.siteData);
   });
 
-  it(`import site`, () => {
-    site = server.importSiteData(forum.siteData);
+  it(`import site`, async () => {
+    site = await server.importSiteData(forum.siteData);
     server.skipRateLimits(site.id);
   });
 
-  it(`Maria logs in`, () => {
-    mariasBrowser.go2(site.origin + '/');
-    mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
+  it(`Maria logs in`, async () => {
+    await mariasBrowser.go2(site.origin + '/');
+    await mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
   });
 
   let topicOneUrl: St;
   let topicTwoUrl: St;
 
-  it(`... posts a new topic`, () => {
-    mariasBrowser.complex.createAndSaveTopic({
+  it(`... posts a new topic`, async () => {
+    await mariasBrowser.complex.createAndSaveTopic({
           title: topicOneTitle, body: topicOneBody, willBePendingApproval: true });
-    topicOneUrl = mariasBrowser.getUrl();
+    topicOneUrl = await mariasBrowser.getUrl();
   });
 
-  it(`... it becomes pending approval`, () => {
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, topicOneBody);
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.TitleNr, topicOneTitle);
-    mariasBrowser.topic.assertPagePendingApprovalBodyVisible();
+  it(`... it becomes pending approval`, async () => {
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, topicOneBody);
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.TitleNr, topicOneTitle);
+    await mariasBrowser.topic.assertPagePendingApprovalBodyVisible();
   });
 
-  it(`Maria navigates away, ... and back`, () => {
-    mariasBrowser.topbar.clickHome();
-    mariasBrowser.forumTopicList.goToTopic(topicOneTitle);
+  it(`Maria navigates away, ... and back`, async () => {
+    await mariasBrowser.topbar.clickHome();
+    await mariasBrowser.forumTopicList.goToTopic(topicOneTitle);
   });
 
-  it(`... text stil visible, after SPA-navigated away and back  TyTE2E603SKD`, () => {
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, topicOneBody);
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.TitleNr, topicOneTitle);
-    mariasBrowser.topic.assertPagePendingApprovalBodyVisible();
+  it(`... text stil visible, after SPA-navigated away and back  TyTE2E603SKD`, async () => {
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, topicOneBody);
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.TitleNr, topicOneTitle);
+    await mariasBrowser.topic.assertPagePendingApprovalBodyVisible();
   });
 
-  it(`... and after reload  TyTE2E603SKD`, () => {
-    mariasBrowser.refresh2();
-    mariasBrowser.waitForMyDataAdded();
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, topicOneBody);
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.TitleNr, topicOneTitle);
-    mariasBrowser.topic.assertPagePendingApprovalBodyVisible();
+  it(`... and after reload  TyTE2E603SKD`, async () => {
+    await mariasBrowser.refresh2();
+    await mariasBrowser.waitForMyDataAdded();
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, topicOneBody);
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.TitleNr, topicOneTitle);
+    await mariasBrowser.topic.assertPagePendingApprovalBodyVisible();
   });
 
-  it(`Maria posts another topic`, () => {
-    mariasBrowser.topbar.clickHome();
-    mariasBrowser.complex.createAndSaveTopic({
+  it(`Maria posts another topic`, async () => {
+    await mariasBrowser.topbar.clickHome();
+    await mariasBrowser.complex.createAndSaveTopic({
           title: topicTwoTitle, body: topicTwoBody, willBePendingApproval: true });
-    topicTwoUrl = mariasBrowser.getUrl();
+    topicTwoUrl = await mariasBrowser.getUrl();
   });
 
-  it(`... it becomes pending approval`, () => {
-    mariasBrowser.topic.assertPagePendingApprovalBodyVisible();
+  it(`... it becomes pending approval`, async () => {
+    await mariasBrowser.topic.assertPagePendingApprovalBodyVisible();
   });
 
-  it(`A stranger somehow navigates to the page`, () => {
-    modyasBrowser.go2(topicTwoUrl);  // not yet logged in
+  it(`A stranger somehow navigates to the page`, async () => {
+    await modyasBrowser.go2(topicTwoUrl);  // not yet logged in
   });
 
-  it(`... but page not visible — not yet approved  TyTE2E603SKD`, () => {
-    modyasBrowser.assertWholePageHidden();  // not yet logged in
+  it(`... but page not visible — not yet approved  TyTE2E603SKD`, async () => {
+    await modyasBrowser.assertWholePageHidden();  // not yet logged in
   });
 
-  it(`Modya logs in`, () => {
-    modyasBrowser.loginDialog.loginWithPassword(modya);
+  it(`Modya logs in`, async () => {
+    await modyasBrowser.loginDialog.loginWithPassword(modya);
   });
 
-  it(`... the unapproved title & body get loaded via page load  TyTE2E603SKD`, () => {
-    modyasBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, topicTwoBody);
-    modyasBrowser.topic.waitForPostAssertTextMatches(c.TitleNr, topicTwoTitle);
+  it(`... the unapproved title & body get loaded via page load  TyTE2E603SKD`, async () => {
+    await modyasBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, topicTwoBody);
+    await modyasBrowser.topic.waitForPostAssertTextMatches(c.TitleNr, topicTwoTitle);
   });
 
-  it(`Modya rejects topic two`, () => {
-    modyasBrowser.topic.rejectPostNr(c.BodyNr);
+  it(`Modya rejects topic two`, async () => {
+    await modyasBrowser.topic.rejectPostNr(c.BodyNr);
   });
 
-  it(`... that deletes the page`, () => {
-    modyasBrowser.topic.waitUntilPageDeleted();
+  it(`... that deletes the page`, async () => {
+    await modyasBrowser.topic.waitUntilPageDeleted();
   });
 
-  it(`Modya navigates to topic one`, () => {
-    modyasBrowser.topbar.clickHome();
-    modyasBrowser.forumTopicList.goToTopic(topicOneTitle);
+  it(`Modya navigates to topic one`, async () => {
+    await modyasBrowser.topbar.clickHome();
+    await modyasBrowser.forumTopicList.goToTopic(topicOneTitle);
   });
 
-  it(`... the unapproved posts get loaded, via SPA navigation  TyTE2E603SKD`, () => {
-    modyasBrowser.topic.waitForPostAssertTextMatches(c.TitleNr, topicOneTitle);
-    modyasBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, topicOneBody);
+  it(`... the unapproved posts get loaded, via SPA navigation  TyTE2E603SKD`, async () => {
+    await modyasBrowser.topic.waitForPostAssertTextMatches(c.TitleNr, topicOneTitle);
+    await modyasBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, topicOneBody);
     /* Not created yet:
-    modyasBrowser.topic.waitForPostAssertTextMatches(replA_nr, replA_txt);
-    modyasBrowser.topic.waitForPostAssertTextMatches(replB_nr, replB_txt);
-    modyasBrowser.topic.waitForPostAssertTextMatches(replC_toRej_nr, replC_toRej_txt);
-    modyasBrowser.topic.waitForPostAssertTextMatches(replD_toApr_nr, replD_toApr_txt);
+    await modyasBrowser.topic.waitForPostAssertTextMatches(replA_nr, replA_txt);
+    await modyasBrowser.topic.waitForPostAssertTextMatches(replB_nr, replB_txt);
+    await modyasBrowser.topic.waitForPostAssertTextMatches(replC_toRej_nr, replC_toRej_txt);
+    await modyasBrowser.topic.waitForPostAssertTextMatches(replD_toApr_nr, replD_toApr_txt);
     */
   });
 
-  it(`... approves topic one`, () => {
-    modyasBrowser.topic.approvePostNr(c.BodyNr);
+  it(`... approves topic one`, async () => {
+    await modyasBrowser.topic.approvePostNr(c.BodyNr);
   });
 
 
-  it(`Maria now cannot see topic 2`, () => {
-    assert.eq(mariasBrowser.getUrl(), topicTwoUrl);
-    mariasBrowser.refresh2();
-    mariasBrowser.assertNotFoundError({ whyNot: 'PageDeleted' });
+  it(`Maria now cannot see topic 2`, async () => {
+    assert.eq(await mariasBrowser.getUrl(), topicTwoUrl);
+    await mariasBrowser.refresh2();
+    await mariasBrowser.assertNotFoundError({ whyNot: 'PageDeleted' });
   });
 
-  it(`... and that topic one got approved`, () => {
-    mariasBrowser.go2(topicOneUrl);
-    mariasBrowser.topic.assertPageNotPendingApproval();
+  it(`... and that topic one got approved`, async () => {
+    await mariasBrowser.go2(topicOneUrl);
+    await mariasBrowser.topic.assertPageNotPendingApproval();
   });
 
-  it(`Maria posts four replies, in topic one`, () => {
-    mariasBrowser.complex.replyToOrigPost(replA_txt);
-    mariasBrowser.complex.replyToOrigPost(replB_txt);
-    mariasBrowser.complex.replyToOrigPost(replC_toRej_txt);
-    mariasBrowser.complex.replyToOrigPost(replD_toApr_txt);
+  it(`Maria posts four replies, in topic one`, async () => {
+    await mariasBrowser.complex.replyToOrigPost(replA_txt);
+    await mariasBrowser.complex.replyToOrigPost(replB_txt);
+    await mariasBrowser.complex.replyToOrigPost(replC_toRej_txt);
+    await mariasBrowser.complex.replyToOrigPost(replD_toApr_txt);
   });
 
-  it(`... they become pending-approval`, () => {
-    mariasBrowser.topic.assertPostNeedsApprovalBodyVisible(replA_nr);
-    mariasBrowser.topic.assertPostNeedsApprovalBodyVisible(replB_nr);
-    mariasBrowser.topic.assertPostNeedsApprovalBodyVisible(replC_toRej_nr);
-    mariasBrowser.topic.assertPostNeedsApprovalBodyVisible(replD_toApr_nr);
+  it(`... they become pending-approval`, async () => {
+    await mariasBrowser.topic.assertPostNeedsApprovalBodyVisible(replA_nr);
+    await mariasBrowser.topic.assertPostNeedsApprovalBodyVisible(replB_nr);
+    await mariasBrowser.topic.assertPostNeedsApprovalBodyVisible(replC_toRej_nr);
+    await mariasBrowser.topic.assertPostNeedsApprovalBodyVisible(replD_toApr_nr);
   });
 
-  it(`Modya rejects reply C`, () => {
-    modyasBrowser.topic.rejectPostNr(replC_toRej_nr);
+  it(`Modya rejects reply C`, async () => {
+    await modyasBrowser.topic.rejectPostNr(replC_toRej_nr);
   });
 
-  it(`... edits reply D`, () => {
-    modyasBrowser.complex.editPostNr(replD_toApr_nr, modyasMoreText, { append: true });
+  it(`... edits reply D`, async () => {
+    await modyasBrowser.complex.editPostNr(replD_toApr_nr, modyasMoreText, { append: true });
   });
 
-  it(`... edititing it won't approve it  TyTE2E407RKS`, () => {
-    modyasBrowser.refresh2();
-    modyasBrowser.topic.waitForPostAssertTextMatches(
+  it(`... edititing it won't approve it  TyTE2E407RKS`, async () => {
+    await modyasBrowser.refresh2();
+    await modyasBrowser.topic.waitForPostAssertTextMatches(
           replD_toApr_nr, replD_toApr_txt + modyasMoreText);
-    modyasBrowser.topic.assertPostNeedsApprovalBodyVisible(replD_toApr_nr);
-    assert.deepEq(modyasBrowser.topic.countReplies({ skipWait: true }),
+    await modyasBrowser.topic.assertPostNeedsApprovalBodyVisible(replD_toApr_nr);
+    assert.deepEq(await modyasBrowser.topic.countReplies({ skipWait: true }),
           { numNormal: 0, numPreviews: 0, numUnapproved: 3, numDeleted: 1 });
   });
 
-  it(`... approves reply D`, () => {
-    modyasBrowser.topic.approvePostNr(replD_toApr_nr);
+  it(`... approves reply D`, async () => {
+    await modyasBrowser.topic.approvePostNr(replD_toApr_nr);
   });
 
   //  TyT204RKSTEM
   //  Mons approves from disc page, Modya approves & rejects from modn page.
   //  Mons rejects from disc page, Modya approves & rejects from modn page.
 
-  it(`Maria sees the page and reply D got approved`, () => {
-    mariasBrowser.topic.refreshUntilPostNotPendingApproval(replD_toApr_nr);
+  it(`Maria sees the page and reply D got approved`, async () => {
+    await mariasBrowser.topic.refreshUntilPostNotPendingApproval(replD_toApr_nr);
   });
 
-  it(`... and reply C is deleted`, () => {
-    mariasBrowser.topic.waitForPostVisibleAsDeleted(replC_toRej_nr);
+  it(`... and reply C is deleted`, async () => {
+    await mariasBrowser.topic.waitForPostVisibleAsDeleted(replC_toRej_nr);
   });
 
-  it(`... and two pending approval`, () => {
-    assert.deepEq(strangersBrowser.topic.countReplies({ skipWait: true }),
+  it(`... and two pending approval`, async () => {
+    assert.deepEq(await strangersBrowser.topic.countReplies({ skipWait: true }),
           { numNormal: 1, numPreviews: 0, numUnapproved: 2, numDeleted: 1 });
   });
 
 
-  it(`A stranger sees reply D  TyTE2E603SKD`, () => {
-    mariasBrowser.topbar.clickLogout();
-    strangersBrowser.topic.waitForPostAssertTextMatches(
+  it(`A stranger sees reply D  TyTE2E603SKD`, async () => {
+    await mariasBrowser.topbar.clickLogout();
+    await strangersBrowser.topic.waitForPostAssertTextMatches(
           replD_toApr_nr, replD_toApr_txt + modyasMoreText);
   });
 
-  it(`... A and B still pending approval`, () => {
-    strangersBrowser.topic.assertPostNeedsApprovalBodyHidden(replA_nr);
-    strangersBrowser.topic.assertPostNeedsApprovalBodyHidden(replB_nr);
+  it(`... A and B still pending approval`, async () => {
+    await strangersBrowser.topic.assertPostNeedsApprovalBodyHidden(replA_nr);
+    await strangersBrowser.topic.assertPostNeedsApprovalBodyHidden(replB_nr);
   });
 
-  it(`... C gone`, () => {
-    assert.not(strangersBrowser.topic.isPostNrVisible(replC_toRej_nr));
+  it(`... C gone`, async () => {
+    assert.not(await strangersBrowser.topic.isPostNrVisible(replC_toRej_nr));
   });
 
-  it(`... those are all posts`, () => {
-    assert.deepEq(strangersBrowser.topic.countReplies({ skipWait: true }),
+  it(`... those are all posts`, async () => {
+    assert.deepEq(await strangersBrowser.topic.countReplies({ skipWait: true }),
           { numNormal: 1, numPreviews: 0, numUnapproved: 2, numDeleted: 0 });
   });
 
@@ -279,16 +275,16 @@ describe(`modn-from-disc-page-approve-before  TyTE2E603RTJ`, () => {
   //  Modya approves from modn page, Mons approves & rejects from disc page.
   //  Modya rejects from modn page, Mons approves & rejects from disc page.
 
-  it(`Mons tries to approve and reject C and D via the mod page`, () => {
+  it(`Mons tries to approve and reject C and D via the mod page`, async () => {
   });
 
-  it(`Mons instead approves A and B`, () => {
+  it(`Mons instead approves A and B`, async () => {
   });
 
-  it(`Modya approves A — before Mons' undo timeout`, () => {
+  it(`Modya approves A — before Mons' undo timeout`, async () => {
   });
 
-  it(`Modya tries to approve B — after Mons' undo timeout`, () => {
+  it(`Modya tries to approve B — after Mons' undo timeout`, async () => {
   });
 
 });

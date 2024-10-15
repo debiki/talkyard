@@ -432,7 +432,7 @@ navigation:
           - navigation-as-admin.test.ts  TyT7WAAR2J4
           - embedded-comments-navigation-as-guest.test.ts  TyT2P067WKT2
   to topic with unapproved posts:
-          - modn-from-disc-page-appr-befr.2browsers.test.ts  TyTE2E603RTJ.TyTE2E603SKD
+          - modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ.TyTE2E603SKD
   from user profile topic list to page:
             - tags-basic.2br  TyTE2ETAGSBSC.TyTNAVUSR2PG
   from user profile posts list to page:
@@ -1131,6 +1131,7 @@ direct messages:
             - block-dir-msgs.2br.d  TyTBLOCKDIRMSGS
 
 chat:
+            - chat-basic.2br.f.mtime  TyTCHATBASC
   create channel:  chat.2browsers.test.ts  (4FE2)
     two users chat:         ==
           - login-required-join-global-chat.2br.test.ts  TyTE2E603MAT53
@@ -1462,7 +1463,7 @@ review after:
           - admin-review-cascade-approval.2browsers.test.ts  TyT0SKDE24
   mod new page:
             - modn-approve-before.2browsers.test.ts  TyTE2E52RKDHI.TyTAPRTHRPG01
-            - modn-from-disc-page-appr-befr.2browsers.test.ts  TyTE2E603RTJ
+            - modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ
             - topic-prominent-pats-reply-approve.2br.d  TyTPROMPATS_REAPR.TyTAPRTHRT
   mod first posts:
           - FirstPostsAppSpec.scala  TyTIT205RKDJ4
@@ -1471,11 +1472,11 @@ review after:
   require approval before:
     see own, not others:
           - new-member-allow-approve.2browsers.test.ts  TyT4AKBJ20.TyTE2E042RT
-          - modn-from-disc-page-appr-befr.2browsers.test.ts  TyTE2E603RTJ.TyTE2E603SKD
+          - modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ.TyTE2E603SKD
     edit own:
           - new-member-allow-approve.2browsers.test.ts  TyT4AKBJ20.TyTE2E306RKP
     staff can edit:
-          - modn-from-disc-page-appr-befr.2browsers.test.ts  TyTE2E603RTJ.TyTE2E407RKS
+          - modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ.TyTE2E407RKS
     staff can reply to not yet approved pages and comments:
             - topic-prominent-pats-reply-approve.2br.d  TyTPROMPATS_REAPR.TyTREBEFAPR
   require approval before, if trust less than:
@@ -1500,7 +1501,7 @@ review after:
     # Undo reject, and undelete — then, can approve?
     # Delete whole page. Undelete page. Then can approve / reject afterwards.
   moderate from page:
-            - modn-from-disc-page-appr-befr.2browsers.test.ts  TyTE2E603RTJ
+            - modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ
             - tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTAPRTGDPO
             - topic-prominent-pats-reply-approve.2br.d  TyTPROMPATS_REAPR.TyTAPRTHRT
     other mod moderates just after, from moderation page:

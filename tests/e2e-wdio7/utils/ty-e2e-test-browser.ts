@@ -3104,21 +3104,19 @@ export class TyE2eTestBrowser {
 
     _pageNotFoundOrAccessDenied = 'Page not found, or Access Denied';
 
-    /* CLEAN_UP  byBrowser probably doesn't work? if so,  REMOVE this.
     // Also see this.#br.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
     async assertWholePageHidden() {
-      let resultsByBrowser = byBrowser(await this.#br.getPageSource());
-      _.forOwn(resultsByBrowser, (text: any, browserName) => {
-        if (settings.prod) {
-          tyAssert.includes(text, this._pageNotFoundOrAccessDenied);
-        }
-        else {
-          tyAssert.includes(text, 'EdE0SEEPAGEHIDDEN_');
-        }
-      });
+      const text = await this.#br.getPageSource();
+      if (settings.prod) {
+        tyAssert.includes(text, this._pageNotFoundOrAccessDenied);
+      }
+      else {
+        tyAssert.includes(text, 'EdE0SEEPAGEHIDDEN_');
+      }
     }
 
 
+    /*
     // Also see this.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
     async assertMayNotSeePage() {
       let resultsByBrowser = byBrowser(await this.#br.getPageSource());
@@ -3905,10 +3903,11 @@ export class TyE2eTestBrowser {
         });
       },
 
-      waitUntilNumUnreadTopics: async (num: number) => {
-        assert.ok(num > 0, 'TyE0578WNSYG');
-        await this.waitForAtLeast(num, '.esWB_T-Unread');
-        await this.assertExactly(num, '.esWB_T-Unread');
+      waitUntilNumUnreadTopics: async (ps: HowMany) => {
+        await this.waitUntil(async () => {
+          const num = await this.watchbar.numUnreadTopics();
+          return isOkMany(num, ps);
+        });
       },
 
       goToTopic: async (title: St, opts: { isHome?: true, shouldBeUnread?: Bo } = {}) => {
