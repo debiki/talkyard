@@ -50,6 +50,20 @@ export function win_getSessWinStore(): SessWinStore {
   return mainWin.theStore;
 }
 
+/// Helps us keep track of if any change event needs to be emitted.
+///
+/// Emitting a change when not needed, can waste 100 ms in a VM in a slow Core i5 laptop,
+/// and much more one a mobile phone I suppose.
+/// (It's various StoreListenerMixin onChange() handlers that together can take some time
+/// — search for "onChange: function".)
+///
+const enum EmitEvent {
+  NoNothingChanged = 0,
+  YesQuickUpdate = 1,
+  Yes = 2,
+  YesFullUpdate = 3,
+}
+
 export let __patchedStore: Store | St; // [flux_mess]
 
 type StoreStateSetter = (store: Store) => void;
@@ -231,6 +245,7 @@ ReactDispatcher.register(function(payload) {
   const action = payload.action;
   const currentPage: Page = store.currentPage;
   let patchedTheStore: true | U;
+  let needEmit: EmitEvent | U;
   // SHOULD clone the store here? [8GKB3QA] but might introduce so many bugs, so wait a bit.
   // So becomes (more) immutable.
   switch (action.actionType) {
@@ -451,11 +466,11 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.UncollapsePost:
-      uncollapsePostAndChildren(action.post);
+      needEmit = uncollapsePostAndChildren(action.post);
       break;
 
     case ReactActions.actionTypes.ShowPost:
-      showPostNr(action.postNr, action.showPostOpts);
+      needEmit = showPostNr(action.postNr, action.showPostOpts);
       break;
 
     case ReactActions.actionTypes.SetWatchbar:
@@ -513,11 +528,11 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.AddNotifications:
-      handleNotifications(action.notifications);
+      needEmit = handleNotifications(action.notifications);
       break;
 
     case ReactActions.actionTypes.MarkAnyNotificationAsSeen:
-      markAnyNotificationssAsSeen(action.postNr);
+      needEmit = markAnyNotificationssAsSeen(action.postNr);
       break;
 
     case ReactActions.actionTypes.AddMeAsPageMember:
@@ -539,6 +554,11 @@ ReactDispatcher.register(function(payload) {
     break;
 
     case ReactActions.actionTypes.UpdateUserPresence:
+      // Only need to rerender the users list in the sidebar, if it's shown. — But in very
+      // rare cases, a user might have gotten a new badge? Then we'd want to rerender any
+      // posts by han, so the badge appears. Still, COULD_OPTIMIZE, [try_skip_emit].
+      //store.quickUpdate = true;
+
       const data: UserPresenceWsMsg = action.data;
       maybePatchTheStore(data);
       patchedTheStore = true; // always patches, see UserPresenceWsMsg server side.
@@ -558,6 +578,30 @@ ReactDispatcher.register(function(payload) {
       console.warn('Unknown action: ' + JSON.stringify(action));
       return true;
   }
+
+  if (needEmit === EmitEvent.NoNothingChanged) {
+    // Don't trigger any event.
+    // @ifdef DEBUG
+    dieIf(store.cannotQuickUpdate || _.size(store.postsToUpdate), 'TyE50SLN2');
+    // @endif
+  }
+  else {
+    _emitEvent(store, patchedTheStore, action);
+  }
+
+  // How can one know when React is done with all updates scheduled above?
+  // (Would need to look into how emitChange() and the hook fns work?)
+  // Some code wants to run afterwards: [SCROLLPRVW]. For now though:
+  if (action.onDone) {
+    setTimeout(action.onDone, 1);
+  }
+
+  // Tell the dispatcher that there were no errors:
+  return true;
+});
+
+
+function _emitEvent(store: Store, patchedTheStore: Bo, action: any) {
 
   if (store.cannotQuickUpdate) {
     resetQuickUpdateInPlace(store);
@@ -590,17 +634,7 @@ ReactDispatcher.register(function(payload) {
   }
 
   resetQuickUpdateInPlace(store);
-
-  // How can one know when React is done with all updates scheduled above?
-  // (Would need to look into how emitChange() and the hook fns work?)
-  // Some code wants to run afterwards: [SCROLLPRVW]. For now though:
-  if (action.onDone) {
-    setTimeout(action.onDone, 1);
-  }
-
-  // Tell the dispatcher that there were no errors:
-  return true;
-});
+}
 
 
 function resetQuickUpdateInPlace(st: Store) {
@@ -1427,12 +1461,15 @@ function collapseTree(post: Post) {
 }
 
 
-function showPostNr(postNr: PostNr, showPostOpts: ShowPostOpts = {}) {
+function showPostNr(postNr: PostNr, showPostOpts: ShowPostOpts = {}): EmitEvent {
+  let needEmit = EmitEvent.NoNothingChanged;
+
   const page: Page = store.currentPage;
   const postToShow: Post = page.postsByNr[postNr];
   let post: Post = postToShow;
   if (showPostOpts.showChildrenToo) {
-    uncollapsePostAndChildren(post);
+    needEmit = Math.max(needEmit,
+            uncollapsePostAndChildren(post));
   }
   // Uncollapse ancestors, to make postId visible. Don't loop forever if there's any weird
   // cycle — that crashes Chrome (as of May 3 2017).
@@ -1446,9 +1483,11 @@ function showPostNr(postNr: PostNr, showPostOpts: ShowPostOpts = {}) {
     }
     postNrsSeen[post.nr] = true;
     // But minor BUG: Usually we want to leave isPostCollapsed = false? (305RKTU).
-    uncollapseOne(post);
+    needEmit = Math.max(needEmit,
+            uncollapseOne(post));
     post = page.postsByNr[post.parentNr];
   }
+
   setTimeout(() => {
     const opts: ShowPostOpts = { ...showPostOpts };
     if (postNr <= MaxVirtPostNr) {
@@ -1467,43 +1506,55 @@ function showPostNr(postNr: PostNr, showPostOpts: ShowPostOpts = {}) {
 
     debiki2.page.Hacks.processPosts();
   }, 1);
+
+  return needEmit;
 }
 
 
-function uncollapsePostAndChildren(post: Post) {
+function uncollapsePostAndChildren(post: Post): EmitEvent {
   const page: Page = store.currentPage;
-  uncollapseOne(post);
+  let needEmit =
+          uncollapseOne(post);
   // Also uncollapse children and grandchildren so one won't have to Click-to-show... all the time.
   for (let i = 0; i < Math.min(post.childNrsSorted.length, 5); ++i) {
     const childNr = post.childNrsSorted[i];
     const child = page.postsByNr[childNr];
     if (!child)
       continue;
-    uncollapseOne(child);
+
+    needEmit = Math.max(needEmit,
+            uncollapseOne(child));
+
     for (let i2 = 0; i2 < Math.min(child.childNrsSorted.length, 3); ++i2) {
       const grandchildNr = child.childNrsSorted[i2];
       const grandchild = page.postsByNr[grandchildNr];
       if (!grandchild)
         continue;
-      uncollapseOne(grandchild);
+
+      needEmit = Math.max(needEmit,
+              uncollapseOne(grandchild));
     }
   }
+
   setTimeout(function() {
     debiki2.page.Hacks.processPosts();
     scrollAndFlashPosts(page, [post]);
   });
+
+  return needEmit;
 }
 
 
-function uncollapseOne(post: Post) {
+function uncollapseOne(post: Post): EmitEvent {
   if (!post.isTreeCollapsed && !post.isPostCollapsed && !post.summarize && !post.squash)
-    return;
+    return EmitEvent.NoNothingChanged;
   const p2 = clonePost(post.nr);
   p2.isTreeCollapsed = false;
   p2.isPostCollapsed = false;  // sometimes we don't want this though  (305RKTU)
   p2.summarize = false;
   p2.squash = false;
   updatePost(p2, store.currentPageId, true);
+  return EmitEvent.Yes;
 }
 
 
@@ -1736,7 +1787,8 @@ export function postAppearedBefore(postA: Post, postB: Post): number {
 }
 
 
-function handleNotifications(newNotfs: Notification[]) {
+function handleNotifications(newNotfs: Notification[]): EmitEvent {
+  let needEmit = EmitEvent.NoNothingChanged;
   const oldNotfs = store.me.notifications;
   for (let i = 0; i < newNotfs.length; ++i) {
     const newNotf = newNotfs[i];
@@ -1749,11 +1801,15 @@ function handleNotifications(newNotfs: Notification[]) {
     }
 
     watchbar_handleNotification(store.me.watchbar, newNotf);
+    // Only need to rerender the watchbar, MyMenu and notification icons.
+    needEmit = EmitEvent.YesQuickUpdate;
   }
+  return needEmit;
 }
 
 
 function markAnyNotificationssAsSeen(postNr) {
+  let needEmit = EmitEvent.NoNothingChanged;
   const notfs: Notification[] = store.me.notifications;
   _.each(notfs, (notf: Notification) => {
     if (notf.pageId === store.currentPageId && notf.postNr === postNr &&
@@ -1766,9 +1822,12 @@ function markAnyNotificationssAsSeen(postNr) {
         updateNotificationCounts(notf, false);
         // Simpler to call the server from here:
         Server.markNotificationAsSeen(notf.id);
+        // Only need to rerender MyMenu and notification icons.
+        needEmit = EmitEvent.YesQuickUpdate;
       }
     }
   });
+  return needEmit;
 }
 
 
