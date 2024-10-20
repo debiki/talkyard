@@ -225,7 +225,7 @@ describe(`modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ`, () => {
           replD_toApr_nr, replD_toApr_txt + modyasMoreText);
     await modyasBrowser.topic.assertPostNeedsApprovalBodyVisible(replD_toApr_nr);
     assert.deepEq(await modyasBrowser.topic.countReplies({ skipWait: true }),
-          { numNormal: 0, numPreviews: 0, numUnapproved: 3, numDeleted: 1 });
+          { numNormal: 0, numPreviews: 0, numDrafts: 0, numUnapproved: 3, numDeleted: 0 });
   });
 
   it(`... approves reply D`, async () => {
@@ -240,13 +240,14 @@ describe(`modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ`, () => {
     await mariasBrowser.topic.refreshUntilPostNotPendingApproval(replD_toApr_nr);
   });
 
+  /* Now deleted unapproved posts are no longer loaded.  [opt_show_deld_posts]
   it(`... and reply C is deleted`, async () => {
     await mariasBrowser.topic.waitForPostVisibleAsDeleted(replC_toRej_nr);
-  });
+  }); */
 
   it(`... and two pending approval`, async () => {
     assert.deepEq(await strangersBrowser.topic.countReplies({ skipWait: true }),
-          { numNormal: 1, numPreviews: 0, numUnapproved: 2, numDeleted: 1 });
+          { numNormal: 1, numPreviews: 0, numDrafts: 0, numUnapproved: 2, numDeleted: 0 });
   });
 
 
@@ -267,7 +268,7 @@ describe(`modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ`, () => {
 
   it(`... those are all posts`, async () => {
     assert.deepEq(await strangersBrowser.topic.countReplies({ skipWait: true }),
-          { numNormal: 1, numPreviews: 0, numUnapproved: 2, numDeleted: 0 });
+          { numNormal: 1, numPreviews: 0, numDrafts: 0, numUnapproved: 2, numDeleted: 0 });
   });
 
 
