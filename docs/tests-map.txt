@@ -1197,9 +1197,9 @@ embedded comments:
   scroll and show #comment-n:
           - embedded-comments-scroll  TyT2K4DHR49-05
   scroll and load #comment-nnn:
-          - embedded-comments-scroll-and-load-more.2browsers.test.ts  TyT603MRKH592S.TyT03RMET742M
+          - embcom.scroll-and-load-more.2br.ec  TyT603MRKH592S.TyT03RMET742M
   load more comments:
-          - embedded-comments-scroll-and-load-more.2browsers.test.ts  TyT603MRKH592S
+          - embcom.scroll-and-load-more.2br.ec  TyT603MRKH592S
   won't auto scroll to last read comment:
   (usually the blog post more interesting? so don't auto scroll):
           - embedded-comments-scroll  TyT2K4DHR49

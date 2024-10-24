@@ -693,7 +693,7 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-create-site-forum-intro-tour $args
   $r s/wdio       --only embedded-comments-create-site-import-disqus.2br $args
   $r s/wdio-7     --only embcom.drafts-previews-not-logged-in.2br --cd -i $args
-  $r s/wdio       --only embedded-comments-scroll-and-load-more.2browsers $args
+  $r s/wdio-7     --only embcom.scroll-and-load-more.2br.ec --cd -i $args
   $r s/wdio       --only embedded-comments-scroll-embedding-page $args
   # (no -old-name version, because the new name is always included in the server's genetarted html.)
 
