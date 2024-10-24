@@ -466,7 +466,7 @@ const ChooseAnonModal = React.createFactory<{}>(function() {
 
   return (
       DropdownModal({ show: isOpen, onHide: close, atX: atRect.left, atY: atRect.top,
-          pullLeft: true, showCloseButton: true },
+          pullLeft: true, showCloseButton: true, dialogClassName2: 'e_ChoAuD' },
         r.div({ className: 's_ExplDrp_Ttl' }, "Post ..."),  // I18N
         items,
         ));
