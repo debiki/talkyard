@@ -513,7 +513,7 @@ function runAllE2eTests {
 
   $r s/wdio --only group-permissions-similar-topics.2br.mtime $args
   $r s/wdio --only permissions-edit-wiki-posts.2browsers $args
-  #$r s/wdio-7 --only perms-see-own.2br.f $args --cd -i  # _see_own
+  $r s/wdio-7 --only perms-see-own.2br.f $args --cd -i  # _see_own
 
   # Do after the search and access permission tests above.  [.more_cat_tests]
   $r s/wdio --only categories-delete.2br $args
@@ -542,8 +542,12 @@ function runAllE2eTests {
   # Aliases (anonyms, pseudonyms)
   # ------------
 
-  #$r s/wdio-7 --only alias-anons-true-mixed.2br.f --cd -i $args
-  #$r s/wdio-7 --only alias-anons-basic.2br.f --cd -i $args
+  $r s/wdio-7 --only alias-anons-basic-temp.2br.f --cd -i $args
+  $r s/wdio-7 --only alias-anons-basic-perm.2br.f --cd -i $args
+  $r s/wdio-7 --only alias-anons-approve-review.2br.f --cd -i $args
+  $r s/wdio-7 --only alias-anons-edit-alter.2br.f --cd -i $args
+  # $r s/wdio-7 --only alias-anons-true-mixed.2br.f --cd -i $args
+  # Would be good with this too, later:
   #$r s/wdio-7 --only alias-anons-see-own.2br.f --cd -i $args  # _see_own
 
 

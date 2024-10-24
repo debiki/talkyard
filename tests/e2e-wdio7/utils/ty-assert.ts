@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as assert from 'assert';
-import { j2s, dieIf } from './log-and-die';
+import { j2s, dieIf, die } from './log-and-die';
 
 // (Also see: https://www.npmjs.com/package/power-assert )
 
@@ -170,11 +170,30 @@ const tyAssert = {
     }
   },
 
-  excludes: (text: string, unexpectedSubstring: string, message?: string) => {
+  excludes: (text: St, unexpectedSubstring: (St | RegExp) | (St | RegExp)[], details?: St) => {
     tyAssert.ok(text.length > 0, 'TyE4906895SK', 'text empty');
-    const ix = text.indexOf(unexpectedSubstring);
-    assert.ok(ix === -1,
-      message || `This: "${unexpectedSubstring}" is incorrectly included in: "${text}"`);
+    let found = [];
+    const unexVals = _.isArray(unexpectedSubstring) ? unexpectedSubstring : [unexpectedSubstring];
+    for (let unexVal of unexVals) {
+      if (_.isString(unexVal)) {
+        const unexStr: St = unexVal;
+        const ix = text.indexOf(unexStr);
+        if (ix !== -1)
+          found.push(unexStr);
+      }
+      else if (_.isRegExp(unexVal)) {
+        die("Regex unimpl [TyE703SN<MD5]");
+      }
+      else {
+        die(`Bad item type: ${typeof unexVal} [TyE7TKSR47WQ2]`);
+      }
+    }
+    tyAssert.ok(!found.length,
+        `assert.excludes:\n` +
+        `    These items:  ${j2s(found)}\n` +
+        `    found in:  "${text}"` +
+        `    (but shouldn't be there)` + (!details ? '' :
+        `    Details:  ${details}`));
   },
 
   numSubstringsEq: (text: St, substringNoSpecialChars: St, numExpected: Nr) => {

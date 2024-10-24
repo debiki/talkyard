@@ -5,22 +5,31 @@
 import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
 import server from '../utils/server';
+import * as make from '../utils/make';
+import { checkEmailsTo } from '../utils/emails-e2e';
 import { buildSite } from '../utils/site-builder';
 import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import { E2eVote, E2eAuthor } from '../test-types';
+import { ForbiddenPs } from '../test-types2';
+import { TestAnonStatus, TestNeverAlways } from '../test-constants';
 import c from '../test-constants';
+import { j2s, logBoring, logDebug, die } from '../utils/log-and-die';
 
 let brA: TyE2eTestBrowser;
 let brB: TyE2eTestBrowser;
 
 let owen: Member;
 let owen_brA: TyE2eTestBrowser;
+let owensForbiddenWords: St[] | U;
+let owensForbiddenPs: ForbiddenPs;
+
 const owensAnonsUrl = '/-/users/-11';
-// Owen posts the second anon reply —  he gets avatar 'A2'.
-const owensAnonsLetters = 'A2';
+// Owen does the first anon interaction (except for posting the orig post, but
+// no orig post avatar is shown, currently [no_op_avatar]) —  he gets avatar 'A'.
+const owensAnonsLetters = 'A';
 const owensAnonAuthor: E2eAuthor = {
   username: null,
-  fullName: 'Anonym',
+  fullName: c.PermAnonName,
   profileUrl: owensAnonsUrl,
   avatarText: owensAnonsLetters,
   saysIsYou: false,
@@ -35,12 +44,13 @@ const owenSelf: E2eAuthor = {
 
 let maja: Member;
 let maja_brB: TyE2eTestBrowser;
+let majasForbiddenWords: St[] | U;
+let majasForbiddenPs: ForbiddenPs;
 const majasAnonsUrl = '/-/users/-10';
-// Maja posts the first anon reply — her anon gets avatar 'A'.
-const majasAnonsLetters = 'A';
+const majasAnonsLetters = 'A2';
 const majasAnonAuthor: E2eAuthor = {
   username: null,
-  fullName: 'Anonym',
+  fullName: c.PermAnonName,
   profileUrl: majasAnonsUrl,
   avatarText: majasAnonsLetters,
   saysIsYou: false,
@@ -53,9 +63,11 @@ const majaSelf: E2eAuthor = {
   saysIsYou: false,
 };
 
-/*
 let michael: Member;
 let michael_brB: TyE2eTestBrowser;
+let michaelsForbiddenWords: St[] | U;
+let michaelsForbiddenPs: ForbiddenPs;
+/*
 const michaelsAnonsUrl = '/-/users/-12';
 // Michael is the third person to vote or comment — he gets letter A3.
 const michaelsAnonsLetters = 'A3';
@@ -74,34 +86,70 @@ let forum: TwoCatsTestForum;  // or TwoPagesTestForum or EmptyTestForum or Large
 
 
 let majasPagePath: St | U;
-const majasPage = {
-  title: 'majasPage_title',
-  body: 'majasPage_body',
+const ma_x_jasPage = {
+  title: 'ma_x_jasPage_title',
+  body: 'ma_x_jasPage_body',
 };
 
-const owensReplyText = 'owensReplyText';
-const majasReplyToOwenText = 'majasReplyToOwenText';
-const owensReplyToMajasReplyText = 'owensReplyToMajasReplyText';
-const majaContinuesText = 'majaContinuesText';
-const majaContinuesText2 = 'majaContinuesText2';
-const owenContinuesText2 = 'owenContinuesText2';
-const majaFinishesThread = 'majaFinishesThread';
+const ow_ensReply1 = 'ow_ensReply1';
+const ow_ensReply2 = 'ow_ensReply2';
+const ma_jasReply = 'ma_jasReply';
+const mi_chaelsReply1 = 'mi_chaelsReply1';
+const mi_chaelsReply2 = 'mi_chaelsReply2';
 
-const owensThreadTwoStart = 'owensThreadTwoStart';
-const owensThreadTwoCtd = 'owensThreadTwoCtd';
-const owensThreadThreeStart = 'owensThreadThreeStart';
+const ow_ensReplyText = 'ow_ensReplyText';
+const ma_jasReplyToOw_enText = 'ma_jasReplyToOw_enText';
+const ow_ensReplyToMa_jasReplyText = 'ow_ensReplyToMa_jasReplyText';
+const ma_jaContinuesText = 'ma_jaContinuesText';
+const ma_jaContinuesText2 = 'ma_jaContinuesText2';
+const ow_enContinuesText2 = 'ow_enContinuesText2';
+const ma_jaFinishesThread = 'ma_jaFinishesThread';
+
+const ow_ensThreadTwoStart = 'ow_ensThreadTwoStart';
+const ow_ensThreadTwoCtd = 'ow_ensThreadTwoCtd';
+const ow_ensThreadThreeStart = 'ow_ensThreadThreeStart';
+
+const allPostTexts = [
+        ma_x_jasPage.title,
+        ma_x_jasPage.body,
+        ow_ensReply1,
+        ow_ensReply2,
+        ma_jasReply,
+        mi_chaelsReply1,
+        mi_chaelsReply2,
+        ow_ensReplyText,
+        ma_jasReplyToOw_enText,
+        ow_ensReplyToMa_jasReplyText,
+        ma_jaContinuesText,
+        ma_jaContinuesText2,
+        ow_enContinuesText2,
+        ma_jaFinishesThread,
+        ow_ensThreadTwoStart,
+        ow_ensThreadTwoCtd,
+        ow_ensThreadThreeStart,
+        ];
+
+let owenIdName: St[] | U;
+let majaIdName: St[] | U;
+let michaelIdName: St[] | U;
 
 let lastPostNr = 0;
+
+let expectedNumEmails = 0;
 
 
 describe(`alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX`, () => {
 
   it(`Construct site`, async () => {
+    make.setNextUserId(1020304001); // [e2e_forbidden_anon_ids]
+
     const builder = buildSite();
     forum = builder.addCatABForum({
-      title: "Some E2E Test",
+      title: "E2e: Sensitive Anon Discs",
       members: ['mei', 'maja', 'michael']
     });
+
+    // +  Configure Sensitive Anon Discs, see:  alias-anons-edit-alter.2br.f.e2e.ts
 
     // Disable notifications, or notf email counts will be off
     // (since Owen would get emails).
@@ -112,7 +160,7 @@ describe(`alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX`, () => {
     });
     builder.getSite().pageNotfPrefs = [{
       memberId: forum.members.owen.id,
-      notfLevel: c.TestPageNotfLevel.Muted,
+      notfLevel: c.TestPageNotfLevel.EveryPostAllEdits,
       wholeSite: true,
     }];
 
@@ -124,41 +172,41 @@ describe(`alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX`, () => {
 
     maja = forum.members.maja;
     maja_brB = brB;
-    //michael = forum.members.michael;
-    //michael_brB = brB;
+    michael = forum.members.michael;
+    michael_brB = brB;
+
+    const forbiddenPs = { forbiddenWordsOkInPresence: false, shouldFindWords: allPostTexts };
+
+    owenIdName    = ['' + owen.id, "owen", owen.username, owen.fullName];
+    majaIdName    = ['' + maja.id, maja.username, maja.fullName];
+    michaelIdName = ['' + michael.id, michael.username, michael.fullName];
+    assert.eq(michael.id, 1020304004); // or test fails below
+
+    owensForbiddenWords = [...majaIdName, ...michaelIdName];
+    owensForbiddenPs = { forbiddenWords: owensForbiddenWords, ...forbiddenPs };
+
+    majasForbiddenWords = [...owenIdName, ...michaelIdName];
+    majasForbiddenPs = { forbiddenWords: majasForbiddenWords, ...forbiddenPs };
+
+    michaelsForbiddenWords = [...owenIdName, ...majaIdName];
+    michaelsForbiddenPs = { forbiddenWords: michaelsForbiddenWords, ...forbiddenPs };
 
     assert.refEq(builder.getSite(), forum.siteData);
   });
 
   it(`Import site`, async () => {
     site = await server.importSiteData(forum.siteData);
-    await server.skipRateLimits(site.id);
+    server.skipRateLimits(site.id);
   });
 
 
-  // ----- Configure Anons Allowed
 
-  it(`Owen goes to Category A`, async () => {
-    await owen_brA.go2(site.origin + '/latest/category-a');
-    await owen_brA.complex.loginWithPasswordViaTopbar(owen);
-  });
-  it(`... opens the Anonymous dropdown`, async () => {
-    await owen_brA.forumButtons.clickEditCategory();
-    await owen_brA.waitAndClick('.e_AnonComtsB');
-  });
-  it(`... sets it to Allowed`, async () => {
-    await owen_brA.waitAndClick('.c_NevAlwD .e_Alow');
-  });
-  it(`... opens the Anon Purpose dialog`, async () => {
-    await owen_brA.waitAndClick('.e_AnonPurpB');
-  });
-  it(`... selects Sensitive Discussions`, async () => {
-    await owen_brA.waitAndClick('.e_OnlSelf');
-  });
-  it(`... saves`, async () => {
-    await owen_brA.categoryDialog.submit();
-  });
+  // Not finished!
 
+
+  // ============================================
+  return;
+  // ============================================
 
   // ----- Default oneself
 
@@ -173,12 +221,12 @@ describe(`alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX`, () => {
     await maja_brB.waitForVisible('.c_AliasB');
   });
   it(`... with as-you pre-selected  (anonymity is Allowed, not Recommended)`, async () => {
-    await maja_brB.waitForVisible('.e_AsSelf');
+    await maja_brB.editor.waitForAnonPurpose(TestAnonStatus.NotAnon);
   });
   it(`... she submits the topic`, async () => {
-    await maja_brB.editor.editTitle(majasPage.title);
-    await maja_brB.editor.editText(majasPage.body);
-    await maja_brB.complex.saveTopic(majasPage);
+    await maja_brB.editor.editTitle(ma_x_jasPage.title);
+    await maja_brB.editor.editText(ma_x_jasPage.body);
+    await maja_brB.complex.saveTopic(ma_x_jasPage);
     majasPagePath = await maja_brB.urlPath();
   });
 
@@ -191,10 +239,10 @@ describe(`alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX`, () => {
     await owen_brA.waitForVisible('.c_AliasB');
   });
   it(`... he's also himself`, async () => {
-    await owen_brA.waitForVisible('.e_AsSelf');
+    await owen_brA.editor.waitForAnonPurpose(TestAnonStatus.NotAnon);
   });
   it(`... he submits his comment`, async () => {
-    await owen_brA.editor.editText(owensReplyText);
+    await owen_brA.editor.editText(ow_ensReplyText);
     await owen_brA.editor.save();
   });
 
@@ -220,15 +268,16 @@ describe(`alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX`, () => {
     await maja_brB.topic.clickReplyToPostNr(lastPostNr);
   });
   it(`... she's herself`, async () => {
-    await maja_brB.waitForVisible('.e_AsSelf');
+    await maja_brB.editor.waitForAnonPurpose(TestAnonStatus.NotAnon);
   });
   it(`... but swiches to Anonymous`, async () => {
     await maja_brB.waitAndClick('.c_AliasB');
     await maja_brB.waitAndClick('.e_AnonPrmB');
   });
   it(`... submits`, async () => {
-    await maja_brB.editor.editText(majasReplyToOwenText);
+    await maja_brB.editor.editText(ma_jasReplyToOw_enText);
     await maja_brB.editor.save();
+    //await maja_brB.waitAndClick('.e_AnoMby .e_HelpOk');
     lastPostNr += 1;
   });
 
@@ -238,15 +287,15 @@ describe(`alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX`, () => {
     await owen_brA.topic.clickReplyToPostNr(lastPostNr);
   });
   it(`... he is himself`, async () => {
-    await owen_brA.waitForVisible('.e_AsSelf');
+    await owen_brA.editor.waitForAnonPurpose(TestAnonStatus.NotAnon);
   });
   it(`... swiches to Anonymous, he too`, async () => {
-    await owen_brA.waitAndClick('.c_AliasB');
-    await owen_brA.waitAndClick('.e_AnonPrmB');
+    await owen_brA.editor.setAnonPurpose(TestAnonStatus.IsAnonOnlySelfCanDeanon);
   });
   it(`... he submits his comment`, async () => {
-    await owen_brA.editor.editText(owensReplyToMajasReplyText);
+    await owen_brA.editor.editText(ow_ensReplyToMa_jasReplyText);
     await owen_brA.editor.save();
+    //await owen_brA.waitAndClick('.e_AnoMby .e_HelpOk');
     lastPostNr += 1;
   });
 
@@ -262,7 +311,7 @@ describe(`alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX`, () => {
     await maja_brB.waitForVisible('.e_AnonPrm');
   });
   it(`... submits`, async () => {
-    await maja_brB.editor.editText(majaContinuesText);
+    await maja_brB.editor.editText(ma_jaContinuesText);
     await maja_brB.editor.save();
     lastPostNr += 1;
   });
@@ -287,7 +336,7 @@ describe(`alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX`, () => {
     await maja_brB.waitAndClick('.e_AsSelfB');
   });
   it(`... submits`, async () => {
-    await maja_brB.editor.editText(majaContinuesText2);
+    await maja_brB.editor.editText(ma_jaContinuesText2);
     await maja_brB.editor.save();
     lastPostNr += 1;
   });
@@ -303,7 +352,7 @@ describe(`alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX`, () => {
     await owen_brA.waitAndClick('.e_AsSelfB');
   });
   it(`... submits`, async () => {
-    await owen_brA.editor.editText(owenContinuesText2);
+    await owen_brA.editor.editText(ow_enContinuesText2);
     await owen_brA.editor.save();
     lastPostNr += 1;
   });
@@ -317,10 +366,10 @@ describe(`alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX`, () => {
     await maja_brB.topic.clickReplyToPostNr(lastPostNr);
   });
   it(`... she's herself — becuse her last comment in the thread is`, async () => {
-    await maja_brB.waitForVisible('.e_AsSelf');
+    await maja_brB.editor.waitForAnonPurpose(TestAnonStatus.NotAnon);
   });
   it(`... submits`, async () => {
-    await maja_brB.editor.editText(majaFinishesThread);
+    await maja_brB.editor.editText(ma_jaFinishesThread);
     await maja_brB.editor.save();
     lastPostNr += 1;
   });
@@ -353,7 +402,7 @@ describe(`alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX`, () => {
     await owen_brA.waitAndClick('.e_AnonPrmB');
   });
   it(`... he submits his comment`, async () => {
-    await owen_brA.editor.editText(owensThreadTwoStart);
+    await owen_brA.editor.editText(ow_ensThreadTwoStart);
     await owen_brA.editor.save();
     lastPostNr += 1;
     subThreadTwoStartNr = lastPostNr;
@@ -375,7 +424,7 @@ describe(`alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX`, () => {
     await owen_brA.waitAndClick('.e_AsSelfB');
   });
   it(`... he submits his comment`, async () => {
-    await owen_brA.editor.editText(owensThreadThreeStart);
+    await owen_brA.editor.editText(ow_ensThreadThreeStart);
     await owen_brA.editor.save();
     lastPostNr += 1;
   });
@@ -393,7 +442,7 @@ describe(`alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX`, () => {
     await owen_brA.waitForVisible('.e_AnonPrm');
   });
   it(`... he submits his comment`, async () => {
-    await owen_brA.editor.editText(owensThreadTwoCtd);
+    await owen_brA.editor.editText(ow_ensThreadTwoCtd);
     await owen_brA.editor.save();
     lastPostNr += 1;
   });

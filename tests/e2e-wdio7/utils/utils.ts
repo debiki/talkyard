@@ -204,6 +204,12 @@ export function makeLinkPreviewSelector(provider: LinkPreviewProvider | 'Interna
 }
 
 
+export function removeUsersOnlineJson(html: St) {
+  // Also in the slim-bundle. [remove_usersOnline]
+  return html.replace(/"usersOnline":\[\{.*?\}\]/, ' usersOnl_ine_redacted ');
+}
+
+
 export async function ssoLogin(ps: { member: Member, ssoId, browser,
         origin: string, server, apiSecret: string, apiRequesterId?: UserId,
         thenGoTo: string }) {

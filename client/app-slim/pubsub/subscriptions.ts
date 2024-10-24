@@ -34,6 +34,11 @@ if (eds.useServiceWorker) {
     console.debug(`SW says: ${JSON.stringify(event)}, message: ${JSON.stringify(message)} [TyMGOTSWMSG]`);
     // @endif
 
+    // ((Stringifying `event` becomes just '{"isTrusted":true}' — but stringifying
+    // event.data gives us the actual content. `Server.checkE2eTestForbiddenWords()`
+    // stringifies, later.))
+    Server.checkE2eTestForbiddenWords('WebSocket', event.data);
+
     // REFACTOR replace these messages with SwSays?
     switch (message.type) {  // dupl switch, will delete the other one (7QKBAG202)
       case 'MyVersionIs':
