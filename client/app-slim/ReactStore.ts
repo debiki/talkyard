@@ -64,6 +64,9 @@ const enum EmitEvent {
   YesFullUpdate = 3,
 }
 
+// For detecting unnecessary store change events (bad for perforance).
+let numEmits = 0;
+
 export let __patchedStore: Store | St; // [flux_mess]
 
 type StoreStateSetter = (store: Store) => void;
@@ -405,7 +408,11 @@ ReactDispatcher.register(function(payload) {
       //currentPage.horizontalLayout = newMeta.page type === PageRole.MindMap || currentPage.is2dTreeDefault;
       //const is2dTree = currentPage.horizontalLayout;
 
-      updatePost(newData.newTitlePost, currentPage.pageId);
+      upsertPost(newData.newTitlePost, currentPage.pageId);
+
+      // Maybe different posts shown, now. E.g. if sort order changed.  _break_out_process_fn
+      stopGifsPlayOnClick();
+      setTimeout(debiki2.page.Hacks.processPosts);
 
       /*
       if (was2dTree !== is2dTree) {   // [2D_LAYOUT]
@@ -437,7 +444,8 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.UpdatePost:
-      updatePost(action.post, currentPage.pageId);
+      const res = upsertPost(action.post, currentPage.pageId);
+      _showMyNewPostsIfAny([res]);
       break;
 
     case ReactActions.actionTypes.VoteOnPost:
@@ -467,6 +475,14 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.UncollapsePost:
       needEmit = uncollapsePostAndChildren(action.post);
+      // _break_out_process_fn?
+      setTimeout(function() {
+        if (needEmit !== EmitEvent.NoNothingChanged) {
+          stopGifsPlayOnClick();
+          debiki2.page.Hacks.processPosts();
+        }
+        scrollAndFlashPosts(store.currentPage, [post]);
+      });
       break;
 
     case ReactActions.actionTypes.ShowPost:
@@ -755,6 +771,8 @@ ReactStore.activateVolatileData = function() {
 ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffForMe) {
   // [redux] Modifying state in-place, shouldn't do? But works fine.
 
+  numEmits = 0;
+
   store.userSpecificDataAdded = true;
 
   if (stuffForMe) {
@@ -898,14 +916,22 @@ ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffFo
   // ----- Websocket
 
   debiki2.pubsub.subscribeToServerEvents(store.me);
-  store.quickUpdate = false;
+
+
+  // The caller will emit a change event — if we've done here too, that's bad
+  // for performance.
+  // @ifdef DEBUG
+  dieIf(numEmits > 0, `${numEmits} pointless emits [TyEEMIT02]`)
+  // @endif
+
+  resetQuickUpdateInPlace(store);
 };
 
 
 function store_addAnonsAndUnapprovedPosts(store: Store, myPageData: MyPageData) {
   // Test:  modn-from-disc-page-approve-before  TyTE2E603RTJ
   _.each(myPageData.unapprovedPosts, (post: Post) => {
-    updatePost(post, store.currentPageId);
+    upsertPost(post, store.currentPageId);
     // COULD_FREE_MEM if other user was logged in before?
   });
 
@@ -995,7 +1021,7 @@ function addMyDraftPosts(store: Store, myPageData: MyPageData) {
       if (draftType === DraftType.Reply || draftType === DraftType.ProgressPost) {
         const post: Post | null = store_makePostForDraft(store.me.id, draft);
         if (post) {
-          updatePost(post, store.currentPageId);
+          upsertPost(post, store.currentPageId);
         }
       }
     });
@@ -1081,6 +1107,7 @@ ReactStore.getCategories = function() {
 
 ReactStore.emitChange = function() {
   this.emit(ChangeEvent);
+  numEmits += 1;
 };
 
 
@@ -1112,17 +1139,22 @@ export function clonePost(postNr: number): Post {
 }
 
 
-function updatePost(post: Post, pageId: PageId, isCollapsing?: Bo, isScrollAdding?: Bo) {
+interface UpsertPostResult {
+  postBef?: Post
+  postAft?: Post
+}
+
+function upsertPost(post: Post, pageId: PageId, ps: { isCollapsing?: Bo } = {}): UpsertPostResult {
   // The post might be for the page currently being shown, but could also be for a page
   // in our client side mem cache. [8YDVP2A]
   const isCurrentPage = pageId === store.currentPageId;
   const page: Page = store.pagesById[pageId];
 
   if (!page)
-    return;
+    return {};
 
   const oldVersion = page.postsByNr[post.nr];
-  if (oldVersion && !isCollapsing) {
+  if (oldVersion && !ps.isCollapsing) {
     // If we've modified-saved-reloaded-from-the-server this post, then ignore the
     // collapse settings from the server, in case the user has toggled it client side.
     // If `isCollapsing`, however, then we're toggling that state client side only.
@@ -1229,28 +1261,37 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: Bo, isScrollAddin
 
   rememberPostsToQuickUpdate(post.nr);
 
-  if (isScrollAdding) {
-    // Noop. Caller calls processPosts(). And, no need to loadAndShowPost() —
-    // they'll scroll in at the top or bottom anyway.
-    return;
-  }
+  return { postBef: oldVersion, postAft: post };
+}
 
-  stopGifsPlayOnClick();
-  setTimeout(() => {
-    debiki2.page.Hacks.processPosts(); // COULD_OPTIMIZE: Don't do for each new post, if many
-    if (!oldVersion && post.authorId === store.me.id && !post.isPreview &&
-        // Need not flash these — if one does sth that results in a meta comment,
-        // then one is aware about that already (since one did it oneself).
-        // And if sbd else did — then I think that's typically not that interesting,
-        // would be distracting to scroll-and-flash-&-show?
-        post.postType !== PostType.MetaMessage) {
-      // Scroll to and highligt this new / edited post.
-      // BUG (harmless) skip if we just loaded it because we're staff or the author,
-      // and it's deleted so only we can see it
-      // — because that doesn't mean we want to scroll to it and flash it.
-      ReactActions.loadAndShowPost(post.nr);
+
+// Maybe RENAME to sth that incl "processPost"? Since that's done too.
+function _showMyNewPostsIfAny(upsertResults: UpsertPostResult[]) {
+  if (upsertResults.length)
+    return;
+
+  setTimeout(showMyPosts, 1);
+
+  function showMyPosts() {
+    stopGifsPlayOnClick();
+    for (let res of upsertResults) {
+      const oldVersion = res.postBef;
+      const post = res.postAft;
+      debiki2.page.Hacks.processPosts('post-' + post.uniqueId);
+      if (!oldVersion && post.authorId === store.me.id && !post.isPreview &&
+          // Need not flash these — if one does sth that results in a meta comment,
+          // then one is aware about that already (since one did it oneself).
+          // And if sbd else did — then I think that's typically not that interesting,
+          // would be distracting to scroll-and-flash-&-show?
+          post.postType !== PostType.MetaMessage) {
+        // Scroll to and highligt this new / edited post.
+        // BUG (harmless) skip if we just loaded it because we're staff or the author,
+        // and it's deleted so only we can see it
+        // — because that doesn't mean we want to scroll to it and flash it.
+        ReactActions.loadAndShowPost(post.nr);
+      }
     }
-  }, 1);
+  }
 }
 
 
@@ -1452,7 +1493,7 @@ function collapseTree(post: Post) {
   post.isTreeCollapsed = 'Truncated';
   post.summarize = true;
   post.summary = makeSummaryFor(post, 70);
-  updatePost(post, store.currentPageId, true);
+  upsertPost(post, store.currentPageId, { isCollapsing: true });
   // It's nice to see where the post is, after having collapsed it
   // — because collapsing a post tree often makes the page jump a bit.
   // UX COULD animate-collapse height of tree to 0? By shrinking each
@@ -1497,14 +1538,18 @@ function showPostNr(postNr: PostNr, showPostOpts: ShowPostOpts = {}): EmitEvent 
     }
 
     if (showPostOpts.showChildrenToo) {
-      // uncollapsePostAndChildren() will scroll-flash, don't do here too.
+      scrollAndFlashPosts(page, [post]);
     }
     else {
-      // Maybe could use instead?: scrollAndFlashPosts(page, [post]);
       scrollAndFlashPostNr(postNr, opts);
     }
 
-    debiki2.page.Hacks.processPosts();
+    // _break_out_process_fn
+    if (needEmit !== EmitEvent.NoNothingChanged) {
+      stopGifsPlayOnClick();
+      // Maybe many descendants are now shown — this'll update all of them (not specifying a nr).
+      debiki2.page.Hacks.processPosts();
+    }
   }, 1);
 
   return needEmit;
@@ -1536,11 +1581,6 @@ function uncollapsePostAndChildren(post: Post): EmitEvent {
     }
   }
 
-  setTimeout(function() {
-    debiki2.page.Hacks.processPosts();
-    scrollAndFlashPosts(page, [post]);
-  });
-
   return needEmit;
 }
 
@@ -1553,7 +1593,7 @@ function uncollapseOne(post: Post): EmitEvent {
   p2.isPostCollapsed = false;  // sometimes we don't want this though  (305RKTU)
   p2.summarize = false;
   p2.squash = false;
-  updatePost(p2, store.currentPageId, true);
+  upsertPost(p2, store.currentPageId, { isCollapsing: true });
   return EmitEvent.Yes;
 }
 
@@ -2085,11 +2125,11 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
             const movedToNewPage = oldPage.pageId !== patchedPageId;
             const movedOnThisPage = !movedToNewPage && oldPost.parentNr !== patchedPost.parentNr;
             if (movedOnThisPage) {
-              // It'll get reinserted into its new location, by updatePost() below.
+              // It'll get reinserted into its new location, by upsertPost() below.
               page_removeFromParentInPlace(oldPage, oldPost);
             }
             if (movedToNewPage) {
-              // It'll get inserted into the new page by updatePost() below.
+              // It'll get inserted into the new page by upsertPost() below.
               page_deletePostInPlace(oldPage, oldPost);
             }
             // If the current page gets changed, then, need redraw arrows,
@@ -2113,6 +2153,8 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
   }
 
   // ----- Posts, new or edited?
+
+  const upsertResults: UpsertPostResult[] = [];
 
   // Update the current page.
   if (!storePatch.pageVersionsByPageId && !storePatch.ignorePageVersion) {
@@ -2151,11 +2193,11 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
 
     const patchedPosts = storePatch.postsByPageId[page.pageId];
     _.each(patchedPosts || [], (patchedPost: Post) => {
-      // RENAME to  upsertPost?
       // SHOULD_OPTIMIZE — handle all posts on a page at once, otherwise [On2]+
       // when loading missing chat messages.
-      updatePost(patchedPost, page.pageId, undefined,
-              storePatch.ignorePageVersion /*isScrollAdding*/);
+      const res = upsertPost(patchedPost, page.pageId);
+
+      upsertResults.push(res);
     });
 
     // The server should have marked this page as unread because of these new events.
@@ -2168,10 +2210,7 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
     }
   }
 
-  if (storePatch.ignorePageVersion) {
-    stopGifsPlayOnClick();
-    setTimeout(debiki2.page.Hacks.processPosts, 0)
-  }
+  _showMyNewPostsIfAny(upsertResults);
 
   // [update_personas], here after both comments & the user's persona mode
   // have been patched.
@@ -2814,9 +2853,13 @@ function rememberPostsToQuickUpdate(startPostId: number) {
   }
 }
 
+let gifferHandle: Nr | U;
 
 function stopGifsPlayOnClick() {
-  setTimeout(window['Gifffer'], 50);
+  if (gifferHandle)
+    clearTimeout(gifferHandle);
+
+  gifferHandle = setTimeout(window['Gifffer'], 50);
 }
 
 
