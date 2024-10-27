@@ -54,6 +54,9 @@ Minor & medium:
   - Button title: "Post as yourself", "Post anonymously]",  in >= anon-allowed cats.
   - Require 2 clicks to choose anon, but not at the same coordinates? [deanon_risk] [mouse_slip]
 
+  - If subscribing to a page, use one's true id?  [pub_or_true_id_notf_prefs]
+    But, some time later, don't show what one has subscribed to, if impersonated,
+    by default? [safer_imp] [deanon_risk]
   - Let aliases edit wikis [alias_ed_wiki] (normally, editing
       others' posts anonymously isn't allowed)
   - wikify-dialog.more.ts  choose persona  (if posted as anon, should wikify as same anon)

@@ -710,6 +710,10 @@ Or cache more-bundle.js: PWA and service worker.
 If there're many drafts for the same thing, show them in a list and let the user choose which
 one to continue editing. (Rather than just picking a random one.)
 
+[safer_imp]
+If impersonating sbd, hide that person's aliases and subscriptions, by default.
+So can e.g. help out w troubleshooting access perms, without seeing too much.
+Maybe hide the person's posts?  Diferent impersonation capabilities?
 
 [imp-groups]
 Make it possible to impersonate groups. Nice for testing one's access control settings.
