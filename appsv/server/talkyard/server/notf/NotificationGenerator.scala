@@ -60,12 +60,17 @@ case class NotificationGenerator(
 
   dieIf(Globals.isDevOrTest && tx.siteId != dao.siteId, "TyE603RSKHAN3")
 
-  private var notfsToCreate = mutable.ArrayBuffer[Notification]()
-  private var notfsToDelete = mutable.ArrayBuffer[NotificationToDelete]()
+  private val notfsToCreate = mutable.ArrayBuffer[Notification]()
+  private val notfsToDelete = mutable.ArrayBuffer[NotificationToDelete]()
 
   BUG // currently harmless. Should remember sent-to by post id too — in case [REMBSENTTO]
   // needs to generate many notfs to the same user, for different posts.
-  private var sentToUserIds = new mutable.HashSet[UserId]()
+  //
+  // Remembers what true ids we've generated notifications to — so no one gets
+  // double notifications: one to any alias of theirs, and another to themselves
+  // (if they've subscribed to a page as themselves, and commented anonymously
+  // on that page, for example).
+  private val sentToTrueIds = new mutable.HashSet[UserId]()
 
   // One post can trigger more than one notification to the same person,
   // e.g. a staff user getting notified first about a new post to moderate,
@@ -241,10 +246,6 @@ case class NotificationGenerator(
     // reply notf only, no @mention notf.
     maybeGenReplyNotf(NotificationType.DirectReply, anyParentPost.toSeq)
 
-    // Why this? Can reuse sentToUserIds instead?
-    def notfCreatedAlreadyTo(userId: UserId) =
-      generatedNotifications.toCreate.map(_.toUserId).contains(userId)
-
     val pageMemberIds: Set[UserId] = tx.loadMessageMembers(newPost.pageId)
 
     // Mentions
@@ -283,7 +284,7 @@ case class NotificationGenerator(
         // probably it's better to use bookmarks, for that? (Adding a to-do bookmark.)
         // If mentioning a group that one is a member of, one shouldn't and won't be notified (5ABKRW2).
         if userOrGroup.id != theAuthor.id  // poster mentions henself?
-        if !notfCreatedAlreadyTo(userOrGroup.id)
+        if !sentToTrueIds.contains(userOrGroup.trueId2.trueId)
         // Authz checks that we won't notify people outside a private chat
         // about any mentions (because they cannot see the chat). [PRIVCHATNOTFS]
       } {
@@ -583,7 +584,7 @@ case class NotificationGenerator(
       case o => o
     }
 
-    if (sentToUserIds.contains(toUserMaybeGroup.id))
+    if (sentToTrueIds.contains(toUserMaybeGroup.trueId2.trueId))
       return
 
     if (toUserMaybeGroup.isGuest) {
@@ -700,8 +701,8 @@ case class NotificationGenerator(
       toPat <- toPats
       toUserId = toPat.id
       // Later: Could recursively expand [sub_groups], notify everyone in a "group tree".
-      if toUserId <= MaxGuestId || Participant.LowestNormalMemberId <= toUserId
-      if !sentToUserIds.contains(toUserId)
+      if toUserId <= Pat.MaxGuestOrAnonId || Pat.LowestNormalMemberId <= toUserId
+      if !sentToTrueIds.contains(toPat.trueId2.trueId)
 
       // Move these may-mention and may-message tests to the  toUserMaybeGroup.isGroup
       // if branch above? No need to be done here again if is not-a-group? [.move_may]
@@ -1163,13 +1164,17 @@ case class NotificationGenerator(
             NotfEmailStatus.Undecided
 
     if (isAboutModTask) {
+      // Don't update `sentToTrueIds`. We still want to generate e.g. any reply notification
+      // to the moderator that approves a new comment — so the moderator later on can
+      // find the comment in their notifications list.  But the mod probably doesn't
+      // want more than one *email* about such a new comment, so:
       avoidDuplEmailToUserIds += toPat.id
     }
     else {
-      if (sentToUserIds.contains(toPat.id))
+      if (sentToTrueIds.contains(toPat.trueId2.trueId))
         return ()
 
-      sentToUserIds += toPat.id
+      sentToTrueIds += toPat.trueId2.trueId
     }
 
     val newNotfId = bumpAndGetNextNotfId()
