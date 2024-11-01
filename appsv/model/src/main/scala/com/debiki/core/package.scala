@@ -1990,7 +1990,8 @@ package object core {
         }
         byteIx += 1
       }
-      immutable.Set[PostNr](postNrs: _*)
+      postNrs.to(Set)  // ?
+      //immutable.Set[PostNr](postNrs: _*)
     }
   }
 
