@@ -36,6 +36,10 @@ import _root_.sbtbuildinfo.BuildInfoPlugin.autoImport._
 //
 ThisBuild / scalaVersion := "2.12.19"
 
+// Scala 2.13 disables postfix notation, e.g. `something isEmpty`. Enable, so won't
+// have to modify sooo many files when upgrading to 2.13.
+ThisBuild / scalacOptions += "-language:postfixOps"
+
 
 // Show unchecked and deprecated warnings, in this project and its modules.
 // scalacOptions in ThisBuild ++= Seq("-deprecation")
@@ -43,6 +47,15 @@ ThisBuild / scalaVersion := "2.12.19"
 // Causes error:
 //    bad option: -P:semanticdb:synthetics:on
 // scalacOptions in ThisBuild += "-P:semanticdb:synthetics:on"   // [scala_2_13]
+
+inThisBuild(List( // [scala_2_13]
+  // Alternatively, type: `scalafixEnable` in the sbt shell. But what about the 3
+  // other lines below?
+  semanticdbEnabled := true,
+  semanticdbOptions += "-P:semanticdb:synthetics:on", // make sure to add this
+  semanticdbVersion := scalafixSemanticdb.revision,
+  scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
+))
 
 
 val appName = "talkyard-server"
@@ -134,7 +147,7 @@ val appDependencies = Seq(
   Dependencies.Libs.scalaTestPlusPlay,
 
   // SalaFix plugin, https://github.com/scala/scala-collection-compat/releases [scala_2_13]
-  "org.scala-lang.modules" %% "scala-collection-compat" % "2.11.0")
+  "org.scala-lang.modules" %% "scala-collection-compat" % "2.13.0")
 
 
 val main = (project in file("."))

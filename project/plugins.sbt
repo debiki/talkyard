@@ -21,10 +21,18 @@ resolvers ++= Seq(
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.21")
 
 // A refactoring and linting tool for Scala
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.12.0")
+// Docs: https://scalacenter.github.io/scalafix/
+// There's plugins, e.g.: https://github.com/scala/scala-collection-compat?tab=readme-ov-file#collection213upgrade
+// for upgrading collections from 2.12 to 2.13. (That plugin is added in ../build.sbt.)
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.0")
 // Can get [scala_2_13] migration help by doing?:
 //  scalafixAll dependency:Collection213Upgrade@org.scala-lang.modules:scala-collection-migrations:<version>
 // where  <version>  is the scala-collection-migrations version?
+
+
+// See: https://github.com/scalacenter/scala3-migrate
+// But this is for migrating to Scala 3, not from 2.12 to 2.13. (Right?)
+//addSbtPlugin("ch.epfl.scala" % "sbt-scala3-migrate" % "0.7.1")  // ?     or 0.6.2 ?
 
 // Pin dependencies.
 addSbtPlugin("com.github.tkawachi" % "sbt-lock" % "0.8.0")
