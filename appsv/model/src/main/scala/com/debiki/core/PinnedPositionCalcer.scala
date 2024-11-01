@@ -18,7 +18,7 @@
 package com.debiki.core
 
 import scala.collection.{mutable => mut}
-import scala.collection.mutable.DoubleLinkedList
+//import scala.collection.mutable.DoubleLinkedList  — gone/deprecated since looong back
 
 
 /* Disabled. Uses Post, it's gone, now it's Post2.
