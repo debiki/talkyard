@@ -17,6 +17,7 @@
 
 package debiki
 
+import scala.collection.MapView
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
@@ -1986,7 +1987,7 @@ object JsonMaker {
 
     val voterIds = mut.Set[PatId]()
 
-    val votesJsonByNr: Map[St, JsArray] = votesByPostNr mapValues { votes =>
+    val votesJsonByNr: MapView[St, JsArray] = votesByPostNr mapValues { votes =>
       JsArray(votes map { v =>
         voterIds.add(v.voterId.pubId)
         var jOb = Json.obj(  // Could create JsX.JsVote  ?

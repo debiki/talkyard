@@ -689,7 +689,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def loadUsersAsMap(userIds: Iterable[UserId]): Map[UserId, User] = {
     dieIf(userIds.exists(_ <= Participant.MaxGuestId), "EsE5YKG2")
-    loadParticipantsAsMap(userIds).mapValues(_.asInstanceOf[User])
+    loadParticipantsAsMap(userIds).view.mapValues(_.asInstanceOf[User]).toMap
   }
 
   def loadUserByPrimaryEmailOrUsername(emailOrUsername: String): Option[User]

@@ -266,11 +266,11 @@ abstract class PageParts {
       childMap.put(parentNrOrNoNr, node)
     }
 
-    childMap.mapValues { node =>
+    (childMap.view.mapValues { node =>
       val sortOrder = postsOrderNesting.sortOrder.atDepth(node.depth)
       val childsSortedForReal = Post.sortPosts(node.childsSorted, sortOrder)
       node.copy(childsSorted = childsSortedForReal)
-    }
+    }).toMap
   }
 
 

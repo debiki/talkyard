@@ -205,7 +205,8 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: TyContext)
     OkSafeJson(Json.obj(
       "drafts" -> JsArray(drafts map JsDraft),
       "pagePostNrsByPostId" -> JsObject(pagePostNrs),
-      "pageTitlesById" -> JsObject(pageStuffById.mapValues(stuff => JsString(stuff.title)))))
+      "pageTitlesById" -> JsObject(
+            pageStuffById.mapValues(stuff => JsString(stuff.title)).toMap)))
   }
 
 
