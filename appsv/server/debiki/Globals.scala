@@ -1083,7 +1083,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false, conf, isOrWasTest)
         val rdb = new Rdb(readOnlyDataSource, readWriteDataSource)
         val dbDaoFactory = new RdbDaoFactory(
-              rdb, ScalaBasedMigrations, getCurrentTime = now(), isTest = isOrWasTest)
+              rdb, ScalaBasedMigrations, getCurrentTime = now _, isTest = isOrWasTest)
 
         // Create any missing database tables before `new State`, otherwise State
         // creates background threads that might attempt to access the tables.
@@ -1350,7 +1350,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
       edContext, dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient, config)
 
     val mailerActorRef: ActorRef = MailerActor.startNewActor(
-          actorSystem, siteDaoFactory, conf, now(), isProd)
+          actorSystem, siteDaoFactory, conf, now _, isProd)
 
     val notifierActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None

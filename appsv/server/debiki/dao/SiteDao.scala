@@ -176,7 +176,7 @@ class SiteDao(
   // Need more caches? E.g. one that expires keys after 1 hour, say [mem_cache_exp_secs].
   lazy val memCache = new MemCache(siteId, cache, globals.mostMetrics)
 
-  lazy val redisCache = new RedisCache(siteId, redisClient, context.globals.now())
+  lazy val redisCache = new RedisCache(siteId, redisClient, context.globals.now _)
 
   protected lazy val searchEngine = new SearchEngine(siteId, elasticSearchClient,
         ffIxMapping2 = theSite().isFeatureEnabled("ffIxMapping2", globals.config.featureFlags))
