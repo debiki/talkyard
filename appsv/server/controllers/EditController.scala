@@ -359,7 +359,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
       val isStaffOrComposer = request.isStaff || request.user.map(_.id).contains(revision.composedById)
       JsonMaker.postRevisionToJson(revision, usersById, maySeeHidden = isStaffOrComposer)
     }
-    OkSafeJson(JsArray(revisionsJson))
+    OkSafeJsonArr(JsArray(revisionsJson))
   }
 
 

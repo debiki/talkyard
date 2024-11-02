@@ -40,7 +40,7 @@ class ApiSecretsController @Inject()(cc: ControllerComponents, edContext: TyCont
 
   private def listApiSecretsImpl(request: DebikiRequest[_]): Result = {
     val secrets = request.dao.listApiSecrets(limit = 100)
-    OkSafeJson(JsArray(secrets map JsApiSecret))
+    OkSafeJsonArr(JsArray(secrets map JsApiSecret))
   }
 
 

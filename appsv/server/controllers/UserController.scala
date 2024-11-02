@@ -1391,7 +1391,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   def loadGroups: Action[Unit] = GetActionRateLimited(RateLimits.ReadsFromDb) { request =>
     val groups = request.dao.getGroupsAndStatsReqrMaySee(request.requesterOrUnknown)
-    OkSafeJson(JsArray(groups map JsGroupAndStats))
+    OkSafeJsonArr(JsArray(groups map JsGroupAndStats))
   }
 
 
@@ -1455,7 +1455,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     request.theMember
 
     val json = _listAllUsersImpl(usernamePrefix, request)
-    OkSafeJson(json)
+    OkSafeJsonArr(json)
   }
 
 
@@ -1538,7 +1538,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     }
 
     val jsArr = _mkMentionOptionsJson(patAndPrefs, requester)
-    OkSafeJson(jsArr)
+    OkSafeJsonArr(jsArr)
   }
 
 

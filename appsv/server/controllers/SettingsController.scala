@@ -130,7 +130,7 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: TyContex
           .sortBy(idp => idp.guiOrder getOrElse (
                 idp.idpId.getOrElse(0) + 1000 * 1000))
     val json = JsArray(idps map JsX.JsIdentityProviderSecretConf)
-    OkSafeJson(json)
+    OkSafeJsonArr(json)
   }
 
 

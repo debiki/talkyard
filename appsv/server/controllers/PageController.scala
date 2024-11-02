@@ -145,7 +145,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
       json
     }
 
-    OkSafeJson(JsArray(idsUrlsJsonForPages))
+    OkSafeJsonArr(JsArray(idsUrlsJsonForPages))
   }
 
 
