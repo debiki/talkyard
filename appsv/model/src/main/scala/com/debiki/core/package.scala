@@ -2161,7 +2161,7 @@ package object core {
     * and: https://www.michaelpollmeier.com/
     *                        execute-scala-futures-in-serial-one-after-the-other-non-blocking
     */
-  def runFuturesSequentially[I, R](items: IterableOnceIterableOnce[I])(
+  def runFuturesSequentially[I, R](items: IterableOnce[I])(
         fn: I => Future[R])(execCtx: ExecutionContext): Future[immutable.Seq[R]] = {
     val futureResults = items.foldLeft(Future.successful[List[R]](Nil)) {
       (futureResultsThisFar: Future[List[R]], nextItem: I) =>
