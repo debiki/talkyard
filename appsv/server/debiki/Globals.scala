@@ -1114,10 +1114,10 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
           _state = Bad(Some(new DatabasePoolInitializationException(ex)))
         case ex @ AppSecretNotChangedException =>
           logger.error(s"Admin error: The admin hasn't edited '$AppSecretConfValName' [EdE2QCHP4]", ex)
-          _state = Bad(Some(ex))
+          _state = Bad(Some(AppSecretNotChangedException))
         case ex @ StillConnectingException =>
           logger.error("Bug: StillConnectingException [EdE3PG7FY1]", ex)
-          _state = Bad(Some(ex))
+          _state = Bad(Some(StillConnectingException))
         case ex: Exception =>
           logger.error("Unknown state creation error [EsE4GY67]", ex)
           _state = Bad(Some(ex))
