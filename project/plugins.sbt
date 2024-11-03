@@ -41,7 +41,7 @@ addDependencyTreePlugin
 
 // Makes e.g. Git SHA1 available to the Scala code at runtime.
 // ---------------------------------------------------------------
-addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.12.0")
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.13.0")
 
 // Picks scala-xml 2.1 over 1.1 — otherwise there the below version conflict error
 // (when just loading the project) with Scala 2.12.18 or 2.12.19 because they use
