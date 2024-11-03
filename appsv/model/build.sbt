@@ -13,7 +13,6 @@ libraryDependencies ++= Seq(
   "commons-validator" % "commons-validator" % "1.8.0",
   Dependencies.Libs.apacheCommonsEmail,  // needed here for email address validation only
   Dependencies.Libs.apacheTika,
-  "nu.validator.htmlparser" % "htmlparser" % "1.4",
   "org.owasp.encoder" % "encoder" % "1.2.3",
   Dependencies.Play.json,
   "com.lambdaworks" % "scrypt" % "1.4.0", // COULD move to ed-server, see comments in src/main/scala/com/debiki/core/dao-db.scala

@@ -20,7 +20,6 @@ package controllers
 import scala.collection.Seq
 import com.debiki.core._
 import debiki.EdHttp._
-import talkyard.server.liftweb
 import java.{lang => jl}
 import play.api._
 import play.api.libs.json.{Json, JsValue, JsArray, JsObject}
@@ -28,26 +27,6 @@ import play.api.mvc._
 
 
 object Utils extends Results with http.ContentTypes {
-
-
-  /**
-   * Prefixes `<!DOCTYPE html>` to the reply, otherwise Internet Explorer
-   * enters the terrible Quirks mode. Also sets the Content-Type header.
-   */
-  def OkHtml(htmlNode: xml.NodeSeq): Result =
-    Ok(serializeHtml(htmlNode)) as HTML
-
-  /**
-   * Adds doctype and serializes to html using a real HTML5 writer.
-   *
-   * Some pros with using a real HTML5 writer: it won't escape '"' when found
-   * inside script tags (which is very annoying when you e.g. copy-paste
-   * Twitter's Follow Button <script> elem).
-   */
-  def serializeHtml(htmlNode: xml.NodeSeq): String = {
-    require(htmlNode.size == 1)
-    "<!DOCTYPE html>\n"+ liftweb.Html5.toString(htmlNode.head)
-  }
 
 
   /** Gatling doesn't understand this prefix */

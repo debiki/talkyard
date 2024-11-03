@@ -1521,11 +1521,6 @@ class Config(conf: play.api.Configuration) extends TyLogging {
   val systemMaintenanceApiSecret: Opt[St] =
     conf.getOptional[St]("talkyard.maintenanceApiSecret").noneIfBlank
 
-  // FOR NOW
-  object forms {
-    val notifyAboutFormsEmailAdr: Opt[St] =
-          conf.getOptional[St]("talkyard.notifyAboutFormsEmailAddr").noneIfBlank
-  }
 
   object uploads {
     TESTS_MISSING // test that these conf vals work properly, by running UploadsDaoSpec twice,

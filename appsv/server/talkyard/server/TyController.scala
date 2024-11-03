@@ -189,15 +189,6 @@ class TyController(cc: ControllerComponents, val context: TyContext)
     PlainApiActionSuperAdminOnly(
       cc.parsers.json(maxLength = maxBytes))(f)
 
-  def PostFormAction_unused(rateLimits: RateLimits, maxBytes: i32, allowAnyone: Bo = false,
-          skipXsrfCheck: Bo = false)(
-          f: ApiRequest[Either[p.mvc.MaxSizeExceeded, Map[St, Seq[St]]]] => Result)
-          : Action[Either[MaxSizeExceeded, Map[St, Seq[St]]]] = {
-    implicit val materializer = context.akkaStreamMaterializer  // [6KFW02G]
-    PlainApiAction(cc.parsers.maxLength(maxBytes, cc.parsers.formUrlEncoded(maxBytes)),
-          rateLimits, allowAnyone = allowAnyone, skipXsrfCheck = skipXsrfCheck)(f)
-  }
-
 
   def PostFilesAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)(
         f: ApiRequest[Either[p.mvc.MaxSizeExceeded, MultipartFormData[TemporaryFile]]] => Result)
@@ -207,7 +198,7 @@ class TyController(cc: ControllerComponents, val context: TyContext)
     //   class MyController @Inject() (implicit val mat: Materializer) {}
     // read more here:
     //   http://stackoverflow.com/questions/36004414/play-2-5-migration-error-custom-action-with-bodyparser-could-not-find-implicit
-    implicit val materializer = context.akkaStreamMaterializer  // [6KFW02G]
+    implicit val materializer = context.akkaStreamMaterializer
     PlainApiAction(cc.parsers.maxLength(maxBytes, cc.parsers.multipartFormData),
       rateLimits, allowAnyone = allowAnyone)(f)
   }
