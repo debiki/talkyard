@@ -73,7 +73,7 @@ class DaoAppSuite(
 
   private var edAppComponents: TyAppComponents = _
 
-  lazy val context: TyContext = edAppComponents.context
+  lazy val context: TyContext = edAppComponents.tyCtx
   lazy val globals: Globals = context.globals
 
 
