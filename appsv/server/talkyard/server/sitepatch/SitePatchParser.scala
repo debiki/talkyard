@@ -236,7 +236,7 @@ case class SitePatchParser(context: TyContext) {
             has type: ${classNameOf(x)}""")
         }
       })
-      Map(emailsAndPrefs.toSeq: _*)
+      Map.from(emailsAndPrefs)
     }) getOrElse Map.empty
 
     val guests: Seq[Guest] = guestsJson.value.toVector.zipWithIndex map { case (json, index) =>
@@ -332,7 +332,7 @@ case class SitePatchParser(context: TyContext) {
               json: $json"""))
     }
 
-    val pageIdsByAltIds: Map[AltPageId, PageId] = Map(pageIdsByAltIdsJson.fields map {
+    val pageIdsByAltIds: Map[AltPageId, PageId] = Map.from(pageIdsByAltIdsJson.fields map {
       case (altId, pageIdJs) =>
         pageIdJs match {
           case JsString(value) =>
@@ -344,7 +344,7 @@ case class SitePatchParser(context: TyContext) {
           case x => throwBadRequest(
             "TyE406TNW2", s"For alt page id '$altId', the page id is invalid: '$x'")
         }
-    }: _*)
+    })
 
     val pagePopularityScores: Seq[PagePopularityScores] =
           pagePopularityScoresJson.value.toVector.zipWithIndex map {

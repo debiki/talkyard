@@ -145,7 +145,7 @@ object PageParts {
       return posts
 
     // The bool says if we've seen the updated-post in `posts` — if not, it's new.
-    val changeMap = mutable.HashMap(updatedPosts.map(p => p.id -> (p, false)): _*)
+    val changeMap = mutable.HashMap.from(updatedPosts.map(p => p.id -> (p, false)))
     val oldAndUpdatedPosts = posts map { post =>
       changeMap.get(post.id) map { case (updatedPost, _) =>
         // Remember we've seen the updated post.

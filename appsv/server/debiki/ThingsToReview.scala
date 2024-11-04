@@ -17,26 +17,24 @@
 
 package debiki
 
-import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import scala.collection.immutable
 
 
 
 case class ThingsToReview(
-  posts: immutable.Seq[Post],
-  pageMetas: immutable.Seq[PageMeta],
+  posts: Seq[Post],
+  pageMetas: Seq[PageMeta],
   people: Seq[Participant],
-  flags: immutable.Seq[PostFlag]) {
+  flags: Seq[PostFlag]) {
 
-  private val postsByNr: Map[PostNr, Post] = Map(posts.map(post => post.nr -> post): _*)
-  private val pagesById: Map[PageId, PageMeta] = Map(pageMetas.map(meta => meta.pageId -> meta): _*)
-  private val peopleById: Map[UserId, Participant] = Map(people.map(user => user.id -> user): _*)
-  private val flagsByPostNr: Map[PostNr, immutable.Seq[PostFlag]] = flags.groupBy(_.postNr)
+  private val postsByNr: Map[PostNr, Post] = Map.from(posts.map(post => post.nr -> post))
+  private val pagesById: Map[PageId, PageMeta] = Map.from(pageMetas.map(meta => meta.pageId -> meta))
+  private val peopleById: Map[UserId, Participant] = Map.from(people.map(user => user.id -> user))
+  private val flagsByPostNr: Map[PostNr, Seq[PostFlag]] = flags.groupBy(_.postNr)
 
   def thePost(id: PostNr): Post = postsByNr.get(id) getOrDie "DwE8F0Be2"
   def thePage(id: PageId): PageMeta = pagesById.get(id) getOrDie "DwE6PKJ5"
   def theUser(id: UserId): Participant = peopleById.get(id) getOrDie "DwE2dKG8"
-  def theFlagsFor(id: PostNr): immutable.Seq[PostFlag] = flagsByPostNr.getOrElse(id, Nil)
+  def theFlagsFor(id: PostNr): Seq[PostFlag] = flagsByPostNr.getOrElse(id, Nil)
 }

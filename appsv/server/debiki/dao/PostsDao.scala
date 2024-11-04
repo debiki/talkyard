@@ -2253,7 +2253,7 @@ trait PostsDao {
       }
     }
 
-    tx.indexPostsSoon(postsToReindex: _*)
+    tx.indexPostsSoon(postsToReindex.to(Vec): _*)
 
     // ----- Update related things
 
@@ -3185,7 +3185,7 @@ trait PostsDao {
           }
 
           postsAfter foreach tx.updatePost
-          tx.indexPostsSoon(postsAfter: _*)
+          tx.indexPostsSoon(postsAfter.to(Vec): _*)
 
           // Uncache backlinked pages. [uncache_blns]
           // (Need not update links_t or upload_refs3, because links and upload refs

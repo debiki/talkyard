@@ -227,9 +227,9 @@ trait PagePathMetaDao {
       pageMetas.appendAll(remainingPageMetas)
     }
 
-    immutable.HashMap[PageId, PageMeta](pageMetas map { pageMeta =>
+    immutable.HashMap.from[PageId, PageMeta](pageMetas map { pageMeta =>
       pageMeta.pageId -> pageMeta
-    }: _*)
+    })
   }
 
 

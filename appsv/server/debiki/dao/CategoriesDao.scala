@@ -829,8 +829,8 @@ trait CategoriesDao {
       siblings.append(cat)
     }
 
-    val catsByParentIdImmutable = Map.apply(
-          catsByParentId.mapValues(_.sortBy(_.position).toVector).toBuffer: _*)
+    val catsByParentIdImmutable = Map.from(
+          catsByParentId.mapValues(_.sortBy(_.position).toVector))
 
     (catsById, catsByParentIdImmutable)
   }
