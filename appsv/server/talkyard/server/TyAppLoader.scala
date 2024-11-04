@@ -1,6 +1,5 @@
 package talkyard.server
 
-import scala.collection.Seq
 import com.debiki.core._
 import debiki.{Globals, RateLimiter, Nashorn}
 import talkyard.server.http.{PlainApiActions, SafeActions}

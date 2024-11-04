@@ -335,7 +335,7 @@ trait TagsDao {
             tx.loadPostsByUniqueId(postIdsDirectlyAffected)
 
       // (Don't:  postsById.values — then we wouldn't find out if a post wasn't found.)
-      val postsAffected: Seq[Post] = postIdsDirectlyAffected.toSeq map { postId =>
+      val postsAffected: ImmSeq[Post] = postIdsDirectlyAffected.toSeq map { postId =>
         postsById.getOrElse(postId, {
           if (tagger.isStaff) abortNotFound("TyEPOST0FND025", s"No post with id $postId")
           else throwIndistinguishableNotFound("POST2TAG")  // [abrt_indist_404]

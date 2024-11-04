@@ -187,7 +187,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   private val AuthStateCookieName = "dwCoOAuth2State"
 
   // Discard these also if logging in with username + password?  [clear_aun_cookies]
-  private val CookiesToDiscardAfterLogin: Seq[DiscardingCookie] = Seq(
+  private val CookiesToDiscardAfterLogin: Vec[DiscardingCookie] = Vec(
     ReturnToUrlCookieName,
     ReturnToSiteOriginTokenCookieName,
     ReturnToThisSiteXsrfTokenCookieName,

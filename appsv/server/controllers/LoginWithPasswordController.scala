@@ -80,8 +80,8 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  private def doLogin(request: ApiRequest[_], dao: SiteDao, emailOrUsername: String, password: String)
-        : (SidOk, Seq[Cookie]) = {
+  private def doLogin(request: ApiRequest[_], dao: SiteDao, emailOrUsername: St, password: St)
+        : (SidOk, ImmSeq[Cookie]) = {
     val loginAttempt = PasswordLoginAttempt(
       ip = request.ip,
       date = request.ctime,
