@@ -43,14 +43,21 @@ addSbtPlugin("com.github.tkawachi" % "sbt-lock" % "0.8.0")
 //   dependencyTree
 //   dependencyBrowseGraph  / -Tree
 //   whatDependsOn  com.nimbusds  nimbus-jose-jwt
-// Plugin now bundled with SBT, so just this:
+// Plugin now bundled with SBT, so just this:  (and: [dependencyTree_dependency])
 addDependencyTreePlugin
 
 
 // Makes e.g. Git SHA1 available to the Scala code at runtime.
 // ---------------------------------------------------------------
+// Version 0.13 adds some cross build capabilities, we don't need, let's wait.
+
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.12.0")
 
+
+// Pointless problems
+// ---------------------------------------------------------------
+
+// This still a problem with Play 2.9 & Scala 2.13?:
 // Picks scala-xml 2.1 over 1.1 — otherwise there the below version conflict error
 // (when just loading the project) with Scala 2.12.18 or 2.12.19 because they use
 // scala-xml 2.x but Play and SBT use 1.x.

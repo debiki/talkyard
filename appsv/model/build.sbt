@@ -4,18 +4,22 @@ organization := "com.debiki"
 
 version := ProjectDirectory.versionFileContents
 
+// Apparently needed for SBT dependencyTree, see plugins.sbt.  [dependencyTree_dependency]
 resolvers += "Scala-Tools Maven2 Repository" at "https://scala-tools.org/repo-releases"
 
 libraryDependencies ++= Seq(
   Dependencies.Libs.scalactic,
   Dependencies.Libs.guava,
-  "commons-codec" % "commons-codec" % "1.16.1",
-  "commons-validator" % "commons-validator" % "1.8.0",
+  Dependencies.Libs.apacheCommonsCodec,
+  Dependencies.Libs.apacheCommonsValidator,
   Dependencies.Libs.apacheCommonsEmail,  // needed here for email address validation only
   Dependencies.Libs.apacheTika,
-  "org.owasp.encoder" % "encoder" % "1.2.3",
+  Dependencies.Libs.owaspEncoder,
   Dependencies.Play.json,
-  "com.lambdaworks" % "scrypt" % "1.4.0", // COULD move to ed-server, see comments in src/main/scala/com/debiki/core/dao-db.scala
+  // COULD move to the server module?  [mv_scrypt_2_srv]
+  Dependencies.Libs.lambdaworksScrypt,
+  // CLEAN_UP remove Mockito and Spec2. Use only ScalaTest, need to edit some tests.
+  Dependencies.Libs.mockito,
   Dependencies.Libs.specs2,
   Dependencies.Libs.scalaTest,
 )

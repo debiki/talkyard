@@ -1087,7 +1087,7 @@ Do outside tx.
 Read-only tx in tx is ok but unnecessary, a tiny bit slower & more mem.
 
 
-[Scala_213]
+[Scala_213][scala_2_13]
 Try —> Using
 
 [Scala_3]
