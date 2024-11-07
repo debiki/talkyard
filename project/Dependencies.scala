@@ -53,7 +53,7 @@ object Dependencies {
 
     // HikariCP — "A solid high-performance JDBC connection pool at last"
     // Java 11 needs/can/should use "5.0.1". [java_8_to_11]
-    val hikariCp = "com.zaxxer" % "HikariCP" % "5.1.0"
+    val hikariCp = "com.zaxxer" % "HikariCP" % "6.1.0"
 
     // ElasticSearch client, in https://mvnrepository.com.
     // When upgrading to next major version, consider improving the mappings at the same
