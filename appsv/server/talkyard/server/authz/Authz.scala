@@ -885,6 +885,27 @@ object Authz {
         mayWhat = mayWhat.copyAsMayNothingOrOnlySee("-TyEANONPAGEID")
     }
 
+    // Trying to do sth under an alias, although not allowed? (Too low/high trust/threat level?)
+    if (asAlias.isDefined) {
+      val theUser = user.getOrDie("TyE6P03SKLE")
+      // Anon trust level is New Member [anon_tr_lv], so >= that is ok, < is not.
+      if (theUser.effectiveTrustLevel.toInt < TrustLevel.NewMember.toInt) {
+        mayWhat = mayWhat.copyAsMayNothingOrOnlySee("-TyM0USEALI_TRLV")
+      }
+      theUser match {
+        case u: UserBase =>
+          val level = u.effectiveThreatLevel
+          // Could instead allow posting, and add to review queue — but that leaks info
+          // to mods about who the anonym is. If that's ok or not, would depend on
+          // the community. For now, simply disallow posting,  [anon_tr_lv] [mod_deanon_risk]
+          if (level.toInt >= ThreatLevel.MildThreat.toInt) {
+            mayWhat = mayWhat.copyAsMayNothingOrOnlySee("-TyM0USEALI_THRLV")
+          }
+        case _ =>
+          // Has no threat level (e.g. groups or guests).
+      }
+    }
+
     // Check if page or category settings allows anonyms. [derive_node_props_on_server]
     // [pseudonyms_later]
     val anyComtsStartAnon: Opt[NeverAlways] =
