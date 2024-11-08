@@ -314,6 +314,16 @@ trait PagesDao {
     require(pinOrder.isDefined == pinWhere.isDefined, "Ese5MJK2")
     require(embeddingUrl.trimNoneIfBlank == embeddingUrl, "Cannot have blank emb urls [TyE75SPJBJ]")
 
+    SECURITY // Maybe page id shouldn't be public? [rand-page-id] To prevent people from
+    // discovering all pages. E.g. iterating through all discussions, in a public blog.
+    val pageId = tx.nextPageId()
+
+    val personaAndLevels: UserAndLevels = SiteDao.getPersonaAndLevels(
+          realAuthorAndLevels, pageId = pageId, asAlias, mayReuseAnon = false,
+          isCreatingPage = true)(tx, IfBadAbortReq)
+
+    val authorMaybeAnon: Pat = personaAndLevels.user
+
     val pageSlug = anySlug.getOrElse({
         context.nashorn.slugifyTitle(title.source)
     }).take(PagePath.MaxSlugLength).dropRightWhile(_ == '-').dropWhile(_ == '-')
@@ -321,16 +331,14 @@ trait PagesDao {
     COULD // try to move this authz + review-reason check to talkyard.server.authz.Authz?
     val (
       reviewReasons: Seq[ReviewReason],
-      shallApprove: Boolean) =
-        throwOrFindReviewNewPageReasons(realAuthorAndLevels, pageRole, tx)  // [mod_deanon_risk]
+      shallApprove: Bo) =
+          throwOrFindReviewNewPageReasons(personaAndLevels, pageRole, tx)  // [mod_deanon_risk]
 
+    // Similar to: [find_approver_id].  [mod_deanon_risk]
     val approvedById =
-      if (realAuthor.isStaff) {  // [mod_deanon_risk]
-        dieIf(!shallApprove, "EsE2UPU70")
-        Some(realAuthor.id)
-      }
-      else if (shallApprove) Some(SystemUserId)
-      else None
+          if (!shallApprove) None
+          else if (realAuthor.isStaff && asAlias.isEmpty) Some(realAuthor.id)
+          else Some(SystemUserId)
 
     if (pageRole.isSection) {
       // A forum page is created before its root category — verify that the root category
@@ -360,19 +368,12 @@ trait PagesDao {
     }
 
     val folder = anyFolder getOrElse "/"
-    SECURITY // Maybe page id shouldn't be public? [rand-page-id] To prevent people from
-    // discovering all pages. E.g. iterating through all discussions, in a public blog.
-    val pageId = tx.nextPageId()
     val siteId = tx.siteId // [5GKEPMW2] remove this row later
     val pagePath = PagePathWithId(folder = folder, pageId = pageId,
       showId = showId, pageSlug = pageSlug, canonical = true)
 
     val titleUniqueId = tx.nextPostId()
     val bodyUniqueId = titleUniqueId + 1
-
-    val authorMaybeAnon: Pat = SiteDao.getAliasOrTruePat(
-          truePat = realAuthor, pageId = pageId, asAlias, mayReuseAnon = false,
-          isCreatingPage = true)(tx, IfBadAbortReq)
 
     val titlePost = Post.createTitle(
       uniqueId = titleUniqueId,

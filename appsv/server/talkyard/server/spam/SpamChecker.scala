@@ -1046,6 +1046,9 @@ object SpamChecker {
     val hasHighTrustLevel = participant.effectiveTrustLevel.toInt >= TrustLevel.TrustedMember.toInt
     val isGuestOrThreat = participant match {
       case m: User => m.effectiveThreatLevel.toInt >= ThreatLevel.MildThreat.toInt
+      case a: Anonym =>
+        die("TyESPAMANO", """Look at the true user, not hans alias, to decide if
+              to check for spam. See: [spam_check_true_user]""")
       case _: Guest => true
       case _: Group => false
     }

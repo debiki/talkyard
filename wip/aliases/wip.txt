@@ -27,6 +27,36 @@ If you think anonymous mode is just "flip a bool and they're anonymous",
 then, this is a big box of butterflies!
 
 
+Think about
+-----------------------
+
+[spam_check_true_user]
+Maybe in publicly visible categories, mods & anons can be expected to have ways to figure out
+who an anonym is?  Might be a bit necessary, to be able to block spammers.
+Still, can be good to, by default, not let moderators see [which posts got spam checked
+and passed the spam check] — because then they could better know which posts are by newer
+members (maybe there's just one person who joined recently).
+Only let them see which posts *failed* a spam check.
+However, admins maybe must be able to see this, so they can decide if a spam check service
+works ok well or not.
+
+But in private categories and private communities, posts aren't sent to spam check
+services, and maybe then anonymity can be stronger? So by default more than one
+admin / mod need to agree, [joint_decisions]
+before looking at people's trust or threat levels which they could then try to correlate
+with an anonymous user having gotten blocked just recently because of writing something
+not-alloowed.
+
+Details: Banning an anonymous user (let's say someone who posts angry toxic things),
+is going to affect the underlying true user's threat level. (Not yet impl, [block_true_user].)
+But if a moderator can look at all true users' levels, then clicks Ban, and then looks at
+all true users' levels again and notices that for user X, the threat level is now
+a bit higher — then, X is likely the anonym's true user. [deanon_risk]
+
+Therefore, maybe in private communities, peolpe's threat levels should be secret?
+Only the software knows, by default? And to have a look, [joint_decisions] are needed?
+
+
 Left to do
 -----------------------
 
@@ -88,10 +118,16 @@ Even later:
     Maybe add sth like talkyard.server.parser.JsonConf that says if any doerId.privId
     should be included or not?  SensitiveConf or PrivacyConf maybe?
     (Currently not included.)
-  - Suspending: If an anonym posts say toxic comments and gets reported, then,
-    can't suspend the underlying true user — that'd leak info about who the
+  - Suspending: If an anonym posts say toxic comments and gets reported,  [block_true_user]
+    then, can't suspend the underlying true user — that'd leak info about who the
     anonym is?  Instead, the anonym would get banned, and the true user
     prevented from creating new anonyms. Likewise, with pseudonyms?
+    Or maybe: A new threat level!  Each true user has two threat levels:
+    One for hanself, when han post as hanself. And another not yet existing
+    anonThreatLevel, which is affected by how hans anonyms behave. And if
+    hans anonThreatLevel becomes too high, han is prevented from posting anonymously
+    any more. But no one can see others' anonThreatLevels (except for admins maybe
+    after [joint_decisions]), so, there's no [deanon_risk].
   - Think about anonymous votes and how many have read this-or-that comment,
     when the same person visits & comments sometimes as hanself, sometimes
     using an alias.  See: PagePopularityCalculator  [alias_vote_stats]
@@ -110,6 +146,8 @@ Even later:
     (Not that important, now there's an info message.)
   - Pass doer (usually the author)  and  trueDoer  to NotificationGenerator,
     so won't need to lookup inside.    [notf_pass_doer]
+  - Set an anon's trust level to min required to post in the relevant category  [anon_tr_lv]
+    (if the true user has that level or higher, so is allowed to post).
 
 Tests missing:
   /^alias/  in test-map.txt.
