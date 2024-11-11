@@ -556,6 +556,16 @@ class JsonMaker(dao: SiteDao) {
 
     val reactStoreJsonString = jsonObj.toString()
 
+    // Make sure we [dont_leak_true_ids].  This page json is for everyone, not a specific
+    // person, and then no aliases' true ids should be included.  (However,
+    // in  userDataJson()  and requestersJsonImpl()  (below) it can be ok with true ids.)
+    val trueIds = (jsonObj \\ JsX.AnonForIdFieldName)
+    if (trueIds.nonEmpty) {
+      // Only include in the server logs, don't show to the end user.
+      System.err.println(s"True ids in page json: $reactStoreJsonString  [TyEIDLEAKPAGE1]")
+      die(s"Bug: True ids in page json, see server logs. [TyEIDLEAKPAGE2]")
+    }
+
     val version = CachedPageVersion(
       siteVersion = transaction.loadSiteVersion(),
       pageVersion = page.version,
@@ -1447,20 +1457,19 @@ class JsonMaker(dao: SiteDao) {
 
 
   def makeStorePatchForPostIds(postIds: Set[PostId], showHidden: Bo,
-        inclUnapproved: Bo, maySquash: Bo, dao: SiteDao, reqerId: Opt[PatId] = None,
-        ): JsObject = {
+        inclUnapproved: Bo, maySquash: Bo, dao: SiteDao): JsObject = {
     dieIf(Globals.isDevOrTest && dao != this.dao, "TyE602MWJL43") ; CLEAN_UP // remove dao param?
     dao.readTx { tx =>
       // This might render CommonMark, in a tx — slightly bad. [nashorn_in_tx]
-      makeStorePatchForPostIds(postIds, showHidden = showHidden,
-            inclUnapproved = inclUnapproved, maySquash = maySquash, tx, reqerId = reqerId)
+      _makeStorePatchForPostIds(postIds, showHidden = showHidden,
+            inclUnapproved = inclUnapproved, maySquash = maySquash, tx)
     }
   }
 
   // [post_to_json]
-  private def makeStorePatchForPostIds(postIds: Set[PostId],
+  private def _makeStorePatchForPostIds(postIds: Set[PostId],
           showHidden: Bo, inclUnapproved: Bo, maySquash: Bo,
-          transaction: SiteTx, reqerId: Opt[PatId]): JsObject = {
+          transaction: SiteTx): JsObject = {
     val posts = transaction.loadPostsByUniqueId(postIds).values
     val tagsAndBadges = transaction.loadPostTagsAndAuthorBadges(postIds)
     val tagTypes = dao.getTagTypes(tagsAndBadges.tagTypeIds)
@@ -1472,14 +1481,14 @@ class JsonMaker(dao: SiteDao) {
     makeStorePatch3(pageIdVersions, posts,
           showHidden = showHidden, inclUnapproved = inclUnapproved,
           maySquash = maySquash, tagsAndBadges, tagTypes,
-          pats, reqerId = reqerId, appVersion = dao.globals.applicationVersion)(transaction)
+          pats, appVersion = dao.globals.applicationVersion)(transaction)
   }
 
 
-  def makeStorePatchForPost(post: Post, showHidden: Bo, reqerId: PatId): JsObject = {
+  def makeStorePatchForPost(post: Post, showHidden: Bo): JsObject = {
     makeStorePatchForPostIds(
           postIds = Set(post.id), showHidden = showHidden, inclUnapproved = true,
-          maySquash = false, dao, reqerId = Some(reqerId))
+          maySquash = false, dao)
   }
 
 
@@ -1494,7 +1503,7 @@ class JsonMaker(dao: SiteDao) {
   private def makeStorePatch3(pageIdVersions: Iterable[PageIdVersion], posts: Iterable[Post],
           showHidden: Bo, inclUnapproved: Bo, maySquash: Bo,
           tagsAndBadges: TagsAndBadges, tagTypes: Seq[TagType],
-          pats: Iterable[Pat], reqerId: Opt[PatId] = None, appVersion: St)(
+          pats: Iterable[Pat], appVersion: St)(
           tx: SiteTx): JsObject = {
     require(posts.isEmpty || pats.nonEmpty, "Posts but no authors [EsE4YK7W2]")
 
@@ -1521,7 +1530,7 @@ class JsonMaker(dao: SiteDao) {
     Json.obj(
       "appVersion" -> appVersion,
       "pageVersionsByPageId" -> pageVersionsByPageIdJson,
-      "usersBrief" -> pats.map(JsPat(_, tagsAndBadges, toShowForPatId = reqerId)),
+      "usersBrief" -> pats.map(JsPat(_, tagsAndBadges)),
       "tagTypes" -> tagTypes.map(JsTagType),
       "postsByPageId" -> postsByPageIdJson)
   }

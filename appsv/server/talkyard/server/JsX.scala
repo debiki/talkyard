@@ -226,7 +226,7 @@ object JsX {   RENAME // to JsonPaSe
         toShowForPatId foreach { showForPatId: PatId =>
           if (anon.anonForPatId == showForPatId) {
             // [see_own_alias]
-            json += "anonForId" -> JsNumber(anon.anonForPatId)
+            json += AnonForIdFieldName -> JsNumber(anon.anonForPatId)
             //on += "anonOnPageId" -> JsString(anon.anonOnPageId),
           }
         }
@@ -258,6 +258,7 @@ object JsX {   RENAME // to JsonPaSe
     json
   }
 
+  val AnonForIdFieldName = "anonForId"
 
   // A bit dupl code. [dupl_pat_json_apiv0]
   def JsUserApiV0(pat: Pat, brief: Bo, authzCtx: AuthzCtxOnPats): JsObject = {
