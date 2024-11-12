@@ -743,6 +743,7 @@ case class NotificationGenerator(
       COULD; NotfLevel.Hushed // Also consider the type of notf: is it a direct message? Then send
       // if >= Hushed. If is a subthread indirect reply? Then don't send if == Hushed.
 
+      BUG // Pretty harmless: Shouldn't we look at true id? [pub_or_true_id_notf_prefs]
       val notfLevels = tx.loadPageNotfLevels(toUserId, aboutPost.pageId, inCategoryId)
       val usersMoreSpecificLevel =
         notfLevels.forPage.orElse(notfLevels.forCategory).orElse(notfLevels.forWholeSite)
