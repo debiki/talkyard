@@ -303,7 +303,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val privPrefs = group.privPrefs
     json = json.addAnyInt32("maySendMeDmsTrLv", privPrefs.maySendMeDmsTrLv)
     json = json.addAnyInt32("mayMentionMeTrLv", privPrefs.mayMentionMeTrLv)
-    json = json.addAnyInt32("seeActivityMinTrustLevel", privPrefs.seeActivityMinTrustLevel)
+    json = json.addAnyInt32("maySeeMyActivityTrLv", privPrefs.seeActivityMinTrustLevel)
 
     if (callerIsStaff) {
       json += "summaryEmailIntervalMins" -> JsNumberOrNull(group.summaryEmailIntervalMins)

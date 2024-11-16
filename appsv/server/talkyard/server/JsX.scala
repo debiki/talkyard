@@ -317,7 +317,9 @@ object JsX {   RENAME // to JsonPaSe
       "bio" -> JsStringOrNull(user.about),
       "websiteUrl" -> JsStringOrNull(user.website),
       "location" -> JsStringOrNull(user.country),
-      "seeActivityMinTrustLevel" -> JsNumberOrNull(user.privPrefs.seeActivityMinTrustLevel.map(_.toInt)),
+      "maySeeMyActivityTrLv" -> JsNumberOrNull(user.privPrefs.seeActivityMinTrustLevel.map(_.toInt)),
+      "seeActivityMinTrustLevel" -> // [ty_v1] remove
+            JsNumberOrNull(user.privPrefs.seeActivityMinTrustLevel.map(_.toInt)),
       "avatarTinyHashPath" -> JsStringOrNull(user.tinyAvatar.map(_.hashPath)),
       "avatarSmallHashPath" -> JsStringOrNull(user.smallAvatar.map(_.hashPath)),
       "avatarMediumHashPath" -> JsStringOrNull(user.mediumAvatar.map(_.hashPath)),
@@ -406,7 +408,9 @@ object JsX {   RENAME // to JsonPaSe
   def memberPrivacyPrefsFromJson(json: JsValue): MemberPrivacyPrefs = {
     MemberPrivacyPrefs(
           seeActivityMinTrustLevel =
-              parseOptInt32(json, "seeActivityTrLv", altField = "seeActivityMinTrustLevel")
+              parseOptInt32(json, "maySeeMyActivityTrLv",
+                      // [ty_v1] remove both these:
+                      altField = "seeActivityTrLv", alt2 = "seeActivityMinTrustLevel")
                   .flatMap(TrustLevel.fromInt),
           maySendMeDmsTrLv =
               parseOptInt32(json, "maySendMeDmsTrLv").flatMap(TrustLevel.fromInt),

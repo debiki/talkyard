@@ -740,6 +740,7 @@ interface PrivacyPrefsTabState {
   savingStatus?: St;
   hideActivityForStrangers: Bo;
   hideActivityForAll: Bo;
+  maySeeMyProfileTrLv?: TrustLevelOrStaff
   maySendMeDmsTrLv?: TrustLevelOrStaff;
   mayMentionMeTrLv?: TrustLevelOrStaff;
 }
@@ -752,8 +753,8 @@ const PrivacyPrefsTab = createFactory({
     const props: PrivacyPrefsTabProps = this.props;
     const user: UserInclDetails = props.user;
     const state: PrivacyPrefsTabState = {
-      hideActivityForStrangers: user.seeActivityMinTrustLevel >= TrustLevel.FullMember,
-      hideActivityForAll: user.seeActivityMinTrustLevel >= TrustLevel.CoreMember,
+      hideActivityForStrangers: user.maySeeMyActivityTrLv >= TrustLevel.FullMember,
+      hideActivityForAll: user.maySeeMyActivityTrLv >= TrustLevel.CoreMember,
       maySendMeDmsTrLv: user.maySendMeDmsTrLv,
       mayMentionMeTrLv: user.mayMentionMeTrLv,
     };
@@ -768,12 +769,12 @@ const PrivacyPrefsTab = createFactory({
     event.preventDefault();
     const props: PrivacyPrefsTabProps = this.props;
     const state: PrivacyPrefsTabState = this.state;
-    const seeActivityMinTrustLevel = state.hideActivityForAll ? TrustLevel.CoreMember : (
+    const maySeeMyActivityTrLv = state.hideActivityForAll ? TrustLevel.CoreMember : (
         state.hideActivityForStrangers ? TrustLevel.FullMember : null);
     const user: UserInclDetails = props.user;
     const prefs = {
       userId: user.id,
-      seeActivityMinTrustLevel,
+      maySeeMyActivityTrLv,
       maySendMeDmsTrLv: state.maySendMeDmsTrLv,
       mayMentionMeTrLv: state.mayMentionMeTrLv,
     };
@@ -810,6 +811,9 @@ const PrivacyPrefsTab = createFactory({
     const you =
             user.isGroup ? "members of this group" : (    // I18N
             user.id === me.id ? "you" : "this user");
+    const your =
+            user.isGroup ? "this group's" : (    // I18N
+            user.id === me.id ? "your" : "this user's");
 
 
     return (
@@ -840,6 +844,29 @@ const PrivacyPrefsTab = createFactory({
               hideActivityForAll: event.target.checked,
               savingStatus: null,
             }) })),
+
+        !user.isGroup ? null : rFr({},
+          r.div({ className: 'e_SeeProfile' },
+            r.span({}, `Min trust level to see ${your} profile page: `),  // I18N
+            TrustLevelBtn({
+                diagTitle: rFr({},
+                    `Min trust level:`),  // I18N
+                curLevel: firstValOf(
+                      state.maySeeMyProfileTrLv, user.maySeeMyProfileTrLv,
+                      TrustLevelOrStaff.Stranger),
+                minLevel: TrustLevelOrStaff.Stranger,
+                maxLevel:
+                    me.isModerator ? TrustLevelOrStaff.Staff : (
+                    me.isAdmin ? TrustLevelOrStaff.Admin :
+                    TrustLevelOrStaff.FullMember),
+                saveFn: (newLevel) => {
+                  this.setState({ maySeeMyProfileTrLv: newLevel, savingStatus: null });
+                }}))),
+
+          // Can see everyone else's profile pages:
+          // For now, if someone can see other people's email addresses,
+          // then let han see their profile pages too?
+          // Later: New conf val, init to  can_see_others_email_adrs_c ?
 
         // This is notf prefs, rather than privacy? Maybe should move
         // to tne notf prefs tab? Not important, let's wait.
