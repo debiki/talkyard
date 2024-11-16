@@ -304,12 +304,13 @@ anons:
   Make work again, and code review:
             - tests/e2e-wdio7/specs/alias-anons-basic.2br.f.e2e.ts
             - tests/e2e-wdio7/specs/alias-anons-true-mixed.2br.f.e2e.ts
+  settings:
+    enabling Anon Sens Disc disables presence:
+            - alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX.TyTANOSENSDISLN
   TESTS_MISSING:
             - See  ../wip/aliases/auto-test-thoughts.txt
             - Anon mode, send priv msg?
             - Callers of  checkAliasOrThrowForbidden() & getAliasOrTruePat() [misc_alias_tests]
-            - Anons for drafts, UNTSETED.
-            - Load anon drafts, restore as anon. TyTANONDFLOAD
             - Cannot move anon post to other page.  TyTMOVANONCOMT
             - Notfs from anons (comments, votes, more?), don't include real user name  TyTNOTFFROMANON
             - UNTESTED; TESTS_MISSING // exp imp anons?
@@ -318,6 +319,9 @@ anons:
             - Reuse anons: At most one per page & person [one_anon_per_page].
                 Verify cannot create many, by opening many browser tabs
                 & posting one anon comment in each?
+
+            - Anons for drafts, UNTSETED.
+            - Load anon drafts, restore as anon. TyTANONDFLOAD
             - Edit & update the draft.  TyTEDUPDDFT04
             - Save anon draft, reuse an anon.  TyTDFTREUSEANON.
             - Save draft using the wrong alias —  should work, but needs to choose an
@@ -325,6 +329,7 @@ anons:
                 - When editing own post  TyTDRAFTALI
                 - When editing sbd else's post
             - Edit comment as anon: Anon name in new edit revision, & email notfs. TyTANONEDIT
+
             - Post pages as anon
             - Post page as anon,
                     edit as self
@@ -379,6 +384,7 @@ anons:
                 - in sub cat
                 - on specific page
             - ... and more
+            - Audit log user ids
 
 different users -
   login, logout, switch user:  almost all tests

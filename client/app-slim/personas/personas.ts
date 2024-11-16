@@ -114,11 +114,14 @@ export function disc_findMyPersonas(discStore: DiscStore, ps: {
 
     // Bit dupl code:  [_find_anons]
 
+    const authorId = nextPost.doAsAnon ?
+            nextPost.doAsAnon.sameAnonId || Pats.FutureAnonId : nextPost.authorId;
+
     // We might have added this author, already.
-    if (result.byId[nextPost.authorId])
+    if (result.byId[authorId])
       continue;
 
-    const author: Pat | U = discStore.usersByIdBrief[nextPost.authorId];
+    const author: Pat | U = discStore.usersByIdBrief[authorId];
     if (!author)
       continue; // would be a bug somewhere, or a rare & harmless race? Oh well.
 
@@ -173,11 +176,14 @@ export function disc_findMyPersonas(discStore: DiscStore, ps: {
 
     // Bit dupl code:  [_find_anons]
 
+    const authorId = post.doAsAnon ?
+            post.doAsAnon.sameAnonId || Pats.FutureAnonId : post.authorId;
+
     // Each anon pat has used, is to be included at most once.
-    if (result.byId[post.authorId])
+    if (result.byId[authorId])
       return;
 
-    const author: Pat | U = discStore.usersByIdBrief[post.authorId];
+    const author: Pat | U = discStore.usersByIdBrief[authorId];
     if (!author)
       return;
 

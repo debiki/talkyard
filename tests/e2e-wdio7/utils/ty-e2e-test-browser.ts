@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import { IsWhere, E2eAuthor, E2eVote, isWhere_isInIframe, PermName } from '../test-types';
-import { ServerSays } from '../test-types2';
-import { SiteType, NewSiteOwnerType } from '../test-constants';
+import { ServerSays, TestPersonaMode } from '../test-types2';
+import { SiteType, NewSiteOwnerType, TestNeverAlways, TestAnonStatus } from '../test-constants';
 
 
 // Why are many WebdriverIO's functions reimplemented here?
@@ -301,6 +301,7 @@ export class TyE2eTestBrowser {
 
   #br: WebdriverIOAsync.Browser;
   #name: St;
+  #forbiddenWords?: St[];
 
   constructor(aWdioBrowser: WebdriverIOAsync.Browser,
           name: 'brA' | 'brB' | 'brC' | 'brD' | 'brAll') {
@@ -476,13 +477,20 @@ export class TyE2eTestBrowser {
       return await this.#br.executeAsync.apply(this.#br, arguments);
     }
 
+    // Only refreshes, zero other things. Avoids e.g. failIfAnyForbiddenWordsError().
+    async refreshNothingElse() {
+      await this.#br.refresh();
+    }
+
     async refresh() {
+      await this.failIfAnyForbiddenWordsError();
       await this.#br.refresh();
     }
 
     // Change all refresh() to refresh2, then remove '2' from name.
     // (Would need to add  waitForPageType: false  anywhere? Don't think so?)
     async refresh2(ps: { isWhere?: IsWhere } = {}) {
+      await this.failIfAnyForbiddenWordsError();
       await this.#br.refresh();
       if (ps.isWhere) {
         dieIf(isWhere_isInIframe(ps.isWhere),
@@ -493,6 +501,7 @@ export class TyE2eTestBrowser {
     }
 
     async back() {
+      await this.failIfAnyForbiddenWordsError();
       await this.#br.back();
     }
 
@@ -547,17 +556,33 @@ export class TyE2eTestBrowser {
     }
 
 
-    // Don't use. Change to go2 everywhere, then rename to 'go', and remove this old 'go'.
+    // Don't use. Change to go2 everywhere.
     async go(url: string, opts: { useRateLimits?: boolean } = {}) {
       await this.go2(url, { ...opts, waitForPageType: false });
     }
 
-    async go2(url: string, opts: { useRateLimits?: boolean, waitForPageType?: false,
-          isExternalPage?: true, willBeWhere?: IsWhere } = {}) {
+    async go2(url0: St, opts: { useRateLimits?: Bo, waitForPageType?: false,
+          isExternalPage?: true, willBeWhere?: IsWhere,
+          forbiddenWords?: St[], forbiddenWordsOkInPresence?: Bo, shouldFindWords?: St[] } = {}) {
+
+      await this.failIfAnyForbiddenWordsError();
 
       let shallDisableRateLimits = false;
 
       this.#firstWindowHandle = await this.#br.getWindowHandle();
+
+      dieIf(opts.forbiddenWords && url0.indexOf('#') !== -1,
+                "Unimpl: go2 with forbiddenWords and #hash frag [TyE5H0WCNEP3]")
+      const querySep = url0.indexOf('?') === -1 ? '?' : '&';
+      const moreQueryParams = !opts.forbiddenWords ? '' :
+              querySep +
+              `e2eTestForbiddenWords=${opts.forbiddenWords.join(',')}` +
+              (opts.forbiddenWordsOkInPresence ?
+                    '&e2eTestForbiddenWordsOkInPresence=true' : '') +
+              (opts.shouldFindWords ?
+                    `&e2eTestShouldFindWords=${opts.shouldFindWords.join(',')}` : '');
+
+      let url = url0 + moreQueryParams;
 
       if (url[0] === '/') {
         // Local url, need to add origin.
@@ -621,8 +646,80 @@ export class TyE2eTestBrowser {
 
 
       if (shallDisableRateLimits) {
-        await this.disableRateLimits();
+        // (No need to `await` for this.)
+        this.disableRateLimits();
       }
+
+      // ttt: Read back the forbidden words we attempted to set via query params —
+      // so we know it actually worked (rather than sth getting renamed and the tests
+      // silently start testing nothing).
+      if (opts.forbiddenWords) {
+        this.#forbiddenWords = opts.forbiddenWords;
+        const readBack: [St[], Bo, St[]] = await this.getForbiddenWords();
+        const expected = [opts.forbiddenWords, !!opts.forbiddenWordsOkInPresence,
+                            opts.shouldFindWords];
+        tyAssert.deepEq(readBack, expected,
+                `Failed to set go2() forbidden words,` +
+                `\n   got back:  ${j2s(readBack)}` +
+                `\n   expected:  ${j2s(expected)}`);
+      }
+    }
+
+
+    async clearForbiddenWords() {
+      await this.setForbiddenWords([], false, []);
+    }
+
+
+    async setForbiddenWords(words: St[], okInPresence: Bo, shouldFind: St[]) {
+      this.#forbiddenWords = words;
+      await this.#br.execute(function(words: St[], okInPresence: Bo, shouldFind: St[]) {
+        window['debiki2'].Server.setE2eTestForbiddenWords(words, okInPresence, shouldFind);
+      }, words, okInPresence, shouldFind);
+    }
+
+
+    async getForbiddenWords(): Pr<[St[], Bo, St[]]> {
+      return await this.#br.execute(function() {
+        return window['debiki2'].Server.getE2eTestForbiddenWords();
+      });
+    }
+
+
+    async failIfAnyForbiddenWordsError() {
+      if (this.#forbiddenWords?.length) {
+        await this.serverErrorDialog.failIfDisplayed('TyEFORBWDS_');
+      }
+    }
+
+
+    async getTestWordCounts(): Pr<{ forbidden: [St, St[]][], should: { [word: St]: Nr }}> {
+      return await this.#br.execute(function() {
+        return window['debiki2'].Server.getE2eTestWordCounts();
+      });
+    }
+
+
+    async waitForShouldWords(expectedCounts: { [word: St]: HowMany }):
+              Pr<{ forbidden: [St, St[]][], should: { [word: St]: Nr }}> {
+      let actualCounts: { forbidden: [St, St[]][], should: { [word: St]: Nr }};
+      let fails: St[];
+      await this.waitUntil(async () => {
+        actualCounts = await this.getTestWordCounts()
+        fails = [];
+        for (const [word, expCount] of Object.entries(expectedCounts)) {
+          const actCount = actualCounts.should[word] || 0;
+          if (!isOkMany(actCount, expCount)) {
+            fails.push(word);
+          }
+        }
+        return !fails.length;
+      }, {
+        message: () => `Waiting for should-see words, fails: ${j2s(fails)},\n` +
+          `    actual: ${j2s(actualCounts)}\n` +
+          `    expected: ${j2s(expectedCounts)}\n`
+      });
+      return actualCounts;
     }
 
 
@@ -2013,6 +2110,7 @@ export class TyE2eTestBrowser {
         if (await test())
           return;
         await this.#br.pause(PollMs / 3);
+        await this.failIfAnyForbiddenWordsError();
         await this.#br.refresh();
         await this.#br.pause(PollMs * 2 / 3);
       }
@@ -2027,6 +2125,7 @@ export class TyE2eTestBrowser {
         let isVisibleValues = allBrowserValues(resultsByBrowser);
         let goneEverywhere = !_.some(isVisibleValues);
         if (goneEverywhere) break;
+        await this.failIfAnyForbiddenWordsError();
         await this.#br.refresh();
         await this.#br.pause(250);
       }
@@ -3033,6 +3132,7 @@ export class TyE2eTestBrowser {
         if (!is404) {
           await this.#br.pause(250);
           if (!ps.shouldBeErrorDialog) {
+            await this.failIfAnyForbiddenWordsError();
             await this.#br.refresh();
           }
           continue;
@@ -3384,6 +3484,7 @@ export class TyE2eTestBrowser {
 
       clickLogout: async (options: { waitForLoginButton?: Bo,   // RENAME to logout
               waitForLoginDialog?: Bo } = {}) => {
+        await this.failIfAnyForbiddenWordsError();
         // Sometimes this scrolls to top, small small steps, annoying, [FASTER_E2E_TESTS]
         // and not needed, right.
         // Can speed up by calling scrollToTop() — done here: [305RKTJ205].
@@ -3413,11 +3514,11 @@ export class TyE2eTestBrowser {
       openMyMenu: async () => {
         // We can click in the fixed topbar if it's present, instead of scrolling
         // all the way up to the static topbar.
-        let sel = '.s_TbW-Fxd .esMyMenu';
+        let sel = '.s_TbW-Fxd .s_MMB';
         const fixedScrollbarVisible = await this.isVisible(sel);
         const opts = { mayScroll: !fixedScrollbarVisible };
         if (!fixedScrollbarVisible) {
-          sel = '.esMyMenu';
+          sel = '.s_MMB';
         }
         await this.waitAndClick(sel, opts);
         await this.waitUntilLoadingOverlayGone();
@@ -3435,6 +3536,7 @@ export class TyE2eTestBrowser {
       },
 
       clickGoToAdmin: async () => {
+        await this.failIfAnyForbiddenWordsError();
         await this.rememberCurrentUrl();
         await this.topbar.openMyMenu();
         await this.waitAndClick('.esMyMenu_admin a');
@@ -3459,6 +3561,7 @@ export class TyE2eTestBrowser {
       },
 
       clickStopImpersonating: async () => {
+        await this.failIfAnyForbiddenWordsError();
         let oldName = await this.topbar.getMyUsername();
         let newName;
         await this.topbar.openMyMenu();
@@ -3473,6 +3576,7 @@ export class TyE2eTestBrowser {
       },
 
       searchFor: async (phrase: string) => {
+        await this.failIfAnyForbiddenWordsError();
         await this.waitAndClick('.esTB_SearchBtn');
         // The search text field should grab focus, so we can just start typing:
         // But this causes a "RuntimeError" in Webdriver.io v4:
@@ -3533,6 +3637,7 @@ export class TyE2eTestBrowser {
           if (millisLeftToRefresh < 0) {
             logUnusual(`Refreshing page. Num-other-notfs count is currently ${isWhat} ` +
                 `and refuses to become ${desiredNumNotfs}...`);
+            await this.failIfAnyForbiddenWordsError();
             await this.#br.refresh();
             millisLeftToRefresh = millisBetweenRefresh;
           }
@@ -3644,6 +3749,32 @@ export class TyE2eTestBrowser {
         unhideAnnouncements: async () => {
           await this.waitAndClick('.e_UnhAnns');
         }
+      },
+
+      personaIndicator: {
+        __persToSel: (mode: TestPersonaMode): St => {
+          return (  // [pers_mode_2_class]
+                mode.anonStatus === TestAnonStatus.IsAnonOnlySelfCanDeanon ? '.e_Prs-PrmAno' : (
+                mode.anonStatus === TestAnonStatus.IsAnonCanAutoDeanon ? '.e_Prs-TmpAno' : (
+                mode.self ? '.e_Prs-Self' :
+                mode.pat ? '.e_Prs-Usr-' + mode.pat.id :
+                'TyEUNKPRSMOD')));
+        },
+
+        assertNoIndicator: async () => {
+          await this.waitForDisplayed('.s_MMB');
+          await this.assertNotExists('.c_Tb_Ali');
+        },
+
+        assertIsIndicated: async (mode: TestPersonaMode) => {
+          const sel = this.topbar.personaIndicator.__persToSel(mode);
+          await this.assertDisplayed(sel);
+        },
+
+        waitForIndicated: async (mode: TestPersonaMode) => {
+          const sel = this.topbar.personaIndicator.__persToSel(mode);
+          await this.waitForDisplayed(sel);
+        },
       },
 
       pageTools: {
@@ -3863,6 +3994,7 @@ export class TyE2eTestBrowser {
         let dialogShown = false;
         let lap = 0;
         while (Date.now() - startMs < settings.waitforTimeout) {
+          await this.failIfAnyForbiddenWordsError();
           await this.#br.refresh();
           // Give the page enough time to load:
           lap += 1;
@@ -4944,6 +5076,8 @@ export class TyE2eTestBrowser {
       },
 
       save: async () => {
+        // This loads a new page, if we're creating a new topic.
+        await this.failIfAnyForbiddenWordsError();
         await this.waitAndClick('.e_Ttl_SaveB');
         await this.pageTitle.waitForVisible();
       },
@@ -5382,6 +5516,38 @@ export class TyE2eTestBrowser {
         return discLayoutTitleToEnum(title);
       },
 
+      setAnonAllowed: async (nevAlw: TestNeverAlways): Pr<V> => {
+        await this.waitAndClick('.e_AnonComtsB');
+        await this.neverAlwaysD.select(nevAlw);
+      },
+
+      setAnonPurpose: async (purpose: TestAnonStatus, ps: { disabled?: Bo } = {}): Pr<V> => {
+        await this.waitAndClick('.c_AnonPurpB');
+        switch (purpose) {
+          case TestAnonStatus.IsAnonOnlySelfCanDeanon:
+            let sel = '.e_OnlSelf';
+            if (ps.disabled) {
+              // In the anonymous discussions purpose dropdown,
+              sel = '.e_AnonPurpD'
+              // If Anonymous Sensitive Discussions not enabled, the Sensitive Discussions
+              // purpose (.e_OnlSelf) is disabled (.c_Dis) and crossed out (.c_Cross, 2 hmm),
+              sel += ' .c_Dis .esExplDrp_entry_title.c_Cross:has(.e_OnlSelf.c_Cross)';
+              // And there's a link in the description to the features page in the Admin Area,
+              // where the feature can be enabled.
+              sel += ' + .esExplDrp_entry_expl a[href="/-/admin/settings/features"]';
+            }
+            await this.waitAndClick(sel);
+            break;
+          case TestAnonStatus.IsAnonCanAutoDeanon:
+            await this.waitAndClick('.e_AutoDean');
+            break;
+          default:
+            die('TyE5307SKN5');
+        }
+        if (!ps.disabled)
+          await this.waitUntilGone('.e_AnonPurpD');
+      },
+
       submit: async () => {
         // ---- Some scroll-to-Save-button problem. So do a bit double scrolling.
         await this.scrollIntoViewInPageColumn('#e2eSaveCatB')
@@ -5561,6 +5727,7 @@ export class TyE2eTestBrowser {
         // Later: this.#br.waitUntilModalGone();
         // But for now:  [5FKE0WY2]
         await this.waitForVisible('.esStupidDlg');
+        await this.failIfAnyForbiddenWordsError();
         await this.#br.refresh();
       },
     }
@@ -5683,6 +5850,7 @@ export class TyE2eTestBrowser {
         // But for now:  [5FKE0WY2]
         if (ps.closeStupidDialogAndRefresh) {
           await this.waitForVisible('.esStupidDlg');
+          await this.failIfAnyForbiddenWordsError();
           await this.#br.refresh();
         }
       }
@@ -5767,6 +5935,45 @@ export class TyE2eTestBrowser {
         return await this.waitAndGetValue('.editor-area textarea');
       },
 
+      waitForPostAsDropdownBtn: async (): Pr<V> => {
+        await this.waitForVisible('.c_AliasB');
+      },
+
+      setAnonPurpose: async (purpose: TestAnonStatus) => {
+        await this.waitAndClick('.c_AliasB');
+        switch (purpose) {
+          case TestAnonStatus.NotAnon:
+            await this.waitAndClick('.e_AsSelfB');
+            break;
+          case TestAnonStatus.IsAnonOnlySelfCanDeanon:
+            await this.waitAndClick('.e_AnonPrmB');
+            break;
+          case TestAnonStatus.IsAnonCanAutoDeanon:
+            await this.waitAndClick('.e_AnonTmpB');
+            break;
+          default:
+            die('TyE5307SKN6');
+        }
+        await this.waitUntilGone('e_ChoAuD');
+      },
+
+      waitForAnonPurpose: async (purpose: TestAnonStatus) => {
+        switch (purpose) {
+          case TestAnonStatus.NotAnon:
+            await this.waitForVisible('.e_AsSelf');
+            break;
+          case TestAnonStatus.IsAnonOnlySelfCanDeanon:
+            await this.waitForVisible('.e_AnonPrm');
+            break;
+          case TestAnonStatus.IsAnonCanAutoDeanon:
+            await this.waitForVisible('.e_AnonTmp');
+            break;
+          default:
+            die('TyE5307SKN6');
+        }
+      },
+
+      // This, and setTopicType(), works also in the change-page dialog.
       openTopicTypeDropdown: async () => {
         await this.waitAndClick('.esTopicType_dropdown');
       },
@@ -5780,6 +5987,7 @@ export class TyE2eTestBrowser {
         return await this.isVisible('.esPageRole_showMore');
       },
 
+      // This, and openTopicTypeDropdown(), works also in the change-page dialog.
       setTopicType: async (type: PageRole) => {
         let optionId = null;
         let needsClickMore = false;
@@ -6511,6 +6719,7 @@ export class TyE2eTestBrowser {
         let delayMs = RefreshPollMs;
         while (!await this.isVisible(selector)) {
           logMessage(`Refreshing page until appears:  ${selector}  [TyE2EMREFRWAIT]`);
+          await this.failIfAnyForbiddenWordsError();
           await this.#br.refresh();
           // Pause *after* the refresh, so there's some time for the post to get loaded & appear.
           await this.#br.pause(delayMs);
@@ -6530,6 +6739,7 @@ export class TyE2eTestBrowser {
             break;
           }
           await this.#br.pause(200);
+          await this.failIfAnyForbiddenWordsError();
           await this.#br.refresh();
         }
       },
@@ -6904,10 +7114,29 @@ export class TyE2eTestBrowser {
         await this.waitAndClick('.dw-ar-t > .esPA > .dw-a-like');
       },
 
-      toggleLikeVote: async (postNr: PostNr, opts: { logInAs? } = {}) => {
+      tryLikeVote: async (postNr: PostNr, opts: { errorCode: St }) => {
+        const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr);
+        await this.waitUntil(async () => {
+          await this.waitAndClick(likeVoteSelector);
+          await this.serverErrorDialog.waitAndAssertTextMatches(opts.errorCode);
+          return true;
+        }, {
+          timeoutIsFine: true,
+          timeoutMs: 2500,
+          message: () => `Trying to Like vote post ${postNr} so that error ${
+                      opts.errorCode} happens [TyM4LS9EM2G]`,
+        });
+      },
+
+      likeVote: async (postNr: PostNr, opts: { logInAs? } = {}) => {
+        await this.topic.toggleLikeVote(postNr, { ...opts, toggle: 'on' });
+      },
+
+      toggleLikeVote: async (postNr: PostNr, opts: { logInAs?, toggle?: 'on' | 'off' } = {}) => {
         const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr);
         await this.switchToEmbCommentsIframeIfNeeded();
-        const isLikedBefore = await this.isVisible(likeVoteSelector + '.dw-my-vote');
+        const isLikedBefore = opts.toggle === 'on' ? false : (opts.toggle === 'off' ? true :
+                await this.isVisible(likeVoteSelector + '.dw-my-vote'));
         let isLoggedIn = !opts.logInAs;
         // This click for some reason won't always work, here: [E2ECLICK03962]
         await utils.tryUntilTrue(`toggle Like vote`, 3, async (attemptNr: Nr) => {
@@ -7266,6 +7495,7 @@ export class TyE2eTestBrowser {
           let isBodyHidden = await this.topic.isPostBodyHidden(postNr);
           if (isBodyHidden) return true;
           await this.#br.pause(RefreshPollMs);
+          await this.failIfAnyForbiddenWordsError();
           await this.#br.refresh();
         }, {
           message: `Waiting for post nr ${postNr}'s body to hide`,
@@ -7278,6 +7508,7 @@ export class TyE2eTestBrowser {
           let isBodyHidden = await this.topic.isPostBodyHidden(postNr);
           if (isVisible && !isBodyHidden) return true;
           await this.#br.pause(RefreshPollMs);
+          await this.failIfAnyForbiddenWordsError();
           await this.#br.refresh();
         }, {
           message: `Waiting for post nr ${postNr}: isVisible && !isBodyHidden`,
@@ -8812,7 +9043,7 @@ export class TyE2eTestBrowser {
       },
 
       goToReview: async (origin?: St, opts: { loginAs? } = {}) => {
-        await this.go((origin || '') + '/-/admin/review/all');
+        await this.go2((origin || '') + '/-/admin/review/all');
         if (opts.loginAs) {
           await this.loginDialog.loginWithPassword(opts.loginAs);
         }
@@ -9042,6 +9273,20 @@ export class TyE2eTestBrowser {
 
           setCorsOrigins: async (text: St) => {
             await this.waitAndSetValue('.e_CorsFrm textarea', text);
+          },
+
+          setEnableAnonSensitiveDiscs: async (enabled: Bo) => {
+            await this.setCheckbox('.e_EnbSensCB input', enabled);
+          },
+          getEnableAnonSensitiveDiscs: async (): Pr<Bo> => {
+            return await (await this.$('.e_EnbSensCB input')).isSelected();
+          },
+
+          setEnablePresence: async (enabled: Bo) => {
+            await this.setCheckbox('.e_EnbPresenceCB input', enabled);
+          },
+          getEnablePresence: async (): Pr<Bo> => {
+            return await (await this.$('.e_EnbPresenceCB input')).isSelected();
           },
         },
 
@@ -9533,14 +9778,15 @@ export class TyE2eTestBrowser {
 
         waitUntilLoaded: async () => {
           await this.waitForVisible('.s_A_Rvw');
-          //----
-          // Top tab pane unmount bug workaround, for e2e tests. [5QKBRQ].  [E2EBUG]
-          // Going to the Settings tab, makes the Review tab pane unmount, and after that,
-          // it won't surprise-unmount ever again (until page reload).
-          await this.waitAndClick('.e_UsrsB');
-          await this.waitAndClick('.e_RvwB');
-          await this.waitForVisible('.s_A_Rvw');
-          //----
+          // Still needed?
+          //  //----
+          //  // Top tab pane unmount bug workaround, for e2e tests. [5QKBRQ].  [E2EBUG]
+          //  // Going to the Settings tab, makes the Review tab pane unmount, and after that,
+          //  // it won't surprise-unmount ever again (until page reload).
+          //  await this.waitAndClick('.e_DashbB'); //e_UsrsB
+          //  await this.waitAndClick('.e_RvwB');
+          //  await this.waitForVisible('.s_A_Rvw');
+          //  //----
         },
 
         hideCompletedTasks: async () => {
@@ -9981,6 +10227,28 @@ export class TyE2eTestBrowser {
     };
 
 
+    neverAlwaysD = {
+      select: async (nevAlw: TestNeverAlways): Pr<V> => {
+        switch (nevAlw) {
+          case TestNeverAlways.NeverButCanContinue:
+            await this.waitAndClick('.c_NevAlwD .e_Nevr');
+            break;
+          case TestNeverAlways.Allowed:
+            await this.waitAndClick('.c_NevAlwD .e_Alow');
+            break;
+          case TestNeverAlways.Recommended:
+            await this.waitAndClick('.c_NevAlwD .e_Rec');
+            break;
+          case TestNeverAlways.Allowed:
+            await this.waitAndClick('.c_NevAlwD .e_Alwa');
+            break;
+          default:
+        }
+        await this.waitUntilGone('.c_NevAlwD');
+      }
+    };
+
+
     notFoundDialog = {
       waitAndAssertErrorMatches: async (regex: St | RegExp, ifDevRegex?: St | RegExp) => {
         await this.waitAndAssertVisibleTextMatches('body > pre', regex);
@@ -9998,6 +10266,12 @@ export class TyE2eTestBrowser {
     serverErrorDialog = {
       isDisplayed: async (): Pr<Bo> => {
         return await this.isVisible('.s_SED_Msg');
+      },
+
+      failIfDisplayed: async (withText?: St) => {
+        if (await this.serverErrorDialog.isDisplayed()) {
+          await this.serverErrorDialog.failTestAndShowDialogText();
+        }
       },
 
       failTestAndShowDialogText: async () => {
@@ -10041,7 +10315,13 @@ export class TyE2eTestBrowser {
         logMessage("Didn't get any got-logged-out but-had-started-writing related alert.");
       },
 
-      waitAndAssertTextMatches: async (regex: St | RegExp, ifDevRegex?: St | RegExp) => {
+      // Add the 's' flag to have '.' match newlines too: '/regex/s'.
+      waitAndAssertTextMatches: async (regex: St | RegExp, ifDevRegex?: St | RegExp, ps?: WaitPs) => {
+        // Just so we can configure WaitPs:
+        if (ps) {
+          await this.waitForDisplayed('.s_SED_Msg', {
+                  message: () => "Waiting for server error dialog", ...ps });
+        }
         await this.waitAndAssertVisibleTextMatches('.s_SED_Msg', regex);
         if (!settings.prod && ifDevRegex) {
           await this.waitAndAssertVisibleTextMatches('.s_SED_Msg', ifDevRegex);

@@ -710,6 +710,10 @@ Or cache more-bundle.js: PWA and service worker.
 If there're many drafts for the same thing, show them in a list and let the user choose which
 one to continue editing. (Rather than just picking a random one.)
 
+[safer_imp]
+If impersonating sbd, hide that person's aliases and subscriptions, by default.
+So can e.g. help out w troubleshooting access perms, without seeing too much.
+Maybe hide the person's posts?  Diferent impersonation capabilities?
 
 [imp-groups]
 Make it possible to impersonate groups. Nice for testing one's access control settings.
@@ -857,6 +861,10 @@ Done: Send notifications about getting a Like.
 Could also:
   Select which notifications get sent over email (e.g. excl Like votes & mod tasks).
   Still visible in username dropdown.
+
+[do_notify_mod]
+Generate a notification link, but no email, to a moderator who approves a reply to hanself?
+So they can find & reply to that reply, also when han hanself is the one who approved the reply.
 
 [dont_notify]
 In some corner cases, one gets a notification about sth one already knows about,

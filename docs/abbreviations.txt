@@ -97,6 +97,7 @@ Aft = after
 Ali = alias (anonym or pseudonym)
 Alw = allow(ed)
 Ann, An = announcement, also see SAn: Server Announcement
+Ano = anonymous
 Asg  = assign
 Asgd = assigned, Asgd2 assigned to
 Asgs = assignees
@@ -172,9 +173,10 @@ Ln  = link — like `ln -s ...` in Linux. E.g. LnPv = Link Preview.
 Lo  = low
 Lv  = level
 Mb  = metabar NO rename to Pb = pagebar
-Mr  = member  (or Mbr?)  Us = user, Mr = member, Gp = group, Gs = guest
+Mr  = member  (or Mbr?)  Usr = user, Mr = member, Gp = group, Gs = guest
 Md  = medium (screen), also: Sm, Lg, Xl
 Mod = moderation
+Mde = mode
 Mnt = mention
 Mu  = menu?
 Mi  = min, Mx = max
@@ -187,6 +189,7 @@ Op  = Original post
 Ord = order
 Par = parenhtesis? Maybe sth else too
 Pat = participant
+Prs = persona, e.g. PrsMde = persona mode
 Pb  = pagebar
 Pf  = preference, e.g. NfPfs = notification preferences
 Pnl = panel
@@ -194,6 +197,7 @@ Py  = property?
 Pw  = password, e.g. NwPwI
 Perm,
 Prm = permission, e.g.: 's_PP_PrmsTb' = profile page, permissions tab
+Prm = permanently, e.g. PrmAno = permanently anonymous (cmp w TmpAno: temporarily anonymous)
 Pp = participant  NO change to Pat
 P, Pg = page
 Pop = popular

@@ -601,6 +601,17 @@ class PubSubActor(val globals: Globals) extends Actor {
 
     message match {
       case patchMessage: StorePatchMessage =>
+
+        // Make sure we [dont_leak_true_ids]. This message gets sent to different people,
+        // then, no aliases' true ids should be included.
+        val json: JsValue = patchMessage.json
+        val trueIds = (json \\ JsX.AnonForIdFieldName)
+        if (trueIds.nonEmpty) {
+          logger.error(s"""True ids in WebSocket StorePatchMessage message, I won't send.
+                The message: ${json.toString}  [TyEIDLEAKWS]""")
+          return
+        }
+
         val pageId = patchMessage.toUsersViewingPageId
         val userIdsWatching = usersWatchingPage(
               patchMessage.siteId, pageId = pageId).filter(_ != byId)
@@ -645,6 +656,7 @@ class PubSubActor(val globals: Globals) extends Actor {
         // notice this new topic. (Unless it's private.)
         // Exclude private page members though — they got notified above,
         // via the notifications list.
+        // And, make sure we [dont_leak_true_ids], here too.
 
         // sendPublishRequest( .... )
         //  — but excl users who may not access the category, see [WATCHSEC] above.

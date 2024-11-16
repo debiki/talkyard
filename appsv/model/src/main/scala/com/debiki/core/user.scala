@@ -1077,9 +1077,14 @@ case class Anonym(
   // Currently only approved users may use anonyms, so, for now:
   override def isAuthenticated: Bo = true
 
-  // Or use the real user's levels? But then it can be simpler to know how hen is?
+  // Don't use the real user's levels — that'd make it simpler to guess how the
+  // true user is. For now, let's use NewMember.
+  // Later: Set the trust level to the min level required, to post in the
+  // anonymous category? Then, can e.g. avoid moderators having to approve all
+  // anonymous comments (since they'd be by "new" members, anonyms being per page,
+  // not having posted elsewhere before),  without leaking any info about the true
+  // user's trust level.  [anon_tr_lv]
   def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember
-  //def effectiveThreatLevel: ThreatLevel = ThreatLevel.SeemsSafe
 
   // But the accounts haven't been approved?
   override def isApprovedOrStaff: Bo = false

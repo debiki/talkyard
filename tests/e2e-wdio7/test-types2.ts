@@ -1,7 +1,7 @@
 /// <reference path="../../client/app-slim/constants.ts" />
 /// <reference path="../../client/types-and-const-enums.ts" />
 
-import { SiteType, NewSiteOwnerType } from './test-constants';
+import { SiteType, NewSiteOwnerType, TestAnonStatus, TestNeverAlways } from './test-constants';
 
 
 
@@ -9,7 +9,7 @@ type BoolOrFn = boolean | (() => boolean);
 type StringOrFn = string | (() => string);
 
 
-interface TestSettings {
+export interface TestSettings {
   debug: boolean;
   noDebug?: true;
   slow?: true;
@@ -343,6 +343,9 @@ interface Member {   // see also TestGuest below
   isModerator?: boolean;
   trustLevel?: TrustLevel;
   threatLevel?: ThreatLevel;
+
+  // Lazy-inited by tests that look at emails. Not sent to the server. Bit hacky.
+  expectedNumEmails: Nr
 }
 
 type WellKnownMemberUsername =
@@ -364,6 +367,9 @@ interface MemberToCreate extends Member {
   shallBecomeOwner?: true;
   willNeedToVerifyEmail?: true;
 }
+
+export type TestPersonaMode = { pat?: Member, self?: true, anonStatus?: TestAnonStatus };
+
 
 interface TestGuest {  // try to rename to Guest?  See also  Member  above
   id: UserId;
@@ -393,6 +399,13 @@ interface TestCategory {  // try to merge with Category in model.ts?
   description?: string;
   newTopicTypes?: number[]; // currently ignored, server side [962MRYPG]
   defaultTopicType: number;
+  comtOrder?: PostSortOrder;
+  //comtNesting: NestingDepth; — later [max_nesting]
+  comtsStartHidden?: TestNeverAlways;
+  comtsStartAnon?: TestNeverAlways;
+  //opStartsAnon: NeverAlways; — later
+  newAnonStatus?: TestAnonStatus;
+  //pseudonymsAllowed: NeverAlways;
   createdAtMs: number;
   updatedAtMs: number;
   lockedAtMs?: number;
@@ -464,9 +477,17 @@ interface CatJustAdded {
   aboutPageText?: string;
   aboutPage?: PageJustAdded;
   defaultTopicType?: PageRole;
+  comtOrder?: PostSortOrder;
+  //comtNesting: NestingDepth; — later [max_nesting]
+  comtsStartHidden?: TestNeverAlways;
+  comtsStartAnon?: TestNeverAlways;
+  //opStartsAnon: NeverAlways; — later
+  newAnonStatus?: TestAnonStatus;
+  //pseudonymsAllowed: NeverAlways;
 }
 
 
+// Use TestCategory or CatJustAdded instead? Extract parent base interface?
 interface CatToAdd {
   id: CatId,
   extId?: ExtId,
@@ -896,6 +917,13 @@ export interface ServerSaysOk {
 
 export interface  ServerSaysError {
   serverSaysError: A;
+}
+
+
+export interface ForbiddenPs {
+  forbiddenWords: St[]
+  forbiddenWordsOkInPresence: Bo
+  shouldFindWords: St[]
 }
 
 // Right now, constraints like >= 1 aren't supported in Typescript, but this works, and, in test

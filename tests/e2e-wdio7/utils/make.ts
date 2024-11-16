@@ -27,6 +27,10 @@ function getAndBumpNextUserId() {
   return nextUserId - 1;
 }
 
+export function setNextUserId(id: Nr) {
+  nextUserId = id;
+}
+
 
 function makeEmptySite(ps: { okInitEarly?: boolean } = {}): SiteData {
   log.dieAndExitIf(!(global as any).wdioBeforeHookHasRun && !ps.okInitEarly,

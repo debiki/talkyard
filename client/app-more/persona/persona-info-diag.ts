@@ -235,13 +235,15 @@ export function openPersonaInfoDiag(ps: { atRect: Rect, isSectionPage: Bo,
       if (!mustBeAnon) enterSelfModeBtn =
             mkBtn(r.span({},
                 "Enter ", r.u({}, "Yourself"), " mode"),
-                { self: true } satisfies Oneself);
+                { self: true } satisfies Oneself, 'e_SlfMdeB');
 
       if (anonsAllowed) enterAnonModeBtn =
             mkBtn(r.span({},
                 "Enter ", r.u({}, anonStatus_toStr(discProps.newAnonStatus)), " mode"),
                 { anonStatus: discProps.newAnonStatus,
-                  lazyCreate: true } satisfies LazyCreatedAnon);
+                  lazyCreate: true } satisfies LazyCreatedAnon,
+                discProps.newAnonStatus === AnonStatus.IsAnonOnlySelfCanDeanon ?
+                      'e_PrmAnoB' : 'e_TmpAnoB');
 
       // [pseudonyms_later] More buttons:
       //   [ Switch to (P) pseudonym_of_yours  ]
@@ -266,10 +268,11 @@ export function openPersonaInfoDiag(ps: { atRect: Rect, isSectionPage: Bo,
     } */
 
     const leaveModeBtn = !whatMode ? null :
-            mkBtn(r.span({}, "Leave ", r.u({}, whatMode), " mode"), null);
+            mkBtn(r.span({}, "Leave ", r.u({}, whatMode), " mode"), null, 'e_XitMdeB');
 
-    function mkBtn(title: St | RElm, usePersona: Oneself | LazyCreatedAnon | N): RElm {
-      return Button({ onClick: () => {
+    function mkBtn(title: St | RElm, usePersona: Oneself | LazyCreatedAnon | N,
+              e2eClass: St): RElm {
+      return Button({ className: e2eClass, onClick: () => {
           ReactActions.patchTheStore({ me: { usePersona } });
           closeDiag();
         }}, title);

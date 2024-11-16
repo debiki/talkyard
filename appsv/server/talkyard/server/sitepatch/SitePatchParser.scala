@@ -1371,6 +1371,12 @@ case class SitePatchParser(context: TyContext) {
                     // Later: Make configurable. [conf_do_it_cats]
                     offset = None, TopTopicsPeriod.Default,
                     scoreAlg = pop.PagePopularityCalculator.OpLikeVotes)),
+        comtOrder = PostSortOrder.fromOptVal(parseOptInt32(jsObj, "comtOrder")),
+        comtNesting = None, // later
+        comtsStartHidden = NeverAlways.fromOptInt(parseOptInt32(jsObj, "comtsStartHidden")),
+        comtsStartAnon = NeverAlways.fromOptInt(parseOptInt32(jsObj, "comtsStartAnon")),
+        //opStartsAnon = // later
+        newAnonStatus = AnonStatus.fromOptInt(parseOptInt32(jsObj, "newAnonStatus")),
         doVoteStyle =
               if (!doItVotesPopFirst) None
               else Some(DoVoteStyle.Likes),

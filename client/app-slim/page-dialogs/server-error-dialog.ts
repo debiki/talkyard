@@ -64,7 +64,8 @@ const ServerErrorDialog = createComponent({
   },
 
   openForBrowserError: function(errorMessage: St,
-          opts: { title?: St, mayClose?: Bo } = {}) {
+          opts: { title?: St, mayClose?: Bo, badBug?: Bo } = {}) {
+    if (this.state.badBug) return; // don't overwrite the error message
     this.setState({
       ...opts,
       isOpen: true,
@@ -75,6 +76,7 @@ const ServerErrorDialog = createComponent({
   },
 
   open: function(dialogMessagePrefix?: any, error?: any) {
+    if (this.state.badBug) return; // don't overwrite the error message
     if (!error) {
       error = dialogMessagePrefix;
       dialogMessagePrefix = '';
@@ -89,7 +91,7 @@ const ServerErrorDialog = createComponent({
   },
 
   close: function() {
-    this.setState({ isOpen: false });
+    this.setState({ isOpen: false, badBug: false });
   },
 
   render: function () {

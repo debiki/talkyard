@@ -123,7 +123,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
           "TyE7M3MRSED5", "The post just got hard deleted?")
 
     val storePatchJson = dao.jsonMaker.makeStorePatchForPost(
-          updatedPost, showHidden = true, reqerId = request.theReqerId)
+          updatedPost, showHidden = true)
 
     var responseJson: JsObject =
           storePatchJson ++

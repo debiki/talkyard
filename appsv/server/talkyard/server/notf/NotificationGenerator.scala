@@ -60,12 +60,17 @@ case class NotificationGenerator(
 
   dieIf(Globals.isDevOrTest && tx.siteId != dao.siteId, "TyE603RSKHAN3")
 
-  private var notfsToCreate = mutable.ArrayBuffer[Notification]()
-  private var notfsToDelete = mutable.ArrayBuffer[NotificationToDelete]()
+  private val notfsToCreate = mutable.ArrayBuffer[Notification]()
+  private val notfsToDelete = mutable.ArrayBuffer[NotificationToDelete]()
 
   BUG // currently harmless. Should remember sent-to by post id too — in case [REMBSENTTO]
   // needs to generate many notfs to the same user, for different posts.
-  private var sentToUserIds = new mutable.HashSet[UserId]()
+  //
+  // Remembers what true ids we've generated notifications to — so no one gets
+  // double notifications: one to any alias of theirs, and another to themselves
+  // (if they've subscribed to a page as themselves, and commented anonymously
+  // on that page, for example).
+  private val sentToTrueIds = new mutable.HashSet[UserId]()
 
   // One post can trigger more than one notification to the same person,
   // e.g. a staff user getting notified first about a new post to moderate,
@@ -78,9 +83,7 @@ case class NotificationGenerator(
   // a mod task notf), so the post appears in hens notification list, in case
   // hen wants to find it again some time later (since it was a reply to hen).
   //
-  RENAME // to skipPatIds or patIdsDone? Because also for aoviding notifying
-  // one's own anons.
-  private var avoidDuplEmailToUserIds = new mutable.HashSet[UserId]()
+  private val avoidDuplEmailsToTrueIds = new mutable.HashSet[UserId]()
 
   private var nextNotfId: Option[NotificationId] = None
 
@@ -190,13 +193,17 @@ case class NotificationGenerator(
       return generatedNotifications
     }
 
+    // Approving comments anonymously or using a pseudonym, isn't supported. [approver_0_alias]
+    bugWarnIf(theApprover.isAlias,
+          "TyEAPRISALI", s"s${siteId}: Approver $approverId is an alias")
+
     // Don't send emails twice to the staff — they've gotten a post-to-review notf already about
     // this post (see above). Do however create notfs — it's nice to have any notification
     // about e.g. a @mention of oneself, in the mentions list, also if one approved
     // that post, oneself.
     val oldNotfsToStaff = tx.loadNotificationsAboutPost(
           newPost.id, NotificationType.NewPostReviewTask)
-    avoidDuplEmailToUserIds ++= oldNotfsToStaff.map(_.toUserId)
+    avoidDuplEmailsToTrueIds ++= oldNotfsToStaff.map(n => n.toTrueId getOrElse n.toUserId)
 
     anyNewTextAndHtml foreach { textAndHtml =>
       require(newPost.approvedSource is textAndHtml.text,
@@ -218,13 +225,22 @@ case class NotificationGenerator(
         // Not replying to oneself
         if replyingToPost.createdById != theAuthor.id
 
-        // The approver has already read newPost. So if the author-of-the-replyingToPost
+        // 1/2: The approver has already read newPost. So if the author-of-the-replyingToPost
         // is the same as the approver (of newPost), then, skip that author.
+        // UX BUG?:  Wouldn't it be nice to have a reply notificatoin link, in one's
+        // list of notifications, also if one is a moderator?   [do_notify_mod]
+        // So, proceed also if same? (2/2 below too?)  But don't send two emails to such
+        // a mod, though (about the same reply).
         if replyingToPost.createdById != theApprover.id
 
         // COULD_OPTIMIZE: Load authors of all ancestor posts in one query (possibly
         // filtered by not-author-id, not notifying oneself).
         replyingToUser <- tx.loadParticipant(replyingToPost.createdById)
+
+        // 2/2: If the author-of-the-replyingToPost is an alias, compare with the true user too.
+        // (Could skip the first `if` (1/2) above?)
+        // (The approver can't be an alias, so can compare with `id`. [approver_0_alias])
+        if replyingToUser.trueId2.trueId != theApprover.id
       } {
         // (If the replying-to-post is by a group (currently cannot happen), and someone in the group
         // replies to that group, then hen might get a notf about hens own reply. Fine, not much to
@@ -240,10 +256,6 @@ case class NotificationGenerator(
     // which also @mentions the one it replies to — then we'll generate a direct
     // reply notf only, no @mention notf.
     maybeGenReplyNotf(NotificationType.DirectReply, anyParentPost.toSeq)
-
-    // Why this? Can reuse sentToUserIds instead?
-    def notfCreatedAlreadyTo(userId: UserId) =
-      generatedNotifications.toCreate.map(_.toUserId).contains(userId)
 
     val pageMemberIds: Set[UserId] = tx.loadMessageMembers(newPost.pageId)
 
@@ -283,7 +295,7 @@ case class NotificationGenerator(
         // probably it's better to use bookmarks, for that? (Adding a to-do bookmark.)
         // If mentioning a group that one is a member of, one shouldn't and won't be notified (5ABKRW2).
         if userOrGroup.id != theAuthor.id  // poster mentions henself?
-        if !notfCreatedAlreadyTo(userOrGroup.id)
+        if !sentToTrueIds.contains(userOrGroup.trueId2.trueId)
         // Authz checks that we won't notify people outside a private chat
         // about any mentions (because they cannot see the chat). [PRIVCHATNOTFS]
       } {
@@ -567,8 +579,7 @@ case class NotificationGenerator(
     // Don't gen notfs e.g. if sbd assigns a task to themself,  [notfs_trueid_check]
     // or if someone replies to their own alias.
     if (sentFrom.trueId2.trueId == sendTo.trueId2.trueId) {
-      avoidDuplEmailToUserIds += sendTo.id
-      avoidDuplEmailToUserIds += sendTo.trueId2.trueId
+      avoidDuplEmailsToTrueIds += sendTo.trueId2.trueId
       return
     }
 
@@ -583,7 +594,7 @@ case class NotificationGenerator(
       case o => o
     }
 
-    if (sentToUserIds.contains(toUserMaybeGroup.id))
+    if (sentToTrueIds.contains(toUserMaybeGroup.trueId2.trueId))
       return
 
     if (toUserMaybeGroup.isGuest) {
@@ -700,8 +711,8 @@ case class NotificationGenerator(
       toPat <- toPats
       toUserId = toPat.id
       // Later: Could recursively expand [sub_groups], notify everyone in a "group tree".
-      if toUserId <= MaxGuestId || Participant.LowestNormalMemberId <= toUserId
-      if !sentToUserIds.contains(toUserId)
+      if toUserId <= Pat.MaxGuestOrAnonId || Pat.LowestNormalMemberId <= toUserId
+      if !sentToTrueIds.contains(toPat.trueId2.trueId)
 
       // Move these may-mention and may-message tests to the  toUserMaybeGroup.isGroup
       // if branch above? No need to be done here again if is not-a-group? [.move_may]
@@ -732,6 +743,7 @@ case class NotificationGenerator(
       COULD; NotfLevel.Hushed // Also consider the type of notf: is it a direct message? Then send
       // if >= Hushed. If is a subthread indirect reply? Then don't send if == Hushed.
 
+      BUG // Pretty harmless: Shouldn't we look at true id? [pub_or_true_id_notf_prefs]
       val notfLevels = tx.loadPageNotfLevels(toUserId, aboutPost.pageId, inCategoryId)
       val usersMoreSpecificLevel =
         notfLevels.forPage.orElse(notfLevels.forCategory).orElse(notfLevels.forWholeSite)
@@ -1143,8 +1155,7 @@ case class NotificationGenerator(
     // If the notification is to or from an alias (anonym or pseudonym), the alias
     // might be the sender's own alias.  Then, don't generate any notf.  [notfs_trueid_check]
     if (toPat.trueId2.trueId == fromPat.trueId2.trueId) {
-      avoidDuplEmailToUserIds += toPat.id
-      avoidDuplEmailToUserIds += toPat.trueId2.trueId
+      avoidDuplEmailsToTrueIds += toPat.trueId2.trueId
       return ()
     }
 
@@ -1157,19 +1168,23 @@ case class NotificationGenerator(
       return ()
 
     val emailStatus: NotfEmailStatus =
-          if (avoidDuplEmailToUserIds.contains(toPat.id))
+          if (avoidDuplEmailsToTrueIds.contains(toPat.trueId2.trueId))
             NotfEmailStatus.Skipped
           else
             NotfEmailStatus.Undecided
 
     if (isAboutModTask) {
-      avoidDuplEmailToUserIds += toPat.id
+      // Don't update `sentToTrueIds`. We still want to generate e.g. any reply notification
+      // to the moderator that approves a new comment — so the moderator later on can
+      // find the comment in their notifications list.  But the mod probably doesn't
+      // want more than one *email* about such a new comment, so:
+      avoidDuplEmailsToTrueIds += toPat.trueId2.trueId
     }
     else {
-      if (sentToUserIds.contains(toPat.id))
+      if (sentToTrueIds.contains(toPat.trueId2.trueId))
         return ()
 
-      sentToUserIds += toPat.id
+      sentToTrueIds += toPat.trueId2.trueId
     }
 
     val newNotfId = bumpAndGetNextNotfId()

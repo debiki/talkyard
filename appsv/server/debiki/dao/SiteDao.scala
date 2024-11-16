@@ -963,6 +963,24 @@ object SiteDao extends TyLogging {
   }
 
 
+  def getPersonaAndLevels(truePatAndLevels: UserAndLevels, pageId: PageId,
+          asAlias: Opt[WhichAliasPat], mayCreateAnon: Bo = true, mayReuseAnon: Bo = true,
+          isCreatingPage: Bo = false)(tx: SiteTx, mab: MessAborter): UserAndLevels = {
+    val persona = getAliasOrTruePat(truePatAndLevels.user, pageId = pageId, asAlias,
+          mayCreateAnon = mayCreateAnon, mayReuseAnon = mayReuseAnon,
+          isCreatingPage = isCreatingPage)(tx, mab)
+    persona match {
+      case anon: Anonym =>
+        UserAndLevels(anon,
+              // This is the current trust level, for all anons. [anon_tr_lv]
+              TrustLevel.NewMember, ThreatLevel.HopefullySafe)
+        // [pseudonyms_later]
+      case _ =>
+        dieIf(persona ne truePatAndLevels.user, "TyE703SKJLU4")
+        truePatAndLevels
+    }
+  }
+
 
   /** Gets or lazy-creates the specified alias, or just returns the user hanself (`truePat`).
     *
@@ -978,6 +996,8 @@ object SiteDao extends TyLogging {
     *   persona, as when creating the page. (Otherwise others can guess that
     *   the real person and any anonym of hans are the same —  if they both can
     *   alter the same page. [deanon_risk])
+    *
+    * RENAME to getPersona()  ?
     */
   def getAliasOrTruePat(truePat: Pat, pageId: PageId, asAlias: Opt[WhichAliasPat],
           mayCreateAnon: Bo = true, mayReuseAnon: Bo = true, isCreatingPage: Bo = false,

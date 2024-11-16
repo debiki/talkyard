@@ -214,7 +214,7 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     val patsJsArr = JsArray(patsById.values.toSeq map { pat =>
       JsPat(pat, tagsAndBadges,
-            toShowForPatId = Some(query.reqr.id))  // Maybe use Opt[Pat] instead, hmm
+            )  // skip!  toShowForPatId = Some(query.reqr.id))  // Maybe use Opt[Pat] instead, hmm
     })
 
     val postsJson = posts flatMap { post =>

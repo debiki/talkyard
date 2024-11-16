@@ -84,7 +84,7 @@ function anonPurpose_title(neverAlways: AnonStatus, enabled: Bo): [St, St | RElm
   switch (neverAlways) {
     case AnonStatus.IsAnonOnlySelfCanDeanon:
       title = "Sensitive discussions";
-      howEnable = rFr({},
+      howEnable = rFr({},  // TyTANOSENSDISLN
           "You need to enable the Anonymous Sensitive Discussions site feature, ",
           r.a({ href: linkToAdminPageFeatures(), target: 'blank' }, "here."));
       break;

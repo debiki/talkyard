@@ -421,7 +421,9 @@ async function waitGetLastEmailsSentTo(siteId: SiteId, email: St, atLeast: Nr, d
       }
       logMessage(`${email} has gotten ${lastEmails.length} emails, waiting for >= ${atLeast}`);
     }
-    else if (atLeast !== -1) die('TyE306EVCHF');
+    else if (atLeast !== -1) {
+      die(`waitGetLastEmailsSentTo(): atLeast is: ${j2s(atLeast)}  [TyE306EVCHF]`);
+    }
     else if (lastEmails.length) {
       logMessage(`${email} has gotten ${lastEmails.length} emails:`);
       for (let i = 0; i < lastEmails.length; ++i) {

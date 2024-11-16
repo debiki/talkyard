@@ -1497,7 +1497,7 @@ export const Editor = createFactory<any, EditorState>({
     // place it here. Works, & it's just for now.)
     if (state.doAsAnon && !this._hasShownAnonTips) {
       const isTempAnon = state.doAsAnon.anonStatus === AnonStatus.IsAnonCanAutoDeanon;
-      if (!isTempAnon) {
+      if (!isTempAnon && !isAutoTestSite()) {
         this._hasShownAnonTips = true;
         setTimeout(function() {
           debiki2.help.openHelpDialogUnlessHidden(anonExperimentalMsg);
@@ -3236,7 +3236,7 @@ const anonExperimentalMsg: HelpMessage = {
   // Let's show it many times, until they tick "Hide this tips".
   defaultHide: false,
   content: rFr({},
-      r.h3({} ,
+      r.h3({ className: 'e_AnoMby' } ,
         "You're anonymous  (hopefully)"),  // the space "  " before the '(' is a &thinsp;.
       r.p({},
         "Do ", r.b({}, "not"), " write anything sensitive!"),

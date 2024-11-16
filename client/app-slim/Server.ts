@@ -108,6 +108,7 @@ function postJson(urlPath: string, requestData: RequestData) {
     if (requestData.success) {
       // Remove any AngularJS safe json prefix. [5LKW02D4]
       let response = xhr.response.replace(/^\)]}',\n/, '');
+      checkE2eTestForbiddenWords(url, response);
       response = response ? JSON.parse(response) : null;
       try {
         requestData.success(response);
@@ -282,6 +283,8 @@ export function corsPost(ps: { url: string, xsrfToken: string, data: any,
         return;
       }
 
+      checkE2eTestForbiddenWords(ps.url, text);
+
       let json;
       try { json = JSON.parse(text) }
       catch (ex) {
@@ -378,6 +381,8 @@ function corsPost(ps) {
         return;
       }
 
+      //checkE2eTestForbiddenWords(url, text); (doesn't exist in the brouwser console)
+
       let json;
       try { json = JSON.parse(text) }
       catch (ex) {
@@ -442,6 +447,7 @@ export function uploadFiles(endpoint: string, files: any[], onDone, onError) {  
     else {
       // Remove any AngularJS safe json prefix. [5LKW02D4]
       const jsonStr = respObj.responseText.replace(/^\)]}',\n/, '');
+      checkE2eTestForbiddenWords(endpoint, jsonStr);
       const json = JSON.parse(jsonStr);
       onDone(json);
       return json;
@@ -696,15 +702,22 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
   addAnyNoCookieHeaders(headers);
 
   const timeoutHandle = showWaitForRequestOverlay(options?.showLoadingOverlay === true);
+  const url = origin() + uri;
 
-  const promiseWithXhr = <any> Bliss.fetch(origin() + uri, {  // hack, search for "Hack" in fetch()
+  const promiseWithXhr = <any> Bliss.fetch(url, {  // hack, search for "Hack" in fetch()
     method: 'GET',                                            // in client/third-party/bliss.shy.js
     headers: headers,
     timeout: options.timeout,
   });
   promiseWithXhr.then(xhr => {
     removeWaitForRequestOverlay(timeoutHandle);
-    let response = xhr.response;
+    let response: St = xhr.response;
+
+    // @ifdef DEBUG
+    dieIf(!_.isString(response), 'TyE603SRKHNg');
+    // @endif
+    checkE2eTestForbiddenWords(url, response);
+
     if (options.dataType !== 'html') {
       // Then it's json, what else could it be? Remove any AngularJS safe json prefix. [5LKW02D4]
       response = xhr.response.replace(/^\)]}',\n/, '');
@@ -2594,6 +2607,156 @@ export function anyMaintWork(): MaintWork | U {
   const volD: VolatileDataFromServer | U = eds.volatileDataFromServer;
   const maintWork: MaintWork | U = volD && volD.maintWork;
   return maintWork;
+}
+
+
+//------------------------------------------------------------------------------
+// E2e test utils
+//------------------------------------------------------------------------------
+
+// For e2e tests: If a response or WebSocket message includes any of the strings
+// in the `forbiddenWords` list, we'll pop up a server error dialog, which tends to break
+// the current e2e test. And we'll remember the forbidden words across page reloads.
+//
+// (Included in prod builds, too. Makes the slim-bundle a tiny bit bigger, but doesn't
+// otherwise affect performance.)
+//
+// Helpful when checking that names and user ids of anonymous comment authors
+// aren't leaked. [deanon_risk]
+//
+let forbiddenWords: St[] | U;
+let forbiddenWordsOkInPresence: Bo | U;
+let shouldFindWords: St[] | U;
+let shouldWordCounts: { [word: St]: Nr } = {};
+
+// For each response with forbidden words, remembers the request url and the matching words.
+// E.g.:  [["http://test--forum/-/get-sth", ["somename", "another matching name"]]].
+// (If any found, there's a bug)
+const forbiddenWordsFound: [St, St[]][] = [];
+
+// Init from url params or session storage, so can look for forbidden words on page load
+// in the page html and in json in <script> tags.
+{
+  // Check url:
+  const params = new URLSearchParams(window.location.search);
+  const wordsStr = params.get('e2eTestForbiddenWords');
+  let words = wordsStr ? wordsStr.split(',') : [];
+  // Are the words however ok in any user-online / -offline messages?
+  let okInPresence = !!params.get('e2eTestForbiddenWordsOkInPresence');
+  // We'll count all should-find-words, as one more way to know that the e2e tests
+  // actually works — that we aren't just seeing empty blank pages, say.
+  let shouldWordsStr = params.get('e2eTestShouldFindWords');
+  let shouldFind = shouldWordsStr ? shouldWordsStr.split(',') : [];
+
+  // Check session storage:
+  if (!wordsStr) {
+    const wordsJsonStr = getFromSessionStorage('e2eTestSpecialWords');
+    if (wordsJsonStr) {
+      const wordsObj = JSON.parse(wordsJsonStr);
+      words = wordsObj[0];
+      okInPresence = wordsObj[1];
+      shouldFind = wordsObj[2];
+    }
+  }
+
+  if (words.length) {
+    // Update worlds variables, before checkE2eTestForbiddenWords(). And session storage
+    // too — let's keep checking for forbidden words, also if an e2e test reloads the page,
+    // or loads a new page.
+    setE2eTestForbiddenWords(words, okInPresence, shouldFind);
+
+    const headHtmlInclOnline = document.head.innerHTML; // `outer...` doesn't work
+    const headHtmlToCheck = !okInPresence ? headHtmlInclOnline :
+            // Ignore usernames in the `usersOnline` list, if forbidden words are
+            // in fact allowed in online presence info.  (There's presence info in
+            // `theVolatileJson` and in 'presence' websocket messages.)
+            // '*?' is non-greedy. There's no ']' in the users list, so '}]' marks
+            // the end of the users online list. (If there *is* a ']', that can break
+            // the tests — but not silently make them succeed.)
+            // (Also in the e2e test utils. [remove_usersOnline])
+            headHtmlInclOnline.replace(/"usersOnline":\[\{.*?\}\]/, ' usersOnl_ine_redacted ');
+    const bodyHtml = document.body.outerHTML;
+    const pageUrl = window.location.toString();
+    const error = checkE2eTestForbiddenWords(pageUrl + ' <head>', headHtmlToCheck, true);
+    if (!error) checkE2eTestForbiddenWords(pageUrl + ' <body>', bodyHtml, true);
+  }
+}
+
+export function setE2eTestForbiddenWords(words: St[], okInPresence: Bo, count: St[]) {
+  forbiddenWords = words;
+  forbiddenWordsOkInPresence = okInPresence;
+  shouldFindWords = count;
+  shouldWordCounts = {};
+  putInSessionStorage('e2eTestSpecialWords', JSON.stringify([
+        forbiddenWords, forbiddenWordsOkInPresence, shouldFindWords]));
+}
+
+export function getE2eTestForbiddenWords(): [St[], Bo | U, St[]] {
+  return [forbiddenWords, forbiddenWordsOkInPresence, shouldFindWords];
+}
+
+export function getE2eTestWordCounts(): { forbidden: [St, St[]][], should: { [word: St]: Nr }} {
+  // (Not important to clone this.)
+  return { forbidden: forbiddenWordsFound, should: shouldWordCounts };
+}
+
+// Returns true if error.
+export function checkE2eTestForbiddenWords(reqUrl: St, resp: St | any, loadingPage?: Bo): Bo | V {
+  if (!resp || !forbiddenWords)
+    return;
+
+  if (reqUrl === 'WebSocket' && forbiddenWordsOkInPresence && resp.type === 'presence')
+    return;
+
+  const respTxt = _.isString(resp) ? resp : JSON.stringify(resp);
+
+  for (let word of shouldFindWords) {
+    const regex = new RegExp(`\\b${word}\\b`, 'g')
+    const matches = respTxt.match(regex); // not lowercase
+    const num = matches ? matches.length : 0;
+    if (num) {
+      shouldWordCounts[word] = (shouldWordCounts[word] || 0) + num;
+    }
+  }
+
+  const respLower = respTxt.toLowerCase();
+  const forbiddenMatches: St[] = [];
+
+  for (let word of forbiddenWords) {
+    // Caseless comparison — better match too much than too little, if any casing bug.
+    if (respLower.indexOf(word.toLowerCase()) !== -1) {
+      forbiddenMatches.push(word);
+    }
+  }
+
+  if (forbiddenMatches.length) {
+    const urlAndMatches: [St, St[]] = [reqUrl, forbiddenMatches];
+    forbiddenWordsFound.push(urlAndMatches);
+
+    const msg = `Unexpected words in response,  [TyEFORBWDS_]\n` +
+                `   req url:  ${reqUrl}\n` +
+                `     words:  ${JSON.stringify(forbiddenMatches)}\n`;
+                `  start of response:\n` +
+                `--------------------\n` +
+                respTxt.substring(0, 300) +
+                `\n--------------------`;
+
+    if (loadingPage) {
+      // Scripts not fully loaded — getServerErrorDialog() might not yet exist.
+      setTimeout(showError);
+      logE(msg);
+      return true;
+    }
+    else {
+      showError();
+      throw Error(msg);
+    }
+
+    function showError() {
+      pagedialogs.getServerErrorDialog().openForBrowserError(
+            msg, { badBug: true, title: "Test error" });
+    }
+  }
 }
 
 

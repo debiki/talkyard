@@ -51,9 +51,16 @@ export function PersonaIndicator(ps: { store: Store, isSectionPage: Bo }): RElm 
       // If we'll need to ask pat which persona to use, then, show a question mark:
       !personaOpts.isAmbiguous ? null : r.span({ className: 'c_AliAmbig' }, ' ?'));
 
+  const e2eClass =  // [pers_mode_2_class]
+          mode.anonStatus === AnonStatus.IsAnonOnlySelfCanDeanon ? 'e_Prs-PrmAno' : (
+          mode.anonStatus === AnonStatus.IsAnonCanAutoDeanon ? 'e_Prs-TmpAno' : (
+          mode.self ? 'e_Prs-Self' :
+          mode.pat ? 'e_Prs-Usr-' + mode.pat.id :
+          'TyEUNKPRSMOD'));
+
   const aliasElm =
-      Button({ className: 'esAvtrName esMyMenu s_MMB c_Tb_Ali' +
-                            (!me.usePersona ? '' : ' c_Tb_Ali-Switched'),
+      Button({ className: 'esAvtrName esMyMenu c_Tb_Ali ' + e2eClass +
+                      (!me.usePersona ? '' : ' c_Tb_Ali-Switched'),
           onClick: (event: MouseEvent) => {
             const atRect: Rect = cloneEventTargetRect(event);
             morebundle.openPersonaInfoDiag({ atRect, isSectionPage: ps.isSectionPage,

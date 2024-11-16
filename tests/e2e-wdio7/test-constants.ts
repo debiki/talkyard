@@ -1,3 +1,17 @@
+import settings from './utils/settings';
+
+export const enum TestNeverAlways {
+  Inherit = 0,
+  //Never = 1,
+  NeverButCanContinue = 2,
+  Allowed = 3,
+  //AllowedMustChoose = 4,
+  //MustChoose = 5,
+  //RecommendedMustChoose = 6,
+  Recommended = 7,
+  AlwaysButCanContinue = 8,
+  //Always = 9,
+}
 
 export const enum SiteType {
   Forum = 1,
@@ -64,6 +78,13 @@ enum TestTopicListLayout {   // same as TopicListLayout
   ThumbnailsBelowTitle = 5,
   NewsFeed = 6,
 }
+
+export enum TestAnonStatus {
+  NotAnon = 0,
+  IsAnonOnlySelfCanDeanon = 65535,
+  IsAnonCanAutoDeanon = 2097151,
+}
+
 
 const TestTrustLevel = {
   New: <TrustLevel> 1,
@@ -178,6 +199,9 @@ export default {
   NoUserId: 0,
   SystemUserId: 1,
   SysbotUserId: 2,
+  EmailAnonName: 'Anonym',  // same for temp & perm, currently
+  TempAnonName: 'Temp Anonymous',
+  PermAnonName: settings.prod ? 'Anonymous' : 'PAnonymous',
   EveryoneFullName: 'Everyone',
   EveryoneId: 10,
   AllMembersId: 11,

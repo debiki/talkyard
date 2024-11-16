@@ -151,8 +151,7 @@ trait PostsDao {
 
     refreshPageInMemCache(pageId)
 
-    val storePatchJson = jsonMaker.makeStorePatchForPost(
-          newPost, showHidden = true, reqerId = byWho.id)
+    val storePatchJson = jsonMaker.makeStorePatchForPost(newPost, showHidden = true)
 
     // (If reply not approved, this'll send mod task notfs to staff [306DRTL3])
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
@@ -186,8 +185,10 @@ trait PostsDao {
     val realAuthor = realAuthorAndLevels.user
     val realAuthorAndGroupIds = tx.loadGroupIdsMemberIdFirst(realAuthor)
 
-    val authorMaybeAnon: Pat = SiteDao.getAliasOrTruePat(
-          truePat = realAuthor, pageId = pageId, asAlias)(tx, IfBadAbortReq)
+    val personaAndLevels: UserAndLevels = SiteDao.getPersonaAndLevels(
+          realAuthorAndLevels, pageId = pageId, asAlias)(tx, IfBadAbortReq)
+
+    val authorMaybeAnon: Pat = personaAndLevels.user
 
     val pageAuthor = tx.loadTheParticipant(page.meta.authorId)
 
@@ -236,16 +237,40 @@ trait PostsDao {
     // no descendants. So it cannot create a cycle. (However, if *importing* posts,
     // then in a corrupt import file the posts on a page might form cycles. [ck_po_ckl])
 
-    val (reviewReasons: Seq[ReviewReason], shallApprove) =
-          throwOrFindNewPostReviewReasons(page.meta, realAuthorAndLevels, tx)
+    val (reviewReasons: Seq[ReviewReason], shallApprove: Bo) =
+            // Don't use an anonym's true user or trust level here — that would
+            // make it simpler to guess who the anonym is.
+            // F.ex. if there aren't many members, and only one member, M1, has had their
+            // first posts reviewed and can post without further reviews — and then an
+            // anon comment appears, automatically approved. Then it's simpler to guess
+            // that member M1 is the true author. [deanon_risk]
+            // (It's in the nature of anonymous comments that one cannot use info about
+            // who actually wrote such a comment to decide if to review it or not. Still,
+            // in the future, for some communities that might be fine, if moderators are
+            // very trusted (they're the ones who can see when a comment got approved).)
+            throwOrFindNewPostReviewReasons(page.meta, personaAndLevels, tx)
 
+    // Similar to: [find_approver_id].
     val approverId =
-      if (realAuthor.isStaff) {
-        dieIf(!shallApprove, "EsE5903")
-        Some(realAuthor.id)  // [mod_deanon_risk]
-      }
-      else if (shallApprove) Some(SystemUserId)
-      else None
+          if (!shallApprove) {
+            // This can happen with anon comments, also if the true author is a moderator.
+            // Because if anon comments were to get approved immediately just because the
+            // author is a mod, it'd be simpler to guess who the author is. [mod_deanon_risk]
+            None
+          }
+          else {
+            if (realAuthor.isStaff && asAlias.isEmpty) {
+              // Mods approve their own commments, upon posting them.  Unless it's an anon
+              // comment — then, the System user approves it instead  [mod_deanon_risk]
+              // (in the `else` branch just below).
+              Some(realAuthor.id)
+            }
+            else {
+              // This means the user has had enough of their previous comments reviewed,
+              // so now their comments are getting auto approved by the software.
+              Some(SystemUserId)
+            }
+          }
 
     val newPost = Post.create(
       uniqueId = uniqueId,
@@ -330,7 +355,7 @@ trait PostsDao {
       if (!globals.spamChecker.spamChecksEnabled) None
       else if (settings.userMustBeAuthenticated) None
       else if (!canStrangersSeePagesInCat_useTxMostly(newMeta.categoryId, tx)) None
-      else if (!SpamChecker.shallCheckSpamFor(realAuthorAndLevels)) None
+      else if (!SpamChecker.shallCheckSpamFor(realAuthorAndLevels)) None  // [mod_deanon_risk]
       else Some(
         SpamCheckTask(
           createdAt = globals.now(),
@@ -443,10 +468,6 @@ trait PostsDao {
         : (Seq[ReviewReason], Boolean) = {
     if (author.isStaff)
       return (Nil, true)
-
-    // When posting anonymously, one's real account (not the anon account) is used
-    // to find out if one's anon posts need to get reviewed.
-    dieIf(author.user.isAnon, "TyE7MW40GM")
 
     // Don't review direct messages — then all staff would see them. Instead, only non-threat
     // users with level >= Basic may post private messages to non-staff people.
@@ -725,8 +746,8 @@ trait PostsDao {
 
     refreshPageInMemCache(pageId)
 
-    val storePatchJson = jsonMaker.makeStorePatchForPost(
-          post, showHidden = true, reqerId = byWho.id)
+    val storePatchJson = jsonMaker.makeStorePatchForPost(post, showHidden = true)
+
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
       byId = author.id)
 
@@ -1045,8 +1066,10 @@ trait PostsDao {
             if (page.meta.authorId == realEditor.id) realEditor
             else tx.loadTheParticipant(page.meta.authorId)
 
-      val editorMaybeAnon = SiteDao.getAliasOrTruePat(
-            truePat = realEditor, pageId = pageId, asAlias)(tx, IfBadAbortReq)
+      val editorPersonaAndLevels = SiteDao.getPersonaAndLevels(
+            realEditorAndLevels, pageId = pageId, asAlias)(tx, IfBadAbortReq)
+
+      val editorPersona = editorPersonaAndLevels.user
 
       // [dupl_ed_perm_chk]?
       dieOrThrowNoUnless(Authz.mayEditPost(
@@ -1084,12 +1107,13 @@ trait PostsDao {
         !anyNewComment && !anyNewFlag
       }
 
-      val anyNewApprovedById =
+      // Similar to: [find_approver_id].  [mod_deanon_risk]
+      val anyNewApprovedById = {
         if (postToEdit.tyype == PostType.ChatMessage) {
           // Auto approve chat messages. Always SystemUserId for chat.
           Some(SystemUserId)  // [7YKU24]
         }
-        else if (realEditor.isStaff) {
+        else if (editorPersona.isStaff) {
           if (!postToEdit.isSomeVersionApproved) {
             // Staff won't approve a not yet approved post, just by editing it.
             // Instead, they need to click a button to explicitly approve it  [in_pg_apr]
@@ -1102,14 +1126,14 @@ trait PostsDao {
           else {
             // Older revision already approved and post already published.
             // Then, continue approving it.
-            Some(realEditor.id)  // [mod_deanon_risk]
+            Some(editorPersona.id)
           }
         }
         else {
           // Let people continue editing a post that has been approved already — unless
           // they're a moderate threat. A bit further below (7ALGJ2), we'll create
           // a review task (also for mild threat edits).
-          if ( realEditorAndLevels.threatLevel.toInt >= ThreatLevel.ModerateThreat.toInt) {
+          if (editorPersonaAndLevels.threatLevel.toInt >= ThreatLevel.ModerateThreat.toInt) {
             None  // [TyT7UQKBA2]
           }
           else if (postToEdit.isCurrentVersionApproved) {
@@ -1121,6 +1145,7 @@ trait PostsDao {
             None
           }
         }
+      }
 
       val (
           editsApproved: Boolean,
@@ -1135,7 +1160,7 @@ trait PostsDao {
           (true,
           None,
           Some(tx.now.toJavaDate),
-          Some(editorMaybeAnon.id),
+          Some(editorPersona.id),
           Some(newTextAndHtml.text),
           Some(newTextAndHtml.safeHtml),
           Some(tx.now.toJavaDate))
@@ -1158,7 +1183,7 @@ trait PostsDao {
       }
 
       val isNinjaEdit = {
-        val sameAuthor = postToEdit.currentRevisionById == editorMaybeAnon.id
+        val sameAuthor = postToEdit.currentRevisionById == editorPersona.id
         val ninjaHardEndMs = postToEdit.currentRevStaredAt.getTime + HardMaxNinjaEditWindowMs
         val isInHardWindow = tx.now.millis < ninjaHardEndMs
         // If the current version has been approved, and one does an unapproved edit — then, shouldn't
@@ -1189,7 +1214,7 @@ trait PostsDao {
       var editedPost = postToEdit.copy(
         currentRevStaredAt = newStartedAt,
         currentRevLastEditedAt = Some(tx.now.toJavaDate),
-        currentRevisionById = editorMaybeAnon.id,
+        currentRevisionById = editorPersona.id,
         currentRevSourcePatch = newCurrentSourcePatch,
         currentRevisionNr = newRevisionNr,
         previousRevisionNr = newPrevRevNr,
@@ -1201,7 +1226,7 @@ trait PostsDao {
         approvedById = anyNewApprovedById orElse postToEdit.approvedById,
         approvedRevisionNr = newApprovedRevNr)
 
-      if (editorMaybeAnon.id != editedPost.createdById) {
+      if (editorPersona.id != editedPost.createdById) {
         editedPost = editedPost.copy(numDistinctEditors = 2)  // for now
       }
 
@@ -1234,7 +1259,7 @@ trait PostsDao {
           AllSettings.PostRecentlyCreatedLimitMs
 
       val reviewTask: Option[ReviewTask] =    // (7ALGJ2)
-        if (realEditor.isStaffOrTrustedNotThreat) {
+        if (editorPersona.isStaffOrTrustedNotThreat) {
           // This means staff has had a look at the post, even edited it — so resolve
           // mod tasks about this posts. So staff won't be asked to review this post,
           // on the Moderation page.
@@ -1249,14 +1274,14 @@ trait PostsDao {
                 }
 
           // [mod_deanon_risk]
-          maybeReviewAcceptPostByInteracting(postWithModTasks, moderator = realEditor,
+          maybeReviewAcceptPostByInteracting(postWithModTasks, moderator = editorPersona,
                 ReviewDecision.InteractEdit)(tx, staleStuff)
 
           // Don't review late edits by trusted members — trusting them is
           // the point with the >= TrustedMember trust levels. TyTLADEETD01
           None
         }
-        else if (postRecentlyCreated && ! realEditorAndLevels.threatLevel.isThreat) {
+        else if (postRecentlyCreated && !editorPersonaAndLevels.threatLevel.isThreat) {
           // Need not review a recently created post: it's new and the edits likely
           // happened before other people read it, so they'll notice any weird things
           // later when they read it, and can flag it. This is not totally safe,
@@ -1283,7 +1308,7 @@ trait PostsDao {
             // their old posts and change to spam links, undetected.
             reviewReasons :+= ReviewReason.LateEdit
           }
-          if (realEditorAndLevels.threatLevel.isThreat) {
+          if (editorPersonaAndLevels.threatLevel.isThreat) {
             reviewReasons :+= ReviewReason.Edit
             reviewReasons :+= ReviewReason.IsByThreatUser
           }
@@ -1297,7 +1322,7 @@ trait PostsDao {
         if (!globals.spamChecker.spamChecksEnabled) None
         else if (settings.userMustBeAuthenticated) None
         else if (!canStrangersSeePagesInCat_useTxMostly(page.meta.categoryId, tx)) None
-        else if (!SpamChecker.shallCheckSpamFor(realEditor)) None  // [mod_deanon_risk]
+        else if (!SpamChecker.shallCheckSpamFor(realEditorAndLevels)) None  // [mod_deanon_risk]
         else Some(
           // This can get same prim key as earlier spam check task, if is ninja edit. [SPMCHKED]
           // Solution: Give each spam check task its own id field.
@@ -1313,14 +1338,14 @@ trait PostsDao {
               pageAvailableAt = When.fromDate(page.meta.publishedAt getOrElse page.meta.createdAt),
               htmlToSpamCheck = newTextAndHtml.safeHtml,
               language = settings.languageCode)),
-            reqrId = editorMaybeAnon.id,
+            reqrId = editorPersona.id,
             requestStuff = spamRelReqStuff))
 
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.EditPost,
-        doerTrueId = editorMaybeAnon.trueId2,
+        doerTrueId = editorPersona.trueId2,
         doneAt = tx.now.toJavaDate,
         browserIdData = who.browserIdData,
         pageId = Some(pageId),
@@ -1336,7 +1361,7 @@ trait PostsDao {
       anySpamCheckTask.foreach(tx.insertSpamCheckTask)
       newRevision.foreach(tx.insertPostRevision)
       saveDeleteUploadRefs(postToEdit, editedPost = editedPost, newTextAndHtml,
-            isAppending = false, isEditing = true, editorMaybeAnon.trueId2, tx)
+            isAppending = false, isEditing = true, editorPersona.trueId2, tx)
 
       insertAuditLogEntry(auditLogEntry, tx)
 
@@ -1359,9 +1384,9 @@ trait PostsDao {
 
       if (editedPost.isCurrentVersionApproved) {
         staleStuff.addPageId(editedPost.pageId)
-        saveDeleteLinks(editedPost, newTextAndHtml, editorMaybeAnon.trueId2, tx, staleStuff)
+        saveDeleteLinks(editedPost, newTextAndHtml, editorPersona.trueId2, tx, staleStuff)
         TESTS_MISSING // notf not sent until after ninja edit window ended?  TyTNINJED02
-        val notfs = notfGenerator(tx).generateForEdits(editor = editorMaybeAnon,
+        val notfs = notfGenerator(tx).generateForEdits(editor = editorPersona,
               postToEdit, editedPost = editedPost, Some(newTextAndHtml))
         tx.saveDeleteNotifications(notfs)
       }

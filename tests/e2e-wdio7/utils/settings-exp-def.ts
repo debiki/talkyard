@@ -1,6 +1,8 @@
-/// <reference path="../test-types2.ts"/>
+//x <reference path="../test-types2.ts"/>  — why won't work? (w '/' not 'x') But `import` works.
 
 import * as _ from 'lodash';
+import { TestSettings } from '../test-types2';
+
 // Won't work, results in error:  minimist is not a function
 // import * as minimist from 'minimist';
 // It's not available as an ES6 module? But this works:
