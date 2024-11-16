@@ -226,7 +226,7 @@ describe(`alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX`, () => {
   // ----- Configure Sensitive Anon Discs  (feature now enabled)
 
   it(`Owen goes back to the category`, async () => {
-    // (Can skip: owen_brA.switchBackToFirstTabIfNeeded().)
+    // (Can skip: await owen_brA.switchBackToFirstTabIfNeeded().)
     await owen_brA.go2('/latest/category-a');
   });
   it(`... edits the category`, async () => {
