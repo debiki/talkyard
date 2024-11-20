@@ -644,6 +644,9 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     }
   }
 
+  def parseOptTrustLevel(json: JsValue, field: St, altField: St = "", alt2: St = "")
+        : Opt[TrustLevel] =
+    parseOptInt32(json, field, altField = altField, alt2 = alt2).flatMap(TrustLevel.fromInt)
 
   def parseOptNeverAlways(json: JsValue, field: St, altField: St = ""): Opt[NeverAlways] =
     NeverAlways.fromOptInt(readOptInt(json, fieldName = field, altName = altField))

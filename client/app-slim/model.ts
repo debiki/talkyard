@@ -1728,7 +1728,7 @@ type UserInclDetails = PatVb; // old name, remove
 // "PatVbStaff" better?)
 /// A Participant including verbose details, for the pat profile pages.
 // RENAME to UserVb? Isn't this alaways a user — not a group or guest.
-interface PatVb extends MemberInclDetails, BioWebsiteLocation {
+interface PatVb extends MemberInclDetails, BioWebsiteLocation, PrivacyPrefs {
   externalId?: string;
   createdAtEpoch: number;  // change to millis
   fullName?: string;
@@ -1737,11 +1737,6 @@ interface PatVb extends MemberInclDetails, BioWebsiteLocation {
   emailNotfPrefs: EmailNotfPrefs,
   // mailingListMode: undefined | true;  // default false  — later
   hasPassword?: boolean;
-  // ------- (Could break out interface? Or maybe pointless.)
-  maySeeMyActivityTrLv?: TrustLevel;
-  maySendMeDmsTrLv?: TrustLevelOrStaff;
-  mayMentionMeTrLv?: TrustLevelOrStaff;
-  // -------
   uiPrefs: UiPrefs;
   isAdmin: boolean;
   isModerator: boolean;
@@ -1764,6 +1759,18 @@ interface PatVb extends MemberInclDetails, BioWebsiteLocation {
   lockedThreatLevel?: ThreatLevel;
   deactivatedAt?: number;
   deletedAt?: number;
+}
+
+interface PrivacyPrefs {
+  maySeeMyBriefBioTrLv?: TrustLevelOrStaff
+  maySeeMyMembershipsTrLv?: TrustLevelOrStaff
+  maySeeMyProfileTrLv?: TrustLevelOrStaff
+  mayFindMeTrLv?: TrustLevelOrStaff
+  maySeeMyPresenceTrLv?: TrustLevelOrStaff
+  maySeeMyApproxStatsTrLv?: TrustLevelOrStaff
+  maySeeMyActivityTrLv?: TrustLevel
+  maySendMeDmsTrLv?: TrustLevelOrStaff
+  mayMentionMeTrLv?: TrustLevelOrStaff
 }
 
 interface UserInclDetailsWithStats extends PatVb {   // REMOVE, instead, use PatVvb? no UserVvb?

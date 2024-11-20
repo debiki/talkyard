@@ -301,6 +301,12 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // These currently needs to be public, so others get to know if they cannot
     // mention or message this user. [some_pub_priv_prefs]
     val privPrefs = group.privPrefs
+    json = json.addAnyInt32("maySeeMyBriefBioTrLv", privPrefs.maySeeMyBriefBioTrLv)
+    json = json.addAnyInt32("maySeeMyMembershipsTrLv", privPrefs.maySeeMyMembershipsTrLv)
+    json = json.addAnyInt32("maySeeMyProfileTrLv", privPrefs.maySeeMyProfileTrLv)
+    json = json.addAnyInt32("mayFindMeTrLv", privPrefs.mayFindMeTrLv)
+    json = json.addAnyInt32("maySeeMyPresenceTrLv", privPrefs.maySeeMyPresenceTrLv)
+    json = json.addAnyInt32("maySeeMyApproxStatsTrLv", privPrefs.maySeeMyApproxStatsTrLv)
     json = json.addAnyInt32("maySendMeDmsTrLv", privPrefs.maySendMeDmsTrLv)
     json = json.addAnyInt32("mayMentionMeTrLv", privPrefs.mayMentionMeTrLv)
     json = json.addAnyInt32("maySeeMyActivityTrLv", privPrefs.seeActivityMinTrustLevel)

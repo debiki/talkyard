@@ -317,7 +317,6 @@ object JsX {   RENAME // to JsonPaSe
       "bio" -> JsStringOrNull(user.about),
       "websiteUrl" -> JsStringOrNull(user.website),
       "location" -> JsStringOrNull(user.country),
-      "maySeeMyActivityTrLv" -> JsNumberOrNull(user.privPrefs.seeActivityMinTrustLevel.map(_.toInt)),
       "seeActivityMinTrustLevel" -> // [ty_v1] remove
             JsNumberOrNull(user.privPrefs.seeActivityMinTrustLevel.map(_.toInt)),
       "avatarTinyHashPath" -> JsStringOrNull(user.tinyAvatar.map(_.hashPath)),
@@ -332,6 +331,18 @@ object JsX {   RENAME // to JsonPaSe
       userJson += "createdAtEpoch" -> JsNumber(user.createdAt.millis)  // REMOVE
       userJson += "createdAtMs" -> JsNumber(user.createdAt.millis)  // RENAME
       // (Don't think need not exclude deletedAt & suspendedTillMs)
+    }
+
+    // Others don't need to know. If may not see, the info is simply not included by the server.
+    // (Not totally implemented though.)
+    if (reqrIsStaffOrSelf) {
+      userJson = userJson.addAnyInt32("maySeeMyBriefBioTrLv", user.privPrefs.maySeeMyBriefBioTrLv)
+      userJson = userJson.addAnyInt32("maySeeMyMembershipsTrLv", user.privPrefs.maySeeMyMembershipsTrLv)
+      userJson = userJson.addAnyInt32("maySeeMyProfileTrLv", user.privPrefs.maySeeMyProfileTrLv)
+      userJson = userJson.addAnyInt32("mayFindMeTrLv", user.privPrefs.mayFindMeTrLv)
+      userJson = userJson.addAnyInt32("maySeeMyPresenceTrLv", user.privPrefs.maySeeMyPresenceTrLv)
+      userJson = userJson.addAnyInt32("maySeeMyApproxStatsTrLv", user.privPrefs.maySeeMyApproxStatsTrLv)
+      userJson = userJson.addAnyInt32("maySeeMyActivityTrLv", user.privPrefs.seeActivityMinTrustLevel)
     }
 
     // Currently needs to be public, see [some_pub_priv_prefs].
@@ -407,15 +418,17 @@ object JsX {   RENAME // to JsonPaSe
 
   def memberPrivacyPrefsFromJson(json: JsValue): MemberPrivacyPrefs = {
     MemberPrivacyPrefs(
-          seeActivityMinTrustLevel =
-              parseOptInt32(json, "maySeeMyActivityTrLv",
-                      // [ty_v1] remove both these:
-                      altField = "seeActivityTrLv", alt2 = "seeActivityMinTrustLevel")
-                  .flatMap(TrustLevel.fromInt),
-          maySendMeDmsTrLv =
-              parseOptInt32(json, "maySendMeDmsTrLv").flatMap(TrustLevel.fromInt),
-          mayMentionMeTrLv =
-              parseOptInt32(json, "mayMentionMeTrLv").flatMap(TrustLevel.fromInt),
+          maySeeMyBriefBioTrLv = parseOptTrustLevel(json, "maySeeMyBriefBioTrLv"),
+          maySeeMyMembershipsTrLv = parseOptTrustLevel(json, "maySeeMyMembershipsTrLv"),
+          maySeeMyProfileTrLv = parseOptTrustLevel(json, "maySeeMyProfileTrLv"),
+          mayFindMeTrLv = parseOptTrustLevel(json, "mayFindMeTrLv"),
+          maySeeMyPresenceTrLv = parseOptTrustLevel(json, "maySeeMyPresenceTrLv"),
+          maySeeMyApproxStatsTrLv = parseOptTrustLevel(json, "maySeeMyApproxStatsTrLv"),
+          seeActivityMinTrustLevel = parseOptTrustLevel(json, "maySeeMyActivityTrLv",
+                  // [ty_v1] remove both these:
+                  altField = "seeActivityTrLv", alt2 = "seeActivityMinTrustLevel"),
+          maySendMeDmsTrLv = parseOptTrustLevel(json, "maySendMeDmsTrLv"),
+          mayMentionMeTrLv = parseOptTrustLevel(json, "mayMentionMeTrLv"),
           )
   }
 

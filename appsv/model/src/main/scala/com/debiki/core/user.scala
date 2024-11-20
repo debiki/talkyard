@@ -806,6 +806,8 @@ sealed trait Pat extends HasInt32Id {
   final def nameHashId: St =
     anyUsername.map(un => s"@$un #$id") getOrElse s"'$usernameOrGuestName' #$id"
 
+  def anyPrivPrefs: Opt[MemberPrivacyPrefs] = None
+
   final def toMemberOrThrow: Member = toMemberOrThrowCode("")
 
   final def toMemberOrThrowCode(errCode: ErrCode): Member = {
@@ -893,6 +895,7 @@ sealed trait Member extends Pat {
   final def isApprovedOrStaff: Bo = isApproved.is(true) || isStaff
 
   def privPrefs: MemberPrivacyPrefs
+  override def anyPrivPrefs: Opt[MemberPrivacyPrefs] = Some(privPrefs)
 }
 
 
@@ -1222,6 +1225,7 @@ sealed trait MemberInclDetails extends ParticipantInclDetails {  RENAME // to Me
   def summaryEmailIntervalMins: Option[Int]
   def summaryEmailIfActive: Option[Boolean]
   def privPrefs: MemberPrivacyPrefs
+  override def anyPrivPrefs: Opt[MemberPrivacyPrefs] = Some(privPrefs)
 
   def usernameLowercase: String
 
@@ -1578,14 +1582,52 @@ case class AboutGroupPrefs(
   * is important).
   */
 case class MemberPrivacyPrefs(
+  maySeeMyBriefBioTrLv: Opt[TrustLevel],
+  maySeeMyMembershipsTrLv: Opt[TrustLevel],
+  maySeeMyProfileTrLv: Opt[TrustLevel],
+  mayFindMeTrLv: Opt[TrustLevel],
+  maySeeMyPresenceTrLv: Opt[TrustLevel],
+  maySeeMyApproxStatsTrLv: Opt[TrustLevel],
   seeActivityMinTrustLevel: Opt[TrustLevel],
   maySendMeDmsTrLv: Opt[TrustLevel],
   mayMentionMeTrLv: Opt[TrustLevel],
-)
+) {
+
+  /** If all prefs have been specified, there's no point in looking at even more
+    * preferences from lower priority user groups (since they'll all be ignored).
+    */
+  def everythingSpecified: Bo =
+        maySeeMyBriefBioTrLv.nonEmpty &&
+        maySeeMyMembershipsTrLv.nonEmpty &&
+        maySeeMyProfileTrLv.nonEmpty &&
+        mayFindMeTrLv.nonEmpty &&
+        maySeeMyPresenceTrLv.nonEmpty &&
+        maySeeMyApproxStatsTrLv.nonEmpty &&
+        seeActivityMinTrustLevel.nonEmpty &&
+        maySendMeDmsTrLv.nonEmpty &&
+        mayMentionMeTrLv.nonEmpty
+
+  def addMissing(other: MemberPrivacyPrefs): MemberPrivacyPrefs = {
+    val t = this
+    val o = other
+    MemberPrivacyPrefs(
+          maySeeMyBriefBioTrLv = t.maySeeMyBriefBioTrLv orElse o.maySeeMyBriefBioTrLv,
+          maySeeMyMembershipsTrLv = t.maySeeMyMembershipsTrLv orElse o.maySeeMyMembershipsTrLv,
+          maySeeMyProfileTrLv = t.maySeeMyProfileTrLv orElse o.maySeeMyProfileTrLv,
+          mayFindMeTrLv = t.mayFindMeTrLv orElse o.mayFindMeTrLv,
+          maySeeMyPresenceTrLv = t.maySeeMyPresenceTrLv orElse o.maySeeMyPresenceTrLv,
+          maySeeMyApproxStatsTrLv = t.maySeeMyApproxStatsTrLv orElse o.maySeeMyApproxStatsTrLv,
+          seeActivityMinTrustLevel = t.seeActivityMinTrustLevel orElse o.seeActivityMinTrustLevel,
+          maySendMeDmsTrLv = t.maySendMeDmsTrLv orElse o.maySendMeDmsTrLv,
+          mayMentionMeTrLv = t.mayMentionMeTrLv orElse o.mayMentionMeTrLv,
+          )
+  }
+}
 
 
 object MemberPrivacyPrefs {
-  val empty: MemberPrivacyPrefs = MemberPrivacyPrefs(None, None, None)
+  val empty: MemberPrivacyPrefs = MemberPrivacyPrefs(
+        None, None, None, None, None, None, None, None, None)
 }
 
 
