@@ -174,7 +174,7 @@ class GetController @Inject()(cc: ControllerComponents, edContext: TyContext)
             // up above. A tiny bit inefficient. [_lookup_stuff])
             ThingsFoundJson.makePagesJsArr(
                   // Already done _access_control.
-                  PagesCanSee(pages.to[Vec]), dao, inclFields, JsonConf.v0_1(), authzCtx)
+                  PagesCanSee(pages.to(Vec)), dao, inclFields, JsonConf.v0_1(), authzCtx)
           }
 
     val pageJsIter = pagesJs.iterator

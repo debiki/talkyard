@@ -174,7 +174,7 @@ package object search {
       for (pageAndHits <- pagesAndHits; tag <- pageAndHits.pageStuff.pageTags) {
         ids.add(tag.tagTypeId)
       }
-      ids.to[imm.Set]
+      ids.to(imm.Set)
     }
   }
 

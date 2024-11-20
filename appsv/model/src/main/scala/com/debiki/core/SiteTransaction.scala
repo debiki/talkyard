@@ -654,7 +654,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def loadTheParticipants(userIds: UserId*): immutable.Seq[Participant] = {
     val usersById = loadParticipantsAsMap(userIds)
-    userIds.to[immutable.Seq] map { id =>
+    userIds.to(immutable.Seq) map { id =>
       usersById.getOrElse(id, throw UserNotFoundException(id))
     }
   }

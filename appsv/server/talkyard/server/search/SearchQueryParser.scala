@@ -215,7 +215,7 @@ object SearchQueryParser {
               // Let 'sort:...' have precedence over 'tags:tag-name:asc/desc' — 'sort:'
               // is more explicit, intentional?
               sortOrders ++ sortByTags,
-          warnings = warnings.to[Vec])
+          warnings = warnings.to(Vec))
   }
 
 
@@ -240,7 +240,7 @@ object SearchQueryParser {
         //         "tag-name",  or with a value:  "some-tag=123"  or  "some-tag<100".
         // Or like "user_name"  or  "category-slug"  without any `<=>123` comparison.
         val nameCompValStrs: Vec[St] =
-              commaSepNames.split(',').to[Vec].map(_.trim).filter(_.nonEmpty)
+              commaSepNames.split(',').to(Vec).map(_.trim).filter(_.nonEmpty)
         if (nameCompValStrs.isEmpty) {
           warnings.append(ErrMsgCode(
                 s"""Incomplete sort parameter: There's   "${
@@ -450,7 +450,7 @@ object SearchQueryParser {
       }
     }
 
-    (idsNoVals.to[Vec], typesWithCompVals, sortBy.to[Vec])
+    (idsNoVals.to(Vec), typesWithCompVals, sortBy.to(Vec))
   }
 
 

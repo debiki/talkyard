@@ -1022,7 +1022,7 @@ case class SitePatcher(globals: debiki.Globals) {
       // so the caller gets to know where they're located. Needed by
       // /-/v0/upsert-simple, for creating an API consumer friendly json response. [8R392PFP0]
       val sectionPagePaths =
-        upsertedCategories.map(_.sectionPageId).to[immutable.Set].toVector map { sectionPageId =>
+        upsertedCategories.map(_.sectionPageId).to(immutable.Set).toVector map { sectionPageId =>
           tx.loadPagePath(sectionPageId).getOrDie( // there's a foreign key
             "TyE305RKTG42", {
               val badCat = upsertedCategories.find(_.sectionPageId == sectionPageId).get

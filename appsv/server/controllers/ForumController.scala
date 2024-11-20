@@ -233,12 +233,12 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val (category, permsWithIds) =
       if (categoryData.isNewCategory) {
         val result = request.dao.createCategory(
-          categoryData, permissions.to[immutable.Seq], request.who, IfBadAbortReq)
+          categoryData, permissions.to(immutable.Seq), request.who, IfBadAbortReq)
         (result.category, result.permissionsWithIds)
       }
       else {
         val editedCategory = request.dao.editCategory(
-          categoryData, permissions.to[immutable.Seq], request.who)
+          categoryData, permissions.to(immutable.Seq), request.who)
         (editedCategory, permissions)
       }
 

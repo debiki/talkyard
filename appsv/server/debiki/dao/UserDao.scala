@@ -1067,7 +1067,7 @@ trait UserDao {
 
 
   def getMembersByUsernames(usernames: Iterable[Username]): ImmSeq[Opt[Member]] = {
-    usernames.to[Vec].map(getMemberByUsername)
+    usernames.to(Vec).map(getMemberByUsername)
   }
 
 

@@ -198,7 +198,7 @@ package object api {
     def removeBadNewSiteFlags(flagsStr: St): St = {
       // Tests: (manual)
       //   - create-site-password-run-admin-intro-tours.1br.d  TyT7BAWFPK9.TyTNEWSITEFFS
-      val flagsMaybeBad = flagsStr.split(" ").to[Vec]
+      val flagsMaybeBad = flagsStr.split(" ").to(Vec)
       val flagsOk = flagsMaybeBad.filter(flag =>
             allowedNewSiteExactFlags.contains(flag) || ffPrPNNRegex.matches(flag))
       flagsOk.mkString(" ")

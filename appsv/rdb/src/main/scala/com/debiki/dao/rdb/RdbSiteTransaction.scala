@@ -473,11 +473,11 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
 
   def loadAllPageMetas(limit: Option[Int] = None): immutable.Seq[PageMeta] =
-    loadPageMetaImpl(pageIds = Nil, all = true, limit = limit).values.to[immutable.Seq]
+    loadPageMetaImpl(pageIds = Nil, all = true, limit = limit).values.to(immutable.Seq)
 
 
   def loadPageMetas(pageIds: Iterable[PageId]): immutable.Seq[PageMeta] =
-    loadPageMetaImpl(pageIds, all = false).values.to[immutable.Seq]
+    loadPageMetaImpl(pageIds, all = false).values.to(immutable.Seq)
 
 
   def loadPageMeta(pageId: PageId): Option[PageMeta] =

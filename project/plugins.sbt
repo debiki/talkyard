@@ -44,7 +44,7 @@ addDependencyTreePlugin
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.12.0")
 
 // Picks scala-xml 2.1 over 1.1 — otherwise there the below version conflict error
-// (when just loading the project) with Scala 2.12.18 or 2.12.19 because they use
+// (when just loading the project) with Scala 2.12.18 or 2.13.14 because they use
 // scala-xml 2.x but Play and SBT use 1.x.
 //
 // 2.1 and 1.x are binary compatible, sort of, so this is ok, see e.g.
