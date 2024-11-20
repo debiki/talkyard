@@ -30,7 +30,7 @@ Compile / dependencyOverrides ++= {
       "commons-validator" % "commons-validator" % "1.8.0",
       "javax.activation" % "activation" % "1.1",
       "nu.validator.htmlparser" % "htmlparser" % "1.4",
-      "org.apache.commons" % "commons-email" % "1.5",
+      "org.apache.commons" % "commons-email" % "1.6.0",
       "org.apache.tika" % "tika-core" % "2.9.2",
       "org.checkerframework" % "checker-qual" % "3.37.0",
       "org.owasp.encoder" % "encoder" % "1.2.3",
