@@ -56,6 +56,7 @@ case class StalePage(
   * Mutable. Not thread safe.
   */
 class StaleStuff {
+  private var _allGroupsStale = false
   private var _allPagesStale = false
   private val _stalePages = mut.Map[PageId, StalePage]()
   private val _stalePpIdsMemCacheOnly = mut.Set[PatId]()
@@ -80,6 +81,12 @@ class StaleStuff {
   def addPatDynData(patId: PatId, memCacheOnly: Bo): U = {
     unimplIf(!memCacheOnly, "TyE036WH7MN25")
     // Noop, currently not cached.
+  }
+
+  /** But doesn't mean that any group members list is stale.
+    */
+  def addAllGroups(): U = {
+    _allGroupsStale = true
   }
 
 
@@ -232,6 +239,11 @@ class StaleStuff {
         dao.removeUserFromMemCache(ppId)
       }
     }
+
+    if (_allGroupsStale) {
+      dao.clearAllGroupsFromMemCache()
+    }
+
   }
 
 }

@@ -39,6 +39,54 @@ trait AuthzSiteDaoMixin {
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
 
 
+  def getPatAndPrivPrefs(pat: Pat, allGroups: Vec[Group]): PatAndPrivPrefs = {
+
+    COULD_OPTIMIZE // Cache a by-id map instead / too? (in getAllGroups()) [cache_groups_by_id]
+    val allGroupsById: Map[PatId, Group] = Map(allGroups.map(g => g.id -> g): _*)
+
+    val patsGroupIdsMaybeRestr = this.getOnesGroupIds(pat).drop(1) // [own_id_bef_groups]
+    val patsGroupsMaybeRestr = patsGroupIdsMaybeRestr flatMap { id =>
+            val g = allGroupsById.get(id)
+            bugWarnIf(g.isEmpty, "TyENOGROUP0761", s"s$siteId: Group $id missing")
+            g
+          }
+
+    val patsPrivPrefs = Authz.derivePrivPrefs(pat, patsGroupsMaybeRestr)
+
+    PatAndPrivPrefs(
+          pat,
+          privPrefsOfPat = patsPrivPrefs,
+          patsGroupIds = patsGroupIdsMaybeRestr,
+          patsGroups = patsGroupsMaybeRestr)
+  }
+
+
+  /** Derives prefs, like `getPatAndPrivPrefs`, but efficiently for many users at once.
+    *
+    * Shouldn't this be a pure fn? Doesn't currently need `this`, will it ever?
+    */
+  def derivePrivPrefs(users: Iterable[UserBr], allGroups: Vec[Group]): ImmSeq[PatAndPrivPrefs] = {
+    COULD_OPTIMIZE // Cache a by-id map instead / too? (in getAllGroups()) [cache_groups_by_id]
+    val allGroupsById: Map[PatId, Group] = Map(allGroups.map(g => g.id -> g): _*)
+    users.to[Vec] map { user =>
+      val usersGroupIdsMaybeRestr = Pat.getBuiltInGroupIdsForUser(user)
+      val usersGroupsMaybeRestr = usersGroupIdsMaybeRestr flatMap { id =>
+        val g = allGroupsById.get(id)
+        bugWarnIf(g.isEmpty, "TyENOGROUP0761", s"s$siteId: Group $id missing")
+        g
+      }
+
+      val usersPrivPrefs = Authz.derivePrivPrefs(user, usersGroupsMaybeRestr)
+
+      PatAndPrivPrefs(
+            user,
+            usersPrivPrefs,
+            usersGroupIdsMaybeRestr,
+            usersGroupsMaybeRestr)
+    }
+  }
+
+
   def deriveEffPatPerms(groupIdsAnyOrder: Iterable[GroupId]): EffPatPerms = {
     val groups = groupIdsAnyOrder map getTheGroup
     val permsOnSite = getPermsOnSiteForEveryone()

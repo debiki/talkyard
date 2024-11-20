@@ -200,6 +200,65 @@ object Authz {
   }
 
 
+  /** Derives pat's privacy preferences, by looking at hans own personal
+    * settings, and filling in any missing by inheriting defaults from
+    * the groups pat is a member of.
+    *
+    * (Later, use AuthzCtxOnPats somehow instead as param?)
+    *
+    * @param memberOfGroups Order doesn't matter.
+    */
+  def derivePrivPrefs(pat: Pat, patsGroups: ImmSeq[Group]): MemberPrivacyPrefs = {
+    _derivePrivPrefsImpl(Some(pat), patsGroups)
+  }
+
+
+  /** Default privacy prefs for someone who is a member of the specified groups.
+    * Prefs in higher trust level groups (more specific),
+    * override prefs from lower (less specific) groups.
+    *
+    * @param memberOfGroups Order doesn't matter.
+    */
+  def deriveDefaultPrivPrefs(memberOfGroups: ImmSeq[Group]): MemberPrivacyPrefs = {
+    _derivePrivPrefsImpl(None, memberOfGroups)
+  }
+
+
+  private def _derivePrivPrefsImpl(anyPat: Opt[Pat], patsGroups: ImmSeq[Group])
+          : MemberPrivacyPrefs = {
+    var result = anyPat.flatMap(_.anyPrivPrefs) getOrElse MemberPrivacyPrefs.empty
+
+    val (groupsByPrioDesc, _customGroups) = sortGroupsByPrioDesc(patsGroups)
+
+    // Prefs in higher (more specific) trust level groups override lower group prefs.
+    // (Later: Consider custom groups too [group_priorities]. Then, we'll need an inner
+    // loop, to loop over groups with the same prio? And use the most private prefs
+    // (TrustLevel.maxOfAny()).)
+    for (group <- groupsByPrioDesc) {
+      result = result.addMissing(group.privPrefs)
+
+      // All other groups have lower precedence, so if all preferences have been
+      // specified we're done (which is rare — admins & users tend to leave some things
+      // as is, using the defaults).
+      if (result.everythingSpecified)
+        return result
+    }
+
+    result
+  }
+
+
+  /** Returns a tuple with:
+    * - Trust level groups, ordered by trust level descending (so, most specific first).
+    * - Custom groups, unspecified priority
+    */
+  def sortGroupsByPrioDesc(patsGroups: ImmSeq[Group]): (ImmSeq[Group], ImmSeq[Group]) = {
+    // Groups Everyone, All Members, ... Core Members, Mods, Admins have ids 10, 11, ... 20.
+    // But custom groups (not built-in) have ids >= 100, so this places them last:
+    val byId = patsGroups.sortBy(-_.id)
+    byId.span(_.isBuiltIn)
+  }
+
 
   def mayCreatePage(
     userAndLevels: AnyUserAndLevels,

@@ -45,6 +45,7 @@ export function getAboutUserDialog() { // RENAME QUICK to getAboutPatDialog
 interface AboutPatDialogState {
   store?: Store;
   isOpen?: boolean;
+  notFound?: true
   user?: BriefUser | UserDetailsStatsGroups;
   groupsMaySee?: Group[];
   post?: Post;
@@ -115,12 +116,18 @@ const AboutPatDialog = createComponent({
 
   loadPat: function(idOrUsername: Nr | St) {
     Server.loadPatVvbPatchStore(idOrUsername,
-            ({ user, groupsMaySee }: LoadPatVvbResponse) => {
+            (resp: LoadPatVvbResponse | NotFoundResponse) => {
       if (this.isGone) return;
+      if (resp === 404) {
+        this.setState({ notFound: true, user: null, idOrUsername });
+        return;
+      }
+      const { user, groupsMaySee } = resp;
       const nextState: AboutPatDialogState = {
         user,
         groupsMaySee,
       };
+      // Dialog closed?
       if (!this.state.post) {
         this.setState(nextState);
         return;
@@ -152,7 +159,7 @@ const AboutPatDialog = createComponent({
 
   render: function () {
     const state: AboutPatDialogState = this.state;
-    let content;
+    let content: RElm | U;
 
     if (state.isOpen) {
       const user: Guest | BriefUser | UserDetailsStatsGroups = state.user;
@@ -168,7 +175,11 @@ const AboutPatDialog = createComponent({
       }, this.props);
 
       if (!user) {
-        content = r.p({}, t.Loading);
+        // Later, make it possible to send DMs also if profile private? [dm_priv_pats]
+        // That'd be from this dialog? The user's profile page just says Not Found,
+        // shows no buttons.
+        content = state.notFound ?
+              r.p({}, "This user's info is private.") : r.p({}, t.Loading);
       }
       else if (user.isAnon) {
         content = AboutAnon({ anon: user as Anonym });

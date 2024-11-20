@@ -23,7 +23,7 @@ import debiki.JsonUtils
 import debiki.JsonUtils._
 import debiki.EdHttp._
 import java.{util => ju}
-import talkyard.server.authz.AuthzCtxOnPats
+import talkyard.server.authz.{Authz, AuthzCtxOnPats}
 import talkyard.server.api.{UpsertTypeParams, CreateTagParams}
 import org.scalactic.{Bad, Good, Or}
 
@@ -333,21 +333,21 @@ object JsX {   RENAME // to JsonPaSe
       // (Don't think need not exclude deletedAt & suspendedTillMs)
     }
 
-    // Others don't need to know. If may not see, the info is simply not included by the server.
-    // (Not totally implemented though.)
+    // Private, and of interest client side only to oneself and staff, if wants to edit.
     if (reqrIsStaffOrSelf) {
-      userJson = userJson.addAnyInt32("maySeeMyBriefBioTrLv", user.privPrefs.maySeeMyBriefBioTrLv)
-      userJson = userJson.addAnyInt32("maySeeMyMembershipsTrLv", user.privPrefs.maySeeMyMembershipsTrLv)
-      userJson = userJson.addAnyInt32("maySeeMyProfileTrLv", user.privPrefs.maySeeMyProfileTrLv)
-      userJson = userJson.addAnyInt32("mayFindMeTrLv", user.privPrefs.mayFindMeTrLv)
-      userJson = userJson.addAnyInt32("maySeeMyPresenceTrLv", user.privPrefs.maySeeMyPresenceTrLv)
-      userJson = userJson.addAnyInt32("maySeeMyApproxStatsTrLv", user.privPrefs.maySeeMyApproxStatsTrLv)
-      userJson = userJson.addAnyInt32("maySeeMyActivityTrLv", user.privPrefs.seeActivityMinTrustLevel)
+      userJson += "privPrefsOwn" -> JsPrivPrefs(user.privPrefs)
+      // Good to know what the defaults are, since usually that's what's in use — most
+      // people don't look at or configure their own prefs that much.
+      val defaults = Authz.deriveDefaultPrivPrefs(groups)
+      userJson += "privPrefsDef" -> JsPrivPrefs(defaults)
     }
 
-    // Currently needs to be public, see [some_pub_priv_prefs].
-    userJson = userJson.addAnyInt32("maySendMeDmsTrLv", user.privPrefs.maySendMeDmsTrLv)
-    userJson = userJson.addAnyInt32("mayMentionMeTrLv", user.privPrefs.mayMentionMeTrLv)
+    // But these effective prefs need to be public, see [some_pub_priv_prefs] (& bit dupl code).
+    // so the client can show/disable e.g. the Send Message button, if DMs allowed or not.
+    val effPrefs = Authz.derivePrivPrefs(user, groups)
+    userJson = userJson.addAnyInt32("maySendMeDmsTrLv", effPrefs.maySendMeDmsTrLv)
+    userJson = userJson.addAnyInt32("mayMentionMeTrLv", effPrefs.mayMentionMeTrLv)
+    userJson = userJson.addAnyInt32("maySeeMyActivityTrLv", effPrefs.seeActivityMinTrustLevel)
 
     val maySeeEmailAdrs = reqrPerms.exists(_.canSeeOthersEmailAdrs)
 
@@ -413,6 +413,21 @@ object JsX {   RENAME // to JsonPaSe
     }
 
     userJson
+  }
+
+
+  def JsPrivPrefs(prefs: MemberPrivacyPrefs): JsObject = {
+    var obj = JsEmptyObj2
+    obj = obj.addAnyInt32("maySeeMyBriefBioTrLv", prefs.maySeeMyBriefBioTrLv)
+    obj = obj.addAnyInt32("maySeeMyMembershipsTrLv", prefs.maySeeMyMembershipsTrLv)
+    obj = obj.addAnyInt32("maySeeMyProfileTrLv", prefs.maySeeMyProfileTrLv)
+    obj = obj.addAnyInt32("mayFindMeTrLv", prefs.mayFindMeTrLv)
+    obj = obj.addAnyInt32("maySeeMyPresenceTrLv", prefs.maySeeMyPresenceTrLv)
+    obj = obj.addAnyInt32("maySeeMyApproxStatsTrLv", prefs.maySeeMyApproxStatsTrLv)
+    obj = obj.addAnyInt32("maySeeMyActivityTrLv", prefs.seeActivityMinTrustLevel)
+    obj = obj.addAnyInt32("maySendMeDmsTrLv", prefs.maySendMeDmsTrLv)
+    obj = obj.addAnyInt32("mayMentionMeTrLv", prefs.mayMentionMeTrLv)
+    obj
   }
 
 
@@ -566,7 +581,7 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
-  def JsGroup(group: Group): JsObject = {   // dupl code [B28JG4] also in UserController
+  def JsGroup(group: Group): JsObject = {   // dupl code [B28JG4] also in JsPatNameAvatar
     var json = Json.obj(
       "id" -> group.id,
       "username" -> group.theUsername,
@@ -576,7 +591,7 @@ object JsX {   RENAME // to JsonPaSe
     group.tinyAvatar foreach { uploadRef =>
       json += "avatarTinyHashPath" -> JsString(uploadRef.hashPath)
     }
-    group.isDeleted  // what?
+    if (group.isDeleted) json += "isDeleted" -> JsTrue
     json
   }
 
@@ -588,6 +603,23 @@ object JsX {   RENAME // to JsonPaSe
         "numMembers" -> JsNumber(stats.numMembers))
     }
     json
+  }
+
+
+  /** Verbose, more details included.
+    */
+  def JsGroupAndStatsVb(groupAndStats: GroupAndStats, isStaff: Bo): JsObject = {
+    var json = JsGroupAndStats(groupAndStats)
+
+    // Needed, for the Inspect page, for admins.
+    unimplIf(!isStaff, "Must be staff [TyE702KJCW]")
+    json += "privPrefsOwn" -> JsPrivPrefs(groupAndStats.group.privPrefs)
+
+    // Not currently needed: privPrefsDef.  Or incl anyway?
+    // val ancestorGroups = tx.loadGroupsAncestorGroups(g) // some caller
+    // val defaults = Authz.deriveDefaultPrivPrefs(ancestorGroups)
+
+    json  // [perms_missing]
   }
 
 

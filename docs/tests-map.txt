@@ -419,12 +419,6 @@ sessions:
             - TESTS_MISSING
 
 
-privacy:  [.noise_and_privacy]
-  can cannot:
-    see email:
-    see username:
-    see if I'm online:
-
 navigation:
   from anywhere, to anywhere:
           - navigation-as-stranger.test.ts  TyT5WKAB024
@@ -540,10 +534,18 @@ groups:
   privacy: [_priv]
 
 
-privacy:  [_priv]
+privacy:  [_priv] [.noise_and_privacy]
             - privacy-list-activity.2br.f  TyTPRIV_LSACT
             - block-mentions.2br.d  TyTMAYMENTION
             - block-dir-msgs.2br.d  TyTBLOCKDIRMSGS
+  inherited from groups:
+            - privacy-may-see.3br.f.e2e.ts  TyTPRIV_MAYSEE
+  see activity but not user profile?:  [see_activity_0_profile]
+      not implemented, and:
+            - TESTS_MISSING  TyTPRIV_ACT0PROF
+  see email:
+  see username:
+  see if I'm online:
 
 security:
   access denied,
@@ -977,6 +979,8 @@ mentions:
 
   may mention me trust level:
             - block-mentions.2br.d  TyTMAYMENTION
+  mentioning users w private profiles:
+            - privacy-may-see.3br.f.e2e.ts  TyTPRIV_MAYSEE.TyTPRIV_MENTION02
 
 
 link previews:

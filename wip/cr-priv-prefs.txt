@@ -1,0 +1,51 @@
+
+Cr:ing:
+
+          ~/styd/ty9 priv/p/m/9 *$% $ git diff --stat 16a1bffa7~ 16a1bffa7 # Derive priv prefs 
+           appsv/model/src/main/scala/com/debiki/core/SiteTransaction.scala  |  21 +-
+           appsv/model/src/main/scala/com/debiki/core/permissions.scala      |   8 +-
+           .../model/src/main/scala/com/debiki/core/trust-threat-level.scala |  12 +
+           appsv/model/src/main/scala/com/debiki/core/user.scala             | 110 ++++++++-
+           .../rdb/src/main/scala/com/debiki/dao/rdb/UserSiteDaoMixin.scala  |  31 ++-
+           appsv/server/controllers/UserController.scala                     | 313 +++++++++++++++++------
+           appsv/server/debiki/ReactJson.scala                               |   8 +
+           appsv/server/debiki/dao/UserDao.scala                             |  73 ++++--
+           appsv/server/talkyard/server/JsX.scala                            |  56 +++--
+           appsv/server/talkyard/server/authz/Authz.scala                    |  88 +++++++
+           appsv/server/talkyard/server/authz/AuthzSiteDaoMixin.scala        |  48 ++++
+           appsv/server/talkyard/server/authz/package.scala                  |  36 +++
+           appsv/server/talkyard/server/dao/StaleStuff.scala                 |  10 +
+           appsv/server/talkyard/server/pubsub/PubSub.scala                  |   2 +
+           appsv/server/talkyard/server/security/package.scala               |   5 +-
+           appsv/server/talkyard/server/talk/PostsController.scala           | 109 +++++---
+           client/app-more/page-dialogs/about-user-dialog.more.ts            |  17 +-
+           client/app-more/users/groups-page.more.ts                         |   8 +-
+           client/app-more/users/user-activity.more.ts                       |   1 +
+           client/app-more/users/user-preferences.more.ts                    | 179 +++++++++-----
+           client/app-more/users/user-prefs.styl                             |   5 +
+           client/app-more/users/users-page.more.ts                          |  16 +-
+           client/app-more/users/users-page.styl                             |   5 +
+           client/app-more/util/trust-level-dialog.more.ts                   |  25 +-
+           client/app-slim/Server.ts                                         |  16 +-
+           client/app-slim/model.ts                                          |  15 +-
+           client/app-slim/oop-methods.ts                                    |   6 +-
+           client/app-slim/prelude.ts                                        |   5 +
+           client/app-slim/slim-bundle.d.ts                                  |   5 +-
+           client/types-and-const-enums.ts                                   |   8 +-
+           docs/maybe-do-later.txt                                           |  26 +-
+     ---crd---
+
+    crd——> docs/tests-map.txt                                                |  14 +-
+    crd——> s/run-e2e-tests.sh                                                |  19 ++
+    crd——> tests/e2e-wdio7/specs/privacy-list-activity.2br.f.e2e.ts          |  13 +-
+    crd——> tests/e2e-wdio7/specs/privacy-may-see.3br.f.e2e.ts                | 397 ++++++++++++++++++++++++++++++
+    crd——> tests/e2e-wdio7/test-constants.ts                                 |   1 +
+    crd——> tests/e2e-wdio7/test-types.ts                                     |   5 +
+    crd——> tests/e2e-wdio7/utils/ty-e2e-test-browser.ts                      |  51 ++--
+    crd——> wip/priv-prefs/priv-prefs-wip.txt                                 |  93 +++++++
+           39 files changed, 1576 insertions(+), 284 deletions(-)
+
+
+
+
+

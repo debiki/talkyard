@@ -31,20 +31,25 @@ export interface TrustLevelBtnProps {
   className?: St,
   minLevel?: TrustLevelOrStaff,
   maxLevel?: TrustLevelOrStaff,
-  curLevel: TrustLevelOrStaff | U;
-  saveFn: (newLevel: TrustLevelOrStaff) => Vo;
+  ownLevel: TrustLevelOrStaff | U;
+  defLevel: TrustLevelOrStaff
+  saveFn: (newLevel: TrustLevelOrStaff | N) => V;
 }
 
 
 // Bit dupl code? [open_diag_btn]
 export function TrustLevelBtn(props: TrustLevelBtnProps) {
-  const className = `e_TrLv-${props.curLevel} ${props.className || ''}`;
+  const level = firstValOf(props.ownLevel, props.defLevel);
+  const isDef = !isVal(props.ownLevel) && isVal(props.defLevel);
+  const isDefClass = isDef ? ' e_TrLv-Def' : '';
+  const isDefTxt = isDef ? " (default)" : '';
+  const className = `e_TrLv-${level}${isDefClass} ${props.className || ''}`;
   return (
       Button({ className, onClick: event => {
           const atRect = cloneEventTargetRect(event);
           openTrustLevelDiag({ ...props, atRect });
         }},
-        trustLevel_toString(props.curLevel as any), ' ', r.span({ className: 'caret' })
+        trustLevel_toString(level as any) + isDefTxt, ' ', r.span({ className: 'caret' })
       ));
 }
 
@@ -54,8 +59,9 @@ interface TrustLevelDiagState {
   atRect: Rect;
   minLevel?: TrustLevelOrStaff,
   maxLevel?: TrustLevelOrStaff,
-  curLevel: TrustLevelOrStaff | U;
-  saveFn: (newLevel: TrustLevelOrStaff) => Vo;
+  ownLevel: TrustLevelOrStaff | U;
+  defLevel: TrustLevelOrStaff
+  saveFn: (newLevel: TrustLevelOrStaff | N) => V;
 }
 
 
@@ -87,6 +93,7 @@ const TrustLevelDiag = React.createFactory<{}>(function() {
   }
 
   let title: St | U;
+  let defaultItem: RElm | U;
   let strangersItem: RElm | U;
   let allMembersItem: RElm | U;
   let basicMembersItem: RElm | U;
@@ -102,7 +109,7 @@ const TrustLevelDiag = React.createFactory<{}>(function() {
     const makeItem = (level: TrustLevelOrStaff): RElm => {
       return level < min || max < level ? null : (
             ExplainingListItem({
-                active: diagState.curLevel === level,
+                active: diagState.ownLevel === level,
                 title: r.span({ className: 'e_TrLv-' + level  },
                           trustLevel_toString(level as any)),
                 // text: trustLevel_descr(level),  — later?
@@ -113,6 +120,15 @@ const TrustLevelDiag = React.createFactory<{}>(function() {
     }
 
     title = diagState.diagTitle;
+    defaultItem = ExplainingListItem({
+                active: !isVal(diagState.ownLevel),
+                title: r.span({ className: 'e_TrLv-Def'  },
+                          "Default: " + trustLevel_toString(diagState.defLevel)),
+                onSelect: () => {
+                  diagState.saveFn(null);
+                  close();
+                }});
+
     strangersItem = makeItem(TrustLevelOrStaff.Stranger);
     allMembersItem = makeItem(TrustLevelOrStaff.New);
     basicMembersItem = makeItem(TrustLevelOrStaff.Basic);
@@ -128,6 +144,7 @@ const TrustLevelDiag = React.createFactory<{}>(function() {
       DropdownModal({ show: isOpen, onHide: close, atX: atRect.left, atY: atRect.top,
             pullLeft: true, showCloseButton: true, className: 'e_TruLvD' },
         r.div({ className: 's_ExplDrp_Ttl' }, title),
+        defaultItem,
         strangersItem,
         allMembersItem,
         basicMembersItem,

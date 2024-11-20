@@ -195,7 +195,7 @@ function PrivPrefsRow(title: St, getFn: (_: PrivacyPrefs) => TrustLevel | TrustL
   return r.tr({},
       r.td({}, title),
       groups.map(group => {
-        const thisGroupsPref = getFn(group.privPrefs);
+        const thisGroupsPref = group.privPrefsOwn && getFn(group.privPrefsOwn);
         let className = '';
         let prefToShow: Nr | U;
         if (isVal(thisGroupsPref)) {

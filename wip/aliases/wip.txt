@@ -76,6 +76,7 @@ Later, quick:
   - Rename def getAliasOrTruePat()  to getPersona()?  And "nnnMaybeAnon" to "nnnPersona"?
 
 Minor & medium:
+  - Even more hidden user profiles? See: ../priv-prefs/priv-prefs-wip.txt  [hidden_profile]
 
   - Remember post-as-oneself in drafts3, use post_as_id_c, and,
   - Remember anon status, also when reusing anons, in drafts3.

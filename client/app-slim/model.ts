@@ -1712,6 +1712,10 @@ interface MemberInclDetails extends Member {
   summaryEmailIntervalMinsOwn?: number;
   summaryEmailIfActive?: boolean;
   summaryEmailIfActiveOwn?: boolean;
+
+  // For editing one's own prefs (or sbd else's, if one is staff).
+  privPrefsOwn?: PrivacyPrefs
+  privPrefsDef?: PrivacyPrefs
 }
 
 
@@ -1719,7 +1723,7 @@ type GroupInclDetails = GroupVb;
 interface GroupVb extends MemberInclDetails, Group {
   isGroup: true;
   //"createdAtEpoch" -> JsWhen(group.createdAt),
-  perms: GroupPerms;
+  perms: GroupPerms;  // oops missing here: [perms_missing] currently doesn't matter
 }
 
 type UserInclDetails = PatVb; // old name, remove
@@ -1728,7 +1732,12 @@ type UserInclDetails = PatVb; // old name, remove
 // "PatVbStaff" better?)
 /// A Participant including verbose details, for the pat profile pages.
 // RENAME to UserVb? Isn't this alaways a user — not a group or guest.
-interface PatVb extends MemberInclDetails, BioWebsiteLocation, PrivacyPrefs {
+interface PatVb extends MemberInclDetails, BioWebsiteLocation,
+      // The priv prefs fields directly on a PatVb are the effective prefs
+      // so the browser knows if any buttons/features should be disabled.
+      // privPrefsOwn and ...Def are for editing one's prefs, and only included
+      // for oneself or staff.
+      PrivacyPrefs {
   externalId?: string;
   createdAtEpoch: number;  // change to millis
   fullName?: string;
@@ -1764,14 +1773,21 @@ interface PatVb extends MemberInclDetails, BioWebsiteLocation, PrivacyPrefs {
 interface PrivacyPrefs {
   maySeeMyBriefBioTrLv?: TrustLevelOrStaff
   maySeeMyMembershipsTrLv?: TrustLevelOrStaff
+  //mayListMyMembersTrLv?: TrustLevelOrStaff — later, for groups & circles [list_membs_perm]
   maySeeMyProfileTrLv?: TrustLevelOrStaff
   mayFindMeTrLv?: TrustLevelOrStaff
+  // Not yet impl. [priv_prof_0_presence]
   maySeeMyPresenceTrLv?: TrustLevelOrStaff
   maySeeMyApproxStatsTrLv?: TrustLevelOrStaff
-  maySeeMyActivityTrLv?: TrustLevel
+  maySeeMyActivityTrLv?: TrustLevelOrStaff
   maySendMeDmsTrLv?: TrustLevelOrStaff
   mayMentionMeTrLv?: TrustLevelOrStaff
 }
+
+/// When editing, value can be null, means "delete, use default".
+type PrivacyPrefsEdited = {
+  [Property in keyof PrivacyPrefs]: TrustLevelOrStaff | N | U
+};
 
 interface UserInclDetailsWithStats extends PatVb {   // REMOVE, instead, use PatVvb? no UserVvb?
   // Mabye some old accounts lack stats?
@@ -3120,6 +3136,8 @@ type ErrorStatusHandler = (httpStatusCode?: Nr, errCode?: ErrCode) => Vo;
 type ErrorDetailsStatusHandler = (
         errorStatusCode: number | U, errorStatusText: string | U, details?) => void;
 
+// For endpoints that expect the whatever to maybe not exist. 200 ok always return json.
+type NotFoundResponse = 404;
 
 /// The browser gives you a Response, but that's not an object so { ...response } won't work.
 /// This is however a real object, with the reponse payload included in 'responseText':

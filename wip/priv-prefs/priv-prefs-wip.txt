@@ -1,0 +1,104 @@
+Privacy Preferences  [inherit_group_priv_prefs]
+-----------------------
+
+Privacy preferences:
+- Are inherited from trust level groups.
+- Not yet inherited from custom groups, see below.
+- Higher trust level groups (more specific) override lower trust level (less specific) groups.
+- User's own prefs are most specific, override any from groups.
+- Only may-see-my-profile and -activity inherited, right now (but not may-mention or send-DM).
+- Not yet implemented everywhere: [inherit_priv_prefs_0impl]
+
+Later:
+- Custom groups can have priv prefs.
+- Maybe: Trust level group's priority = trust level * 10,
+- Custom group priority by default = between Core Members and Moderators?
+  But priority can be edited & changed.
+- Add some space for light-weight mods and mods-of-mods? [new_trust_levels]
+- If two groups have the same priority, the most restrictive priv prefs is used
+  (cannot happen currently, since custom groups cannot have priv prefs, yet).
+
+For example, these endpoints require the requester to be allowed to see the target user:
+    /-/load-user-any-details?who=username  (by username)
+    /-/load-user-any-details?who=123      (by id)
+    /-/list-posts?authorId=123
+    /-/list-topics-by-user?userId=123
+    /-/list-all-users   — one's name is excluded if requester may not see one's profile
+    /-/list-usernames   — same
+
+More, later:
+- Moderators should maybe not always be able to see everyone's usernames? If
+  a communtity is about something sensitive and everyone is anonymous,
+  maybe better if they don't know what any usernames are. [private_pats] [hidden_profile]
+
+- Probably if hiding one's profile, by default, those who then can't see it, also
+  shouldn't see one's online status in the users online list.
+  Not yet implemented though. See: [priv_prof_0_presence] ("private profile -> no presence")
+
+- How send DMs to users whose profile one may not see? (Let's say user Usra has
+  commented in the same topic and you, and you can't see hans profile, but you
+  still want to ask sth privately, and Usra has configured hans priv prefs to
+  allow this (profile private, but DMs are ok). Then, should the message be sent
+  ... via Usra's profile page? But you can't see it. So, via the about-user dialog then?)
+
+- How see activity of users whose profile one may not see?  Maybe it's then
+  better if the profile page is partly visible, just name (?), bio & stats removed?
+  But then it's better with the hide-bio preference instead? [see_activity_0_profile]
+
+- Impl more inheritance:  may-dm-me, may-mention-me. And:  may-see-me-in-lists,
+    may-see-my-presence, may-see-my-group-memberships. By default, these'll be
+    No-may-not, for people for which one's profile is hidden.
+
+Custom groups can't have prefs  [0_priv_prefs_4_cust_groups]
+-----------------------
+
+Right now, custom groups aren't considered when deriving a user's privacy prefs,
+because there's not yet a way to specify how that should be done.
+
+Sometimes one wants a custom group's prefs to override trust level group prefs.
+In other cases, one wants trust level groups to override custom group prefs.
+A way to specify the priority of a custom group, is needed? [group_priorities]
+
+For example, 1/2: Consider a communtity for university students who post
+anonymous questions to teachers and other students. All user profiles are
+hidden by default, so no one can guess who worte what (which might otherwise
+have been simpler to guess, in the beginning if there were only a few members
+initially — but with profiles hidden, it's not possible to know who the forum
+members are at all).
+
+However, there're some teachers and tech support people, who should have their
+profiles visible (so students can aks about the university or e.g. how the
+forum works). Let's say these people are in a Support group, and you'd like to
+configure that group so the user profiles of its members are shown (not
+hidden). Thus, you want this custom group's preferences to override the trust
+level groups' preferences. (The Support people aren't necessarily moderators;
+making them all mods and configuring the Mods group might not be ok.)
+
+But, 2/2, in another forum, for another university, there're more teachers
+and professors, and students are instead added to a Students custom group.
+The students' profiles are hidden, for student privacy reasons. However,
+some students help out as moderators in the forum, so they're in the
+Moderators trust level group. This group's user profiles are shown, so
+everyone knows who the moderators are. — Now you want a trust level group
+(Moderators) to override a custom group's privacy prefs (the Students group).
+
+Is it maybe unavoidable that privacy preferences from different groups,
+have different pirority? And it'd make sense if each custom groups too, not
+only trust level groups, has its own priority number?
+
+And among groups with the same priority, the most restrictive privacy settings
+would be used.
+
+This is for privacy preferences. Access permissions, however, are additive, and
+don't run into this trickiness. For example, if posting in Category X is
+granted to a Students group, but not granted to the Full Members group, and a
+student is in both those groups — that's fine, the student then has access to X
+(since access permissions from all groups the student is in, are added
+together). — Maybe there'll be some Deny permission [may_not_perms] but that'd be
+in the distant future, or never, and then that could result in access
+permissions becoming a bit tricky too, just like privacy prefs, with group
+priorities playing a role. Or, Deny:s could "simply" be added together from all
+one's groups, and if there's any, then that overrides any access permission
+granted.
+
+

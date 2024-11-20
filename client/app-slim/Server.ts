@@ -677,6 +677,7 @@ interface GetOptions {
   timeout?: number;
   suppressErrorDialog?: boolean;
   showLoadingOverlay?: true;  // default false, for GET requests
+  notFoundAs404?: true
 }
 
 
@@ -737,8 +738,17 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
     const errorAsJson = JSON.stringify(errorObj);
     const details: string = errorObj.xhr ? errorObj.xhr.responseText : errorObj.stack;
     checkE2eTestForbiddenWords(url, details);
+
+    // If not found is normal, don't show any error, just run callback. (It's simpler to
+    // return 404 server side, than to decide on some 200 OK json that in fact
+    // means "not found". And then we get to here.)
+    if (options.notFoundAs404 && errorObj.status === 404) {
+      successFn(404);
+      return;
+    }
+
     console.error(`Error GETting from ${uri}: ${errorAsJson}, details: ${details}`);
-    let maybeIgnoreError;
+    let maybeIgnoreError: ErrorPolicy;
     if (errorFn) {
       maybeIgnoreError = errorFn(details, errorObj.status);
     }
@@ -1388,11 +1398,11 @@ export function removeGroupMembers(groupId: UserId, memberIds: UserId[], onDone:
 // BUG might get a Guest or Group, not always a UserInclDetails. SHOULD find for usages & fix.
 // (Some callers, but not all, can deal with Group or Guest.)
 export function loadPatVvbPatchStore(userIdOrUsername: UserId | St,
-      onOk: (resp: LoadPatVvbResponse) => Vo, onErr?: () => Vo) {
+      onOk: (resp: LoadPatVvbResponse) => V) {
   get('/-/load-user-any-details?who=' + userIdOrUsername, function(resp: LoadPatVvbResponse) {
     ReactActions.patchTheStore({ tagTypes: resp.tagTypes });
     if (onOk) onOk(resp);
-  }, onErr);
+  }, undefined, { notFoundAs404: true });
 }
 
 

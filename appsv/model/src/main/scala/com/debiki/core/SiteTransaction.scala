@@ -543,10 +543,22 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadTheMemberInclDetails(userId: UserId): MemberInclDetails =
     loadMemberInclDetailsById(userId).getOrElse(throw UserNotFoundException(userId))
 
-  def loadGroups(memberOrGroup: MemberInclDetails): immutable.Seq[Group] = {
+  def loadGroups(memberNotGroup: MemberInclDetails): immutable.Seq[Group] = {
+    dieIf(memberNotGroup.isGroup, "TyEGROUPGROUP", "Use loadGroupsAncestorGroups() instead")
     val allGroups = loadAllGroupsAsMap()
-    val groupIds = loadGroupIdsMemberIdFirst2(memberOrGroup)
+    val groupIds = loadGroupIdsMemberIdFirst2(memberNotGroup)
     groupIds.flatMap(allGroups.get)
+  }
+
+  /** Avoids the pointless [own_id_bef_groups] problem (doesn't incl the group itself first).
+    */
+  def loadGroupsAncestorGroups(group: Group): immutable.Seq[Group] = {
+    val allGroups = loadAllGroupsAsMap()
+    val groupIds = loadGroupIdsMemberIdFirst2(group)
+    // Currently only trust level groups can have ancestors — other trust level groups.
+    val ancestorGroupsTooMany = groupIds.flatMap(allGroups.get)
+    ancestorGroupsTooMany.filter(g => g.id != group.id // silly [own_id_bef_groups]
+                                     && g.isBuiltIn)
   }
 
   // def updateMember(user: Member): Boolean — could add, [6DCU0WYX2]
@@ -675,11 +687,10 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadUserInclDetailsByExtId(externalId: String): Option[UserInclDetails]
   def loadUserInclDetailsByEmailAddr(email: String): Option[UserInclDetails]
 
-  def loadUsersWithUsernamePrefix(
-    usernamePrefix: String, caseSensitive: Boolean = false, limit: Int = 50): immutable.Seq[User]
-
+  def loadUsersWithUsernamePrefix(usernamePrefix: St, caseSensitive: Bo = false,
+          limit: i32 = 50): ImmSeq[UserBr]
   // Also see: loadAuthorIdsByPostId(postIds)
-  def listUsernamesOnPage(pageId: PageId): Seq[NameAndUsername]
+  def listUsernamesOnPage(pageId: PageId): ImmSeq[UserBr]
 
   def loadAdmins(): immutable.Seq[User] =
     loadStaffUsers().filter(_.isAdmin)
@@ -756,7 +767,6 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
     * only Vector(EveryoneId) is returned).
     */
   def loadGroupIdsMemberIdFirst(ppt: Participant): Vector[UserId]
-
 
   def upsertPageNotfPref(notfPref: PageNotfPref): Unit
   def deletePageNotfPref(notfPref: PageNotfPref): Boolean  // notf level ignored

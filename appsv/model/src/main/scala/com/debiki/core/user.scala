@@ -416,6 +416,86 @@ case object Participant {
   def isOkayGuestId(id: UserId): Boolean =
     id == UnknownUserId || id <= MaxCustomGuestId
 
+
+  def getBuiltInGroupIdsForUser(member: UserBase): Vector[UserId] = {
+    val G = Group
+
+    BUG // Sleeping: Shouldn't admins who are also mods, be in both groups? Right now,
+    // they're in the Admins group only.
+
+    if (member.isAdmin)
+      return Vector(G.AdminsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
+        G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
+
+    if (member.isModerator)
+      return Vector(G.ModeratorsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
+        G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
+
+    member.effectiveTrustLevel match {
+      case TrustLevel.Stranger =>
+        // Cannot happen — members always >= NewMember. But incl this
+        // anyway — in case will refactor in the future, so can be Stranger.
+        Vector(G.EveryoneId)
+      case TrustLevel.NewMember =>
+        Vector(G.AllMembersId, G.EveryoneId)
+      case TrustLevel.BasicMember =>
+        Vector(G.BasicMembersId, G.AllMembersId, G.EveryoneId)
+      case TrustLevel.FullMember =>
+        Vector(G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
+      case TrustLevel.TrustedMember =>
+        Vector(G.TrustedMembersId,
+          G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
+      case TrustLevel.RegularMember =>
+        Vector(G.RegularMembersId, G.TrustedMembersId,
+          G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
+      case TrustLevel.CoreMember =>
+        Vector(G.CoreMembersId, G.RegularMembersId, G.TrustedMembersId,
+          G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
+    }
+  }
+
+
+  def getBuiltInGroupIdsForGroup(group: Group): Vector[UserId] = {
+    CLEAN_UP // This is annoying: The group's own id is included.  [own_id_bef_groups]
+    // Sometimes helpful, but turns out it's mostly annoying.
+    val G = Group
+    group.id match {
+      case G.EveryoneId =>
+        Vector(G.EveryoneId)
+      case G.AllMembersId =>
+        Vector(G.AllMembersId, G.EveryoneId)
+      case G.BasicMembersId =>
+        Vector(G.BasicMembersId, G.AllMembersId, G.EveryoneId)
+      case G.FullMembersId =>
+        Vector(G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
+      case G.TrustedMembersId =>
+        Vector(G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
+      case G.RegularMembersId =>
+        Vector(G.RegularMembersId, G.TrustedMembersId,
+          G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
+      case G.CoreMembersId =>
+        Vector(G.CoreMembersId, G.RegularMembersId, G.TrustedMembersId,
+          G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
+      case G.StaffId =>
+        Vector(G.StaffId, G.CoreMembersId, G.RegularMembersId,
+          G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
+      case G.ModeratorsId =>
+        Vector(G.ModeratorsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
+          G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
+      case G.AdminsId =>
+        Vector(G.AdminsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
+          G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
+      case _ =>
+        // Custom groups are members, so should be in the all-members group, right.
+        // But what if one would want to place guests in a group? Then, maybe should
+        // use only  G.EveryoneId  here?  And only *authenticated* (somehow) guests
+        // could be placed in any group.  [authnd_guests_group]  And they wouldn't be real
+        // forum members, only guests.
+        Vector(G.AllMembersId, G.EveryoneId)
+    }
+  }
+
+
   val MinUsernameLength = 3  // must be < 9, search for usages to see why
   val MaxUsernameLength = 20 // sync with tests [6AKBR20Q]
 
@@ -754,7 +834,13 @@ sealed trait Pat extends HasInt32Id {
   def canPromoteToBasicMember: Bo = false
   def canPromoteToFullMember: Bo = false
 
-  /** Sync w Typescript: store_maySendDirectMessageTo().  */
+  /** Sync w Typescript: store_maySendDirectMessageTo(), hmm, or instead,
+    * will probably remove that fn, and derive server side, and incl
+    * in the "privPrefs" obj.
+    *
+    * Should be inherited from ancestor groups, but not impl.  [inherit_priv_prefs_0impl]
+    * See: JsUserInclDetails and "privPrefsDef", that is, use:  Authz.deriveDefaultPrivPrefs().
+    */
   def mayMessage(pat: Pat): Bo = {
     // It's ok to message oneself? Maybe for some kind of personal journal
     if (pat.isSystemOrSysbot || pat.isGuest || pat.isGone) return false
@@ -769,8 +855,15 @@ sealed trait Pat extends HasInt32Id {
     }
   }
 
+  /** Should be inherited from ancestor groups, but not impl.  [inherit_priv_prefs_0impl]
+    *
+    * When implementing, let guests @mention users and send DMs [guests_0_mention],
+    * — because then admins can configure this however they want. But maybe the *default*
+    * should still be that only members can.
+    */
   def mayMention(pat: Pat): Bo = {
-    if (pat.id == this.id || pat.isSystemOrSysbot || pat.isGuest || pat.isGone) return false
+    if (pat.id == this.id || pat.isSystemOrSysbot || pat.isGuest  // [guests_0_mention]
+            || pat.isGone) return false
     if (isStaffOrCoreMember) return true
     pat match {
       case m: Member =>
@@ -849,12 +942,18 @@ sealed trait Pat extends HasInt32Id {
   }
 
   COULD_OPTIMIZE // return UserBase instead?
-  final def toUserOrThrow: User = {
+  final def toUserOrNone: Opt[User] = Some {
     this match {
       case u: User => u
       case u: UserVb => u.briefUser // or just return UserBase instead of converting
       case _: UserBase => die("TyE59RKTJ1", "Should see UserBr or UserVb before UserBase")
-      case _ => throwWrongPatType(wantedWhat = "a user")
+      case _ => return None
+    }
+  }
+
+  final def toUserOrThrow: User = {
+    toUserOrNone getOrElse {
+      throwWrongPatType(wantedWhat = "a user")
     }
   }
 
@@ -1824,6 +1923,18 @@ object Group {
   val EveryoneId = 10
   // Everyone   (incl people w/o any account)
   // EveryoneWithAccount
+
+  // Distant future: If it'll be possible to e.g. have someone from outside one's
+  // organization join a chat channel, but that person shouldn't have a regular
+  // user account with a username, maybe some kind of "authenticated guest" can make
+  // sense? (No username reduces the risk that anyone accidentally @mentions such
+  // a not-company-employee-but-just-a-guest person.)
+  //
+  // val Authenticated = 11  // and bump other group ids, in a db migr? [authnd_guests_group]
+
+  // Priorities: [group_priorities] Each trust level group will have a priority matching
+  // its id here, but probably some offset, so the ids start at ... 1? not 11.
+  // And maybe in steps of ... 2?  or 10?  so can add "forgotten" groups in-between.
 
   /** All higher trust level members are members of this group too. And so on:
     * members >= Basic are all members of Basic, too. So this group includes all

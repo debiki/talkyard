@@ -28,6 +28,7 @@ import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
 import scala.collection.{mutable => mut}
 import talkyard.server.{TyContext, TyController}
+import talkyard.server.authz.{PatAndPrivPrefs}
 import javax.inject.Inject
 import talkyard.server.JsX._
 import talkyard.server.TyLogging
@@ -42,15 +43,20 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   import context.globals
 
 
-  def listTopicsByUser(userId: PatId): Action[U] = GetAction { request =>
-    import request.{dao, requester}
+  def listTopicsByUser(userId: PatId): Action[U] = GetActionRateLimited() { request =>
+    import request.{dao, requesterOrUnknown, requester}
 
+    // Return Not Found directly, using the cache, if no such user.  Bit dupl [_6827]
+    val targetUser: Pat =
+          dao.getParticipant(userId) getOrElse {
+            throwIndistinguishableNotFound("TyE0PAT020764")
+          }
+
+    _throwIfMayNotSeeActivity(requesterOrUnknown, targetUser, dao)
+
+    val isSelf = requester.exists(_.id == userId)
     val isStaff = requester.exists(_.isStaff)
-    val isStaffOrSelf = isStaff || requester.exists(_.id == userId)
-    // Return Not Found directly, using the cache, if no such user.
-    dao.getTheParticipant(userId)
-
-    throwForbiddenIfActivityPrivate(userId, requester, dao)
+    val isStaffOrSelf = isStaff || isSelf
 
     // Later, include, if reqr is the author henself. [list_anon_posts]
     val inclAnonPosts = false
@@ -60,17 +66,29 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val topics = topicsInclForbidden filter { page: PagePathAndMeta =>
       dao.maySeePageUseCache(page.meta, requester, maySeeUnlisted = isStaffOrSelf).maySee
     }
+
     controllers.ForumController.makeTopicsResponse(topics, dao)
   }
 
 
   def listPostsByUser(authorId: UserId, relType: Opt[Int], which: Opt[Int]): Action[U] =
           GetActionRateLimited() { req: GetRequest =>
+    import req.{dao, requesterOrUnknown}
+
+    // Return Not Found directly, using the cache, if no such user.  Bit dupl [_6827]
+    val targetUser: Pat =
+          dao.getParticipant(authorId) getOrElse {
+            throwIndistinguishableNotFound("TyE0PAT020764")
+          }
+
+    // (_Double_check 1/2, if calling _listPostsImpl(), oh well.)
+    _throwIfMayNotSeeActivity(requesterOrUnknown, targetUser, dao)
+
     relType match {
       case None =>
         // Later, will use PostQuery here too, just like below (and this match-case
         // branch maybe then no longer needed).
-        listPostsImpl(authorId, all = false, req)
+        _listPostsImpl(authorId, all = false, req)
       case Some(relTypeInt) =>
 
         // Tests:
@@ -154,18 +172,21 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  private def listPostsImpl(authorId: UserId, all: Boolean, request: GetRequest): mvc.Result = {
+  private def _listPostsImpl(authorId: UserId, all: Boolean, request: GetRequest): mvc.Result = {
     import request.dao
-    import request.{dao, requester}
+    import request.{dao, requester, requesterOrUnknown}
+
+    // Return Not Found directly, using the cache, if no such user.  Bit dupl [_6827]
+    val targetUser: Pat =
+          dao.getParticipant(authorId) getOrElse {
+            throwIndistinguishableNotFound("TyE0PAT020764")
+          }
+
+    // (_Double_check 2/2, if caller is listPostsByUser(), oh well.)
+    _throwIfMayNotSeeActivity(requesterOrUnknown, targetUser, dao)
 
     val requesterIsStaff = requester.exists(_.isStaff)
     val requesterIsStaffOrAuthor = requesterIsStaff || requester.exists(_.id == authorId)
-
-     /*/ Later: Throw if the reqr may not see `authorId`. [private_pats]
-    val author = dao.getParticipant(authorId) getOrElse throwNotFound("EdE2FWKA9", "Author not found")
-     */
-
-    throwForbiddenIfActivityPrivate(authorId, requester, dao)
 
     // For now. LATER: if really many posts, generate an archive in the background.
     // And if !all, and > 100 posts, add a load-more button.  UX, [to_paginate]
@@ -255,34 +276,34 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   def downloadUsersContent(authorId: UserId): Action[Unit] = GetActionRateLimited(
         RateLimits.DownloadOwnContentArchive) { request: GetRequest =>
     // These responses can be huge; don't prettify the json.
-    listPostsImpl(authorId, all = true, request)
+    _listPostsImpl(authorId, all = true, request)
   }
 
 
-  private def throwForbiddenIfActivityPrivate(
-          userId: UserId, requester: Opt[Pat], dao: SiteDao): U = {
+  private def _throwIfMayNotSeeActivity(requester: Pat, targetUser: Pat, dao: SiteDao): U = {
     // Also browser side [THRACTIPRV]
-    // Related idea: [private_pats].
-    throwForbiddenIf(!maySeeActivity(userId, requester, dao),
-          "TyE4JKKQX3", "Not allowed to list activity for this user")
-  }
+    val isSelf = requester.id == targetUser.id
+    val isStaff = requester.isStaff
+    val isStaffOrSelf = isStaff || isSelf
 
+    val allGroups: Vec[Group] = dao.getAllGroups()
+    val targetStuff: PatAndPrivPrefs = dao.getPatAndPrivPrefs(targetUser, allGroups)
+    val targetsPrivPrefs = targetStuff.privPrefsOfPat
 
-  private def maySeeActivity(userId: UserId, requester: Option[Participant], dao: SiteDao): Boolean = {
-    // Guests cannot hide their activity. One needs to create a real account.
-    if (!Participant.isMember(userId))
-      return true
+    // Can be good if e.g. mods can see someone's post history, even if they can't
+    // see any of hans profile page details. So they can know if han is well-behaved or not.
+    // So, it's enough if `maySeeActivity` allows, `maySeeMyProfileTrLv` not required.
+    // [see_activity_0_profile]
+    val maySeeActivity = isStaffOrSelf || targetsPrivPrefs.seeActivityMinTrustLevel.forall(
+          _.isAtMost(requester.effectiveTrustLevel))
+    val maySeeProfilePage = isSelf || targetsPrivPrefs.maySeeMyProfileTrLv.forall(
+          _.isAtMost(requester.effectiveTrustLevel))
 
-    // Staff and the user henself can view hens activity.
-    if (requester.exists(r => r.isStaff || r.id == userId))
-      return true
-
-    COULD_OPTIMIZE // Use cache
-    val memberInclDetails = dao.loadTheMemberInclDetailsById(userId)
-    memberInclDetails.privPrefs.seeActivityMinTrustLevel match {
-      case None => true
-      case Some(minLevel) =>
-        requester.exists(_.effectiveTrustLevel.toInt >= minLevel.toInt)
+    if (!maySeeActivity) {
+      if (!maySeeProfilePage) {
+        throwIndistinguishableNotFound("TyEM0SEEPROF053")
+      }
+      throwForbidden("TyEM0LISTACT1", "Cannot list activity for this user")
     }
   }
 

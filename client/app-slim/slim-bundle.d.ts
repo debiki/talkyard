@@ -354,8 +354,9 @@ declare namespace debiki2 {
   function user_isGone(user: Myself | BriefUser | UserInclDetails | ParticipantAnyDetails): boolean;
 
   function uppercaseFirst(text: string): string;
-  function firstDefinedOf(x, y, z?): any;
-  function firstValOf(x, y, z?): any;
+  function firstDefinedOf(x, y, z?): any; // RENAME QUICK to firstDefOf, next line.
+  function firstDefOf<T>(x: T | U, y: T | U, z?: T | U): T | U;
+  function firstValOf<T>(x: T | NU, y: T | NU, z?: T | NU, w?: T | NU): T | NU;
   // Renaming from...
   function groupByKeepOne<V>(vs: V[], fn: (v: V) => number): { [key: number]: V };
   // ...to:
@@ -619,7 +620,7 @@ declare namespace debiki2 {
   // From oop-methods.ts:
   function userStats_totalNumPosts(stats: UserStats | NU): Nr | N;
   function userStats_totalNumPostsRead(stats: UserStats | NU): Nr | N;
-  function trustLevel_toString(trustLevel: TrustLevel): string;
+  function trustLevel_toString(trustLevel: TrustLevel | TrustLevelOrStaff): St;
 
 }
 

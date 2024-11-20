@@ -155,6 +155,18 @@ object TrustLevel {
       // but right now, this works fine anyway.
       return None
   })
+
+  def minOfAny(a: Opt[TrustLevel], b: Opt[TrustLevel]): Opt[TrustLevel] = {
+    if (a.isEmpty) return b
+    if (b.isEmpty) return a
+    if (a.get.toInt < b.get.toInt) a else b
+  }
+
+  def maxOfAny(a: Opt[TrustLevel], b: Opt[TrustLevel]): Opt[TrustLevel] = {
+    if (a.isEmpty) return b
+    if (b.isEmpty) return a
+    if (a.get.toInt > b.get.toInt) a else b
+  }
 }
 
 

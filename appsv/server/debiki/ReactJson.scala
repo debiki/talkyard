@@ -1030,9 +1030,14 @@ class JsonMaker(dao: SiteDao) {
     COULD_OPTIMIZE // cache this?
     val effPerms = Authz.deriveEffPatPerms(myGroupsEveryoneLast, permsOnSiteTooMany)
 
+    // Privacy prefs are _not_needed, the reqr can see everything about hanself anyway. Only
+    // needed, on the user profile page, if editing one's prefs, see: JsUserInclDetails().
+    // (To derive, see: Authz.deriveDefaultPrivPrefs().)
+
     val (threatLevel,
          tourTipsSeenJson,
          uiPrefsOwnFirstJsonSeq,
+         // privacyPrefs — _not_needed, see above.
          anyStats) = requester match {
       case member: User =>
         COULD_OPTIMIZE // load stats together with other user fields, in the same db request

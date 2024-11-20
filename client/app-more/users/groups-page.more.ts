@@ -37,6 +37,7 @@ export const ListGroupsComponent = React.createFactory<RouteChildProps>(function
   const myId = React.useRef(me.id);
   const [groupsOrNull, setGroups] = React.useState<Group[]>(null);
 
+  // Dupl code. [dupl_load_groups]
   React.useEffect(() => {
     myId.current = me.id;
     Server.loadGroups((groups) => {
@@ -181,8 +182,8 @@ const CreateGroupDialog = React.createFactory<{}>(function() {
     });
   }
 
-  let contents;
-  let saveCancel;
+  let contents: RElm | U;
+  let saveCancel: RElm | U;
 
   if (isOpen) {
     contents = rFragment({},
@@ -211,3 +212,4 @@ const CreateGroupDialog = React.createFactory<{}>(function() {
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------
+

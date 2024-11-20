@@ -40,6 +40,7 @@ interface UserProfileAdminViewProps {
 interface UserProfileAdminViewState {
   user?: UserDetailsStatsGroups | N;
   myId?: PatId;
+  notFoundId?: PatId
 }
 
 
@@ -69,6 +70,12 @@ export const UserProfileAdminView = createFactory({
     const propsBef: UserProfileAdminViewProps = this.props;
     const meBef: Me = propsBef.store.me;
     const params = propsBef.match.params;
+    const userIdInt = parseInt(params.userId);
+
+    // Don't keep trying forever.
+    if (stateBef.notFoundId === userIdInt)
+      return;
+
     {
       // The props changes first, before the state gets updated (later in this fn).
       const isSameMe = meBef.id === stateBef.myId;
@@ -92,9 +99,13 @@ export const UserProfileAdminView = createFactory({
       this.nowLoading = params.userId;
     }
 
-    Server.loadPatVvbPatchStore(params.userId, (resp: LoadPatVvbResponse) => {
+    Server.loadPatVvbPatchStore(params.userId, (resp: LoadPatVvbResponse | NotFoundResponse) => {
       this.nowLoading = null; // (or only if correct id)
       if (this.isGone) return;
+      if (resp === 404) {
+        this.setState({ notFoundId: userIdInt, user: null } satisfies UserProfileAdminViewState);
+        return;
+      }
       const propsAft: UserProfileAdminViewProps = this.props;
       const meAft = propsAft.store.me;
       const isSameMeLater = meAft.id === meBef.id;
@@ -107,7 +118,7 @@ export const UserProfileAdminView = createFactory({
       if (!rightPat || !isSameMeLater)
         return;
 
-      this.setState({ user: pat });
+      this.setState({ user: pat, notFoundId: null } satisfies UserProfileAdminViewState);
     });
   },
 
@@ -150,8 +161,13 @@ export const UserProfileAdminView = createFactory({
     const props: UserProfileAdminViewProps = this.props;
     const store: Store = props.store;
     const settings: Settings = props.settings;
-    const user: UserInclDetails = this.state.user;
+    const state: UserProfileAdminViewState = this.state;
+    const user: UserInclDetails = state.user;
     const me: Myself = store.me;
+
+    if (state.notFoundId)
+      return r.p({}, "User not found.");
+
     if (!user)
       return r.p({}, "Loading...");
 

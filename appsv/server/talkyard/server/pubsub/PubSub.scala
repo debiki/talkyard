@@ -546,6 +546,8 @@ class PubSubActor(val globals: Globals) extends Actor {
     val toUserIds = clientsByUserId.keySet - user.id
     traceLog(siteId, s"Pupl presence ${user.nameHashId}: $presence [TyDPRESCNS]")
 
+    // Later: Exclude users with profiles hidden, see: [priv_prof_0_presence].
+
     // If some time later, users can be "invisible", stop publishing their
     // presence here.  [PRESPRIV]  [private_pats]
     // Compare with pages one may not see: [WATCHSEC].

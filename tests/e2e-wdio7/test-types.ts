@@ -89,3 +89,8 @@ export type PermName =
         'SeeOthers' |
         'SeeOwn';
 
+export type PrivPrefName =
+        'MaySeeProfile' |
+        'MaySeeActivity' |
+        'MayMention' |
+        'MayDirectMessage';

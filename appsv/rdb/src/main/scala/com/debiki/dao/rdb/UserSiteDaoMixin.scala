@@ -469,10 +469,10 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   def loadGroupIdsMemberIdFirst(ppt: Participant): Vector[UserId] = {
     val builtInGroups = ppt match {
       case _: Guest | _: Anonym | UnknownParticipant => return Vector(Group.EveryoneId)
-      case u: User => getBuiltInGroupIdsForUser(u)
-      case u: UserInclDetails => getBuiltInGroupIdsForUser(u)
+      case u: User => Pat.getBuiltInGroupIdsForUser(u)
+      case u: UserInclDetails => Pat.getBuiltInGroupIdsForUser(u)
       case _: UserBase => die("TyE26MP431", "Should see User or UserInclDetails before UserBase")
-      case g: Group => getBuiltInGroupIdsForGroup(g)
+      case g: Group => Pat.getBuiltInGroupIdsForGroup(g)
     }
 
     // The system users cannot be placed in custom groups.
@@ -481,7 +481,9 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
     val customGroups = loadCustomGroupsFor(ppt.id)
     // More specific first: the user henself, then custom groups. And AllMembers and Everyone
-    // last — the least specific groups.
+    // last — the least specific groups.
+    CLEAN_UP // Adding ppt.id here is annoying! [own_id_bef_groups]
+    // Let callers do instead, where needed.
     ppt.id +: (customGroups ++ builtInGroups)
   }
 
@@ -497,76 +499,6 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
     runQueryFindMany(query, List(siteId.asAnyRef, pptId.asAnyRef), rs => {
       rs.getInt("group_id")
     })
-  }
-
-
-  private def getBuiltInGroupIdsForUser(member: UserBase): Vector[UserId] = {
-    val G = Group
-
-    if (member.isAdmin)
-      return Vector(G.AdminsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
-        G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
-
-    if (member.isModerator)
-      return Vector(G.ModeratorsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
-        G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
-
-    member.effectiveTrustLevel match {
-      case TrustLevel.Stranger =>
-        // Cannot happen — members always >= NewMember. But incl this
-        // anyway — in case will refactor in the future, so can be Stranger.
-        Vector(G.EveryoneId)
-      case TrustLevel.NewMember =>
-        Vector(G.AllMembersId, G.EveryoneId)
-      case TrustLevel.BasicMember =>
-        Vector(G.BasicMembersId, G.AllMembersId, G.EveryoneId)
-      case TrustLevel.FullMember =>
-        Vector(G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
-      case TrustLevel.TrustedMember =>
-        Vector(G.TrustedMembersId,
-          G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
-      case TrustLevel.RegularMember =>
-        Vector(G.RegularMembersId, G.TrustedMembersId,
-          G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
-      case TrustLevel.CoreMember =>
-        Vector(G.CoreMembersId, G.RegularMembersId, G.TrustedMembersId,
-          G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
-    }
-  }
-
-
-  private def getBuiltInGroupIdsForGroup(group: Group): Vector[UserId] = {
-    val G = Group
-    group.id match {
-      case G.EveryoneId =>
-        Vector(G.EveryoneId)
-      case G.AllMembersId =>
-        Vector(G.AllMembersId, G.EveryoneId)
-      case G.BasicMembersId =>
-        Vector(G.BasicMembersId, G.AllMembersId, G.EveryoneId)
-      case G.FullMembersId =>
-        Vector(G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
-      case G.TrustedMembersId =>
-        Vector(G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
-      case G.RegularMembersId =>
-        Vector(G.RegularMembersId, G.TrustedMembersId,
-          G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
-      case G.CoreMembersId =>
-        Vector(G.CoreMembersId, G.RegularMembersId, G.TrustedMembersId,
-          G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
-      case G.StaffId =>
-        Vector(G.StaffId, G.CoreMembersId, G.RegularMembersId,
-          G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
-      case G.ModeratorsId =>
-        Vector(G.ModeratorsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
-          G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
-      case G.AdminsId =>
-        Vector(G.AdminsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
-          G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
-      case _ =>
-        // Custom groups are members, so should be in the all-members group, right.
-        Vector(G.AllMembersId, G.EveryoneId)
-    }
   }
 
 
@@ -1292,21 +1224,31 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
   // See also:  loadUsersWithUsernamePrefix(usernamePrefix, ...): Seq[User]
   //
-  def listUsernamesOnPage(pageId: PageId): Seq[NameAndUsername] = {
-    val sql = """
+  COULD_OPTIMIZE // Don't need to load all UserBr fields. Previously loaded just
+  // NameAndUsername,  but that's too little — need privacy prefs and trust level too
+  // (but now we load too much, instead).
+  def listUsernamesOnPage(pageId: PageId): ImmSeq[UserBr] = {
+    // Later, once bookmarks impl: [dont_list_bookmarkers] and don't list [priv_comts] authors.
+    /* Was, but not enough:
       select distinct
           u.user_id,
           u.full_name,
           u.USERNAME,
           u.may_mention_me_tr_lv_c,
           u.why_may_not_mention_msg_me_html_c
+    */
+    // Later, by default exclude deleted & banned users? [mention_all_cb]
+    val sql = s"""
+      select $UserSelectListItemsNoGuests
       from posts3 p inner join users3 u    -- + pat_node_rels_t [AuthorOf]
          on p.SITE_ID = u.SITE_ID
         and p.CREATED_BY_ID = u.USER_ID
         and u.USERNAME is not null
       where p.SITE_ID = ? and p.PAGE_ID = ?"""
     val values = List(siteId.asAnyRef, pageId)
-    runQueryFindMany(sql, values, rs => {
+    runQueryFindMany(sql, values, getUser)
+
+    /* Was: rs => {
       val userId = rs.getInt("user_id")
       val fullName = Option(rs.getString("full_name")) getOrElse ""
       val username = rs.getString("USERNAME")
@@ -1315,7 +1257,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
       dieIf(username eq null, "DwE5BKG1")
       NameAndUsername(
             id = userId, fullName = fullName, username = username, mayMentionMeTrLv)
-    })
+    }) */
   }
 
 

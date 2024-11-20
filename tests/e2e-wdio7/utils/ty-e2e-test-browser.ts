@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { IsWhere, E2eAuthor, E2eVote, isWhere_isInIframe, PermName } from '../test-types';
+import { IsWhere, E2eAuthor, E2eVote, isWhere_isInIframe, PermName, PrivPrefName } from '../test-types';
 import { ServerSays, TestPersonaMode } from '../test-types2';
 import { SiteType, NewSiteOwnerType, TestNeverAlways, TestAnonStatus } from '../test-constants';
 
@@ -8582,7 +8582,7 @@ export class TyE2eTestBrowser {
 
         switchToPrivacy: async () => {
           await this.waitAndClick('.e_UP_Prf_Nav_PrivL');
-          await this.waitForVisible('.e_PrivPrefsF');
+          await this.waitForVisible('.c_PrivPrefsF');
         },
 
         // ---- Should be wrapped in `about { .. }`:
@@ -8652,24 +8652,47 @@ export class TyE2eTestBrowser {
         },
 
         privacy: {
-          setHideActivityForStrangers: async (enabled: Bo) => {
-            await this.setCheckbox('.e_HideActivityStrangersCB input', enabled);
+          goHere: async (username: St, ps: { isGroup?: true, origin?: St } = {}) => {
+            await this.userProfilePage._goHere(username, ps, '/preferences/privacy');
           },
 
-          setHideActivityForAll: async (enabled: Bo) => {
-            await this.setCheckbox('.e_HideActivityAllCB input', enabled);
+          _mkSel: (what: PrivPrefName): St => {
+            switch (what) {
+              case 'MaySeeProfile': return '.e_SeeProfile';
+              case 'MaySeeActivity': return '.e_WhoMaySeeAct';
+              case 'MayMention': return '.e_WhoMayMention';
+              case 'MayDirectMessage': return '.e_WhoMayDm';
+              default: die('TyE0532SNLTS5');
+            }
           },
 
-          setMayMentionMeTrustLevel: async (level: Nr) => {
-            await this.waitAndClick('.e_WhoMayMention .btn');
-            await this.waitAndClick(`.e_TruLvD .e_TrLv-${level}`);
-            await this.waitForVisible(`.e_WhoMayMention .e_TrLv-${level}.btn`);
+          _setMayWhat: async (what: St, level: Nr | N) => {
+            await this.waitAndClick(what + ' .btn');
+            const levelStr = level === null ? 'Def' : level;
+            await this.waitAndClick(`.e_TruLvD .e_TrLv-${levelStr}`);
+            await this.waitForVisible(what + ` .e_TrLv-${levelStr}.btn`);
           },
 
-          setMayDirMsgMeTrustLevel: async (level: Nr) => {
-            await this.waitAndClick('.e_WhoMayDm .btn');
-            await this.waitAndClick(`.e_TruLvD .e_TrLv-${level}`);
-            await this.waitForVisible(`.e_WhoMayDm .e_TrLv-${level}.btn`);
+          setMaySeeMyProfileTrustLevel: async (level: Nr | N) => {
+            await this.userProfilePage.preferences.privacy._setMayWhat('.e_SeeProfile', level);
+          },
+
+          setMaySeeMyActivityTrustLevel: async (level: Nr | N) => {
+            await this.userProfilePage.preferences.privacy._setMayWhat('.e_WhoMaySeeAct', level);
+          },
+
+          setMayMentionMeTrustLevel: async (level: Nr | N) => {
+            await this.userProfilePage.preferences.privacy._setMayWhat('.e_WhoMayMention', level);
+          },
+
+          setMayDirMsgMeTrustLevel: async (level: Nr | N) => {
+            await this.userProfilePage.preferences.privacy._setMayWhat('.e_WhoMayDm', level);
+          },
+
+          assertLevelIs: async (what: PrivPrefName, level: Nr, isDefault?: 'IsDefault') => {
+            const whatSel = this.userProfilePage.preferences.privacy._mkSel(what);
+            const defaultStr = isDefault ? '.e_TrLv-Def' : ':not(.e_TrLv-Def)';
+            await this.assertDisplayed(whatSel + ` .e_TrLv-${level}${defaultStr}.btn`);
           },
 
           savePrivacySettings: async () => {

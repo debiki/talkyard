@@ -383,7 +383,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
     OkSafeJson(  // ts: InspectForumResp
         Json.obj(
             "catsMaySee" -> catsJsMaySee,
-            "groupsMaySee" -> groupsMaySee.map(JsGroupAndStatsVb),
+            "groupsMaySee" -> groupsMaySee.map(JsGroupAndStatsVb(_, isStaff = req.isStaff)),
             // This is for _admins_only: (hence `AdminGetAction...` above)
             "allPerms" -> allPerms.map(JsonMaker.permissionToJson),
             ))

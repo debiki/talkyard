@@ -89,8 +89,9 @@ describe(`privacy-list-activity.2br.f  TyTPRIV_LSACT`, () => {
     await mariasBrowser.userProfilePage.preferences.switchToPrivacy();
   });
 
-  it("... hides her activity for strangers", async () => {
-    await mariasBrowser.userProfilePage.preferences.privacy.setHideActivityForStrangers(true);
+  it("... hides her activity for strangers & new & basic members", async () => {
+    await mariasBrowser.userProfilePage.preferences.privacy.setMaySeeMyActivityTrustLevel(
+            c.TestTrustLevel.FullMember);
     await mariasBrowser.userProfilePage.preferences.privacy.savePrivacySettings();
   });
 
@@ -140,10 +141,11 @@ describe(`privacy-list-activity.2br.f  TyTPRIV_LSACT`, () => {
   // ----- Hide activity for everyone (except staff)
 
 
-  it("Maria hides her activity for everyone", async () => {
+  it("Maria hides her activity for everyone (up to Core Members))", async () => {
     await mariasBrowser.userProfilePage.goToPreferences();
     await mariasBrowser.userProfilePage.preferences.switchToPrivacy();
-    await mariasBrowser.userProfilePage.preferences.privacy.setHideActivityForAll(true);
+    await mariasBrowser.userProfilePage.preferences.privacy.setMaySeeMyActivityTrustLevel(
+            c.TestTrustLevel.CoreMember);
     await mariasBrowser.userProfilePage.preferences.privacy.savePrivacySettings();
   });
 
@@ -197,7 +199,8 @@ describe(`privacy-list-activity.2br.f  TyTPRIV_LSACT`, () => {
   it("Maria shows her activity again", async () => {
     await mariasBrowser.userProfilePage.goToPreferences();
     await mariasBrowser.userProfilePage.preferences.switchToPrivacy();
-    await mariasBrowser.userProfilePage.preferences.privacy.setHideActivityForStrangers(false);
+    await mariasBrowser.userProfilePage.preferences.privacy.setMaySeeMyActivityTrustLevel(
+            c.TestTrustLevel.Stranger);
     await mariasBrowser.userProfilePage.preferences.privacy.savePrivacySettings();
   });
 
