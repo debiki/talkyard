@@ -77,7 +77,7 @@ Compile / dependencyOverrides ++= {
       "com.typesafe.play" % "twirl-api_2.12" % "1.5.1",
       "com.zaxxer" % "HikariCP" % "5.1.0",
       "commons-beanutils" % "commons-beanutils" % "1.9.4",
-      "commons-codec" % "commons-codec" % "1.16.1",
+      "commons-codec" % "commons-codec" % "1.17.1",
       "commons-collections" % "commons-collections" % "3.2.2",
       "commons-digester" % "commons-digester" % "2.1",
       "commons-io" % "commons-io" % "2.15.1",
