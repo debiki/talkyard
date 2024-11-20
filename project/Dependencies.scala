@@ -61,7 +61,7 @@ object Dependencies {
     val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
     val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "6.8.23"
 
-    val guava = "com.google.guava" % "guava" % "32.1.3-jre"
+    val guava = "com.google.guava" % "guava" % "33.3.1-jre"
 
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
 
