@@ -174,7 +174,7 @@ Compile / dependencyOverrides ++= {
       "org.owasp.encoder" % "encoder" % "1.2.3",
       "org.postgresql" % "postgresql" % "42.6.2",
       "org.reactivestreams" % "reactive-streams" % "1.0.4",
-      "org.scala-lang.modules" % "scala-collection-compat_2.12" % "2.11.0",
+      "org.scala-lang.modules" % "scala-collection-compat_2.12" % "2.12.0",
       "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.9.1",
       "org.scala-lang.modules" % "scala-parser-combinators_2.12" % "1.1.2",
       "org.scala-lang.modules" % "scala-xml_2.12" % "1.3.1",
