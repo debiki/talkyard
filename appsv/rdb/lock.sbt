@@ -36,7 +36,7 @@ Compile / dependencyOverrides ++= {
       "org.flywaydb" % "flyway-core" % "5.0.7",
       "org.owasp.encoder" % "encoder" % "1.2.3",
       "org.postgresql" % "postgresql" % "42.6.2",
-      "org.scalactic" % "scalactic_2.12" % "3.2.18",
+      "org.scalactic" % "scalactic_2.12" % "3.2.19",
       "org.slf4j" % "slf4j-api" % "2.0.10"
     )
   }
