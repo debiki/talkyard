@@ -709,8 +709,15 @@ export function pp_snoozeLeftMs(me: Myself): number {
 }
 
 
+/// Banned users are condisered suspended too (suspended forever).
 export function user_isSuspended(user: UserInclDetails, nowMs: WhenMs): boolean {
   return user.suspendedTillEpoch && ((user.suspendedTillEpoch * 1000) > nowMs);
+}
+
+
+export function pat_isBanned(user: Pat): Bo {
+  // See [ban_magic_nr] server side.
+  return user.suspendedTillEpoch === 10876500001;
 }
 
 

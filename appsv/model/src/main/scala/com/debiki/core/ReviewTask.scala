@@ -32,7 +32,8 @@ case class ModResult(
   updatedPosts: Seq[Post],
   updatedAuthor: Option[Participant],
   updatedPageId: Option[PageId] = None,
-  deletedPageId: Option[PageId] = None)
+  deletedPageId: Option[PageId] = None,
+  bannedUser: Opt[Pat] = None)
 
 object ModResult {
   val NothingChanged = ModResult(Nil, None, None, None)
@@ -112,6 +113,7 @@ object ReviewDecision {
   // 5nnn = Reject.
   private val FirstBadId = 5000
   case object DeletePostOrPage extends ReviewDecision(5001)
+  case object DeleteAndBanSpammer extends ReviewDecision(5501)
 
 
 
@@ -124,6 +126,7 @@ object ReviewDecision {
     //case InteractTopicDoingStatus.IntVal => InteractTopicDoingStatus
     case InteractLike.IntVal => InteractLike
     case DeletePostOrPage.IntVal => DeletePostOrPage
+    case DeleteAndBanSpammer.IntVal => DeleteAndBanSpammer
     case _ => return None
   })
 }

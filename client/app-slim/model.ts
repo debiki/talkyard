@@ -1611,6 +1611,9 @@ interface Pat extends PatNameAvatar {   // Guest or Member, and Member = group o
   isGuest?: boolean;  // = !isAuthenticated
   isAuthenticated?: Bo;  // = !isGuest, if is a user (but absent, if is a group)
 
+  // Not always present, even if is suspended. [incl_susp_till]
+  suspendedTillEpoch?: WhenSecs;
+
   isEmailUnknown?: boolean;
   avatarSmallHashPath?: string;
   isMissing?: boolean;

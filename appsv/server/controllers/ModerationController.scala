@@ -67,7 +67,7 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: TyCont
           "numOther" -> reviewTaskCounts.numOther),
         // [missing_tags_feats] load user badges too, and page tags
         // And change to "pats".
-        "users" -> usersById.values.map(JsUser(_)),
+        "users" -> usersById.values.map(JsUser(_, inclSuspendedTill = true)),
         "pageMetasBrief" -> pageMetaById.values.map(JsPageMetaBrief)))
   }
 
@@ -102,8 +102,12 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: TyCont
     val decision = ReviewDecision.fromInt(decisionInt).getOrThrowBadRequest(
           "TyE05RKJTR3", s"Bad review decision int: $decisionInt")
 
-    throwBadRequestIf(decision != ReviewDecision.Accept &&
-          decision != ReviewDecision.DeletePostOrPage, "TyE305RKDJ3",
+    throwBadRequestIf(decision != ReviewDecision.Accept
+          && decision != ReviewDecision.DeletePostOrPage,
+          // Need to fix this first: [incl_all_mod_results], before banning from pages
+          // (rather than from the review queue). So wait:
+          // && decision != ReviewDecision.DeleteAndBanSpammer,
+          "TyE305RKDJ3",
           s"That decision not allowed here: $decision")
 
     val modResult = dao.moderatePostInstantly(postId = postId, postRevNr = postRevNr,

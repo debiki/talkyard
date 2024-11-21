@@ -348,6 +348,7 @@ declare namespace debiki2 {
   function pp_snoozeLeftMs(me: Myself): number;
   function member_isBuiltIn(member: Member): boolean;
   function user_isSuspended(user: UserInclDetails, nowMs: WhenMs): boolean;
+  function pat_isBanned(user: Pat): Bo;
   function user_threatLevel(user: UserInclDetails): ThreatLevel;
   function user_trustLevel(user: Myself | UserInclDetails): TrustLevel;
   function user_isGone(user: Myself | BriefUser | UserInclDetails | ParticipantAnyDetails): boolean;

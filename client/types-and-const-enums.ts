@@ -283,6 +283,7 @@ const enum ReviewDecision {
   // 3nnn = Request changes.
   // 5nnn = Reject.
   DeletePostOrPage = 5001,
+  DeleteAndBanSpammer = 5501,
 }
 
 

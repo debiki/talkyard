@@ -211,7 +211,8 @@ object JsX {   RENAME // to JsonPaSe
     *
     * ts: Pat and subclasses, e.g. Guest, Anonym.
     */
-  def JsUser(user: Pat, tags: Seq[Tag] = Nil, toShowForPatId: Opt[PatId] = None): JsObject = {  //RENAME to JsPat, ts: Pat
+  def JsUser(user: Pat, tags: Seq[Tag] = Nil, toShowForPatId: Opt[PatId] = None,
+          inclSuspendedTill: Bo = false): JsObject = {  //RENAME to JsPat, ts: Pat
     var json = JsPatNameAvatar(user)
     user.smallAvatar foreach { uploadRef =>
       json += "avatarSmallHashPath" -> JsString(uploadRef.hashPath)
@@ -254,6 +255,9 @@ object JsX {   RENAME // to JsonPaSe
     }
     if (tags.nonEmpty) {
       json += "pubTags" -> JsArray(tags map JsTag)
+    }
+    if (inclSuspendedTill && user.suspendedTill.isDefined) {
+      json += "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill)  // [incl_susp_till]
     }
     json
   }

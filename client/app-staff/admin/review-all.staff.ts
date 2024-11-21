@@ -60,7 +60,7 @@ export const ReviewAllPanel = createFactory({
 
   componentDidMount: function() {
     let promise: Promise<void> = Server.loadEditorAndMoreBundlesGetDeferred();
-    Server.loadReviewTasks(reviewTasks => {
+    Server.loadReviewTasks((reviewTasks: ReviewTask[]) => {
       promise.then(() => {
         this.updateTaskList(reviewTasks);
       });
@@ -78,14 +78,29 @@ export const ReviewAllPanel = createFactory({
     Server.loadReviewTasks(this.updateTaskList)
   },
 
-  updateTaskList: function(reviewTasks) {
+  updateTaskList: function(reviewTasks: ReviewTask[]) {
     if (this.isGone) {
       // This previously happened because of a component-unmount bug [5QKBRQ],
       // resulting in the task list not updating itself properly (one would need to reload the page).
       return;
     }
+
+    // Find ids of spammers we've decided to ban already, so can skip ban buttons.
+    const spammersById: { [patId: PatId]: true } = {};
+    const tasksBanningNow = reviewTasks.filter(t =>
+            t.decision === ReviewDecision.DeleteAndBanSpammer && !t.completedAtMs);
+    for (let t of tasksBanningNow) {
+      const post: PostToReview = t.post;
+      if (post.createdById !== post.currRevComposedById) {
+        // Then which one is the spammer?
+        continue;
+      }
+      spammersById[post.createdById] = true;
+    }
+
     this.setState({
       reviewTasks,
+      spammersById,
       nowMs: getNowMs(),
     });
     setTimeout(this.countdownUndoTimeout, 1000);
@@ -132,7 +147,9 @@ export const ReviewAllPanel = createFactory({
     let elems = this.state.reviewTasks.map((reviewTask: ReviewTask, index: number) => {
       if (this.state.hideComplTasks && reviewTask_doneOrGone(reviewTask))
         return null;
-      return ReviewTask({ reviewTask, key: reviewTask.id, updateTaskList: this.updateTaskList,
+      const isSpammer = this.state.spammersById[reviewTask.post?.createdById];
+      return ReviewTask({ reviewTask, key: reviewTask.id, isSpammer,
+          updateTaskList: this.updateTaskList,
           store, nowMs: this.state.nowMs, taskIndex: index });
     });
 
@@ -188,13 +205,26 @@ const ReviewTask = createComponent({
   },
 
   // Returns [string, string[]]
-  formatWhatAndWhys: function(): any[] {
-    const reviewTask: ReviewTask = this.props.reviewTask;
+  formatWhatAndWhys: function(reviewTask: ReviewTask, pageMeta: PageMetaBrief): any[] {
+    const post: PostToReview = reviewTask.post;
+    // Is it better with the link here? Or _link_after?
+    // const linkToPost = '/-'+ post.pageId + (post.nr >= FirstReplyNr ? '#post-'+ post.nr : '');
+    // const theWhatLink =
+    //         r.a({ href: linkToPost, className: 's_A_Rvw_Tsk_ViewB', target: '_blank' },
+    //           reviewTask.pageId ? "The page below " : "The post below ");
+
     let what = reviewTask.pageId ? "The page below " : "The post below ";
     const whys = [];
 
-    const post = this.props.reviewTask.post;
-    if (!post.approvedRevNr) {
+    if (post.deletedById) {
+      what += "has been deleted. It ";
+    }
+    else if (pageMeta?.deletedAtMs) {
+      what += post.nr >= FirstReplyNr
+            ? "is deleted, because the page has been deleted. It "
+            : "has been deleted. It ";
+    }
+    else if (!post.approvedRevNr) {
       what += "is hidden, waiting for approval, and ";
     }
     else if (post.approvedRevNr !== post.currRevNr) {
@@ -255,6 +285,7 @@ const ReviewTask = createComponent({
       changed his/her name
       changed his/her about text */
 
+    //return [r.span({}, theWhatLink, what), whys];
     return [what, whys];
   },
 
@@ -296,49 +327,53 @@ const ReviewTask = createComponent({
     const store: Store = this.props.store;
     const state: ReviewTaskState = this.state;
 
-    const whatAndWhys: any[] = this.formatWhatAndWhys();
-    const what: string = whatAndWhys[0];
-    const whys: string[] = whatAndWhys[1];
-
     const post: PostToReview = reviewTask.post;
 
+    // (Currently, the name of anyone who deleted the page, isn't available: deletedById
+    // isn't saved in page meta. Only in the audit log. Hmm.)
+    const pageMeta: PageMetaBrief | U = store.pageMetaBriefById[post.pageId];
+
+    const whatAndWhys: any[] = this.formatWhatAndWhys(reviewTask, pageMeta);
+    const what: RElm = whatAndWhys[0];
+    const whys: string[] = whatAndWhys[1];
+
+    const author = store_getUserOrMissing(store, post.createdById);
+
+    const authorIsBannedSpammer: Bo = pat_isBanned(author) || this.props.isSpammer;
+
+    // Is it better with the go-to _link_after the post, or in the text, before?
     const linkToPost = '/-'+ post.pageId + (post.nr >= FirstReplyNr ? '#post-'+ post.nr : '');
     const postOrPage = reviewTask.pageId ? "page" : "post";
     const openPostButton =
         r.a({ href: linkToPost, className: 's_A_Rvw_Tsk_ViewB', target: '_blank' },
           `Go to ${postOrPage}`);
 
-    const decideTo = (action) => {
+    const decideTo = (action: ReviewDecision) => {
       return () => this.makeReviewDecision(action);
     };
 
-    let taskInvalidatedInfo;
-    let taskDoneInfo;
-    let undoDecisionButton;
-    let gotUndoneInfo;
-    let acceptButton;
-    let rejectButton;
+    let taskInvalidatedInfo: RElm | U;
+    let taskDoneInfo: RElm | U;
+    let undoDecisionButton: RElm | U;
+    let gotUndoneInfo: RElm | U;
+    let acceptButton: RElm | U;
+    let rejectButton: RElm | U;
+    let banSpammerBtn: RElm | U;
 
     const deletedBy = !post.deletedById ? null : store_getUserOrMissing(store, post.deletedById);
     const itHasBeenDeleted = !post.deletedAtMs ? null :
         r.span({}, "It was deleted by ",
             UserNameLink({ store, user: deletedBy, avoidFullName: true }), ". ");
 
-    // (Currently, name of anyone who deleted the page, isn't available: deletedById not saved
-    // in page meta. Only in audit log. Hmm.)
-    const pageMeta: PageMetaBrief = store.pageMetaBriefById[post.pageId];
-    const pageHasBeenDeleted = !pageMeta || !pageMeta.deletedAtMs ? null :
-      r.span({}, "The page has been deleted. ");
-
-    // Skip pageHasBeenDeleted and itHasBeenDeleted — let's review those posts anyway?
+    // Don't check itHasBeenDeleted — let's review those posts anyway?
     // So staff get more chances to block bad users early. [deld_post_mod_tasks]
     const isInvalidated = !reviewTask.completedAtMs && reviewTask.invalidatedAtMs;
     const doneOrGoneClass = reviewTask_doneOrGone(reviewTask) ? 'e_TskDoneGone' : '';
 
     if (isInvalidated) {
-      taskInvalidatedInfo =
+      taskInvalidatedInfo = itHasBeenDeleted ? null : // incl elsewhere always
           r.span({ className: doneOrGoneClass },
-            itHasBeenDeleted || "Invalidated [TyM5WKBAX2]");
+            "Invalidated [TyM5WKBAX2]");
     }
     else if (state.justDecidedAtMs || reviewTask.decidedAtMs || reviewTask.completedAtMs) {
       const decider: BriefUser | U = store.usersByIdBrief[reviewTask.decidedById];
@@ -354,8 +389,13 @@ const ReviewTask = createComponent({
         //case ReviewDecision.InteractTopicDoingStatus: whatWasDone = " Seems fine: ... ?"; break;
         case ReviewDecision.InteractLike: whatWasDone = " Seems fine: Liked"; break;
         case ReviewDecision.DeletePostOrPage: whatWasDone = " Deleted"; break;
+        case ReviewDecision.DeleteAndBanSpammer: whatWasDone = " Deleted, author banned,"; break;
+        default: whatWasDone = 'TyEWAWADON';
       }
       taskDoneInfo = r.span({ className: doneOrGoneClass }, whatWasDone, byWho);
+    }
+    else if (authorIsBannedSpammer) {
+      taskDoneInfo = r.span({ className: doneOrGoneClass }, "Author banned as spammer");
     }
 
     if (reviewTask.invalidatedAtMs) {
@@ -378,16 +418,27 @@ const ReviewTask = createComponent({
           || isInvalidated) {
       // Show no decision buttons. (But maybe an Undo button, see above.)
     }
+    else if (authorIsBannedSpammer) {
+      // Hans posts will be auto deleted when the DeleteAndBanSpammer decision gets
+      // carried out. (So, show no buttons.)  [hide_ban_btns]
+    }
     else {
-      // UX should maybe be an undelete button? And a ban-bad-user button?
+      // UX should maybe be an undelete button?
       const acceptText = post.approvedRevNr !== post.currRevNr ? "Approve" : "Looks fine";
       acceptButton = itHasBeenDeleted ? null : // won't undelete it
           Button({ onClick: decideTo(ReviewDecision.Accept),
               className: 'e_A_Rvw_Tsk_AcptB' }, acceptText);
+
       rejectButton =
           Button({ onClick: decideTo(ReviewDecision.DeletePostOrPage),
               className: 'e_A_Rvw_Tsk_RjctB' },
             itHasBeenDeleted ? "Do nothing (already deleted)" : "Delete");
+
+      const isNewUser = ReviewReasons.isByNewUser(reviewTask);
+      banSpammerBtn = itHasBeenDeleted || !isNewUser ? null :
+          Button({ onClick: decideTo(ReviewDecision.DeleteAndBanSpammer),
+              className: 'e_A_Rvw_Tsk_BanB' },
+            "Delete and ban spammer");
     }
 
 
@@ -412,10 +463,9 @@ const ReviewTask = createComponent({
     const itHasBeenHidden = !post.bodyHiddenAtMs || isInvalidated ? null :
       "It has been hidden; only staff can see it. ";
 
-    const author = store_getUserOrMissing(store, post.createdById);
     const writtenByInfo =
         r.div({ className: 's_RT_WrittenBy' },
-          "Written by: ", UserNameLink({ user: author, store }));
+          "Posted by: ", UserNameLink({ user: author, store }));
 
     const lastApprovedEditBy = !post.lastApprovedEditById ? null :
         store_getUserOrMissing(store, post.lastApprovedEditById);
@@ -456,10 +506,10 @@ const ReviewTask = createComponent({
             })));
     }
 
-    // (If pageHasBeenDeleted, then sth like "Page deleted" is shown just above hereIsThePost
-    // — then, don't use the word "it", because would be unclear if referred to the page, or the post.)
+    /* This is a bit chatty, let's remove?
     const hereIsThePost = pageHasBeenDeleted ? "Here is the post:" : (
         whys.length > 1 || flaggedByInfo ? "Here it is:" : '');
+      */
 
     const anyPageTitleToReview = !reviewTask.pageId ? null :
       r.div({ className: 'esRT_TitleToReview' }, reviewTask.pageTitle);
@@ -503,8 +553,7 @@ const ReviewTask = createComponent({
           flaggedByInfo,
           itHasBeenHidden,
           itHasBeenDeleted,
-          pageHasBeenDeleted,
-          hereIsThePost,
+          //hereIsThePost,
           r.div({ className: 'esReviewTask_it' },
             anyPageTitleToReview,
             r.div({ dangerouslySetInnerHTML: { __html: safeHtml }}))),
@@ -515,6 +564,7 @@ const ReviewTask = createComponent({
           taskDoneInfo,
           acceptButton,
           rejectButton,
+          banSpammerBtn,
           undoDecisionButton,
           gotUndoneInfo )));
 

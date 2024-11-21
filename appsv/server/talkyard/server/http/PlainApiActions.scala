@@ -585,8 +585,16 @@ class PlainApiActions(
                   .discardingCookies(DiscardingSessionCookies: _*))
       }
 
-      val isSuspended = anyUserMaybeSuspended.exists(_.isSuspendedAt(new ju.Date))
+      val isBanned = anyUserMaybeSuspended.exists(_.isBanned)
+      if (isBanned) {
+        return Future.successful(
+              ForbiddenResult("TyEBANND", "Account banned")
+                  .discardingCookies(DiscardingSessionCookies: _*))
+      }
 
+      // Suspended users can log in and view their old posts (method GET is enough),
+      // but not post new posts (uses POST).
+      val isSuspended = anyUserMaybeSuspended.exists(_.isSuspendedAt(new ju.Date))
       if (isSuspended && request.method != "GET") {
         // A race. Any session already deleted by UserDao [end_sess],
         bugWarnIf(dao.listPatsSessions(theUserId).nonEmpty, "TyESTILLSID02",

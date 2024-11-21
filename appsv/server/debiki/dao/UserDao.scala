@@ -405,23 +405,46 @@ trait UserDao {
   }
 
 
+  /** Banning works like suspending, just some UI buttons that will (later) read "Banned"
+    * instead of "Suspended", so it's more clear that the person won't be coming back.
+    * And the person can't log in and view their old posts — but you can if you're
+    * only suspended.
+    */
+  def banUser(userId: UserId, reason: St, bannedById: UserId)(tx: SiteTx, ss: StaleStuff,
+          ): Pat = {
+    _suspendOrBan(userId, until = new ju.Date(Pat._BanMagicEpoch), reason = reason,
+          suspendedById = bannedById)(tx, ss)
+  }
+
+
   def suspendUser(userId: UserId, numDays: i32, reason: St, suspendedById: UserId): U = {
     // If later on banning, by setting numDays = none, then look at [4ELBAUPW2], seems
     // it won't notice someone is suspended, unless there's an end date.
     require(numDays >= 1, "DwE4PKF8")
 
     val cappedDays = math.min(numDays, 365 * 110)
-    val now = globals.now()
 
     writeTx { (tx, staleStuff) =>
+      val now = tx.now
+      val suspendedTill = new ju.Date(now.millis + cappedDays * MillisPerDay)
+
+      _suspendOrBan(userId, until = suspendedTill, reason = reason,
+            suspendedById = suspendedById)(tx, staleStuff)
+    }
+  }
+
+
+  /** If `until` is epoch `_BanMagicEpoch` the user is considered banned.
+    */
+  private def _suspendOrBan(userId: UserId, until: ju.Date, reason: St, suspendedById: UserId,
+          )(tx: SiteTx, staleStuff: StaleStuff): Pat = {
       var user = tx.loadTheUserInclDetails(userId)
       if (user.isAdmin)
         throwForbidden("DwE4KEF24", "Cannot suspend admins")
 
-      val suspendedTill = new ju.Date(now.millis + cappedDays * MillisPerDay)
       user = user.copy(
         suspendedAt = Some(now.toJavaDate),
-        suspendedTill = Some(suspendedTill),
+        suspendedTill = Some(until),
         suspendedById = Some(suspendedById),
         suspendedReason = Some(reason.trim))
 
@@ -431,7 +454,8 @@ trait UserDao {
       logout(user.noDetails, bumpLastSeen = false, anyTx = Some(tx, staleStuff))
       terminateSessions(  // [end_sess]
             forPatId = user.id, all = true, anyTx = Some(tx, staleStuff))
-    }
+
+      user
   }
 
 

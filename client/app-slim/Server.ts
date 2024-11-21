@@ -1127,14 +1127,14 @@ export function saveSpecialContent(specialContent: SpecialContent, success: () =
 }
 
 
-export function moderatePostOnPage(post, decision: ReviewDecision,
-          onDone: (storePatch: StorePatch) => void) {
+export function moderatePostOnPagePatchStore(post: Post, decision: ReviewDecision,
+          onOk: (_: StorePatch) => V) {
   const data = {
     postId: post.uniqueId,
     postRevNr: post.currRevNr,
     decision,
   };
-  postJsonSuccess('/-/moderate-from-page', onDone, data);
+  postAndPatchStore('/-/moderate-from-page', onOk, data);
 }
 
 

@@ -433,9 +433,9 @@ const PatTopPanel = createComponent({
     const me: Myself = props.me;
     const isGone = user_isGone(user);
 
-    let suspendedInfo;
+    let suspendedInfo: RElm | U;
     if (user.suspendedAtEpoch) {
-      const thisUserIsWhat = (<number | string> user.suspendedTillEpoch) === 'Forever'
+      const thisUserIsWhat = pat_isBanned(user)
           ? t.upp.UserBanned
           : t.upp.UserSuspended(moment(user.suspendedTillEpoch).format('YYYY-MM-DD HH:mm'));
       suspendedInfo = r.div({},
@@ -448,7 +448,7 @@ const PatTopPanel = createComponent({
 
     const isMe = me.id === user.id;
 
-    let isAGroup;
+    let isAGroup: St | U;
     if (user.isGroup) {
       isAGroup = t.upp.isGroup;
     }

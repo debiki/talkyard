@@ -655,6 +655,15 @@ case object Participant {
         isAdmin = true,
         isModerator = true,
         )
+
+
+  /** This works and won't need to do any db migration.  Later (and better), could edit
+    * some db constraints, review [4ELBAUPW2], and set the suspended-till end date
+    * to null instead of this funny date.
+    *
+    * This is 2314-08-31 10:00:01. DO_BEFORE 2200-01-01: Replace w null & review constraints etc.
+    */
+  val _BanMagicEpoch: i64 = 10876500001L // [ban_magic_nr]
 }
 
 
@@ -679,7 +688,10 @@ sealed trait Pat extends HasInt32Id {
   def emailNotfPrefs: EmailNotfPrefs
   def tinyAvatar: Opt[UploadRef]
   def smallAvatar: Opt[UploadRef]
+  // Later: Set to false, if banned? Add new fn: isSuspendedOrBanned?
   def suspendedTill: Opt[ju.Date]
+  /** Banned users cannot log in and view their old posts — but suspended users can. */
+  def isBanned: Bo = suspendedTill.exists(_.getTime == Participant._BanMagicEpoch)
   def isAdmin: Bo
   def isOwner: Bo
   def isModerator: Bo
