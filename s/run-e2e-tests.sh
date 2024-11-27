@@ -536,6 +536,8 @@ function runAllE2eTests {
   # Moderation   (4862065)
   # ------------
 
+  $r s/wdio-7 --only modn-ban-spammer.2br.f.e2e.ts --cd -i $args
+
   $r s/wdio-7 --only may-see-email-adrs.2br.d --cd -i $args
 
 

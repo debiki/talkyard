@@ -9824,7 +9824,8 @@ export class TyE2eTestBrowser {
               const stillVisible = await this.filterVisible([
                       pagePostSelector + ' .s_A_Rvw_Tsk_UndoB',
                       pagePostSelector + ' .e_A_Rvw_Tsk_AcptB',
-                      pagePostSelector + ' .e_A_Rvw_Tsk_RjctB'],
+                      pagePostSelector + ' .e_A_Rvw_Tsk_RjctB',
+                      pagePostSelector + ' .e_A_Rvw_Tsk_BanB'],
                       { keepVisible: true });
               if (!stillVisible.length)
                 return true;
@@ -9867,6 +9868,12 @@ export class TyE2eTestBrowser {
 
         rejectDeleteTaskIndex: async (index: Nr) => {
           await this.topic.clickPostActionButton(`.e_RT-Ix-${index} .e_A_Rvw_Tsk_RjctB`);
+          await this.waitUntilModalGone();
+          await this.waitUntilLoadingOverlayGone();
+        },
+
+        banAndDeleteTaskNr: async (nr: Nr) => {
+          await this.topic.clickPostActionButton(`.e_RT-Ix-${nr} .e_A_Rvw_Tsk_BanB`);
           await this.waitUntilModalGone();
           await this.waitUntilLoadingOverlayGone();
         },
@@ -10297,6 +10304,10 @@ export class TyE2eTestBrowser {
 
       waitForJustGotSuspendedError: async () => {
         await this.waitUntilTextMatches('.s_SED_Msg', 'TyESUSPENDED_|TyE0LGDIN_');
+      },
+
+      waitForBannedError: async () => {
+        await this.waitUntilTextMatches('.s_SED_Msg', 'banned.*TyEBANND');
       },
 
       dismissReloadPageAlert: async () => {
