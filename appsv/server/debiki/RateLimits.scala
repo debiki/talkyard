@@ -100,8 +100,6 @@ case class MaxLimits(
 
 
 
-// CLEAN
-
 /**
   * @param maxPerDayNewUser — If unlimited, maxPerDay is used instead.
   */
@@ -128,12 +126,15 @@ abstract class RateLimits {  CLEAN_UP // change to case class, and all concrete 
 
 
   def multBy(siteLimits: SiteLimitsMultipliers): RateLimits = {
+    // Change this? Only multiply, if the limit is for 1) not-logged-in people, that is,
+    // ip addresses [site_ip_person_limits], or, later, 2) rate limits for the whole site.
     val anyMultiplier: Opt[f32] =
           if (isReadLimits is true) {
             siteLimits.readLimitsMultiplier
           }
           else {
             // Later, would mult by write limits or log limits?
+            // No, don't? See [site_ip_person_limits].
             None
           }
 
@@ -141,6 +142,7 @@ abstract class RateLimits {  CLEAN_UP // change to case class, and all concrete 
       return this // unchanged
     }
 
+    // Mults by `m` above.
     def multByM(lim: i32): i32 = {
       if (lim == Unlimited) Unlimited
       else {
@@ -169,6 +171,7 @@ abstract class RateLimits {  CLEAN_UP // change to case class, and all concrete 
       val maxPerDayNewUser: i32 = multByM(_this.maxPerDayNewUser)
     }
   }
+
 
   def isUnlimited(isNewUser: Bo): Bo =
     maxPerFifteenSeconds == Unlimited &&
@@ -310,10 +313,10 @@ object RateLimits {
   }
 
 
-  val ReadsFromCache = ReadsFromDb  // for now
+  val ReadsFromCache: RateLimits = ReadsFromDb  // for now
 
 
-  val ReadsFromCacheALot = ReadsFromDb  // for now
+  val ReadsFromCacheALot: RateLimits = ReadsFromDb  // for now
 
 
   object AdminWritesToDb extends RateLimits {

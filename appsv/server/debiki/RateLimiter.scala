@@ -120,7 +120,7 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
       requestTimestamps = timestampsHolder.timestamps.get
     }
 
-    val now: UnixTime = (request.ctime.getTime / 1000).toInt // change before year 2038
+    val now: UnixTime = (request.ctime.getTime / 1000).toInt // change, DO_BEFORE 2038
 
     throwIfTooManyRequests(effectiveLimits, now, requestTimestamps, key)
 
@@ -148,6 +148,9 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
     var numRequestsLast15Seconds = 0
     var numRequestsLast15Minutes = 0
     var numRequestsLastDay = 0
+    // Could [_remember_oldest_ix], would then only need to count the relevant
+    // timestamps. Could remember the 15 secs, 15 mins, day indexes too — then,
+    // could just subtract, instead of counting, but higher bug risk.
     while (index < recentRequestTimestamps.length) {
       val timestamp = recentRequestTimestamps(index)
       if (now - timestamp < 15) {
@@ -195,6 +198,9 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
     val timestamps = timestampsToCopy.clone()
     var indexOfOldestTimestamp = 0
     var oldestTimestamp = Int.MaxValue
+    COULD_OPTIMIZE // Cache and remember this oldest-index, together with the array?
+    // So won't have to search and find. But is it worth it? Usually the queue is just
+    // 20 or 100 long anyway, that's negligible. [_remember_oldest_ix]
     var index = 0
     while (index < timestamps.length) {
       if (timestamps(index) < oldestTimestamp) {

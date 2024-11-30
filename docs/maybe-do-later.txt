@@ -263,6 +263,22 @@ If admins try to configure too "high" values, e.g. 1 TB upload size,
 need a way for them to know they're above the server or site limits,
 e.g. the Nginx client_max_body_size.
 
+[site_ip_person_limits]
+Should be 3 types of rate & max limits multipliers:
+1) One that affects groups and everyone in those groups,
+2) One that affects ip addresses, possibly specific addresses or whithin a country,
+3) One that affects the whole site.
+But the current  SiteLimitsMultipliers  are for all three at once — which doen't make sense.
+E.g. shouldn't increase *per person* rate limits, just because there's many members.
+Instead, should split into 1, 2, 3 above.
+And, with 1) limits for user groups, then, the Everyone group would be the default
+limit multipliers (1.0), and e.g. Core Members could have limits x 2?
+Sth like:
+    SiteLimitsMultipliers —> LimitsMultipliers,
+      and look up by:  whole site,  ip addr logged in / not logged in,  user group?
+      and look at all limits.
+Add more fields to  PatPerms? No, it's not for limits, but for permissions?  [more_pat_perms]
+
 [more_runtime_assertions]
 Figure out a way to safely add more runtime assertions — although sometimes
 I'll add *incorrect assertions* some of which will *break* and need to
