@@ -86,6 +86,9 @@ declare namespace debiki2.pagedialogs {
 
   function getAboutUserDialog();
   function getProgressBarDialog();
+
+  var NeverAlwaysBtn: any;
+  function neverAlways_title(neverAlways: NeverAlways): St;
 }
 
 declare namespace debiki2.persona {

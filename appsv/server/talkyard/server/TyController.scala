@@ -89,6 +89,11 @@ class TyController(cc: ControllerComponents, val context: TyContext)
   def AdminGetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiActionAdminOnly(NoRateLimits, cc.parsers.empty)(f)
 
+  def AdminGetActionRateLimited(
+        rateLimits: RateLimits = RateLimits.ExpensiveGetRequest,
+        )(f: GetRequest => Result): Action[Unit] =
+    PlainApiActionAdminOnly(rateLimits, cc.parsers.empty)(f)
+
   def ApiSecretGetJsonAction(whatSecret: WhatApiSecret, rateLimits: RateLimits)(
           f: GetRequest => Result): Action[Unit] =
     PlainApiActionApiSecretOnly(whatSecret, rateLimits, cc.parsers.empty)(f)

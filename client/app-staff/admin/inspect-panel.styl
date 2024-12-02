@@ -1,0 +1,151 @@
+$columnBorder = 1px solid lightgray;
+
+
+.c_Insp_PrefsT
+  // Header texts are position: absolute, so they can be rotated. Need to manually
+  // reserve some space for the headers. — Hopefully no group name is much longer than this.
+  // Or would it be good with text-overflow on the group name? (they're column headers)
+  margin-top: 150px;
+
+  th, td
+    padding: 4px;
+
+  th
+    text-align: center;
+
+  tr
+    border-bottom: 1px solid hsl(0 0% 60%);
+
+  td
+    // Dim prefs inherited from ancestor groups, ...
+    &.n_Inh
+      opacity: 0.4;
+    // ... and make prefs explicitly configured on the current group, stronger.
+    &.n_Set
+      color: #000;
+
+    border-right: $columnBorder;
+
+    // First column is the preference feature name, but the values (remaining columns)
+    // look better when centered.
+    &:not(:first-child)
+      text-align: center;
+
+thead.c_Rotated th
+  min-width: 2.4em; // so space for header text (which is position absolute)
+  font-weight: normal; // not bold
+
+  & > div
+    & > span
+      position: absolute;
+      transform: rotate(-70deg);
+      transform-origin: center left;
+
+      white-space: nowrap; // not needed?
+      translate: 0 -11px; // otherwise start of header inside topmost <td>s
+                          // (since position absolute)
+
+      // Skip this — simpler and looks ok without border-bottom.
+      //translate: 9px -11px; // makes the border-bottom start from the column's border
+      //border-bottom: $columnBorder;
+
+
+
+ul.c_InspAno,
+ul.c_InspPrm
+  margin-top: 2.7ex;
+  // So the category names (flex: 1) won't become much wider than needed.
+  display: inline-block;
+
+.c_InspAno,
+.c_InspPrm
+  & > li
+    margin-left: 0;  // left-aligs perms list.
+  li
+    list-style: none;
+
+.c_InspAno_Cat,
+.c_InspPrm_Cat
+  display: flex
+  justify-content: space-between;  // places the is-anon info to the right ...
+
+.c_InspAno_Cat_Name,  // ... because the category name elem expands.
+.c_InspPrm_Cat_Name
+  flex: 1;
+
+.c_InspAno_Cat_AnoSt
+  min-width: 5em;   // this fits "How long", Perm" and "Temp".
+                    // Hmm maybe an [anonymity_table] would have been better?
+  color: gray;
+.c_InspAno_Cat_ComtAno
+  color: green;
+
+.c_InspAno_Cat_ComtAno
+  min-width: 130px;  // fits "Recommended"
+
+// Dim inherited and default settings.
+.c_InspAno_Cat_ComtAno,
+.c_InspAno_Cat_AnoSt
+  color: blue;
+  font-weight: bold;
+  font-size: 120%;
+  &.n_Set
+    color: cyan;
+
+// Doesn't work. Only  blue and  cyan works. Why? I don't have time for this any more.
+//.c_InspAno_Cat_ComtAno,
+//.c_InspAno_Cat_AnoSt
+//  color: gray;   // matches inherited (.n_Inh) and default (no class)
+//  &.n_Set
+//    color: #000;
+
+.c_InhSamp
+  color: hsl(0deg 0% 40%)  // a bit darker than gray (50%) so simpler to read.
+                           // (But the "real" inherited text has the ancestor's value
+                           // in dark strong color just before.)
+
+.c_InspAno_Cat > span
+  &:first-child
+    margin-right: 1.5em;
+  &:not(:first-child)
+    margin-left: 0.5em;
+    text-align: right;
+
+.c_InspAno > li
+  $catBorder = 1px solid lightgray
+  border-bottom: $catBorder;
+  padding-bottom: 9px;
+  &:first-child
+    border-top: $catBorder;
+    padding-top: 8px; // 8 looks better than padding-bottom = 9px.
+
+.c_InspAno li
+  list-style: none;
+
+// Avoids double margins from a sub cat <li> in an <ul> in a base cat's <li>.
+ul.c_InspAno ul li:last-child
+  margin-bottom: 0;
+
+
+// Many perms! let's make bit compact.
+$compactPermsMargin = 2px;
+
+.c_InspPrm_Cat_PrmLs_GrpPrmLs li
+  margin-bottom: $compactPermsMargin;
+
+.c_InspPrm
+  li > ul, li > ol
+    margin-top: $compactPermsMargin;
+
+.c_InspPrm > li
+  border-bottom: 2px solid lightgray;
+
+  &:first-child
+    border-top: 2px solid lightgray;
+
+.c_InspPrm_Cat + ul > li
+  border-bottom: 1px solid lightgray;
+
+  &:first-child
+    border-top: 1px solid lightgray;
+

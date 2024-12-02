@@ -764,6 +764,8 @@ object Authz {
 
     // We'll start with no permissions, at the top category, and loop through all categories
     // down to the category in which the page is placed, and add/remove permissions along the way.
+    // But only to find out if the user may not *see* the category at all — later,
+    // we merge only with the most specific category's permissions. [direct_cat_perms]
     // Move these pageMeta checks to 'Check page' above?
     val isForumPage = pageMeta.exists(_.pageType == PageType.Forum)
     val isPageDeleted = pageMeta.exists(_.isDeleted)
@@ -795,6 +797,7 @@ object Authz {
             debugCode = "EdMMSEEFORUM")
     }
 
+    // Site wide permissions not implemented — no way to specify via the ui.  [0_site_perms]
     val relPermsWholeSite = relevantPermissions.filter(_.onWholeSite.is(true))
     for (p <- relPermsWholeSite) {
       // Random order? So better add permissions only (not remove).  [2LG5F04W]
@@ -861,7 +864,13 @@ object Authz {
       anyCatMayWhat = Some(mayWhatThisCat)
     }
 
-    // Only merge with the permissions set directly on the category the page is in.
+    // Only merge with the permissions set directly on the category  [direct_cat_perms]
+    // the page is in.
+    //
+    // But then site wide permissions make no sense? Why would they be inherited to sub cats,
+    // but not permissions set on a direct parent category?
+    // Fortunately, site wide permissions haven't been implemented anyway  [0_site_perms]
+    //
     // This means it's possible to let people post topics in a sub cat,
     // although they may not post topics in the base cat.
     // (However if they cannot *see* the base cat, then they cannot access any

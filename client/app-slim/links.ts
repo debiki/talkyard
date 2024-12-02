@@ -185,6 +185,14 @@ export function linkToUsersEmailAddrs(userIdOrUsername: UserId | string): string
   return linkToUserProfilePage(userIdOrUsername) + '/preferences/account';
 }
 
+export function linkToPatsPrivPrefs(who: Who): St {
+  return linkToUserProfilePage(who) + '/preferences/privacy';
+}
+
+export function linkToPatsUiPrefs(who: Who): St {
+  return linkToUserProfilePage(who) + '/preferences/ui';
+}
+
 export function linkToMyDraftsEtc(store: Store): string {
   return linkToMyProfilePage(store) + '/drafts-etc';
 }
@@ -259,6 +267,11 @@ export function linkToNotificationSource(notf: Notification): string {
   else {
     die("Unknown notification type [EsE5GUKW2]")
   }
+}
+
+
+export function linkToCat(cat: Cat): St {
+  return origin() + '/latest/' + cat.slug;
 }
 
 

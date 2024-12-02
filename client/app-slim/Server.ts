@@ -1354,6 +1354,11 @@ export function loadGroups(onDone: (_: Group[]) => void) {
 }
 
 
+export function inspectForum(onOk: (_: InspectForumResp) => V) {
+  get('/-/inspect-forum', onOk);
+}
+
+
 export function createGroup(newGroup: Group, onDone: (newGroup: Group) => void) {
   postJsonSuccess('/-/create-group', onDone, newGroup);
 }

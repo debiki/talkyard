@@ -3351,6 +3351,13 @@ interface GenPasetoV2LocSecrResp {
 }
 
 
+interface InspectForumResp {
+  catsMaySee: Cat[]
+  groupsMaySee: GroupVb[]
+  allPerms: PermsOnPage[]
+}
+
+
 // =========================================================================
 //  WebSocket messages
 // =========================================================================

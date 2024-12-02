@@ -140,6 +140,16 @@ with "negative" permissions — e.g. a group that may Not something.
 Then, everyone in that group, would be forbidden from doing that something,
 regardless of how they inherited permissions from other groups.
 
+[0_site_perms]
+Let's wait. Whole site see/reply/edit/etc permissions haven't been totally implemented —
+there's no way to set such permissions via the ui (right?).
+Maybe that's good — site wide permissions would be too coarse grained & permissive,
+would almost need to be combined with Deny permissions? [may_not_perms] So that it'd
+still be possible with private categories, even if sbd may see everything by default.
+But there's group permissions — that's site wide perms, but not related to any
+specific category, so, fine (no confusion about if inherited in the category tree, since
+not related to categories). See EffPatPerms.
+
 [granular_perms]
 E.g. may-see-others'-sessions. Currently only amdins may, but sometimes, good if mods could too?
 Or a mayReplyOnOwn permission? Maybe never.
@@ -947,6 +957,10 @@ Use the C preprocessor? Didn't find anything else that does what I'm looking for
 [devfriendly]
 Maybe make all endpoints that accept, say, only POST, reply and tell other method
 type invocations that they should use POST? Would need to change Play Fmw for this.
+
+[React19_actions]
+Can lots of React.useEffect() plus React.useRef() be replaced & simplified by
+React 19's useActionState()?
 
 [React_Router_v51]
 Migrate unnecessary Route({ ... render: ({ match }) => ...) to hooks:

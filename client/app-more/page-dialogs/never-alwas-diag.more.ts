@@ -73,7 +73,7 @@ export const NeverAlwaysBtn = React.createFactory<DiscLayoutDropdownBtnProps & N
 });
 
 
-function neverAlways_title(neverAlways: NeverAlways): St {
+export function neverAlways_title(neverAlways: NeverAlways): St {
   switch (neverAlways) {
     // case PostSortOrder.Inherit:
     //  Not supposed to happen. Instead the DiscLayoutDiag constructs a list item

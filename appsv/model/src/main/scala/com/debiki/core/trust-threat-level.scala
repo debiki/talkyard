@@ -87,6 +87,8 @@ object TrustLevel {
   REFACTOR // Actually, *do* change to real trust levels — see Mod, ModOfMods, Admin above.
   val StrangerDummyLevel = 0
   val ModeratorDummyLevel = 7
+  //case object Moderator extends TrustLevel2(7)  // rename to Staff? [ren_mod_tl]
+                                                // It's for both mods & admins.
   val AdminDummyLevel = 8
 
   def fromOptInt(value: Opt[i32]): Opt[TrustLevel] = value.flatMap(fromInt)

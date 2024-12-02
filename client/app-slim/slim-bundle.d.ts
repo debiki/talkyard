@@ -470,16 +470,24 @@ declare namespace debiki2 {
   function linkToNotificationSource(notf: Notification): string;
   function linkToAdminPageAdvancedSettings(hostname?: string): string;
   function linkToRedirToAboutCategoryPage(categoryId: CategoryId): string;
+  function linkToCat(cat: Cat): St;
   function linkToUserInAdminArea(user: Myself | UserInclDetails | Participant | UserId): string;
   function linkToSendMessage(idOrUsername: UserId | string): string;
   function linkToUserInAdminArea(userId: UserId): string;
+
+  // Don't use:
   function linkToUserProfilePage(idOrUsername: Myself | Participant | UserId | string): string;
   function pathTo(user: Participant | Myself | UserId | string): string;
+  // Use instead, better name:
+  function linkToPatsProfile(who: Who): St;
+
   function linkToUsersNotfs(who: Who): string;
   function linkToMembersNotfPrefs(userIdOrUsername: UserId | string): string;
   function linkToSendMessage(userIdOrUsername: UserId | string): string;
   function linkToInvitesFromUser(userId: UserId): string;
   function linkToUsersEmailAddrs(userIdOrUsername: UserId | string): string;
+  function linkToPatsPrivPrefs(who: Who): St;
+  function linkToPatsUiPrefs(who: Who): St;
   function linkToAdminPage(): string;
   function linkToAdminPageLoginSettings(): string;
   function linkToAdminPageFeatures(): St;

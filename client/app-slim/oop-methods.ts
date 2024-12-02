@@ -1774,7 +1774,7 @@ const DiscPropDefaults: DiscPropsBase = {
   comtsStartHidden: NeverAlways.NeverButCanContinue,
   comtsStartAnon: NeverAlways.NeverButCanContinue,
   opStartsAnon: NeverAlways.NeverButCanContinue,
-  // For now. Later: OnlySelfCanDeanon.
+  // For now. Later: OnlySelfCanDeanon. [def_anon_status]
   newAnonStatus: AnonStatus.IsAnonCanAutoDeanon,
   pseudonymsAllowed: NeverAlways.NeverButCanContinue,
 };
