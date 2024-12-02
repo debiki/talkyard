@@ -746,6 +746,11 @@ sealed trait Pat extends HasInt32Id {
 
   def effectiveTrustLevel: TrustLevel
 
+  def effectiveTrustLevel2: TrustLevel2 =
+    if (isAdmin) TrustLevel.Admin
+    else if (isModerator) TrustLevel.Staff
+    else effectiveTrustLevel.asInstanceOf[TrustLevel2] // all TrustLevel are TrustLevel2
+
   def canPromoteToBasicMember: Bo = false
   def canPromoteToFullMember: Bo = false
 
@@ -1790,7 +1795,7 @@ object Group {
 
   val BasicMembersId = 12
   val FullMembersId = 13
-  //  GoodMembersId = ?
+  //  GoodMembersId = ?, no, HelpfulMembers?  [new_trust_levels]
   val TrustedMembersId = 14
   val RegularMembersId = 15  ; RENAME // to TrustedVeterans? In typescript  model.ts  too
   val CoreMembersId = 16

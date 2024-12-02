@@ -397,7 +397,6 @@ function OneGroupsPerms(perms: PermsOnPage, groupsById: GroupsById): RElm {
 function GroupPrioNameLink(group: GroupVb, linkFn: (_: Who) => St, showTrustLevel?: Bo): RElm {
   // This: `id - 10` just happens to work right now,  [new_trust_levels] [group_priorities]
   // except for the staff group (id 17, but not a trust level), mods (18) & admins (19),
-  // [oops: I've named the trust level Moderator server side, but Staff client side. [ren_mod_tl]]
   // then need to subtract 11 because of the Staff group in between, which isn't a trust level.
   // TrustLevelOrStaff.CoreMember = 6, Staff = 7, Admins = 8.
   const trustLevelNr = group.id < Groups.StaffId ? group.id - 10 : group.id - 11;

@@ -360,7 +360,7 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
         case
           when u.suspended_at is not null then ${TrustLevel.StrangerDummyLevel}
           when u.is_admin then ${TrustLevel.AdminDummyLevel}
-          when u.is_moderator then ${TrustLevel.ModeratorDummyLevel}
+          when u.is_moderator then ${TrustLevel.StaffDummyLevel}
           else coalesce(u.locked_trust_level, u.trust_level)
         end trust_level
       from page_users3 pu left join users3 u
