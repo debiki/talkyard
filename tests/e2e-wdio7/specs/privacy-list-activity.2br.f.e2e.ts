@@ -1,22 +1,16 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
+import server from '../utils/server';
 import { buildSite } from '../utils/site-builder';
-import logAndDie = require('../utils/log-and-die');
-import c = require('../test-constants');
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import c from '../test-constants';
 
-let browser: TyE2eTestBrowser;
-declare let browserA: any;
-declare let browserB: any;
+let brA: TyE2eTestBrowser;
+let brB: TyE2eTestBrowser;
 
 let forum: LargeTestForum;
 
-let everyonesBrowser: TyE2eTestBrowser;
 let owen: Member;
 let owensBrowser: TyE2eTestBrowser;
 let maria: Member;
@@ -35,160 +29,161 @@ let oneOfMariasPosts: string;
 let oneOfMariasTopicTitles: string;
 
 
-describe("user profile access:", () => {
+describe(`privacy-list-activity.2br.f  TyTPRIV_LSACT`, () => {
 
-  it("import a site", () => {
+  it("import a site", async () => {
     forum = buildSite().addLargeForum({ title: forumTitle });
 
     // Make Michael a full member so he can see activity that strangers may not see.
     forum.members.michael.trustLevel = c.TestTrustLevel.FullMember;
 
-    idAddress = server.importSiteData(forum.siteData);
+    idAddress = await server.importSiteData(forum.siteData);
     oneOfMariasPosts = forum.topics.byMariaCategoryANr2.body;
     oneOfMariasTopicTitles = forum.topics.byMariaCategoryA.title;
   });
 
-  it("initialize people", () => {
-    everyonesBrowser = new TyE2eTestBrowser(wdioBrowser);
+  it("initialize people", async () => {
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
-    owensBrowser = new TyE2eTestBrowser(browserA);
+    owensBrowser = brA;
     owen = forum.members.owen;
 
-    mariasBrowser = new TyE2eTestBrowser(browserB);
+    mariasBrowser = brB;
     maria = forum.members.maria;
 
-    mallorysBrowser = owensBrowser;
+    mallorysBrowser = brA;
     mallory = forum.members.mallory;
 
-    michaelsBrowser = owensBrowser;
+    michaelsBrowser = brA;
     michael = forum.members.michael;
     michael.trustLevel = c.TestTrustLevel.FullMember; // so he can se posts that strangers may not see
 
-    guestsBrowser = owensBrowser;
-    strangersBrowser = owensBrowser;
+    guestsBrowser = brA;
+    strangersBrowser = brA;
   });
 
 
   // ----- Everyone sees Maria's stuff
 
-  it("Everyone sees Maria's public posts", () => {
-    strangersBrowser.userProfilePage.openActivityFor(maria.username, idAddress.origin);
-    strangersBrowser.userProfilePage.activity.posts.waitForPostTextsVisible();
-    strangersBrowser.userProfilePage.activity.posts.assertPostTextVisible(oneOfMariasPosts);
+  it("Everyone sees Maria's public posts", async () => {
+    await strangersBrowser.userProfilePage.openActivityFor(maria.username, idAddress.origin);
+    await strangersBrowser.userProfilePage.activity.posts.waitForPostTextsVisible();
+    await strangersBrowser.userProfilePage.activity.posts.assertPostTextVisible(oneOfMariasPosts);
   });
 
-  it("... and topics", () => {
-    strangersBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
-    strangersBrowser.userProfilePage.activity.topics.waitForTopicTitlesVisible();
-    strangersBrowser.userProfilePage.activity.topics.assertTopicTitleVisible(oneOfMariasTopicTitles);
+  it("... and topics", async () => {
+    await strangersBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
+    await strangersBrowser.userProfilePage.activity.topics.waitForTopicTitlesVisible();
+    await strangersBrowser.userProfilePage.activity.topics.assertTopicTitleVisible(oneOfMariasTopicTitles);
   });
 
 
   // ----- Hide activity for strangers
 
 
-  it("Maria goes to her privacy tab", () => {
-    mariasBrowser.userProfilePage.openActivityFor(maria.username, idAddress.origin);
-    mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
-    mariasBrowser.userProfilePage.goToPreferences();
-    mariasBrowser.userProfilePage.preferences.switchToPrivacy();
+  it("Maria goes to her privacy tab", async () => {
+    await mariasBrowser.userProfilePage.openActivityFor(maria.username, idAddress.origin);
+    await mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
+    await mariasBrowser.userProfilePage.goToPreferences();
+    await mariasBrowser.userProfilePage.preferences.switchToPrivacy();
   });
 
-  it("... hides her activity for strangers", () => {
-    mariasBrowser.userProfilePage.preferences.privacy.setHideActivityForStrangers(true);
-    mariasBrowser.userProfilePage.preferences.privacy.savePrivacySettings();
+  it("... hides her activity for strangers", async () => {
+    await mariasBrowser.userProfilePage.preferences.privacy.setHideActivityForStrangers(true);
+    await mariasBrowser.userProfilePage.preferences.privacy.savePrivacySettings();
   });
 
-  it("The stranger no longer sees her topics", () => {
-    strangersBrowser.refresh();
-    strangersBrowser.userProfilePage.activity.topics.waitForNothingToShow();
+  it("The stranger no longer sees her topics", async () => {
+    await strangersBrowser.refresh2();
+    await strangersBrowser.userProfilePage.activity.topics.waitForNothingToShow();
   });
 
-  it("... and not her posts", () => {
-    strangersBrowser.userProfilePage.activity.switchToPosts({ shallFindPosts: 'NoSinceActivityHidden' });
-    strangersBrowser.userProfilePage.activity.posts.waitForNothingToShow(); // hmm redundant
+  it("... and not her posts", async () => {
+    await strangersBrowser.userProfilePage.activity.switchToPosts({ shallFindPosts: 'NoSinceActivityHidden' });
+    await strangersBrowser.userProfilePage.activity.posts.waitForNothingToShow(); // hmm redundant
   });
 
   /* Guest login not enabled in this forum. Maybe later? skip for now:
-  it("A guest also doesn't see her posts", () => {
-    guestsBrowser.complex.logInAsGuestViaTopbar("Curiosiy Guestiy");
-    guestsBrowser.refresh();
-    guestsBrowser.userProfilePage.activity.posts.waitForNothingToShow();
-    guestsBrowser.topbar.clickLogout();
+  it("A guest also doesn't see her posts", async () => {
+    await guestsBrowser.complex.logInAsGuestViaTopbar("Curiosiy Guestiy");
+    await guestsBrowser.refresh2();
+    await guestsBrowser.userProfilePage.activity.posts.waitForNothingToShow();
+    await guestsBrowser.topbar.clickLogout();
   }); */
 
-  it("Mallory is a new membmer, won't see posts", () => {
-    mallorysBrowser.complex.loginWithPasswordViaTopbar(mallory);
-    mallorysBrowser.userProfilePage.activity.posts.waitForNothingToShow();
+  it("Mallory is a new membmer, won't see posts", async () => {
+    await mallorysBrowser.complex.loginWithPasswordViaTopbar(mallory);
+    await mallorysBrowser.userProfilePage.activity.posts.waitForNothingToShow();
   });
 
-  it("But Michael is a full member, does see the posts", () => {
-    mallorysBrowser.topbar.clickLogout();
-    michaelsBrowser.complex.loginWithPasswordViaTopbar(michael);
-    michaelsBrowser.userProfilePage.activity.posts.waitForPostTextsVisible();
-    michaelsBrowser.userProfilePage.activity.posts.assertPostTextVisible(oneOfMariasPosts);
+  it("But Michael is a full member, does see the posts", async () => {
+    await mallorysBrowser.topbar.clickLogout();
+    await michaelsBrowser.complex.loginWithPasswordViaTopbar(michael);
+    await michaelsBrowser.userProfilePage.activity.posts.waitForPostTextsVisible();
+    await michaelsBrowser.userProfilePage.activity.posts.assertPostTextVisible(oneOfMariasPosts);
   });
 
-  it("... and the topics", () => {
-    michaelsBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
-    michaelsBrowser.userProfilePage.activity.topics.waitForTopicTitlesVisible();
-    michaelsBrowser.userProfilePage.activity.topics.assertTopicTitleVisible(oneOfMariasTopicTitles);
+  it("... and the topics", async () => {
+    await michaelsBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
+    await michaelsBrowser.userProfilePage.activity.topics.waitForTopicTitlesVisible();
+    await michaelsBrowser.userProfilePage.activity.topics.assertTopicTitleVisible(oneOfMariasTopicTitles);
   });
 
-  it("Maria also sees her posts", () => {
-    mariasBrowser.userProfilePage.goToActivity();
-    mariasBrowser.userProfilePage.activity.posts.waitForPostTextsVisible();
-    mariasBrowser.userProfilePage.activity.posts.assertPostTextVisible(oneOfMariasPosts);
+  it("Maria also sees her posts", async () => {
+    await mariasBrowser.userProfilePage.goToActivity();
+    await mariasBrowser.userProfilePage.activity.posts.waitForPostTextsVisible();
+    await mariasBrowser.userProfilePage.activity.posts.assertPostTextVisible(oneOfMariasPosts);
   });
 
 
   // ----- Hide activity for everyone (except staff)
 
 
-  it("Maria hides her activity for everyone", () => {
-    mariasBrowser.userProfilePage.goToPreferences();
-    mariasBrowser.userProfilePage.preferences.switchToPrivacy();
-    mariasBrowser.userProfilePage.preferences.privacy.setHideActivityForAll(true);
-    mariasBrowser.userProfilePage.preferences.privacy.savePrivacySettings();
+  it("Maria hides her activity for everyone", async () => {
+    await mariasBrowser.userProfilePage.goToPreferences();
+    await mariasBrowser.userProfilePage.preferences.switchToPrivacy();
+    await mariasBrowser.userProfilePage.preferences.privacy.setHideActivityForAll(true);
+    await mariasBrowser.userProfilePage.preferences.privacy.savePrivacySettings();
   });
 
-  it("Michael now cannot see Maria's topics", () => {
-    michaelsBrowser.refresh();
-    michaelsBrowser.userProfilePage.activity.topics.waitForNothingToShow();
+  it("Michael now cannot see Maria's topics", async () => {
+    await michaelsBrowser.refresh2();
+    await michaelsBrowser.userProfilePage.activity.topics.waitForNothingToShow();
   });
 
-  it("... or posts", () => {
-    michaelsBrowser.userProfilePage.activity.switchToPosts({ shallFindPosts: 'NoSinceActivityHidden' });
-    michaelsBrowser.userProfilePage.activity.posts.waitForNothingToShow(); // hmm redundant
+  it("... or posts", async () => {
+    await michaelsBrowser.userProfilePage.activity.switchToPosts({ shallFindPosts: 'NoSinceActivityHidden' });
+    await michaelsBrowser.userProfilePage.activity.posts.waitForNothingToShow(); // hmm redundant
   });
 
-  it("The stranger still don't see the posts", () => {
-    michaelsBrowser.topbar.clickLogout();
-    strangersBrowser.userProfilePage.activity.posts.waitForNothingToShow();
+  it("The stranger still don't see the posts", async () => {
+    await michaelsBrowser.topbar.clickLogout();
+    await strangersBrowser.userProfilePage.activity.posts.waitForNothingToShow();
   });
 
-  it("But Owen sees the posts — he's admin", () => {
-    owensBrowser.complex.loginWithPasswordViaTopbar(owen);
-    owensBrowser.userProfilePage.activity.posts.waitForPostTextsVisible();
-    owensBrowser.userProfilePage.activity.posts.assertPostTextVisible(oneOfMariasPosts);
+  it("But Owen sees the posts — he's admin", async () => {
+    await owensBrowser.complex.loginWithPasswordViaTopbar(owen);
+    await owensBrowser.userProfilePage.activity.posts.waitForPostTextsVisible();
+    await owensBrowser.userProfilePage.activity.posts.assertPostTextVisible(oneOfMariasPosts);
   });
 
-  it("... and the topics too", () => {
-    owensBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
-    owensBrowser.userProfilePage.activity.topics.waitForTopicTitlesVisible();
-    owensBrowser.userProfilePage.activity.topics.assertTopicTitleVisible(oneOfMariasTopicTitles);
+  it("... and the topics too", async () => {
+    await owensBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
+    await owensBrowser.userProfilePage.activity.topics.waitForTopicTitlesVisible();
+    await owensBrowser.userProfilePage.activity.topics.assertTopicTitleVisible(oneOfMariasTopicTitles);
   });
 
-  it("Maria still sees her own posts", () => {
-    mariasBrowser.userProfilePage.goToActivity();
-    mariasBrowser.userProfilePage.activity.posts.waitForPostTextsVisible();
-    mariasBrowser.userProfilePage.activity.posts.assertPostTextVisible(oneOfMariasPosts);
+  it("Maria still sees her own posts", async () => {
+    await mariasBrowser.userProfilePage.goToActivity();
+    await mariasBrowser.userProfilePage.activity.posts.waitForPostTextsVisible();
+    await mariasBrowser.userProfilePage.activity.posts.assertPostTextVisible(oneOfMariasPosts);
   });
 
-  it("... and topics", () => {
-    mariasBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
-    mariasBrowser.userProfilePage.activity.topics.waitForTopicTitlesVisible();
-    mariasBrowser.userProfilePage.activity.topics.assertTopicTitleVisible(oneOfMariasTopicTitles);
+  it("... and topics", async () => {
+    await mariasBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
+    await mariasBrowser.userProfilePage.activity.topics.waitForTopicTitlesVisible();
+    await mariasBrowser.userProfilePage.activity.topics.assertTopicTitleVisible(oneOfMariasTopicTitles);
   });
 
 
@@ -199,24 +194,24 @@ describe("user profile access:", () => {
   // ----- Show activity again
 
 
-  it("Maria shows her activity again", () => {
-    mariasBrowser.userProfilePage.goToPreferences();
-    mariasBrowser.userProfilePage.preferences.switchToPrivacy();
-    mariasBrowser.userProfilePage.preferences.privacy.setHideActivityForStrangers(false);
-    mariasBrowser.userProfilePage.preferences.privacy.savePrivacySettings();
+  it("Maria shows her activity again", async () => {
+    await mariasBrowser.userProfilePage.goToPreferences();
+    await mariasBrowser.userProfilePage.preferences.switchToPrivacy();
+    await mariasBrowser.userProfilePage.preferences.privacy.setHideActivityForStrangers(false);
+    await mariasBrowser.userProfilePage.preferences.privacy.savePrivacySettings();
   });
 
-  it("Now the stranger sees her topics again", () => {
-    owensBrowser.topbar.clickLogout();
-    strangersBrowser.refresh();
-    strangersBrowser.userProfilePage.activity.topics.waitForTopicTitlesVisible();
-    strangersBrowser.userProfilePage.activity.topics.assertTopicTitleVisible(oneOfMariasTopicTitles);
+  it("Now the stranger sees her topics again", async () => {
+    await owensBrowser.topbar.clickLogout();
+    await strangersBrowser.refresh2();
+    await strangersBrowser.userProfilePage.activity.topics.waitForTopicTitlesVisible();
+    await strangersBrowser.userProfilePage.activity.topics.assertTopicTitleVisible(oneOfMariasTopicTitles);
   });
 
-  it("... and posts", () => {
-    strangersBrowser.userProfilePage.activity.switchToPosts({ shallFindPosts: true });
-    strangersBrowser.userProfilePage.activity.posts.waitForPostTextsVisible();
-    strangersBrowser.userProfilePage.activity.posts.assertPostTextVisible(oneOfMariasPosts);
+  it("... and posts", async () => {
+    await strangersBrowser.userProfilePage.activity.switchToPosts({ shallFindPosts: true });
+    await strangersBrowser.userProfilePage.activity.posts.waitForPostTextsVisible();
+    await strangersBrowser.userProfilePage.activity.posts.assertPostTextVisible(oneOfMariasPosts);
   });
 
 });

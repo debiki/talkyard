@@ -414,7 +414,6 @@ function runAllE2eTests {
   $r s/wdio --only user-profile-change-email.2browsers $args
   $r s/wdio --only user-profile-change-password.2br.mtime $args  # ... similar
   $r s/wdio --only user-profile-cannot-delete-idp-email.1br.extidp $args
-  $r s/wdio --only user-profile-activity-private.2browsers $args
   $r s/wdio-7 --only user-self-delete-upd-groups.2br.f.e2e.ts --cd -i $args
 
   $r s/wdio --only group-profile-change-things.2browsers $args
@@ -461,6 +460,7 @@ function runAllE2eTests {
 
   $r s/wdio-7 --only notfs-mark-seen-as-seen.d.2br --cd -i $args  # RENAME append -automatically
 
+  $r s/wdio-7 --only privacy-list-activity.2br.f.e2e.ts --cd -i $args
   $r s/wdio-7 --only block-mentions.2br.d --cd -i $args
   $r s/wdio-7 --only block-dir-msgs.2br.d --cd -i $args
 

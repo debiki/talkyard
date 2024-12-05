@@ -465,6 +465,7 @@ profile page, user:
     won't list posts in deleted categories:
     won't list posts from deleted pages:
     won't list posts from pages one may not see:
+  privacy: [_priv]
 
   list login methods:
           - create-site-github-oauth-uppercase-email.test.ts  TyT4AR8GFAH
@@ -536,7 +537,13 @@ groups:
   permissions, custom groups:
           - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
           - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46
+  privacy: [_priv]
 
+
+privacy:  [_priv]
+            - privacy-list-activity.2br.f  TyTPRIV_LSACT
+            - block-mentions.2br.d  TyTMAYMENTION
+            - block-dir-msgs.2br.d  TyTBLOCKDIRMSGS
 
 security:
   access denied,
