@@ -1638,7 +1638,7 @@ class BuiltInPat extends Participant {
   def isModerator = false
   def isGroup = false
   def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Bo = false
-  override def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember ; SHOULD // CHANGE to TrustLevel.Stranger
+  override def effectiveTrustLevel: TrustLevel = TrustLevel.Stranger
   def usernameOrGuestName: String = UnknownUserName
   def nameOrUsername: String = UnknownUserName
   def anyName: Opt[St] = Some(UnknownUserName)
