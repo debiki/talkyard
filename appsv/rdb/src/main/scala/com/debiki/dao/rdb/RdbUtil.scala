@@ -513,9 +513,9 @@ object RdbUtil {
       return Anonym(
           id = patId,
           createdAt = getWhen(rs, "created_at"),
-          anonForPatId = getInt32(rs, "u_true_id_c"),
+          anonForPatId = getInt32(rs, "true_id_c"),
           anonStatus = anonStatus.get,
-          anonOnPageId = getString(rs, "u_anon_on_page_id_st_c"))
+          anonOnPageId = getString(rs, "anon_on_page_id_st_c"))
     }
 
     Guest(
