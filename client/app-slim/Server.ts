@@ -736,6 +736,7 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
     removeWaitForRequestOverlay(timeoutHandle);
     const errorAsJson = JSON.stringify(errorObj);
     const details: string = errorObj.xhr ? errorObj.xhr.responseText : errorObj.stack;
+    checkE2eTestForbiddenWords(url, details);
     console.error(`Error GETting from ${uri}: ${errorAsJson}, details: ${details}`);
     let maybeIgnoreError;
     if (errorFn) {
