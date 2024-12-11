@@ -301,13 +301,19 @@ anonymous comments,
 anons:
   partly impl:
             - tests/app/debiki/dao/AnonymAppSpec.scala
-  Make work again, and code review:
-            - tests/e2e-wdio7/specs/alias-anons-basic.2br.f.e2e.ts
-            - tests/e2e-wdio7/specs/alias-anons-true-mixed.2br.f.e2e.ts
+  _anon_e2e_to_code_review:
+            - alias-anons-basic-temp.2br.f
+            - alias-anons-basic-perm.2br.f
+            - alias-anons-approve-review.2br.f
+            - alias-anons-edit-alter.2br.f
+  TESTS_MISSING, not impl:
+            - alias-anons-true-mixed.2br.f
+            - alias-anons-see-own.2br.f
   settings:
     enabling Anon Sens Disc disables presence:
             - alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX.TyTANOSENSDISLN
   TESTS_MISSING:
+    but now most of this implmented, see _anon_e2e_to_code_review above.
             - See  ../wip/aliases/auto-test-thoughts.txt
             - Anon mode, send priv msg?
             - Callers of  checkAliasOrThrowForbidden() & getAliasOrTruePat() [misc_alias_tests]
@@ -1259,6 +1265,7 @@ users online -
   unchanged after server restart:
   not see if I'm online:
             - see [.noise_and_privacy]
+            - all   _anon_e2e_to_code_review
 
 watchbar -
   recent list:
