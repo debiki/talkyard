@@ -21,6 +21,8 @@
 
 """)}
 
+@what = @{ if (isEmailAddress) "email address" else "username" }
+
 
 @views.html.createsite.main(tpi, css = css) {
 
@@ -28,17 +30,11 @@
 
   <br>
   <p id="e2eRPP_ResetEmailSent">
-    We just sent you a reset-password email. Please check your inbox.
+    We just sent you a reset-password email, if there is a user with that @{what}.
+    Please check your inbox.
   </p>
 
   <p>You can close this page.</p>
-
-  @if(isEmailAddress) {
-    <p>(If however there is in fact no user with that email address, then we
-      did not send any email.)</p>
-  }
-  @* Else: It's a username, they are public, so an error dialog was shown instead
-    if there's no such user. *@
 
 }
 
