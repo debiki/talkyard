@@ -275,9 +275,33 @@ Guessing who is who?  [deanon_risk] [mod_deanon_risk]
 - Inherits permissions — see [pseudonym_types] below.
     - Posting anonymously in a category few people have access too.
     - Anonymously moving a page from one access restricted cat to another.
-- 9999 more things...
 
-When posting anonymously, often safer to [not_use_true_users]' permissions.
+- Count people with access: If doing things few others can do, e.g. posting anonymously
+  in a category to which few people have access (especially if doing repeatedly
+  using a pseudonym), then:
+      Count how many have acces, and estimate total % likelihood
+      that someone correctly guesses who the person is.
+
+      For example, 1 / num-people-with-access.  Or, look at all past posts and actions
+      of a pseudonym (can use AI and spend a bunch of lifetimes, researching this?).
+
+      And if too easy to guess, show an info message to the user, maybe they
+      then don't want to post. Or they might want to create a new pseudonym.
+      If hard to guess (what's that? 1 in 20? 1 in 200? 2000?) then just
+      show an info symbol somewhere, e.g. "Anonymity 99%" if 100 people have access?
+
+  Also helpful in, say, a forum for a university, when in the beginning just a few
+  peolpe have joined. Then, might want to wait with posting anonymously, until there's
+  lots of people in the forum, so others can't guess who is who.
+
+  This needs a way to calculate how many people can see the relevant category.
+  And, turns out this is useful also if moving a (sub) category to somewhere else,
+  or editing its permission settings:  Then it'd be nice if the admin could see
+  how the changes affect who can/not see the category, thereafter.
+  [direct_cat_perms] [cat_perm_inh_bug]
+
+- When posting anonymously, sometimes safer to [not_use_true_users]' permissions.
+  Maybe that could be an option somehow?
 
 
 Lots of work
@@ -290,13 +314,6 @@ Lots of work
 - If admins configure categories so there's small groups with unique sets of permissions,
   and pseudonyms allowed: Maybe tell the admins that it's possible to make pretty
   good guesses about who the pseudonyms are?
-- If repeatedly doing very different things that few others can do,
-  using the same pseudonym, then what? Calculate total % likelihood that someone
-  correctly guesses their true identity, looking at all past actions
-  (can use AI and spend a bunch of lifetimes, researching this?), and if too high,
-  consider switching to a new pseudonym?  — Maybe simpler to just suggest that
-  the user switches to a new pseudonym after N time units or M interactions/comments.
-
 - If an admin Alice impersonates Bob, then, even if Bob's list of aliases are hidden
   (so Alice can't see them),  it can still be partly possible for Alice to figure out
   which aliases are Bob's aliases — by looking at when Bob did *not* get notified about

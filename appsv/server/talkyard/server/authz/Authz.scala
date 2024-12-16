@@ -925,6 +925,9 @@ object Authz {
 
     // Only merge with the permissions set directly on the category  [direct_cat_perms]
     // the page is in.
+    BUG // The client side algorithm, lets sub cats inherit permissions   [cat_perm_inh_bug]
+    // of ancestor cats. So, e.g. a Reply or Create Topic button is shown, but when
+    // submitting, the server refuses.
     //
     // But then site wide permissions make no sense? Why would they be inherited to sub cats,
     // but not permissions set on a direct parent category?

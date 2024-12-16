@@ -1030,6 +1030,8 @@ export function store_mayICreateTopics(store: Store, category: Cat | U): Bo {
     }
     // @endif
 
+    // BUG: Server side we look only at the parent cat, not any other ancestors. [cat_perm_inh_bug]
+
     // Old, before sub cats:  [subcats]
     while (currentCategory) {
       me.permsOnPages.forEach((p: PermsOnPage) => {
@@ -1088,6 +1090,8 @@ export function store_mayIReply(store: Store, post: Post): boolean {
   });
 
   // ----- Category perms?
+
+  // BUG: Server side we look only at the parent cat, not any other ancestors. [cat_perm_inh_bug]
 
   // Here we loop through the cats in the correct order though, [0GMK2WAL].
   for (let i = 0; i < ancestorCategories.length; ++i) {
