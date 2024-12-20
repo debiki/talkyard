@@ -117,13 +117,38 @@ describe(`block-mentions.2br.d  TyTMAYMENTION`, () => {
 
 
 
+  // ----- @mentions disabled
+
+
+  it(`Memah starts mentioning Owen ...`, async () => {
+    await memah_brB.topic.clickReplyToOrigPost();
+    await memah_brB.editor.editText(`Hmm @o`);
+  });
+  it(`... Owen appears in a usernames pop up list, but disabled`, async () => {
+    await memah_brB.waitUntilAnyTextMatches(
+            '.rta__entity > div.c_Disabled', owen.username + '.* mentions disabled');
+  });
+
+  it(`Memah starts mentioning Maria instead ...`, async () => {
+    await memah_brB.keys('Escape');
+    await memah_brB.editor.editText(`Hi @m`);
+  });
+  it(`... a usernames list pops up, Maria's name isn't disabled`, async () => {
+    await memah_brB.waitUntilAnyTextMatches(
+            '.rta__entity > div:not(.c_Disabled)', maria.username);
+  });
+
+
+
   // ----- Block @mentions in comments
 
 
   it(`Memah again mentions first Owen ...`, async () => {
     numEmailsTotal += 0;
-    await memah_brB.complex.replyToOrigPost(
+    await memah_brB.keys('Escape');
+    await memah_brB.editor.editText(
           `Actually @${owen.username}`);
+    await memah_brB.editor.save();
   });
 
 
