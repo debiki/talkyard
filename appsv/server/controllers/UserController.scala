@@ -1693,7 +1693,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val staffOrSelf = requester.isStaff || requester.id == userId
     throwForbiddenIf(!staffOrSelf, "TyE5KKQSFW0", "May not edit other people's preferences")
     throwForbiddenIf(userId < LowestTalkToMemberId,
-      "TyE2GKVQ", "Cannot configure preferences for this user, it's a built-in user")
+            "TyE2GKVQ", "Cannot configure preferences for this user, it's a built-in user")
+    throwForbiddenIf(userId == Group.ModeratorsId,
+            "TyE2GKVP", o"""Cannot configure preferences for moderators — configure for the Staff
+            group instead."""")  // [0_conf_mod_priv_prefs]
   }
 
 

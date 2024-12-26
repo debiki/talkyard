@@ -148,7 +148,7 @@ const PrivPrefsTable = React.createFactory<{ groups: GroupVb[] }>(function(props
           );
 
   return rFr({},
-      r.h2({}, "Privacy preferences"),  // [inherit_group_priv_prefs]
+      r.h2({ id: 'priv-prefs' }, "Privacy preferences"),  // [inherit_group_priv_prefs]
 
       r.p({},
           "Here you can see how you've configured privacy preferences, " +
@@ -396,17 +396,17 @@ function OneGroupsPerms(perms: PermsOnPage, groupsById: GroupsById): RElm {
 
 function GroupPrioNameLink(group: GroupVb, linkFn: (_: Who) => St, showTrustLevel?: Bo): RElm {
   // This: `id - 10` just happens to work right now,  [new_trust_levels] [group_priorities]
-  // except for the staff group (id 17, but not a trust level), mods (18) & admins (19),
-  // then need to subtract 11 because of the Staff group in between, which isn't a trust level.
+  // except for the Mods group (id 18 but not a trust level), & admins (19),
+  // then need to subtract 11 because of both the Staff & Mods groups in between.
   // TrustLevelOrStaff.CoreMember = 6, Staff = 7, Admins = 8.
-  const trustLevelNr = group.id < Groups.StaffId ? group.id - 10 : group.id - 11;
+  const trustLevelNr = group.id <= Groups.StaffId ? group.id - 10 : group.id - 11;
 
   showTrustLevel = showTrustLevel !== false &&
         // Only built-in groups have a trust level.
         member_isBuiltIn(group) &&
-        // The staff group is not a trust level group, although it's built-in.
-        // (Mods & admins are trust levels, though.)
-        group.id !== Groups.StaffId;
+        // The Mods group is not a trust level group, although it's built-in.
+        // (Staff & admins are trust levels, though.)
+        group.id !== Groups.ModeratorsId;
 
   const groupName = pat_name(group);
   const title = showTrustLevel ? `${trustLevelNr}: ${groupName}` : groupName;

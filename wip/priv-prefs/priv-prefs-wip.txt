@@ -9,6 +9,13 @@ Privacy preferences:
 - Only may-see-my-profile and -activity inherited, right now (but not may-mention or send-DM).
 - Not yet implemented everywhere: [inherit_priv_prefs_0impl]
 
+- But should a priv prefs on a group, affect the group (only)  [may_group_prefs]
+  or all members in the group? Right now, affects both. E.g. if may-not-see-profile — is that
+  the group's profile page, or all its members' individual pages? Currently, both.
+  But that's annoying — typically, if you hide Everyone's profile pages, it's still ok
+  to know that the Everyone group exists (it's built-in, hardcoded even), although
+  you cannot list its members or see their profile pages.
+
 Later:
 - Custom groups can have priv prefs.
 - Maybe: Trust level group's priority = trust level * 10,

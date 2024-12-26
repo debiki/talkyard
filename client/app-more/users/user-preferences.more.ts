@@ -794,6 +794,16 @@ const PrivacyPrefsTab = createFactory({
 
     // Maybe most new members would mess up these settings? [can_config_what_priv_prefs]
 
+    // Can't config moderators' priv prefs directly — it's better to configure Staff, since both
+    // admins & mods are staff, but admins might not be mods. [0_conf_mod_priv_prefs]
+    if (user.id === Groups.ModeratorsId)
+      return rFr({},
+          r.p({}, "Configure the Staff group instead, ",
+              LinkUnstyled({ to: linkToPatsPrivPrefs(Groups.StaffId) }, "go here"), "."),
+          r.p({}, "You cannot configure privacy prefs of the Moderators group, since I don't " +
+              "know if you want changes to affect admins too, or not. But if you configure " +
+              "the Staff group, that affects both mods and admins."));
+
     // Right now, custom groups cannot have privacy preferences.  [0_priv_prefs_4_cust_groups]
     const isCustomGroup = user.isGroup && !member_isBuiltIn(user);
 
@@ -820,8 +830,14 @@ const PrivacyPrefsTab = createFactory({
             // ... which of course (?) takes precedence over group configs, need not mention?
 
     const you =
-            user.isGroup ? "members of this group" : (    // I18N
-            user.id === me.id ? "you" : "this user");
+            user.id === Groups.AllMembersId ? "members of this forum" : (    // I18N
+            user.id === Groups.StaffId ? "moderators and admins" : (
+            user.isGroup ? "members of this group" : (
+            user.id === me.id ? "you" : "this user")));
+    const oneYou = !user.isGroup ? you : (             // I18N
+            user.id === Groups.StaffId ? "a moderator or admin" : (
+            user.id === Groups.AllMembersId ? "a member" : (
+            "a member of this group")));
     const your =
             user.isGroup ? "the group members'" : (    // I18N
             user.id === me.id ? "your" : "this user's");
@@ -842,7 +858,8 @@ const PrivacyPrefsTab = createFactory({
 
         !isTrustLevelGroupOrStaff ? null :
             r.p({}, "The privacy preferences of this group are used as " +
-                "the defaults for members of this group."),
+                `the defaults for ${you}. `,
+                !me.isAdmin ? null : r.a({ href: linkToInspect('priv-prefs') }, "Inspect")),
             // Is this a bit too chatty?:
             // "Preferences from lower trust level groups (e.g. All Members) are overridden
             // by any changes you make here."
@@ -860,7 +877,7 @@ const PrivacyPrefsTab = createFactory({
             // t.upp.HideActivityAll_2,,
             // But now, with a dropdown instead of two checkboxes:
             r.p({}, `Min trust level to see ${  // I18N
-                user.isGroup ? "recent activity by members of this group"
+                user.isGroup ? `recent activity by ${you}`
                             : your + " recent activity"}: (e.g. posts, comments) `),
             // It's possible to let others see one's activity, but non one's profile.
             // [see_activity_0_profile]
@@ -883,7 +900,7 @@ const PrivacyPrefsTab = createFactory({
         !canConfigSeeProfile ? null :
           r.div({ className: 'form-group e_SeeProfile' },
             r.p({}, `Min trust level to see ${  // I18N
-                user.isGroup ? "the profile pages of members of this group"
+                user.isGroup ? `the profile pages of ${you}`
                             : your + " profile page"}: `),
             TrustLevelBtn({
                 diagTitle: rFr({},
@@ -911,10 +928,12 @@ const PrivacyPrefsTab = createFactory({
         //
         !canConfigWhoMayMentionOrDM ? null : rFr({},
           r.div({ className: 'form-group e_WhoMayMention' },
-            r.p({}, `Min trust level to @mention ${you}: *`),  // I18N
+            r.p({}, `Min trust level to @mention ${oneYou}: *`),  // I18N
             TrustLevelBtn({
                 diagTitle: rFr({},
-                    `Min trust level to get to notify ${you} by typing `,  // I18N
+                    // UX BUG: I don't think this lets people notify *groups*? Only
+                    // group *members* individually? Or, hmm, what?  [may_group_prefs]
+                    `Min trust level to get to notify ${oneYou} by typing `,  // I18N
                     r.code({}, `@${user.username}`), ':'),
                 ownLevel: firstDefOf( // _first_defined
                       prefsEdited.mayMentionMeTrLv, prefsOwn.mayMentionMeTrLv),
@@ -928,9 +947,9 @@ const PrivacyPrefsTab = createFactory({
                 }})),
 
           r.div({ className: 'form-group e_WhoMayDm' },
-            r.p({}, `Min trust level to direct-message (DM) ${you}: *`),  // I18N
+            r.p({}, `Min trust level to direct-message (DM) ${oneYou}: *`),  // I18N
             TrustLevelBtn({
-                diagTitle: `Min trust level to get to direct-message ${you}:`,  // I18N
+                diagTitle: `Min trust level to get to direct-message ${oneYou}:`,  // I18N
                 ownLevel: firstDefOf( // _first_defined
                       prefsEdited.maySendMeDmsTrLv, prefsOwn.maySendMeDmsTrLv),
                 defLevel: TrustLevelOrStaff.New,

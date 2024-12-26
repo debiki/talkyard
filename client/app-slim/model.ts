@@ -1770,16 +1770,21 @@ interface PatVb extends MemberInclDetails, BioWebsiteLocation,
   deletedAt?: number;
 }
 
+// Should a group pref group apply to the group, or to members individually?  [may_group_prefs]
 interface PrivacyPrefs {
   maySeeMyBriefBioTrLv?: TrustLevelOrStaff
   maySeeMyMembershipsTrLv?: TrustLevelOrStaff
-  //mayListMyMembersTrLv?: TrustLevelOrStaff — later, for groups & circles [list_membs_perm]
+  //mayListMyMembersTrLv?   — later, for groups & circles [list_membs_perm] [may_group_prefs]
   maySeeMyProfileTrLv?: TrustLevelOrStaff
   mayFindMeTrLv?: TrustLevelOrStaff
   // Not yet impl. [priv_prof_0_presence]
   maySeeMyPresenceTrLv?: TrustLevelOrStaff
   maySeeMyApproxStatsTrLv?: TrustLevelOrStaff
   maySeeMyActivityTrLv?: TrustLevelOrStaff
+
+  // If it's a group, does this mean one can mention the group, e.g. @staff, or that one can
+  // mention the members individually, e.g. @some_moderator?  Mabye there should be two new
+  // permissions: one mayMentionGroupTrLv and mayDirMsgGroupTrLv? [may_group_prefs]
   maySendMeDmsTrLv?: TrustLevelOrStaff
   mayMentionMeTrLv?: TrustLevelOrStaff
 }

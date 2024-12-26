@@ -234,7 +234,11 @@ object Authz {
     // (Later: Consider custom groups too [group_priorities]. Then, we'll need an inner
     // loop, to loop over groups with the same prio? And use the most private prefs
     // (TrustLevel.maxOfAny()).)
-    for (group <- groupsByPrioDesc) {
+    for {
+      group <- groupsByPrioDesc;
+      // Should configure the Staff group, not Mods. [0_conf_mod_priv_prefs]
+      if group.id != Group.ModeratorsId
+    } {
       result = result.addMissing(group.privPrefs)
 
       // All other groups have lower precedence, so if all preferences have been

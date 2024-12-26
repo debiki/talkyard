@@ -497,6 +497,7 @@ declare namespace debiki2 {
   function linkToAdminPageEmbeddedSettings(): string;
   function linkToReviewPage(): string;
   function linkToStaffInvitePage(): string;
+  function linkToInspect(what: 'priv-prefs'): St;
   function externalLinkToAdminHelp(): string;
   function linkToGroups(): string;
   function linkToMyDraftsEtc(store: Store): string;

@@ -120,6 +120,10 @@ export function linkToStaffInvitePage(): string {
   return origin() + '/-/admin/users/invited';
 }
 
+export function linkToInspect(what: 'priv-prefs'): St {
+  return origin() + '/-/admin/inspect#' + what;
+}
+
 export function linkToStaffUsersPage(): St {
   return origin() + '/-/admin/users/';
 }
