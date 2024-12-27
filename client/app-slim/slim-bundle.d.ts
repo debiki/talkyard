@@ -348,13 +348,15 @@ declare namespace debiki2 {
   function pp_snoozeLeftMs(me: Myself): number;
   function member_isBuiltIn(member: Member): boolean;
   function user_isSuspended(user: UserInclDetails, nowMs: WhenMs): boolean;
+  function pat_isBanned(user: Pat): Bo;
   function user_threatLevel(user: UserInclDetails): ThreatLevel;
   function user_trustLevel(user: Myself | UserInclDetails): TrustLevel;
   function user_isGone(user: Myself | BriefUser | UserInclDetails | ParticipantAnyDetails): boolean;
 
   function uppercaseFirst(text: string): string;
-  function firstDefinedOf(x, y, z?): any;
-  function firstValOf(x, y, z?): any;
+  function firstDefinedOf(x, y, z?): any; // RENAME QUICK to firstDefOf, next line.
+  function firstDefOf<T>(x: T | U, y: T | U, z?: T | U): T | U;
+  function firstValOf<T>(x: T | NU, y: T | NU, z?: T | NU, w?: T | NU): T | NU;
   // Renaming from...
   function groupByKeepOne<V>(vs: V[], fn: (v: V) => number): { [key: number]: V };
   // ...to:
@@ -469,16 +471,24 @@ declare namespace debiki2 {
   function linkToNotificationSource(notf: Notification): string;
   function linkToAdminPageAdvancedSettings(hostname?: string): string;
   function linkToRedirToAboutCategoryPage(categoryId: CategoryId): string;
+  function linkToCat(cat: Cat): St;
   function linkToUserInAdminArea(user: Myself | UserInclDetails | Participant | UserId): string;
   function linkToSendMessage(idOrUsername: UserId | string): string;
   function linkToUserInAdminArea(userId: UserId): string;
+
+  // Don't use:
   function linkToUserProfilePage(idOrUsername: Myself | Participant | UserId | string): string;
   function pathTo(user: Participant | Myself | UserId | string): string;
+  // Use instead, better name:
+  function linkToPatsProfile(who: Who): St;
+
   function linkToUsersNotfs(who: Who): string;
   function linkToMembersNotfPrefs(userIdOrUsername: UserId | string): string;
   function linkToSendMessage(userIdOrUsername: UserId | string): string;
   function linkToInvitesFromUser(userId: UserId): string;
   function linkToUsersEmailAddrs(userIdOrUsername: UserId | string): string;
+  function linkToPatsPrivPrefs(who: Who): St;
+  function linkToPatsUiPrefs(who: Who): St;
   function linkToAdminPage(): string;
   function linkToAdminPageLoginSettings(): string;
   function linkToAdminPageFeatures(): St;
@@ -487,6 +497,7 @@ declare namespace debiki2 {
   function linkToAdminPageEmbeddedSettings(): string;
   function linkToReviewPage(): string;
   function linkToStaffInvitePage(): string;
+  function linkToInspect(what: 'priv-prefs'): St;
   function externalLinkToAdminHelp(): string;
   function linkToGroups(): string;
   function linkToMyDraftsEtc(store: Store): string;
@@ -610,7 +621,7 @@ declare namespace debiki2 {
   // From oop-methods.ts:
   function userStats_totalNumPosts(stats: UserStats | NU): Nr | N;
   function userStats_totalNumPostsRead(stats: UserStats | NU): Nr | N;
-  function trustLevel_toString(trustLevel: TrustLevel): string;
+  function trustLevel_toString(trustLevel: TrustLevel | TrustLevelOrStaff): St;
 
 }
 

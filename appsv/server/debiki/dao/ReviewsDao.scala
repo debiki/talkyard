@@ -58,6 +58,12 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
   /** This only remembers a *decision* about what to do. The decision is then
     * carried out, by JanitorActor.executePendingReviewTasks, after a short
     * undo-decision timeout.
+    *
+    * If the decision affects many review tasks — which `DeleteAndBanSpammer` does
+    * — then, the client dims other Delete button about additional posts by
+    * the same spammer, so the moderator won't need to click all those too,
+    * because other posts by the spammer are deleted too, later when
+    * the review decision gets carried out. [hide_ban_btns]
     */
   def makeReviewDecisionIfAuthz(taskId: ReviewTaskId, requester: Who, anyRevNr: Opt[i32],
         decision: ReviewDecision): U = {
@@ -215,7 +221,10 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
     // More authz in the tx below.
 
     dieIf(decision != ReviewDecision.Accept
-          && decision != ReviewDecision.DeletePostOrPage, "TYE06SAKHJ34",
+          && decision != ReviewDecision.DeletePostOrPage,
+          // Need to fix this first: [incl_all_mod_results].
+          // && decision != ReviewDecision.DeleteAndBanSpammer,
+          "TYE06SAKHJ34",
           s"Unexpected moderatePostInstantly() decision: $decision")
 
     val modResult = writeTx { (tx, staleStuff) =>
@@ -366,9 +375,45 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
                 InteractAcceptAnswer | InteractWikify | InteractLike =>
             reviewAcceptPost(post, tasksToAccept = modTasks, decision,
                   decidedById = decidedById)(tx, staleStuff)
-          case DeletePostOrPage =>
-            rejectAndDeletePost(post, decidedById = decidedById, modTasks,
+          case DeletePostOrPage | DeleteAndBanSpammer =>
+            var res = rejectAndDeletePost(
+                  post, decidedById = decidedById, doingTasksNow = modTasks,
                   browserIdData)(tx, staleStuff)
+            if (decision == DeleteAndBanSpammer) {
+              val bannedUser = banUser(post.createdById, reason = "DeleteAndBanSpammer",
+                    bannedById = decidedById)(tx, staleStuff)
+
+              // Has the spammer posted more spam? We'll delete it too, by looking up
+              // other new post mod tasks related to han, and then delete the posts
+              // and invalidating the mod tasks (which `rejectAndDeletePost()` does).
+              val moreSpammerModTasks: Seq[ModTask] = tx.loadReviewTasksAboutUser(
+                    post.createdById, limit = 999, OrderBy.OldestFirst)
+              // Similar code: [_loop_pending]
+              val pendingTasks = moreSpammerModTasks.filter(
+                      t => t.decision.isEmpty && !t.doneOrGone && t.postId.isDefined)
+              val pendingTasksByPostId = pendingTasks.groupBy(_.postId getOrDie "TyE4JKR02J7")
+              for {
+                (post2Id, _tasksForPost2) <- pendingTasksByPostId
+                post2 <- tx.loadPost(post2Id)
+              } {
+                // If banning a spammer directly from a page, then, we should return all
+                // res2:s too to the browser, not only res. [incl_all_mod_results]
+                // So if a spammer posts a page and a comment on the page, then, if banning
+                // via the comment, the moderator sees that this deletes the spammer's
+                // whole page.
+                val res2 = rejectAndDeletePost(
+                      post2, decidedById = decidedById,
+                      // We aren't doing any of these tasks now — the ones we're handling,
+                      // are `modTasks` for `post` not `post2`.
+                      // WOULD_OPTIMIZE: This'll load  the mod tasks about `post2` again,
+                      // via `tx.loadReviewTasksAboutPostIds()`, although we have them
+                      // already in _tasksForPost2, oh well.
+                      doingTasksNow = Nil, browserIdData)(tx, staleStuff)
+              }
+
+              res = res.copy(bannedUser = Some(bannedUser))
+            }
+            res
         }
 
     completeModTasksMaybeSpamCheckTask(post, modTasks, decision, decidedById = decidedById
@@ -427,7 +472,8 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
   }
 
 
-  private def isPageModTask(post: Post, modTasks: Seq[ModTask]): Bo = {
+  private def _isPageModTask(post: Post): Bo = {
+    // But isn't this bug mostly solved already by looking at isOrigPost (below)?
     BUG // need to know if the moderator's intention is to delete the whole page,
     // and which page — or just the post.
     // Need a new  ModDecision type. [apr_movd_orig_post]
@@ -464,7 +510,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
         (tx: SiteTx, staleStuff: StaleStuff): ModResult = {
 
     dieIf(tasksToAccept.isEmpty, "TyE306RKTD5")
-    val taskIsForBothTitleAndBody = isPageModTask(post, tasksToAccept)
+    val taskIsForBothTitleAndBody = _isPageModTask(post)
 
     if (post.isDeleted) {
       // Approve the post anyway  [apr_deld_post] — maybe gets undeleted
@@ -504,14 +550,14 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
 
 
 
-  private def rejectAndDeletePost(post: Post, decidedById: UserId, modTasks: Seq[ModTask],
+  private def rejectAndDeletePost(post: Post, decidedById: UserId, doingTasksNow: Seq[ModTask],
         browserIdData: BrowserIdData)
         (tx: SiteTx, staleStuff: StaleStuff): ModResult = {
 
-    val taskIsForBothTitleAndBody = isPageModTask(post, modTasks)
+    val taskIsForBothTitleAndBody = _isPageModTask(post)
     val reqr = Who(TrueId.forMember(decidedById), browserIdData)
 
-    dieIf(modTasks.exists(_.postId isSomethingButNot post.id), "TyE50WKDL6")
+    dieIf(doingTasksNow.exists(_.postId isSomethingButNot post.id), "TyE50WKDL6")
 
     // Maybe got moved to an new page?
     val pageId = post.pageId
@@ -537,10 +583,10 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
 
               // It's annoying if [other review tasks for the same post] would
               // need to be handled too.
-              // (If carrying out a mod task decision, then, modTasks is just that
-              // one mod task — there might be other mod tasks too.)
+              // (If carrying out a mod task decision, then, doingTasksNow is just that
+              // one mod task — there might be other mod tasks too, about the same post.)
               UX; COULD // do this also if deleting the whole page? (see above)
-              invalidateModTasksForPosts(Seq(post), doingTasksNow = modTasks, tx)
+              invalidateModTasksForPosts(Seq(post), doingTasksNow = doingTasksNow, tx)
 
               (updPost.toSeq, None)
             }
@@ -728,6 +774,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
 
       val shallApproveRemainingFirstPosts = numApproved >= numFirstToApprove
       if (shallApproveRemainingFirstPosts) {
+        // Similar code: [_loop_pending]
         val pendingTasks = tasks.filter(!_.doneOrGone)
         val titlesToApprove = mutable.HashSet[PageId]()
         val postIdsToApprove = pendingTasks flatMap { task =>
@@ -827,17 +874,20 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
   }
 
 
-  def loadReviewStuff(olderOrEqualTo: Option[ju.Date], limit: Int, forWho: Who)
-        : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, Participant], Map[PageId, PageMeta]) =
-    readOnlyTransaction { tx =>
+  /** Note: Any Guest:s returned were loaded via `..._wrongGuestEmailNotfPerf()`.
+    */
+  def loadReviewStuff(olderOrEqualTo: Opt[ju.Date], limit: Int, forWho: Who)
+        : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, PatVb], Map[PageId, PageMeta]) =
+    readTx { tx =>
       val requester = tx.loadTheParticipant(forWho.id)
-      loadStuffImpl(olderOrEqualTo, limit, requester, tx)
+      _loadStuffImpl(olderOrEqualTo, limit, requester, tx)
     }
 
 
-  private def loadStuffImpl(olderOrEqualTo: Option[ju.Date], limit: Int,
-        requester: Participant, tx: SiteTransaction)
-        : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, Participant], Map[PageId, PageMeta]) = {
+  private def _loadStuffImpl(olderOrEqualTo: Opt[ju.Date], limit: Int,
+        requester: Pat, tx: SiteTx)
+        : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, PatVb], Map[PageId, PageMeta]) = {
+
     val reviewTasksMaybeNotSee = tx.loadReviewTasks(olderOrEqualTo, limit)
     val taskCounts = tx.loadReviewTaskCounts(requester.isAdmin)
 
@@ -897,7 +947,9 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
       userIds.add(flag.flaggerId.pubId)
     }
 
-    val usersById = tx.loadParticipantsAsMap(userIds)
+    // Load details, so we'll know e.g. if sbd has been banned alreayd.
+    val usersById: immutable.Map[UserId, PatVb] =
+          tx.loadParticipantsInclDetailsByIdsAsMap_wrongGuestEmailNotfPerf(userIds)
 
     val titlesByPageId = tx.loadTitlesPreferApproved(pageIds)
 

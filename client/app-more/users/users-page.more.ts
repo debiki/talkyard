@@ -94,6 +94,7 @@ const UserPageComponent = createReactClass(<any> {
       // code assumes we have access to pat's private fields. [pat_prof_fields]
       // So, until reloaded with those fields included, don't show any pat at all.
       user: iAmSbdElse ? null : this.state.user,
+      notFound: iAmSbdElse ? null : this.state.notFound,
     });
     if (iAmSbdElse) {
       // Now we might have access to more/less data about the user, so refresh.
@@ -143,10 +144,15 @@ const UserPageComponent = createReactClass(<any> {
     Server.loadPatVvbPatchStore(usernameOrId,
           // CLEAN_UP don't merge objs server side and pick apart here
           // — just send them as separate fields from the start. [load_pat_stats_grps]
-          ({ user, groupsMaySee }: LoadPatVvbResponse) => {
-      const stats: UserStats | undefined = user.anyUserStats;
+          (resp: LoadPatVvbResponse | NotFoundResponse) => {
       this.nowLoading = null;
       if (this.isGone) return;
+      if (resp === 404) {
+        this.setState({ notFound: true, user: null, usernameOrId });
+        return;
+      }
+      const { user, groupsMaySee } = resp;
+      const stats: UserStats | undefined = user.anyUserStats;
       // This setState will trigger a rerender immediately, because we're not in a React event handler.
       // But when rerendering here, the url might still show a user id, not a username. (5GKWS20)
       this.setState({ user, stats, groupsMaySee });
@@ -208,6 +214,12 @@ const UserPageComponent = createReactClass(<any> {
     const me: Myself = store.me;
     const user: UserDetailsStatsGroups = state.user;  // ParticipantAnyDetails = better class?
     const usernameOrId = props.match.params.usernameOrId;
+
+    if (state.notFound)
+      return r.div({ className: 'container esUP c_UP_404' },
+               r.div({ className: 's_UP_Ab dw-user-bar clearfix' },
+                  r.h1({},
+                        "User not found, or their profile is private.")));
 
     // Wait until url updated to show username, instead of id, to avoid mounting & unmounting
     // sub comoponents, which could result in duplicated load-data requests.  (5GKWS20)
@@ -433,9 +445,9 @@ const PatTopPanel = createComponent({
     const me: Myself = props.me;
     const isGone = user_isGone(user);
 
-    let suspendedInfo;
+    let suspendedInfo: RElm | U;
     if (user.suspendedAtEpoch) {
-      const thisUserIsWhat = (<number | string> user.suspendedTillEpoch) === 'Forever'
+      const thisUserIsWhat = pat_isBanned(user)
           ? t.upp.UserBanned
           : t.upp.UserSuspended(moment(user.suspendedTillEpoch).format('YYYY-MM-DD HH:mm'));
       suspendedInfo = r.div({},
@@ -448,7 +460,7 @@ const PatTopPanel = createComponent({
 
     const isMe = me.id === user.id;
 
-    let isAGroup;
+    let isAGroup: St | U;
     if (user.isGroup) {
       isAGroup = t.upp.isGroup;
     }

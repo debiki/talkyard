@@ -200,6 +200,69 @@ object Authz {
   }
 
 
+  /** Derives pat's privacy preferences, by looking at hans own personal
+    * settings, and filling in any missing by inheriting defaults from
+    * the groups pat is a member of.
+    *
+    * (Later, use AuthzCtxOnPats somehow instead as param?)
+    *
+    * @param memberOfGroups Order doesn't matter.
+    */
+  def derivePrivPrefs(pat: Pat, patsGroups: ImmSeq[Group]): MemberPrivacyPrefs = {
+    _derivePrivPrefsImpl(Some(pat), patsGroups)
+  }
+
+
+  /** Default privacy prefs for someone who is a member of the specified groups.
+    * Prefs in higher trust level groups (more specific),
+    * override prefs from lower (less specific) groups.
+    *
+    * @param memberOfGroups Order doesn't matter.
+    */
+  def deriveDefaultPrivPrefs(memberOfGroups: ImmSeq[Group]): MemberPrivacyPrefs = {
+    _derivePrivPrefsImpl(None, memberOfGroups)
+  }
+
+
+  private def _derivePrivPrefsImpl(anyPat: Opt[Pat], patsGroups: ImmSeq[Group])
+          : MemberPrivacyPrefs = {
+    var result = anyPat.flatMap(_.anyPrivPrefs) getOrElse MemberPrivacyPrefs.empty
+
+    val (groupsByPrioDesc, _customGroups) = sortGroupsByPrioDesc(patsGroups)
+
+    // Prefs in higher (more specific) trust level groups override lower group prefs.
+    // (Later: Consider custom groups too [group_priorities]. Then, we'll need an inner
+    // loop, to loop over groups with the same prio? And use the most private prefs
+    // (TrustLevel.maxOfAny()).)
+    for {
+      group <- groupsByPrioDesc;
+      // Should configure the Staff group, not Mods. [0_conf_mod_priv_prefs]
+      if group.id != Group.ModeratorsId
+    } {
+      result = result.addMissing(group.privPrefs)
+
+      // All other groups have lower precedence, so if all preferences have been
+      // specified we're done (which is rare — admins & users tend to leave some things
+      // as is, using the defaults).
+      if (result.everythingSpecified)
+        return result
+    }
+
+    result
+  }
+
+
+  /** Returns a tuple with:
+    * - Trust level groups, ordered by trust level descending (so, most specific first).
+    * - Custom groups, unspecified priority
+    */
+  def sortGroupsByPrioDesc(patsGroups: ImmSeq[Group]): (ImmSeq[Group], ImmSeq[Group]) = {
+    // Groups Everyone, All Members, ... Core Members, Mods, Admins have ids 10, 11, ... 20.
+    // But custom groups (not built-in) have ids >= 100, so this places them last:
+    val byId = patsGroups.sortBy(-_.id)
+    byId.span(_.isBuiltIn)
+  }
+
 
   def mayCreatePage(
     userAndLevels: AnyUserAndLevels,
@@ -764,6 +827,8 @@ object Authz {
 
     // We'll start with no permissions, at the top category, and loop through all categories
     // down to the category in which the page is placed, and add/remove permissions along the way.
+    // But only to find out if the user may not *see* the category at all — later,
+    // we merge only with the most specific category's permissions. [direct_cat_perms]
     // Move these pageMeta checks to 'Check page' above?
     val isForumPage = pageMeta.exists(_.pageType == PageType.Forum)
     val isPageDeleted = pageMeta.exists(_.isDeleted)
@@ -795,6 +860,7 @@ object Authz {
             debugCode = "EdMMSEEFORUM")
     }
 
+    // Site wide permissions not implemented — no way to specify via the ui.  [0_site_perms]
     val relPermsWholeSite = relevantPermissions.filter(_.onWholeSite.is(true))
     for (p <- relPermsWholeSite) {
       // Random order? So better add permissions only (not remove).  [2LG5F04W]
@@ -861,7 +927,16 @@ object Authz {
       anyCatMayWhat = Some(mayWhatThisCat)
     }
 
-    // Only merge with the permissions set directly on the category the page is in.
+    // Only merge with the permissions set directly on the category  [direct_cat_perms]
+    // the page is in.
+    BUG // The client side algorithm, lets sub cats inherit permissions   [cat_perm_inh_bug]
+    // of ancestor cats. So, e.g. a Reply or Create Topic button is shown, but when
+    // submitting, the server refuses.
+    //
+    // But then site wide permissions make no sense? Why would they be inherited to sub cats,
+    // but not permissions set on a direct parent category?
+    // Fortunately, site wide permissions haven't been implemented anyway  [0_site_perms]
+    //
     // This means it's possible to let people post topics in a sub cat,
     // although they may not post topics in the base cat.
     // (However if they cannot *see* the base cat, then they cannot access any

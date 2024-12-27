@@ -1415,11 +1415,12 @@ class EdSecurity(globals: Globals) {
     * to find out that it exists. [7C2KF24]
     */
   def throwIndistinguishableNotFound(devModeErrCode: St = "",
-          showErrCodeAnyway: Bo = false): Nothing = {
+         devModeMsg: St = "", showErrCodeAnyway: Bo = false): Nothing = {
     val suffix =
       if (showErrCodeAnyway || !globals.isProd && devModeErrCode.nonEmpty) s"-$devModeErrCode"
       else ""
-    throwNotFound("TyE404_" + suffix, "Not found")
+    val msg = if (!globals.isProd && devModeMsg.nonEmpty) devModeMsg else "Not found"
+    throwNotFound("TyE404_" + suffix, msg)
   }
 
   /** Throws 404 Not Found if pat may not see the post, or 403 Forbidden if

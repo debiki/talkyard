@@ -709,8 +709,15 @@ export function pp_snoozeLeftMs(me: Myself): number {
 }
 
 
+/// Banned users are condisered suspended too (suspended forever).
 export function user_isSuspended(user: UserInclDetails, nowMs: WhenMs): boolean {
   return user.suspendedTillEpoch && ((user.suspendedTillEpoch * 1000) > nowMs);
+}
+
+
+export function pat_isBanned(user: Pat): Bo {
+  // See [ban_magic_nr] server side.
+  return user.suspendedTillEpoch === 10876500001;
 }
 
 
@@ -1023,6 +1030,8 @@ export function store_mayICreateTopics(store: Store, category: Cat | U): Bo {
     }
     // @endif
 
+    // BUG: Server side we look only at the parent cat, not any other ancestors. [cat_perm_inh_bug]
+
     // Old, before sub cats:  [subcats]
     while (currentCategory) {
       me.permsOnPages.forEach((p: PermsOnPage) => {
@@ -1081,6 +1090,8 @@ export function store_mayIReply(store: Store, post: Post): boolean {
   });
 
   // ----- Category perms?
+
+  // BUG: Server side we look only at the parent cat, not any other ancestors. [cat_perm_inh_bug]
 
   // Here we loop through the cats in the correct order though, [0GMK2WAL].
   for (let i = 0; i < ancestorCategories.length; ++i) {
@@ -1767,7 +1778,7 @@ const DiscPropDefaults: DiscPropsBase = {
   comtsStartHidden: NeverAlways.NeverButCanContinue,
   comtsStartAnon: NeverAlways.NeverButCanContinue,
   opStartsAnon: NeverAlways.NeverButCanContinue,
-  // For now. Later: OnlySelfCanDeanon.
+  // For now. Later: OnlySelfCanDeanon. [def_anon_status]
   newAnonStatus: AnonStatus.IsAnonCanAutoDeanon,
   pseudonymsAllowed: NeverAlways.NeverButCanContinue,
 };
@@ -2172,7 +2183,7 @@ export function topPeriod_toString(period: TopTopicsPeriod): string {
 // Trust and threat levels
 //----------------------------------
 
-export function trustLevel_toString(trustLevel: TrustLevel): string {
+export function trustLevel_toString(trustLevel: TrustLevel | TrustLevelOrStaff): St {
   switch (trustLevel) {
     case TrustLevel.Stranger: return t.Stranger || "Stranger";  // I18N
     case TrustLevel.New: return t.NewMember;
@@ -2181,9 +2192,9 @@ export function trustLevel_toString(trustLevel: TrustLevel): string {
     case TrustLevel.Trusted: return t.TrustedMember;
     case TrustLevel.Regular: return t.RegularMember;
     case TrustLevel.CoreMember: return t.CoreMember;
+    case TrustLevelOrStaff.Staff: return t.Staff || "Staff";  // I18N
+    case TrustLevelOrStaff.Admin: return t.Admin;
     default:
-      if (trustLevel === DummyTrustLevel.Staff) return t.Staff || "Staff";   // I18N
-      if (trustLevel === DummyTrustLevel.Admin) return t.Admin;
       return `Unknown trust level: ${trustLevel} [TyEUNKTRLVL]`;
   }
 }

@@ -1611,6 +1611,9 @@ interface Pat extends PatNameAvatar {   // Guest or Member, and Member = group o
   isGuest?: boolean;  // = !isAuthenticated
   isAuthenticated?: Bo;  // = !isGuest, if is a user (but absent, if is a group)
 
+  // Not always present, even if is suspended. [incl_susp_till]
+  suspendedTillEpoch?: WhenSecs;
+
   isEmailUnknown?: boolean;
   avatarSmallHashPath?: string;
   isMissing?: boolean;
@@ -1709,6 +1712,10 @@ interface MemberInclDetails extends Member {
   summaryEmailIntervalMinsOwn?: number;
   summaryEmailIfActive?: boolean;
   summaryEmailIfActiveOwn?: boolean;
+
+  // For editing one's own prefs (or sbd else's, if one is staff).
+  privPrefsOwn?: PrivacyPrefs
+  privPrefsDef?: PrivacyPrefs
 }
 
 
@@ -1716,7 +1723,7 @@ type GroupInclDetails = GroupVb;
 interface GroupVb extends MemberInclDetails, Group {
   isGroup: true;
   //"createdAtEpoch" -> JsWhen(group.createdAt),
-  perms: GroupPerms;
+  perms: GroupPerms;  // oops missing here: [perms_missing] currently doesn't matter
 }
 
 type UserInclDetails = PatVb; // old name, remove
@@ -1725,7 +1732,12 @@ type UserInclDetails = PatVb; // old name, remove
 // "PatVbStaff" better?)
 /// A Participant including verbose details, for the pat profile pages.
 // RENAME to UserVb? Isn't this alaways a user — not a group or guest.
-interface PatVb extends MemberInclDetails, BioWebsiteLocation {
+interface PatVb extends MemberInclDetails, BioWebsiteLocation,
+      // The priv prefs fields directly on a PatVb are the effective prefs
+      // so the browser knows if any buttons/features should be disabled.
+      // privPrefsOwn and ...Def are for editing one's prefs, and only included
+      // for oneself or staff.
+      PrivacyPrefs {
   externalId?: string;
   createdAtEpoch: number;  // change to millis
   fullName?: string;
@@ -1734,11 +1746,6 @@ interface PatVb extends MemberInclDetails, BioWebsiteLocation {
   emailNotfPrefs: EmailNotfPrefs,
   // mailingListMode: undefined | true;  // default false  — later
   hasPassword?: boolean;
-  // ------- (Could break out interface? Or maybe pointless.)
-  seeActivityMinTrustLevel?: TrustLevel;
-  maySendMeDmsTrLv?: TrustLevelOrStaff;
-  mayMentionMeTrLv?: TrustLevelOrStaff;
-  // -------
   uiPrefs: UiPrefs;
   isAdmin: boolean;
   isModerator: boolean;
@@ -1762,6 +1769,30 @@ interface PatVb extends MemberInclDetails, BioWebsiteLocation {
   deactivatedAt?: number;
   deletedAt?: number;
 }
+
+// Should a group pref group apply to the group, or to members individually?  [may_group_prefs]
+interface PrivacyPrefs {
+  maySeeMyBriefBioTrLv?: TrustLevelOrStaff
+  maySeeMyMembershipsTrLv?: TrustLevelOrStaff
+  //mayListMyMembersTrLv?   — later, for groups & circles [list_membs_perm] [may_group_prefs]
+  maySeeMyProfileTrLv?: TrustLevelOrStaff
+  mayFindMeTrLv?: TrustLevelOrStaff
+  // Not yet impl. [priv_prof_0_presence]
+  maySeeMyPresenceTrLv?: TrustLevelOrStaff
+  maySeeMyApproxStatsTrLv?: TrustLevelOrStaff
+  maySeeMyActivityTrLv?: TrustLevelOrStaff
+
+  // If it's a group, does this mean one can mention the group, e.g. @staff, or that one can
+  // mention the members individually, e.g. @some_moderator?  Mabye there should be two new
+  // permissions: one mayMentionGroupTrLv and mayDirMsgGroupTrLv? [may_group_prefs]
+  maySendMeDmsTrLv?: TrustLevelOrStaff
+  mayMentionMeTrLv?: TrustLevelOrStaff
+}
+
+/// When editing, value can be null, means "delete, use default".
+type PrivacyPrefsEdited = {
+  [Property in keyof PrivacyPrefs]: TrustLevelOrStaff | N | U
+};
 
 interface UserInclDetailsWithStats extends PatVb {   // REMOVE, instead, use PatVvb? no UserVvb?
   // Mabye some old accounts lack stats?
@@ -3110,6 +3141,8 @@ type ErrorStatusHandler = (httpStatusCode?: Nr, errCode?: ErrCode) => Vo;
 type ErrorDetailsStatusHandler = (
         errorStatusCode: number | U, errorStatusText: string | U, details?) => void;
 
+// For endpoints that expect the whatever to maybe not exist. 200 ok always return json.
+type NotFoundResponse = 404;
 
 /// The browser gives you a Response, but that's not an object so { ...response } won't work.
 /// This is however a real object, with the reponse payload included in 'responseText':
@@ -3345,6 +3378,13 @@ interface IframeOffsetWinSize {
 
 interface GenPasetoV2LocSecrResp {
   pasetoV2LocalSecret: St;
+}
+
+
+interface InspectForumResp {
+  catsMaySee: Cat[]
+  groupsMaySee: GroupVb[]
+  allPerms: PermsOnPage[]
 }
 
 

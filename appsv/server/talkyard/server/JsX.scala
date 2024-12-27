@@ -23,7 +23,7 @@ import debiki.JsonUtils
 import debiki.JsonUtils._
 import debiki.EdHttp._
 import java.{util => ju}
-import talkyard.server.authz.AuthzCtxOnPats
+import talkyard.server.authz.{Authz, AuthzCtxOnPats}
 import talkyard.server.api.{UpsertTypeParams, CreateTagParams}
 import org.scalactic.{Bad, Good, Or}
 
@@ -211,7 +211,8 @@ object JsX {   RENAME // to JsonPaSe
     *
     * ts: Pat and subclasses, e.g. Guest, Anonym.
     */
-  def JsUser(user: Pat, tags: Seq[Tag] = Nil, toShowForPatId: Opt[PatId] = None): JsObject = {  //RENAME to JsPat, ts: Pat
+  def JsUser(user: Pat, tags: Seq[Tag] = Nil, toShowForPatId: Opt[PatId] = None,
+          inclSuspendedTill: Bo = false): JsObject = {  //RENAME to JsPat, ts: Pat
     var json = JsPatNameAvatar(user)
     user.smallAvatar foreach { uploadRef =>
       json += "avatarSmallHashPath" -> JsString(uploadRef.hashPath)
@@ -254,6 +255,9 @@ object JsX {   RENAME // to JsonPaSe
     }
     if (tags.nonEmpty) {
       json += "pubTags" -> JsArray(tags map JsTag)
+    }
+    if (inclSuspendedTill && user.suspendedTill.isDefined) {
+      json += "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill)  // [incl_susp_till]
     }
     json
   }
@@ -313,7 +317,8 @@ object JsX {   RENAME // to JsonPaSe
       "bio" -> JsStringOrNull(user.about),
       "websiteUrl" -> JsStringOrNull(user.website),
       "location" -> JsStringOrNull(user.country),
-      "seeActivityMinTrustLevel" -> JsNumberOrNull(user.privPrefs.seeActivityMinTrustLevel.map(_.toInt)),
+      "seeActivityMinTrustLevel" -> // [ty_v1] remove
+            JsNumberOrNull(user.privPrefs.seeActivityMinTrustLevel.map(_.toInt)),
       "avatarTinyHashPath" -> JsStringOrNull(user.tinyAvatar.map(_.hashPath)),
       "avatarSmallHashPath" -> JsStringOrNull(user.smallAvatar.map(_.hashPath)),
       "avatarMediumHashPath" -> JsStringOrNull(user.mediumAvatar.map(_.hashPath)),
@@ -328,9 +333,21 @@ object JsX {   RENAME // to JsonPaSe
       // (Don't think need not exclude deletedAt & suspendedTillMs)
     }
 
-    // Currently needs to be public, see [some_pub_priv_prefs].
-    userJson = userJson.addAnyInt32("maySendMeDmsTrLv", user.privPrefs.maySendMeDmsTrLv)
-    userJson = userJson.addAnyInt32("mayMentionMeTrLv", user.privPrefs.mayMentionMeTrLv)
+    // Private, and of interest client side only to oneself and staff, if wants to edit.
+    if (reqrIsStaffOrSelf) {
+      userJson += "privPrefsOwn" -> JsPrivPrefs(user.privPrefs)
+      // Good to know what the defaults are, since usually that's what's in use — most
+      // people don't look at or configure their own prefs that much.
+      val defaults = Authz.deriveDefaultPrivPrefs(groups)
+      userJson += "privPrefsDef" -> JsPrivPrefs(defaults)
+    }
+
+    // But these effective prefs need to be public, see [some_pub_priv_prefs] (& bit dupl code).
+    // so the client can show/disable e.g. the Send Message button, if DMs allowed or not.
+    val effPrefs = Authz.derivePrivPrefs(user, groups)
+    userJson = userJson.addAnyInt32("maySendMeDmsTrLv", effPrefs.maySendMeDmsTrLv)
+    userJson = userJson.addAnyInt32("mayMentionMeTrLv", effPrefs.mayMentionMeTrLv)
+    userJson = userJson.addAnyInt32("maySeeMyActivityTrLv", effPrefs.seeActivityMinTrustLevel)
 
     val maySeeEmailAdrs = reqrPerms.exists(_.canSeeOthersEmailAdrs)
 
@@ -399,15 +416,34 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
+  def JsPrivPrefs(prefs: MemberPrivacyPrefs): JsObject = {
+    var obj = JsEmptyObj2
+    obj = obj.addAnyInt32("maySeeMyBriefBioTrLv", prefs.maySeeMyBriefBioTrLv)
+    obj = obj.addAnyInt32("maySeeMyMembershipsTrLv", prefs.maySeeMyMembershipsTrLv)
+    obj = obj.addAnyInt32("maySeeMyProfileTrLv", prefs.maySeeMyProfileTrLv)
+    obj = obj.addAnyInt32("mayFindMeTrLv", prefs.mayFindMeTrLv)
+    obj = obj.addAnyInt32("maySeeMyPresenceTrLv", prefs.maySeeMyPresenceTrLv)
+    obj = obj.addAnyInt32("maySeeMyApproxStatsTrLv", prefs.maySeeMyApproxStatsTrLv)
+    obj = obj.addAnyInt32("maySeeMyActivityTrLv", prefs.seeActivityMinTrustLevel)
+    obj = obj.addAnyInt32("maySendMeDmsTrLv", prefs.maySendMeDmsTrLv)
+    obj = obj.addAnyInt32("mayMentionMeTrLv", prefs.mayMentionMeTrLv)
+    obj
+  }
+
+
   def memberPrivacyPrefsFromJson(json: JsValue): MemberPrivacyPrefs = {
     MemberPrivacyPrefs(
-          seeActivityMinTrustLevel =
-              parseOptInt32(json, "seeActivityTrLv", altField = "seeActivityMinTrustLevel")
-                  .flatMap(TrustLevel.fromInt),
-          maySendMeDmsTrLv =
-              parseOptInt32(json, "maySendMeDmsTrLv").flatMap(TrustLevel.fromInt),
-          mayMentionMeTrLv =
-              parseOptInt32(json, "mayMentionMeTrLv").flatMap(TrustLevel.fromInt),
+          maySeeMyBriefBioTrLv = parseOptTrustLevel(json, "maySeeMyBriefBioTrLv"),
+          maySeeMyMembershipsTrLv = parseOptTrustLevel(json, "maySeeMyMembershipsTrLv"),
+          maySeeMyProfileTrLv = parseOptTrustLevel(json, "maySeeMyProfileTrLv"),
+          mayFindMeTrLv = parseOptTrustLevel(json, "mayFindMeTrLv"),
+          maySeeMyPresenceTrLv = parseOptTrustLevel(json, "maySeeMyPresenceTrLv"),
+          maySeeMyApproxStatsTrLv = parseOptTrustLevel(json, "maySeeMyApproxStatsTrLv"),
+          seeActivityMinTrustLevel = parseOptTrustLevel(json, "maySeeMyActivityTrLv",
+                  // [ty_v1] remove both these:
+                  altField = "seeActivityTrLv", alt2 = "seeActivityMinTrustLevel"),
+          maySendMeDmsTrLv = parseOptTrustLevel(json, "maySendMeDmsTrLv"),
+          mayMentionMeTrLv = parseOptTrustLevel(json, "mayMentionMeTrLv"),
           )
   }
 
@@ -545,7 +581,7 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
-  def JsGroup(group: Group): JsObject = {   // dupl code [B28JG4] also in UserController
+  def JsGroup(group: Group): JsObject = {   // dupl code [B28JG4] also in JsPatNameAvatar
     var json = Json.obj(
       "id" -> group.id,
       "username" -> group.theUsername,
@@ -555,7 +591,7 @@ object JsX {   RENAME // to JsonPaSe
     group.tinyAvatar foreach { uploadRef =>
       json += "avatarTinyHashPath" -> JsString(uploadRef.hashPath)
     }
-    group.isDeleted  // what?
+    if (group.isDeleted) json += "isDeleted" -> JsTrue
     json
   }
 
@@ -567,6 +603,23 @@ object JsX {   RENAME // to JsonPaSe
         "numMembers" -> JsNumber(stats.numMembers))
     }
     json
+  }
+
+
+  /** Verbose, more details included.
+    */
+  def JsGroupAndStatsVb(groupAndStats: GroupAndStats, isStaff: Bo): JsObject = {
+    var json = JsGroupAndStats(groupAndStats)
+
+    // Needed, for the Inspect page, for admins.
+    unimplIf(!isStaff, "Must be staff [TyE702KJCW]")
+    json += "privPrefsOwn" -> JsPrivPrefs(groupAndStats.group.privPrefs)
+
+    // Not currently needed: privPrefsDef.  Or incl anyway?
+    // val ancestorGroups = tx.loadGroupsAncestorGroups(g) // some caller
+    // val defaults = Authz.deriveDefaultPrivPrefs(ancestorGroups)
+
+    json  // [perms_missing]
   }
 
 

@@ -87,6 +87,7 @@ export enum TestAnonStatus {
 
 
 const TestTrustLevel = {
+  Stranger: <TrustLevel> 0,
   New: <TrustLevel> 1,
   Basic: <TrustLevel> 2,
   FullMember: <TrustLevel> 3,

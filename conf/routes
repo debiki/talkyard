@@ -140,7 +140,6 @@ GET   /-/load-cats-tags-site-notf-prefs  controllers.UserController.loadMembersC
 POST  /-/save-privacy-prefs     controllers.UserController.saveMemberPrivacyPrefs
 POST  /-/save-guest             controllers.UserController.saveGuest
 POST  /-/delete-user            controllers.UserController.deleteUser
-# Currently ignores group inheritance of settings. [2WHK7PU0]
 GET   /-/list-complete-users    controllers.UserController.listCompleteUsers(whichUsers)
 GET   /-/load-user-any-details  controllers.UserController.loadUserAnyDetails(who)
 POST  /-/edit-member            controllers.UserController.editMember
@@ -192,6 +191,7 @@ POST  /-/save-category          controllers.ForumController.saveCategory
 GET   /-/load-category          controllers.ForumController.loadCategoryToEdit(id: Int)
 POST  /-/delete-category        controllers.ForumController.deleteCategory
 POST  /-/undelete-category      controllers.ForumController.undeleteCategory
+GET   /-/inspect-forum          controllers.ForumController.inspectForum
 
 GET   /-/redir-to-about         controllers.ForumController.redirectToAboutPage(categoryId: Option[Int])
 

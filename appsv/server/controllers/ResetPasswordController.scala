@@ -107,21 +107,17 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: TyC
         }
 
       case None =>
+        // Don't tell the user that the email address or username doesn't exist; that'd be a
+        // security issue. Just show the email sent page.
+        // (Also usernames might be private, e.g. if a community is behind a login wall,
+        // or if someone has hidden their user profile page. [private_pats])
         if (isEmailAddress) {
-          // Don't tell the user that this email address doesn't exist; that'd be a
-          // security issue. Just show the email sent page.
           logger.info(o"""s$siteId: Not sending password reset email to non-existing
-               email address: $emailOrUsername""")
+                email address: $emailOrUsername  [TyMRSTPW_0EML]""")
         }
         else {
-          // Usernames are publicly visible.
-          // Unless user is private / name hidden?  [private_pats]  Not impl.
-          val settings = dao.getWholeSiteSettings()
-          val notify = !settings.userMustBeAuthenticated
           logger.info(o"""s$siteId: Not sending password reset email to non-existing
-               username: $emailOrUsername, and notifying=$notify hen about it""")
-          throwForbiddenIf(notify, "DwE4KFE03",
-                "There is no user with that username")
+                username: $emailOrUsername  [TyMRSTPW_0UN]""")
         }
     }
 

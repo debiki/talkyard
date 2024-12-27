@@ -90,7 +90,8 @@ export const UsersActivity = createFactory<PatStatsPanelProps, any>({
 function isHiddenForMe(me: Myself, user: UserInclDetails): boolean[] {
   // There's also a server side check: [THRACTIPRV].
   const isStaffOrSelf = isStaff(me) || user.id === me.id;
-  const hiddenForMe = user.seeActivityMinTrustLevel > me.trustLevel && !isStaffOrSelf;
+  // [some_pub_priv_prefs]
+  const hiddenForMe = user.maySeeMyActivityTrLv > me.trustLevel && !isStaffOrSelf;
   return [isStaffOrSelf, hiddenForMe];
 }
 
@@ -99,9 +100,9 @@ function isHiddenForMe(me: Myself, user: UserInclDetails): boolean[] {
 function makeMaybeHiddenInfo(me: Myself, user: UserInclDetails) {
   const [isStaffOrSelf, hiddenForMe] = isHiddenForMe(me, user);
   const hiddenForSomeText = !isStaffOrSelf ? null : (
-      user.seeActivityMinTrustLevel >= TrustLevel.CoreMember ?
+      user.maySeeMyActivityTrLv >= TrustLevel.CoreMember ?
         t.upp.OnlyStaffCanSee : (
-          user.seeActivityMinTrustLevel >= TrustLevel.FullMember ?
+          user.maySeeMyActivityTrLv >= TrustLevel.FullMember ?
             t.upp.OnlyMbrsCanSee : null));
 
   const hiddenForSomeElem = hiddenForSomeText ?

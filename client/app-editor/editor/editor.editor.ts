@@ -62,6 +62,8 @@ let listUsernamesCount = 0;
 export const listUsernamesTrigger = {
 
   // Mentions.
+  // Tests
+  //   - Search for 'rta__entity' in the tests/e2e-*/ dirs. (Later, break out reusable fns.)
   '@': {
     dataProvider: (charsTyped: St) => {
       listUsernamesCount += 1;
@@ -2872,6 +2874,8 @@ export const Editor = createFactory<any, EditorState>({
 
     // React-textarea-autocomplete docs:
     //   https://github.com/webscopeio/react-textarea-autocomplete
+    //
+    // Much later: A checkbox that if ticked loads deleted/banned/... users? [mention_all_cb]
 
     const textErrorClass = state.showTextErrors ? ' esError' : '';
     const textarea =

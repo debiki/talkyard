@@ -134,16 +134,41 @@ Also make this work for the root cat? So one can get an overview of permission
 settings for *all* base cats and sub cats in the whole forum — a cat permissions
 table-tree, somehow. [incl_root_cat]
 
-[may_not_perms] (negative_perms, neg_perms)
+[may_not_perms] (negative_perms, neg_perms, [deny_perms])
 Currently permissions are additive. Maybe, though, in some cases it'd be good
 with "negative" permissions — e.g. a group that may Not something.
 Then, everyone in that group, would be forbidden from doing that something,
 regardless of how they inherited permissions from other groups.
 
+[0_site_perms]
+Let's wait. Whole site see/reply/edit/etc permissions haven't been totally implemented —
+there's no way to set such permissions via the ui (right?).
+Maybe that's good — site wide permissions would be too coarse grained & permissive,
+would almost need to be combined with Deny permissions? [may_not_perms] So that it'd
+still be possible with private categories, even if sbd may see everything by default.
+But there's group permissions — that's site wide perms, but not related to any
+specific category, so, fine (no confusion about if inherited in the category tree, since
+not related to categories). See EffPatPerms.
+
 [granular_perms]
 E.g. may-see-others'-sessions. Currently only amdins may, but sometimes, good if mods could too?
 Or a mayReplyOnOwn permission? Maybe never.
 Also see: [wiki_perms]
+
+[inherit_group_priv_prefs]
+Privacy preferences are inherited from groups, and there's a group priority order see:
+../wip/priv-prefs/priv-prefs-wip.txt and Scala class MemberPrivacyPrefs.
+Visualized on the inspect page, ../client/app-staff/admin/inspect.staff.ts.
+But not implemented everywhere: [inherit_priv_prefs_0impl]
+
+[maySeeProfiles](WithMaxTrLv?)
+New permissions, on groups. Can then see profiles, or maySeeActivity, or mayMessage etc.
+Might want to grant to all support staff, in a publ forum, f.ex., even if they're not moderators.
+
+[group_priorities]
+Let admins configure which groups have priority, if there're conflicting privacy
+preferences? Trust level groups have increasing priority from Everyone —> All Members —> ...,
+Custom groups priorities: See  ../wip/priv-prefs/priv-prefs-wip.txt.
 
 [tags]
 Nice props / tags in Gerrit: https://chromium-review.googlesource.com/c/v8/v8/+/2537690
@@ -201,6 +226,11 @@ the same group(s) or high enough trust level or sth like that?
 The opposite: Easy to find pats, e.g.:
       type ' @' and the '@support' group is suggested [mentions_prio_c].
 
+[dm_priv_pats]
+If happens to be in same discussion as a private user, can be nice to be able to DM
+them, although can't access their profile and see any more user details.
+(maySendMeDmsTrLv can be configured independently.)
+
 [tech_level] Let users configure their tech level — let's say sbd who knows all about
 Ty joins a new forum. Then, although a New Member, hen can up hens tech level and get
 access to features the software otherwise would have thought were too complicated.
@@ -209,7 +239,7 @@ Store in pats_t.tech_level_c.
 [new_trust_levels]
 [mods_are_core_membs]
 Let trust level of mods & admins be CoreMember — or maybe add higher trust levels?
-Can start at 21 = lightweight mod, 22 = mod, 23 = admin, 24 = owner?
+Can start at 21 = [lightweight_mods], 22 = mod, 23 = mod of mods, 24 = admin, 25 = owner?
 
 [alterPage]
 [core_move_page]
@@ -218,9 +248,19 @@ Should there be a move-page-perm, not just alter-page?
 [power_mod]
 [power_users]
 
-[inherit_group_priv_prefs]
-One should inherit privacy and noise settings from one's closest trust level group,
-and from any custom group one is in? But one's own settings should override.
+[power_admin]
+Various fancy admin features, disabled by default.
+
+[mod_of_mods]
+? Like admins, but cannot edit site configuration (and might not have access to all parts).
+Can manage [lightweight_mods] and ordinary mods.
+
+[lightweight_mods]
+? People who can approve posts / edit / suspend, but fewer abilities than ordinary mods.
+
+[cat_mods]
+Category moderators. They'd be [lightweight_mods], but in a specific category/ies only.
+
 
 [user_version] [tag_versions]
 Add a version field to pats_t and an in-mem user? So knows if the in-mem one is stale;
@@ -262,6 +302,22 @@ Many times faster startup time, hopefully uses less memory too?
 If admins try to configure too "high" values, e.g. 1 TB upload size,
 need a way for them to know they're above the server or site limits,
 e.g. the Nginx client_max_body_size.
+
+[site_ip_person_limits]
+Should be 3 types of rate & max limits multipliers:
+1) One that affects groups and everyone in those groups,
+2) One that affects ip addresses, possibly specific addresses or whithin a country,
+3) One that affects the whole site.
+But the current  SiteLimitsMultipliers  are for all three at once — which doen't make sense.
+E.g. shouldn't increase *per person* rate limits, just because there's many members.
+Instead, should split into 1, 2, 3 above.
+And, with 1) limits for user groups, then, the Everyone group would be the default
+limit multipliers (1.0), and e.g. Core Members could have limits x 2?
+Sth like:
+    SiteLimitsMultipliers —> LimitsMultipliers,
+      and look up by:  whole site,  ip addr logged in / not logged in,  user group?
+      and look at all limits.
+Add more fields to  PatPerms? No, it's not for limits, but for permissions?  [more_pat_perms]
 
 [more_runtime_assertions]
 Figure out a way to safely add more runtime assertions — although sometimes
@@ -636,9 +692,6 @@ Don't bump page if private comments — or do, for those who can see? Hmm.
       Same notf level as for direct messages — instead of the page's notf level?
 
 
-[cat_mods]
-Category moderators.
-
 [see_who_notfd]
 When composing a message, see who will get notified — e.g. if mentioning a group,
 or editing a message, can be unclar if a newly edit-added @username gets notified or not
@@ -696,9 +749,6 @@ a bunch of settings automatically tweaked, for that use case.
   - Community
   - Blog comments
 
-
-[power_admin]
-Various fancy admin features, disabled by default.
 
 [tiny-dialog]
 Find (or create?) a tiny modal dialog React class that can be included in slim-bundle.js,
@@ -931,6 +981,10 @@ Use the C preprocessor? Didn't find anything else that does what I'm looking for
 [devfriendly]
 Maybe make all endpoints that accept, say, only POST, reply and tell other method
 type invocations that they should use POST? Would need to change Play Fmw for this.
+
+[React19_actions]
+Can lots of React.useEffect() plus React.useRef() be replaced & simplified by
+React 19's useActionState()?
 
 [React_Router_v51]
 Migrate unnecessary Route({ ... render: ({ match }) => ...) to hooks:

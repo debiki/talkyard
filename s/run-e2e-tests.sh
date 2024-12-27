@@ -414,7 +414,6 @@ function runAllE2eTests {
   $r s/wdio --only user-profile-change-email.2browsers $args
   $r s/wdio --only user-profile-change-password.2br.mtime $args  # ... similar
   $r s/wdio --only user-profile-cannot-delete-idp-email.1br.extidp $args
-  $r s/wdio --only user-profile-activity-private.2browsers $args
   $r s/wdio-7 --only user-self-delete-upd-groups.2br.f.e2e.ts --cd -i $args
 
   $r s/wdio --only group-profile-change-things.2browsers $args
@@ -431,6 +430,8 @@ function runAllE2eTests {
   $r s/wdio --only impersonate-post-as-other.2browsers $args
   $r s/wdio --only impersonate-restricted-areas $args
 
+  # Notifications
+  # ------------
 
   # There're email notfs and unsubscription tests for guests, further below, in:
   # embedded-comments-guest-login-email-notf-unsbscribe
@@ -461,8 +462,15 @@ function runAllE2eTests {
 
   $r s/wdio-7 --only notfs-mark-seen-as-seen.d.2br --cd -i $args  # RENAME append -automatically
 
+  # Privacy preferences
+  # ------------
+
+  $r s/wdio-7 --only privacy-list-activity.2br.f.e2e.ts --cd -i $args
+  $r s/wdio-7 --only privacy-may-see.3br.f.e2e.ts --cd -i $args
   $r s/wdio-7 --only block-mentions.2br.d --cd -i $args
   $r s/wdio-7 --only block-dir-msgs.2br.d --cd -i $args
+
+  # ------------
 
   # RENAME these to  modn-... ,  and MOVE to (4862065) below?
   $r s/wdio --only new-user-review-ok.2br.mtime $args
@@ -481,6 +489,9 @@ function runAllE2eTests {
   $r s/wdio --only flag-member-block-agree.2browsers $args
   $r s/wdio --only flag-guest-block-agree.2browsers $args
 
+  # Page types
+  # ------------
+
   $r s/wdio-7 --only page-type-discussion-progress.1br.d --cd -i $args
   $r s/wdio-7 --only page-type-idea-statuses-comments.2br.d --cd -i $args
   $r s/wdio-7 --only page-type-problem-statuses.2br.d --cd -i $args
@@ -488,6 +499,9 @@ function runAllE2eTests {
   $r s/wdio-7 --only page-type-info-page.1br.d --cd -i $args
 
   $r s/wdio-7 --only do-api-upvote-ideas-sort-by-votes.2br.d --cd -i $args
+
+  # Seach
+  # ------------
 
   $r s/wdio --only search-public-basic.2browsers $args
   $r s/wdio --only search-private-chat.2browsers $args
@@ -498,6 +512,9 @@ function runAllE2eTests {
   # one has seen.
   $r s/wdio --only summary-emails.2br.mtime $args
 
+  # Invites
+  # ------------
+
   $r s/wdio --only invites-by-adm-click-email-set-pwd-link.2browsers $args
   $r s/wdio --only invites-by-mod-try-signup-after.2browsers $args
   $r s/wdio --only invites-by-core-try-login-after.2browsers $args
@@ -505,6 +522,8 @@ function runAllE2eTests {
   $r s/wdio --only invites-many-retry.2browsers $args
   $r s/wdio --only invites-too-many.2browsers $args
   $r s/wdio --only invite-to-groups.2browsers $args
+
+  # ------------
 
   $r s/wdio --only weird-usernames.2browsers $args
 
@@ -535,6 +554,8 @@ function runAllE2eTests {
 
   # Moderation   (4862065)
   # ------------
+
+  $r s/wdio-7 --only modn-ban-spammer.2br.f.e2e.ts --cd -i $args
 
   $r s/wdio-7 --only may-see-email-adrs.2br.d --cd -i $args
 

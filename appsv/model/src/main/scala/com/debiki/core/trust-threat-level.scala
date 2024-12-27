@@ -23,6 +23,13 @@ trait HasInt32 {
   def toInt: i32
 }
 
+/** Works only up to Core Member, but it's sometimes better to think of mods & admins
+  * as their own trust levels. — Try to start using TrustLevel2 instead.
+  *
+  * But don't set anyone's trust level directly to mod or admin — instead, those are flags:
+  * an admin doesn't have to also be a moderator. But the admin's trust level is higher.
+  * See: `effectiveTrustLevel2`.
+  */
 sealed abstract class TrustLevel(val IntVal: Int) extends HasInt32 {
   def toInt: Int = IntVal
 
@@ -42,6 +49,29 @@ sealed abstract class TrustLevel(val IntVal: Int) extends HasInt32 {
 }
 
 
+/** This works also with mods & admins — but TrustLevel (without 2) works only
+  * up to Core Member, which is sometimes annoying.
+  */
+sealed abstract class TrustLevel2(val IntVal2: i32)
+    extends TrustLevel(if (IntVal2 > 6) 6 /* CoreMember is max */ else IntVal2)
+    with HasInt32 {
+
+  def toInt2: i32 = IntVal2
+
+  def isBelow2(other: TrustLevel2): Bo =
+    toInt2 < other.toInt2
+
+  def isAbove2(other: TrustLevel2): Bo =
+    toInt2 > other.toInt2
+
+  def isAtMost2(level: TrustLevel2): Bo =
+    toInt2 <= level.toInt2
+
+  def isAtLeast2(level: TrustLevel2): Bo =
+    toInt2 >= level.toInt2
+}
+
+
 /** The same as Discourse's trust levels, plus one more level: the helpful member,
   *
   * Discourse's trust levels:
@@ -51,7 +81,7 @@ sealed abstract class TrustLevel(val IntVal: Int) extends HasInt32 {
   * https://meta.discourse.org/t/a-new-trust-level-the-helpful-member/56894
   */
 object TrustLevel {
-  case object Stranger extends TrustLevel(0)   ; REFACTOR // bump all 1, so won't start at 0
+  case object Stranger extends TrustLevel2(0)   ; REFACTOR // bump all 1, so won't start at 0
                                       // 0 is easily buggy-mistaken for undefined, in Javascript.
   //se object [StrangerWithSecret] — if someone doesn't yet have a real account, but via a secret link  [new_trust_levels]
   //      has been invited to look at an otherwise private discussion?
@@ -60,18 +90,21 @@ object TrustLevel {
   //      Maybe different secret links, some let one create a real account,
   //      others just lets one view sth, for a limited time maybe. And could have a link-max-use-count.
 
-  case object NewMember extends TrustLevel(1)   // has created a real account
-  case object BasicMember extends TrustLevel(2)
-  case object FullMember extends TrustLevel(3)
+  case object NewMember extends TrustLevel2(1)   // has created a real account
+  case object BasicMember extends TrustLevel2(2)
+  case object FullMember extends TrustLevel2(3)
+
   //se object [GoodMember] extends TrustLevel(_)   — the software promotes up to here only
   //       or DecentMember or WellBehavedMember or Soft(ware)Trusted or BitTrustedMember?
-  case object TrustedMember extends TrustLevel(4)  // requires manual review, maybe not much but a bit
-  case object RegularMember extends TrustLevel(5)   ; RENAME // to Trusted Regular, no, remove, and let visit frequency be another dimension, don't conflate with trust level
+  //se object HelpfulMember extends TrustLevel2(_)  <—— maybe this is best/least-bad after all?
+
+  case object TrustedMember extends TrustLevel2(4)  // requires manual review, maybe not much but a bit
+  case object RegularMember extends TrustLevel2(5)   ; RENAME // to Trusted Regular, no, remove, and let visit frequency be another dimension, don't conflate with trust level
   //se object TrustedVeteran extends TrustLevel(_) — trusted members who have been around for long,
   //                and know the community and domain inside and out?
   //                (Most people who have been along for long, would be FullMembers
   //                or GoodMembers,  not Trusted-*.)
-  case object CoreMember extends TrustLevel(6)
+  case object CoreMember extends TrustLevel2(6)
 
   // + Mod, [mods_are_core_membs][new_trust_levels]
   // + ModOfMods (can resolve disagreements between mods)
@@ -85,9 +118,13 @@ object TrustLevel {
   // Not real trust levels, but sometimes simpler to remember just one digit, say 7,
   // instead of 3 things: level + isStaff + isModerator.
   REFACTOR // Actually, *do* change to real trust levels — see Mod, ModOfMods, Admin above.
-  val StrangerDummyLevel = 0
-  val ModeratorDummyLevel = 7
+  val StrangerDummyLevel = 0  // But there's already a Stranger level above?
+
+  val StaffDummyLevel = 7
+  case object Staff extends TrustLevel2(7)
+
   val AdminDummyLevel = 8
+  case object Admin extends TrustLevel2(8)
 
   def fromOptInt(value: Opt[i32]): Opt[TrustLevel] = value.flatMap(fromInt)
 
@@ -114,8 +151,22 @@ object TrustLevel {
       // Skip: Group.ModeratorsId, AdminsId, because StrangerDummyLevel and
       // moderators and admins aren't trust levels. [COREINCLSTAFF]
       // Staff members can have trust level just Basic or Core Member or whatever.
+      // Edit: Now there's TrustLevel2 with Staff and Admin trust levels,
+      // but right now, this works fine anyway.
       return None
   })
+
+  def minOfAny(a: Opt[TrustLevel], b: Opt[TrustLevel]): Opt[TrustLevel] = {
+    if (a.isEmpty) return b
+    if (b.isEmpty) return a
+    if (a.get.toInt < b.get.toInt) a else b
+  }
+
+  def maxOfAny(a: Opt[TrustLevel], b: Opt[TrustLevel]): Opt[TrustLevel] = {
+    if (a.isEmpty) return b
+    if (b.isEmpty) return a
+    if (a.get.toInt > b.get.toInt) a else b
+  }
 }
 
 

@@ -40,6 +40,7 @@ interface UserProfileAdminViewProps {
 interface UserProfileAdminViewState {
   user?: UserDetailsStatsGroups | N;
   myId?: PatId;
+  notFoundId?: PatId
 }
 
 
@@ -69,6 +70,12 @@ export const UserProfileAdminView = createFactory({
     const propsBef: UserProfileAdminViewProps = this.props;
     const meBef: Me = propsBef.store.me;
     const params = propsBef.match.params;
+    const userIdInt = parseInt(params.userId);
+
+    // Don't keep trying forever.
+    if (stateBef.notFoundId === userIdInt)
+      return;
+
     {
       // The props changes first, before the state gets updated (later in this fn).
       const isSameMe = meBef.id === stateBef.myId;
@@ -92,9 +99,13 @@ export const UserProfileAdminView = createFactory({
       this.nowLoading = params.userId;
     }
 
-    Server.loadPatVvbPatchStore(params.userId, (resp: LoadPatVvbResponse) => {
+    Server.loadPatVvbPatchStore(params.userId, (resp: LoadPatVvbResponse | NotFoundResponse) => {
       this.nowLoading = null; // (or only if correct id)
       if (this.isGone) return;
+      if (resp === 404) {
+        this.setState({ notFoundId: userIdInt, user: null } satisfies UserProfileAdminViewState);
+        return;
+      }
       const propsAft: UserProfileAdminViewProps = this.props;
       const meAft = propsAft.store.me;
       const isSameMeLater = meAft.id === meBef.id;
@@ -107,7 +118,7 @@ export const UserProfileAdminView = createFactory({
       if (!rightPat || !isSameMeLater)
         return;
 
-      this.setState({ user: pat });
+      this.setState({ user: pat, notFoundId: null } satisfies UserProfileAdminViewState);
     });
   },
 
@@ -150,8 +161,13 @@ export const UserProfileAdminView = createFactory({
     const props: UserProfileAdminViewProps = this.props;
     const store: Store = props.store;
     const settings: Settings = props.settings;
-    const user: UserInclDetails = this.state.user;
+    const state: UserProfileAdminViewState = this.state;
+    const user: UserInclDetails = state.user;
     const me: Myself = store.me;
+
+    if (state.notFoundId)
+      return r.p({}, "User not found.");
+
     if (!user)
       return r.p({}, "Loading...");
 
@@ -189,10 +205,10 @@ export const UserProfileAdminView = createFactory({
     // ----- Enabled?
 
     let enabled = true;
-    let notEnabledBecauseEmailUnverified;
-    let notEnabledBecauseWaitingToBeApproved;
-    let notEnabledBecauseRejected;
-    let notEnabledBecauseBanned;
+    let notEnabledBecauseEmailUnverified: RElm | U;
+    let notEnabledBecauseWaitingToBeApproved: RElm | U;
+    let notEnabledBecauseRejected: RElm | U;
+    let notEnabledBecauseBanned: RElm | U;
 
     if (settings.requireVerifiedEmail && !user.emailVerifiedAtMs) {
       enabled = false;
@@ -212,7 +228,7 @@ export const UserProfileAdminView = createFactory({
       }
     }
 
-    if ((<number | string> user.suspendedTillEpoch) === 'Forever') {
+    if (pat_isBanned(user)) {
       enabled = false;
       notEnabledBecauseBanned =
           r.span({ className: 'e_Banned' }, " User banned.");
@@ -290,25 +306,30 @@ export const UserProfileAdminView = createFactory({
                 Button({ onClick: makeEditFn(EditMemberAction.SetUnapproved), className: 'e_Appr_RejB' },
                   "Reject"))));
 
+    const fromFn = () => moment(user.suspendedAtEpoch).format('YYYY-MM-DD');
+    const isBanned = pat_isBanned(user);
+    const suspendedText =
+        !user.suspendedAtEpoch ? "No" : (
+            isBanned ? `Banned since ${fromFn()}` : (
+                "Suspended at " + fromFn() +
+                " until " + moment(user.suspendedTillEpoch).format('YYYY-MM-DD HH:mm')
+            ) +
+            ", reason: " + user.suspendedReason);
 
-    const suspendedText = user.suspendedTillEpoch
-        ? "from " + moment(user.suspendedAtEpoch).format('YYYY-MM-DD') +
-            " to " + moment(user.suspendedTillEpoch).format('YYYY-MM-DD HH:mm') +
-            ", reason: " + user.suspendedReason
-        : "No";
-
-    let whyCannotSuspend;
+    let whyCannotSuspend: RElm | U;
     if (thatIsYou) {
       whyCannotSuspend = r.span({}, "(you cannot suspend yourself)");
     }
     else if (user.isAdmin) {
       whyCannotSuspend = r.span({}, "(cannot suspend admins)");
     }
-    let suspendButton;
-    let userSuspendedNow = user.suspendedTillEpoch && Date.now() <= user.suspendedTillEpoch;
+
+    let suspendButton: RElm | U;
+    let userSuspendedNow = user_isSuspended(user, Date.now());
     if (userSuspendedNow) {
       suspendButton =
-          Button({ onClick: this.unsuspendUser, className: 'e_Unuspend' }, "Unsuspend");
+          Button({ onClick: this.unsuspendUser, className: 'e_Unuspend' },
+              isBanned ? "Unban" : "Unsuspend");
     }
     else if (whyCannotSuspend) {
       suspendButton = whyCannotSuspend;
@@ -317,7 +338,8 @@ export const UserProfileAdminView = createFactory({
       suspendButton =
           Button({ onClick: () => openSuspendUserDialog(user, this.reloadUser),
               className: 'e_Suspend' },
-            "Suspend");
+            // UX SHOULD add a way to ban user from here, too.
+            "Suspend");  // " or ban" ?
     }
 
     const isAdminText =
@@ -328,8 +350,8 @@ export const UserProfileAdminView = createFactory({
         r.span({ className: user.isModerator ? 'e_Mod-Yes' : 'e_Mod-No' },
             prettify(user.isModerator));
 
-    let toggleAdminButton;
-    let toggleModeratorButton;
+    let toggleAdminButton: RElm | U;
+    let toggleModeratorButton: RElm | U;
     if (me.isAdmin && !thatIsYou && !userSuspendedNow && !user.isGroup) {
       toggleAdminButton =
           Button({ onClick: this.toggleIsAdmin, className: 'e_ToggleAdminB' },

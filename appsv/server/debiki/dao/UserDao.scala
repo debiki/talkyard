@@ -32,7 +32,7 @@ import talkyard.server._
 import talkyard.server.dao.StaleStuff
 import talkyard.server.authn.{Join, Leave, JoinOrLeave, StayIfMaySee}
 import talkyard.server.authz.{AuthzCtxOnPats, AuthzCtxOnAllWithReqer, AuthzCtxWithReqer}
-import talkyard.server.authz.{ReqrAndTgt}
+import talkyard.server.authz.{ReqrAndTgt, PatAndPrivPrefs}
 
 
 case class LoginNotFoundException(siteId: SiteId, userId: UserId)
@@ -405,23 +405,46 @@ trait UserDao {
   }
 
 
+  /** Banning works like suspending, just some UI buttons that will (later) read "Banned"
+    * instead of "Suspended", so it's more clear that the person won't be coming back.
+    * And the person can't log in and view their old posts — but you can if you're
+    * only suspended.
+    */
+  def banUser(userId: UserId, reason: St, bannedById: UserId)(tx: SiteTx, ss: StaleStuff,
+          ): Pat = {
+    _suspendOrBan(userId, until = new ju.Date(Pat._BanMagicEpoch), reason = reason,
+          suspendedById = bannedById)(tx, ss)
+  }
+
+
   def suspendUser(userId: UserId, numDays: i32, reason: St, suspendedById: UserId): U = {
     // If later on banning, by setting numDays = none, then look at [4ELBAUPW2], seems
     // it won't notice someone is suspended, unless there's an end date.
     require(numDays >= 1, "DwE4PKF8")
 
     val cappedDays = math.min(numDays, 365 * 110)
-    val now = globals.now()
 
     writeTx { (tx, staleStuff) =>
+      val now = tx.now
+      val suspendedTill = new ju.Date(now.millis + cappedDays * MillisPerDay)
+
+      _suspendOrBan(userId, until = suspendedTill, reason = reason,
+            suspendedById = suspendedById)(tx, staleStuff)
+    }
+  }
+
+
+  /** If `until` is epoch `_BanMagicEpoch` the user is considered banned.
+    */
+  private def _suspendOrBan(userId: UserId, until: ju.Date, reason: St, suspendedById: UserId,
+          )(tx: SiteTx, staleStuff: StaleStuff): Pat = {
       var user = tx.loadTheUserInclDetails(userId)
       if (user.isAdmin)
         throwForbidden("DwE4KEF24", "Cannot suspend admins")
 
-      val suspendedTill = new ju.Date(now.millis + cappedDays * MillisPerDay)
       user = user.copy(
         suspendedAt = Some(now.toJavaDate),
-        suspendedTill = Some(suspendedTill),
+        suspendedTill = Some(until),
         suspendedById = Some(suspendedById),
         suspendedReason = Some(reason.trim))
 
@@ -431,7 +454,8 @@ trait UserDao {
       logout(user.noDetails, bumpLastSeen = false, anyTx = Some(tx, staleStuff))
       terminateSessions(  // [end_sess]
             forPatId = user.id, all = true, anyTx = Some(tx, staleStuff))
-    }
+
+      user
   }
 
 
@@ -890,8 +914,14 @@ trait UserDao {
   }
 
 
-  def loadUsersWithUsernamePrefix(prefix: String, caseSensitive: Boolean, limit: Int)
-        : immutable.Seq[User] = {
+  /** Excludes users with profiles hidden / unlistable,  so can't create
+    * a list of members, by typing '@' and looking at the result.
+    */
+  def loadUserMayListByPrefix(prefix: St, caseSensitive: Bo, limit: i32, reqr: Pat)
+        : ImmSeq[PatAndPrivPrefs] = {
+
+    // See also: this.listUsernamesOnPage().
+    COULD_OPTIMIZE // needn't load throw away not-needed fields. [ONLYNAME]
     COULD_OPTIMIZE // cache, sth like:
     //memCache.lookup[immutable.Seq[User]](
     //  membersByPrefixKey(prefix, "u"),
@@ -899,8 +929,14 @@ trait UserDao {
     // BUT then there'd be a DoS attack: iterate through all prefixes and exhaust
     // the cache. Note that there's a million? Unicode chars, so restricting the
     // prefix length to <= 2 chars won't work (cache size 1e6 ^ 2 = 1e12).
-    readOnlyTransaction(_.loadUsersWithUsernamePrefix(
-      prefix, caseSensitive = caseSensitive, limit = limit))
+    // But what about caching only ascii?
+    val usersTooMany: immutable.Seq[User] = readTx(
+          _.loadUsersWithUsernamePrefix(prefix, caseSensitive = caseSensitive, limit = limit))
+
+    val patsPrefsMayList: ImmSeq[PatAndPrivPrefs] = authz.PrivPrefs.filterMayList(
+          usersTooMany, reqr, dao = this)
+
+    patsPrefsMayList
   }
 
 
@@ -1103,16 +1139,24 @@ trait UserDao {
   }
 
 
-  def getGroupsReqrMaySee(requester: Participant): Vector[Group] = {
+  COULD_OPTIMIZE // Cache both Vec and Map(groups.map(g => g.id, g): _*)  [cache_groups_by_id]
+  //
+  def getAllGroups(): Vec[Group] = {
     BUG // risk: ?? Maybe shouldn't cache Group:s, but group ids ??  [LDALGRPS]
     // So cannot get different results if loading groups via  allGroupsKey, or via  pptKey
-    val tooManyGroups = memCache.lookup[Vector[Group]](
+    memCache.lookup[Vector[Group]](
       allGroupsKey,
       orCacheAndReturn = {
         readOnlyTransaction { tx =>
           Some(tx.loadAllGroupsAsSeq())
         }
       }).get
+  }
+
+
+  // Later: make allGroups required, remove getAllGroups() from impl?
+  def getGroupsReqrMaySee(requester: Pat, allGroups: Opt[Vec[Group]] = None): Vec[Group] = {
+    val tooManyGroups = allGroups getOrElse getAllGroups()
 
     val requestersGroupIds = getOnesGroupIds(requester)
     // + groups one manages or is an adder or bouncer for [GRPMAN]
@@ -1139,6 +1183,7 @@ trait UserDao {
 
   private def getGroupStatsIfReqrMaySee(group: Group, requester: Participant): Option[GroupStats] = {
     // Hmm this counts not only users, but child groups too. [sub_groups]
+    COULD_OPTIMIZE // Count or cache in the database instead.
     val members = listGroupMembersIfReqrMaySee(group.id, requester) getOrElse {
       return None
     }
@@ -1147,9 +1192,10 @@ trait UserDao {
 
 
   /** Returns Some(the members), or, if one isn't allowed to know who they are, None.
+    * Returns _users_only, at least for now. Groups can't be group members yes anyway.
     */
   def listGroupMembersIfReqrMaySee(groupId: UserId, requester: Participant)
-        : Option[Vector[Participant]] = {
+        : Opt[ImmSeq[UserBr]] = {
     // For now, don't allow "anyone" to list almost all members in the whole forum, by looking
     // at built-in groups like Everyone or All Members.
     if (groupId == Group.EveryoneId)
@@ -1160,30 +1206,40 @@ trait UserDao {
 
     // Let everyone see who the staff members are. That's important so one knows whom
     // to trust about how the community functions?
-    // Later: configurable count/view-members per group settings.
+    // Later: configurable count/view-members per group settings.  [list_membs_perm]
     // Later: or if is manager [GRPMAN]
     if (!requester.isStaff && !requestersGroupIds.contains(groupId) && !Group.isStaffGroupId(groupId))
       return None
 
-    lazy val members = memCache.lookup[Vector[Participant]](
-      groupMembersKey(groupId),
-      orCacheAndReturn = {
-        readOnlyTransaction { tx =>
-          Some(tx.loadGroupMembers(groupId))
-        }
-      }).get
-
     if (requester.isStaffOrCoreMember) {
-      Some(members)
+      // Ok, may list members.
     }
     else if (group.isBuiltIn && requester.effectiveTrustLevel.isBelow(TrustLevel.TrustedMember)) {
       // For now, don't let not-yet-trusted members list all members in the whole forum
       // (by looking at the All Members group members).
-      None
+      return None
     }
     else {
-      Some(members)
+      // Ok.
     }
+
+    // (This could be its own fn, but it's good to have checked that groupId is indeed
+    // a group first (done above), so one cannot DoS-attack by caching None for int-max
+    // integers that are not group ids.)
+    val membersTooMany = memCache.lookup[Vec[User]](
+          groupMembersKey(groupId),
+          orCacheAndReturn = {
+            readTx { tx =>
+              // For now, _users_only.
+              Some(tx.loadGroupMembers(groupId).flatMap(_.toUserOrNone))
+            }
+          }).get
+
+    val membersMayList: ImmSeq[PatAndPrivPrefs] =
+          authz.PrivPrefs.filterMayList(membersTooMany, requester, dao = this)
+
+    val usersMayList = membersMayList.map(_.pat.toUserOrThrow)
+    Some(usersMayList)
   }
 
 
@@ -1280,6 +1336,7 @@ trait UserDao {
   }
 
 
+  /** Places one's [own_id_bef_groups]! Annoying. CLEAN_UP: remove own-id-first? */
   def getOnesGroupIds(ppt: Participant): Vector[UserId] = {
     ppt match {
       case _: Guest | _: Anonym | UnknownParticipant => Vector(Group.EveryoneId)
@@ -1288,6 +1345,7 @@ trait UserDao {
           onesGroupIdsKey(ppt.id),
           orCacheAndReturn = {
             readOnlyTransaction { tx =>
+              // [own_id_bef_groups] sometimes annoying. (Cached! Need to update all callers.)
               Some(tx.loadGroupIdsMemberIdFirst(ppt))
             }
           }).get
@@ -1986,19 +2044,17 @@ trait UserDao {
     readOnlyTransaction(_.listUsersNotifiedAboutPost(postId))
 
 
-  def listUsernames(pageId: PageId, prefix: String, caseSensitive: Boolean, limit: Int)
-        : Seq[NameAndUsername] = {
+  /** Returns all users on the page. No need to filter may-see-profile or anything,
+    * because if you can see a page, you can also see all usernames participating
+    * on that page. — Except for private comments, later.
+    */
+  def listUsernamesOnPage(pageId: PageId): ImmSeq[UserBr] = {
+    // See also: this.loadUserMayListByPrefix().
+    // Later, [priv_comts], [dont_list_bookmarkers]: Exclude users who have posted
+    // private comments or bookmarks only.
     readOnlyTransaction(tx => {
-      if (prefix.isEmpty) {
         COULD_OPTIMIZE // could cache, + maybe use 'limit'?
         tx.listUsernamesOnPage(pageId)
-      }
-      else {
-        COULD_OPTIMIZE // needn't load throw away not-needed fields. [ONLYNAME]
-        loadUsersWithUsernamePrefix(
-          prefix, caseSensitive = caseSensitive, limit = limit)
-          .map(_.nameAndUsername)
-      }
     })
   }
 
@@ -2064,6 +2120,11 @@ trait UserDao {
       tx.updateMemberInclDetails(memberAfter)
 
       staleStuff.addPatIds(Set(forUserId))
+      if (memberAfter.isGroup) {
+        // Priv prefs are inherited from groups. So need to refresh the cache, for changes
+        // to groups to take effect.  [inherit_group_priv_prefs]
+        staleStuff.addAllGroups()
+      }
     }
   }
 
@@ -2223,13 +2284,14 @@ trait UserDao {
     _editMemberThrowUnlessSelfStaff(patId, byWho, "TyE3ASHW6703", "edit pat perms",
                                       mustBeAdmin = true) {
           case EditMemberCtx(tx, staleStuff, memberInclDetails, _) =>
+      // Permissions can only be configured on groups (not individual users).
       val groupBef: Group = memberInclDetails.asGroupOr(IfBadAbortReq)
       val groupAft = groupBef.copy(perms = perms)
       val validGroup = groupAft.checkValid(IfBadAbortReq)
       tx.updateGroup(validGroup)
       staleStuff.addPatIds(Set(patId))
+      staleStuff.addAllGroups()
     }
-    memCache.remove(allGroupsKey) ; CLEAN_UP // use staleStuff instead, new fn needed?
   }
 
 
@@ -2504,6 +2566,10 @@ trait UserDao {
   def getUsersOnlineStuff(): UsersOnlineStuff = {
     usersOnlineCache.get(siteId, new ju.function.Function[SiteId, UsersOnlineStuff] {
       override def apply(dummySiteId: SiteId): UsersOnlineStuff = {
+        // Later: Exclude users with profiles hidden, but only   [priv_prof_0_presence]
+        // for those who can't see their profiles. Might need to cache
+        // one version of the users-online list per trust level group?
+        // And exclude those with a may-not maySeeMyPresenceTrLv.
         val (userIdsInclSystem, numStrangers) = redisCache.loadOnlineUserIds()
         // If a superadmin is visiting the site (e.g. to help fixing a config error), don't  [EXCLSYS]
         // show hen in the online list — hen isn't a real member.
@@ -2572,6 +2638,11 @@ trait UserDao {
 
   def removeUserFromMemCache(userId: UserId): Unit = {
     memCache.remove(patKey(userId))
+  }
+
+  def clearAllGroupsFromMemCache() {
+    memCache.remove(allGroupsKey)
+    // (No need to clear group members though, that is, `groupMembersKey(..)`.)
   }
 
   private def patKey(userId: UserId) = MemCacheKey(siteId, s"$userId|PptById")

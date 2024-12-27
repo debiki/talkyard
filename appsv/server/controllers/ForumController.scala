@@ -364,6 +364,31 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     OkSafeJson(Json.obj("catsWithTopics" -> catsAndTopics.catsAndTopicsJson))
   }
+
+
+  /** For creating a table of groups, categories and permissions,
+    * to get an overview of all permissions.
+    *
+    * For _admins_only, for now. Later, could allow mods & core members to use this
+    * too? — Note that we're using loadCatsJsArrayMaySee() below, so only
+    * categories the requester can see are included.
+    * However, too many pemissions get loaded (namely all).
+    */
+  def inspectForum(): Action[Unit] = AdminGetActionRateLimited(RateLimits.ReadsFromDb) { req =>
+    import req.dao
+    val catsJsMaySee = loadCatsJsArrayMaySee(req)
+    val groupsMaySee = dao.getGroupsAndStatsReqrMaySee(req.requesterOrUnknown)
+    val allPerms = dao.readTx(_.loadPermsOnPages())
+
+    OkSafeJson(  // ts: InspectForumResp
+        Json.obj(
+            "catsMaySee" -> catsJsMaySee,
+            "groupsMaySee" -> groupsMaySee.map(JsGroupAndStatsVb(_, isStaff = req.isStaff)),
+            // This is for _admins_only: (hence `AdminGetAction...` above)
+            "allPerms" -> allPerms.map(JsonMaker.permissionToJson),
+            ))
+  }
+
 }
 
 

@@ -283,6 +283,7 @@ const enum ReviewDecision {
   // 3nnn = Request changes.
   // 5nnn = Reject.
   DeletePostOrPage = 5001,
+  DeleteAndBanSpammer = 5501,
 }
 
 
@@ -639,11 +640,6 @@ const enum TrustLevel {
   Max = CoreMember,
 }
 
-const enum DummyTrustLevel {
-  Staff = 7,
-  Admin = 8,
-}
-
 /// Any way to avoid repetition? (See TrustLevel above.)
 /// Note that Max is different here though!
 const enum TrustLevelOrStaff {
@@ -652,6 +648,7 @@ const enum TrustLevelOrStaff {
   New = 1,
   Basic = 2,
   FullMember = 3,
+  // HelpfulMember, later? [new_trust_levels]
   Trusted = 4,
   Regular = 5,
   CoreMember = 6,

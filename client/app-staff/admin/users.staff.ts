@@ -366,11 +366,12 @@ const UserRow = createFactory<any>({
             r.span({ className: 's_A_Us_UsL_U_Modif' },
               threatLevel === ThreatLevel.MildThreat ? " — mild threat" : " — moderate threat"),
         !user_isSuspended(user, nowMs) ? null :
-            r.span({ className: 's_A_Us_UsL_U_Modif' }, " — suspended"),
+            r.span({ className: 's_A_Us_UsL_U_Modif' }, pat_isBanned(user) ? " — banned" : " — suspended"),
         !isDeactivated || isDeleted ? null :
             r.span({ className: 's_A_Us_UsL_U_Modif' }, " — deactivated"),
         !isDeleted ? null :
           r.span({ className: 's_A_Us_UsL_U_Modif' }, " — deleted"));
+
 
     const emailNotVerified = !user.email || user.emailVerifiedAtMs ? null :
       r.span({ className: 's_A_Us_UsL_U_Modif e_EmNotVerfd' }, " — not verified");

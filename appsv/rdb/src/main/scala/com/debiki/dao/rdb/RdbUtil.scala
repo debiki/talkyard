@@ -210,6 +210,12 @@ object RdbUtil {
       avatar_small_base_url,
       avatar_small_hash_path,
       ui_prefs,
+      may_see_my_brief_bio_tr_lv_c,
+      may_see_my_memberships_tr_lv_c,
+      may_see_my_profile_tr_lv_c,
+      may_see_me_in_lists_tr_lv_c,
+      may_see_if_im_online_tr_lv_c,
+      may_see_my_approx_stats_tr_lv_c,
       may_see_my_activity_tr_lv_c,
       may_mention_me_tr_lv_c,
       may_dir_msg_me_tr_lv_c,
@@ -253,6 +259,12 @@ object RdbUtil {
       |u.avatar_small_base_url,
       |u.avatar_small_hash_path,
       |u.ui_prefs, ${"" /* WOULD exclude here, if had time to micro optimize */}
+      |u.may_see_my_brief_bio_tr_lv_c,
+      |u.may_see_my_memberships_tr_lv_c,
+      |u.may_see_my_profile_tr_lv_c,
+      |u.may_see_me_in_lists_tr_lv_c,
+      |u.may_see_if_im_online_tr_lv_c,
+      |u.may_see_my_approx_stats_tr_lv_c,
       |u.may_see_my_activity_tr_lv_c,
       |u.may_mention_me_tr_lv_c,
       |u.may_dir_msg_me_tr_lv_c,
@@ -440,6 +452,7 @@ object RdbUtil {
     |may_see_my_medium_avatar_tr_lv_c,
     |may_see_my_brief_bio_tr_lv_c,
     |may_see_my_full_bio_tr_lv_c,
+    |may_see_my_memberships_tr_lv_c,
     |may_see_my_profile_tr_lv_c,
     |may_see_me_in_lists_tr_lv_c,
     |may_see_if_im_online_tr_lv_c,
@@ -513,9 +526,9 @@ object RdbUtil {
       return Anonym(
           id = patId,
           createdAt = getWhen(rs, "created_at"),
-          anonForPatId = getInt32(rs, "u_true_id_c"),
+          anonForPatId = getInt32(rs, "true_id_c"),
           anonStatus = anonStatus.get,
-          anonOnPageId = getString(rs, "u_anon_on_page_id_st_c"))
+          anonOnPageId = getString(rs, "anon_on_page_id_st_c"))
     }
 
     Guest(
@@ -579,6 +592,12 @@ object RdbUtil {
 
   def getPrivPrefs(rs: js.ResultSet): MemberPrivacyPrefs = {
     MemberPrivacyPrefs(
+          maySeeMyBriefBioTrLv = getOptTrustLevel(rs, "may_see_my_brief_bio_tr_lv_c"),
+          maySeeMyMembershipsTrLv = getOptTrustLevel(rs, "may_see_my_memberships_tr_lv_c"),
+          maySeeMyProfileTrLv = getOptTrustLevel(rs, "may_see_my_profile_tr_lv_c"),
+          mayFindMeTrLv = getOptTrustLevel(rs, "may_see_me_in_lists_tr_lv_c"),
+          maySeeMyPresenceTrLv = getOptTrustLevel(rs, "may_see_if_im_online_tr_lv_c"),
+          maySeeMyApproxStatsTrLv = getOptTrustLevel(rs, "may_see_my_approx_stats_tr_lv_c"),
           seeActivityMinTrustLevel = getOptTrustLevel(rs, "may_see_my_activity_tr_lv_c"),
           maySendMeDmsTrLv = getOptTrustLevel(rs, "may_dir_msg_me_tr_lv_c"),
           mayMentionMeTrLv = getOptTrustLevel(rs, "may_mention_me_tr_lv_c"),

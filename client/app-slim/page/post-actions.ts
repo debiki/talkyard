@@ -476,11 +476,8 @@ export const PostActions = createComponent({
             secondaryButonTitle: t.Cancel,
             small: true,
             onPrimaryClick: () => {
-              // COULD create a ReactActions fn instead that does this:
-              Server.moderatePostOnPage(post, decision, (storePatch: StorePatch) => {
-                ReactActions.patchTheStore(storePatch, () => {
-                  scrollAndFlashPostNr(post.nr);
-                });
+              Server.moderatePostOnPagePatchStore(post, decision, () => {
+                scrollAndFlashPostNr(post.nr);
               });
             },
           });

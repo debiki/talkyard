@@ -250,6 +250,18 @@ trait SiteLimitsMultipliers {
   def readLimitsMultiplier: Opt[f32]
   def logLimitsMultiplier: Opt[f32]
   def createLimitsMultiplier: Opt[f32]
+
+  /** If there's many people — a whole herd — at the same ip, e.g. employees
+    * in an office building, or attendees at an in-place (not online) conference,
+    * it can be necessary to let lots of people sign up from the same ip address,
+    * but in other cases that can be fishy. [site_ip_person_limits]
+    *
+    * But no? Instead, would want read/log/create limits, for ip addresses,
+    * and sometimes a specific address or from a set of geographical areas?
+    * (E.g. a company's office buildings in a country or city.)
+    * Not just a single field.
+    */
+  // def ipHerdMultiplier: Opt[f32] = None
 }
 
 

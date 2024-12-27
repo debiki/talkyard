@@ -335,6 +335,10 @@ const AdminAppComponent = createReactClass(<any> {
     const apiLink = me.isAdmin && currentSettings.enableApi ?
       LiNavLink({ to: ar + 'api', className: 'e_ApiB' }, "API") : null;
 
+    const inspectLink = me.isAdmin ?
+        LiNavLink({ to: ar + 'inspect', className: 'e_InspB' }, "Inspect") : null;
+
+
     const saveBar = _.isEmpty(this.state.editedSettings) ? null :
       r.div({ className: 'esA_SaveBar' },
         r.div({ className: 'container' },
@@ -375,7 +379,8 @@ const AdminAppComponent = createReactClass(<any> {
         Route({ path: ar + 'customize', render: () => CustomizePanel(childProps) }),
         Route({ path: ar + 'backup', render: () => BackupPanel(childProps) }),
         Route({ path: ar + 'api', render: () => ApiPanel(childProps) }),
-        Route({ path: ar + 'review', render: () => ReviewAllPanel(childProps) }));
+        Route({ path: ar + 'review', render: () => ReviewAllPanel(childProps) }),
+        Route({ path: ar + 'inspect', render: () => InspectPanel(childProps) }));
 
     return (
       r.div({ className: 'esAdminArea' },
@@ -391,7 +396,8 @@ const AdminAppComponent = createReactClass(<any> {
             customizeLink,
             backupLink,
             apiLink,
-            LiNavLink({ to: ar + 'review', className: 'e_RvwB' }, "Moderation")),
+            LiNavLink({ to: ar + 'review', className: 'e_RvwB' }, "Moderation"),
+            inspectLink),
           childRoutes,
           saveBar)));
   }

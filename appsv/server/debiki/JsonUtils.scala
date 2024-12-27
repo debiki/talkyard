@@ -500,14 +500,15 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
      readOptInt(json, field, altName = altField, min = min, max = max)
 
 
-  def parseOptInt32(json: JsValue, field: St, altField: St = ""): Opt[i32] =
-     readOptInt(json, fieldName = field, altName = altField)
+  def parseOptInt32(json: JsValue, field: St, altField: St = "", alt2: St = ""): Opt[i32] =
+     readOptInt(json, fieldName = field, altName = altField, alt2 = alt2)
 
 
-  def readOptInt(json: JsValue, fieldName: String, altName: String = "",
+  def readOptInt(json: JsValue, fieldName: String, altName: String = "", alt2: St = "",
           min: Opt[i32] = None, max: Opt[i32] = None): Option[Int] = {
     val firstFieldValue = readOptLong(json, fieldName)
-    firstFieldValue.orElse(readOptLong(json, altName)) map { valueAsLong =>
+    firstFieldValue.orElse(readOptLong(json, altName)).orElse(readOptLong(json, alt2)) map {
+          valueAsLong =>
       val usedName = if (firstFieldValue.isDefined) fieldName else altName
       int64To32ThrowIfOutOfRange(valueAsLong, usedName, min = min, max = max)
     }
@@ -537,7 +538,7 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     readOptLong(json, fieldName = fieldName)
 
   def readOptLong(json: JsValue, fieldName: String): Option[Long] =
-    (json \ fieldName).validateOpt[Long] match {
+    if (fieldName.isEmpty) None else (json \ fieldName).validateOpt[Long] match {
       case JsSuccess(value, _) => value
       case JsError(errors) =>
         // Will this be readable? Perhaps use json.value[fieldName] match ... instead, above.
@@ -643,6 +644,9 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     }
   }
 
+  def parseOptTrustLevel(json: JsValue, field: St, altField: St = "", alt2: St = "")
+        : Opt[TrustLevel] =
+    parseOptInt32(json, field, altField = altField, alt2 = alt2).flatMap(TrustLevel.fromInt)
 
   def parseOptNeverAlways(json: JsValue, field: St, altField: St = ""): Opt[NeverAlways] =
     NeverAlways.fromOptInt(readOptInt(json, fieldName = field, altName = altField))

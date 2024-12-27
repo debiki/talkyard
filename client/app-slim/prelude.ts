@@ -534,12 +534,18 @@ export function notVal(x): Bo {
 }
 
 
+// RENAME to firstDefOf(), started.
 export function firstDefinedOf(x, y, z?) {
+  return firstDefOf(x, y, z);
+}
+
+
+export function firstDefOf<T>(x: T | U, y: T | U, z?: T | U): T | U {
   return !_.isUndefined(x) ? x : (!_.isUndefined(y) ? y : z);
 }
 
 
-export function firstValOf(x, y, z?, w?) {
+export function firstValOf<T>(x: T | NU, y: T | NU, z?: T | NU, w?: T | NU): T | NU {
   return isVal(x) ? x : (isVal(y) ? y : (isVal(z) ? z : w));
 }
 

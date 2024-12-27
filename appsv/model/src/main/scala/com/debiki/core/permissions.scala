@@ -20,7 +20,13 @@ package com.debiki.core
 import com.debiki.core.Prelude._
 
 
-
+/** Permissions for a user or group that aren't specific to a page or category,
+  * but for the whole site.
+  *
+  * (These are set on groups, not in the perms_on_pages3 table. The site wide perms in
+  * that table aren't in use [0_site_perms]. But these ones are (and stored in users3),
+  * and these are better — can vary, by group.)
+  */
 case class EffPatPerms(
   maxUploadSizeBytes: i32,
   allowedUploadExtensions: Set[St],

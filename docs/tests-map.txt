@@ -301,13 +301,19 @@ anonymous comments,
 anons:
   partly impl:
             - tests/app/debiki/dao/AnonymAppSpec.scala
-  Make work again, and code review:
-            - tests/e2e-wdio7/specs/alias-anons-basic.2br.f.e2e.ts
-            - tests/e2e-wdio7/specs/alias-anons-true-mixed.2br.f.e2e.ts
+  _anon_e2e_to_code_review:
+            - alias-anons-basic-temp.2br.f
+            - alias-anons-basic-perm.2br.f
+            - alias-anons-approve-review.2br.f
+            - alias-anons-edit-alter.2br.f
+  TESTS_MISSING, not impl:
+            - alias-anons-true-mixed.2br.f
+            - alias-anons-see-own.2br.f
   settings:
     enabling Anon Sens Disc disables presence:
             - alias-anons-true-mixed.2br.f  TyTALIANONTRUEMX.TyTANOSENSDISLN
   TESTS_MISSING:
+    but now most of this implmented, see _anon_e2e_to_code_review above.
             - See  ../wip/aliases/auto-test-thoughts.txt
             - Anon mode, send priv msg?
             - Callers of  checkAliasOrThrowForbidden() & getAliasOrTruePat() [misc_alias_tests]
@@ -419,12 +425,6 @@ sessions:
             - TESTS_MISSING
 
 
-privacy:  [.noise_and_privacy]
-  can cannot:
-    see email:
-    see username:
-    see if I'm online:
-
 navigation:
   from anywhere, to anywhere:
           - navigation-as-stranger.test.ts  TyT5WKAB024
@@ -465,6 +465,7 @@ profile page, user:
     won't list posts in deleted categories:
     won't list posts from deleted pages:
     won't list posts from pages one may not see:
+  privacy: [_priv]
 
   list login methods:
           - create-site-github-oauth-uppercase-email.test.ts  TyT4AR8GFAH
@@ -536,7 +537,21 @@ groups:
   permissions, custom groups:
           - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
           - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46
+  privacy: [_priv]
 
+
+privacy:  [_priv] [.noise_and_privacy]
+            - privacy-list-activity.2br.f  TyTPRIV_LSACT
+            - block-mentions.2br.d  TyTMAYMENTION
+            - block-dir-msgs.2br.d  TyTBLOCKDIRMSGS
+  inherited from groups:
+            - privacy-may-see.3br.f.e2e.ts  TyTPRIV_MAYSEE
+  see activity but not user profile?:  [see_activity_0_profile]
+      not implemented, and:
+            - TESTS_MISSING  TyTPRIV_ACT0PROF
+  see email:
+  see username:
+  see if I'm online:
 
 security:
   access denied,
@@ -970,6 +985,8 @@ mentions:
 
   may mention me trust level:
             - block-mentions.2br.d  TyTMAYMENTION
+  mentioning users w private profiles:
+            - privacy-may-see.3br.f.e2e.ts  TyTPRIV_MAYSEE.TyTPRIV_MENTION02
 
 
 link previews:
@@ -1248,6 +1265,7 @@ users online -
   unchanged after server restart:
   not see if I'm online:
             - see [.noise_and_privacy]
+            - all   _anon_e2e_to_code_review
 
 watchbar -
   recent list:
@@ -1392,10 +1410,12 @@ review after:
     undoReviewDecision: [4JKWWD4]
     ... lots of stuff ...
     bad user auto-banned:
-    invalidating review tasks - [2VSP5Q8]
-      reject-delete post -
-       - admin-review-invalidate-for-reply.2browsers.test.ts  TyT6KWB42A
-      reject-delete page -
+    invalidating review tasks: [2VSP5Q8]
+      band & delete all:
+            - modn-ban-spammer.2br.f  TyTMODNBANSPM
+      reject-delete post:
+            - admin-review-invalidate-for-reply.2browsers.test.ts  TyT6KWB42A
+      reject-delete page:
         other review task same page get invalidated:
         delete one post on the deleted page:
         undelete page, other tasks reactivated:
@@ -1508,6 +1528,8 @@ spam: (4BKS0)
           - spam-basic-akismet-false-positives.2browsers.test.ts  TyT205MKRRK0
           - spam-basic-akismet-false-negatives.2browsers.test.ts  TyT63MKWYT37
           - spam-basic-safe-browsing-api-blocked.2browsers.test.ts  TyTSPSAFEBRAPI
+  ban spammer:
+            - modn-ban-spammer.2br.f  TyTMODNBANSPM
 
 delete user:    NEXT was a bug, when deleted by admin
   deletes henself:
@@ -1715,6 +1737,7 @@ live notfs,
 live notifications -
   reply appears in 2nd browser:
             - delete-pages.2br  TyTE2EDELPG602.TyTWS702MEGR5
+            - modn-ban-spammer.2br.f  TyTMODNBANSPM.TyTWS702MEGR5
   attacker tries to bypass authentication:
           -  TESTS_MISSING  TyTWSAUTH
   reconnects after disconnection:

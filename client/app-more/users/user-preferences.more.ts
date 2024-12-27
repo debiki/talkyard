@@ -738,10 +738,7 @@ interface PrivacyPrefsTabProps {
 
 interface PrivacyPrefsTabState {
   savingStatus?: St;
-  hideActivityForStrangers: Bo;
-  hideActivityForAll: Bo;
-  maySendMeDmsTrLv?: TrustLevelOrStaff;
-  mayMentionMeTrLv?: TrustLevelOrStaff;
+  privPrefs: PrivacyPrefsEdited
 }
 
 
@@ -751,12 +748,8 @@ const PrivacyPrefsTab = createFactory({
   getInitialState: function() {
     const props: PrivacyPrefsTabProps = this.props;
     const user: UserInclDetails = props.user;
-    const state: PrivacyPrefsTabState = {
-      hideActivityForStrangers: user.seeActivityMinTrustLevel >= TrustLevel.FullMember,
-      hideActivityForAll: user.seeActivityMinTrustLevel >= TrustLevel.CoreMember,
-      maySendMeDmsTrLv: user.maySendMeDmsTrLv,
-      mayMentionMeTrLv: user.mayMentionMeTrLv,
-    };
+    const privPrefs: PrivacyPrefsEdited = { ...user.privPrefsOwn };
+    const state: PrivacyPrefsTabState = { privPrefs };
     return state;
   },
 
@@ -768,15 +761,8 @@ const PrivacyPrefsTab = createFactory({
     event.preventDefault();
     const props: PrivacyPrefsTabProps = this.props;
     const state: PrivacyPrefsTabState = this.state;
-    const seeActivityMinTrustLevel = state.hideActivityForAll ? TrustLevel.CoreMember : (
-        state.hideActivityForStrangers ? TrustLevel.FullMember : null);
     const user: UserInclDetails = props.user;
-    const prefs = {
-      userId: user.id,
-      seeActivityMinTrustLevel,
-      maySendMeDmsTrLv: state.maySendMeDmsTrLv,
-      mayMentionMeTrLv: state.mayMentionMeTrLv,
-    };
+    const prefs = { userId: user.id, ...state.privPrefs };
     // Dupl code [save_pat_pref].
     Server.saveMemberPrivacyPrefs(prefs, (r: { patNoStatsNoGroupIds: PatVb }) => {
       if (this.isGone) return;
@@ -794,6 +780,8 @@ const PrivacyPrefsTab = createFactory({
     const me: Me = props.store.me;
     const user: UserInclDetails = props.user;
     const isSelf = user.id === me.id;
+    const prefsEdited: PrivacyPrefsEdited = state.privPrefs;
+    const prefsOwn: PrivacyPrefs = user.privPrefsOwn || {};
 
     // Dupl Saving... code [7UKBQT2]
     let savingInfo = null;
@@ -805,71 +793,176 @@ const PrivacyPrefsTab = createFactory({
     }
 
     // Maybe most new members would mess up these settings? [can_config_what_priv_prefs]
-    // Currently these settings have no effect, for groups. [inherit_group_priv_prefs]
-    const canConfigWhoMayMessage = isSelf && pat_isBitAdv(me) || pat_isStaff(me);  // UX BUG but not if me is mod, and user is admin
-    const you =
-            user.isGroup ? "members of this group" : (    // I18N
-            user.id === me.id ? "you" : "this user");
 
+    // Can't config moderators' priv prefs directly — it's better to configure Staff, since both
+    // admins & mods are staff, but admins might not be mods. [0_conf_mod_priv_prefs]
+    if (user.id === Groups.ModeratorsId)
+      return rFr({},
+          r.p({}, "Configure the Staff group instead, ",
+              LinkUnstyled({ to: linkToPatsPrivPrefs(Groups.StaffId) }, "go here"), "."),
+          r.p({}, "You cannot configure privacy prefs of the Moderators group, since I don't " +
+              "know if you want changes to affect admins too, or not. But if you configure " +
+              "the Staff group, that affects both mods and admins."));
+
+    // Right now, custom groups cannot have privacy preferences.  [0_priv_prefs_4_cust_groups]
+    const isCustomGroup = user.isGroup && !member_isBuiltIn(user);
+
+    const isTrustLevelGroupOrStaff = user.isGroup && member_isBuiltIn(user);
+
+    const canConfigHideActivity = !isCustomGroup;
+
+    // Currently not inherited from groups, should be (later). [inherit_priv_prefs_0impl]
+    const canConfigWhoMayMentionOrDM =
+            isSelf && pat_isBitAdv(me) ||
+                // UX BUG but not if me is mod, and user is admin.
+                pat_isStaff(me) && !isCustomGroup;
+
+    const canConfigSeeProfile = !isCustomGroup
+
+    // See: [0_priv_prefs_4_cust_groups] in wip/.
+    if (!canConfigHideActivity && !canConfigWhoMayMentionOrDM && !canConfigSeeProfile)
+      return rFr({},
+          r.p({}, "You cannot configure privacy preferences for custom groups, right now."),
+          r.p({}, "You can, however, configure trust level groups (e.g. All Members, " +
+            "Full Members, etc), which then become the defaults, for people in " +
+            "those groups. " +
+            "Users can change their own preferences individually."));
+            // ... which of course (?) takes precedence over group configs, need not mention?
+
+    const you =
+            user.id === Groups.AllMembersId ? "members of this forum" : (    // I18N
+            user.id === Groups.StaffId ? "moderators and admins" : (
+            user.isGroup ? "members of this group" : (
+            user.id === me.id ? "you" : "this user")));
+    const oneYou = !user.isGroup ? you : (             // I18N
+            user.id === Groups.StaffId ? "a moderator or admin" : (
+            user.id === Groups.AllMembersId ? "a member" : (
+            "a member of this group")));
+    const your =
+            user.isGroup ? "the group members'" : (    // I18N
+            user.id === me.id ? "your" : "this user's");
+
+    const updPrivPrefs = (prefs: Partial<PrivacyPrefsEdited>) => {
+      this.setState({
+              privPrefs: { ...state.privPrefs, ...prefs },
+              savingStatus: null,
+            });
+    }
 
     return (
-      r.form({ role: 'form', className: 'e_PrivPrefsF', onSubmit: this.savePrivacyPrefs },
+      r.form({ role: 'form', className: 'c_PrivPrefsF', onSubmit: this.savePrivacyPrefs },
 
         // If in the future, adding options for being a bit invisible and not receiving
         // messages from others — then, stop publishing presence here: [PRESPRIV].
+        // [private_pats] [priv_prof_0_presence]
 
-        user.isGroup ? null : rFr({},
-        Input({ type: 'checkbox', className: 'e_HideActivityStrangersCB',
-            label: rFragment({},
-              t.upp.HideActivityStrangers_1, r.br(),
-              t.upp.HideActivityStrangers_2),
-            checked: state.hideActivityForStrangers,
-            onChange: (event: CheckboxEvent) => this.setState({
-              hideActivityForStrangers: event.target.checked,
-              hideActivityForAll: false,
-              savingStatus: null,
-            }) }),
+        !isTrustLevelGroupOrStaff ? null :
+            r.p({}, "The privacy preferences of this group are used as " +
+                `the defaults for ${you}. `,
+                !me.isAdmin ? null : r.a({ href: linkToInspect('priv-prefs') }, "Inspect")),
+            // Is this a bit too chatty?:
+            // "Preferences from lower trust level groups (e.g. All Members) are overridden
+            // by any changes you make here."
+            // Or:  (but how many non-native speakers know what "precedence" means?)
+            // "Preferences in higher trust level groups, have precedence, though."
+            // Or: "If something is configured differently in two groups, the higher " +
+            // "trust level group has precedence (e.g. Full Members overrides Basic Members)."
 
-        Input({ type: 'checkbox', className: 'e_HideActivityAllCB',
-            label: rFragment({},
-              t.upp.HideActivityAll_1, r.br(),
-              t.upp.HideActivityAll_2,),
-            checked: state.hideActivityForAll,
-            onChange: (event: CheckboxEvent) => this.setState({
-              hideActivityForStrangers: event.target.checked || state.hideActivityForStrangers,
-              hideActivityForAll: event.target.checked,
-              savingStatus: null,
-            }) })),
-
-        // This is notf prefs, rather than privacy? Maybe should move
-        // to tne notf prefs tab? Not important, let's wait.
-        //
-        !canConfigWhoMayMessage ? null : rFr({},
-          r.div({ className: 'e_WhoMayMention' },
-            r.span({}, `Min trust level to @mention ${you}: `),  // I18N
+        !canConfigHideActivity ? null :
+          r.div({ className: 'form-group e_WhoMaySeeAct' },
+            // This used to be these ui texts:
+            // t.upp.HideActivityStrangers_1, r.br(),
+            // t.upp.HideActivityStrangers_2,
+            // t.upp.HideActivityAll_1, r.br(),
+            // t.upp.HideActivityAll_2,,
+            // But now, with a dropdown instead of two checkboxes:
+            r.p({}, `Min trust level to see ${  // I18N
+                user.isGroup ? `recent activity by ${you}`
+                            : your + " recent activity"}: (e.g. posts, comments) `),
+            // It's possible to let others see one's activity, but non one's profile.
+            // [see_activity_0_profile]
             TrustLevelBtn({
                 diagTitle: rFr({},
-                    `Min trust level to get to notify ${you} by typing `,  // I18N
-                    r.code({}, `@${user.username}`), ':'),
-                curLevel: firstValOf(
-                      state.mayMentionMeTrLv, user.mayMentionMeTrLv, TrustLevelOrStaff.New),
-                minLevel: TrustLevelOrStaff.New,
-                maxLevel: TrustLevelOrStaff.CoreMember,
+                    `Min trust level:`),  // I18N
+                ownLevel: firstDefOf( // _first_defined: `null` means use-default.
+                      prefsEdited.maySeeMyActivityTrLv, prefsOwn.maySeeMyActivityTrLv),
+                defLevel: firstValOf(
+                      user.privPrefsDef?.maySeeMyActivityTrLv, TrustLevelOrStaff.Stranger),
+                minLevel: TrustLevelOrStaff.Stranger,
+                maxLevel:
+                    me.isModerator ? TrustLevelOrStaff.Staff : (
+                    me.isAdmin ? TrustLevelOrStaff.Admin :
+                    TrustLevelOrStaff.CoreMember),
                 saveFn: (newLevel) => {
-                  this.setState({ mayMentionMeTrLv: newLevel, savingStatus: null });
+                  updPrivPrefs({ maySeeMyActivityTrLv: newLevel });
                 }})),
 
-          r.div({ className: 'e_WhoMayDm' },
-            r.span({}, `Min trust level to direct-message (DM) ${you}: `),  // I18N
+        !canConfigSeeProfile ? null :
+          r.div({ className: 'form-group e_SeeProfile' },
+            r.p({}, `Min trust level to see ${  // I18N
+                user.isGroup ? `the profile pages of ${you}`
+                            : your + " profile page"}: `),
             TrustLevelBtn({
-                diagTitle: `Min trust level to get to direct-message ${you}:`,  // I18N
-                curLevel: firstValOf(
-                      state.maySendMeDmsTrLv, user.maySendMeDmsTrLv, TrustLevelOrStaff.New),
+                diagTitle: rFr({},
+                    `Min trust level:`),  // I18N
+                ownLevel: firstDefOf( // _first_defined
+                      prefsEdited.maySeeMyProfileTrLv, prefsOwn.maySeeMyProfileTrLv),
+                defLevel: firstValOf(
+                      user.privPrefsDef?.maySeeMyProfileTrLv, TrustLevelOrStaff.Stranger),
+                minLevel: TrustLevelOrStaff.Stranger,
+                maxLevel:
+                    me.isModerator ? TrustLevelOrStaff.Staff : (
+                    me.isAdmin ? TrustLevelOrStaff.Admin :
+                    TrustLevelOrStaff.FullMember),
+                saveFn: (newLevel) => {
+                  updPrivPrefs({ maySeeMyProfileTrLv: newLevel });
+                }})),
+
+          // Can see everyone else's profile pages:
+          // For now, if someone can see other people's email addresses,
+          // then let han see their profile pages too?
+          // Later: New conf val, init to  can_see_others_email_adrs_c ?
+
+        // Maybe this is notf prefs, rather than privacy perfs? Maybe should move
+        // to tne notf prefs tab? Not important, let's wait.
+        //
+        !canConfigWhoMayMentionOrDM ? null : rFr({},
+          r.div({ className: 'form-group e_WhoMayMention' },
+            r.p({}, `Min trust level to @mention ${oneYou}: *`),  // I18N
+            TrustLevelBtn({
+                diagTitle: rFr({},
+                    // UX BUG: I don't think this lets people notify *groups*? Only
+                    // group *members* individually? Or, hmm, what?  [may_group_prefs]
+                    `Min trust level to get to notify ${oneYou} by typing `,  // I18N
+                    r.code({}, `@${user.username}`), ':'),
+                ownLevel: firstDefOf( // _first_defined
+                      prefsEdited.mayMentionMeTrLv, prefsOwn.mayMentionMeTrLv),
+                defLevel: TrustLevelOrStaff.New, // guests can't mention [guests_0_mention]
+                      // later: firstValOf(   [inherit_priv_prefs_0impl]
+                      //   user.privPrefsDef?.mayMentionMeTrLv, TrustLevelOrStaff.Stranger),
                 minLevel: TrustLevelOrStaff.New,
                 maxLevel: TrustLevelOrStaff.CoreMember,
                 saveFn: (newLevel) => {
-                  this.setState({ maySendMeDmsTrLv: newLevel, savingStatus: null });
+                  updPrivPrefs({ mayMentionMeTrLv: newLevel });
                 }})),
+
+          r.div({ className: 'form-group e_WhoMayDm' },
+            r.p({}, `Min trust level to direct-message (DM) ${oneYou}: *`),  // I18N
+            TrustLevelBtn({
+                diagTitle: `Min trust level to get to direct-message ${oneYou}:`,  // I18N
+                ownLevel: firstDefOf( // _first_defined
+                      prefsEdited.maySendMeDmsTrLv, prefsOwn.maySendMeDmsTrLv),
+                defLevel: TrustLevelOrStaff.New,
+                      // later: firstValOf(   [inherit_priv_prefs_0impl]
+                      //    user.privPrefsDef?.maySendMeDmsTrLv, TrustLevelOrStaff.New),
+                minLevel: TrustLevelOrStaff.New,
+                maxLevel: TrustLevelOrStaff.CoreMember,
+                saveFn: (newLevel) => {
+                  updPrivPrefs({ maySendMeDmsTrLv: newLevel });
+                }})),
+
+          r.p({}, r.i({}, "* These two settings' default values aren't yet " +
+                "inherited from ancestor groups — not implemented.")),
         ),
 
         InputTypeSubmit({ className: 'e_SavePrivacy', style: { marginTop: '11px' },

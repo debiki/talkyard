@@ -120,6 +120,10 @@ export function linkToStaffInvitePage(): string {
   return origin() + '/-/admin/users/invited';
 }
 
+export function linkToInspect(what: 'priv-prefs'): St {
+  return origin() + '/-/admin/inspect#' + what;
+}
+
 export function linkToStaffUsersPage(): St {
   return origin() + '/-/admin/users/';
 }
@@ -183,6 +187,14 @@ export function linkToInvitesFromUser(userId: UserId): string {
 
 export function linkToUsersEmailAddrs(userIdOrUsername: UserId | string): string {
   return linkToUserProfilePage(userIdOrUsername) + '/preferences/account';
+}
+
+export function linkToPatsPrivPrefs(who: Who): St {
+  return linkToUserProfilePage(who) + '/preferences/privacy';
+}
+
+export function linkToPatsUiPrefs(who: Who): St {
+  return linkToUserProfilePage(who) + '/preferences/ui';
 }
 
 export function linkToMyDraftsEtc(store: Store): string {
@@ -259,6 +271,11 @@ export function linkToNotificationSource(notf: Notification): string {
   else {
     die("Unknown notification type [EsE5GUKW2]")
   }
+}
+
+
+export function linkToCat(cat: Cat): St {
+  return origin() + '/latest/' + cat.slug;
 }
 
 
