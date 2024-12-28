@@ -7,6 +7,7 @@ import * as make from '../utils/make';
 import { buildSite } from '../utils/site-builder';
 import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import c from '../test-constants';
+import { logBoring } from '../utils/log-and-die';
 
 let brA: TyE2eTestBrowser;
 let brB: TyE2eTestBrowser;
@@ -169,7 +170,7 @@ describe(`modn-ban-spammer.2br.f  TyTMODNBANSPM`, () => {
   // ----- Post comment, 2 pages
 
   it(`Maria goes to Angry Elk's page, it gets approved ...`, async () => {
-    // There's a race: Page might load, before it's been approved and rerendered.
+    // There's a _race: Page might load, before it's been approved and rerendered.
     // So, refresh and retry.
     await maria_brB.go2(angryElksUrl);
     await maria_brB.refreshUntil(async () => {
@@ -207,6 +208,8 @@ describe(`modn-ban-spammer.2br.f  TyTMODNBANSPM`, () => {
   });
 
   it(`Maria no longer sees her mashed potatoes page: it's deleted, not approved`, async () => {
+    // Isn't this a _race too,  should use   refreshUntil(async () => { ... }) ?  [E2EBUG]
+    // Also see _untested below.
     await maria_brB.refresh2();
     await maria_brB.assertNotFoundError();
   });
@@ -263,9 +266,11 @@ describe(`modn-ban-spammer.2br.f  TyTMODNBANSPM`, () => {
     await merche_brB.topic.assertPostNeedsApprovalBodyVisible(merchesReplyNr);
   });
   it(`... but after page reload, it's gone: Deleted, not approved`, async () => {
-    await merche_brB.refresh2();
-    await merche_brB.topic.waitForPostNrVisible(c.BodyNr);
-    assert.not(await merche_brB.topic.isPostNrVisible(merchesReplyNr));
+    // Another _race, another loop.
+    await merche_brB.refreshUntil(async () => {
+      await merche_brB.topic.waitForPostNrVisible(c.BodyNr);
+      return !await merche_brB.topic.isPostNrVisible(merchesReplyNr);
+    });
   });
   it(`... she's no longer logged in`, async () => {
     await merche_brB.me.waitUntilKnowsNotLoggedIn();
@@ -329,8 +334,15 @@ describe(`modn-ban-spammer.2br.f  TyTMODNBANSPM`, () => {
   });
 
   it(`Mallory no longer sees his spam page: it's deleted`, async () => {
-    await mallory_brB.refresh2();
-    await mallory_brB.assertNotFoundError();
+    // A _race, loop until deleted server side.
+    await mallory_brB.refreshUntil(async () => {
+      try { await mallory_brB.assertNotFoundError(); }
+      catch (ex) {
+        logBoring(`Waiting for Mallory's page to get deleted ...`);
+        return false;  // _untested  UNTESTED
+      }
+      return true;
+    });
   });
   it(`... he's no longer logged in`, async () => {
     await mallory_brB.waitAndClick('.s_LD_NotFound_HomeL');
