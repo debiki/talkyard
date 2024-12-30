@@ -1388,6 +1388,8 @@ admin:
 moderation,
 approve before,
 review after:
+    author names:
+            -  modn-ban-spammer.2br.f  TyTMODNBANSPM.TyTMODN_AUTHRNAME
     ninja edits,
     normal edits,
     late edits

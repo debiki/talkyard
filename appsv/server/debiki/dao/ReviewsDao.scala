@@ -562,34 +562,34 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
     // Maybe got moved to an new page?
     val pageId = post.pageId
 
-    val (updatedPosts, deletedPageId)  =
+    val (updatedPosts, deletedPageId, closeRemainingTasks)  =
             if (post.isDeleted) {
               // Fine, just update the mod tasks. [apr_deld_post]
               // (There're races: mods reviewing and deleting, and others maybe
               // deleting the post or ancestor posts — fine.)
-              (Nil, None)
+              (Nil, None, false)
             }
             // If staff deletes many posts by this user, mark it as a moderate threat?
             // That'll be done from inside update-because-deleted fn below. [DETCTHR]
             else if (taskIsForBothTitleAndBody) {
               deletePagesImpl(Seq(pageId), reqr, asAlias = None /*[anon_mods]*/)(tx, staleStuff)
               // Posts not individually deleted, instead, whole page gone // [62AKDN46]
-              (Seq.empty, Some(pageId))
+              (Seq.empty, Some(pageId), true)
             }
             else {
               val updPost =
                     deletePostImpl(pageId = post.pageId, postNr = post.nr, deletedBy = reqr,
                           tx, staleStuff).updatedPost
-
-              // It's annoying if [other review tasks for the same post] would
-              // need to be handled too.
-              // (If carrying out a mod task decision, then, doingTasksNow is just that
-              // one mod task — there might be other mod tasks too, about the same post.)
-              UX; COULD // do this also if deleting the whole page? (see above)
-              invalidateModTasksForPosts(Seq(post), doingTasksNow = doingTasksNow, tx)
-
-              (updPost.toSeq, None)
+              (updPost.toSeq, None, true)
             }
+
+    // It's annoying if [other review tasks for the same post] would
+    // need to be handled too.
+    // (If carrying out a mod task decision, then, doingTasksNow is just that
+    // one mod task — there might be other mod tasks too, about the same post.)
+    if (closeRemainingTasks) {
+      invalidateModTasksForPosts(Seq(post), doingTasksNow = doingTasksNow, tx)
+    }
 
     ModResult(
           updatedPosts = updatedPosts,
@@ -860,10 +860,11 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
     val tasksToUpdate = tasksLoaded filterNot { task =>
       def anyPostForThisTask = task.postId.flatMap(taskPostId => posts.find(_.id == taskPostId))
       def postDeleted = anyPostForThisTask.exists(_.isDeleted)
-      (task.completedAt.isDefined
-        || task.invalidatedAt.isDefined == shallBeInvalidated  // already correct status
-        || doingTasksNow.exists(_.id == task.id)  // this task gets updated by some ancestor caller
-        || (isReactivating && postDeleted))  // if post gone, don't reactivate this task
+      val shallUpdate = (task.completedAt.isDefined
+            || task.invalidatedAt.isDefined == shallBeInvalidated  // already correct status
+            || doingTasksNow.exists(_.id == task.id)  // task gets updated by some ancestor caller
+            || (isReactivating && postDeleted))  // if post gone, don't reactivate this task
+      shallUpdate
     }
 
     val tasksAfter = tasksToUpdate.map { task =>

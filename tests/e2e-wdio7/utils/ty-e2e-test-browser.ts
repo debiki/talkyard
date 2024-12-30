@@ -9876,6 +9876,17 @@ export class TyE2eTestBrowser {
           await this.waitUntilLoadingOverlayGone();
         },
 
+        countTasksByUsername: async (): Pr<{ [username: St]: Nr }> => {
+          const res: { [username: St]: Nr } = {};
+          const atNames = await this.waitAndGetListTexts('.s_RT_WrittenBy .esP_By_U');
+          for (const atName of atNames) {
+            const name = atName[0] === '@' ? atName.substring(1) : atName;
+            const num = res[name] || 0;
+            res[name] = num + 1;
+          }
+          return res;
+        },
+
         goToPostForTaskIndex: async (index: Nr) => {
           die("Won't work, opens in new tab [TyE5NA2953]");
           const numTabsBefore = await this.numTabs();

@@ -81,7 +81,16 @@ const mallorysTopic_v14gr4 = {
   body: `Cheap v14gr4 who wants`
 };
 
+const mallorysTopic2 = {
+  title: `I ship to all forrests`,
+  body: `Look at a tree and say what you want, and you'll get it dropshipped a week later!
+        Anything! An inflatable elk to confuse the hunters? Easy!`
+};
+
+const mallorysComment2 = `But pay to the following BitCoin address first, wait`;
+
 let mallorysPageUrl: St | U;
+let mallorysPage2Url: St | U;
 
 const angryElksReplyToMallory = `Where can I do that? Can you ship to the murky ` +
           `tree at the stone near the lake?`;
@@ -289,8 +298,8 @@ describe(`modn-ban-spammer.2br.f  TyTMODNBANSPM`, () => {
   it(`Owen changes settings to review-after`, async () => {
     await owen_brA.adminArea.settings.moderation.goHere();
     await owen_brA.adminArea.settings.moderation.setNumFirstToApproveBefore(0);
-    await owen_brA.adminArea.settings.moderation.setNumFirstToReviewAfter(3);
-    await owen_brA.adminArea.settings.moderation.setMaxNumPendingReview(3);
+    await owen_brA.adminArea.settings.moderation.setNumFirstToReviewAfter(4);
+    await owen_brA.adminArea.settings.moderation.setMaxNumPendingReview(4);
     await owen_brA.adminArea.settings.clickSaveAll();
   });
 
@@ -318,6 +327,13 @@ describe(`modn-ban-spammer.2br.f  TyTMODNBANSPM`, () => {
   it(`Mallory replies to Angry Elk  (will be Mallory's _most_recent post)`, async () => {
     // Angry Elk's reply should have appeared via WebSocket.  TyTWS702MEGR5
     await mallory_brB.complex.replyToPostNr(c.FirstReplyNr, mallorysReplyToAngryElk);
+  });
+
+  it(`... posts another spam page, with a comment`, async () => {
+    await mallory_brB.go2('/')
+    await mallory_brB.complex.createAndSaveTopic({ ...mallorysTopic2, matchAfter: false });
+    await mallory_brB.complex.replyToOrigPost(mallorysComment2);
+    mallorysPage2Url = await mallory_brB.getUrl();
   });
 
   it(`Owen is back`, async () => {
@@ -360,9 +376,42 @@ describe(`modn-ban-spammer.2br.f  TyTMODNBANSPM`, () => {
   // moderation queue. But the page it's on, got deleted.
   // That's ok, the mods are supposed to review Angry Elk's first comments, and
   // now they can do that.
-  it(`Owen looks at Mallory's deleted page, sees Angry Elks' comment`, async () => {
+  it(`Owen looks at Mallory's deleted page, sees it's deleted`, async () => {
     await owen_brA.go2(mallorysPageUrl);
+    await owen_brA.topic.waitUntilPageDeleted();
+  });
+
+  it(`... Angry Elks' comment is still there (although the page in inaccessible)`, async () => {
     await owen_brA.topic.assertPostTextIs(c.FirstReplyNr, angryElksReplyToMallory);
+  });
+
+  it(`Owen looks at Mallory's other page, it's been deleted, too`, async () => {
+    await owen_brA.go2(mallorysPage2Url);
+    await owen_brA.topic.waitUntilPageDeleted();
+  });
+
+  it(`Owen returns to the review queue`, async () => {
+    await owen_brA.topbar.myMenu.goToAdminReview();
+  });
+
+  it(`... there's 4 tasks caused by Mallory  (2 pages, 2 comments)`, async () => {
+    const tasksByUsername = await owen_brA.adminArea.review.countTasksByUsername();
+    assert.eq(tasksByUsername[mallory.username], 4);
+  });
+
+  it(`... Owen hides completed tasks`, async () => {
+    await owen_brA.adminArea.review.hideCompletedTasks();
+  });
+
+  let tasksByUsername: { [username: St]: Nr };
+
+  it(`... now all review tasks about Mallory disappear: they're done or invalidated`, async () => {
+    tasksByUsername = await owen_brA.adminArea.review.countTasksByUsername();
+    assert.not(tasksByUsername[mallory.username]);
+  });
+
+  it(`... only Angry Elk's comment remains  TyTMODN_AUTHRNAME`, async () => {
+    assert.deepEq(tasksByUsername, { angryelk: 1 });
   });
 
 });
