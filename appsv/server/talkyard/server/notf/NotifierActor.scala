@@ -336,8 +336,10 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
     if (emailNotfPrefs != EmailNotfPrefs.Receive &&
         emailNotfPrefs != EmailNotfPrefs.ReceiveAlways &&
         emailNotfPrefs != EmailNotfPrefs.Unspecified) {
-      // Or maybe just debug log level, here? — A harmless race can trigger this?
-      skipBecause("User declines emails")
+      BUG; SHOULD_LOG; COULD // Or rather *not* log. We're getting to here too often,
+      // so there're some unnecessary log messages. A tiny bit bad for performance &
+      // disk space.
+      skipBecause("User declines emails", warn = false)
       return
     }
 

@@ -1499,7 +1499,8 @@ export const Editor = createFactory<any, EditorState>({
     // place it here. Works, & it's just for now.)
     if (state.doAsAnon && !this._hasShownAnonTips) {
       const isTempAnon = state.doAsAnon.anonStatus === AnonStatus.IsAnonCanAutoDeanon;
-      if (!isTempAnon && !isAutoTestSite()) {
+      const anonWarn = store_isFeatFlagOn(state.store, 'ffAnonWarn', true);
+      if (!isTempAnon && !isAutoTestSite() && anonWarn) {
         this._hasShownAnonTips = true;
         setTimeout(function() {
           debiki2.help.openHelpDialogUnlessHidden(anonExperimentalMsg);
@@ -3221,7 +3222,7 @@ export function DraftStatusInfo(props: { draftStatus: DraftStatus, draftNr: numb
 }
 
 
-// Later, when more tested:  Remove this message,  and show instead a warning/tips
+// Some time later:  Remove the "_be_careful..." tips below.  But maybe show a warning/tips
 // only to mods & admins, since when they're in Anonymous mode, they can (as of now)
 // still see some things only they can see, e.g. unapproved comments. And by e.g.
 // approving & replying anonymously to a to others not-visible unapproved comment,
@@ -3241,17 +3242,21 @@ const anonExperimentalMsg: HelpMessage = {
   defaultHide: false,
   content: rFr({},
       r.h3({ className: 'e_AnoMby' } ,
-        "You're anonymous  (hopefully)"),  // the space "  " before the '(' is a &thinsp;.
-      r.p({},
-        "Do ", r.b({}, "not"), " write anything sensitive!"),
-      r.p({},
-        "Anonymous comments are pretty new. There might be bugs"),
-      r.p({ style: { marginLeft: '2em' }},
-        "— including ways to find out who you are."),
+        "You're anonymous"),
       r.br(),
       r.p({},
-        "Anyway.  Look in the upper right corner — you should see the text " +
-        "\"Anonymous\", if you're in an anonymous section of this forum.")),
+        "Check the upper right corner — you should see " +
+        "\"Anonymous\", if you're in an anonymous section of this forum."),
+      r.p({}, "Note:"),
+      r.ul({},
+        r.li({},
+          "Forum administrators can, if they really need to, find out which your " +
+          "real user account is."),
+        r.li({},
+          // The _be_careful tips:
+          "Anonymous comments is a new feature — there might be bugs. " +
+          "Be careful with posting anything highly sensitive.")),
+      ),
 };
 
 //------------------------------------------------------------------------------

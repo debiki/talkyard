@@ -382,29 +382,47 @@ type TagFound = Unimplemented;
 
 
 interface TagAnyVal {
-  tagType: TypeRef;  // e.g. "rid:some-tag-type"
+  tagType: TypeRef  // e.g. "rid:some-tag-type"
+  valType?: 'Int32' | 'Flt64' | 'StrKwd'
+  valInt32?: Nr
+  valFlt64?: Nr
+  valStr?: St
+
   // Not needed, if included when creating a post (then, the tags are for that post).
   //onPost?: PostRef;
 }
 
 interface TagNoVal extends TagAnyVal {
+  valType?: U
+  valInt32?: U
+  valFlt64?: U
+  valStr?: U
 }
 
 // [detailed_tag_val_types]:
 
 interface TagInt32 extends TagAnyVal {
-  valType: 'Int32';
-  valInt32: Nr;
+  valType: 'Int32'
+  valInt32: Nr
+
+  valFlt64?: U
+  valStr?: U
 }
 
 interface TagFlt64 extends TagAnyVal {
-  valType: 'Flt64';
-  valFlt64: Nr;
+  valType: 'Flt64'
+  valFlt64: Nr
+
+  valInt32?: U
+  valStr?: U
 }
 
 interface TagStrKwd extends TagAnyVal {
-  valType: 'StrKwd';
-  valStr: St;
+  valType: 'StrKwd'
+  valStr: St
+
+  valInt32?: U
+  valFlt64?: U
 }
 
 /* Later:  — valInt32 isn't always a plain int, can instead be a date-time:

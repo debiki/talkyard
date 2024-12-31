@@ -50,6 +50,18 @@ export function createContextbar(elem) {
 }
 
 
+type WhichPanel = 'Recent' | 'Starred' | 'Users' | 'AdminGuide'
+
+
+interface ContextbarState {
+  store: Store
+  lastLoadedOnlineUsersAsId: PatId
+  commentsType: WhichPanel
+  curPostNr?: PostNr
+  adminGuide?: RElm
+}
+
+
 export var Sidebar = createComponent({  // RENAME to ContextBar
   displayName: 'ContextBar',
   mixins: [debiki2.StoreListenerMixin],
@@ -82,7 +94,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     // If is admin, show the admin guide, unless the admin has clicked away from it.
     // If is chat, then we want to see online users (however, showing recent comments makes no
     // sense, because the chat messages (= comments) are already sorted chronologically).
-    let commentsType;
+    let commentsType: WhichPanel;
     if (me.isAdmin && getFromLocalStorage('showAdminGuide') !== 'false') {
       commentsType = 'AdminGuide';
       this.loadAdminGuide();
@@ -93,24 +105,25 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
           : 'Users';
     }
 
-    return {
+    const state: ContextbarState = {
       store: store,
       lastLoadedOnlineUsersAsId: null,
       commentsType: commentsType,
       // showPerhapsUnread: false,
     };
+    return state;
   },
 
   onChange: function() {
     const newStore: Store = debiki2.ReactStore.allData();
     this.setState({
       store: newStore,
-    });
+    } as ContextbarState);
     this.maybeLoadOnlineUsers(newStore);
   },
 
   showRecent: function() {
-    this.setState({ commentsType: 'Recent' });
+    this.setState({ commentsType: 'Recent' } as ContextbarState);
     setTimeout(() => {
       if (this.isGone) return;
       processTimeAgo('.esCtxbar_list')
@@ -119,24 +132,24 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
 
   /*
   showUnread: function() {
-    this.setState({ commentsType: 'Unread' });
+    this.setState({ commentsType: 'Unread' } as ContextbarState);
   },*/
 
   showStarred: function() {
-    this.setState({ commentsType: 'Starred' });
+    this.setState({ commentsType: 'Starred' } as ContextbarState);
   },
 
   /*
   togglePerhapsUnread: function() {
-    this.setState({ showPerhapsUnread: !this.state.showPerhapsUnread });
+    this.setState({ showPerhapsUnread: !this.state.showPerhapsUnread } as ContextbarState);
   }, */
 
   showUsers: function() {
-    this.setState({ commentsType: 'Users' });
+    this.setState({ commentsType: 'Users' } as ContextbarState);
   },
 
   showAdminGuide: function() {
-    this.setState({ commentsType: 'AdminGuide' });
+    this.setState({ commentsType: 'AdminGuide' } as ContextbarState);
     this.loadAdminGuide();
   },
 
@@ -144,7 +157,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     if (!this.state || !this.state.adminGuide) {
       staffbundle.loadAdminGuide(adminGuide => {
         if (this.isGone) return;
-        this.setState({ adminGuide: adminGuide });
+        this.setState({ adminGuide } as ContextbarState);
       });
     }
   },
@@ -164,21 +177,21 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     keymaster.unbind('s', 'all');
   },
 
-  UNSAFE_componentWillUpdate: function(newProps, newState) {
+  componentDidUpdate: function(prevProps, prevState) {
     // Stop always-showing-the-admin-guide-on-page-load if the admin clicks away from it.
-    const store: Store = this.state.store;
-    if (store.me.isAdmin && this.state.commentsType !== newState.commentsType) {
+    const state: ContextbarState = this.state;
+    const store: Store = state.store;
+    if (store.me.isAdmin && state.commentsType !== prevState.commentsType) {
       putInLocalStorage(
-          'showAdminGuide', newState.commentsType === 'AdminGuide' ? 'true' : 'false');
+          'showAdminGuide', state.commentsType === 'AdminGuide' ? 'true' : 'false');
     }
-  },
-
-  componentDidUpdate: function() {
+    // And:
     // if is-2d then: this.updateSizeAndPosition2d(event);
   },
 
   maybeLoadOnlineUsers: function(anyNewStore?: Store) {
-    const store: Store = anyNewStore || this.state.store;
+    const state: ContextbarState = this.state;
+    const store: Store = anyNewStore || state.store;
 
     // Online users list not visible, or disabled?
     if (!store.isContextbarOpen || !store.userIdsOnline)
@@ -192,7 +205,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     if (store.me.id === this.state.lastLoadedOnlineUsersAsId)
       return;
 
-    this.setState({ lastLoadedOnlineUsersAsId: store.me.id });
+    this.setState({ lastLoadedOnlineUsersAsId: store.me.id } as ContextbarState);
     // Skip for now, because now I'm including all online users are included in the page html.
     //Server.loadOnlineUsers();
   },
@@ -241,7 +254,8 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   },
 
   findComments: function() {
-    const store: Store = this.state.store;
+    const state: ContextbarState = this.state;
+    const store: Store = state.store;
     const page: Page = store.currentPage;
     const unreadComments = [];
     let recentComments = [];
@@ -310,13 +324,15 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   },
 
   manuallyMarkedAsRead: function(postId: number): boolean {
-    const store: Store = this.state.store;
+    const state: ContextbarState = this.state;
+    const store: Store = state.store;
     const mark = store.me.myCurrentPageData.marksByPostId[postId];
     return !!mark; // any mark means it's been read already.
   },
 
   isStarred: function(postId: number) {
-    const store: Store = this.state.store;
+    const state: ContextbarState = this.state;
+    const store: Store = state.store;
     const mark = store.me.myCurrentPageData.marksByPostId[postId];
     return mark === BlueStarMark || mark === YellowStarMark;
   },
@@ -326,10 +342,11 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   },
 
   focusPost: function(post: Post) {
-    const store: Store = this.state.store;
+    const state: ContextbarState = this.state;
+    const store: Store = state.store;
     this.setState({
-      currentPostId: post.nr
-    });
+      curPostNr: post.nr
+    } as ContextbarState);
     page.addVisitedPosts(null, post.nr);
     ReactActions.loadAndShowPost(post.nr);
     if (store.shallSidebarsOverlayPage) {
@@ -339,7 +356,8 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   },
 
   render: function() {
-    const store: Store = this.state.store;
+    const state: ContextbarState = this.state;
+    const store: Store = state.store;
     const page: Page = store.currentPage;
     const me: Myself = store.me;
 
@@ -391,12 +409,12 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
 
     // (If the page type was just changed to a page without comments, the Recent or Bookmarks
     // tab might be open, although commentsFound is now null (40WKP20) )
-    switch (this.state.commentsType) {
+    switch (state.commentsType) {
       case 'Recent':
         let recentComments = commentsFound ? commentsFound.recent : []; // see (40WKP20) above
         title = recentComments.length ? t.cb.RecentComments : t.cb.NoComments;
         recentClass = ' active';
-        listItems = makeCommentsContent(recentComments, this.state.currentPostId, store,
+        listItems = makeCommentsContent(recentComments, state.curPostNr, store,
             this.onPostClick);
         break;
       /*
@@ -411,7 +429,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
         title = t.cb.YourBookmarks;
         starredClass = ' active';
         let starredComments = commentsFound ? commentsFound.starred : []; // see (40WKP20) above
-        listItems = makeCommentsContent(starredComments, this.state.currentPostId, store,
+        listItems = makeCommentsContent(starredComments, state.curPostNr, store,
             this.onPostClick);
         break;
       case 'Users':
@@ -452,7 +470,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     }
 
     let tipsGuideOrExtraConfig;
-    if (this.state.commentsType === 'Recent') {
+    if (state.commentsType === 'Recent') {
       /* Skip this, I think people won't read it anyway and it makes the page look very
           cluttered and complicated.
       tipsOrExtraConfig =
@@ -462,7 +480,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
               'the computer thinks you have read it.');
       */
     }
-    if (this.state.commentsType === 'Starred') {
+    if (state.commentsType === 'Starred') {
       tipsGuideOrExtraConfig =
         r.div({},
           r.p({}, t.NotImplemented)); /*
@@ -473,8 +491,8 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
             */
     }
     /*
-    else if (this.state.commentsType === 'Unread') {
-      var tips = this.state.showPerhapsUnread
+    else if (state.commentsType === 'Unread') {
+      var tips = state.showPerhapsUnread
           ? r.p({}, 'Find listed below all comments that you have not marked as ' +
               'read. To mark a comment as read, click anywhere inside it, in the ' +
               "threaded view **to the left**. (Then the star in the comment's " +
@@ -483,13 +501,13 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       tipsOrExtraConfig =
         r.div({},
           r.label({ className: 'checkbox-inline' },
-            r.input({ type: 'checkbox', checked: !this.state.showPerhapsUnread,
+            r.input({ type: 'checkbox', checked: !state.showPerhapsUnread,
                 onChange: this.togglePerhapsUnread }),
             'Let the computer try to determine when you have read a comment.'),
           tips);
     }*/
-    else if (this.state.commentsType === 'AdminGuide') {
-      tipsGuideOrExtraConfig = this.state.adminGuide || r.p({}, t.Loading);
+    else if (state.commentsType === 'AdminGuide') {
+      tipsGuideOrExtraConfig = state.adminGuide || r.p({}, t.Loading);
     }
 
     let recentButton;
@@ -539,7 +557,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
           adminGuideButton);
     }
     else {
-      const title = r.span({}, this.state.commentsType + ' ', r.span({ className: 'caret' }));
+      const title = r.span({}, state.commentsType + ' ', r.span({ className: 'caret' }));
       tabButtons =
         ModalDropdownButton({ title, key: 'showRecent', pullRight: true },
           r.ul({ className: 'dropdown-menu' },
@@ -556,7 +574,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     let helpMessageBoxTree: RElm | U;
     let helpMessageBoxFour: RElm | U;
     let dimCommentsStyle: { opacity: St } | U;
-    if (this.state.commentsType === 'Recent' && listItems.length >= 6) {
+    if (state.commentsType === 'Recent' && listItems.length >= 6) {
       helpMessageBoxTree =
           help.HelpMessageBox({ className: 'es-editor-help-three', message: helpMessageThree,
             showUnhideTips: false });

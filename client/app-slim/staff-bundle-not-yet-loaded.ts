@@ -4,13 +4,13 @@
 
 namespace debiki2.staffbundle {
 
-  export function loadAdminGuide(handler: (adminGuide) => void) {
+  export function loadAdminGuide(handler: (adminGuide: RElm) => V) {
     Server.loadStaffScriptsBundle(() => {
       handler(debiki2.admin.AdminGuide);
     })
   }
 
-  export function loadStaffTours(handler: (tours: StaffTours) => void) {
+  export function loadStaffTours(handler: (tours: StaffTours) => V) {
     Server.loadStaffScriptsBundle(() => {
       handler(debiki2.admin['staffTours']);
     })

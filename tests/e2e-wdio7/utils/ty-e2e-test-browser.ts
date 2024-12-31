@@ -1474,14 +1474,23 @@ export class TyE2eTestBrowser {
 
     async scrollIntoViewInPageColumn(selector: St) {   // RENAME to  scrollIntoView
       dieIf(!selector, '!selector [TyE05RKCD5]');
-      const isInPageColResult = await this.#br.execute(function(selector) {
+
+      const where: 'Topbar' | 'PageCol' | 'Elsewhere' | 'Nowhere' =
+              await this.#br.execute(function(sel) {
+        var elem = document.querySelector(sel);
+        if (!elem) return 'Nowhere';
         var pageColumn = document.getElementById('esPageColumn');
-        if (!pageColumn)
-          return false;
-        var elem = document.querySelector(selector);
-        return pageColumn.contains(elem);
+        if (!pageColumn || !pageColumn.contains(elem)) return 'Elsewhere';
+        // The topbar isn't really part of the page column — it's fixed at the top.
+        // But technically, it's a descendant, so need to ignore elems therein.
+        var topbarElm = (document.getElementsByClassName('s_Tb-Fxd') || [])[0];
+        return topbarElm && topbarElm.contains(elem) ? 'Topbar': 'PageCol';
       }, selector);
-      if (isInPageColResult) {
+
+      if (where === 'Topbar') {
+        // Noop. Should already be visible
+      }
+      else if (where === 'PageCol') {
         await this._real_scrollIntoViewInPageColumn(selector);
       }
       else {
@@ -9865,6 +9874,17 @@ export class TyE2eTestBrowser {
             refreshBetween: true,
           });
           await this.waitUntilLoadingOverlayGone();
+        },
+
+        countTasksByUsername: async (): Pr<{ [username: St]: Nr }> => {
+          const res: { [username: St]: Nr } = {};
+          const atNames = await this.waitAndGetListTexts('.s_RT_WrittenBy .esP_By_U');
+          for (const atName of atNames) {
+            const name = atName[0] === '@' ? atName.substring(1) : atName;
+            const num = res[name] || 0;
+            res[name] = num + 1;
+          }
+          return res;
         },
 
         goToPostForTaskIndex: async (index: Nr) => {

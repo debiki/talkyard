@@ -122,7 +122,7 @@ But missing: Search in sub cats, if searching in base cat.
 [forum_page]
 More configurable, & discussions too, see:  y2999/wip_sect_disc_props_views_stats.sql
 
-[watchbar_to_linkbar]
+[watchbar_to_linkbar][metabar_2_pagebar]
 RENAME the "watchbar" to "linkbar", the page meta bar to "pagebar", and the right
 sidebar to "contextbar" ?
 
