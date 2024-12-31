@@ -104,11 +104,11 @@ object Dependencies {
     app_1      | SLF4J: Ignoring binding found at [jar:file:/home/owner/.cache/coursier/v1/https/repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.2.11/logback-classic-1.2.11.jar!/org/slf4j/impl/StaticLoggerBinder.class]
     app_1      | SLF4J: See http://www.slf4j.org/codes.html#ignoredBindings for an explanation.
     */
-    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.3.14"
+    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.3.15"
 
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
     // 1.3.x is for Java EE, 1.4.x is for Jakarta (which I don't think we use), otherwise identical.
-    val logbackCore = "ch.qos.logback" % "logback-core" % "1.3.14"
+    val logbackCore = "ch.qos.logback" % "logback-core" % "1.3.15"
 
     // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
     val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.4"
