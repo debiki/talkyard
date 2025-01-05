@@ -218,7 +218,8 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
       where u.site_id = ?
         and user_id >= ${Participant.LowestNormalMemberId}
         and deleted_at is null
-        and ($conditions)"""
+        and ($conditions)
+      order by user_id """
 
     runQueryFindMany(query, values.toList, rs => {
       getParticipant(rs).toMemberOrThrowCode("TyE5ABK20A2")
@@ -495,6 +496,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
         where site_id = ?
           and participant_id = ?
           and is_member
+        order by group_id
         """
     runQueryFindMany(query, List(siteId.asAnyRef, pptId.asAnyRef), rs => {
       rs.getInt("group_id")
@@ -812,6 +814,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
         on u.guest_email_addr = e.EMAIL and u.SITE_ID = e.SITE_ID
       where
         u.SITE_ID = ? and u.user_id <= ${Participant.MaxGuestId}
+      order by u.user_id
       """
     runQueryFindMany(query, List(siteId.asAnyRef), rs => {
       val p = getParticipant(rs)
@@ -841,6 +844,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
       where site_id = ?
         and user_id >= ${Participant.LowestMemberId}
         and trust_level is not null -- means is user, not group
+      order by user_id
       """
     runQueryFindMany(query, List(siteId.asAnyRef), rs => {
       getUserInclDetails(rs)
@@ -856,6 +860,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
       where site_id = ?
         and is_group
         and deleted_at is null
+      order by user_id
       """
     runQueryFindMany(query, List(siteId.asAnyRef), getGroup)
   }

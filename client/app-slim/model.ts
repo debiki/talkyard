@@ -829,6 +829,7 @@ interface Cat extends DiscPropsSource {
   defaultTopicType: PageRole;
   newTopicTypes?: PageRole[];  // [refactor] [5YKW294] delete, use defaultTopicType instead
   doItVotesPopFirst?: Bo;
+  // Always included by the server. Remove '?'?
   position?: number;
   description: string;    // from the about category topic
   thumbnailUrl?: string;  // from the about category topic
