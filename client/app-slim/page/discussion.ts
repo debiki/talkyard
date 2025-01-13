@@ -1132,9 +1132,13 @@ const Thread = createComponent({
   resumeDraft: function(event) {
     const post: Post = this.props.post;
     event.preventDefault();
-    // This will load our new reply draft text.
-    // Let the reply be of the same post type as the post we're replying to. [REPLTYPE]
-    ReactActions.composeReplyTo(post.parentNr, post.postType);
+    // TESTS_MISSING: Logging in by clicking Resume.
+    login.loginIfNeededReturnToPost(LoginReason.LoginToChat, post.nr, () => {
+      // This will load our new reply draft text.
+      // Let the reply be of the same post type as the post we're replying to. [REPLTYPE]
+      if (this.isGone) return;
+      ReactActions.composeReplyTo(post.parentNr, post.postType);
+    }, true /* willCompose */);
   },
 
   askDeleteDraft: function(event) {

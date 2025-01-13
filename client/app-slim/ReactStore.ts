@@ -1076,7 +1076,11 @@ function userIdList_remove(userIds: UserId[], userId: UserId) {
 
 
 ReactStore.mayComposeBeforeSignup = function() {
- return store.settings.mayComposeBeforeSignup;
+  const useOnlyCustomIdps = store.settings.useOnlyCustomIdps;
+  const enableTySso = store.settings.enableSso;
+  // If sso enabled, the may-compose-before setting is hidden, and one should get
+  // redirected to the SSO page directly.  [0_compose_bef_sso_redir]
+ return store.settings.mayComposeBeforeSignup && !(enableTySso || useOnlyCustomIdps);
 };
 
 ReactStore.getPageId = function() {
