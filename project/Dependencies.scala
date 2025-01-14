@@ -122,7 +122,7 @@ object Dependencies {
 
     // ----- Metrics, tracing
 
-    val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.25"
+    val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.30"
 
     // Deprecated. SHOULD migrate to OpenTelemetry, they say, https://opentelemetry.io/.
     // 1.8.1 exists now.
