@@ -159,10 +159,6 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
 
   showRecent: function() {
     this.setState({ commentsType: 'Recent' } as ContextbarState);
-    setTimeout(() => {
-      if (this.isGone) return;
-      processTimeAgo('.esCtxbar_list')
-    });
   },
 
   /*

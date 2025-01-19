@@ -145,14 +145,28 @@ export function reactRouterLinkifyTopHeaderLinks() {
 }
 
 
+let _processedAll = false;
+
 export function processPosts(startElemId?: string) {
   const startElemSelector = startElemId ? '#' + startElemId : undefined;
-  processTimeAgo(startElemSelector);
+
+  // On page load, we process all posts once, to convert the server's cached ISO dates
+  // to time-ago, e.g. "5 hours ago". But that's needed just once, because after we've
+  // hydrated the html, we generate time-ago times directly instead. [hydrate_done]
+  if (!_processedAll) {
+    processTimeAgo(startElemSelector);
+  }
+
   hideShowCollapseButtons();
   addCanScrollHintsSoon();
   makeMentionsInEmbeddedCommentsPointToTalkyardServer();
   if (talkyard.postElemPostProcessor) {
     talkyard.postElemPostProcessor(startElemId || 't_PageContent');
+  }
+
+  // If no specific elem, we've processed all.
+  if (!startElemId) {
+    _processedAll = true;
   }
 }
 

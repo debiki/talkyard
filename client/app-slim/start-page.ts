@@ -269,6 +269,12 @@ function renderPageInBrowser() {
   // debiki2.ReactStore.activateVolatileData(); ))
 
   const doNext = debiki2.startMainReactRoot(reactRenderMethod);
+
+  // We won't hydrate any more html from the server, so, hereafter we can serialize
+  // timestamps to time-ago (e.g. "5 hours ago") directly, rather than hydrating the
+  // timestamps and `processTimeAgo()` converting to "5 hours ago" strings. [hydrate_done]
+  debiki2.__doneHydrating = true;
+
   if (doNext === 'SkipTheRest')
     return;
 

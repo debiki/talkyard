@@ -124,6 +124,14 @@ function doNextFrameOrNow(something: () => void) {
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
+
+export let __doneHydrating: true | U;
+
+export function isDoneHydrating(): Bo {
+  return __doneHydrating;
+}
+
+
 // Typescript changes this so the macro breaks somehow, in prod builds:
 // x ifdef DEBUG
 export function toStr(x: any, indentation: number = 2): string {

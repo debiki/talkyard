@@ -1853,8 +1853,17 @@ export const PostHeader = createComponent({
           // COULD add "Posted on ..." tooltip.
           r.span({ className: 'n_EdAt'},
             post.isPreview ? null : (
-              props.exactTime ?
-                timeExact(post.createdAtMs, timeClass) : timeAgo(post.createdAtMs, timeClass)),
+                // Previously, were using exact timestamps in the chat, since it tend to
+                // upate more often, and "10 seconds ago" can quickly become misleading.
+                // But now, moment.js not available. [E5F29V] 
+                //props.exactTime ? timeExact(post.createdAtMs, timeClass) : 
+
+                // If we aren't hydrating the server's cached html, we can generate time-ago
+                // timestamps directly. (But won't work when hydrating, since "X time ago"
+                // changes all the time, wouldn't match the cached html.)  [hydrate_done]
+                isDoneHydrating() ? r.span({ className: 'dw-ago esTimeDone' },
+                                      debiki.prettyDuration(post.createdAtMs, Date.now())) :
+                timeAgo(post.createdAtMs, timeClass)),
             editInfo),
           inReplyTo,
           assignees(),
