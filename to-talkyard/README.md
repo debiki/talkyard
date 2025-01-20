@@ -1,3 +1,7 @@
+Usage:
+
+    node to-talkyard/dist/to-talkyard/src/to-talkyard.js --help
+
 If importing from MySQL / PgSQL etc, maybe: https://github.com/tgriesser/knex
 
 
