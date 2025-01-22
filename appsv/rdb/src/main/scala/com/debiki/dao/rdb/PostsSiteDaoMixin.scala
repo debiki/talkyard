@@ -20,6 +20,7 @@ package com.debiki.dao.rdb
 import collection.immutable
 import collection.mutable.ArrayBuffer
 import com.debiki.core._
+import com.debiki.core.isProd
 import com.debiki.core.PageParts.TitleNr
 import com.debiki.core.Prelude._
 import java.{sql => js}
@@ -834,6 +835,9 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   override def insertPost(post: Post) {
+    dieIf(isProd && post.tyype == PostType.Bookmark,
+          "TyEBOOKM0ENA11", "Bookmarks not yet enabled")
+
     val statement = """ -- insertPost
       insert into posts3(
         site_id,
@@ -973,6 +977,9 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   def updatePost(post: Post) {
+    dieIf(isProd && post.tyype == PostType.Bookmark,
+          "TyEBOOKM0ENA12", "Bookmarks not yet enabled")
+
     val statement = """ -- updatePost
       update posts3 set
         page_id = ?,

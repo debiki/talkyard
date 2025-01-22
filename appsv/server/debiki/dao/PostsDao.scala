@@ -18,6 +18,7 @@
 package debiki.dao
 
 import com.debiki.core._
+import com.debiki.core.isProd
 import com.debiki.core.EditedSettings.MaxNumFirstPosts
 import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.{FirstReplyNr, MinPublicNr}
@@ -186,6 +187,9 @@ trait PostsDao {
     // ----- Sanity checks
 
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE25JP5L2")
+
+    dieIf(isProd && postType == PostType.Bookmark,
+          "TyEBOOKM0ENA1", "Bookmarks not yet enabled in prod mode")
 
     if (asAlias.isDefined) {  // [both_anon_priv]
       throwForbiddenIf(postType == PostType.Bookmark,
@@ -1199,6 +1203,9 @@ trait PostsDao {
         throwNotFound("DwE404GKF2", s"Post not found, id: '$postNr'")
       }
 
+      dieIf(isProd && postToEdit.tyype == PostType.Bookmark,
+            "TyEBOOKM0ENA2", "Bookmarks not yet enabled in prod mode")
+
       if (postToEdit.currentSource == newTextAndHtml.text)
         return
 
@@ -1951,6 +1958,9 @@ trait PostsDao {
 
 
   def changePostType(pageId: PageId, postNr: PostNr, newType: PostType, reqr: ReqrId): U = {
+    dieIf(isProd && newType == PostType.Bookmark,
+          "TyEBOOKM0ENA9", "Bookmarks not yet enabled in prod mode")
+
     writeTx { (tx, staleStuff) =>
       val page = newPageDao(pageId, tx)
       val postBefore = page.parts.thePostByNr(postNr)

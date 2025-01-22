@@ -18,6 +18,7 @@
 package controllers
 
 import com.debiki.core._
+import com.debiki.core.isProd
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.dao.SiteDao
@@ -226,6 +227,9 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
         (pageMeta, post)
     }
 
+    throwForbiddenIf(isProd && post.tyype == PostType.Bookmark,
+          "TyEBOOKM0ENA1", "Bookmarks not yet enabled in prod mode")
+
     throwBadReqIf(asAlias.isDefined && post.isPrivate, // [both_anon_priv]
           "TyEANONPRIVED1", "Cannot edit bookmarks or private comments anonymously")
 
@@ -364,6 +368,9 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val postNr = (request.body \ "postNr").as[PostNr]
     val newTypeInt = (request.body \ "newType").as[Int]
     val newType = PostType.fromInt(newTypeInt) getOrElse throwBadArgument("DwE4EWL3", "newType")
+
+    throwForbiddenIf(isProd && newType == PostType.Bookmark,
+          "TyEBOOKM0ENA3", "Bookmarks not yet enabled in prod mode")
 
     request.dao.changePostType(pageId = pageId, postNr = postNr, newType, request.reqrIds)
     Ok

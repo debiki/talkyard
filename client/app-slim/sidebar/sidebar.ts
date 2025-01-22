@@ -666,7 +666,15 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       }
     }
 
-    if (windowWideEnoughForTabButtons) {
+    let skipBookmarks = true;
+    // @ifdef DEBUG
+    skipBookmarks = false;
+    // @endif
+
+    if (skipBookmarks) {
+      starredButton = null;
+    }
+    else if (windowWideEnoughForTabButtons) {
       starredButton =
           r.button({ className: 'btn btn-default' + starredClass, onClick: this.showStarred },
               bookmarksBtnTitle);

@@ -18,6 +18,7 @@
 package controllers
 
 import com.debiki.core._
+import com.debiki.core.isProd
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
@@ -59,6 +60,9 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val postType = PostType.fromInt((body \ "postType").as[Int]) getOrElse throwBadReq(
       "DwE6KG4", "Bad post type")
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
+
+    throwForbiddenIf(isProd && postType == PostType.Bookmark,
+          "TyEBOOKM0ENA1", "Bookmarks not yet enabled")
 
     val asAlias: Opt[WhichAliasPat] =
           debiki.dao.SiteDao.checkAliasOrThrowForbidden(body, requester, request.anyAliasPat)(dao)

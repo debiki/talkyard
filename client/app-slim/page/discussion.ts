@@ -1768,7 +1768,13 @@ export const PostHeader = createComponent({
     // (But not if we're in the todo list in the right sidebar — then a bookmark icon and
     // bookmark description are shown instead, above the bookmarked post.)
     let bookmarkBtn: RElm | U;
-    if (me.isAuthenticated && !post.isForDraftNr && !post.isPreview && !props.inTodoList) {
+    let skipBookmarks = true;
+    // @ifdef DEBUG
+    skipBookmarks = false;
+    // @endif
+
+    if (!skipBookmarks &&
+          me.isAuthenticated && !post.isForDraftNr && !post.isPreview && !props.inTodoList) {
       const postsByNr: { [postNr: number]: Post; } = page.postsByNr;
       // WOULD_OPTIMIZE: Can stop the search when nr >= PostNrs.MinPublicNr.
       const bookmarkPosts: Post[] = _.flatMap(post.bookmarkNrs || post.childNrsSorted, (childNr) => {
