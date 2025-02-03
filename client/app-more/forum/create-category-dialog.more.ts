@@ -560,6 +560,7 @@ const CatSettings = createClassAndFactory({
       const isDef = category.isDefaultCategory;
       anyDeleteButton =
         r.div({ className: 's_CD_Btns'},
+          // Break out a [red_delete_btn]?
           Button({ onClick: this.props.deleteCategory, className: 'icon-trash s_CD_DelB',
               disabled: isDef },
             "Delete category"),   // 0I18N

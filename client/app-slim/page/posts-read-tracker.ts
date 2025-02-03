@@ -158,6 +158,8 @@ function sendAnyRemainingDataWithBeacon(unloadEventIgnored) {
 }
 
 
+// COULD_OPTIMIZE: Send this data together with the next track-reading-activity request
+// instead.  [batch_track_reading_reqs]
 export function sendAnyRemainingData(success: () => void | null) {
   let skip = false;
   if (talksWithSererAlready) {
@@ -292,7 +294,11 @@ function trackReadingActivity() {
   let millisSinceLastReport = nowMs - lastReportedToServerAtMs;
   let millisSinceFirstNewRead = nowMs - firstUnreportedPostReadAtMs;
 
-  if (!talksWithSererAlready &&
+  // We don't send an  update-watchbar-mark-page-read  request until  [upd_watchbar_has_read]
+  // here, when we can include a bit more data in the same request. More efficient.
+  const pageIsUnreadInWatchbar = watchbar_isUnread(me.watchbar, page.pageId);
+
+  const timeToTrackReading =
       // It's undef, if haven't looked at the page for long enough. (5AKBR02)
       lastViewedPostNr &&
       // Don't report uninteresting just-a-few-seconds.
@@ -302,8 +308,9 @@ function trackReadingActivity() {
       (millisSinceFirstNewRead > AfterReadThenWaitMillis) &&
       // Only report something, if there's something to report.
       (unreportedPostsRead.length ||
-          millisSinceLastReport > ReportToServerIntervalSeconds * 1000)) {
+          millisSinceLastReport > ReportToServerIntervalSeconds * 1000);
 
+  if (!talksWithSererAlready && (pageIsUnreadInWatchbar || timeToTrackReading)) {
     // @ifdef DEBUG
     !debug || logD(`Reporting to server: lastViewedPostNr: ${lastViewedPostNr}, ` +
         `${unreportedSecondsReading} seconds reading, these post nrs: ${toNrs(unreportedPostsRead)}`);
@@ -313,13 +320,22 @@ function trackReadingActivity() {
     // BUG this won't retry, if there's a netw disconnection. Instead, somehow merge with
     // the pubsub (long-polling / websocket) requests? which auto-retries, if reconnects.
     // See subscribeToServerEvents().
-    // Later, send via WebSocket [VIAWS]. COULD_OPTIMIZE
+    // COULD_OPTIMIZE: Later, send via WebSocket [VIAWS].
+    // COULD_OPTIMIZE: Merge this other request:  [batch_track_reading_reqs] into here.
+    // Would then maybesend an *array* of page reading stats (2 items: prev and current page).
     Server.trackReadingProgress(lastViewedPostNr, unreportedSecondsReading,
         unreportedPostsRead, () => {
       talksWithSererAlready = false;
       // In case the server is slow because under heavy load, better reset this here in
       // the done-callback, when the response arrives, rather than when the request is being sent.
       lastReportedToServerAtMs = Date.now();
+
+      if (pageIsUnreadInWatchbar) {
+        // Update the watchbar object:
+        watchbar_markAsRead(me.watchbar, pageId); // [flux_mess] updating in-place
+        // Update the store & show the changes: (that is, un-highlight the topic in the watchbar)
+        ReactActions.patchTheStore({ me: { watchbar: me.watchbar }});
+      }
     });
 
     // (Don't do this inside the callback above — that could overwrite values

@@ -1035,6 +1035,7 @@ object RdbUtil {
     PageRenderParams(
           PostSortOrder.fromInt(getInt32(rs, "param_comt_order_c")).getOrDie("TyE703MRKJL5"),
           // comtNesting =  param_comt_nesting_c  — later
+          comtOffset = None,
           widthLayout = WidthLayout.fromInt(rs.getInt("param_width_layout_c")),
           isEmbedded = rs.getBoolean("param_is_embedded_c"),
           origin = rs.getString("param_origin_or_empty_c"),

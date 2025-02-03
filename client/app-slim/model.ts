@@ -371,6 +371,7 @@ interface ShowPostOpts extends ScrollIntoViewOpts {
 }
 
 
+// impls: `export const Post` in ./page/discussion.ts
 interface Post {
   // Client side only ------
   // [drafts_as_posts] Later, the drafts3 table will get deleted, and drafts moved to
@@ -387,6 +388,9 @@ interface Post {
   // If we're editing this post right now.
   isEditing?: boolean;
   // -----------------------
+
+  // Needed if we're rendering a post from another page, e.g. a bookmarked post in the sidebar.
+  pageId?: PageId
 
   uniqueId: PostId; // CLEAN_UP RENAME to id
   nr: PostNr;
@@ -429,8 +433,9 @@ interface Post {
   pinnedPosition: number;
   branchSideways: number;
   likeScore: number;
-  childNrsSorted: number[];
-  // For titles, we insert the post source, as text (no html in titles).
+  childNrsSorted: PostNr[];
+  bookmarkNrs?: PostNr[];
+  // For titles and bookmarks, we insert the post source, as text (no html in titles).
   // And for drafts, we show a <pre>the-source</pre>, for now. [DFTSRC]
   unsafeSource?: string;
   sanitizedHtml?: string;
@@ -449,8 +454,12 @@ const enum WritingWhat {
 }
 
 
-interface PostWithPage extends Post {
+interface PostWithPageId extends Post {
   pageId: PageId;
+}
+
+
+interface PostWithPage extends PostWithPageId {
   pageTitle: string;
   pageRole: PageRole;
 }
@@ -492,6 +501,7 @@ interface MyPageData {
   readingProgress?: ReadingProgress;
   votesByPostNr: { [postNr: PostNr]: Vote[] };
   internalBacklinks?: Topic[];
+  // This includes bookmarks and private comments (none of which needs to be approved).
   unapprovedPosts: { [id: number]: Post };
   unapprovedPostAuthors: Participant[];
   knownAnons?: KnownAnonym[];
@@ -819,6 +829,7 @@ interface Cat extends DiscPropsSource {
   defaultTopicType: PageRole;
   newTopicTypes?: PageRole[];  // [refactor] [5YKW294] delete, use defaultTopicType instead
   doItVotesPopFirst?: Bo;
+  // Always included by the server. Remove '?'?
   position?: number;
   description: string;    // from the about category topic
   thumbnailUrl?: string;  // from the about category topic
@@ -838,10 +849,10 @@ interface CategoryPatch extends Category {  // or Partial<Category>?
 
 
 
-interface TagType {
-  id: TagTypeId;
+interface TagType {       // RENAME to Type
+  id: TagTypeId;          // RENAME to TypeId
   refId?: RefId;
-  canTagWhat: ThingType;
+  canTagWhat: ThingType;  // RENAME & CHANGE to thingKind: KindOfThing? [ThingKind]
   dispName: St;
   urlSlug?: St;
   wantsValue?: NeverAlways;
@@ -865,6 +876,7 @@ interface Tag {
   tagTypeId: TagTypeId;
   onPatId?: PatId;
   onPostId?: PostId;
+  //order?: Nr; — maybe later, if some tags more interesting, nice to show first?
   valType?: TypeValueType;
   valInt32?: Nr;
   valFlt64?: Nr;
@@ -1113,7 +1125,7 @@ interface Page
   numPostsRepliesSection: number;  // CLEAN_UP REMOVE server side too  [prgr_chat_sect]
   numPostsChatSection: number;     // REMOVE, don't: change and rename to numProgressPosts  [prgr_chat_sect]
   numPostsExclTitle: number;
-  postsByNr: { [postNr: number]: Post };
+  postsByNr: { [postNr: number]: Post };  // REFACTOR use Store.postsByNrByPage instead?
   parentlessReplyNrsSorted: number[];
   progressPostNrsSorted: number[];
   horizontalLayout: boolean;
@@ -1229,6 +1241,13 @@ interface DiscStore extends SessWinStore {
   usersByIdBrief: { [userId: number]: Pat };  // = PatsById
   pagesById: { [pageId: string]: Page };
 
+  // Here, so can always render tags.
+  tagTypesById?: TagTypesById;
+
+  // Sometimes we have posts but not pages, e.g. when listing bookmarks or sbd's recent
+  // activity — then, we get individual posts from different pages.
+  //postsByNrByPage_later: { [pageId: PageId]: { [postNr: PostNr]: Post } };
+
   // Derived client side from: MyPageData.myPersonas and Me.usePersona.
   curPersonaOptions?: PersonaOptions  // ? move to SessWinStore ?
   curDiscProps?: DiscPropsDerived
@@ -1321,7 +1340,7 @@ interface Store extends Origins, DiscStore, PartialEditorStoreState {
 
   debugStartPageId: string;
 
-  tagTypesById?: TagTypesById;
+  // Not in DiscStore, since only needed on the all-tags page (that's not a discussion page).
   tagTypeStatsById?: { [tagTypeId: number]: TagTypeStats };
 
   superadmin?: SuperAdminStuff;
@@ -2256,7 +2275,9 @@ interface StorePatch
 
   listingCatId?: CatId;
 
-  pageVersionsByPageId?: { [pageId: string]: PageVersion };
+  ignorePageVersion?: true;  // Either this or ...
+  pageVersionsByPageId?: { [pageId: string]: PageVersion };  // ... this, but not both.
+
   postsByPageId?: { [pageId: string]: Post[] };
 
   pageMetasBrief?: PageMetaBrief[];
@@ -2305,6 +2326,14 @@ interface PatsStorePatch {
 
 interface PageTweaksStorePatch {
   curPageTweaks?: Partial<Page>;
+}
+
+interface MorePostsStorePatch extends TagTypesStorePatch, PatsStorePatch {
+  ignorePageVersion: true;
+  pageVersionsByPageId: undefined;
+  postsByPageId: { [pageId: string]: Post[] };
+  patsBrief: Pat[];
+  tagTypes: TagType[];
 }
 
 
@@ -2664,6 +2693,71 @@ interface ChangePageDiagParams {
 }
 
 
+/// For rendering a comment and its descendants.
+interface ThreadProps {
+  store: Store
+  rootPostId?: PostNr // is in fact the pots *nr*
+  post: Post
+  postId?: PostId // is in fact the post *nr*. Try to remove [349063216].
+  index?: Nr  // isn't required?
+  depth: Nr
+  indentationDepth: Nr
+  isFlat?: Bo
+  is2dTreeColumn?: Bo
+
+  elemType: 'div' | 'li'
+  key?: Nr | St
+}
+
+
+/// For rendering a comment or meta post.
+interface PostProps {
+  store: Store
+  post: Post
+  postId?: PostId // is in fact the post *nr*. Try to remove [349063216].
+  author?: BriefUser
+  index?: Nr  // isn't required?
+  depth?: Nr  // not needed when rendering in a flat list
+  isFlat?: Bo
+  is2dTreeColumn?: Bo
+  renderCollapsed?: Bo
+  abbreviate?: St
+
+  // In the todo lists, we skip bookmark icon — bookmarks are shown on a line
+  // above instead, including any bookmark note and page name.
+  inTodoList?: true
+
+  onClick?: () => V
+  onMouseEnter?: () => V
+  className?: St
+
+  // For PostHeaderProps:
+  live?: Bo
+  exactTime?: Bo
+  stuffToAppend?: any; // RElm
+  // onMarkClick?: () => V
+}
+
+
+/// For rendering the "Author-Name [times] [bookmark] [tags] ..."
+/// line above each comment, and below the page title.
+interface PostHeaderProps {
+  store: Store
+  post: Post
+  depth?: Nr
+  author?: BriefUser
+  isFlat?: Bo
+  is2dTreeColumn?: Bo
+  abbreviate?: St
+  inTodoList?: true
+
+  live?: Bo
+  exactTime?: Bo
+  stuffToAppend?: any; // RElm
+  // onMarkClick?: () => V
+}
+
+
 interface PatPanelProps {
   me: Me;
   store: Store;
@@ -2677,6 +2771,7 @@ interface PatStatsPanelProps extends PatPanelProps {
 
 
 interface PatPostsPanelProps extends PatPanelProps {
+  // Or 'Bookmarks'?  [or_load_bokms]
   showWhat?: 'Posts' | 'Tasks';  // Posts is the default
   /// If true, tasks that's been done or closed, are excluded.
   onlyOpen?: Bo;
@@ -2763,6 +2858,7 @@ interface TagListProps {
   forPost?: Post;
   forPat?: Pat;
   canEditTags?: Bo;
+  //canAddTags?: Bo; — not impl
  }
 
 
@@ -2772,6 +2868,7 @@ interface TagListLiveProps {
   forPost?: Post;
   forPat?: Pat;
   live?: Bo; // default true
+  // canAddTags?: Bo; — not impl
   onChanged?: () => Vo;  // or remove, use [useStoreEvent] instead?
 }
 
@@ -3228,6 +3325,7 @@ type TagTypesById = { [tagTypeId: number]: TagType };
 
 interface LoadPostsResponse {
   posts: PostWithPage[];
+  bookmarks: PostWithPageId[];
   storePatch: TagTypesStorePatch & PatsStorePatch;
 }
 

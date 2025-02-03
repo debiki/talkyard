@@ -10,7 +10,7 @@ export function win_getSessWinStore(): SessWinStore {
 }
 
 export function makeNoPageData() { die('K42B01'); }
-export function makeAutoPage(path?: string) { die('K42B02'); }
+export function makeAutoPage(pageId?: PageId): any { die('K42B02'); }
 
 //------------------------------------------------------------------------------
    }

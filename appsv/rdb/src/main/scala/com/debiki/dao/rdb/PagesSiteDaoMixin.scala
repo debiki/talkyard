@@ -60,9 +60,11 @@ trait PagesSiteDaoMixin extends SiteTransaction {
         set version = version + 1, updated_at = now_utc()
         where site_id = ?
           and page_id in (
+            -- Dupl code [page_ids_with_authors]
             select distinct page_id from posts3
             where site_id = ?
               and created_by_id = ?   -- + pat_node_rels_t [AuthorOf] !
+              and post_nr >= ${PageParts.MinPublicNr}
               and approved_at is not null
               and deleted_status = 0
               and hidden_at is null)

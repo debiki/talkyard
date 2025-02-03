@@ -410,15 +410,19 @@ case class SitePatcher(globals: debiki.Globals) {
 
       siteData.posts.groupBy(_.pageId).foreach { case (tempPageId, postsInPatch) =>
         val realPageId = remappedPageTempId(tempPageId)
-        val postsInDbOnPage = tx.loadPostsOnPage(realPageId)  ; COULD_OPTIMIZE // don't need them all
+        val postsInDbOnPage = tx.loadPostsOnPage(realPageId, WhichPostsOnPage.AllByAnyone())  ; COULD_OPTIMIZE // don't need them all
         postsInDbOnPage foreach { postInDb =>
           postsInDbByRealPagePostNr.put(postInDb.pagePostNr, postInDb)
         }
-        val firstNextReplyNr =
-          if (postsInDbOnPage.isEmpty) FirstReplyNr
-          else postsInDbOnPage.map(_.nr).max + 1
-        var nextReplyNr = firstNextReplyNr
-        dieIf(nextReplyNr < FirstReplyNr, "TyE05HKGJ5")
+        val firstNextPubReplyNr =
+              if (postsInDbOnPage.isEmpty) FirstReplyNr
+              else {
+                // If there's only private comments and bookmarks, make sure we start with
+                // a valid public reply nr, that is, FirstReplyNr.
+                Math.max(postsInDbOnPage.map(_.nr).max + 1, FirstReplyNr)
+              }
+        var nextPubReplyNr = firstNextPubReplyNr
+        dieIf(nextPubReplyNr < FirstReplyNr, "TyE05HKGJ5")
 
         val postTempIdsToInsert = mutable.HashSet[PostId]()
 
@@ -479,12 +483,41 @@ case class SitePatcher(globals: debiki.Globals) {
             case None =>
               // Probably we need to remap the post nr to 2, 3, 4, 5 ... instead of a temp nr.
               // Unless has a real nr already, e.g. the title or body post nr.
+              // Or unless it's a private nr — they're big negative nrs.
+              assert(PageParts.MaxPrivateNr < PageParts.MinPublicNr)
+              assert(PageParts.MinPublicNr < LowestTempImpId)
               val realNr =
-                if (postInPatch.nr < LowestTempImpId) postInPatch.nr
-                else {
-                  nextReplyNr += 1
-                  nextReplyNr - 1
-                }
+                    if (postInPatch.isPrivate) {
+                      UNTESTED  // TyTIMPBOOKMRK
+                      // Later: Private comments — do we know, because of the number and also
+                      // because of  Post.privatePatsId?  [priv_comts]
+                      // For now, just bookmarks. Try to reuse nr, why not? [gen_priv_post_nr]
+                      var nr =
+                            if (postInPatch.nr <= PageParts.MaxPrivateNr) postInPatch.nr
+                            else nextRandomPrivPostNr()
+                      // There might be private posts with the same nr, since they're picked
+                      // randomly.
+                      var attemptNr = 1
+                      while (postsInDbByRealPagePostNr.get(PagePostNr(realPageId, nr))
+                              .isDefined) {
+                        // This can happen if there's a large number of bookmarks or
+                        // private comments, f.ex. a DoS attack.
+                        dieIf(attemptNr > 10, "TyEBADLUCK2", o"""Unable to find a random nr for
+                              [post nr ${postInPatch.nr} in the patch] — there was another
+                              posts in the db with the same number, all 10 times I tried,
+                              e.g. nr $nr just now.""")
+                        attemptNr += 1
+                        nr = nextRandomPrivPostNr()
+                      }
+                      nr
+                    }
+                    else if (postInPatch.nr < LowestTempImpId) {
+                      postInPatch.nr
+                    }
+                    else {
+                      nextPubReplyNr += 1
+                      nextPubReplyNr - 1
+                    }
 
               postsInDbByRealPagePostNr.get(PagePostNr(realPageId, realNr)) match {
                 case Some(postInDbSameNr: Post) =>
@@ -597,7 +630,10 @@ case class SitePatcher(globals: debiki.Globals) {
 
             tx.insertPost(postReal)
             wroteToDatabase = true
-            pageIdsWithBadStats.add(postReal.pageId)
+
+            if (!postReal.isPrivate) {  // [0_stats_for_priv_posts]
+              pageIdsWithBadStats.add(postReal.pageId)
+            }
 
             COULD // update user stats, but so many things to think about,  [BADSTATS]
             // so skip for now:
@@ -630,7 +666,9 @@ case class SitePatcher(globals: debiki.Globals) {
             // Wait with sending notfs until pages and categories have been upserted, otherwise
             // I'd think something won't be found when running notf creation related queries.
             // (We exclude titles further below.)
-            postsToMaybeNotfAbout.append(postReal)
+            if (postReal.tyype != PostType.Bookmark) {  // [0_bokm_notfs]
+              postsToMaybeNotfAbout.append(postReal)
+            }
 
             if (postReal.isReply) {
               upsertedReplies.append(postReal)

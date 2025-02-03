@@ -192,16 +192,20 @@ const enum TypeValueType {
   // Flt64Range?
   // BigDecRange?
 
-  StrKwd          = 17,
+  StrKwd          = 17,   // 2^4 + 1
   /*
   StrTxt          = 18,
   StrUrl          = 19,
   SemanticVersion = 2?,
 
-  Date            = 33,
+  Date            = 33,   // 2^5 + 1
   DateRange       = 34,
 
-  LocationLatLong = 49,
+  LocationLatLong = 49,   // 2^5 + 2^4 + 1
+
+  Reminder ?      = 129,  // 2^7 + 1
+
+  PostLink ?      = 193,  // 2^7 + 2^6 + 1
   */
 }
 
@@ -214,16 +218,20 @@ const enum TopicFilters {
 
 
 // Also see type FindWhat in tests/e2e-wdio7/pub-api.ts. [ty_things_types]
+// And [ThingType_ids] in docs/design-docs/tags.dd.adoc.
 //
-const enum ThingType {  // or RENAME to TaggableThingType?
-  // How was I thinking? These numbers? Some kind of bitmasks, hmm.
-  // Pats = 1 + 2 + 4 = guests, users, groups (but which order?).
+const enum ThingType {  // or RENAME to TaggableThingType? no CHANGE to [ThingKind]?
+  // Pats = 1 + 2 + 4 = guests, users, groups.
   Pats = 7,
-  // Posts = Orig Posts (pages) + comments + ...what? + hmm. 32 + 16 + 8 = 56
+  // Posts = Pages = 8, comments = 16, meta posts = 32
   Posts = 56,
-  // And: Post tags = 64? Pat tags = 128?
-  // And cats 256, then? For now.
-  //Cats = 256,
+  // Bookmarks = ?  (a post of type Bookmark)  [ThingKind]
+  // Flags = ?  (later: a post of type Flag)
+  // And: Post tags = 256? User badges (pat tags) = 512?
+  //
+  // Cats = 1024  ?
+
+  // Bookmark = 78,  // what? why? Above instead
 
   All = Pats + Posts,  // RENAME to AllThatCanBeTagged
 }
@@ -340,6 +348,16 @@ const enum PostType {   // sync with test code [26BKA01]
   CommunityWiki = 12,
   CompletedForm = 21,
   MetaMessage = 31,   // RENAME to MetaPost
+  Bookmark = 51,
+}
+
+
+const enum PostNrs {
+  MaxPrivateNr = -1001,
+  MinPublicNr = 0,
+  TitleNr = 0,
+  BodyNr = 1,
+  FirstReplyNr = 2,
 }
 
 
@@ -765,7 +783,9 @@ const enum Verbosity {
 
 
 const enum Time {
-  OneDayInMillis = 24 * 3600 * 1000,
+  OneMinuteInMillis = 60 * 1000,
+  OneHourInMillis = 60 * OneMinuteInMillis,
+  OneDayInMillis = 24 * OneHourInMillis,
 }
 
 
@@ -774,6 +794,13 @@ const enum Sizes {
   Kibibyte = 1024,   // KiB
   Megabyte = 1000 * 1000,  // MB
   Mebibyte = 1024 * 1024,  // MiB
+}
+
+
+const enum RangeDir {
+  Older = -1,
+  // Around = 0, — later
+  Newer = +1,
 }
 
 

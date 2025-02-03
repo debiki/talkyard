@@ -71,6 +71,13 @@ export var Metabar = createComponent({
     die('unimpl [EdE2QKT0]');  // was: d.i.showReplyFormEmbeddedComments(); [todo-emb-cmts]
   },
 
+  // Scrolls to & highlights the most recent comment.
+  goToLatest: function() {
+    const store: Store = this.state.store;
+    const maxNr = page_mostRecentPostNr(store.currentPage);
+    ReactActions.loadAndShowPost(maxNr);
+  },
+
   onToggleDetailsClick: function() {
     // [redux] modifying in place :-/
     this.state.ui.showDetails = !this.state.ui.showDetails;
@@ -113,6 +120,17 @@ export var Metabar = createComponent({
     const nameLoginBtns = !isBlogComments ? null :
         r.li({}, reactelements.NameLoginBtns({}));
 
+    // A go-to-latest-comment button. People often don't open the right hand sidebar
+    // and notice that there's a Recent tab with comments by time, descending,
+    // but this button is visible directly.
+    // UX:  But how make them realize they can go to the last-but-one,  [big_page_nav]
+    // last-but-two etc too?
+    const goToBtns = page.numPostsExclTitle <= 2 // skip if just orig post + 1 reply
+              // and *for now*, if not logged in, so won't have to update the [renderer_version]:
+              || !me.isLoggedIn ? null :
+          r.div({ className: "c_NavBs" },
+            Button({ className: "c_GoLtst", onClick: this.goToLatest }, "Go to latest"));
+
     const summaryElem =
       r.div({ className: 'dw-cmts-tlbr-head' },
           r.ul({ className: 'dw-cmts-tlbr-summary' },
@@ -128,8 +146,10 @@ export var Metabar = createComponent({
                         curPageTweaks: newLayout,
                       });
                     } })),
+
               nameLoginBtns,
               r.li({}, notfLevelElem)),
+          goToBtns,
           toggleDetailsBtn);
 
     const detailsElem = ui.showDetails

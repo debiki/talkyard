@@ -54,8 +54,11 @@ object PostsListFoundJson {
 
     dieIf(anyPostsFound.nonEmpty && anySearchResults.nonEmpty, "TyE60WKTH5")
 
-    val LoadPostsResult(postsFound: Seq[Post], pageStuffById: Map[PageId, PageStuff]) =
-          anyPostsFound getOrDie "TyE405RKDD"
+    val LoadPostsResult(
+          postsFound: Seq[Post],
+          pageStuffById: Map[PageId, PageStuff],
+          _) =
+            anyPostsFound getOrDie "TyE405RKDD"
 
     // --- Load authors
 

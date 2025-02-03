@@ -213,10 +213,11 @@ POST  /-/config-watchbar        controllers.PageController.configWatchbar
 POST  /-/change-pat-node-rels   controllers.PageController.changePatNodeRels
 
 GET   /-/list-topics-by-user    talkyard.server.talk.PostsController.listTopicsByUser(userId: Int)
-GET   /-/list-posts             talkyard.server.talk.PostsController.listPostsByUser(authorId: Int, relType: Option[Int], which: Option[Int])
+GET   /-/list-posts             talkyard.server.talk.PostsController.listPostsByUser(authorId: Int, postType: Option[Int], relType: Option[Int], which: Option[Int])
 GET   /-/download-my-content    talkyard.server.talk.PostsController.downloadUsersContent(authorId: Int)
 GET   /-/list-posts-with-tag    talkyard.server.talk.PostsController.listPostsWithTag(typeIdOrSlug)
 
+# Also handles bookmarks. Should rename to  create-post?
 POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/chat                   controllers.ReplyController.handleChatMessage
 
@@ -430,6 +431,7 @@ OPTIONS  /*whatever             controllers.ApiV0Controller.getFromApi(whatever)
 # ----- View pages/posts
 
 GET   /-/load-post              controllers.ViewPageController.loadPost(pageId: String, postNr: Int)
+GET   /-/load-many-posts        controllers.ViewPageController.loadManyPosts(pageId, comtOrder: Int, offset: Int, rangeDir: Int)
 
 # COULD remove? use only /-/track-reading-activity ?
 POST  /-/mark-as-seen           controllers.ViewPageController.markPageAsSeen(pageId)

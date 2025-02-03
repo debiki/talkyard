@@ -163,6 +163,7 @@ export function logout() {
 
 export function logoutClientSideOnly(ps: { goTo?: St, skipSend?: Bo, msg?: St } = {}) {
   Server.deleteTempSessId();  // [is_logging_out]
+  Server.clearQueryCache();   // [clear_q_cache] here to, in case of races
 
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.Logout
@@ -184,6 +185,7 @@ export function logoutClientSideOnly(ps: { goTo?: St, skipSend?: Bo, msg?: St } 
   // logged out: (we reload() below — but the service-worker might stay connected)
   pubsub.disconnectWebSocket();
 
+  // Make sure we reload() to forget all state, at least for now. [reload_on_logout]
   if (ps.goTo) {
     if (eds.isInIframe) {
       // Then we'll redirect the parent window instead. [sso_redir_par_win]
@@ -491,6 +493,7 @@ export function uncollapsePost(post) {
 }
 
 
+// Sth a bit similar, when paginating in a chat?  [to_paginate]
 // COULD RENAME to loadIfNeededThenShow(AndHighlight)Post
 export function loadAndShowPost(postNr: PostNr, showPostOpts: ShowPostOpts = {},
        onDone?: (post?: Post) => void) {
@@ -744,6 +747,10 @@ export function doUrlFragmentAction(newHashFragment?: string) {
       const newHash = postNr === BodyNr ? '#' : `#post-${postNr}`;
       // Does this sometimes make the browser annoyingly scroll-jump so this post is at
       // the very top of the win, occluded by the topbar? [4904754RSKP]
+      // @ifdef DEBUG
+      logD(`ReactActions doUrlFragmentAction loadAndShowPost: ` +
+              `history.replaceState({}, '', newHash);`);
+      // @endif
       history.replaceState({}, '', newHash);
     }
   });
@@ -1478,16 +1485,17 @@ export function maybeLoadAndShowNewPage(store: Store, history: ReactRouterHistor
   // Or 3) because we just loaded it via '/-pageid', and now we're updating the url to
   // the correct page path, say '/forum/'. (4WKBT80)
 
-  let hasPageAlready = false;
+  let shouldLoadPage = true;
   let isThisPage = false;
   let gotNewHash = false;
+  let theNewPage: Page | U;
 
   _.each(store.pagesById, (page: Page) => {
     if (isThisPage) return; // break loop
 
     const storePagePath = page.pagePath.value;
 
-    // Is this page in the store the one we're navigating to?
+    // Is this cached page in the store the one we're navigating to?
     isThisPage = storePagePath === newUrlPath;
 
     // Maybe the url path is wrong? Case 3 above (4WKBT80): test '/-pageid' urls.
@@ -1504,7 +1512,10 @@ export function maybeLoadAndShowNewPage(store: Store, history: ReactRouterHistor
     }
 
     if (isThisPage) {
-      hasPageAlready = true;
+      // We're navigating to `page`, which we have cached in the store already. (We've looked
+      // at it before, navigated away and back somehow.)
+      shouldLoadPage = false;
+      theNewPage = page;
       if (page.pageId === store.currentPageId) {
         // We just loaded the whole html page from the server, and are already trying to
         // render 'page'. Or we clicked a '/-pageid#post-nr' link, to '/the-current-page'.
@@ -1516,7 +1527,13 @@ export function maybeLoadAndShowNewPage(store: Store, history: ReactRouterHistor
         gotNewHash = hash !== location.hash;
         const somethingChanged = newUrlPath !== page.pagePath.value || gotNewSearch || gotNewHash;
         if (somethingChanged && !newPathIsToThatForum) {
-          history.replace(page.pagePath.value + search + hash);
+          const newUrlPath = page.pagePath.value + search + hash;
+          // @ifdef DEBUG
+          logD(`ReactActions maybeLoadAndShowNewPage: ${
+                              location.pathname + location.search + location.hash
+                              } –> history.replace(${newUrlPath})`);
+          // @endif
+          history.replace(newUrlPath);
         }
       }
       else {
@@ -1525,7 +1542,7 @@ export function maybeLoadAndShowNewPage(store: Store, history: ReactRouterHistor
         // to be sure they're up-to-date. They are kept up-to-date automatically, if they're
         // in the watchbar's recent-pages list. But I haven't tested this properly, also,
         // the recent-pages-list might suffer from race conditions? and become out-of-date?
-        hasPageAlready = false; // [8YDVP2A]
+        shouldLoadPage = true; // [8YDVP2A]
         /* Later:
         // If navigating back to EmptyPageId, maybe there'll be no myData; then create empty data.
         const myData = store.me.myDataByPageId[page.pageId] || makeNoPageData();
@@ -1535,7 +1552,29 @@ export function maybeLoadAndShowNewPage(store: Store, history: ReactRouterHistor
     }
   });
 
-  if (!hasPageAlready) {
+  let canUseCache = false;
+
+  // @ifdef DEBUG
+  // Just testing, on localhost, for now. [8YDVP2A]
+  // Later, maybe, for a start, use any cached page only if it's not older than X minutes?
+  // (Unless there's some http error — then use the cached page anyway.)
+  canUseCache = theNewPage && theNewPage.pageId !== store.currentPageId;
+  if (canUseCache)
+    logD(`ReactActions maybeLoadAndShowNewPage canUseCache=true —> showNewPage...`);
+  // @endif
+
+  if (canUseCache) {
+    showNewPage({
+      newPage: theNewPage,
+      pubCats: store.publicCategories,
+      pats: _.values(store.usersByIdBrief),
+      tagTypesById: store.tagTypesById,
+      me: store.me,
+      stuffForMe: {},
+      history,
+    });
+  }
+  else if (shouldLoadPage) {
     loadAndShowNewPage(newUrlPath, history);
   }
   else if (isThisPage && gotNewHash) {
@@ -1544,6 +1583,7 @@ export function maybeLoadAndShowNewPage(store: Store, history: ReactRouterHistor
 }
 
 
+// REFACTOR look at server.loadPagePartsJson()  [load_page_and_parts]
 function loadAndShowNewPage(newUrlPath: St, history: ReactRouterHistory) {
   // UX maybe dim & overlay-cover the current page, to prevent interactions, until request completes?
   // So the user e.g. won't click Reply and start typing, but then the page suddenly changes.

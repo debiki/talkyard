@@ -741,7 +741,10 @@ const LoginAndSignupSettings = createFactory({
         }),
 
         // If SSO enabled, email addresses must always have been verified, by the external
-        // login provider.
+        // login provider. [0_compose_bef_sso_redir]
+        // Could theoretically make compose-before work also with sso, but then, for embedded
+        // comments, would need to save the comment (in session storage?), before redirecting
+        // the page to sso login.
         enableTySsoOrOnlyCustIdps || !allowSignup ? null : Setting2(props, {
           type: 'checkbox', label: "Require verified email",
           className: 'e_A_Ss_S-RequireVerifiedEmailCB',

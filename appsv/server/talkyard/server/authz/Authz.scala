@@ -469,8 +469,8 @@ object Authz {
     // Staff may see all posts, if they may see the page. [5I8QS2A]
     ANON_UNIMPL // if post.createdById  is pat's own alias, han is the author and can see it.
     // Don't fix now — wait until true author id is incl in posts3/nodes_t? [posts3_true_id]
-    def isStaffOrAuthor =
-          pat.exists(_.isStaff) || pat.exists(_.id == post.createdById)
+    val isAuthor = pat.exists(_.id == post.createdById)
+    val isStaffOrAuthor = pat.exists(_.isStaff) || isAuthor
 
     // Later, [priv_comts]: Exclude private sub threads, also if is staff.
 
@@ -479,6 +479,13 @@ object Authz {
 
     if (!post.isSomeVersionApproved && !isStaffOrAuthor)
       return (MaySeeOrWhyNot.NopePostNotApproved, "6PKJ2RW-Post-0Apr")
+
+    if (post.nr < PageParts.MinPublicNr && !isAuthor)
+      return (MaySeeOrWhyNot.NopePrivate, "6PKJ2RX-Post-Priv")
+
+    // This is fine, since it's pat's own post, although a bit unexpected.
+    // Maybe would be nice to see what code path makes this happen?
+    devDieIf(post.nr < PageParts.MinPublicNr, "TyESEEOTRPRIV", "Want to debug a bit?")
 
     // Later: else if is meta discussion ... [METADISC]
 
@@ -519,11 +526,21 @@ object Authz {
       if (!mayWhat.mayEditPage) // before: user.id != pageMeta.authorId && !user.isStaff)
         return NoMayNot("EsEMAY0REMINDM", "Not allowed to add more items to this mind map")
     }
+    else if (postType.isPrivate) {
+      // That means the new "reply" is a private comment [priv_comts]  or a bookmark.
+      // Those are ok to add — other's won't see them (except for the people one adds to
+      // the private thread).
+      // Later: But private comments won't have any special type?  They'll just have a
+      // nr <= PageParts.MaxPrivateNr?  Maybe a `willBePrivate` param instead?
+    }
     else {
       if (!mayWhat.mayPostComment)
         return NoMayNot("EdEM0RE0RE", "You don't have permissions to post a reply on this page")
     }
 
+    // (This prevents us from bookmarking pages that can't have replies — that's ok,
+    // they're e.g. forum index pages, blog index pages, or special pages e.g. CSS, or
+    // legacy pages e.g. html. Not important to bookmark, and isn't any UI for that anyway.)
     if (!pageMeta.pageType.canHaveReplies)
       return NoMayNot("EsEM0REPAGETY", s"Cannot post to page type ${pageMeta.pageType}")
 
@@ -1250,6 +1267,7 @@ object MaySeeOrWhyNot {
   case object NopeNoPostWithThatNr extends MaySeeOrWhyNot(3)  // RENAME NopeNoSuchPost
   case object NopePostNotApproved extends MaySeeOrWhyNot(6)
   case object NopePostDeleted extends MaySeeOrWhyNot(4)
+  case object NopePrivate extends MaySeeOrWhyNot(7)
 
 }
 

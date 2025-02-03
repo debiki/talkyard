@@ -258,7 +258,23 @@ function renderPageInBrowser() {
 
   const timeBefore = performance.now();
 
+  // ((You might look at a profiler, and realize that it'd be faster to call
+  // `activateVolatileData()` here — that is, to include your own data,
+  // when running React the first time, and avoiding partly rerendering the page, once
+  // your own data has been added (e.g. any unapproved comments of yours).
+  // However! The server side generated html, doesn't include your personal stuff,
+  // so it'd be different from the html you'd get when running React in the browser
+  // (with your personal stuff included), which messes up various html things randomly.
+  // So, don't do here:  (but do later, below)
+  // debiki2.ReactStore.activateVolatileData(); ))
+
   const doNext = debiki2.startMainReactRoot(reactRenderMethod);
+
+  // We won't hydrate any more html from the server, so, hereafter we can serialize
+  // timestamps to time-ago (e.g. "5 hours ago") directly, rather than hydrating the
+  // timestamps and `processTimeAgo()` converting to "5 hours ago" strings. [hydrate_done]
+  debiki2.__doneHydrating = true;
+
   if (doNext === 'SkipTheRest')
     return;
 
@@ -282,7 +298,7 @@ function renderPageInBrowser() {
   debiki2.processTimeAgo(numPosts > 20 ? '.dw-ar-p-hd' : '');
   const timeAfterTimeAgo = performance.now();
 
-  // (Also calls ReactStore.activateMyself().)
+  // (Also calls ReactStore.activateMyself(), ends with emitChange().)
   debiki2.ReactStore.activateVolatileData();
   const timeAfterUserData = performance.now();
 

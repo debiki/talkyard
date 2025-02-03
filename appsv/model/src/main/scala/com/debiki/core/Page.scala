@@ -1188,8 +1188,136 @@ object PinPageWhere {
 
 
 
-// MOVE these two (PageQuery, PostQuery) to their own file,  queries.scala?
+// --------------------------------------------------------------------------------------
+// MOVE QUICK the rest of this page to its own file,  queries.scala?
 // And add more, e.g. user queries.
+
+
+sealed abstract class WhichPostsOnPage(val onlyPublic: Bo, val onlyPrivate: Bo) {
+  assert(!onlyPublic || !onlyPrivate)
+
+  /** Hidden and deleted posts are "inactive", all others are "active" — for example,
+    * a post in a collapsed thread is not visible, but it's acvite, for
+    * lack of a better word.
+    */
+  def activeOnly: Bo
+
+  /** If activeOnly, then, set mustBeApproved to Some(false) to nevertheless load not-yet-
+    * -approved posts. Useful for loading one's bookmarks which don't need to be approved.
+    * (And private comments? [priv_comts])
+    *
+    * Default (if None) is same as activeOnly. [load_only_approved]
+    */
+  def mustBeApproved: Opt[Bo]
+}
+
+
+object WhichPostsOnPage {
+
+  def thoseMaybeRelatedTo(postNr: PostNr): WhichPostsOnPage = {
+    if (postNr >= PageParts.MinPublicNr) {
+      // Public comments cannot reply to private things.
+      OnlyPublic()
+    }
+    else {
+      // Bookmarks and private comments are always related to some public post
+      // (not always directly, but as descendants of).
+      AllByAnyone()
+    }
+  }
+
+  /** Posts you can see, if you have access to the page, are called "public". E.g.
+    * the title, orig post & comments — but not bookmarks or private comments.
+    */
+  case class OnlyPublic(
+    activeOnly: Bo = false,
+    mustBeApproved: Opt[Bo] = None,
+  ) extends WhichPostsOnPage(onlyPublic = true, onlyPrivate = false)
+
+  /** Bookmarks and private comments (e.g. between moderators).  [priv_comts]
+    * Currently only bookmarks — private comments not yet implemented.
+    */
+  case class OnlyPrivate(
+    byUserId: PatId,
+    // groupIds: Set[PatId], // later. byUserId's groups.
+    activeOnly: Bo = false,
+    mustBeApproved: Opt[Bo] = None,
+  ) extends WhichPostsOnPage(onlyPublic = false, onlyPrivate = true)
+
+
+  /** For loading more chat messages, when scrolling up/down in a chat. Then, we first
+    * load only top level comments — and if ever [threaded_chat]s get implemented, then,
+    * as a subsequent step, we'd load a few nested replies (if any) to those
+    * top level comments (and one might need to click to see all, depending on how many).
+    *
+    * The comment with post nr = `offset` gets loaded, and `limit - 1` more
+    * comments in the `direction` direction.
+    *
+    * @param offset Later:  Should? Must? be divible by 25? or 10?, so simpler to cache.
+    *   Why 25?:
+    *   My wide 30'' screen fits these many comments:
+    *   HackerNews zoomed out to 75%: I see sometimes 21 sometimes 24 pretty short
+    *   comments at a time.  Slack fits around 16, 100% zoom.  GitHub Issues maybe 13?
+    *   Talkyard: 30'' height: 1458 px (browser window decoration takes some space),
+    *   short message height: 47px + 15 margin = 62px  and  1458 / 62 = 23.5,  but
+    *   if zommed out 90%:  1600 / 62  =  25.4 messages.
+    *   Maybe chunks of 25 then?
+    *   And if loading cached json (from page_html_cache_t) to show chat messages,
+    *   the most recent chunk is enough.  While if jumping to a bookmarked message,
+    *   then, one or two chunks would be enough to fill the page with messages above
+    *   & below the bookmarked one, also on 30'' monitors.
+    *
+    *   O.t.o.h. if optimizing for mobile phones, then, maybe smaller chunk size, say
+    *   just 10, might make sense — but caching *at all* would be what makes the major
+    *   difference? not if the chunk size is 10 or 25?  Still, there's already
+    *   page_html_cache_t.param_width_layout_c  which tells us if it's probably a
+    *   mobile phone, or a >= laptop.  So we *could* use different sizes
+    *   depending on if mobile or >= laptop, say,  10 for mobile, else 25.
+    *   Or use 10 always, and fetch 2–3 chunks to render on laptops, would be ok too.
+    *
+    * @param direction:
+    */
+  case class TopLevelRange(
+    offset: PostNr,
+    direction: RangeDir,
+    activeOnly: Bo,
+    mustBeApproved: Opt[Bo] = None,
+    ) extends WhichPostsOnPage(onlyPublic = true, onlyPrivate = false) {
+
+    def limit: i32 = 25  // see param `offset` comment above. For now  [chat_pagination_size]
+  }
+
+
+  /** By any user.
+    */
+  case class AllByAnyone(
+    activeOnly: Bo = false,
+    mustBeApproved: Opt[Bo] = None,
+  ) extends WhichPostsOnPage(
+      onlyPublic = false, onlyPrivate = false)
+}
+
+
+sealed abstract class RangeDir(val IntVal: i32)
+
+object RangeDir {
+  /** Older as in less recent posts on a page. */
+  case object Older extends RangeDir(-1)
+
+  /** The more recent posts on a page. */
+  case object Newer extends RangeDir(+1)
+
+  /** Loads limit/2 older comments and limit/2 newer comments, maybe a bit more. */
+  case object Around extends RangeDir(0)
+
+  def fromInt(value: i32): Opt[RangeDir] = Some(value match {
+    case Older.IntVal => Older
+    case Newer.IntVal => Newer
+    case Around.IntVal => Around
+    case _ => return None
+  })
+}
+
 
 case class PageQuery(  // also see PeopleQuery
   orderOffset: PageOrderOffset,
@@ -1217,6 +1345,13 @@ sealed trait PostQuery {
 
 
 object PostQuery {
+
+  /** But what about private comments? "All" sounds as if they'd be included.
+    * And bookmarks are currently implemented as posts — what about them?
+    * Currenly bookmarks & private comments are excluded: [all_0_incl_bookmarks] [priv_comts]
+    *
+    * RENAME QUICK to just Posts? (Without "all")
+    */
   case class AllPosts(
     reqrInf: ReqrInf,
     inclAnonPosts: Bo,
@@ -1232,6 +1367,8 @@ object PostQuery {
 
   }
 
+  /** This also excludes bookmarks & private comments: [all_0_incl_bookmarks]
+    */
   case class PostsRelatedToPat[T <: PatNodeRelType](
     reqrInf: ReqrInf,
     relatedPatId: PatId,
@@ -1251,9 +1388,14 @@ object PostQuery {
   }
 
   // Later, replace w PostsRelatedToPat and relType AuthorOf.
+  /** Also excludes bookmarks & private comments: [all_0_incl_bookmarks]
+    */
   case class PostsByAuthor(
     reqrInf: ReqrInf,
     authorId: PatId,
+    // Currently not in use. But "needed" for consistency? Because one can specify
+    // type Bookmark, but then a PatsBookmarks query is used.
+    onlyPostType: Opt[PostType],  // [onlyPostType_not_used]
     inclAnonPosts: Bo,
     inclTitles: Bo,
     inclUnapproved: Bo,
@@ -1268,6 +1410,8 @@ object PostQuery {
   }
 
 
+  /** Excludes bookmarks & private comments: [all_0_incl_bookmarks]
+    */
   case class PostsWithTag(
     reqrInf: ReqrInf,
     tagTypeId: TagTypeId,
@@ -1281,6 +1425,21 @@ object PostQuery {
 
     def inclAnonPosts = true
     def inclTitles = false
+  }
+
+
+  case class PatsBookmarks(
+    reqrInf: ReqrInf,
+    bookmarkerId: PatId,
+    // tagTypeId: Opt[TagTypeId] — maybe later
+    limit: i32,
+    orderBy: OrderBy,
+    ) extends PostQuery {
+
+    def inclAnonPosts = true
+    def inclTitles = false
+    def inclUnapproved = true
+    def inclUnlistedPagePosts = true
   }
 }
 

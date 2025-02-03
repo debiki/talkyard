@@ -1,21 +1,16 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('../utils/ty-assert');
-import fs = require('fs');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
+import assert from '../utils/ty-assert';
+import * as fs from 'fs';
+import server from '../utils/server';
+import * as utils from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import lad = require('../utils/log-and-die');
-import c = require('../test-constants');
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import * as lad from '../utils/log-and-die';
+import c from '../test-constants';
 
 
-
-
-
-let everyonesBrowsers;
 let richBrowserA;
 let richBrowserB;
 let owen: Member;
@@ -34,12 +29,12 @@ let forum: TwoPagesTestForum;
 const localHostname = 'comments-for-e2e-test-scrlld';
 const embeddingOrigin = 'http://e2e-test-scrlld.localhost:8080';
 
-let veryLastPostNr;
+let veryLastPostNr: Nr | U;
 
 
-describe("embedded-comments-scroll-and-load-more.2browsers  TyT603MRKH592S", () => {
+describe("embcom.scroll-and-load-more.2br.ec  TyT603MRKH592S", () => {
 
-  it("import a site", () => {
+  it("import a site", async () => {
     const builder = buildSite();
     forum = builder.addTwoPagesForum({
       title: "Emb Cmts Scroll Load Posts E2E Test",
@@ -102,16 +97,15 @@ describe("embedded-comments-scroll-and-load-more.2browsers  TyT603MRKH592S", () 
     forum.siteData.meta.localHostname = localHostname;
     forum.siteData.settings.allowEmbeddingFrom = embeddingOrigin;
 
-    siteIdAddress = server.importSiteData(forum.siteData);
+    siteIdAddress = await server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
     server.skipRateLimits(siteId);
     //discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;
   });
 
-  it("initialize people", () => {
-    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
-    richBrowserA = new TyE2eTestBrowser(browserA);
-    richBrowserB = new TyE2eTestBrowser(browserB);
+  it("initialize people", async () => {
+    richBrowserA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    richBrowserB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
     owen = forum.members.owen;
     owensBrowser = richBrowserA;
@@ -126,7 +120,7 @@ describe("embedded-comments-scroll-and-load-more.2browsers  TyT603MRKH592S", () 
   const pageSlug = 'load-and-scroll.html';
   const blankSlug = 'blank.html';
 
-  it("There's an embedding page", () => {
+  it("There's an embedding page", async () => {
     const dir = 'target';
 
     fs.writeFileSync(
@@ -143,54 +137,54 @@ describe("embedded-comments-scroll-and-load-more.2browsers  TyT603MRKH592S", () 
     }
   });
 
-  it("A stranger wants to read #comment-30, which needs to be lazy-opened", () => {
-    strangersBrowser.go2(embeddingOrigin + '/' + pageSlug);
+  it("A stranger wants to read #comment-30, which needs to be lazy-opened", async () => {
+    await strangersBrowser.go2(embeddingOrigin + '/' + pageSlug);
   });
 
-  it("Post 10 is visible", () => {
-    strangersBrowser.topic.waitForPostNrVisible(10);
+  it("Post 10 is visible", async () => {
+    await strangersBrowser.topic.waitForPostNrVisible(10);
   });
 
-  it("But comment 30 is not — when there're many posts, not all are shown", () => {
-    assert.not(strangersBrowser.topic.isPostNrVisible(30 + 1));
+  it("But comment 30 is not — when there're many posts, not all are shown", async () => {
+    assert.not(await strangersBrowser.topic.isPostNrVisible(30 + 1));
   });
 
-  it("The stranger leaves", () => {
-    strangersBrowser.go2(embeddingOrigin + '/' + blankSlug);
+  it("The stranger leaves", async () => {
+    await strangersBrowser.go2(embeddingOrigin + '/' + blankSlug);
   });
 
-  it("And returns — to see comment 30 (post 31)  TyT03RMET742M", () => {
-    strangersBrowser.go2(embeddingOrigin + '/' + pageSlug + '#comment-30');
+  it("And returns — to see comment 30 (post 31)  TyT03RMET742M", async () => {
+    await strangersBrowser.go2(embeddingOrigin + '/' + pageSlug + '#comment-30');
   });
 
-  it("... comment 30 (post 31)  appears", () => {
-    strangersBrowser.topic.waitForPostNrVisible(30 + 1);
-    assert.ok(strangersBrowser.topic.isPostNrVisible(30 + 1));  // tests the test
+  it("... comment 30 (post 31)  appears", async () => {
+    await strangersBrowser.topic.waitForPostNrVisible(30 + 1);
+    assert.ok(await strangersBrowser.topic.isPostNrVisible(30 + 1));  // tests the test
   });
 
-  it("But not comment 31", () => {
-    assert.not(strangersBrowser.topic.isPostNrVisible(31 + 1));
+  it("But not comment 31", async () => {
+    assert.not(await strangersBrowser.topic.isPostNrVisible(31 + 1));
   });
 
-  it("The stranger clicks  'Show more replies...' below — now comment 31 (post 32) appears", () => {
-    strangersBrowser.switchToAnyParentFrame(); // cannot scroll in comments iframe
-    strangersBrowser.switchToEmbCommentsIframeIfNeeded();
-    strangersBrowser.topic.clickShowMorePosts({ nextPostNr: 32 });
-    assert.ok(strangersBrowser.topic.isPostNrVisible(31 + 1));  // tests the test
+  it("The stranger clicks  'Show more replies...' below — now comment 31 (post 32) appears", async () => {
+    await strangersBrowser.switchToAnyParentFrame(); // cannot scroll in comments iframe
+    await strangersBrowser.switchToEmbCommentsIframeIfNeeded();
+    await strangersBrowser.topic.clickShowMorePosts({ nextPostNr: 32 });
+    assert.ok(await strangersBrowser.topic.isPostNrVisible(31 + 1));  // tests the test
   });
 
-  it("The stranger wants to read more and more ... Everything!", () => {
+  it("The stranger wants to read more and more ... Everything!", async () => {
     while (true) {
-      if (strangersBrowser.topic.isPostNrVisible(veryLastPostNr))
+      if (await strangersBrowser.topic.isPostNrVisible(veryLastPostNr))
         break;
 
-      if (strangersBrowser.isVisible('.dw-x-show')) {
+      if (await strangersBrowser.isVisible('.dw-x-show')) {
         lad.logMessage(`Clicking Show More ...`);
-        strangersBrowser.waitAndClickFirst('.dw-x-show', { maybeMoves: true });
+        await strangersBrowser.waitAndClickFirst('.dw-x-show', { maybeMoves: true });
       }
 
       lad.logMessage(`Waiting for more posts to load ...`);
-      strangersBrowser.pause(250);
+      await strangersBrowser.pause(250);
     }
   });
 

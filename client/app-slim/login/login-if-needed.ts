@@ -100,9 +100,14 @@ function loginIfNeededImpl(loginReason: LoginReason, toHash: St, toPath: St,
   onOk = onOk || function() {};
   const store: Store = ReactStore.allData();
   const me: Myself = store.me;
+  const useLoginPopup = eds.isInIframe && eds.ssoHow !== 'RedirPage';
 
   // No login needed, or not until later when submitting any comment?
   if (me.isLoggedIn || (willCompose && ReactStore.mayComposeBeforeSignup())) {
+    // ((If `!useLoginPopup`, the text in the editor would disappear,
+    // when redirecting the whole page later when hitting Submit. However,
+    // compose-before-signup is disabled if sso enabled:  [0_compose_bef_sso_redir],
+    // so, not a problem.))
     onOk();
     return;
   }
@@ -127,7 +132,7 @@ function loginIfNeededImpl(loginReason: LoginReason, toHash: St, toPath: St,
   const returnToUrl_legacy = redirFromEmailOnly ?
             makeReturnToPageHashForVerifEmail(toHash) : returnToUrl_new;
 
-  if (eds.isInIframe && eds.ssoHow !== 'RedirPage') {
+  if (useLoginPopup) {
     // TESTS_MISSING: Compose comment before logging in? Then, we'd be  TyTEMBCOMPBEFLGI
     // in the *editor* iframe, now, rather than the *comments* iframe.
 

@@ -1,13 +1,52 @@
-[add_nodes_t]
+[add_nodes_t]  [its_a_node]
+
+See the _explanation below.
+
 
 alter table posts3 rename to nodes_t
+  & move pages & categories to that table too — they're all nodes.
+  & move drafts3 to nodes_t too? [drafts3_2_nodes_t]
+  Maybe assigned-to would be better as a node too? [tasks_2_nodes_t]
 
 alter table post_actions3 rename to  pat_node_rels_t
 — if it's interesting to know when and by who a relationship was added, e.g.:
 Assigned to Alice by Bob on 2023-04-05. Or post revision nr, or any rel specific
 value (pat_node_rels_t.val_i32_c).
 
+But keep  tags_t  — don't merge into pat_node_rels_t (which, if you look at the tables,
+might seem like a possibly good thing).  There's a difference between tags (in tags_t)
+and relationships (in pat_node_rels_t):    [tags_vs_pat_node_rels]
+
+   There can be just one relationship of a specific type between a person & a node.
+   (e.g. only one Like vote per person and comment)
+   But there can be many *tags* of the same type, on a node (added by the same person).
+   For example, a Like relationships: it's nice that the database enforces that there's
+   just one Like relationships between each person & comment.
+   But tags:  You might tag an event with "Happens-in", and if it happens in two
+   cities, you'd like two tags of the same type, e.g.:  "Happens-in: New York" and
+   "Happens-in: London", or "Happens-on: 2024-09-01" and "Happens-on: 2024-10-01".
+   And tag values are searchable in ElasticSearch, but the things in pat_node_rels_t
+   don't have any searchable values (at least not now).
+  
+   (Still unsure if maybe a single table would have been better, and having
+   a "sub-id" for the (rare?) cases where many relationships of the same type
+   makes sense. — Maybe ok either way)
+
+   Also,  on_parent_tag_c  maybe won't ever make sense for relationships? (At least not
+   in Talkyard's case?) Relationships in graph databases don't have parent *relationships*
+   (only parent & child *nodes*).
+   But tags can be nested, and the tag_t table enforces that nested tags are indeed
+   on the same post (so you can't nest a tag C on post B in a tag P on post A
+   — tag C needs to be on the same post as tag P, that is, post A).
+   So maybe it's good with tags_t after all?  Some things are a bit specific to tags?
+   (Tag hierarchies are pretty common in software — websearch for "tag hierarchies".) 
+
+
 alter table perms_on_pages3 rename to  pat_node_multi_rels_t
+-- "multi", because many relationships in the same table row, e.g.:
+-- may_edit_page, may_post_comment, may_see.
+-- Each one isn't that interesting. Unlike pat_node_rels_t, which has one
+-- relationship per row, plus some relationship properties.
 
 Move from  categories_t, pages3, posts3  to pat_node_multi_rels_t:
     comts_start_hidden_c  never_always_d
@@ -61,7 +100,7 @@ Pages:
   - Child node nr 2, 3, 4: Comments.
   - *Page* child nodes = typially sub tasks or comment trees important enough
       to be moved to their own child page?
-      (That is, pages with sub pages — or, you could say: tasks with sub tasks.)
+      (That is, pages with [sub_pages] — or, you could say: tasks with sub tasks.)
   - Category child nodes: Sub tasks grouped in categories?
       For really big projects?
     Don't appear on any category list page. Instead, only if clicking [+]
@@ -70,12 +109,16 @@ Pages:
 Comments:
   - NodeType.Comment.
   - Node text = comment text.
-  - Child nodes = replies.
-  And, helpful for a bookmarks tree or to specify sidebar contents?:
-  - Page child nodes: Show as a list below the comment? (When would that be useful?)
-  - Category child nodes: Show as a list, too?
-  Hmm but it's all a tree, currently — can't have many parent nodes.
-  Need new table, maybe node_node_rels_t with column  other_parent_id_c  ?
+  - Child nodes = replies,  or PostType.Bookmark and nr < MaxPrivateNr.
+
+        Not flags thuogh? Flags would instead be a sub *page* of type Flag.
+        But skip this?: Maybe should be in a node_node_rels_t, if one flag can
+              flag many posts (by the same spammer)?
+
+  (But maybe a  node_node_rels_t  table, for e.g.  PostPostRelType.DoAfter:
+        [idea post] ——> Depends-On ———> [other idea post]
+  or  PostPostRelType.IsAlsoAnswerTo  for "secondary" answers, if many ok answers.)
+  (Would look a bit like  links_t  but without link_url_c, and added_* not neede?)
 
 Then can:
   - Delete duplicated settings in:
@@ -159,7 +202,7 @@ perms_on_pages3  ——> perms_on_nodes_t (& perms_on_pats_t)  NO,  pat_node_mul
  perm_id                 | integer           |           | not null | 
  for_people_id           | integer           |           | not null | 
  on_whole_site           | boolean           |           |          | 
- on_category_id          | integer       ^^^\
+ on_category_id          | integer       ‾‾‾\
  on_page_id              | character varying >——>  on_node_id  —>  nodes_t  (currently "posts3")
  on_post_id              | integer       ___/
  on_tag_id               | integer           |           |          | 
@@ -226,7 +269,35 @@ NEXT: Add these fields to perms_on_pages3  (to be renamed to  pat_node_multi_rel
   )
 
 
- (s = site)
+The leftmost column below is a list of these, e.g. "c,p,po":  _explanation
+    s       = exists in site settings
+    c       = is a cat prop
+    proj    = project page ? (a page with sub pages, probably w doing-status)
+    p       = is a page prop
+    po      = is a post prop
+    pstat   = is page statistics
+    postat  = is post statistics
+    ppostat = is page & post statistics
+    g       = is a group prop ?  (or user, but usually better to configure groups)
+    jn      = journal ?  (similar to audit log, but shouldn't be deleted —
+                                      is needed to know e.g. who may undo sth)
+    rel     = node —> node relationship, e.g. X-is-answer-of-Y, or X-is-flag-of-Y.
+    rm      = remove (column not needed)
+    tty     = is a type property, needed in the types_t table (currently named tagtypes_t)
+    tag     = is a tag prop
+    b       = is a bookmark prop
+And "c,p,po" means that the database table column just to the right,
+is needed for categories, pages and posts. For example:
+"c,p,po  may_edit_comment"  — if it's set on a category, then one may edit
+comments everywhere in the category. Or everywhere on a page, if set on a page.
+Or one may edit a specific comment.
+
+But, with everything as a node,  "c,p,po" wouldn't be 3 separate tables, but
+instead one table, with different types of rows (nodes are cats, others pages,
+others comments). — And now, with everything in one table, there's no need to
+repeat these columns x 3.
+
+
 
 group_participants3  ——>  pat_rels_t   (or  pat_pat_rels_t ?)
 --------------------------------------------------------------------------
@@ -602,7 +673,7 @@ pages3
  c,p      locked_at              | timestamp
  c,p      frozen_at              | timestamp
  p        unwanted_at            | timestamp
- p        planned_at             | timestamp
+ p,po     planned_at             | timestamp
  p        version                | integer
  pstat    last_reply_by_id       | integer
  pstat    frequent_poster_1_id   | integer
@@ -615,8 +686,8 @@ pages3
  c,p      layout                 | bigint              pers_pref: layout
  p        hidden_at              | timestamp
  c,p      incl_in_summaries      | smallint            pers_pref: emails
- p        started_at             | timestamp
- p        postponed_til_c        | timestamp
+ p,po     started_at             | timestamp
+ p,po     postponed_til_c        | timestamp
  p        num_posts_total        | integer
  c,p      ext_id                 | character varying
  pstat    num_op_do_it_votes_c   | i32_gez_d
@@ -631,9 +702,9 @@ pages3
  c?,p,po  closed_by_id_c ‾‾‾\
  c?,p,po  locked_by_id_c     >  closed_status_c:  colsed, locked, frozen
  c?,p,po  frozen_by_id_c ___/
- p        unwanted_by_id_c       | integer
- p        hidden_by_id_c         | integer
- c,p      deleted_by_id_c        | integer
+ p,po     unwanted_by_id_c       | integer
+ p,po     hidden_by_id_c         | integer
+ c,p,po   deleted_by_id_c        | integer
  s,c,p    forum_search_box_c     | i16_gz_d
  s,c,p    forum_main_view_c      | i16_gz_d
  s,c,p    forum_cats_topics_c    | i32_gz_d
@@ -665,8 +736,8 @@ page_users3
 posts3
 --------------------------------------------------------------------------
         site_id                  | integer
-        unique_post_id           | integer
-        page_id                  | character varying
+ c,p,po unique_post_id           | integer
+ p,po   page_id                  | character varying
  po     post_nr                  | integer
  po     parent_nr                | integer
  po     multireply               | character varying
@@ -674,20 +745,20 @@ posts3
         created_by_id            | integer
  jn     curr_rev_started_at      | timestamp
  jn     curr_rev_last_edited_at  | timestamp
- po     curr_rev_by_id           | integer
+ p,po   curr_rev_by_id           | integer
  jn     last_approved_edit_at    | timestamp
- po     last_approved_edit_by_id | integer
+ p,po   last_approved_edit_by_id | integer
  postat num_distinct_editors     | integer
  postat num_edit_suggestions     | smallint
  jn     last_edit_suggestion_at  | timestamp
- po     safe_rev_nr              | integer
- po     approved_source          | text
- po     approved_html_sanitized  | text
+ p,po   safe_rev_nr              | integer
+ p,po   approved_source          | text
+ p,po   approved_html_sanitized  | text
  jn     approved_at              | timestamp
- po     approved_by_id           | integer
- po     approved_rev_nr          | integer
- po     curr_rev_source_patch    | text
- po     curr_rev_nr              | integer
+ p,po   approved_by_id           | integer
+ p,po   approved_rev_nr          | integer
+ p,po   curr_rev_source_patch    | text
+ p,po   curr_rev_nr              | integer
  po     collapsed_status         | smallint           pers_pref
  jn     collapsed_at             | timestamp
  jn     collapsed_by_id          | integer
@@ -697,21 +768,21 @@ posts3
  jn     hidden_at                | timestamp
  jn     hidden_by_id             | integer
  p,po   hidden_reason            | character varying
- p,po   deleted_status           | smallint
+ c,p,po deleted_status           | smallint
  jn     deleted_at               | timestamp
  jn     deleted_by_id            | integer
  c,p,po pinned_position          | smallint           pers_pref: unpin?
  jn     pinned_at                | timestamp
  jn     pinned_by_id             | integer
- postat num_pending_flags        | smallint
- postat num_handled_flags        | smallint
- postat num_like_votes           | integer
- postat num_wrong_votes          | integer
- postat num_times_read           | integer
- postat num_bury_votes           | integer
- postat num_unwanted_votes       | integer
- po     type                     | post_type_d
- po     prev_rev_nr              | integer
+ ppostat num_pending_flags       | smallint
+ ppostat num_handled_flags       | smallint
+ ppostat num_like_votes          | integer
+ ppostat num_wrong_votes         | integer
+ ppostat num_times_read          | integer
+ ppostat num_bury_votes          | integer
+ ppostat num_unwanted_votes      | integer
+ p,po   type                     | post_type_d
+ p,po   prev_rev_nr              | integer
  po     branch_sideways          | smallint           pers_pref: layout. But depends on one's device
         ext_id                   | character varying
  po     smtp_msg_id_prefix_c     | smtp_msg_id_out_prefix_d
@@ -756,7 +827,7 @@ post_actions3
 
 
 
-tagtypes_t  — better of staying in their own table? (don't incl in nodes_t)
+tagtypes_t  — better of staying in their own table? (don't incl in nodes_t)  rename to types_t
 --------------------------------------------------------------------------
               site_id_c                | integer
               id_c                     | i32_gz_d
@@ -782,11 +853,11 @@ tagtypes_t  — better of staying in their own table? (don't incl in nodes_t)
 
 tags_t
 --------------------------------------------------------------------------
-            site_id_c       | integer
-            id_c            | i32_gz_d
- tag,post   tagtype_id_c    | integer
- tag,post   parent_tag_id_c | integer
- tag        on_pat_id_c     | integer
- tag        on_post_id_c    | integer
+              site_id_c       | integer
+              id_c            | i32_gz_d
+ b,tag,post   tagtype_id_c    | integer
+ b,tag,post   parent_tag_id_c | integer
+ b,tag        on_pat_id_c     | integer
+ b,tag        on_post_id_c    | integer
 
 

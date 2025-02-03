@@ -262,6 +262,10 @@ object SearchQueryParser {
       case "discussion" => isWhat = isWhat.copy(pageType = Some(PageType.Discussion))
       case "comments" => isWhat = isWhat.copy(pageType = Some(PageType.EmbeddedComments))
 
+      // For searching flags (if one is a moderator), or one's own bookmarks
+      //case "flag" => isWhat = isWhat.copy(postType = Some(PostType.Flag))
+      //case "bookmark" => isWhat = isWhat.copy(postType = Some(PostType.Bookmark))  [is_bokm]
+
       // Is "undecided" really the right word? Oh well, for now.
       case "undecided" => isWhat = isWhat.copy(pageDoingStatus = Some(PageDoingStatus.Discussing))
       case "planned" => isWhat = isWhat.copy(pageDoingStatus = Some(PageDoingStatus.Planned))

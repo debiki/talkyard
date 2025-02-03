@@ -50,6 +50,25 @@ export function win_getSessWinStore(): SessWinStore {
   return mainWin.theStore;
 }
 
+/// Helps us keep track of if any change event needs to be emitted.
+///
+/// Emitting a change when not needed, can waste 100 ms in a VM in a slow Core i5 laptop,
+/// and much more one a mobile phone I suppose.
+/// (It's various StoreListenerMixin onChange() handlers that together can take some time
+/// — search for "onChange: function".)
+///
+const enum EmitEvent {
+  NoNothingChanged = 0,
+  YesQuickUpdate = 1,
+  Yes = 2,
+  YesFullUpdate = 3,
+}
+
+// For detecting unnecessary store change events (bad for perforance).
+let numEmits = 0;
+
+export let __patchedStore: Store | St; // [flux_mess]
+
 type StoreStateSetter = (store: Store) => void;
 const useStoreStateSetters: StoreStateSetter[] = [];
 
@@ -182,6 +201,7 @@ window['theStore'] = store; // simplifies inspection in Dev Tools — and hacky 
 
 store.postsToUpdate = {};
 
+
 if (store.user && !store.me) store.me = store.user; // try to remove
 if (!store.me) {
   store.me = makeStranger(store);
@@ -192,9 +212,10 @@ store.user = store.me; // try to remove
 // Auto pages are e.g. admin or user profile pages, html generated automatically when needed.
 // No page id or user created data server side. Auto pages need this default empty stuff,
 // to avoid null errors.
-export function makeAutoPage(): Page {
+export function makeAutoPage(pageId?: PageId): Page {
   return <Page> <any> <AutoPage> {
     dbgSrc: 'AP',
+    pageId,
     ancestorsRootFirst: [],
     pageMemberIds: [],
     postsByNr: [],
@@ -227,6 +248,7 @@ ReactDispatcher.register(function(payload) {
   const action = payload.action;
   const currentPage: Page = store.currentPage;
   let patchedTheStore: true | U;
+  let needEmit: EmitEvent | U;
   // SHOULD clone the store here? [8GKB3QA] but might introduce so many bugs, so wait a bit.
   // So becomes (more) immutable.
   switch (action.actionType) {
@@ -386,7 +408,11 @@ ReactDispatcher.register(function(payload) {
       //currentPage.horizontalLayout = newMeta.page type === PageRole.MindMap || currentPage.is2dTreeDefault;
       //const is2dTree = currentPage.horizontalLayout;
 
-      updatePost(newData.newTitlePost, currentPage.pageId);
+      upsertPost(newData.newTitlePost, currentPage.pageId);
+
+      // Maybe different posts shown, now. E.g. if sort order changed.  _break_out_process_fn
+      stopGifsPlayOnClick();
+      setTimeout(debiki2.page.Hacks.processPosts);
 
       /*
       if (was2dTree !== is2dTree) {   // [2D_LAYOUT]
@@ -418,7 +444,8 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.UpdatePost:
-      updatePost(action.post, currentPage.pageId);
+      const res = upsertPost(action.post, currentPage.pageId);
+      _showMyNewPostsIfAny([res]);
       break;
 
     case ReactActions.actionTypes.VoteOnPost:
@@ -447,11 +474,19 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.UncollapsePost:
-      uncollapsePostAndChildren(action.post);
+      needEmit = uncollapsePostAndChildren(action.post);
+      // _break_out_process_fn?
+      setTimeout(function() {
+        if (needEmit !== EmitEvent.NoNothingChanged) {
+          stopGifsPlayOnClick();
+          debiki2.page.Hacks.processPosts();
+        }
+        scrollAndFlashPosts(store.currentPage, [post]);
+      });
       break;
 
     case ReactActions.actionTypes.ShowPost:
-      showPostNr(action.postNr, action.showPostOpts);
+      needEmit = showPostNr(action.postNr, action.showPostOpts);
       break;
 
     case ReactActions.actionTypes.SetWatchbar:
@@ -509,11 +544,11 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.AddNotifications:
-      handleNotifications(action.notifications);
+      needEmit = handleNotifications(action.notifications);
       break;
 
     case ReactActions.actionTypes.MarkAnyNotificationAsSeen:
-      markAnyNotificationssAsSeen(action.postNr);
+      needEmit = markAnyNotificationssAsSeen(action.postNr);
       break;
 
     case ReactActions.actionTypes.AddMeAsPageMember:
@@ -535,6 +570,11 @@ ReactDispatcher.register(function(payload) {
     break;
 
     case ReactActions.actionTypes.UpdateUserPresence:
+      // Only need to rerender the users list in the sidebar, if it's shown. — But in very
+      // rare cases, a user might have gotten a new badge? Then we'd want to rerender any
+      // posts by han, so the badge appears. Still, COULD_OPTIMIZE, [try_skip_emit].
+      //store.quickUpdate = true;
+
       const data: UserPresenceWsMsg = action.data;
       maybePatchTheStore(data);
       patchedTheStore = true; // always patches, see UserPresenceWsMsg server side.
@@ -555,6 +595,30 @@ ReactDispatcher.register(function(payload) {
       return true;
   }
 
+  if (needEmit === EmitEvent.NoNothingChanged) {
+    // Don't trigger any event.
+    // @ifdef DEBUG
+    dieIf(store.cannotQuickUpdate || _.size(store.postsToUpdate), 'TyE50SLN2');
+    // @endif
+  }
+  else {
+    _emitEvent(store, patchedTheStore, action);
+  }
+
+  // How can one know when React is done with all updates scheduled above?
+  // (Would need to look into how emitChange() and the hook fns work?)
+  // Some code wants to run afterwards: [SCROLLPRVW]. For now though:
+  if (action.onDone) {
+    setTimeout(action.onDone, 1);
+  }
+
+  // Tell the dispatcher that there were no errors:
+  return true;
+});
+
+
+function _emitEvent(store: Store, patchedTheStore: Bo, action: any) {
+
   if (store.cannotQuickUpdate) {
     resetQuickUpdateInPlace(store);
   }
@@ -568,6 +632,7 @@ ReactDispatcher.register(function(payload) {
   // below gets a new object. If reusing the same obj, the useEffect fn:s aren't called.
   const meCopy: Myself = { ...store.me };
   const storeCopy: Store = { ...store, me: meCopy };
+  __patchedStore = 'TyEPATSTOR';
 
   useStoreStateSetters.forEach(setStore => {  // ... new, hooks based code
     setStore(storeCopy);
@@ -581,20 +646,11 @@ ReactDispatcher.register(function(payload) {
     storeEventListeners.forEach(listener => {
       listener(thePatch);
     });
+    __patchedStore = storeCopy; // [flux_mess]
   }
 
   resetQuickUpdateInPlace(store);
-
-  // How can one know when React is done with all updates scheduled above?
-  // (Would need to look into how emitChange() and the hook fns work?)
-  // Some code wants to run afterwards: [SCROLLPRVW]. For now though:
-  if (action.onDone) {
-    setTimeout(action.onDone, 1);
-  }
-
-  // Tell the dispatcher that there were no errors:
-  return true;
-});
+}
 
 
 function resetQuickUpdateInPlace(st: Store) {
@@ -714,6 +770,8 @@ ReactStore.activateVolatileData = function() {
 
 ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffForMe) {
   // [redux] Modifying state in-place, shouldn't do? But works fine.
+
+  numEmits = 0;
 
   store.userSpecificDataAdded = true;
 
@@ -858,14 +916,22 @@ ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffFo
   // ----- Websocket
 
   debiki2.pubsub.subscribeToServerEvents(store.me);
-  store.quickUpdate = false;
+
+
+  // The caller will emit a change event — if we've done here too, that's bad
+  // for performance.
+  // @ifdef DEBUG
+  dieIf(numEmits > 0, `${numEmits} pointless emits [TyEEMIT02]`)
+  // @endif
+
+  resetQuickUpdateInPlace(store);
 };
 
 
 function store_addAnonsAndUnapprovedPosts(store: Store, myPageData: MyPageData) {
   // Test:  modn-from-disc-page-approve-before  TyTE2E603RTJ
   _.each(myPageData.unapprovedPosts, (post: Post) => {
-    updatePost(post, store.currentPageId);
+    upsertPost(post, store.currentPageId);
     // COULD_FREE_MEM if other user was logged in before?
   });
 
@@ -955,7 +1021,7 @@ function addMyDraftPosts(store: Store, myPageData: MyPageData) {
       if (draftType === DraftType.Reply || draftType === DraftType.ProgressPost) {
         const post: Post | null = store_makePostForDraft(store.me.id, draft);
         if (post) {
-          updatePost(post, store.currentPageId);
+          upsertPost(post, store.currentPageId);
         }
       }
     });
@@ -1010,7 +1076,11 @@ function userIdList_remove(userIds: UserId[], userId: UserId) {
 
 
 ReactStore.mayComposeBeforeSignup = function() {
- return store.settings.mayComposeBeforeSignup;
+  const useOnlyCustomIdps = store.settings.useOnlyCustomIdps;
+  const enableTySso = store.settings.enableSso;
+  // If sso enabled, the may-compose-before setting is hidden, and one should get
+  // redirected to the SSO page directly.  [0_compose_bef_sso_redir]
+ return store.settings.mayComposeBeforeSignup && !(enableTySso || useOnlyCustomIdps);
 };
 
 ReactStore.getPageId = function() {
@@ -1041,6 +1111,7 @@ ReactStore.getCategories = function() {
 
 ReactStore.emitChange = function() {
   this.emit(ChangeEvent);
+  numEmits += 1;
 };
 
 
@@ -1072,18 +1143,22 @@ export function clonePost(postNr: number): Post {
 }
 
 
-function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
-  const page: Page = store.currentPage;
+interface UpsertPostResult {
+  postBef?: Post
+  postAft?: Post
+}
 
-  if (page.pageId !== pageId) {
-    // Need to lookup the correct page then, just above, instead of using the current page?
-    // But for now, just ignore this. We currently reload, when navigating back to a page
-    // in the store anyway [8YDVP2A].
-    return;
-  }
+function upsertPost(post: Post, pageId: PageId, ps: { isCollapsing?: Bo } = {}): UpsertPostResult {
+  // The post might be for the page currently being shown, but could also be for a page
+  // in our client side mem cache. [8YDVP2A]
+  const isCurrentPage = pageId === store.currentPageId;
+  const page: Page = store.pagesById[pageId];
+
+  if (!page)
+    return {};
 
   const oldVersion = page.postsByNr[post.nr];
-  if (oldVersion && !isCollapsing) {
+  if (oldVersion && !ps.isCollapsing) {
     // If we've modified-saved-reloaded-from-the-server this post, then ignore the
     // collapse settings from the server, in case the user has toggled it client side.
     // If `isCollapsing`, however, then we're toggling that state client side only.
@@ -1093,8 +1168,8 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
     post.summarize = oldVersion.summarize;
   }
 
-  if (post.isPreview) {
-    // Don't update num replies etc fields.
+  if (post.isPreview || post_isPrivate(post)) {
+    // Don't update num replies etc fields. [0_stats_for_priv_posts]
   }
   else if (oldVersion) {
     if (post_isReply(post)) {
@@ -1128,9 +1203,23 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
 
   const layout: DiscPropsDerived = page_deriveLayout(page, store, LayoutFor.PageWithTweaks);
 
-  // In case this is a new post, update its parent's child id list.
+  // In case this is a new post, update its parent's bookmarks or replies list.
+  // (Maybe break out some obj_addArrayItem_inPl__unimp fn? To use in the if-else branches.)
   const parentPost = page.postsByNr[post.parentNr];
-  if (parentPost) {
+  if (parentPost && post.postType === PostType.Bookmark) {
+    let bookmarkNrs = parentPost.bookmarkNrs;
+    const alreadyHere = _.find(bookmarkNrs || [], nr => nr === post.nr);
+    if (!alreadyHere) {
+      if (!bookmarkNrs) {
+        bookmarkNrs = [];
+        parentPost.bookmarkNrs = bookmarkNrs;
+      }
+      bookmarkNrs.push(post.nr);
+      sortPostNrsInPlace(
+            bookmarkNrs, page.postsByNr, PostSortOrder.NewestFirst);
+    }
+  }
+  else if (parentPost) {
     const childNrsSorted = parentPost.childNrsSorted;
     const alreadyAChild = _.find(childNrsSorted, nr => nr === post.nr);
     if (!alreadyAChild) {
@@ -1170,24 +1259,43 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
         page.parentlessReplyNrsSorted, page.postsByNr, sortOrder);
   }
 
+  // If we aren't showing the page (but just updating the store), then we're done now.
+  if (!isCurrentPage)
+    return;
+
   rememberPostsToQuickUpdate(post.nr);
 
-  stopGifsPlayOnClick();
-  setTimeout(() => {
-    debiki2.page.Hacks.processPosts();
-    if (!oldVersion && post.authorId === store.me.id && !post.isPreview &&
-        // Need not flash these — if one does sth that results in a meta comment,
-        // then one is aware about that already (since one did it oneself).
-        // And if sbd else did — then I think that's typically not that interesting,
-        // would be distracting to scroll-and-flash-&-show?
-        post.postType !== PostType.MetaMessage) {
-      // Scroll to and highligt this new / edited post.
-      // BUG (harmless) skip if we just loaded it because we're staff or the author,
-      // and it's deleted so only we can see it
-      // — because that doesn't mean we want to scroll to it and flash it.
-      ReactActions.loadAndShowPost(post.nr);
+  return { postBef: oldVersion, postAft: post };
+}
+
+
+// Maybe RENAME to sth that incl "processPost"? Since that's done too.
+function _showMyNewPostsIfAny(upsertResults: UpsertPostResult[]) {
+  if (upsertResults.length)
+    return;
+
+  setTimeout(showMyPosts, 1);
+
+  function showMyPosts() {
+    stopGifsPlayOnClick();
+    for (let res of upsertResults) {
+      const oldVersion = res.postBef;
+      const post = res.postAft;
+      debiki2.page.Hacks.processPosts('post-' + post.uniqueId);
+      if (!oldVersion && post.authorId === store.me.id && !post.isPreview &&
+          // Need not flash these — if one does sth that results in a meta comment,
+          // then one is aware about that already (since one did it oneself).
+          // And if sbd else did — then I think that's typically not that interesting,
+          // would be distracting to scroll-and-flash-&-show?
+          post.postType !== PostType.MetaMessage) {
+        // Scroll to and highligt this new / edited post.
+        // BUG (harmless) skip if we just loaded it because we're staff or the author,
+        // and it's deleted so only we can see it
+        // — because that doesn't mean we want to scroll to it and flash it.
+        ReactActions.loadAndShowPost(post.nr);
+      }
     }
-  }, 1);
+  }
 }
 
 
@@ -1267,6 +1375,9 @@ function markPostAsRead(postId: number, manually: boolean) {
 let lastPostIdMarkCycled = null;
 
 function cycleToNextMark(postId: number) {
+  /* This was working 10+ years ago, but more like a demo — wasn't saved sever side.
+     Can be useful later when implementing:  [bookmark_shapes_colors]
+
   const me: Myself = store.me;
   const myPageData: MyPageData = me.myCurrentPageData;
   const currentMark = myPageData.marksByPostId[postId];
@@ -1307,6 +1418,7 @@ function cycleToNextMark(postId: number) {
   myPageData.marksByPostId[postId] = nextMark;
 
   rememberPostsToQuickUpdate(postId);
+  */
 }
 
 
@@ -1385,7 +1497,7 @@ function collapseTree(post: Post) {
   post.isTreeCollapsed = 'Truncated';
   post.summarize = true;
   post.summary = makeSummaryFor(post, 70);
-  updatePost(post, store.currentPageId, true);
+  upsertPost(post, store.currentPageId, { isCollapsing: true });
   // It's nice to see where the post is, after having collapsed it
   // — because collapsing a post tree often makes the page jump a bit.
   // UX COULD animate-collapse height of tree to 0? By shrinking each
@@ -1394,12 +1506,15 @@ function collapseTree(post: Post) {
 }
 
 
-function showPostNr(postNr: PostNr, showPostOpts: ShowPostOpts = {}) {
+function showPostNr(postNr: PostNr, showPostOpts: ShowPostOpts = {}): EmitEvent {
+  let needEmit = EmitEvent.NoNothingChanged;
+
   const page: Page = store.currentPage;
   const postToShow: Post = page.postsByNr[postNr];
   let post: Post = postToShow;
   if (showPostOpts.showChildrenToo) {
-    uncollapsePostAndChildren(post);
+    needEmit = Math.max(needEmit,
+            uncollapsePostAndChildren(post));
   }
   // Uncollapse ancestors, to make postId visible. Don't loop forever if there's any weird
   // cycle — that crashes Chrome (as of May 3 2017).
@@ -1413,9 +1528,11 @@ function showPostNr(postNr: PostNr, showPostOpts: ShowPostOpts = {}) {
     }
     postNrsSeen[post.nr] = true;
     // But minor BUG: Usually we want to leave isPostCollapsed = false? (305RKTU).
-    uncollapseOne(post);
+    needEmit = Math.max(needEmit,
+            uncollapseOne(post));
     post = page.postsByNr[post.parentNr];
   }
+
   setTimeout(() => {
     const opts: ShowPostOpts = { ...showPostOpts };
     if (postNr <= MaxVirtPostNr) {
@@ -1425,52 +1542,63 @@ function showPostNr(postNr: PostNr, showPostOpts: ShowPostOpts = {}) {
     }
 
     if (showPostOpts.showChildrenToo) {
-      // uncollapsePostAndChildren() will scroll-flash, don't do here too.
+      scrollAndFlashPosts(page, [post]);
     }
     else {
-      // Maybe could use instead?: scrollAndFlashPosts(page, [post]);
       scrollAndFlashPostNr(postNr, opts);
     }
 
-    debiki2.page.Hacks.processPosts();
+    // _break_out_process_fn
+    if (needEmit !== EmitEvent.NoNothingChanged) {
+      stopGifsPlayOnClick();
+      // Maybe many descendants are now shown — this'll update all of them (not specifying a nr).
+      debiki2.page.Hacks.processPosts();
+    }
   }, 1);
+
+  return needEmit;
 }
 
 
-function uncollapsePostAndChildren(post: Post) {
+function uncollapsePostAndChildren(post: Post): EmitEvent {
   const page: Page = store.currentPage;
-  uncollapseOne(post);
+  let needEmit =
+          uncollapseOne(post);
   // Also uncollapse children and grandchildren so one won't have to Click-to-show... all the time.
   for (let i = 0; i < Math.min(post.childNrsSorted.length, 5); ++i) {
     const childNr = post.childNrsSorted[i];
     const child = page.postsByNr[childNr];
     if (!child)
       continue;
-    uncollapseOne(child);
+
+    needEmit = Math.max(needEmit,
+            uncollapseOne(child));
+
     for (let i2 = 0; i2 < Math.min(child.childNrsSorted.length, 3); ++i2) {
       const grandchildNr = child.childNrsSorted[i2];
       const grandchild = page.postsByNr[grandchildNr];
       if (!grandchild)
         continue;
-      uncollapseOne(grandchild);
+
+      needEmit = Math.max(needEmit,
+              uncollapseOne(grandchild));
     }
   }
-  setTimeout(function() {
-    debiki2.page.Hacks.processPosts();
-    scrollAndFlashPosts(page, [post]);
-  });
+
+  return needEmit;
 }
 
 
-function uncollapseOne(post: Post) {
+function uncollapseOne(post: Post): EmitEvent {
   if (!post.isTreeCollapsed && !post.isPostCollapsed && !post.summarize && !post.squash)
-    return;
+    return EmitEvent.NoNothingChanged;
   const p2 = clonePost(post.nr);
   p2.isTreeCollapsed = false;
   p2.isPostCollapsed = false;  // sometimes we don't want this though  (305RKTU)
   p2.summarize = false;
   p2.squash = false;
-  updatePost(p2, store.currentPageId, true);
+  upsertPost(p2, store.currentPageId, { isCollapsing: true });
+  return EmitEvent.Yes;
 }
 
 
@@ -1672,7 +1800,7 @@ function sortPostNrsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
 }
 
 
-function postAppearedBefore(postA: Post, postB: Post): number {
+export function postAppearedBefore(postA: Post, postB: Post): number {
   // Sync w Scala [5BKZQF02]
   // BUG  [first_last_apr_at]  use 'nr' only, to sort by date, for now.
   /*
@@ -1687,11 +1815,24 @@ function postAppearedBefore(postA: Post, postB: Post): number {
   if (postA.isPreview != postB.isPreview)
     return postA.isPreview ? +1 : -1;
 
-  return postA.nr < postB.nr ? -1 : +1;
+  // Private posts (incl bookmarks) have random negative nrs. Then, sort by
+  // created-at instead of nr. (But otherwise better to sort by nr, since a comment
+  // might have been posted long ago, and moved to the current page just recently
+  // — then, since it's new on the current page, it appeared later.)
+  if (postA.nr <= PostNrs.MaxPrivateNr || postB.nr <= PostNrs.MaxPrivateNr) {
+    // They might have been created using software at the exact same timestamp.
+    // Then skip this, and sort by nr instead, below.
+    if (postA.createdAtMs !== postB.createdAtMs) {
+      return postA.createdAtMs - postB.createdAtMs;
+    }
+  }
+
+  return postA.nr - postB.nr;
 }
 
 
-function handleNotifications(newNotfs: Notification[]) {
+function handleNotifications(newNotfs: Notification[]): EmitEvent {
+  let needEmit = EmitEvent.NoNothingChanged;
   const oldNotfs = store.me.notifications;
   for (let i = 0; i < newNotfs.length; ++i) {
     const newNotf = newNotfs[i];
@@ -1704,11 +1845,15 @@ function handleNotifications(newNotfs: Notification[]) {
     }
 
     watchbar_handleNotification(store.me.watchbar, newNotf);
+    // Only need to rerender the watchbar, MyMenu and notification icons.
+    needEmit = EmitEvent.YesQuickUpdate;
   }
+  return needEmit;
 }
 
 
 function markAnyNotificationssAsSeen(postNr) {
+  let needEmit = EmitEvent.NoNothingChanged;
   const notfs: Notification[] = store.me.notifications;
   _.each(notfs, (notf: Notification) => {
     if (notf.pageId === store.currentPageId && notf.postNr === postNr &&
@@ -1721,9 +1866,12 @@ function markAnyNotificationssAsSeen(postNr) {
         updateNotificationCounts(notf, false);
         // Simpler to call the server from here:
         Server.markNotificationAsSeen(notf.id);
+        // Only need to rerender MyMenu and notification icons.
+        needEmit = EmitEvent.YesQuickUpdate;
       }
     }
   });
+  return needEmit;
 }
 
 
@@ -1971,6 +2119,9 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
     // have been the old one, if any.)
     _.each(store.pagesById, (oldPage: Page) => {
       _.each(patchedPosts, (patchedPost: Post) => {
+        // [On2] Maybe remember posts by page & id too, so this'll be a direct lookup?
+        // SHOULD COULD_OPTIMIZE: But can just look up by `nr`?
+        // like so:  oldPage.postsByNr[patchedPost.nr]  — why not?
         _.each(oldPage.postsByNr, (oldPost: Post) => {
           // Oops, drafts and previews have ids like = -1000101, -1000102
           // — but they are the *newest*, so, "old" in oldPost is then misleading.
@@ -1978,11 +2129,11 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
             const movedToNewPage = oldPage.pageId !== patchedPageId;
             const movedOnThisPage = !movedToNewPage && oldPost.parentNr !== patchedPost.parentNr;
             if (movedOnThisPage) {
-              // It'll get reinserted into its new location, by updatePost() below.
+              // It'll get reinserted into its new location, by upsertPost() below.
               page_removeFromParentInPlace(oldPage, oldPost);
             }
             if (movedToNewPage) {
-              // It'll get inserted into the new page by updatePost() below.
+              // It'll get inserted into the new page by upsertPost() below.
               page_deletePostInPlace(oldPage, oldPost);
             }
             // If the current page gets changed, then, need redraw arrows,
@@ -2007,36 +2158,50 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
 
   // ----- Posts, new or edited?
 
+  const upsertResults: UpsertPostResult[] = [];
+
   // Update the current page.
-  if (!storePatch.pageVersionsByPageId) {
-    // No page. Currently storePatch.usersBrief is for the current page (but there is none)
-    // so ignore it too.
+  if (!storePatch.pageVersionsByPageId && !storePatch.ignorePageVersion) {
+    // No page to update, or we shouldn't compare page version.
   }
   else {
+    // (WOULD_OPTIMIZE: For each page id in the keys of `storePatch.pageVersionsByPageId`,
+    // look up that page directly in store.pagesById — no need to iterate through all pages.
+    // But there're so few (in our browser cache), so doesn't matter.)
     _.each(store.pagesById, patchPage);
   }
 
   function patchPage(page: Page) {
-    const storePatchPageVersion = storePatch.pageVersionsByPageId[page.pageId];
-    if (!storePatchPageVersion || storePatchPageVersion < page.pageVersion) {
-      // These changes are old, might be out-of-date, ignore.
-      return;
-    }
-    else if (storePatchPageVersion === page.pageVersion) {
-      // We might be loading the text of a hidden/unapproved/deleted comment, in order to show it.
-      // So although store & patch page versions are the same, proceed with updating
-      // any posts below.
+    if (storePatch.ignorePageVersion) {
+      // Don't look at or update any `page.pageVersion`. (We might be loading
+      // missing chat messages, if scrolling up in a chat; then, the page version
+      // doesn't matter.)
     }
     else {
-      // (Hmm this assumes we get all patches in between these two versions, or that
-      // the current patch contains all changes, since the current page version.)
-      page.pageVersion = storePatchPageVersion;
+      const storePatchPageVersion = storePatch.pageVersionsByPageId[page.pageId];
+      if (!storePatchPageVersion || storePatchPageVersion < page.pageVersion) {
+        // These changes are old, might be out-of-date, ignore.
+        return;
+      }
+      else if (storePatchPageVersion === page.pageVersion) {
+        // We might be loading the text of a hidden/unapproved/deleted comment, in order
+        // to show it.  So although store & patch page versions are the same,
+        // proceed with updating any posts below.
+      }
+      else {
+        // (Hmm this assumes we get all patches in between these two versions, or that
+        // the current patch contains all changes, since the current page version.)
+        page.pageVersion = storePatchPageVersion;
+      }
     }
 
     const patchedPosts = storePatch.postsByPageId[page.pageId];
     _.each(patchedPosts || [], (patchedPost: Post) => {
-      // RENAME to  upsertPost?
-      updatePost(patchedPost, page.pageId);
+      // SHOULD_OPTIMIZE — handle all posts on a page at once, otherwise [On2]+
+      // when loading missing chat messages.
+      const res = upsertPost(patchedPost, page.pageId);
+
+      upsertResults.push(res);
     });
 
     // The server should have marked this page as unread because of these new events.
@@ -2048,6 +2213,8 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
       Server.markCurrentPageAsSeen();
     }
   }
+
+  _showMyNewPostsIfAny(upsertResults);
 
   // [update_personas], here after both comments & the user's persona mode
   // have been patched.
@@ -2128,6 +2295,14 @@ function showNewPage(ps: ShowNewPageParams) {
       store.me.myDataByPageId[newPage.pageId] = myData;
     }
   }
+
+  // If using the cache, `watchbar` wasn't changed, above. Let's update it here.
+  // But this is in fact an optimistic UI update — looks better if the watchbar topic
+  // directly stops being highlighted (means it's unread).
+  // The actual http request isn't sent until a tiny bit later. [upd_watchbar_has_read]
+  // No, let's wait, let's not update it here — harder to see & fix bugs then.
+  //if (newPage.pageId)
+  //  watchbar_markAsRead(store.me.watchbar, newPage.pageId);
 
   store.me.myCurrentPageData = myData || makeNoPageData();
 
@@ -2237,6 +2412,11 @@ function showNewPage(ps: ShowNewPageParams) {
     }
     else {
       correctedUrl = pagePath + location.search + location.hash;
+      // @ifdef DEBUG
+      logD(`ReactStore showNewPage: ${
+                              location.pathname + location.search + location.hash
+                              } –> history.replace(${correctedUrl})`);
+      // @endif
       history.replace(correctedUrl);  // [4DKWWY0]  TyTE2EPGID2SLUG
     }
   }
@@ -2375,13 +2555,25 @@ function store_updatePersonaOpts(store: Store) {
   }
 }
 
+// ---- Break_out_watchbar.ts file? ----
+
+export function watchbar_isUnread(watchbar: Watchbar, pageId: PageId): Bo {
+  let res = false;
+  watchbar_foreachTopic(watchbar, watchbarTopic => {
+    if (watchbarTopic.pageId === pageId && watchbarTopic.unread)
+      res = true;
+      // break, but how?
+  });
+  return res;
+}
+
 
 function watchbar_markAsUnread(watchbar: Watchbar, pageId: PageId) {
   watchbar_markReadUnread(watchbar, pageId, false);
 }
 
 
-function watchbar_markAsRead(watchbar: Watchbar, pageId: PageId) {
+export function watchbar_markAsRead(watchbar: Watchbar, pageId: PageId) {
   watchbar_markReadUnread(watchbar, pageId, true);
 }
 
@@ -2462,6 +2654,7 @@ function watchbar_copyUnreadStatusFromTo(old: Watchbar, newWatchbar: Watchbar) {
   });
 }
 
+// -- / Break_out_watchbar.ts file? ----
 
 function makeStranger(store: Store): Myself {
   const stranger = {
@@ -2664,9 +2857,13 @@ function rememberPostsToQuickUpdate(startPostId: number) {
   }
 }
 
+let gifferHandle: Nr | U;
 
 function stopGifsPlayOnClick() {
-  setTimeout(window['Gifffer'], 50);
+  if (gifferHandle)
+    clearTimeout(gifferHandle);
+
+  gifferHandle = setTimeout(window['Gifffer'], 50);
 }
 
 

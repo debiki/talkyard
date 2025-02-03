@@ -107,6 +107,8 @@ Bitf = bitfield
 Em  = email
 Enb = enabled, Dsb? Disb? = disabled
 B   = button, e.g. ReplyB
+Bm,
+Bokm = bookmark
 Br  = brief. Also, Tn  = tiny, Vb = verbose, Vvb = very verbose.
 It  = list item
 C,
@@ -192,6 +194,7 @@ Pat = participant
 Prs = persona, e.g. PrsMde = persona mode
 Pb  = pagebar
 Pf  = preference, e.g. NfPfs = notification preferences
+P   = panel, e.g. c_Cb_P = contextbar panel
 Pnl = panel
 Py  = property?
 Pw  = password, e.g. NwPwI

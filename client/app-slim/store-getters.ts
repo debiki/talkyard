@@ -87,8 +87,8 @@ export function store_getAuthorOrMissing(store: DiscStore, post: Post): Pat {
 
   const user = store_getUserOrMissing(store, post.authorId);
   if (user.isMissing) {
-    logError("Author " + post.authorId + " missing, page: " +
-      store.currentPageId + ", post nr: " + post.nr + " [EsE6TK2R0]");
+    logError("Author " + post.authorId + " missing, post id: "
+          + post.uniqueId + ", nr: " + post.nr + " [TyE6TK2R0]");
   }
   return user;
 }
@@ -99,8 +99,7 @@ export function store_getUserOrMissing(store: DiscStore, userId: PatId,
   const user = store.usersByIdBrief[userId];
   if (!user) {
     if (errorCode2) {
-      logError(`Participant ${userId} missing, page: ${store.currentPageId}` +
-        ` [TyE0PP-${errorCode2}]`);
+      logError(`Participant ${userId} missing [TyE0PP-${errorCode2}]`);
     }
     return {
       id: userId,

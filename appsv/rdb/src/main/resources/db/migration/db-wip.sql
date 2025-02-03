@@ -5,6 +5,22 @@
 --   https://medium.com/developer-rants/bitwise-magic-in-postgresql-1a05284e4017
 
 
+-- Sleeping bug fix? Bookmarks don't use  private_status_c?   [bookm_0_priv_status]
+-- NEED TO SET  private_status_c  to NULL too, if type 51!
+update  posts3
+  set private_status_c = null where type = 51 and private_status_c is not null;
+alter table  posts3
+    add constraint posts_c_bookmarks_0_priv_status check (
+        (type != 51) or (private_status_c is null),
+
+    -- There's already:
+    add constraint posts_c_bookmark_neg_nr check (
+        type != 51 or post_nr <= -1001), -- PageParts.MaxPrivateNr
+
+    add constraint posts_c_privatecomt_neg_nr check (
+        (private_status_c is null) or post_nr <= -1001); -- PageParts.MaxPrivateNr
+
+
 --=============================================================================
 --  Misc new domains?
 --=============================================================================
@@ -452,6 +468,8 @@ create unique index types_u_anypat_basetype_subtype_urlslug on types_t (
 
 -- upd triggers too!
 alter table post_actions3 rename to pat_node_rels_t; -- not: pat_rels_t;
+-- Also see: [tags_vs_pat_node_rels] — because pat_node_rels_t is
+-- pretty similar to tags_t.
 
 alter table post_actions3 drop column action_id; -- ?. Already noted below in "delete: ...".
 alter table post_actions3 rename to created_at to added_at_c;
@@ -596,6 +614,8 @@ $_$;
 --   about_post_id_c,
 --   about_tag_id_c,
 -- )
+
+-- Maybe a menu_t?  See wip_v427__sidebar_menu.sql  (or v427__sidebar_menu.sql)
 
 
 

@@ -38,6 +38,14 @@ Primary button colors, secondary, background, arrows, fonts,
 and embedded widgets, e.g. Twitter's oEmbed has a 'link_color: #223344' attr,
                             and  theme=light/dark.
 
+[big_page_nav]
+How make the sidebar and the Recent tab more discoverable?
+Maybe if there's more than 5 comments, pop up a tips when someone clicks "Go to latest"?
+And / or if the display is wide, auto open the sidebar and show the Recent tab?
+(But not if it's open already, maybe they are doing something there, e.g. looking at
+their bookmarks.)
+And tips about keyboard shortcuts too, and add keybindings for prev/next comment.
+
 [post_owners] posts_t.owners_id_c — if ownership of a post has been transferred.
 The new owner can, but the original author can't, edit it and delete it etc.
 
@@ -51,6 +59,17 @@ post A is-answer-to post Q (could be many answers), multireplies, here.
 [flags_as_posts] Move flags from  post_actions3 to  posts_t, and use a future
 table  post_rels_t  to link to flagged posts or user accounts.
 Why? See <./tyworld.adoc>, the Flag Pages and Posts section.
+
+[about_user_notes] Should these be tags or posts? Maybe tags are better,
+because then many users can be linked to the same about-user-note — useful, if
+an astroturfer creates many accounts?
+So, there's a post with text, and then a badge (that's a tag on a user)
+linking from the user (or badges linking from many users)
+to that post? (The note itself is a post — it's text.)  Maybe the badge could show
+inline the first line of the post?  So one better knows if it's worth clicking
+the note & reading more.
+And these badges are visible only to mods, f.ex., as per permissions in the
+upcoming tagtype_perms_t table?
 
 [do_it_votes]
 Optionally, use separate Do-It and Do-Not votes, to show if one wants
@@ -119,12 +138,23 @@ See: ./everything-is-a-node.txt
 DONE: Implement sub categories.
 But missing: Search in sub cats, if searching in base cat.
 
+[sub_pages]  aka sub_tasks, nested_pages, child_pages, parent_page, project_pages
+Let pages optionally have a parent page. This can be nice, to create small projects:
+A page that describes the project, and one child page per major task-to-be-done.
+(Small tasks might instead just be comments.)
+Now there's:  pages3.parent_post_id_c.
+But better wait until after [add_nodes_t]?
+
 [forum_page]
 More configurable, & discussions too, see:  y2999/wip_sect_disc_props_views_stats.sql
 
 [watchbar_to_linkbar][metabar_2_pagebar]
 RENAME the "watchbar" to "linkbar", the page meta bar to "pagebar", and the right
 sidebar to "contextbar" ?
+
+[sidebar_menu]
+Customizable sidebar menu (or "linkbar"?).
+See: ../appsv/rdb/src/main/resources/db/migration/y2999/wip_v427__sidebar_menu.sql
 
 [propagate_cat_perms]
 It'd be nice if there was a way to get an overview of sub cat permissions,
@@ -188,7 +218,7 @@ Wasn't fixed in first iteration.
 
 [nested_tags][child_tags] hierarchical tags
 
-[to_paginate]
+[to_paginate][needs_pagination][pagination]
 E.g. don't list only 100 tags — add a Show More ... button.
 
 [sw] [sse]
@@ -651,9 +681,12 @@ New permission.
 Later, comments can be tasks with their own DoingStatus, and marked done or closed.
 (The db is prepared for this, but not implemented UX wise.)
 
-[priv_comts] Private comments:
+[priv_comts] Private comments:  see  ../wip/priv-comts/priv-comts-wip.txt.
 (Aka "whispers" in Discourse and "private items" in Basecamp long ago, and "private comments"
 in other software.)
+To show the right private comments: Probably we'll need to [load_all_private_comments] on
+the relevant page, and then do a tree search & access permission checks on each comment,
+to find the ones the current user may see.
 Add posts_t.private_pats_id_c, and a new participant type:  lists of pats,
 to remember who can see private comments.
 New permissions
@@ -691,6 +724,8 @@ Don't bump page if private comments — or do, for those who can see? Hmm.
       Do send notifications about priv comts to those who can see them & want though.
       Same notf level as for direct messages — instead of the page's notf level?
 
+[bookmarks_wip]
+See ../wip/bookmarks/bookmarks-wip.txt.
 
 [see_who_notfd]
 When composing a message, see who will get notified — e.g. if mentioning a group,
@@ -840,6 +875,7 @@ Things to think about, if making Ty work offline.
 Use two session ids and cookies — one HttpOnly, another not-HttpOnly. Both needs to be
 present, to be logged in. By deleting the not-HttpOnly, one can log out, also if
 the server is offline.  And, the HttpOnly session offers a bit extra security.
+Partly impl, pages are cached, see: [cache_how_long], but only in dev builds [8YDVP2A].
 
 [serversid]
 Server side sesison ids, maybe in Redis? So can log ppl out, without having access

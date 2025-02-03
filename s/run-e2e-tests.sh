@@ -341,9 +341,10 @@ function runAllE2eTests {
   $r s/wdio --only upload-images-and-files.2br $args
   $r s/wdio-7 --only direct-messages-notfs.3br.d --cd -i $args
   $r s/wdio --only direct-messages-delete.2browsers $args
-  $r s/wdio --only chat-basic.2br.mtime $args  #  broken [DRAFTS_BUG]
+  $r s/wdio-7 --only chat-basic.2br.f.mtime --cd -i $args  #  broken [DRAFTS_BUG]
   $r s/wdio --only chat-create-from-direct-message.2browsers $args
   $r s/wdio --only chat-create-from-profile-pages.2browsers $args
+  $r s/wdio-7 --only chat-scroll.2br.f --cd -i $args
 
   $r s/wdio-7 --only categories-basic.3br.d --cd -i $args
   # There're more category tests below. [.more_cat_tests]
@@ -395,7 +396,7 @@ function runAllE2eTests {
   $r s/wdio --only modn-appr-bef-comb-w-revw-aftr.2br.mtime $args
   $r s/wdio --only mod-review.2br.mtime $args  # RENAME to modn-by-moderator-not-admin
 
-  $r s/wdio --only modn-from-disc-page-appr-befr.2browsers $args
+  $r s/wdio-7 --only modn-from-disc-page-appr-befr.2br.f --cd -i $args
   $r s/wdio --only modn-from-disc-page-review-after.2browsers $args
 
   # TESTS_MISSING
@@ -692,7 +693,7 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-create-site-forum-intro-tour $args
   $r s/wdio       --only embedded-comments-create-site-import-disqus.2br $args
   $r s/wdio-7     --only embcom.drafts-previews-not-logged-in.2br --cd -i $args
-  $r s/wdio       --only embedded-comments-scroll-and-load-more.2browsers $args
+  $r s/wdio-7     --only embcom.scroll-and-load-more.2br.ec --cd -i $args
   $r s/wdio       --only embedded-comments-scroll-embedding-page $args
   # (no -old-name version, because the new name is always included in the server's genetarted html.)
 

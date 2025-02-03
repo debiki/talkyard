@@ -39,9 +39,9 @@ if [[ ! $next_version =~ ^v0\.$year\. ]]; then
   echo
   echo "Edit  version.txt — bump the year, and reset the in-year version to 001."
   echo
-  echo "And, don't forget to bump the Business Source License change date"
-  echo "in  README.md   and  LICENSE-BUSLv11.txt,  and the copyright-up-to"
-  echo "year in  README.md.  (4 edits in total, in 3 files.)"
+  echo "And, don't forget to bump the GPLv2 change dates"
+  echo "in  README.md,  and the copyright-up-to year too."
+  echo "(4 edits in total, in 2 files.)"
   echo
   exit 1
 fi

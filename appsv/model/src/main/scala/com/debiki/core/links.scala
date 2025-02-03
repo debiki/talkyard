@@ -70,12 +70,32 @@ case class LinkPreview(
 }
 
 
+/** A link from one post to another, to show from where a page is linked from (backlinks).
+  * If the link is to outside the forum, then it's external.
+  *
+  * @param fromPostId
+  * @param linkUrl
+  * @param addedAt
+  * @param addedById
+  * @param isExternal
+  * @param isFromToPrivatePosts ? So we can exclude all private comment links  [priv_comts]
+  *    when loading stuff to render the public cacheable version of a page. ?
+  *     If it's from *or* to a private post, the link is private. But not if it's only
+  *     from or to an access restricted page or category.
+  * @param toStaffSpace
+  * @param toPageId
+  * @param toPostId
+  * @param toPpId
+  * @param toTagId
+  * @param toCategoryId
+  */
 case class Link(
   fromPostId: PostId,
   linkUrl: String,
   addedAt: When,
   addedById: UserId,
   isExternal: Boolean,
+  // isFromToPrivatePosts: Bo, — later? See descr above
   toStaffSpace: Boolean = false,
   toPageId: Option[PageId] = None,
   toPostId: Option[PostId] = None,

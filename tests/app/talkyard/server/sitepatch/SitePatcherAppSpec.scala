@@ -745,7 +745,7 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
       textAndHtmlMaker.testBody("Forum intro text."), SysbotUserId, browserIdData,
       dao, Some(forum.defaultCategoryId), extId = pageExtId, discussionIds = pageDiscussionIds)
 
-    val pagePosts = dao.readOnlyTransaction { tx => tx.loadPostsOnPage(pageId) }
+    val pagePosts = dao.readTx(_.loadPostsOnPage(pageId, WhichPostsOnPage.OnlyPublic()))
 
     (site, forum, pageId, pagePosts, owen, merrylMember, dao)
   }
@@ -1126,6 +1126,9 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
         val postsWithExtImpId = actualDump.posts.filter(_.extImpId.isDefined)
         postsWithExtImpId.length mustBe 1
       }
+    }
+
+    "Import bookmarks?  TyTIMPBOOKMRK" - {
     }
   }
 

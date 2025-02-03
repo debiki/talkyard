@@ -18,9 +18,10 @@
 package debiki.dao
 
 import com.debiki.core._
+import com.debiki.core.isProd
 import com.debiki.core.EditedSettings.MaxNumFirstPosts
 import com.debiki.core.Prelude._
-import com.debiki.core.PageParts.FirstReplyNr
+import com.debiki.core.PageParts.{FirstReplyNr, MinPublicNr}
 import controllers.EditController
 import debiki._
 import debiki.EdHttp._
@@ -47,7 +48,9 @@ case class ApprovePostResult(
 
 case class LoadPostsResult(
   posts: immutable.Seq[Post],
-  pageStuffById: Map[PageId, PageStuff])
+  pageStuffById: Map[PageId, PageStuff],
+  bookmarks: immutable.Seq[Post],
+  )
 
 
 
@@ -153,10 +156,18 @@ trait PostsDao {
 
     val storePatchJson = jsonMaker.makeStorePatchForPost(newPost, showHidden = true)
 
-    // (If reply not approved, this'll send mod task notfs to staff [306DRTL3])
-    pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
-          // This can be an anonym's id — fine. (Right?)
-          byId = author.id)
+    // WebSocket-notify others about the new post, if it's public (meaning, if those
+    // who can see the page, can see the post).
+    //
+    // But don't send bookmarks or private comments to others. There's a double check
+    // in PubSubActor that nothing private gets sent: [dont_leak_private_posts].
+    //
+    if (!newPost.isPrivate) {
+      // (If reply not approved, this'll send mod task notfs to staff [306DRTL3])
+      pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
+            // This can be an anonym's id — fine. (Right?)
+            byId = author.id)
+    }
 
     InsertPostResult(storePatchJson, newPost, anyReviewTask)
   }
@@ -173,12 +184,79 @@ trait PostsDao {
         refId: Opt[RefId] = None)
         : (Post, Participant, Notifications, Option[ReviewTask]) = {
 
+    // ----- Sanity checks
+
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE25JP5L2")
 
+    dieIf(isProd && postType == PostType.Bookmark,
+          "TyEBOOKM0ENA1", "Bookmarks not yet enabled in prod mode")
+
+    if (asAlias.isDefined) {  // [both_anon_priv]
+      throwForbiddenIf(postType == PostType.Bookmark,
+            "TyEANONBOOKM", "Anonyms cannot bookmark things")
+
+      throwForbiddenIf(postType.isPrivate,
+            "TyEANONPRIVPO2", "Anonyms cannot post private comments")
+
+      // maybe must be System?
+      throwForbiddenIf(postType == PostType.MetaMessage,
+            "TyEANONMETA", "Anonyms cannot post meta messages")
+    }
+
+    throwBadReqIf(postType == PostType.Bookmark && byWho.isGuestOrAnon,
+          "TyEANONBOKM", "Guests and anonyms cannot bookmark things")
+
+    throwBadReqIf(postType.isPrivate && byWho.isGuestOrAnon,
+          "TyEANONPRIVCOMT", "Guests and anonyms cannot comment privately")
+
+    val noReplyToIsPrivate   = replyToPostNrs.forall(_ >= PageParts.MinPublicNr)
+    val someReplyToIsPrivate = replyToPostNrs.exists(_ <= PageParts.MaxPrivateNr)
+    val allReplyToArePrivate = (replyToPostNrs.forall(_ <= PageParts.MaxPrivateNr)
+                                  && !replyToPostNrs.isEmpty)  // but can't be empty? oh well
+
+    // Later, maybe there'll be some `makePrivate: Bo` param instead/in-addition-to checking
+    // `postType.isPrivate`,  since [priv_comts] will have the same type as public comments?
+    // But their nrs are <= MaxPrivateNr; then need to generate such a nr.
+    throwForbiddenIf(someReplyToIsPrivate && !postType.isPrivate,
+          "TyEREPUB2PRIV", "Cannot post a not-private post to private posts")
+
+    // (However, replying privately to a public comment is ok — that's the whole point
+    // with private comments, sort of.)
+
+    // ----- Load stuff
+
+    WOULD_OPTIMIZE // We'll load all priv or pub posts, but maybe it'd be enough to
+    // load only those pat is replying to, and their ancestors? (to know whom to notify)
+    val loadWhichPosts =
+          if (allReplyToArePrivate) {
+            // Then we don't need to know about any of the public posts — which nrs exist,
+            // which is the next public nr, doesn't matter.
+            // Later, [priv_comts]: We need public posts too, so we can generate
+            // notifications to [people who posted public comments earlier and can see
+            // the private comments, but didn't post any private comments themselves yet].
+            // (Note that `page` below contains only `loadWhichPosts` but is used
+            // for generating notifications [_gen_notfs].)
+            unimpl("Replying to private posts [TyEUNTEST0367]")
+            WhichPostsOnPage.OnlyPrivate(byUserId = byWho.id)
+          }
+          else if (noReplyToIsPrivate) {
+            // Then we don't need to look at private posts — cannot be any private ancestors.
+            WhichPostsOnPage.OnlyPublic()
+          }
+          else {
+            unimpl("Multireply to mixed priv pub [TyE6F8FMS26]")
+            // WhichPostsOnPage.AllByAnyone
+          }
+
     val realAuthorAndLevels = loadUserAndLevels(byWho, tx)
-    val page = newPageDao(pageId, tx)
-    val replyToPosts = page.parts.getPostsAllOrError(replyToPostNrs) getOrIfBad  { missingPostNr =>
-      throwNotFound(s"Post nr $missingPostNr not found", "EdE4JK2RJ")
+    val page = newPageDao(pageId, tx, whichPosts = loadWhichPosts)
+    val replyToPosts = page.parts.getPostsAllOrError(replyToPostNrs) getOrIfBad { missingNr =>
+      throwIndistinguishableNotFound("TyEPOST0FND2", isAboutPostNr = Some(missingNr.loneElement))
+    }
+
+    if (replyToPosts.exists(_.tyype == PostType.Bookmark)) {
+      throwBadReqIf(postType == PostType.Bookmark, "TyEBOKMBOKM", "Cannot bookmark bookmarks")
+      throwBadReq("TyERE2BOKM", "Cannot reply to bookmarks")
     }
 
     // Might be a [pseudonyms_later] though, if ever implemented.
@@ -192,6 +270,11 @@ trait PostsDao {
 
     val pageAuthor = tx.loadTheParticipant(page.meta.authorId)
 
+    // ----- Authz check
+
+    // If we're adding a bookmark, or posting private comments, then it's enough if we
+    // can see the page or comment, since others won't know about our bookmarks or private
+    // comments thread anyway.  mayPostReply() knows about that (looks at the post type).
     dieOrThrowNoUnless(Authz.mayPostReply(
       realAuthorAndLevels, asAlias /* _not_same_tx, ok */, realAuthorAndGroupIds,
       postType, page.meta, pageAuthor = pageAuthor,
@@ -199,14 +282,30 @@ trait PostsDao {
       tx.loadCategoryPathRootLast(page.meta.categoryId, inclSelfFirst = true),
       tx.loadPermsOnPages()), "EdEMAY0RE")
 
-    if (page.pageType.isChat)
+    // ----- Generate id, nr
+
+    if (page.pageType.isChat && postType != PostType.Bookmark)
       throwForbidden("EsE50WG4", s"Page '${page.id}' is a chat page; cannot post normal replies")
 
     val settings = loadWholeSiteSettings(tx)
 
     // Some dupl code [3GTKYA02]
     val uniqueId = tx.nextPostId()
-    val postNr = page.parts.highestReplyNr.map(_ + 1).map(max(FirstReplyNr, _)) getOrElse FirstReplyNr
+    val postNr =
+          if (postType.isPrivate) {  // later: or if is [priv_comts]
+            // Generate a random post nr <= MaxPrivateNr. (Sequential order would enable
+            // others to figure out if others have bookmarked something or if there're
+            // private comment threads.)  [gen_priv_post_nr]
+            nextRandomPrivPostNr()
+          }
+          else {
+            // Bump the post nr to previous reply nr + 1, so the orig post & comments have
+            // nrs 1, 2, 3, ...
+            page.parts.highestReplyNr.map(_ + 1).map(max(FirstReplyNr, _)) getOrElse FirstReplyNr
+          }
+
+    // ----- More sanity checks
+
     val commonAncestorNr = page.parts.findCommonAncestorNr(replyToPostNrs.toSeq)
     val anyParent: Opt[Post] =
       if (commonAncestorNr == PageParts.NoNr) {
@@ -237,7 +336,14 @@ trait PostsDao {
     // no descendants. So it cannot create a cycle. (However, if *importing* posts,
     // then in a corrupt import file the posts on a page might form cycles. [ck_po_ckl])
 
+    // ----- Review? Approve?
+
     val (reviewReasons: Seq[ReviewReason], shallApprove: Bo) =
+          if (postType == PostType.Bookmark) {   // later: or if is [priv_comts] ?
+            // Bookmarks can't be seen by others, need not be approved.
+            (Nil, false)
+          }
+          else {
             // Don't use an anonym's true user or trust level here — that would
             // make it simpler to guess who the anonym is.
             // F.ex. if there aren't many members, and only one member, M1, has had their
@@ -248,7 +354,8 @@ trait PostsDao {
             // who actually wrote such a comment to decide if to review it or not. Still,
             // in the future, for some communities that might be fine, if moderators are
             // very trusted (they're the ones who can see when a comment got approved).)
-            throwOrFindNewPostReviewReasons(page.meta, personaAndLevels, tx)
+             throwOrFindNewPostReviewReasons(page.meta, personaAndLevels, tx)
+          }
 
     // Similar to: [find_approver_id].
     val approverId =
@@ -257,6 +364,9 @@ trait PostsDao {
             // Because if anon comments were to get approved immediately just because the
             // author is a mod, it'd be simpler to guess who the author is. [mod_deanon_risk]
             None
+          }
+          else if (postType.isPrivate || postNr < PageParts.MinPublicNr) {
+            die("TyEAPRPRIVPO", "Approving private post?")
           }
           else {
             if (realAuthor.isStaff && asAlias.isEmpty) {
@@ -271,6 +381,8 @@ trait PostsDao {
               Some(SystemUserId)
             }
           }
+
+    // ----- Create post
 
     val newPost = Post.create(
       uniqueId = uniqueId,
@@ -296,16 +408,31 @@ trait PostsDao {
             page.meta.frequentPosterIds
 
     val oldMeta = page.meta
-    val newMeta = oldMeta.copy(
-      bumpedAt = shallBumpPage ? Option(now.toJavaDate) | oldMeta.bumpedAt,
-      lastApprovedReplyAt = shallApprove ? Option(now.toJavaDate) | oldMeta.lastApprovedReplyAt,
-      lastApprovedReplyById = shallApprove ? Option(authorMaybeAnon.id) | oldMeta.lastApprovedReplyById,
-      frequentPosterIds = newFrequentPosterIds,
-      numRepliesVisible = page.parts.numRepliesVisible + (shallApprove ? 1 | 0),
-      numRepliesTotal = page.parts.numRepliesTotal + 1,
-      numPostsTotal = page.parts.numPostsTotal + 1,
-      numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible + numNewOpRepliesVisible,
-      version = oldMeta.version + 1)
+    val newMeta =
+          if (postType.isPrivate) {   // later: or if is [priv_comts] ?
+            // Then, nothing others can see, changes.  [0_stats_for_priv_posts]
+            // No need to bump any page fileds or version, no need to rerender.
+            // Private things are loaded separately, only for those who can see them.
+            // E.g. one's bookmarks, or private threads one is a member of.
+            oldMeta
+          }
+          else {
+            // If `shallApprove`, things others can see have changed; then, need
+            // to rerender the page.
+            oldMeta.copy(
+                bumpedAt = shallBumpPage ? Option(now.toJavaDate) | oldMeta.bumpedAt,
+                lastApprovedReplyAt = shallApprove ?
+                      Option(now.toJavaDate) | oldMeta.lastApprovedReplyAt,
+                lastApprovedReplyById = shallApprove ?
+                      Option(authorMaybeAnon.id) | oldMeta.lastApprovedReplyById,
+                frequentPosterIds = newFrequentPosterIds,
+                numRepliesVisible = page.parts.numRepliesVisible + (shallApprove ? 1 | 0),
+                numRepliesTotal = page.parts.numRepliesTotal + 1,
+                numPostsTotal = page.parts.numPostsTotal + 1,
+                numOrigPostRepliesVisible =
+                      page.parts.numOrigPostRepliesVisible + numNewOpRepliesVisible,
+                version = oldMeta.version + (shallApprove ? 1 | 0))
+          }
 
     // Since the post didn't exist before, it's enough to remember the refs
     // from the new textAndHtml only. [new_upl_refs]
@@ -315,6 +442,8 @@ trait PostsDao {
       val uplRefs2 = findUploadRefsInPost(newPost, Some(site))
       dieIf(uploadRefs != uplRefs2, "TyE503SKH5", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
+
+    // ----- Audit log entry
 
     val anyParentOrigAuthor: Opt[Pat] = anyParent.map(parentPost =>
                                           tx.loadTheParticipant(parentPost.createdById))
@@ -338,6 +467,8 @@ trait PostsDao {
       targetUniquePostId = anyParent.map(_.id),
       targetPostNr = anyParent.map(_.nr),
       targetPatTrueId = anyParentOrigAuthor.map(_.trueId2))
+
+    // ----- Review & spam check tasks
 
     val anyReviewTask = if (reviewReasons.isEmpty) None
     else Some(ReviewTask(
@@ -372,20 +503,25 @@ trait PostsDao {
           reqrId = authorMaybeAnon.id,
           requestStuff = spamRelReqStuff))
 
-    val stats = UserStats(
-      authorMaybeAnon.id,
-      lastSeenAt = now,
-      lastPostedAt = Some(now),
-      firstDiscourseReplyAt = Some(now),
-      numDiscourseRepliesPosted = 1,
-      numDiscourseTopicsRepliedIn = 0) // SHOULD update properly
+    // ----- Save to db
 
+    var stats = UserStats(authorMaybeAnon.id, lastSeenAt = now)
+    if (!newPost.isPrivate) {  // [0_stats_for_priv_posts]
+      stats = stats.copy(
+            lastPostedAt = Some(now),
+            firstDiscourseReplyAt = Some(now),
+            numDiscourseRepliesPosted = 1,
+            numDiscourseTopicsRepliedIn = 0) // SHOULD update properly
+    }
     addUserStats(stats)(tx)
+
     tx.insertPost(newPost)
     // Index post, also if not yet approved [ix_unappr] — can be nice for mods to be able to
     // search & find such posts too? We _reindexed_if_approved_later.
     tx.indexPostsSoon(newPost)
     tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = shallApprove)
+
+    // (This excludes bookmarks and private comments — they don't get approved.)
     if (shallApprove) {
       val pagePartsInclNewPost = PreLoadedPageParts(
         newMeta,
@@ -399,6 +535,7 @@ trait PostsDao {
       staleStuff.addPageId(pageId)
       saveDeleteLinks(newPost, textAndHtml, authorMaybeAnon.trueId2, tx, staleStuff)
     }
+
     uploadRefs foreach { uploadRef =>
       tx.insertUploadedFileReference(newPost.id, uploadRef, addedById = authorMaybeAnon.id)
     }
@@ -421,13 +558,20 @@ trait PostsDao {
             ReviewDecision.InteractReply)(tx, staleStuff)
     }
 
+    // ----- Notify others
+
     val notifications =
-      if (skipNotfsAndAuditLog) Notifications.None
-      else notfGenerator(tx).generateForNewPost( // page dao excls new reply, ...
-                 // ... that's ok, as of now. (See: [notf_new_post_dao])
-            page, newPost, Some(textAndHtml),
-            postAuthor = Some(authorMaybeAnon), trueAuthor = Some(realAuthor),
-            anyNewModTask = anyReviewTask)
+          if (skipNotfsAndAuditLog || newPost.tyype == PostType.Bookmark)  // [0_bokm_notfs]
+            Notifications.None
+          else
+            notfGenerator(tx).generateForNewPost( // page dao excls new reply, ...
+                  // ... that's ok, as of now. (See: [notf_new_post_dao])
+                  // But `page` needs to incl public posts, even if the reply is private
+                  // and only replies to private posts? See [_gen_notfs] above.
+                  page, newPost, Some(textAndHtml),
+                  postAuthor = Some(authorMaybeAnon), trueAuthor = Some(realAuthor),
+                  anyNewModTask = anyReviewTask)
+
     tx.saveDeleteNotifications(notifications)
 
     // Could save the poster's topics-replied-to notf pref as  [interact_notf_pref]
@@ -1047,13 +1191,20 @@ trait PostsDao {
     val anyEditedCategory = writeTx { (tx, staleStuff) =>
       val realEditorAndLevels = loadUserAndLevels(who, tx)
       val realEditor = realEditorAndLevels.user
-      val page = newPageDao(pageId, tx)
+      val page = newPageDao(pageId, tx,
+            // Editing a page or ordinary comment? [_dont_load_private]
+            if (postNr >= MinPublicNr) WhichPostsOnPage.OnlyPublic(activeOnly = false)
+            // Editing bookmarks or private comments?
+            else WhichPostsOnPage.OnlyPrivate(byUserId = who.id, activeOnly = false))
       val settings = loadWholeSiteSettings(tx)
 
       val postToEdit = page.parts.postByNr(postNr) getOrElse {
         page.meta // this throws page-not-fount if the page doesn't exist
         throwNotFound("DwE404GKF2", s"Post not found, id: '$postNr'")
       }
+
+      dieIf(isProd && postToEdit.tyype == PostType.Bookmark,
+            "TyEBOOKM0ENA2", "Bookmarks not yet enabled in prod mode")
 
       if (postToEdit.currentSource == newTextAndHtml.text)
         return
@@ -1070,6 +1221,9 @@ trait PostsDao {
             realEditorAndLevels, pageId = pageId, asAlias)(tx, IfBadAbortReq)
 
       val editorPersona = editorPersonaAndLevels.user
+
+      dieIf(editorPersona.isAlias && postToEdit.isPrivate, // [both_anon_priv]
+            "TyEANONPRIVED2", "Cannot edit bookmarks or anonymous comments anonymously")
 
       // [dupl_ed_perm_chk]?
       dieOrThrowNoUnless(Authz.mayEditPost(
@@ -1102,14 +1256,27 @@ trait PostsDao {
           val currentRevStartMs = postToEdit.currentRevStaredAt.getTime
           val flags = tx.loadFlagsFor(immutable.Seq(PagePostNr(pageId, postNr)))
           val anyNewFlag = flags.exists(_.flaggedAt.millis > currentRevStartMs)
+
+          // But what about private comment successors to public comments? Ignore them,
+          // otherwise it'd be possible to guess if there's private comments or not,
+          // by looking at if a new revision gets created.  (If editing a public post,
+          // we _dont_load_private posts.)  [priv_comts]
           val successors = page.parts.descendantsOf(postNr)
+
           val anyNewComment = successors.exists(_.createdAt.getTime > currentRevStartMs)
         !anyNewComment && !anyNewFlag
       }
 
       // Similar to: [find_approver_id].  [mod_deanon_risk]
       val anyNewApprovedById = {
-        if (postToEdit.tyype == PostType.ChatMessage) {
+        if (postToEdit.tyype == PostType.Bookmark) {
+          // Bookmarks need not be approved.
+          None
+        }
+        else if (postToEdit.isPrivate) {
+          unimpl("Not approving private edits [TyEAPRPRIVED]")
+        }
+        else if (postToEdit.tyype == PostType.ChatMessage) {
           // Auto approve chat messages. Always SystemUserId for chat.
           Some(SystemUserId)  // [7YKU24]
         }
@@ -1383,6 +1550,7 @@ trait PostsDao {
         "TyE305RK7TP", "Staff cannot approve and publish post via an edit")
 
       if (editedPost.isCurrentVersionApproved) {
+        dieIf(editedPost.isPrivate, "TyE603SKJ", "Bookmark links & notfs?") // [0_bokm_notfs]
         staleStuff.addPageId(editedPost.pageId)
         saveDeleteLinks(editedPost, newTextAndHtml, editorPersona.trueId2, tx, staleStuff)
         TESTS_MISSING // notf not sent until after ninja edit window ended?  TyTNINJED02
@@ -1392,6 +1560,8 @@ trait PostsDao {
       }
 
       deleteDraftNr.foreach(nr => tx.deleteDraft(realEditorId, nr))
+
+      // Skip for bookmarks ! [0_stats_for_priv_posts],  & skip approve / review / etc too, above
 
       val oldMeta = page.meta
       var newMeta = oldMeta.copy(version = oldMeta.version + 1)
@@ -1443,6 +1613,14 @@ trait PostsDao {
   def saveDeleteLinks(post: Post, sourceAndHtml: SourceAndHtml, writerTrueId: TrueId,
           tx: SiteTx, staleStuff: StaleStuff, skipBugWarn: Bo = false): U = {
     // Some e2e tests: backlinks-basic.2br.d  TyTINTLNS54824
+
+    // Skip bookmarks. And skip [priv_comts] too, for now.  [0_ln_from_priv]
+    // Later: Nice to see links from one's private comments? But would be good if there was
+    // then a way to easily exclude all links from private comments, so won't slow down
+    // page rendering (by loading everyone's private comment links, might be many). Like
+    // private posts: nr < MaxPrivateNr.
+    if (post.isPrivate)
+      return
 
     // Let's always add the page id to staleStuff before, just so that
     // here we can check that that wasn't forgotten.
@@ -1506,6 +1684,7 @@ trait PostsDao {
     // [On2], fine.
     val deletedLinks = linksBefore.filter(lb => !linkUrlsAfter.contains(lb.linkUrl))
 
+    require(!post.isPrivate) // double check
     tx.deleteLinksFromPost(post.id, deletedLinks.map(_.linkUrl).toSet)
     newLinks foreach tx.upsertLink
 
@@ -1779,6 +1958,9 @@ trait PostsDao {
 
 
   def changePostType(pageId: PageId, postNr: PostNr, newType: PostType, reqr: ReqrId): U = {
+    dieIf(isProd && newType == PostType.Bookmark,
+          "TyEBOOKM0ENA9", "Bookmarks not yet enabled in prod mode")
+
     writeTx { (tx, staleStuff) =>
       val page = newPageDao(pageId, tx)
       val postBefore = page.parts.thePostByNr(postNr)
@@ -1903,7 +2085,14 @@ trait PostsDao {
     import com.debiki.core.{PostStatusAction => PSA}
     import context.security.throwIndistinguishableNotFound
 
-    val pageBef = newPageDao(pageId, tx)
+    // (This won't load private comments or bookmarks, if postNr is a public post.
+    // That's as intended — deleting a comments tree, should not delete any bookmarks or
+    // private sub threads.  Such bookmarks or private threads get orphaned if the bookmarker
+    // or private thread members can't see the deleted posts.  [private_orphans]
+    // They can still see their bookmarks or private comment threads, but not the deleted
+    // bookmarked comment or deleted comments being discussed privately.)
+    val pageBef = newPageDao(pageId, tx, WhichPostsOnPage.thoseMaybeRelatedTo(postNr))
+
     if (!pageBef.exists)
       throwIndistinguishableNotFound("TyE05KSRDM3")
 
@@ -2027,10 +2216,11 @@ trait PostsDao {
       }
     }
 
-    // ----- Update successors
+    // ----- Update descendants
 
     // Update any indirectly affected posts, e.g. subsequent comments in the same
     // thread that are being deleted recursively.
+    // (This ignores private descendants of public comments — as intended. [private_orphans])
     val postsToReindex = MutArrBuf[Post]()
     if (action.affectsSuccessors) for (successor: Post <- pageBef.parts.descendantsOf(postNr)) {
       val anyUpdatedSuccessor: Option[Post] = action match {
@@ -2081,6 +2271,7 @@ trait PostsDao {
             linkedPageIds, pageModified = false, backlinksStale = true)
     }
 
+    SHOULD // Skip if is bookmark being deleted. ! [0_stats_for_priv_posts]
     val oldMeta = pageBef.meta
     var newMeta = oldMeta.copy(version = oldMeta.version + 1)
     var markSectionPageStale = false
@@ -2177,6 +2368,10 @@ trait PostsDao {
       updatePagePopularity(pageAft.parts, tx)
     }
 
+    // (Can this be skipped if the updated post is private?  E.g. deleting a bookmark.
+    // Yes, right now, I think so. But not later if  [remember_if_bookmarks_or_priv_comts]
+    // gets implemented — then we need to update & remember in the mem cache.)
+    SHOULD // Skip if is bookmark. ! [0_stats_for_priv_posts]
     staleStuff.addPageId(pageBef.id, memCacheOnly = true)  // page version bumped above
     tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale)
 
@@ -3209,6 +3404,7 @@ trait PostsDao {
               PostQuery.PostsByAuthor(
                 reqrInf = ReqrInf(Participant.SystemUserBr, BrowserIdData.System),
                 authorId = userId,
+                onlyPostType = None, // all types
                 // Don't hide the person's anonymous posts? Because if doing that,
                 // it'd be possible to guess that hen wrote them?  [list_anon_posts]
                 // It's more important that people get to stay anon, if they expect to
@@ -3418,7 +3614,7 @@ trait PostsDao {
       require(postIds.isDefined != pagePostNrs.isDefined, "TyE023MAEJP6")
 
       if (postIds.forall(_.isEmpty) && pagePostNrs.forall(_.isEmpty))
-        return LoadPostsResult(Nil, Map.empty)
+        return LoadPostsResult(Nil, Map.empty, Nil)
 
       val postsInclForbidden: ImmSeq[Post] = readTx { tx =>
         if (postIds.isDefined) {
@@ -3430,7 +3626,9 @@ trait PostsDao {
       }
 
       filterMaySeeAddPages(
-            requester, postsInclForbidden, inclUnlistedPagePosts = true)
+            requester, postsInclForbidden, inclUnlistedPagePosts = true,
+            // Maybe optionally include, if needed later.
+            bookmarksInclForbidden = Nil)
     }
 
 
@@ -3439,6 +3637,7 @@ trait PostsDao {
     unimplementedIf(query.orderBy != OrderBy.MostRecentFirst,
           "Only most recent first supported [TyE403RKTJ]")
 
+    var bookmarksInclForbidden: ImmSeq[Post] = Nil
     val postsInclForbidden: ImmSeq[Post] = readTx { tx =>
       if (query.onlyEmbComments) {
         dieIf(query.inclTitles, "TyE503RKDP5", "Emb cmts have no titles")
@@ -3461,6 +3660,23 @@ trait PostsDao {
       }
       else {
         query match {
+          case q: PostQuery.PatsBookmarks =>
+            TESTS_MISSING
+            // If asking for sbd else's bookmarks, then, currently they're
+            // all filtered away here: [own_bookmarks]. Maybe later there'll be
+            // shared / group bookmarks somehow.
+
+            // But what about `posts` whose bookmarks one may not see?
+            // Such posts still returned? If one may see them, but then one could know if sbd
+            // else has bookmarked them? Currently can't happen, listPostsByUser()
+            // returns Forbidden if trying to list sbd elses bookmarks. [others_bookmarks]
+            dieIf(q.bookmarkerId != q.reqr.id, "TyEOTHERSBOKMS")
+
+            val (bookms, posts) = tx.loadBookmarksAndBookmarkedPosts(byPatId = q.bookmarkerId,
+                  limit = q.limit, offsetAt = When.Never, offsetId = 0)
+            bookmarksInclForbidden = bookms
+            posts
+
           case q: PostQuery.PostsRelatedToPat[_] =>  // [load_posts_by_rels]
             // Tests incl:
             //    - assign-to-basic.2br.d  TyTASSIGN01
@@ -3474,12 +3690,17 @@ trait PostsDao {
                   onlyOpenPosts = q.onlyOpen, limit = q.limit)
             val postIds = rels.map(_.toNodeId)
             tx.loadPostsByIdKeepOrder(postIds.distinct)
+
           case q: PostQuery.PostsWithTag =>
             TESTS_MISSING // TyTLISTTAGDPOSTS
             tx.loadPostsByTag(tagTypeId = q.tagTypeId, inclUnapproved = q.inclUnapproved,
                   limit = query.limit, orderBy = q.orderBy)
-          case _ =>
+
+          case _: PostQuery.AllPosts | _: PostQuery.PostsByAuthor =>
             tx.loadPostsByQuery(query)
+
+          case x =>
+            die("TyE5T3SKL5JS", s"Forgotten query type: ${classNameOf(x)}")
         }
       }
     }
@@ -3487,12 +3708,19 @@ trait PostsDao {
     filterMaySeeAddPages(
           Some(query.reqr),
           postsInclForbidden,
-          inclUnlistedPagePosts = query.inclUnlistedPagePosts)
+          inclUnlistedPagePosts = query.inclUnlistedPagePosts,
+          bookmarksInclForbidden = bookmarksInclForbidden)
   }
 
 
-  private def filterMaySeeAddPages(requester: Opt[Pat], postsInclForbidden: ImmSeq[Post],
-        inclUnlistedPagePosts: Bo): LoadPostsResult = {
+  /** Returns only the `postsInclForbidden` the requester may see, plus,
+    * the pages of those posts. And returns only the `bookmarksInclForbidden`
+    * that are requester's own.
+    *
+    * @param inclUnlistedPagePosts If posts on unlisted pages should be returned or not.
+    */
+  def filterMaySeeAddPages(requester: Opt[Pat], postsInclForbidden: ImmSeq[Post],
+        inclUnlistedPagePosts: Bo, bookmarksInclForbidden: ImmSeq[Post]): LoadPostsResult = {
 
     val pageIdsInclForbidden = postsInclForbidden.map(_.pageId).toSet
     val pageMetaById = getPageMetasAsMap(pageIdsInclForbidden)
@@ -3509,7 +3737,16 @@ trait PostsDao {
     val pageIds = postsOneMaySee.map(_.pageId).distinct
     val pageStuffById = getPageStuffById(pageIds) ; COULD_OPTIMIZE // reuse pageMetaById
 
-    LoadPostsResult(postsOneMaySee, pageStuffById)
+    // But don't add pages for any of the bookmarks. If the requester may see those pages,
+    // they have been added already, since the bookmarked posts got loaded together with
+    // the bookmarks. — There might some bookmark the requester may see but can't
+    // see the bookmarked post (any longer). That's ok, can be good to still have access
+    // to the bookmark in case it has some important notes. [private_orphans]
+
+    LoadPostsResult(postsOneMaySee, pageStuffById,
+          // For now, can only see one's own bookmarks. Maybe later there'll be
+          // *shared* bookmarks, somehow. [own_bookmarks]
+          bookmarks = bookmarksInclForbidden.filter(bm => requester.map(_.id) is bm.createdById))
   }
 
 

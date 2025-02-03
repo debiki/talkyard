@@ -107,6 +107,30 @@ trait WatchbarDao {
   }
 
 
+  def watchbarAddRecentMarkSeen(watchbarBef: BareWatchbar, page: PageMeta,
+          authzCtx: AuthzCtxOnAllWithReqer): BareWatchbar = {
+    val watchbarAft = watchbarBef.tryAddRecentTopicMarkSeen(page) getOrElse {
+      // Watchbar wasn't modified.
+      return watchbarBef
+    }
+
+    // Double check we may see the page(s) we're adding to the watchbar. [WATCHSEC]
+    SEC_TESTS_MISSING // TyT602KRGJG
+    val pageCtx = this.maySeePageUseCacheAndAuthzCtx(page, authzCtx).ifNot { debugCode =>
+        this.context.security.throwIndistinguishableNotFound(debugCode)
+      }
+
+    this.saveWatchbar(authzCtx.theReqer.id, watchbarAft)
+
+    RACE // if somehow happens in two threads at the same time.
+    // [user_watches_pages_pubsub]
+    this.pubSub.userWatchesPages(
+          this.siteId, authzCtx.theReqer.id, watchbarAft.watchedPageIds)
+
+    watchbarAft
+  }
+
+
   /* BUG race conditions, if e.g. saveWatchbar & markPageAsUnreadInWatchbar called at the
   * same time. Could perhaps solve by creating a Watchbar actor that serializes access?
   */

@@ -44,7 +44,11 @@ case class InterestingPosters(
 
 object PageParts {
 
+  // Private comments (e.g. between mods) and people's bookmarks aren't visible to others.
+  // Their post nrs are <= -1001, so there's a quick way to find all not-private page parts.
   val MaxPrivateNr: i32 = -1001
+  val MinPublicNr : i32 = 0  // for now. But the title nr will change from 0 to -1?
+  // (Values -1 ... -1000 are reserved, sort of.)
 
   // Letting the page body / original post be number 1 is compatible with Discourse.
   // COULD change to TitleNr = -1. That'd *reduce bug risk* because right now,
@@ -299,7 +303,6 @@ abstract class PageParts {
   }
 
   def allPosts: Vec[Post]
-  def activePosts: Vec[Post] = allPosts.filter(_.isVisible)
 
   def postByNr(postNr: PostNr): Option[Post] = postsByNr.get(postNr)
   def postByNr(postNr: Option[PostNr]): Option[Post] = postNr.flatMap(postsByNr.get)
@@ -392,10 +395,12 @@ abstract class PageParts {
   }
 
 
+  // (Maybe exclude bookmarks?  Currently [bookmarks_filtered_out] elsewhere)
   def childrenSortedOf(postNr: PostNr): immutable.Seq[Post] =
     childrenSortedByParentNr.get(postNr).map(_.childsSorted) getOrElse Nil
 
 
+  // (Exclude bookmarks?  Currently [bookmarks_filtered_out] elsewhere)
   def descendantsOf(postNr: PostNr): immutable.Seq[Post] = {
     val childs = childrenSortedOf(postNr)
     val pending = ArrayBuffer[Post](childs: _*)

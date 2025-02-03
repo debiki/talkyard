@@ -105,6 +105,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   def theRequester: Participant = theUser
   def theReqer: Pat = theUser  // shorter, better
   def reqr: Pat = theUser  // better
+  def anyReqr: Opt[Pat] = user
 
   def anyAliasPat: Opt[WhichAliasPat] =
     die("TyEUSINGALIAS", "Cannot use an anonym or pseudonym when doing this")

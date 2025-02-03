@@ -47,7 +47,8 @@ let doNavigate: (url: St) => Vo = function(url: St) {
 export const ExtReactRootNavComponent = createReactClass({
   displayName: 'ExtReactRootNavComponent',
 
-  UNSAFE_componentWillMount: function() {
+  getInitialState: function() {
+    // Just init doNavigate(), not using any state.
     doNavigate = (url: St): V | true => {
       // this.props.location is made available by ReactRouter — we should be
       // wrapped in a Router(..., Routes( ... )) component.
@@ -72,12 +73,16 @@ export const ExtReactRootNavComponent = createReactClass({
       }
 
       // We can single-page-navigate without any page reload.
+      // @ifdef DEBUG
+      logD(`ExtReactRootNavComponent.getInitialState: history.push(${localPath})`);
+      // @endif
       this.props.history.push(localPath);
       return true;
 
       // (Now, ReactRouter will mount new routes and components — and they'll
       // typically fetch json from the server.)
     }
+    return null;
   },
 
   render: function() {
@@ -140,14 +145,28 @@ export function reactRouterLinkifyTopHeaderLinks() {
 }
 
 
+let _processedAll = false;
+
 export function processPosts(startElemId?: string) {
   const startElemSelector = startElemId ? '#' + startElemId : undefined;
-  processTimeAgo(startElemSelector);
+
+  // On page load, we process all posts once, to convert the server's cached ISO dates
+  // to time-ago, e.g. "5 hours ago". But that's needed just once, because after we've
+  // hydrated the html, we generate time-ago times directly instead. [hydrate_done]
+  if (!_processedAll) {
+    processTimeAgo(startElemSelector);
+  }
+
   hideShowCollapseButtons();
   addCanScrollHintsSoon();
   makeMentionsInEmbeddedCommentsPointToTalkyardServer();
   if (talkyard.postElemPostProcessor) {
     talkyard.postElemPostProcessor(startElemId || 't_PageContent');
+  }
+
+  // If no specific elem, we've processed all.
+  if (!startElemId) {
+    _processedAll = true;
   }
 }
 

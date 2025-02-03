@@ -99,6 +99,10 @@ export const MyMenuContent = createFactory({
     // especially on mobile so won't need to scroll up.
     const extraViewAllNotfsOrClear = me.notifications.length <= 10 ? null :
         viewAllNotfsOrClear;
+
+    // UX BUG report [ios_bugs] [ios_notf_list_bug]: On a *real* iPhone, Safari (& Chrome),
+    // one can't scroll down in the notification list, although works in an emulator.
+    // Temp workaround: Make list shorter, if iOS? And notification page pagination.
     const notfsItems = me.notifications.map((notf: Notification) =>
         MenuItemLink({ key: notf.id, to: linkToNotificationSource(notf),
             className: notf.seen ? '' : 'esNotf-unseen' },
@@ -107,11 +111,11 @@ export const MyMenuContent = createFactory({
 
     // ------- Stop impersonating
 
-    let isViewingAsHint;
-    let stopImpersonatingMenuItem;
-    let notYourMenuHint;
-    let impersonationStuffDivider;
-    let viewAsOtherItem;
+    let isViewingAsHint: St | U;
+    let stopImpersonatingMenuItem: RElm | U;
+    let notYourMenuHint: RElm | U;
+    let impersonationStuffDivider: RElm | U;
+    let viewAsOtherItem: RElm | U;
 
     if (store.isImpersonating) {
       isViewingAsHint = store.isViewingAs
@@ -136,12 +140,13 @@ export const MyMenuContent = createFactory({
 
     // ------- The current user
 
-    let viewProfileLogOutMenuItem;
-    let viewUsersOrGroups;
-    let viewDraftsAndBookmarks;
-    let myStuffDivider;
-    let unhideHelpMenuItem;
-    let showAnnouncementsMenuItem;
+    let viewProfileLogOutMenuItem: RElm | U;
+    let viewUsersOrGroups: RElm | U;
+    let viewDraftsAndBookmarks: RElm | U;
+    let myStuffDivider: RElm | U;
+    let unhideHelpMenuItem: RElm | U;
+    let showAnnouncementsMenuItem: RElm | U;
+
     if (me.isLoggedIn) {
       // If is admin, show the logout button on the same line as the "View profile" link,
       // because then there're admin links above, and lots of space for the  X close-menu button.
@@ -158,7 +163,10 @@ export const MyMenuContent = createFactory({
       const isMemberOfCustomGroup = _.some(me.myGroupIds, id => id >= LowestAuthenticatedUserId);
       viewUsersOrGroups = !isStaff(me) && !isMemberOfCustomGroup ? null :
           MenuItemsMany({},
-            LinkUnstyled({ to: GroupsRoot, id: 'te_VwGrps' }, t.mm.ViewGroups)),
+            LinkUnstyled({ to: GroupsRoot, id: 'te_VwGrps' }, t.mm.ViewGroups),
+            // Good with a users link too; someone didn't find the users list.
+            isStaff(me) && LinkUnstyled({ to: AdminUsersRoot, className: 'c_VwUsrs' },
+                  t.mm.ViewUsers || "View users")), // I18N
 
       viewDraftsAndBookmarks =
           MenuItemsMany({},
@@ -196,8 +204,6 @@ export const MyMenuContent = createFactory({
         viewDraftsAndBookmarks,
         viewAsOtherItem,
         notfsDivider,
-        // UX BUG [ios_bugs] On Safari (& Chrome) on iOS, one cannot scroll down
-        // in the notifications list.
         viewAllNotfsOrClear,
         notfsItems,
         extraViewAllNotfsOrClear,

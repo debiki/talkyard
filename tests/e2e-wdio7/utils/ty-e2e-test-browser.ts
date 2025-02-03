@@ -1472,6 +1472,28 @@ export class TyE2eTestBrowser {
     }
 
 
+    /// On chat pages, comments are lazy-loaded when scrolling upwards (or downwards).
+    /// But then, when a comment does not yet exist, how can we scroll towards it?
+    /// By scrolling towards *another* selector that's always present.
+    ///
+    /// Or is it better to specify a scroll *direction*, and after each scroll step,
+    /// poll & check if the elem appeared?
+    /// Is there any risk that we scroll too fast, scroll past the elem?
+    ///
+    async scrollTowardsUntilAppears(towardsSel: St, appearsLaterSel: St): Pr<V> {
+      await this.waitUntil(async (): Pr<Bo> => {
+        // The chat top & bottom have visibility: hidden, and maybe that's the case for
+        // most scroll-towards selectors, since they aren't the "interesting" thing?
+        await this._real_scrollIntoViewInPageColumn(towardsSel, { waitForVisible: false });
+        const isVis = await this.isVisible(appearsLaterSel);
+        return isVis;
+      }, {
+        message: `Scrolling towards: ${towardsSel}  until appears: ${
+                  appearsLaterSel} ...`,
+      });
+    }
+
+
     async scrollIntoViewInPageColumn(selector: St) {   // RENAME to  scrollIntoView
       dieIf(!selector, '!selector [TyE05RKCD5]');
 
@@ -1510,9 +1532,10 @@ export class TyE2eTestBrowser {
     }
 
 
-    async _real_scrollIntoViewInPageColumn(selector: St) { // RENAME to _scrollIntoViewInPageColumn
+    async _real_scrollIntoViewInPageColumn(selector: St, ps: { waitForVisible?: false } = {}) { // RENAME to _scrollIntoViewInPageColumn
       dieIf(!selector, '!selector [TyE5WKT02JK4]');
-      await this.waitForVisible(selector);
+      if (ps.waitForVisible === false) await this.waitForExist(selector);
+      else await this.waitForVisible(selector);
       let lastScrollY = await this.getPageScrollY();
       for (let i = 0; i < 60; ++i) {   // try for a bit more than 10 seconds
         await this.#br.execute(function(selector) {
@@ -3081,21 +3104,19 @@ export class TyE2eTestBrowser {
 
     _pageNotFoundOrAccessDenied = 'Page not found, or Access Denied';
 
-    /* CLEAN_UP  byBrowser probably doesn't work? if so,  REMOVE this.
     // Also see this.#br.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
     async assertWholePageHidden() {
-      let resultsByBrowser = byBrowser(await this.#br.getPageSource());
-      _.forOwn(resultsByBrowser, (text: any, browserName) => {
-        if (settings.prod) {
-          tyAssert.includes(text, this._pageNotFoundOrAccessDenied);
-        }
-        else {
-          tyAssert.includes(text, 'EdE0SEEPAGEHIDDEN_');
-        }
-      });
+      const text = await this.#br.getPageSource();
+      if (settings.prod) {
+        tyAssert.includes(text, this._pageNotFoundOrAccessDenied);
+      }
+      else {
+        tyAssert.includes(text, 'EdE0SEEPAGEHIDDEN_');
+      }
     }
 
 
+    /*
     // Also see this.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
     async assertMayNotSeePage() {
       let resultsByBrowser = byBrowser(await this.#br.getPageSource());
@@ -3882,10 +3903,11 @@ export class TyE2eTestBrowser {
         });
       },
 
-      waitUntilNumUnreadTopics: async (num: number) => {
-        assert.ok(num > 0, 'TyE0578WNSYG');
-        await this.waitForAtLeast(num, '.esWB_T-Unread');
-        await this.assertExactly(num, '.esWB_T-Unread');
+      waitUntilNumUnreadTopics: async (ps: HowMany) => {
+        await this.waitUntil(async () => {
+          const num = await this.watchbar.numUnreadTopics();
+          return isOkMany(num, ps);
+        });
       },
 
       goToTopic: async (title: St, opts: { isHome?: true, shouldBeUnread?: Bo } = {}) => {

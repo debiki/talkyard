@@ -197,8 +197,12 @@ class SiteDao(
   REFACTOR // rename to anyPageDao and return a Some(PageDao) with PageMeta pre-loaded
   // if the page exist, otherwise None? — If callers "always" want a PageMeta.
   COULD_OPTIMIZE // get loadWholeSiteSettings(tx) from cache too?
-  def newPageDao(pageId: PageId, tx: SiteTransaction, useMemCache: Bo = false  ): PageDao =
-    PageDao(pageId, loadWholeSiteSettings(tx), tx, if (useMemCache) Some(this) else None)
+  def newPageDao(pageId: PageId, tx: SiteTransaction,
+          whichPosts: WhichPostsOnPage = WhichPostsOnPage.OnlyPublic(activeOnly = false),
+          useMemCache: Bo = false)
+          : PageDao =
+    PageDao(pageId, loadWholeSiteSettings(tx),
+          tx, if (useMemCache) Some(this) else None, whichPosts)
 
   REFACTOR // Change textAndHtmlMaker to maketextAndHtmlMaker(pageType: PageType)  Edit: Also incl page id  [ln_pv_az]
   // which automatically knows the right embeddedOriginOrEmpty and followLinks etc,

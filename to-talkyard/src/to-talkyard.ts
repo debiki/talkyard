@@ -82,7 +82,7 @@ Usage:
   First convert the Disqus (or WordPress, later) export file
   to Talkyard JSON format:
 
-      nodejs to-talkyard/dist/to-talkyard/src/to-talkyard.js \\
+      node to-talkyard/dist/to-talkyard/src/to-talkyard.js \\
           --disqusXmlExportFile path/to/file.xml \\
           --writeTo disqus-to-talkyard.typatch.json \\
           --skipLocalhostAndNonStandardPortComments \\
@@ -95,7 +95,7 @@ Usage:
   Thereafter you can import the JSON file:  (and change the --sendTo server
   address to your Talkyard site's address)
 
-      nodejs to-talkyard/dist/to-talkyard/src/to-talkyard.js \\
+      node to-talkyard/dist/to-talkyard/src/to-talkyard.js \\
           --talkyardJsonPatchFile disqus-to-talkyard.typatch.json  \\
           --sendTo https://your-talkyard-site.example.com  \\
           --sysbotApiSecret 'THE_SECRET_YOU_COPIED'

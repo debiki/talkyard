@@ -114,7 +114,7 @@ class StaleStuff {
 
   def addPagesWithVisiblePostsBy(patIds: Set[PatId], tx: SiteTx): U = {
     val _200k = 200 * 1000
-    val pageIds: Set[PageId] = tx.loadPageIdsWithVisiblePostsBy(patIds, limit = _200k)
+    val pageIds: Set[PageId] = tx.loadPageIdsWithPublicActivePostsBy(patIds, limit = _200k)
     if (pageIds.size < _200k) {
       addPageIds(pageIds, pageModified = false, bylinesStale = true)
     }

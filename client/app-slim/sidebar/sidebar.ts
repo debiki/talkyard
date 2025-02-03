@@ -37,6 +37,7 @@ const ModalDropdownButton = utils.ModalDropdownButton;
 
 // COULD UX RESPONSIVE: add some screen/window/widget width or size state to some React store somehow. [6KP024]
 // Use outerWidth, it won't force a layout reflow.
+// [dupl_comts_list_code]
 const smallWindow = Math.min(window.outerWidth, window.outerHeight) < 500;
 const windowWideEnoughForTabButtons = window.outerWidth > 1010;
 
@@ -59,6 +60,23 @@ interface ContextbarState {
   commentsType: WhichPanel
   curPostNr?: PostNr
   adminGuide?: RElm
+  // For the current page only:
+  commentsFound: CommentsFound
+  // These includes bookmarks from all pages:
+  bookmarkedPosts?: PostWithPage[]
+  bookmarks?: Post[]
+}
+
+
+interface CommentsFound {
+  unread?: Post[]
+  recent?: Post[]
+  // Bookmarks not already in the sidebar bookmark list:
+  // RENAME to newBookmarks  and  newlyBookmarkedPosts?
+  bookmarks?: Post[]
+  bookmarkedPosts?: Post[]
+  // But this is total num bookmarks on the current page:
+  numBookmarks?: Nr
 }
 
 
@@ -109,25 +127,38 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       store: store,
       lastLoadedOnlineUsersAsId: null,
       commentsType: commentsType,
+      commentsFound: {},
       // showPerhapsUnread: false,
     };
     return state;
   },
 
   onChange: function() {
+    // This'll run if any bookmark is created or edited, [save_edit_bookmark], and,
+    // COULD_OPTIMIZE, for lots of other unrealted reasons that we'd rather ignore. Solve by:
+    // REFACTOR Rewrite to a React hook instead, and use  useStoreEvent().  Or, include the
+    // store in the emit()  — then, we can easily ignore all off-topic things. And also
+    // handle [bookmark_edits_and_updates], BUG: right now ignored.
+    const state: ContextbarState = this.state;
     const newStore: Store = debiki2.ReactStore.allData();
+    const page: Page = newStore.currentPage;
+    const commentsFound = !isPageWithComments(page.pageRole) ? {} :
+            // This finds only missing bookmarks, won't duplicate those in the sidebar alraedy.
+            this.findComments(newStore);
+    const bookmarks = (
+            arr_concat(commentsFound.bookmarks, state.bookmarks)
+                .sort(posts_sortNewFirst));
     this.setState({
       store: newStore,
+      commentsFound,
+      bookmarks,
+      bookmarkedPosts: arr_concat(commentsFound.bookmarkedPosts, state.bookmarkedPosts),
     } as ContextbarState);
     this.maybeLoadOnlineUsers(newStore);
   },
 
   showRecent: function() {
     this.setState({ commentsType: 'Recent' } as ContextbarState);
-    setTimeout(() => {
-      if (this.isGone) return;
-      processTimeAgo('.esCtxbar_list')
-    });
   },
 
   /*
@@ -185,6 +216,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       putInLocalStorage(
           'showAdminGuide', state.commentsType === 'AdminGuide' ? 'true' : 'false');
     }
+    this.loadBookmarksIfNeeded();
     // And:
     // if is-2d then: this.updateSizeAndPosition2d(event);
   },
@@ -208,6 +240,34 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     this.setState({ lastLoadedOnlineUsersAsId: store.me.id } as ContextbarState);
     // Skip for now, because now I'm including all online users are included in the page html.
     //Server.loadOnlineUsers();
+  },
+
+  loadBookmarksIfNeeded: function() {
+    const state: ContextbarState = this.state;
+    const store: Store = state.store;
+    const me: Myself = store.me;
+    if (!me.isAuthenticated)
+      return;
+    if (state.commentsType !== 'Starred')
+      return;
+
+    if (!this.loadedBookmarks) {
+      this.loadedBookmarks = 111; // about to load. Later: [React19_actions]
+      // Load bookmarks, for current page first (`store.currentPage`), then recent first.
+      // For now, we're probably just loading all bookmarks.  [how_load_bookmarks]
+
+      Server.loadPostsByAuthor(me.id, 'Bookmarks', false /* onlyOpen */,
+              (posts: PostWithPage[], bookmarks: Post[]) => {
+        this.loadedBookmarks = 222; // loaded
+        const store2: Store = this.state.store;
+        if (this.isGone || store2.me.id !== me.id)
+          return;
+
+        const bookmarksNewestFirst = [...bookmarks].sort(posts_sortNewFirst);
+        // Since we're loading all bookmarks, it's ok to overwrite the current bookmark state.
+        this.setState({ bookmarkedPosts: posts, bookmarks: bookmarksNewestFirst });
+      });
+    }
   },
 
   updateSizeAndPosition2d: function(event) {
@@ -253,13 +313,19 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     ReactActions.setPagebarOpen(false);
   },
 
-  findComments: function() {
+  findComments: function(store: Store): CommentsFound {
     const state: ContextbarState = this.state;
-    const store: Store = state.store;
     const page: Page = store.currentPage;
-    const unreadComments = [];
-    let recentComments = [];
-    const starredComments = [];
+    const unreadComments: Post[] = [];
+    const recentComments: Post[] = [];
+
+    // Although we loaded all bookmarks when opening the sidebar, we might have added new
+    // bookmarks via another browser tab or computer. To make sure all bookmarks on
+    // the current page are included in the sidebar, we'll look at all posts & bookmarks
+    // shown on the current page, and add any new to the sidebar.
+    const bookmarkedPosts: PostWithPage[] = [];
+    const bookmarks: PostWithPageId[] = [];
+    let numBookmarks = 0;
 
     // Find 1) all unread comments, sorted in the way they appear on the page
     // And 2) all visible comments.
@@ -278,9 +344,43 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       if (isDeleted(post))
         return;
 
-      recentComments.push(post);
-      if (this.isStarred(post.nr)) {
-        starredComments.push(post);
+      // Add to the recent comments list (sorted later).
+      // But the root post (typically the orig post) is older than all others shown; it's
+      // uninteresting to show it in the most recent comments list.
+      if (post.uniqueId !== store.rootPostId)
+        recentComments.push(post);
+
+      // Find any newly added bookmarks, not included in the loadBookmarksIfNeeded() response.
+      for (let bmNr of post.bookmarkNrs || []) {
+        const bmInPage: Post | U = page.postsByNr[bmNr];
+        if (!bmInPage || bmInPage.isPostDeleted) continue;
+
+        numBookmarks += 1;
+
+        // This bookmark not listed in the sidebar?
+        const bmInList = state.bookmarks?.find(b => b.uniqueId == bmInPage.uniqueId);
+        if (!bmInList) {
+          // Page id needed to look up the bookmarked comment. See comment below, and ToDosProps.
+          const bmWithPageId: PostWithPageId = { ...bmInPage, pageId: page.pageId };
+          bookmarks.push(bmWithPageId);
+        }
+
+        // The posts are needed to render the bookmarks. [render_bookms]  We need the
+        // page ide too, since the bookmarked comments are identified via page id + post nr.
+        // However, the server doesn't include the page id (not normally needed), so we'll
+        // add it here.  (Only when loading bookmarks specificaly, is the page id
+        // included by the server. [posts_0_page_json])
+        const postInList = state.bookmarkedPosts?.find(p => p.uniqueId == post.uniqueId);
+        if (!postInList) {
+          const postWithPage: PostWithPage = {
+                ...post,
+                pageId: page.pageId,
+                pageRole: page.pageRole,
+                // The title is plain text. [title_plain_txt]
+                pageTitle: page.postsByNr[TitleNr]?.unsafeSource || "TyE0TTL073",
+              };
+          bookmarkedPosts.push(postWithPage);
+        }
       }
 
       /* Unread? Skip for now, not saved anywhere anyway
@@ -301,8 +401,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       */
     };
 
-    const rootPost = page.postsByNr[store.rootPostId];
-    addRecursively(rootPost.childNrsSorted);
+    addRecursively([store.rootPostId]);
 
     _.each(page.postsByNr, (child: Post) => {
       if (child.postType === PostType.Flat) {
@@ -310,17 +409,16 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       }
     });
 
-    recentComments.sort((a: Post, b: Post) => {
-      // Newest first.
-      if (a.createdAtMs < b.createdAtMs)
-        return +1;
-      if (a.createdAtMs > b.createdAtMs)
-        return -1;
-      return a.nr < b.nr ? +1 : -1;
-    });
-    recentComments = _.take(recentComments, 50);
+    recentComments.sort(posts_sortNewFirst);
+    const lastRecent = _.take(recentComments, 50);
 
-    return { unread: unreadComments, recent: recentComments, starred: starredComments };
+    return {
+          unread: unreadComments,
+          recent: lastRecent,
+          bookmarks,
+          bookmarkedPosts,
+          numBookmarks,
+        } satisfies CommentsFound;
   },
 
   manuallyMarkedAsRead: function(postId: number): boolean {
@@ -330,12 +428,13 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     return !!mark; // any mark means it's been read already.
   },
 
-  isStarred: function(postId: number) {
+  /*
+  isStarred: function(postId: number) {  [bookmark_shapes_colors]
     const state: ContextbarState = this.state;
     const store: Store = state.store;
     const mark = store.me.myCurrentPageData.marksByPostId[postId];
     return mark === BlueStarMark || mark === YellowStarMark;
-  },
+  }, */
 
   onPostClick: function(post: Post) {
     this.focusPost(post);
@@ -344,9 +443,17 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   focusPost: function(post: Post) {
     const state: ContextbarState = this.state;
     const store: Store = state.store;
+
+    // Do before any SPA navigation below, or the wrong bookmark gets highlighted afterwards.
     this.setState({
       curPostNr: post.nr
     } as ContextbarState);
+
+    if (post.pageId && post.pageId !== store.currentPageId) {
+      page.Hacks.navigateTo(linkToPost(post as PostWithPageId));
+      // SPA-navigation, so we'd continue below unless:
+      return;
+    }
     page.addVisitedPosts(null, post.nr);
     ReactActions.loadAndShowPost(post.nr);
     if (store.shallSidebarsOverlayPage) {
@@ -361,8 +468,11 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     const page: Page = store.currentPage;
     const me: Myself = store.me;
 
+    if (!store.isContextbarOpen)
+        return null;
+
     //var minimapProps = _.assign({ ref: 'minimap' }, store);
-    const commentsFound = isPageWithComments(page.pageRole) ? this.findComments() : null;
+    const commentsFound: CommentsFound = state.commentsFound;
     const isChat = page_isChat(page.pageRole);
     const isStaffOrMyPage = isStaff(me) || store_thisIsMyPage(store);
 
@@ -379,7 +489,13 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     const numOnlineTextSlash = usersHere.onlyMeOnline ? t.you + ' / ' : usersHere.numOnline + "/";
 
     //var unreadBtnTitle = commentsFound ? 'Unread (' + commentsFound.unread.length + ')' : null;
-    const starredBtnTitle = commentsFound ? `${t.Bookmarks} (${commentsFound.starred.length})` : null;
+
+    const bookmarksBtnTitle = t.Bookmarks + (commentsFound.numBookmarks
+            // "N here" means "N bookmarks on this page". (That's interesting, though, & quick.)
+            ? ` (${commentsFound.numBookmarks} here)`  // I18N
+            // Maybe show "Bookmarks (123 in total)" where 123 is one's total num bookmarks? Or,
+            // let's skip, forever. Not so interesting, compared to the work & e2e tests needed.
+            : '');
 
     const specificPage = usersHere.areChatChannelMembers || usersHere.areTopicContributors;
     const anyUsersBtnTitle: St | N = (
@@ -405,32 +521,47 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     let starredClass = '';
     let usersClass = '';
     let adminGuideActiveClass = '';
-    let listItems: any[];
+    let listItems: any; // [];
+    let panelClass = '';
 
-    // (If the page type was just changed to a page without comments, the Recent or Bookmarks
-    // tab might be open, although commentsFound is now null (40WKP20) )
+    // (If the page type was just changed to a page without comments, the Recent or Unread
+    // tab might be open, although commentsFound is now {}. (40WKP20) )
     switch (state.commentsType) {
       case 'Recent':
-        let recentComments = commentsFound ? commentsFound.recent : []; // see (40WKP20) above
+        const recentComments = commentsFound.recent || []; // see (40WKP20) above
         title = recentComments.length ? t.cb.RecentComments : t.cb.NoComments;
         recentClass = ' active';
+        panelClass = 'c_Cb_P-Recent';
         listItems = makeCommentsContent(recentComments, state.curPostNr, store,
             this.onPostClick);
         break;
       /*
       case 'Unread':
-        let unreadComments = commentsFound ? commentsFound.unread : []; // see (40WKP20) above
+        const unreadComments = commentsFound.unread || []; // see (40WKP20) above
         title = unreadComments.length ?
             'Unread Comments: (click to show)' : 'No unread comments found.';
         unreadClass = ' active';
-        listItems = ...
+        listItems = makeCommentsContent(unreadComments, state.curPostNr, store,
+            this.onPostClick);
         break; */
       case 'Starred':
+        // [to_paginate]
         title = t.cb.YourBookmarks;
         starredClass = ' active';
-        let starredComments = commentsFound ? commentsFound.starred : []; // see (40WKP20) above
-        listItems = makeCommentsContent(starredComments, state.curPostNr, store,
-            this.onPostClick);
+        panelClass = 'c_Cb_P-ToDos';
+
+        // These are bookmarks from the current page and other pages too.
+        // Later: Search & sort fields [bookmark_search_sort].
+        listItems = !state.bookmarks ? r.p({}, t.Loading) :
+              morebundle.ToDos({ bookmarkedPosts: state.bookmarkedPosts,
+                  bookmarks: state.bookmarks, curPostNr: state.curPostNr, store,
+                  onPostClick: this.onPostClick,
+                  reorderThisBeforeThat: (todoA, todoB) => {
+                    // Later. [order_bokms]
+                    const ixA = state.bookmarks.indexOf(todoA);
+                    const ixB = state.bookmarks.indexOf(todoB);
+                    // ReactActions.alterBookmarks()  ??
+                  }});
         break;
       case 'Users':
         let numOnlineStrangers: Nr | N = store.numOnlineStrangers;
@@ -459,11 +590,13 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
           numOnlineStrangers = null;
         }
         usersClass = ' active';
+        panelClass = 'c_Cb_P-Users';
         listItems = makeUsersContent(store, usersHere.users, store.me.id, numOnlineStrangers);
         break;
       case 'AdminGuide':
         title = t.cb.GettingStartedGuide;
         adminGuideActiveClass = ' active';
+        panelClass = 'c_Cb_P-Guide';
         break;
       default:
         console.error('[DwE4PM091]');
@@ -481,10 +614,9 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       */
     }
     if (state.commentsType === 'Starred') {
-      tipsGuideOrExtraConfig =
+      /* tipsGuideOrExtraConfig =
         r.div({},
-          r.p({}, t.NotImplemented)); /*
-          r.p({}, "You have not bookmarked any comments on this page."),
+          // Old. Now there's a bookmark icon, not a star icon. [bookmark_shapes_colors]
           r.p({}, 'To bookmark a comment, click the star in its upper left ' +
             "corner, so the star turns blue or yellow. (You can use these two colors in " +
             'any way you want.)'));
@@ -510,10 +642,11 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       tipsGuideOrExtraConfig = state.adminGuide || r.p({}, t.Loading);
     }
 
-    let recentButton;
-    let starredButton;
-    let unreadButton;
-    let adminGuideButton;
+    let recentButton: RElm | N;
+    let starredButton: RElm | N;
+    let unreadButton: RElm | N;
+    let adminGuideButton: RElm | N;
+
     if (commentsFound) {
       if (windowWideEnoughForTabButtons) {
         recentButton = isChat ? null :
@@ -522,16 +655,29 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
         //unreadButton =
         // r.button({ className: 'btn btn-default' + unreadClass, onClick: this.showUnread },
         //   unreadBtnTitle);
-        starredButton =
-            r.button({ className: 'btn btn-default' + starredClass, onClick: this.showStarred },
-              starredBtnTitle);
       }
       else {
         recentButton = isChat ? null : MenuItem({ onClick: this.showRecent }, t.Recent);
         //unreadButton = MenuItem({ onClick: this.showUnread }, "Unread"),
-        starredButton = MenuItem({ onClick: this.showStarred },
-          starredBtnTitle);
       }
+    }
+
+    let skipBookmarks = true;
+    // @ifdef DEBUG
+    skipBookmarks = false;
+    // @endif
+
+    if (skipBookmarks) {
+      starredButton = null;
+    }
+    else if (windowWideEnoughForTabButtons) {
+      starredButton =
+          r.button({ className: 'btn btn-default' + starredClass, onClick: this.showStarred },
+              bookmarksBtnTitle);
+    }
+    else {
+      starredButton = MenuItem({ onClick: this.showStarred },
+              bookmarksBtnTitle);
     }
 
     if (me.isAdmin) {
@@ -616,7 +762,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
         r.div({ className: 'esCtxbar_btns', style: dimCommentsStyle  },
           CloseSidebarButton({ onClick: this.closeSidebar }),
           tabButtons),
-        r.div({ className: 'dw-comments esCtxbar_list' },
+        r.div({ className: 'dw-comments esCtxbar_list ' + panelClass },
           helpMessageBoxTree,
           helpMessageBoxFour,
           r.div({ style: dimCommentsStyle },
@@ -632,6 +778,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
 });
 
 
+// [dupl_comts_list_code]
 function makeCommentsContent(comments: Post[], currentPostNr: PostNr, store: Store, onPostClick) {
   const abbreviateHowMuch = smallWindow ? 'Much' : 'ABit';
   return comments.map((post: Post, index) => {
@@ -745,6 +892,12 @@ function CloseSidebarButton(props) {
   return (
       r.button({ className: 'esCtxbar_close esCloseCross', onClick: props.onClick,
           title: t.cb.CloseShortcutS }));
+}
+
+
+function posts_sortNewFirst(a: Post, b: Post) {
+  // Note: b, a  not  a, b  so we'll get newst (not oldest) first.
+  return postAppearedBefore(b, a);
 }
 
 

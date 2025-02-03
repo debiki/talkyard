@@ -102,6 +102,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
         val pageRenderParams = PageRenderParams(
               // (Later, pass a discProps.renderProps — all relevant disc props in one line?)
               comtOrder = discProps.comtOrder,
+              comtOffset = None,
               widthLayout = if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium,
               isEmbedded = true,
               origin = request.origin,

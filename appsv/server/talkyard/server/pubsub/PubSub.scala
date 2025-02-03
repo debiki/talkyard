@@ -24,7 +24,7 @@ import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.dao.{RedisCache, RedisCacheAllSites, SiteDao}
 import debiki.{Globals, JsonMaker}
-import play.api.libs.json.{JsArray, JsNull, JsValue, Json}
+import play.api.libs.json.{JsArray, JsNull, JsValue, JsNumber, Json}
 import redis.RedisClient
 import scala.collection.mutable
 import scala.collection.immutable
@@ -604,21 +604,44 @@ class PubSubActor(val globals: Globals) extends Actor {
     message match {
       case patchMessage: StorePatchMessage =>
 
+        // ----- Check for bugs
+
         // Make sure we [dont_leak_true_ids]. This message gets sent to different people,
         // then, no aliases' true ids should be included.
         val json: JsValue = patchMessage.json
         val trueIds = (json \\ JsX.AnonForIdFieldName)
         if (trueIds.nonEmpty) {
-          logger.error(s"""True ids in WebSocket StorePatchMessage message, I won't send.
-                The message: ${json.toString}  [TyEIDLEAKWS]""")
+          logger.error(o"""True ids in WebSocket StorePatchMessage message, I won't send.
+                 [TyEWSLEAK_TRUEID]  The message: ${json.toString}""")
           return
         }
+
+        // Make sure we [dont_leak_private_posts]. They have negative nrs, so, shouldn't
+        // be any such nrs in the patch.  (There's currently no other "nr" fields
+        // in any Ty json, especially not that can be < PageParts.MinPublicNr.)
+        val postNrs: collection.Seq[JsValue] = (json \\ JsX.PostNrIdFieldName)
+        postNrs foreach {
+          case jsNr: JsNumber =>
+            assert(PageParts.MaxPrivateNr < PageParts.MinPublicNr)
+            if (jsNr.value < PageParts.MinPublicNr) {
+              logger.error(o"""Private post nr: ${jsNr.value} in WebSocket
+                     StorePatchMessage message, I won't send.  [TyEWSLEAK_PRIVNR]
+                     The message: ${json.toString}""")
+              return
+            }
+            // Else: Fine.
+          case x =>
+            logger.error(o"""Number '$x' is not a number, it's a: ${classNameOf(x)} [TyEWS_NRNAN]
+                  The message: ${json.toString}""")
+            return
+        }
+
+        // ----- Access control
 
         val pageId = patchMessage.toUsersViewingPageId
         val userIdsWatching = usersWatchingPage(
               patchMessage.siteId, pageId = pageId).filter(_ != byId)
 
-        // Access control.
         val usersMayMaybeSee = userIdsWatching.flatMap(siteDao.getUser)
         // (Shouldn't be any non-existing users — deleting database row not implemented.)
         val (usersWhoMaySeePage, usersMayNot) = usersMayMaybeSee partition { user =>
@@ -640,6 +663,8 @@ class PubSubActor(val globals: Globals) extends Actor {
                 may not see page [TyM405WKTD2]""")
           updateWatchedPages(message.siteId, user.id, stoppedWatchingPageId = Some(pageId))
         }
+
+        // ----- Mark unread & send
 
         usersWhoMaySeePage foreach { user =>
           siteDao.markPageAsUnreadInWatchbar(user.id, pageId = pageId)

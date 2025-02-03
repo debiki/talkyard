@@ -42,8 +42,10 @@ export const InspectPanel = React.createFactory<AdminPanelProps>(
   const myId = React.useRef(me.id);
   const [inspectForumResp, setResp] = React.useState<InspectForumResp>(null);
 
-  const groups: GroupVb[] = inspectForumResp?.groupsMaySee || [];
-  const cats: Cat[] = inspectForumResp?.catsMaySee || [];
+  const groups0: GroupVb[] = inspectForumResp?.groupsMaySee || [];
+  const groups = [...groups0].sort((a, b) => a.id - b.id); // sort ascending
+  const cats0: Cat[] = inspectForumResp?.catsMaySee || [];
+  const cats: Cat[] = [...cats0].sort((a, b) => a.position - b.position);
   const allPerms: PermsOnPage[] = inspectForumResp?.allPerms || [];
 
 

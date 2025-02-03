@@ -2046,13 +2046,14 @@ trait UserDao {
 
   /** Returns all users on the page. No need to filter may-see-profile or anything,
     * because if you can see a page, you can also see all usernames participating
-    * on that page. — Except for private comments, later.
+    * on that page.  Except for private comment authors. Or, could include authors
+    * of private comments the requester may see [incl_priv_authors], but let's wait.
     */
   def listUsernamesOnPage(pageId: PageId): ImmSeq[UserBr] = {
     // See also: this.loadUserMayListByPrefix().
-    // Later, [priv_comts], [dont_list_bookmarkers]: Exclude users who have posted
-    // private comments or bookmarks only.
-    readOnlyTransaction(tx => {
+    // We exclude users who have posted private comments or bookmarks only, when
+    // finding usernames, see: [dont_list_bookmarkers].
+    readTx(tx => {
         COULD_OPTIMIZE // could cache, + maybe use 'limit'?
         tx.listUsernamesOnPage(pageId)
     })
