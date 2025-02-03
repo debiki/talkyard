@@ -134,7 +134,7 @@ val appDependencies = Seq(
   Dependencies.Libs.scalaTestPlusPlay,
 
   // SalaFix plugin, https://github.com/scala/scala-collection-compat/releases [scala_2_13]
-  "org.scala-lang.modules" %% "scala-collection-compat" % "2.11.0")
+  "org.scala-lang.modules" %% "scala-collection-compat" % "2.13.0")
 
 
 val main = (project in file("."))
