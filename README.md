@@ -306,13 +306,21 @@ That repo, squashed, is in this repo.
 License
 -----------------------------
 
-Copyright (c) 2010-2024 Kaj Magnus Lindberg and contributors.
+Copyright (c) 2010-2025 Kaj Magnus Lindberg and contributors.
 
-Talkyard is multi licensed under 1) AGPLv3 or later, see LICENSE.txt, and
-2) Business Source License v1.1, with change license GPLv2 or later, and
-change date 2029-01-01 (we bump the change date yearly,
-so it's between 4 and 5 years into the future) — see LICENSE-BUSLv1.1.txt.
-And 3) possibly other licenses.
+Talkyard is licensed under AGPLv3 or later, see LICENSE.txt.
+
+<!-- Later, add this, but first ask someone if the wording is ok:
+Starting on 2032-01-01, this specific version of Talkyard (see ./version.txt)
+is also licensed under GPLv2 or later. That is, AGPLv3+ until year 2032, thereafter
+dual licensed under AGPLv3+ and GPLv2+.
+
+Note:
+  - We try to bump the above GPLv2 date each year, so it's 6–7 years in the future.
+  - After the above GPLv2+ date, you can *not* redistribute Talkyard under GPLv2
+    — Talkyard includes Apache2 software and Apache2 is incompatible with GPLv2.
+    You can, however, after the GPLv2+ date, redistribute Talkyard under GPLv3+.
+-->
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
