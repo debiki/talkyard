@@ -844,7 +844,7 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
           actualNewPage.numPostsTotal mustBe 3 // title + body + reply
           actualNewPage.lastApprovedReplyAt mustBe Some(Page333Reply.createdAt)
           actualNewPage.lastApprovedReplyById mustBe Some(merrylMember.id)
-          actualNewPage.categoryId mustBe 'defined
+          actualNewPage.categoryId mustBe Symbol("defined")
           actualNewPage.frequentPosterIds mustBe Vector.empty  // not updated until there're 2 replies
 
 
