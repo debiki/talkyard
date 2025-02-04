@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import scala.collection.Seq
 import com.google.{common => guava}
 import java.net.InetAddress
 import java.{net => jn, util => ju}

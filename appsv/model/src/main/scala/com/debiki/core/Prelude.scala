@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import scala.collection.Seq
 import org.apache.commons.codec.binary.Hex
 
 import java.{util => ju}

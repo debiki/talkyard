@@ -17,6 +17,7 @@
 
 package debiki
 
+import scala.collection.Seq
 import akka.actor._
 import akka.pattern.gracefulStop
 import com.codahale.metrics

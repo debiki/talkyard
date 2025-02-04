@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import scala.collection.Seq
 import java.{util => ju}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must

@@ -17,6 +17,7 @@
 
 package talkyard.server.events
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude.MessAborter
 import talkyard.server.JsX._

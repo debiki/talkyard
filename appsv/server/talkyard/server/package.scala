@@ -17,6 +17,7 @@
 
 package talkyard
 
+import scala.collection.Seq
 import com.debiki.core._
 import debiki.Globals
 import play.api.libs.json._

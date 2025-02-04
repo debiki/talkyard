@@ -17,6 +17,7 @@
 
 package talkyard.server.notf
 
+import scala.collection.Seq
 import com.debiki.core
 import com.debiki.core.Prelude._
 import com.debiki.core._

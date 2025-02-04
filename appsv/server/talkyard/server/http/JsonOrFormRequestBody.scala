@@ -17,6 +17,7 @@
 
 package talkyard.server.http
 
+import scala.collection.Seq
 import com.debiki.core.Prelude._
 import debiki.EdHttp._
 import play.api.mvc.{BodyParser, ControllerComponents}

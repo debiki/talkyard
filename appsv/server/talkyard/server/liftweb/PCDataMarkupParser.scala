@@ -27,6 +27,7 @@ package talkyard.server.liftweb
 
 //import common._
 
+import scala.collection.Seq
 import scala.xml.parsing.{ MarkupParser, MarkupHandler, FatalError, ConstructingHandler, ExternalSources }
 import scala.xml.dtd._
 import scala.xml._

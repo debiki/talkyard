@@ -17,6 +17,7 @@
 
 package talkyard.server.sess
 
+import scala.collection.Seq
 import com.debiki.core._
 import debiki.RateLimits
 import debiki.dao.SiteDao

@@ -17,7 +17,7 @@
 
 package debiki
 
-import scala.collection.MapView
+import scala.collection.{MapView, Seq}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController

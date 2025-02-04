@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import scala.collection.Seq
 import com.debiki.core.Prelude._
 import java.{util => ju}
 import scala.collection.immutable

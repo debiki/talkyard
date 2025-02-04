@@ -17,6 +17,7 @@
 
 package talkyard.server.api
 
+import scala.collection.Seq
 import com.debiki.core._
 import debiki.dao.{PagePartsDao, PageStuff, PagesCanSee, SiteDao}
 import controllers.OkApiJson

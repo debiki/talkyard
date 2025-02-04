@@ -17,6 +17,7 @@
 
 package com.debiki.dao.rdb
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.Participant.{LowestNonGuestId, LowestAuthenticatedUserId}

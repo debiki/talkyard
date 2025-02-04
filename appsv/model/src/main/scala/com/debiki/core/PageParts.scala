@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import scala.collection.Seq
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{immutable, mutable}
 import Prelude._

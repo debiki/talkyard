@@ -18,6 +18,7 @@
 
 package debiki.dao
 
+import scala.collection.Seq
 import akka.actor.Actor
 import com.debiki.core
 import com.debiki.core._

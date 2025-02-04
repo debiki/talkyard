@@ -17,6 +17,7 @@
 
 package talkyard.server.search
 
+import scala.collection.Seq
 import com.debiki.core._
 import CompOp.{Eq, Gt, Gte, Lt, Lte}
 import CompVal.{Flt64, Int32, StrKwd}

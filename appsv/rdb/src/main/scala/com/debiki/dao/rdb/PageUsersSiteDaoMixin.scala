@@ -16,6 +16,7 @@
  */
 
 package com.debiki.dao.rdb
+import scala.collection.Seq
 import java.sql.ResultSet
 import com.debiki.core._
 import com.debiki.core.Prelude._

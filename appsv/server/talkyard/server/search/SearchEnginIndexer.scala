@@ -17,6 +17,7 @@
 
 package talkyard.server.search
 
+import scala.collection.Seq
 import akka.actor._
 import com.debiki.core
 import com.debiki.core._

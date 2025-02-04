@@ -17,6 +17,7 @@
 
 package talkyard.server.pubsub
 
+import scala.collection.Seq
 import akka.actor._
 import akka.pattern.ask
 import akka.stream.scaladsl.SourceQueueWithComplete

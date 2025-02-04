@@ -1,5 +1,6 @@
 package talkyard.server.authz
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude.dieIf
 import debiki.EdHttp.{throwForbidden, throwForbiddenIf}

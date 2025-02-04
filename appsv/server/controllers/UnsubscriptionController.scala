@@ -17,6 +17,7 @@
 
 package controllers
 
+import scala.collection.Seq
 import com.debiki.core._
 import debiki.EdHttp._
 import play.api._

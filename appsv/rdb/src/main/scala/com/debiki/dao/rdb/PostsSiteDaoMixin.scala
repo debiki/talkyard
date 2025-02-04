@@ -17,6 +17,7 @@
 
 package com.debiki.dao.rdb
 
+import scala.collection.Seq
 import collection.immutable
 import collection.mutable.ArrayBuffer
 import com.debiki.core._

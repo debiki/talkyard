@@ -29,6 +29,7 @@ package talkyard.server.authn
 
 
 /*
+import scala.collection.Seq
 import java.net.URLEncoder._
 
 import com.mohiva.play.silhouette.api._

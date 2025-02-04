@@ -17,6 +17,7 @@
 
 package controllers
 
+import scala.collection.Seq
 import debiki.dao._
 import com.debiki.core._
 import com.debiki.core.Prelude._

@@ -17,6 +17,7 @@
 
 package com.debiki
 
+import scala.collection.Seq
 import com.debiki.core.Prelude._
 import java.{util => ju}
 import org.apache.commons.validator.routines.EmailValidator

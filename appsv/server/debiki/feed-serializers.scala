@@ -17,6 +17,7 @@
 
 package debiki
 
+import scala.collection.Seq
 import com.debiki.core._
 import java.{io => jio, util => ju}
 import org.jsoup.Jsoup

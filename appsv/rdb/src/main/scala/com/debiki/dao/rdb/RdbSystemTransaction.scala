@@ -17,6 +17,7 @@
 
 package com.debiki.dao.rdb
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import _root_.java.{util => ju}

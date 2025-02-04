@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import scala.collection.Seq
 import java.net.InetAddress
 import java.{util => ju}
 import scala.collection.immutable

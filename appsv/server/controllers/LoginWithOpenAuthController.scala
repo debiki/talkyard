@@ -17,6 +17,7 @@
 
 package controllers
 
+import scala.collection.Seq
 import talkyard.server.authn.OAuth2Settings
 import com.auth0.jwt.{JWT => a0_JWT}
 import com.auth0.jwt.interfaces.{Claim => a0_Claim, DecodedJWT => a0_DecodedJWT}

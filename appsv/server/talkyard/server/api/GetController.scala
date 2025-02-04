@@ -17,6 +17,7 @@
 
 package talkyard.server.api
 
+import scala.collection.Seq
 import com.debiki.core._
 import controllers.OkApiJson
 import debiki.RateLimits

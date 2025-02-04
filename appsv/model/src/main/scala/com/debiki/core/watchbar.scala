@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import scala.collection.Seq
 import com.debiki.core.Prelude._
 import play.api.libs.json._
 import scala.collection.immutable
