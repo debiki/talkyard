@@ -1236,10 +1236,7 @@ class EdSecurity(globals: Globals) {
   @deprecated("Now", "Use the fancy session id instead.")
   private def createSessionId(site: SiteBrief, userId: PatId): SidOk = {
     val now = globals.now()
-    val useridDateRandom =
-         "" + userId +"."+
-         now.millis +"."+
-         (nextRandomString() take 10)
+    val useridDateRandom = s"$userId.${now.millis}.${nextRandomString() take 10}"
 
     // If the site id wasn't included in the hash, then an admin from site A could
     // login as admin at site B, if they have the same user id and username.

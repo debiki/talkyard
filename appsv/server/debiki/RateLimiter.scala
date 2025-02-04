@@ -99,7 +99,7 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
 
     // If authenticated, the user gets his/her own rate limit entry, otherwise s/he
     // has to share resources with everyone on the same ip.
-    val roleIdOrIp = request.user.flatMap(_.anyMemberId).map("" + request.siteLimits.id + "|" + _)
+    val roleIdOrIp = request.user.flatMap(_.anyMemberId).map(s"${request.siteLimits.id}|" + _)
           .getOrElse(request.ip)
     val key = s"$roleIdOrIp|${rateLimits.key}"
 

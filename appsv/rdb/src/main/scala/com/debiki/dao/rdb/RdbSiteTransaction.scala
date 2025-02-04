@@ -228,7 +228,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       }
       else {
         val result = singleRowHandler(rs)
-        dieIf(rs.next(), "DwE6GMY2" + (if (debugCode eq null) "" else "" + ('-') + debugCode))
+        dieIf(rs.next(), "DwE6GMY2" + (if (debugCode eq null) "" else "-" + debugCode))
         Some(result)
       }
     })
