@@ -54,7 +54,8 @@ inThisBuild(List( // [scala_2_13]
   semanticdbEnabled := true,
   semanticdbOptions += "-P:semanticdb:synthetics:on", // make sure to add this
   semanticdbVersion := scalafixSemanticdb.revision,
-  scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
+  // Not needed if upgrading, not cross-building:
+  // scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
 ))
 
 
