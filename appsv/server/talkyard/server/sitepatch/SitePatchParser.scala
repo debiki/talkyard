@@ -235,7 +235,7 @@ case class SitePatchParser(context: TyContext) {
             has type: ${classNameOf(x)}""")
         }
       })
-      Map(emailsAndPrefs: _*)
+      Map(emailsAndPrefs.toSeq: _*)
     }) getOrElse Map.empty
 
     val guests: Seq[Guest] = guestsJson.value.toVector.zipWithIndex map { case (json, index) =>
