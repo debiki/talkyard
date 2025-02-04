@@ -1237,7 +1237,7 @@ class EdSecurity(globals: Globals) {
   private def createSessionId(site: SiteBrief, userId: PatId): SidOk = {
     val now = globals.now()
     val useridDateRandom =
-         userId +"."+
+         "" + userId +"."+
          now.millis +"."+
          (nextRandomString() take 10)
 

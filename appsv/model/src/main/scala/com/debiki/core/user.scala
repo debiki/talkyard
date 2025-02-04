@@ -654,7 +654,7 @@ case object Participant {
     // Let's prefix 'n', could mean "numeric name".
     val usernameNotOnlyDigits =
       if (usernameOkChars.forall(charIsNumOrDotDash))  // [3935RKDD03]
-        ('n' + usernameOkChars).take(Participant.MaxUsernameLength)
+        ("" + ('n') + usernameOkChars).take(Participant.MaxUsernameLength)
       else
         usernameOkChars
 
@@ -883,7 +883,7 @@ sealed trait Pat extends HasInt32Id {
   def usernameOrGuestName: St
 
   def atUsernameOrFullName: St =
-    anyUsername.map('@' + _) orElse anyName getOrElse UnknownUserName
+    anyUsername.map("" + ('@') + _) orElse anyName getOrElse UnknownUserName
 
   final def usernameSpaceOtherName: St =
     (anyUsername.getOrElse("") + " " + anyName.getOrElse("")).trim

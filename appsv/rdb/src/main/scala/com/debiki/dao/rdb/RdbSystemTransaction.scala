@@ -118,7 +118,7 @@ class RdbSystemTransaction(
       }
       else {
         val result = singleRowHandler(rs)
-        dieIf(rs.next(), "TyE6GMY9" + (if (debugCode eq null) "" else '-' + debugCode))
+        dieIf(rs.next(), "TyE6GMY9" + (if (debugCode eq null) "" else "" + ('-') + debugCode))
         Some(result)
       }
     })
