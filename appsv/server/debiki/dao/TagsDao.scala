@@ -102,7 +102,7 @@ trait TagsDao {
 
   def getTagTypesByNamesOrSlugs(namesOrSlugs: Iterable[St]): ImmSeq[Opt[TagType]] = {
     val byX = getAllTagTypesByX()
-    namesOrSlugs.to[Vec] map { nameOrSlug =>
+    namesOrSlugs.to(Vec) map { nameOrSlug =>
       // Maybe allow prefixes 'slug:' or 'name:'?  But what if a tag is named 'slug'?
       // And ':' is also used for ':desc' and ':asc', but that's maybe ok, that's
       // *after* the tag slug or name.  But what if one tag is named 'slug', another 'desc'
@@ -123,7 +123,7 @@ trait TagsDao {
 
   def resolveTypeRefs(refs: Iterable[TypeRef]): ImmSeq[Opt[TagType]] = {
     val byX = getAllTagTypesByX()
-    refs.to[Vec] map {
+    refs.to(Vec) map {
       case ParsedRef.ExternalId(refId) =>
         byX.byRefId.get(refId)
       case ParsedRef.Slug(slug) =>

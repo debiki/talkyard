@@ -228,7 +228,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         results += post
       }
     })
-    results.to[immutable.Seq]
+    results.to(immutable.Seq)
   }
 
 
@@ -435,7 +435,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       if (p.tyype == PostType.Bookmark) bookmarks.append(p)
       else bookmarkedPosts.append(p)
     })
-    (bookmarks.to[Vec], bookmarkedPosts.to[Vec])
+    (bookmarks.to(Vec), bookmarkedPosts.to(Vec))
   }
 
 
@@ -800,7 +800,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       po.approved_rev_nr = curr_rev_nr and
       po.num_edit_suggestions > 0
       """)
-    (flaggedPosts ++ unapprovedPosts ++ postsWithSuggestions).to[immutable.Seq]
+    (flaggedPosts ++ unapprovedPosts ++ postsWithSuggestions).to(immutable.Seq)
   }
 
 
@@ -1137,7 +1137,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
               die("TyE7MWJC21", s"Unexpected pat-to-node rel_type_c: $x")
           }
         }
-        (ownerIds.to[Vec], authorIds.to[Vec], assignedToIds.to[Vec])
+        (ownerIds.to(Vec), authorIds.to(Vec), assignedToIds.to(Vec))
     }
 
     Post(

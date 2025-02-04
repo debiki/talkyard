@@ -99,7 +99,7 @@ object ReviewReason {
     if ((value & UserNewAvatar.toInt) != 0) reasons.append(UserNewAvatar)
     if ((value & UserNameEdited.toInt) != 0) reasons.append(UserNameEdited)
     if ((value & UserAboutTextEdited.toInt) != 0) reasons.append(UserAboutTextEdited)
-    reasons.to[immutable.Seq]
+    reasons.to(immutable.Seq)
   }
 
   def toLong(reasons: immutable.Seq[ReviewReason]): Long = {

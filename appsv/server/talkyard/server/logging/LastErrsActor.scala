@@ -90,7 +90,7 @@ class LastErrsActor(val globals: Globals) extends Actor {
 
       case GetRecentMsgs =>
         // Send back an immutable structure.
-        sender() ! RecentMsgs(lastErrsBuf.to[Vec])
+        sender() ! RecentMsgs(lastErrsBuf.to(Vec))
 
       case EmailErrorsToOnCalls =>
         if (globals.onCallEmailAddresses.isDefined  // it's not, not implemented

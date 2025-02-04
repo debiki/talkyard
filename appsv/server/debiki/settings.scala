@@ -772,7 +772,7 @@ case class EffectiveSettings(
     }
 
     if (probs.isEmpty) None
-    else Some(probs.to[imm.Seq])
+    else Some(probs.to(imm.Seq))
   }
 
 }

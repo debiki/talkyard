@@ -440,7 +440,7 @@ trait PagesDao {
       if (reviewReasons.isEmpty) None
       else Some(ReviewTask(
         id = tx.nextReviewTaskId(),
-        reasons = reviewReasons.to[immutable.Seq],
+        reasons = reviewReasons.to(immutable.Seq),
         createdById = SystemUserId,
         createdAt = now.toJavaDate,
         createdAtRevNr = Some(bodyPost.currentRevisionNr),

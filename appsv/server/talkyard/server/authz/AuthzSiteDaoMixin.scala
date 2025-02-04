@@ -68,7 +68,7 @@ trait AuthzSiteDaoMixin {
   def derivePrivPrefs(users: Iterable[UserBr], allGroups: Vec[Group]): ImmSeq[PatAndPrivPrefs] = {
     COULD_OPTIMIZE // Cache a by-id map instead / too? (in getAllGroups()) [cache_groups_by_id]
     val allGroupsById: Map[PatId, Group] = Map(allGroups.map(g => g.id -> g): _*)
-    users.to[Vec] map { user =>
+    users.to(Vec) map { user =>
       val usersGroupIdsMaybeRestr = Pat.getBuiltInGroupIdsForUser(user)
       val usersGroupsMaybeRestr = usersGroupIdsMaybeRestr flatMap { id =>
         val g = allGroupsById.get(id)
