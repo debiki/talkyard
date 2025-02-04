@@ -115,7 +115,7 @@ class RateLimiterSpec
   }
 
 
-  def assertThrowsTooManyRequests(block: =>Unit) {
+  def assertThrowsTooManyRequests(block: =>Unit): Unit = {
     try {
       block
       fail("Was not rate limited")

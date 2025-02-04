@@ -107,16 +107,16 @@ class TagsAppSpec extends DaoAppSuite() {
   lazy val theWrongMember: Participant = createPasswordUser("wr_tg_mbr", dao)
   var thePageId: PageId = _
 
-  def addRemoveTags(post: Post, tags: Set[TagLabel], memberId: UserId) {
+  def addRemoveTags(post: Post, tags: Set[TagLabel], memberId: UserId): Unit = {
     dao.addRemoveTagsIfAuth(post.pageId, post.id, tags, Who(memberId, browserIdData))
   }
 
-  def watchTag(memberId: UserId, tagLabel: TagLabel) {
+  def watchTag(memberId: UserId, tagLabel: TagLabel): Unit = {
     dao.setTagNotfLevelIfAuth(theMember.id, tagLabel, NotfLevel.WatchingFirst,
       Who(memberId, browserIdData))
   }
 
-  def stopWatchingTag(memberId: UserId, tagLabel: TagLabel) {
+  def stopWatchingTag(memberId: UserId, tagLabel: TagLabel): Unit = {
     dao.setTagNotfLevelIfAuth(theMember.id, tagLabel, NotfLevel.Normal,
       Who(memberId, browserIdData))
   }

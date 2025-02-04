@@ -43,7 +43,7 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  override def upsertDraft(draft: Draft) {
+  override def upsertDraft(draft: Draft): Unit = {
     // Probably the same person won't be editing the same draft, in two places at once,
     // humans cannot do such things. So upserting and overwriting = fine.
     // Well actually, can happen if one has a text open in two browser tabs, and edits

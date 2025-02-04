@@ -46,7 +46,7 @@ class ReviewStuffAppSuite(randomString: String)
 
     def nextNameNr: Int = { nameCounter += 1; nameCounter }
 
-    def newAdminAndPage() {
+    def newAdminAndPage(): Unit = {
       thePageId = dao.createPage(PageType.Discussion, PageStatus.Published,
         anyCategoryId = Some(categoryId), anyFolder = Some("/"), anySlug = Some(""),
         title = TitleSourceAndHtml("title_62952 $r"),
@@ -55,7 +55,7 @@ class ReviewStuffAppSuite(randomString: String)
         Who(theAdmin.id, browserIdData), dummySpamRelReqStuff).pageId
     }
 
-    def testAdminsRepliesApproved(adminId: UserId, pageId: PageId) {
+    def testAdminsRepliesApproved(adminId: UserId, pageId: PageId): Unit = {
       for (i <- 1 to 10) {
         val result = dao.insertReplySkipAuZ(textAndHtmlMaker.testBody(s"reply_9032372 $r, i = $i"), pageId,
           replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
@@ -71,14 +71,14 @@ class ReviewStuffAppSuite(randomString: String)
         Who(memberId, browserIdData), dummySpamRelReqStuff)
     }
 
-    def approveButUndo(reviewTask: ReviewTask) {
+    def approveButUndo(reviewTask: ReviewTask): Unit = {
       dao.makeReviewDecisionIfAuthz(reviewTask.id, whoAdmin, anyRevNr = Some(FirstRevisionNr),
         ReviewDecision.Accept)
       val wasUndone = dao.tryUndoReviewDecisionIfAuthz(reviewTask.id, whoAdmin)
       dieUnless(wasUndone, "TyE4KDWS0")
     }
 
-    def approve(reviewTask: ReviewTask) {
+    def approve(reviewTask: ReviewTask): Unit = {
       dao.makeReviewDecisionIfAuthz(reviewTask.id, whoAdmin, anyRevNr = Some(FirstRevisionNr),
         ReviewDecision.Accept)
       // Wait until the Janitor has carried out the decision. [5YMBWQT]
@@ -97,7 +97,7 @@ class ReviewStuffAppSuite(randomString: String)
       }
     }
 
-    def checkReviewTaskGenerated(post: Post, reasons: Seq[ReviewReason]) {
+    def checkReviewTaskGenerated(post: Post, reasons: Seq[ReviewReason]): Unit = {
       dao.readOnlyTransaction { transaction =>
         val task = transaction.loadPendingPostReviewTask(post.id) getOrElse {
           fail("No review task generated for post with text: " + post.currentSource)
@@ -111,7 +111,7 @@ class ReviewStuffAppSuite(randomString: String)
       }
     }
 
-    def checkNoReviewTask(post: Post) {
+    def checkNoReviewTask(post: Post): Unit = {
       dao.readOnlyTransaction { transaction =>
         transaction.loadPendingPostReviewTask(post.id) mustBe None
       }

@@ -2641,7 +2641,7 @@ trait UserDao {
     memCache.remove(patKey(userId))
   }
 
-  def clearAllGroupsFromMemCache() {
+  def clearAllGroupsFromMemCache(): Unit = {
     memCache.remove(allGroupsKey)
     // (No need to clear group members though, that is, `groupMembersKey(..)`.)
   }

@@ -42,7 +42,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  override def upsertSiteSettings(settings: SettingsToSave) {
+  override def upsertSiteSettings(settings: SettingsToSave): Unit = {
     // Later: use Postgres' built-in upsert (when have upgraded to Postgres 9.5)
     if (loadSiteSettings().isDefined) {
       updateSiteSettings(settings)
@@ -53,7 +53,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  private def insertSiteSettings(editedSettings2: SettingsToSave) {
+  private def insertSiteSettings(editedSettings2: SettingsToSave): Unit = {
     val statement = s"""
       insert into settings3 (
         site_id,
@@ -302,13 +302,13 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  private def updateSiteSettings(editedSettings2: SettingsToSave) {
+  private def updateSiteSettings(editedSettings2: SettingsToSave): Unit = {
     val statement = mutable.StringBuilder.newBuilder.append("update settings3 set ")
     val values = mutable.ArrayBuffer[AnyRef]()
     var somethingToDo = false
     var nothingOrComma = ""
 
-    def maybeSet(column: String, anyValue: Option[AnyRef]) {
+    def maybeSet(column: String, anyValue: Option[AnyRef]): Unit = {
       anyValue foreach { value =>
         somethingToDo = true
         statement.append(s"$nothingOrComma$column = ?")

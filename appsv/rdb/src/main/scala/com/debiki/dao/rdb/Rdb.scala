@@ -568,7 +568,7 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
 
   // Test the data sources.
   {
-    def testDataSource(dataSource: jxs.DataSource, what: String) {
+    def testDataSource(dataSource: jxs.DataSource, what: String): Unit = {
       val connection: js.Connection =
         try dataSource.getConnection()
         catch {
@@ -583,7 +583,7 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
   }
 
 
-  def close() {
+  def close(): Unit = {
     // Results in PostgreSQL complaining that "DataSource has been closed",
     // also when you open another one (!) with a different name.
     //dataSource.asInstanceOf[pg.ds.PGPoolingDataSource].close()
@@ -855,7 +855,7 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
 
 
   private def _bind(
-        values: List[Any], pstmt: js.PreparedStatement, firstBindPos: Int = 1) {
+        values: List[Any], pstmt: js.PreparedStatement, firstBindPos: Int = 1): Unit = {
     var bindPos = firstBindPos
     for (v <- values) {
       v match {
@@ -897,12 +897,12 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
     connection
   }
 
-  def closeConnection(connection: js.Connection) {
+  def closeConnection(connection: js.Connection): Unit = {
     // Already rolled back or committed by the caller.
     _closeEtc(connection, rollback = false)
   }
 
-  private def _closeEtc(conn: js.Connection, rollback: Boolean) {
+  private def _closeEtc(conn: js.Connection, rollback: Boolean): Unit = {
     // Need to rollback before closing? Read:
     // http://download.oracle.com/javase/6/docs/api/java/sql/Connection.html:
     // "It is strongly recommended that an application explicitly commits

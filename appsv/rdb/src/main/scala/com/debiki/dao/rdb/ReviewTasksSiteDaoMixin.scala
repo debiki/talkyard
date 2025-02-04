@@ -43,7 +43,7 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
   }
 
 
-  override def upsertReviewTask(reviewTask: ReviewTask) {
+  override def upsertReviewTask(reviewTask: ReviewTask): Unit = {
     val statement = """
       insert into review_tasks3(
         site_id,

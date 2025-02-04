@@ -38,7 +38,7 @@ trait EmailAddressesSiteDaoMixin extends SiteTransaction {
   self: RdbSiteTransaction =>
 
 
-  def insertUserEmailAddress(addrInfo: UserEmailAddress) {
+  def insertUserEmailAddress(addrInfo: UserEmailAddress): Unit = {
     val statement = s"""
       insert into user_emails3 (
         site_id, user_id, email_address, added_at, verified_at)
@@ -50,7 +50,7 @@ trait EmailAddressesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def updateUserEmailAddress(addrInfo: UserEmailAddress) {
+  def updateUserEmailAddress(addrInfo: UserEmailAddress): Unit = {
     val statement = s"""
       update user_emails3 set verified_at = ?
       where site_id = ?
@@ -63,7 +63,7 @@ trait EmailAddressesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def deleteUserEmailAddress(userId: UserId, emailAddress: String) {
+  def deleteUserEmailAddress(userId: UserId, emailAddress: String): Unit = {
     val statement = s"""
       delete from user_emails3
       where site_id = ?
@@ -75,7 +75,7 @@ trait EmailAddressesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def deleteAllUsersEmailAddresses(userId: UserId) {
+  def deleteAllUsersEmailAddresses(userId: UserId): Unit = {
     TESTS_MISSING
     val statement = s"""
       delete from user_emails3

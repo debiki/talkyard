@@ -61,7 +61,7 @@ trait SettingsDao {
     val k = 1000
     val defMaxLength = 30 * k
 
-    def checkLen(name: St, getter: SettingsToSave => Opt[Opt[St]], max: i32 = -1) {
+    def checkLen(name: St, getter: SettingsToSave => Opt[Opt[St]], max: i32 = -1): Unit = {
       val anyOptValue = getter(settingsToSave)
       val maxLen = if (max > 0) max else defMaxLength
       throwBadRequestIf(anyOptValue.exists(_.exists(_.length > maxLen)),
@@ -69,7 +69,7 @@ trait SettingsDao {
     }
 
     def checkJsonLen(name: St, getter: SettingsToSave => Opt[Opt[JsObject]],
-          max: i32 = defMaxLength) {
+          max: i32 = defMaxLength): Unit = {
       val anyOptVal = getter(settingsToSave)
       throwBadRequestIf(anyOptVal.exists(_.exists(_.toString.length > max)),
             "TyE50MRTQJ2", s"Too long: $name")

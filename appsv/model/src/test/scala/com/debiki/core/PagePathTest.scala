@@ -178,7 +178,7 @@ class PagePathTest extends AnyFreeSpec with must.Matchers {
     }
 
     s"reject bad slugs" - {
-      def testRejectsBad(slug: String, errorMessagePrefix: String) {
+      def testRejectsBad(slug: String, errorMessagePrefix: String): Unit = {
         val result = PagePath.fromUrlPath(TestSiteId, slug)
         result match {
           case PagePath.Parsed.Bad(message) =>

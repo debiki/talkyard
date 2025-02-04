@@ -34,7 +34,7 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
 
 
   def updatePostsReadStats(pageId: PageId, postNrsRead: Set[PostNr],
-        readById: UserId, readFromIp: Opt[IpAdr]) {
+        readById: UserId, readFromIp: Opt[IpAdr]): Unit = {
     for (postNr <- postNrsRead) {
       // Do nothing if the row already exists — simply means the user has already read the post.
       val sql = s"""
@@ -93,7 +93,7 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
 
 
   def movePostsReadStats(oldPageId: PageId, newPageId: PageId,
-        newPostNrsByOldNrs: Map[PostNr, PostNr]) {
+        newPostNrsByOldNrs: Map[PostNr, PostNr]): Unit = {
     require(oldPageId != newPageId, "EsE7YJK830")
     if (newPostNrsByOldNrs.isEmpty)
       return
@@ -143,7 +143,7 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
   }
 
 
-  def upsertUserStats(userStats: UserStats) {
+  def upsertUserStats(userStats: UserStats): Unit = {
     // Dupl code, also in Scala [7FKTU02], perhaps add param `addToOldStats: Boolean`?
     val statement = s"""
       insert into user_stats3 (
@@ -262,15 +262,15 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
   }
 
 
-  def bumpNextSummaryEmailDate(memberId: UserId, nextEmailAt: Option[When]) {
+  def bumpNextSummaryEmailDate(memberId: UserId, nextEmailAt: Option[When]): Unit = {
     bumpNextSummaryEmailDateImpl(Some(memberId), nextEmailAt)
   }
 
-  def reconsiderSendingSummaryEmailsToEveryone() {
+  def reconsiderSendingSummaryEmailsToEveryone(): Unit = {
     bumpNextSummaryEmailDateImpl(None, None)
   }
 
-  private def bumpNextSummaryEmailDateImpl(memberId: Option[UserId], nextEmailAt: Option[When]) {
+  private def bumpNextSummaryEmailDateImpl(memberId: Option[UserId], nextEmailAt: Option[When]): Unit = {
     val values = ArrayBuffer[AnyRef](nextEmailAt.orNullTimestamp, siteId.asAnyRef)
     val andUserId = memberId match {
       case None =>
@@ -290,7 +290,7 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
   }
 
 
-  def bumpNextAndLastSummaryEmailDate(memberId: UserId, lastAt: When, nextAt: Option[When]) {
+  def bumpNextAndLastSummaryEmailDate(memberId: UserId, lastAt: When, nextAt: Option[When]): Unit = {
     val statement = s"""
       update user_stats3 set last_summary_email_at = ?, next_summary_maybe_at = ?
       where site_id = ? and user_id = ?
@@ -338,7 +338,7 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
   }
 
 
-  def upsertUserVisitStats(visitStats: UserVisitStats) {
+  def upsertUserVisitStats(visitStats: UserVisitStats): Unit = {
     val statement = s"""
       insert into user_visit_stats3 (
         site_id,

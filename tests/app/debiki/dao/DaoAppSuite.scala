@@ -143,14 +143,14 @@ class DaoAppSuite(
 
   def currentTime: When = _currentTime
 
-  def setTime(when: When) {
+  def setTime(when: When): Unit = {
     _currentTime = when
     globals.testSetTime(when)
   }
 
   def playTimeSeconds(seconds: Long): Unit = playTimeMillis(seconds * 1000)
 
-  def playTimeMillis(millis: Long) {
+  def playTimeMillis(millis: Long): Unit = {
     _currentTime = _currentTime plusMillis millis
     globals.testSetTime(_currentTime)
   }
@@ -265,14 +265,14 @@ class DaoAppSuite(
 
 
   def updateMemberPreferences(dao: SiteDao, memberId: UserId,
-        fn: AboutUserPrefs => AboutUserPrefs) {
+        fn: AboutUserPrefs => AboutUserPrefs): Unit = {
     val member = dao.loadTheUserInclDetailsById(memberId)
     dao.saveAboutMemberPrefsIfAuZ(fn(member.preferences_debugTest), Who(memberId, browserIdData))
   }
 
 
   def updateGroupPreferences(dao: SiteDao, groupId: UserId, byWho: Who,
-        fn: AboutGroupPrefs => AboutGroupPrefs) {
+        fn: AboutGroupPrefs => AboutGroupPrefs): Unit = {
     val group = dao.loadTheGroupInclDetailsById(groupId)
     dao.saveAboutGroupPrefs(fn(group.preferences), byWho)
   }
@@ -282,7 +282,7 @@ class DaoAppSuite(
     dao.readOnlyTransaction(_.loadUserStats(userId)) getOrDie "EdE5JWGB10"
 
 
-  def letEveryoneTalkAndStaffModerate(dao: SiteDao) {
+  def letEveryoneTalkAndStaffModerate(dao: SiteDao): Unit = {
     dao.readWriteTransaction { tx =>
       tx.insertPermsOnPages(PermsOnPages(
         id = NoPermissionId,
@@ -406,7 +406,7 @@ class DaoAppSuite(
   }
 
 
-  def edit(post: Post, editorId: UserId, newText: String, skipNashorn: Boolean = true)(dao: SiteDao) {
+  def edit(post: Post, editorId: UserId, newText: String, skipNashorn: Boolean = true)(dao: SiteDao): Unit = {
     val textAndHtml =
       if (skipNashorn) textAndHtmlMaker.testBody(newText)
       else textAndHtmlMaker.forBodyOrComment(newText)

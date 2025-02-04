@@ -43,7 +43,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {  // TyTIT205RKDJ4
     },
 
     new NestedPostsSuite {
-      override def beforeAll {
+      override def beforeAll: Unit = {
         dao.saveSiteSettings(SettingsToSave(
           orgFullName = Some(Some("Test Org Name")),
           maxPostsPendApprBefore = Some(Some(1)),
@@ -134,7 +134,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {  // TyTIT205RKDJ4
     },
 
     new NestedPostsSuite {
-      override def beforeAll {
+      override def beforeAll: Unit = {
         dao.saveSiteSettings(SettingsToSave(
           maxPostsPendApprBefore = Some(Some(5)),
           numFirstPostsToApprove = Some(Some(3)),
@@ -247,7 +247,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {  // TyTIT205RKDJ4
 
 
     new NestedPostsSuite {
-      override def beforeAll {
+      override def beforeAll: Unit = {
         dao.saveSiteSettings(SettingsToSave(
           maxPostsPendApprBefore = Some(Some(0)),
           numFirstPostsToApprove = Some(Some(0)),
@@ -283,7 +283,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {  // TyTIT205RKDJ4
     },
 
     new NestedPostsSuite {
-      override def beforeAll {
+      override def beforeAll: Unit = {
         dao.saveSiteSettings(SettingsToSave(
           maxPostsPendApprBefore = Some(Some(3)),
           numFirstPostsToApprove = Some(Some(1)),
@@ -331,7 +331,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {  // TyTIT205RKDJ4
 
 
     new NestedPostsSuite {
-      override def beforeAll {
+      override def beforeAll: Unit = {
         dao.saveSiteSettings(SettingsToSave(
           maxPostsPendApprBefore = Some(Some(2)),
           numFirstPostsToApprove = Some(Some(1)),
@@ -396,7 +396,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {  // TyTIT205RKDJ4
 
 
     new NestedPostsSuite {
-      override def beforeAll {
+      override def beforeAll: Unit = {
         dao.saveSiteSettings(SettingsToSave(
           maxPostsPendApprBefore = Some(Some(2)),
           numFirstPostsToApprove = Some(Some(1)),
@@ -428,7 +428,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {  // TyTIT205RKDJ4
 
 
     new NestedPostsSuite {
-      override def beforeAll {
+      override def beforeAll: Unit = {
         dao.saveSiteSettings(SettingsToSave(
                 numFirstPostsToApprove = Some(Some(0)),
                 numFirstPostsToReview = Some(Some(0)),

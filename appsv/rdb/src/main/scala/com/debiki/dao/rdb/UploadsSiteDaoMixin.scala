@@ -43,7 +43,7 @@ trait UploadsSiteDaoMixin extends SiteTransaction {
 
 
   def insertUploadedFileMeta(uploadRef: UploadRef, sizeBytes: Int, mimeType: String,
-        dimensions: Option[(Int, Int)]) {
+        dimensions: Option[(Int, Int)]): Unit = {
     dieIf(mimeType eq null, "EsE5KY3U2")
     // COULD use `insert ... on conflict do nothing` here once have upgraded to Postgres 9.5.
     val (width, height) = dimensions match {
@@ -83,13 +83,13 @@ trait UploadsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def deleteUploadedFileMeta(uploadRef: UploadRef) {
+  def deleteUploadedFileMeta(uploadRef: UploadRef): Unit = {
     unimplemented("deleting uploaded file meta")
   }
 
 
   def insertUploadedFileReference(postId: PostId, uploadRef: UploadRef,
-        addedById: UserId) {
+        addedById: UserId): Unit = {
     val siteIdsUsingUploadBefore = loadSiteIdsUsingUpload(uploadRef)
 
     // COULD use `insert ... on conflict do nothing` here once have upgraded to Postgres 9.5.
@@ -230,7 +230,7 @@ trait UploadsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def updateUploadedFileReferenceCount(uploadRef: UploadRef) {
+  def updateUploadedFileReferenceCount(uploadRef: UploadRef): Unit = {
     val statement = """select * from "update_upload_ref_count"(?, ?)"""
     val values = List(
       uploadRef.baseUrl, uploadRef.hashPath)
@@ -243,7 +243,7 @@ trait UploadsSiteDaoMixin extends SiteTransaction {
 
 
   def updateUploadQuotaUse(siteIds: Set[SiteId], uploadRef: UploadRef,
-        deltaUploads: Int, anyDeltaBytes: Option[Int] = None) {
+        deltaUploads: Int, anyDeltaBytes: Option[Int] = None): Unit = {
     if (siteIds.isEmpty)
       return
 

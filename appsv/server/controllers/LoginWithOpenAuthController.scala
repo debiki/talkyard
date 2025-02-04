@@ -932,7 +932,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // — otherwise, if just OAuth2, then it's IDP specific.
 
     def requestUserInfo(accessToken: sj_OAuth2AccessToken, anyIdToken: Opt[OidcIdToken],
-          anyUserInfo: Opt[IdpUserInfo]) {
+          anyUserInfo: Opt[IdpUserInfo]): Unit = {
       val userInfoRequest = new sj_OAuthRequest(sj_Verb.GET, idp.oidcUserInfoUrl)
 
       // Some OAuth2 IDPs want extra headers — when it's not OIDC, it's non-standard.

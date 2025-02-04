@@ -829,7 +829,7 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
           loadDumpCheckLooksOk()
         }
 
-        def loadDumpCheckLooksOk() {
+        def loadDumpCheckLooksOk(): Unit = {
           info("read back")
           val actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
 
@@ -998,7 +998,7 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
           loadDumpCheckLooksOk()
         }
 
-        def loadDumpCheckLooksOk() {
+        def loadDumpCheckLooksOk(): Unit = {
           info("read back")
           val actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
 
@@ -1099,7 +1099,7 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
         loadDumpCheckLooksOk()
       }
 
-      def loadDumpCheckLooksOk() {
+      def loadDumpCheckLooksOk(): Unit = {
         info("read back")
         val actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
 

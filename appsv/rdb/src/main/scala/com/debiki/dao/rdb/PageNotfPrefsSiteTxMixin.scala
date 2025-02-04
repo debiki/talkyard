@@ -48,7 +48,7 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {  // RENAME  DiscNotPref
       die("TyE2ABK057")
 
 
-  override def upsertPageNotfPref(notfPref: PageNotfPref) {
+  override def upsertPageNotfPref(notfPref: PageNotfPref): Unit = {
     // Normal level is the default. However, if is for a page or category, then in some cases
     // we should remember level Normal — in case it overrides a different level set on
     // a parent category, or the whole site, or a group the user is in (maybe site wide group prefs).

@@ -30,12 +30,12 @@ trait DumpMaker {
   self: DaoAppSuite =>
 
 
-  def upsert(siteId: SiteId, patch: SitePatch) {
+  def upsert(siteId: SiteId, patch: SitePatch): Unit = {
     val importer = SitePatcher(globals)
     importer.upsertIntoExistingSite(siteId, patch, browserIdData)
   }
 
-  def upsertSimplePatch(simplePatch: SimpleSitePatch, siteDao: SiteDao) {
+  def upsertSimplePatch(simplePatch: SimpleSitePatch, siteDao: SiteDao): Unit = {
     val importer = SitePatcher(globals)
     val completePatch = simplePatch.makeComplete(siteDao).getOrDie("TyETSTSIMPL2COMPL")
     importer.upsertIntoExistingSite(siteDao.siteId, completePatch, browserIdData)

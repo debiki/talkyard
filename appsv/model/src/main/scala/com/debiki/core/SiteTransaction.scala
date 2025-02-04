@@ -182,8 +182,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def insertPost(newPost: Post): Unit
   def updatePost(newPost: Post): Unit
 
-  def alterJobQueueRange(range: TimeRange, newEndWhen: When, newEndOffset: PostId)
-  def deleteJobQueueRange(range: TimeRange)
+  def alterJobQueueRange(range: TimeRange, newEndWhen: When, newEndOffset: PostId): Unit
+  def deleteJobQueueRange(range: TimeRange): Unit
 
   /** We index any approed text, or the unapproved source, see:
     * [[ed.server.search.makeElasticSearchJsonDocFor]]. [ix_unappr]

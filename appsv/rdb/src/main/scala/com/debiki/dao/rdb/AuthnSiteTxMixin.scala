@@ -44,7 +44,7 @@ trait AuthnSiteTxMixin extends SiteTransaction {
   }
 
 
-  def deleteAllUsersIdentities(userId: UserId) {
+  def deleteAllUsersIdentities(userId: UserId): Unit = {
     TESTS_MISSING
     val statement =
       "delete from identities3 where user_id_c = ? and site_id = ?"
@@ -53,7 +53,7 @@ trait AuthnSiteTxMixin extends SiteTransaction {
   }
 
 
-  def insertIdentity(identity: Identity) {
+  def insertIdentity(identity: Identity): Unit = {
     identity match {
       case x: OpenAuthIdentity =>
         insertOpenAuthIdentity(x)
@@ -63,7 +63,7 @@ trait AuthnSiteTxMixin extends SiteTransaction {
   }
 
 
-  private def insertOpenAuthIdentity(identity: OpenAuthIdentity) {
+  private def insertOpenAuthIdentity(identity: OpenAuthIdentity): Unit = {
     val sql = """
         insert into identities3 (
             site_id,
@@ -146,7 +146,7 @@ trait AuthnSiteTxMixin extends SiteTransaction {
     * (e.g. the user changed hens name) from the OAuth authentication process
     * the caller would be handling.
     */
-  private[rdb] def updateOpenAuthIdentity(identity: OpenAuthIdentity) {
+  private[rdb] def updateOpenAuthIdentity(identity: OpenAuthIdentity): Unit = {
     // About idpId, idpUserId:
     // They should have been used when looking up this user identity
     // — and should never need to get changed.

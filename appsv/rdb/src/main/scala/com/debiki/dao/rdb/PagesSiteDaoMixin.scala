@@ -87,7 +87,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def markSectionPageContentHtmlAsStale(categoryId: CategoryId) {
+  def markSectionPageContentHtmlAsStale(categoryId: CategoryId): Unit = {
     val statement = s"""
       update page_html_cache_t h
         set cached_page_version_c = -1, updated_at_c = ?
@@ -138,7 +138,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
 
 
   override def upsertCachedPageContentHtml(pageId: PageId, version: CachedPageVersion,
-        reactStorejsonString: String, html: String) {
+        reactStorejsonString: String, html: String): Unit = {
     // Not impossible that we'll overwrite a new version with an older,
     // but unlikely. And harmless anyway. Don't worry about it.
     COULD // edit the on-conflict part and use the highest site_version + page_version?
@@ -270,7 +270,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def upsertPagePopularityScore(scores: PagePopularityScores) {
+  def upsertPagePopularityScore(scores: PagePopularityScores): Unit = {
     val statement = s"""
       insert into page_popularity_scores3 (
         site_id,
@@ -308,17 +308,17 @@ trait PagesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def insertAltPageId(altPageId: AltPageId, realPageId: PageId) {
+  def insertAltPageId(altPageId: AltPageId, realPageId: PageId): Unit = {
     insertAltPageIdImpl(altPageId, realPageId = realPageId, ignoreDuplKeyError = false)
   }
 
 
-  def insertAltPageIdIfFree(altPageId: AltPageId, realPageId: PageId) {
+  def insertAltPageIdIfFree(altPageId: AltPageId, realPageId: PageId): Unit = {
     insertAltPageIdImpl(altPageId, realPageId = realPageId, ignoreDuplKeyError = true)
   }
 
 
-  def insertAltPageIdImpl(altPageId: AltPageId, realPageId: PageId, ignoreDuplKeyError: Boolean) {
+  def insertAltPageIdImpl(altPageId: AltPageId, realPageId: PageId, ignoreDuplKeyError: Boolean): Unit = {
     val onConflictMaybeNothing = ignoreDuplKeyError ? "on conflict do nothing" | ""
     val statement = s"""
       insert into alt_page_ids3 (site_id, alt_page_id, real_page_id)
@@ -329,7 +329,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def deleteAltPageId(altPageId: AltPageId) {
+  def deleteAltPageId(altPageId: AltPageId): Unit = {
     TESTS_MISSING
     val statement = s"""
       delete from alt_page_ids3 where site_id = ? and alt_page_id = ?

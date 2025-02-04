@@ -834,7 +834,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  override def insertPost(post: Post) {
+  override def insertPost(post: Post): Unit = {
     dieIf(isProd && post.tyype == PostType.Bookmark,
           "TyEBOOKM0ENA11", "Bookmarks not yet enabled")
 
@@ -976,7 +976,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def updatePost(post: Post) {
+  def updatePost(post: Post): Unit = {
     dieIf(isProd && post.tyype == PostType.Bookmark,
           "TyEBOOKM0ENA12", "Bookmarks not yet enabled")
 
@@ -1455,7 +1455,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId) {
+  def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId): Unit = {
     // Only soft-delete the flags. Might need later, for auditing purposes?
     val statement = s""" -- clearFlags
       update post_actions3
@@ -1471,7 +1471,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def insertPostAction(postAction: PostAction) {
+  def insertPostAction(postAction: PostAction): Unit = {
     postAction match {
       case vote: PostVote =>
         insertPostActionImpl(
@@ -1496,7 +1496,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   private def insertPostActionImpl(postId: PostId, pageId: PageId, postNr: PostNr,
-        actionType: PostActionType, doerId: PatIds, doneAt: When, manyOk: Bo) {
+        actionType: PostActionType, doerId: PatIds, doneAt: When, manyOk: Bo): Unit = {
 
     val subTypeOne: i32 = 1
 
@@ -1624,7 +1624,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def insertPostRevision(revision: PostRevision) {
+  def insertPostRevision(revision: PostRevision): Unit = {
     val statement = """ -- insertPostRevision
           insert into post_revisions3(
             site_id, post_id,
@@ -1647,7 +1647,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def updatePostRevision(revision: PostRevision) {
+  def updatePostRevision(revision: PostRevision): Unit = {
     UNTESTED
     val statement = """ -- updatePostRevision
       update post_revisions3 set

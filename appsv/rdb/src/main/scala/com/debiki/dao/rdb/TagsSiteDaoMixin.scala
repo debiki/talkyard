@@ -91,7 +91,7 @@ trait TagsSiteDaoMixin extends SiteTransaction {  // CLEAN_UP REMOVE this whole 
   }
 
 
-  def removeTagsFromPost(tags: Set[Tag_old], postId: PostId) {
+  def removeTagsFromPost(tags: Set[Tag_old], postId: PostId): Unit = {
     if (tags.isEmpty)
       return
     val statement = s"""
@@ -102,7 +102,7 @@ trait TagsSiteDaoMixin extends SiteTransaction {  // CLEAN_UP REMOVE this whole 
   }
 
 
-  def addTagsToPost(tags: Set[TagLabel], postId: PostId, isPage: Boolean) {
+  def addTagsToPost(tags: Set[TagLabel], postId: PostId, isPage: Boolean): Unit = {
     if (tags.isEmpty)
       return
     val rows = ("(?, ?, ?, ?), " * tags.size) dropRight 2 // drops last ", "
@@ -114,13 +114,13 @@ trait TagsSiteDaoMixin extends SiteTransaction {  // CLEAN_UP REMOVE this whole 
   }
 
 
-  def renameTag(from: String, to: String) {
+  def renameTag(from: String, to: String): Unit = {
     die("EsE5KPU02SK3", "Unimplemented")
     // update post_tags3 ...
   }
 
 
-  def setTagNotfLevel(userId: UserId, tagLabel: TagLabel, notfLevel: NotfLevel) {
+  def setTagNotfLevel(userId: UserId, tagLabel: TagLabel, notfLevel: NotfLevel): Unit = {
     val statement = s"""
       insert into tag_notf_levels3 (site_id, user_id, tag, notf_level)
         values (?, ?, ?, ?)

@@ -30,7 +30,7 @@ trait TwoPeopleChatSpecTrait {
   self: SitePatcherAppSpec =>
 
 
-  def makeTwoPeopleChatTests()  {
+  def makeTwoPeopleChatTests(): Unit =  {
     lazy val siteDao = globals.siteDao(site.id)
 
     lazy val (site, forum, oldPageId, oldPagePosts, owen, merrylMember, dao) =
@@ -131,7 +131,7 @@ trait TwoPeopleChatSpecTrait {
           lastPostCheckFn: Post => Unit,
           numNewNotfs: Int,
           newNotfCheckFn: Seq[Notification.NewPost] => Unit = null
-          ) {
+          ): Unit = {
       val curDump = SitePatchMaker(context).loadSiteDump(site.id)
       curDump.pages.length mustBe (prevSiteDump.pages.length + numNewPages)
       curDump.posts.length mustBe (prevSiteDump.posts.length + numNewPosts)

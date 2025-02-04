@@ -45,7 +45,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
   var currentStats: UserStats = _
 
 
-  def pretendThereAreManyReplies(pageId: PageId) {
+  def pretendThereAreManyReplies(pageId: PageId): Unit = {
     val oldMeta = dao.loadThePageMeta(pageId)
     val newMeta = oldMeta.copy(numRepliesTotal = 9999, numRepliesVisible = 9999, numPostsTotal = 9999)
     dao.readWriteTransaction(_.updatePageMeta(newMeta, oldMeta = oldMeta,

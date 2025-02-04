@@ -41,7 +41,7 @@ trait ApiSecretsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  override def insertApiSecret(secret: ApiSecret) {
+  override def insertApiSecret(secret: ApiSecret): Unit = {
     val statement = s"""
       insert into api_secrets3 (
         site_id, secret_nr, user_id,

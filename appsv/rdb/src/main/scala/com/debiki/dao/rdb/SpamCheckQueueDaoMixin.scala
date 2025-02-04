@@ -28,7 +28,7 @@ trait SpamCheckQueueDaoMixin extends SiteTransaction {
   self: RdbSiteTransaction =>
 
 
-  def insertSpamCheckTask(spamCheckTask: SpamCheckTask) {
+  def insertSpamCheckTask(spamCheckTask: SpamCheckTask): Unit = {
     val statement = s"""
       insert into spam_check_queue3 (
         created_at,
@@ -98,7 +98,7 @@ trait SpamCheckQueueDaoMixin extends SiteTransaction {
   }
 
 
-  def updateSpamCheckTaskForPostWithResults(spamCheckTask: SpamCheckTask) {
+  def updateSpamCheckTaskForPostWithResults(spamCheckTask: SpamCheckTask): Unit = {
     val postToSpamCheck = spamCheckTask.postToSpamCheck.getOrDie("TyE60TQL2")
     val statement = """
       update spam_check_queue3 set

@@ -36,7 +36,7 @@ trait AuditLogSiteDaoMixin extends SiteTransaction {
   var batchId: Option[AuditLogEntryId] = None
   var batchOffset = 0
 
-  def startAuditLogBatch() {
+  def startAuditLogBatch(): Unit = {
     batchId = None
     val (id, _) = nextAuditLogEntryId()
     batchId = Some(id)
@@ -59,7 +59,7 @@ trait AuditLogSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def insertAuditLogEntry(entryNoId: AuditLogEntry) {
+  def insertAuditLogEntry(entryNoId: AuditLogEntry): Unit = {
     val entry =
       if (entryNoId.id != AuditLogEntry.UnassignedId) entryNoId
       else {
