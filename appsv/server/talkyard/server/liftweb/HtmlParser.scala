@@ -368,7 +368,7 @@ trait Html5Parser {
       is.setEncoding("UTF-8")
       hp.parse(is)
 
-      saxer.scopeStack.pop
+      saxer.scopeStack.pop()
       
       in.close()
       saxer.rootElem match {

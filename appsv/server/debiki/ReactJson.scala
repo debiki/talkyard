@@ -949,7 +949,7 @@ class JsonMaker(dao: SiteDao) {
     val myGroupsEveryoneLast: Seq[Group] =
           pageRequest.authzContext.groupIdsEveryoneLast map dao.getTheGroup
 
-    val site = if (requester.isStaffOrCoreMember) dao.getSite else None
+    val site = if (requester.isStaffOrCoreMember) dao.getSite() else None
 
     dao.readOnlyTransaction { tx =>
       requestersJsonImpl(pageRequest.sid, requester, pageRequest.pageId, watchbarWithTitles,
@@ -972,7 +972,7 @@ class JsonMaker(dao: SiteDao) {
     val myGroupsEveryoneLast: Seq[Group] =
           authzContext.groupIdsEveryoneLast map dao.getTheGroup
 
-    val site = if (requester.isStaffOrCoreMember) dao.getSite else None
+    val site = if (requester.isStaffOrCoreMember) dao.getSite() else None
 
     dao.readOnlyTransaction { tx =>
       requestersJsonImpl(request.sid, requester, anyPageId = None, watchbarWithTitles,

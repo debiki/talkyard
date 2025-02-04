@@ -961,7 +961,7 @@ class EdSecurity(globals: Globals) {
       if (chUserAgent.isEmpty) {
         userAgent.foreach(v => mapBuilder += H.UserAgent -> JsString(v take maxLen))
       }
-      JsObject(mapBuilder.result)
+      JsObject(mapBuilder.result())
     }
 
     val session = TySession(

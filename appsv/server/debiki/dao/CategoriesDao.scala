@@ -986,7 +986,7 @@ trait CategoriesDao {
     tx.insertCategoryMarkSectionPageStale(category, mab)
 
     COULD_OPTIMIZE // get as an arg instead?
-    val site: Site = tx.loadSite getOrDie "TyE0MWWNJ25"
+    val site: Site = tx.loadSite() getOrDie "TyE0MWWNJ25"
 
     val titleSourceAndHtml = newCategoryData.makeAboutTopicTitle()
     val bodyTextAndHtml = newCategoryData.makeAboutTopicBody(textAndHtmlMakerNoTx(site))

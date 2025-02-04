@@ -443,7 +443,7 @@ trait UserDao {
         throwForbidden("DwE4KEF24", "Cannot suspend admins")
 
       user = user.copy(
-        suspendedAt = Some(now.toJavaDate),
+        suspendedAt = Some(now().toJavaDate),
         suspendedTill = Some(until),
         suspendedById = Some(suspendedById),
         suspendedReason = Some(reason.trim))

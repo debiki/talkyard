@@ -250,7 +250,7 @@ abstract class LinkPreviewRenderEngine(globals: Globals) extends TyLogging {  CL
     unimplIf(cachePreview && urlAndFns.inline, "TyE592MSRHG2")
     val anyRedisCache = if (!cachePreview) None else Some {
       COULD_OPTIMIZE // As Redis key, use a url hash, so shorter?
-      val redisCache = new RedisCache(urlAndFns.siteId, globals.redisClient, globals.now)
+      val redisCache = new RedisCache(urlAndFns.siteId, globals.redisClient, globals.now())
       redisCache.getLinkPreviewSafeHtml(urlAndFns.unsafeUrl) foreach { safeHtml =>
         SHOULD // if preview broken *and* if (urlAndFns.mayHttpFetch):
         // retry, although cache entry still here.

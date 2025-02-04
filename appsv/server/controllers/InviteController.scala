@@ -161,7 +161,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     var oldInvitesCached: Option[Seq[Invite]] = None
 
-    val now = dao.now
+    val now = dao.now()
 
     for (toEmailAddress <- toEmailAddresses) {
       // Is toEmailAddress already a member or already invited?
