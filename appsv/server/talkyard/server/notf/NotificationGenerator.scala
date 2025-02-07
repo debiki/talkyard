@@ -1076,7 +1076,7 @@ case class NotificationGenerator(
     val userIdsWatching = tx.listUsersWatchingTags(tagsAdded)
     val userIdsNotified = tx.listUsersNotifiedAboutPost(post.id)
     val userIdsToNotify = userIdsWatching -- userIdsNotified
-    val usersToNotify = tx.loadParticipants(userIdsToNotify.to[immutable.Seq])
+    val usersToNotify = tx.loadParticipants(userIdsToNotify.to(immutable.Seq))
     val pageMeta = tx.loadPageMeta(post.pageId)
     anyAuthor = Some(postAuthor)
     for {

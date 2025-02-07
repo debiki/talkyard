@@ -865,7 +865,7 @@ class PubSubActor(val globals: Globals) extends Actor {
     */
   def debugMakeStateAllSites(): ClientsAllSites = {
     ClientsAllSites(
-        clientsInactiveFirst = clientsBySiteUserIdInactiveFirst.to[Vector])
+        clientsInactiveFirst = clientsBySiteUserIdInactiveFirst.to(Vector))
   }
 
 

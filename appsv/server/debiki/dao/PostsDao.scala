@@ -473,7 +473,7 @@ trait PostsDao {
     val anyReviewTask = if (reviewReasons.isEmpty) None
     else Some(ReviewTask(
       id = tx.nextReviewTaskId(),
-      reasons = reviewReasons.to[immutable.Seq].distinct,
+      reasons = reviewReasons.to(immutable.Seq).distinct,
       createdById = SystemUserId,
       createdAt = now.toJavaDate,
       createdAtRevNr = Some(newPost.currentRevisionNr),
@@ -987,7 +987,7 @@ trait PostsDao {
           if (reviewReasons.isEmpty) None
           else Some(ReviewTask(
                 id = tx.nextReviewTaskId(),
-                reasons = reviewReasons.to[immutable.Seq],
+                reasons = reviewReasons.to(immutable.Seq),
                 createdById = SystemUserId,
                 createdAt = tx.now.toJavaDate,
                 createdAtRevNr = Some(newPost.currentRevisionNr),
@@ -3446,7 +3446,7 @@ trait PostsDao {
 
     removeUserFromMemCache(userId)
     pageIdsToRefresh.foreach(refreshPageInMemCache)  ; REMOVE // not needed now with staleStuff
-    postsHidden.to[immutable.Seq]
+    postsHidden.to(immutable.Seq)
   }
 
 
@@ -3618,7 +3618,7 @@ trait PostsDao {
 
       val postsInclForbidden: ImmSeq[Post] = readTx { tx =>
         if (postIds.isDefined) {
-          tx.loadPostsByUniqueId(postIds.get).values.to[Vec]
+          tx.loadPostsByUniqueId(postIds.get).values.to(Vec)
         }
         else {
           tx.loadPostsByNrs(pagePostNrs.get)

@@ -65,7 +65,7 @@ class StaleStuff {
   // ----- Participants
 
   def staleParticipantIdsInMem: Set[UserId] =
-    _stalePpIdsMemCacheOnly.to[immutable.Set]
+    _stalePpIdsMemCacheOnly.to(immutable.Set)
 
   def addPatIds(patIds: Set[PatId]): U = {
     // Only cached in-memory.
