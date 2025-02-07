@@ -117,7 +117,7 @@ object Dependencies {
     // The ElasticSearch client uses Log4j. log4j-api already included, but not -core.
     // (Versions <= 2.17.0 are vulnerable.)
     //  log4jApi  = "org.apache.logging.log4j" % "log4j-api" % "..."   // not needed
-    val log4jCore = "org.apache.logging.log4j" % "log4j-core" % "2.17.2"  // needed
+    val log4jCore = "org.apache.logging.log4j" % "log4j-core" % "2.24.3"  // needed
 
 
     // ----- Metrics, tracing
