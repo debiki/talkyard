@@ -116,7 +116,7 @@ Compile / dependencyOverrides ++= {
       "net.sf.jopt-simple" % "jopt-simple" % "5.0.2",
       "nl.grons" % "metrics4-scala_2.12" % "4.2.9",
       "nu.validator.htmlparser" % "htmlparser" % "1.4",
-      "org.apache.commons" % "commons-email" % "1.5",
+      "org.apache.commons" % "commons-email" % "1.6.0",
       "org.apache.commons" % "commons-lang3" % "3.14.0",
       "org.apache.httpcomponents" % "httpasyncclient" % "4.1.2",
       "org.apache.httpcomponents" % "httpclient" % "4.5.2",
