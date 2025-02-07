@@ -145,6 +145,15 @@ describe(`tags-basic.2br  TyTE2ETAGSBSC`, () => {
     await memah_brB.refresh2();
   });
 
+  // A race? [E2EBUG] `addTagTests()` below sometimes fails with: (when my VM is slooow!)
+  //   Owen adds two more tags
+  //   Memah reloads the page — the OP should have 3 tags, the other posts none
+  //   Memah sees these post tags: {"mapEntries":[
+  //        [1,["tagOneDash-da-sh","tagThreeColonSlash:/ab/c","tagTwoSpace space s"]],[3,[]]]}
+  //   515 ms elapsed: Waiting for 3   .dw-ar-p-hd .n_TagL-Po  .c_TagL_Tag  there are: 1 ...
+  //   868 ms elapsed: Waiting for 3   .dw-ar-p-hd .n_TagL-Po  .c_TagL_Tag  there are: 1 ...
+  //   ...
+
   addTagTests(() => memah_brB, 'Memah', new Map([
         [c.BodyNr, [tagOneDash, tagThreeColonSlash, tagTwoSpace]],
         [c.SecondReplyNr, []]]));
