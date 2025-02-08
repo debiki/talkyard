@@ -518,6 +518,9 @@ And these unique indexes:
   tags_u_id_patid
   tags_u_id_postid
 
+[upgr_pg] [ty_v1]
+Upgrade PostgreSQL. Switch from Flyway to Diesel, and upgr via psql dump export & import?
+
 [careless_rdb]  ty_crdb
 Use a 2nd PostgreSQL server for a persistent mem + disk "cache"?
 E.g. for session storage and user visit logs.

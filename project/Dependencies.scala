@@ -45,10 +45,10 @@ object Dependencies {
     // supports listener-notify.
     // https://stackoverflow.com/questions/21632243/
     //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
-    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.7.4"
+    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.7.5"
 
     // Database migrations.
-    // Upgr to 5.2.4? But avoid v6, they did a total rewrite of the SQL parser,
+    // Let's stop at 5.x. Avoid v6, they did a total rewrite of the SQL parser,
     // https://www.red-gate.com/blog/flyway-6-0-0-released:
     //    > The SQL parser has been completely rebuilt from the ground up".
     //
@@ -57,7 +57,8 @@ object Dependencies {
     // So, need to do sometimes-risky-upgrades, to get support for the latest PostgreSQL
     // versions?
     //
-    // Let's start using Diesel instead? https://docs.diesel.rs. As a command line tool, from a Docker container.
+    // Let's start using Diesel instead? https://docs.diesel.rs  [upgr_pg]
+    // As a command line tool, from a Docker container.
     // It's fully open source, incl down migrations (helpful during developent),
     // and more transparent — f.ex. Flyway stores their release notes at their website
     // (instead of GitHub), but some old ones about 5.x have disappeared, I can find only
@@ -66,7 +67,7 @@ object Dependencies {
     val flywaydb = "org.flywaydb" % "flyway-core" % "5.2.4"   // scala-steward:off
 
     // HikariCP — "A solid high-performance JDBC connection pool at last"
-    val hikariCp = "com.zaxxer" % "HikariCP" % "6.0.0"
+    val hikariCp = "com.zaxxer" % "HikariCP" % "6.2.1"
 
     // ElasticSearch client, in https://mvnrepository.com.
     // When upgrading to next major version, consider improving the mappings at the same
@@ -74,13 +75,13 @@ object Dependencies {
     val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
     val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "6.8.23"
 
-    val guava = "com.google.guava" % "guava" % "33.3.1-jre"
+    val guava = "com.google.guava" % "guava" % "33.4.0-jre"
     val findbugsJsr304 = "com.google.code.findbugs" % "jsr305" % "3.0.2" % "provided"
 
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
 
-    // See: https://commons.apache.org/proper/commons-codec/changes-report.html
-    val apacheCommonsCodec = "commons-codec" % "commons-codec" % "1.17.1"
+    // See: https://commons.apache.org/proper/commons-codec/changes.html
+    val apacheCommonsCodec = "commons-codec" % "commons-codec" % "1.18.0"
 
     // See: https://commons.apache.org/proper/commons-validator/changes-report.html
     val apacheCommonsValidator = "commons-validator" % "commons-validator" % "1.9.0"
@@ -95,17 +96,19 @@ object Dependencies {
     // extra checks in module ty-core. [5AKR20]
     // Latest version is 3.0.0, let's wait, just some weeks ago.
     // See: https://tika.apache.org
-    val apacheTika = "org.apache.tika" % "tika-core" % "2.9.2"
+    // Need to upgrade soon, DO_BEFORE 2025-04-01,
+    //    see: https://tika.apache.org/3.0.0-BETA/index.html
+    val apacheTika = "org.apache.tika" % "tika-core" % "2.9.3"
 
     // See: https://github.com/OWASP/owasp-java-encoder/releases
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.3.1"
 
     // See: https://github.com/jhy/jsoup/releases
-    val jsoup = "org.jsoup" % "jsoup" % "1.18.1"
+    val jsoup = "org.jsoup" % "jsoup" % "1.18.3"
 
     // See: https://github.com/FasterXML/jackson-module-scala/tags
     // and: https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-scala
-    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.18.1"
+    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.18.2"
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
     // ScribeJava is listed by Microsoft as compatible with Azure,
@@ -135,10 +138,10 @@ object Dependencies {
 
     // Fluentd better understands json logs.
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.12"
+    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.16"
 
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
-    val logbackCore = "ch.qos.logback" % "logback-core" % "1.5.12"
+    val logbackCore = "ch.qos.logback" % "logback-core" % "1.5.16"
 
     // See: https://github.com/logfellow/logstash-logback-encoder/releases
     // and: https://mvnrepository.com/artifact/net.logstash.logback/logstash-logback-encoder
@@ -153,14 +156,17 @@ object Dependencies {
 
     // ----- Metrics, tracing
 
-    // See: https://metrics.dropwizard.io/4.2.0/manual/core.html
+    // See: https://github.com/dropwizard/metrics/releases
+    // and: https://metrics.dropwizard.io/4.2.0/manual/core.html
     // and: https://mvnrepository.com/artifact/io.dropwizard.metrics/metrics-core
-    val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.25"
+    val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.30"
 
     // Deprecated. SHOULD migrate to OpenTelemetry, they say, https://opentelemetry.io/.
     // 1.8.1 exists now.
     val jaegertracing = "io.jaegertracing" % "jaeger-client" % "0.35.5"   // scala-steward:off
 
+    // See: https://mvnrepository.com/artifact/nl.grons/metrics4-scala
+    // and: https://github.com/erikvanoosten/metrics-scala/tags
     val metrics4Scala = "nl.grons" %% "metrics4-scala" % "4.2.9"
 
 
@@ -186,10 +192,12 @@ object Dependencies {
     // Let's use Java-JWT. It's well-known and its readme has a simple decoding example.
     // Repo: https://github.com/auth0/java-jwt
     // and: https://mvnrepository.com/artifact/com.auth0/java-jwt
-    val auth0JavaJwt = "com.auth0" % "java-jwt" % "4.4.0"
+    val auth0JavaJwt = "com.auth0" % "java-jwt" % "4.5.0"
 
 
     // ----- PASETO tokens
+
+    // See: https://mvnrepository.com/artifact/dev.paseto   for all  dev.paseto.*
 
     val jpasetoApi = "dev.paseto" % "jpaseto-api" % "0.7.0"  // compile time (default)
     val jpasetoImpl = "dev.paseto" % "jpaseto-impl" % "0.7.0" // % "runtime"
@@ -227,9 +235,10 @@ object Dependencies {
     val scalactic = "org.scalactic" %% "scalactic" % "3.2.19"
     val scalaTest = "org.scalatest" %% "scalatest" % "3.2.19" % "test"
 
-    // See: https://github.com/playframework/scalatestplus-play#releases
+    // See: https://github.com/playframework/scalatestplus-play/releases
+    // and: https://mvnrepository.com/artifact/org.scalatestplus.play/scalatestplus-play
     // v6 is for Play 2.9, v7 for Play 3.0.
-    val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "6.0.0" % Test
+    val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "6.0.1" % Test
 
     // Don't use, migrate to ScalaTest instead, some day.
     //val specs2 = "org.specs2" %% "specs2-core" % "3.10.0" % "test"  // scala-ste  ward:off
