@@ -17,6 +17,7 @@
 
 package talkyard.server
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.PageStuff
@@ -174,7 +175,7 @@ package object search {
       for (pageAndHits <- pagesAndHits; tag <- pageAndHits.pageStuff.pageTags) {
         ids.add(tag.tagTypeId)
       }
-      ids.to[imm.Set]
+      ids.to(imm.Set)
     }
   }
 

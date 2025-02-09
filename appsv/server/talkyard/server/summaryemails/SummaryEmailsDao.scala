@@ -17,6 +17,7 @@
 
 package talkyard.server.summaryemails
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController

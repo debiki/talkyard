@@ -17,6 +17,7 @@
 
 package debiki.dao
 
+import scala.collection.Seq
 import com.debiki.core._
 import java.{util => ju}
 import scala.collection.immutable

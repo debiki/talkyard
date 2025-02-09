@@ -18,13 +18,21 @@ resolvers ++= Seq(
   Resolver.sbtPluginRepo("releases")) // =  https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/
 
 // Use the Play sbt plugin for Play projects. Can't upgrade to 2.9 until using [scala_2_13].
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.21")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.9.5")
 
 // A refactoring and linting tool for Scala
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.12.0")
+// Docs: https://scalacenter.github.io/scalafix/
+// There's plugins, e.g.: https://github.com/scala/scala-collection-compat?tab=readme-ov-file#collection213upgrade
+// for upgrading collections from 2.12 to 2.13. (That plugin is added in ../build.sbt.)
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.0")
 // Can get [scala_2_13] migration help by doing?:
 //  scalafixAll dependency:Collection213Upgrade@org.scala-lang.modules:scala-collection-migrations:<version>
 // where  <version>  is the scala-collection-migrations version?
+
+
+// See: https://github.com/scalacenter/scala3-migrate
+// But this is for migrating to Scala 3, not from 2.12 to 2.13. (Right?)
+//addSbtPlugin("ch.epfl.scala" % "sbt-scala3-migrate" % "0.7.1")  // ?     or 0.6.2 ?
 
 // Pin dependencies.
 addSbtPlugin("com.github.tkawachi" % "sbt-lock" % "0.8.0")
@@ -35,14 +43,21 @@ addSbtPlugin("com.github.tkawachi" % "sbt-lock" % "0.8.0")
 //   dependencyTree
 //   dependencyBrowseGraph  / -Tree
 //   whatDependsOn  com.nimbusds  nimbus-jose-jwt
-// Plugin now bundled with SBT, so just this:
+// Plugin now bundled with SBT, so just this:  (and: [dependencyTree_dependency])
 addDependencyTreePlugin
 
 
 // Makes e.g. Git SHA1 available to the Scala code at runtime.
 // ---------------------------------------------------------------
+// Version 0.13 adds some cross build capabilities, we don't need, let's wait.
+
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.12.0")
 
+
+// Pointless problems
+// ---------------------------------------------------------------
+
+// This still a problem with Play 2.9 & Scala 2.13?:
 // Picks scala-xml 2.1 over 1.1 — otherwise there the below version conflict error
 // (when just loading the project) with Scala 2.12.18 or 2.12.19 because they use
 // scala-xml 2.x but Play and SBT use 1.x.

@@ -16,6 +16,7 @@
  */
 
 package com.debiki.dao.rdb
+import scala.collection.Seq
 import java.sql.ResultSet
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -31,7 +32,7 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
   self: RdbSiteTransaction =>
 
 
-  def insertPageParticipant(pageParticipant: PageParticipant) {
+  def insertPageParticipant(pageParticipant: PageParticipant): Unit = {
     val statement = """
       insert into page_users3 (
         site_id,
@@ -105,7 +106,7 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
   }
 
 
-  override def removeDeletedMemberFromAllPages(userId: UserId) {
+  override def removeDeletedMemberFromAllPages(userId: UserId): Unit = {
     TESTS_MISSING
     val statement = s"""
       update page_users3 set
@@ -290,7 +291,7 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def upsertReadProgress(userId: UserId, pageId: PageId, progress: PageReadingProgress) {
+  def upsertReadProgress(userId: UserId, pageId: PageId, progress: PageReadingProgress): Unit = {
     val statement = """
       insert into page_users3 (
         site_id,
@@ -338,7 +339,7 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def rememberHasIncludedInSummaryEmail(userId: UserId, pageId: PageId, now: When) {
+  def rememberHasIncludedInSummaryEmail(userId: UserId, pageId: PageId, now: When): Unit = {
     val statement = """
       insert into page_users3 (
         site_id,

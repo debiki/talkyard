@@ -17,6 +17,7 @@
 
 package debiki
 
+import scala.collection.Seq
 import akka.actor._
 import akka.pattern.gracefulStop
 import com.codahale.metrics
@@ -1083,7 +1084,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false, conf, isOrWasTest)
         val rdb = new Rdb(readOnlyDataSource, readWriteDataSource)
         val dbDaoFactory = new RdbDaoFactory(
-              rdb, ScalaBasedMigrations, getCurrentTime = now, isTest = isOrWasTest)
+              rdb, ScalaBasedMigrations, getCurrentTime = now _, isTest = isOrWasTest)
 
         // Create any missing database tables before `new State`, otherwise State
         // creates background threads that might attempt to access the tables.
@@ -1093,7 +1094,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
         sysDao.applyEvolutions()
 
-        val sysSettings = sysDao.readTx(_.loadSystemSettings)
+        val sysSettings = sysDao.readTx(_.loadSystemSettings())
         updateSystemSettings(sysSettings)
 
         setStartupStep(
@@ -1114,10 +1115,10 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
           _state = Bad(Some(new DatabasePoolInitializationException(ex)))
         case ex @ AppSecretNotChangedException =>
           logger.error(s"Admin error: The admin hasn't edited '$AppSecretConfValName' [EdE2QCHP4]", ex)
-          _state = Bad(Some(ex))
+          _state = Bad(Some(AppSecretNotChangedException))
         case ex @ StillConnectingException =>
           logger.error("Bug: StillConnectingException [EdE3PG7FY1]", ex)
-          _state = Bad(Some(ex))
+          _state = Bad(Some(StillConnectingException))
         case ex: Exception =>
           logger.error("Unknown state creation error [EsE4GY67]", ex)
           _state = Bad(Some(ex))
@@ -1350,7 +1351,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
       edContext, dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient, config)
 
     val mailerActorRef: ActorRef = MailerActor.startNewActor(
-          actorSystem, siteDaoFactory, conf, now, isProd)
+          actorSystem, siteDaoFactory, conf, now _, isProd)
 
     val notifierActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None
@@ -1520,11 +1521,6 @@ class Config(conf: play.api.Configuration) extends TyLogging {
   val systemMaintenanceApiSecret: Opt[St] =
     conf.getOptional[St]("talkyard.maintenanceApiSecret").noneIfBlank
 
-  // FOR NOW
-  object forms {
-    val notifyAboutFormsEmailAdr: Opt[St] =
-          conf.getOptional[St]("talkyard.notifyAboutFormsEmailAddr").noneIfBlank
-  }
 
   object uploads {
     TESTS_MISSING // test that these conf vals work properly, by running UploadsDaoSpec twice,

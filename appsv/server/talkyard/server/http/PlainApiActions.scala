@@ -257,7 +257,7 @@ class PlainApiActions(
       // There'll be a 2nd "real" request and that's when we'll do something.
       if (corsInfo.isPreFlight) {
         return Future.successful(
-              p_Results.NoContent.withHeaders(corsHeaders: _*))
+              p_Results.NoContent.withHeaders(corsHeaders.toSeq: _*))
       }
 
       // ----- Handle the request
@@ -295,7 +295,7 @@ class PlainApiActions(
       // ----- Add CORS headers?
 
       if (corsHeaders.isEmpty) futureResult
-      else futureResult.map(_.withHeaders(corsHeaders: _*))(executionContext)
+      else futureResult.map(_.withHeaders(corsHeaders.toSeq: _*))(executionContext)
     }
 
 

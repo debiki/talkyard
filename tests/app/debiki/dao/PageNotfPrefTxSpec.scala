@@ -17,6 +17,7 @@
 
 package debiki.dao
 
+import scala.collection.Seq
 import com.debiki.core._
 import NotfLevel._
 
@@ -381,7 +382,7 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
       }
     }
 
-    def checkDidntOverwritePageAndCatsPrefs(siteNotfLevel: Option[NotfLevel]) {
+    def checkDidntOverwritePageAndCatsPrefs(siteNotfLevel: Option[NotfLevel]): Unit = {
       dao.readTx { tx =>
         tx.loadPageNotfLevels(userOne.id, pageIdOne, None) mustBe PageNotfLevels(
           forPage = Some(Hushed),

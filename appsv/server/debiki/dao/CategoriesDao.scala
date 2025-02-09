@@ -17,6 +17,7 @@
 
 package debiki.dao
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp._
@@ -179,7 +180,7 @@ case class CatsCanSee(
           }
         }
 
-        result.to[Vec]
+        result.to(Vec)
     }
   }
 }
@@ -399,7 +400,7 @@ trait CategoriesDao {
 
 
   def getCatsBySlugs(catNames: Iterable[St]): imm.Seq[Opt[Cat]] = {
-    catNames.to[Vec] map getCategoryBySlug
+    catNames.to(Vec) map getCategoryBySlug
   }
 
 
@@ -783,7 +784,7 @@ trait CategoriesDao {
     }
 
     val startCatStuff = build(startCatsRootLast)
-    (startCatStuff, catStuffsNoRoot.sortBy(_.category.position).to[Vec])
+    (startCatStuff, catStuffsNoRoot.sortBy(_.category.position).to(Vec))
   }
 
 
@@ -828,8 +829,8 @@ trait CategoriesDao {
       siblings.append(cat)
     }
 
-    val catsByParentIdImmutable = Map.apply(
-          catsByParentId.mapValues(_.sortBy(_.position).toVector).toBuffer: _*)
+    val catsByParentIdImmutable = Map.from(
+          catsByParentId.mapValues(_.sortBy(_.position).toVector))
 
     (catsById, catsByParentIdImmutable)
   }
@@ -986,7 +987,7 @@ trait CategoriesDao {
     tx.insertCategoryMarkSectionPageStale(category, mab)
 
     COULD_OPTIMIZE // get as an arg instead?
-    val site: Site = tx.loadSite getOrDie "TyE0MWWNJ25"
+    val site: Site = tx.loadSite() getOrDie "TyE0MWWNJ25"
 
     val titleSourceAndHtml = newCategoryData.makeAboutTopicTitle()
     val bodyTextAndHtml = newCategoryData.makeAboutTopicBody(textAndHtmlMakerNoTx(site))
@@ -1147,7 +1148,7 @@ trait CategoriesDao {
 
     val permsWithIds = ArrayBuffer[PermsOnPages]()
     val oldPermissionsById: mutable.Map[PermissionId, PermsOnPages] =
-      tx.loadPermsOnCategory(categoryId).map(p => (p.id, p))(collection.breakOut)
+      scala.collection.mutable.Map.from(tx.loadPermsOnCategory(categoryId).iterator.map(p => (p.id, p)))
     var wasChangesMade = false
 
     permissions foreach { permission =>

@@ -17,6 +17,7 @@
 
 package com.debiki.dao.rdb
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{sql => js}
@@ -62,7 +63,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       ancestors += nextCategory.get
       nextCategory = nextCategory.get.parentId.flatMap(categoriesById.get)
     }
-    ancestors.to[immutable.Seq]
+    ancestors.to(immutable.Seq)
   }
 
 
@@ -346,7 +347,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  override def insertCategoryMarkSectionPageStale(category: Cat, mab: MessAborter) {
+  override def insertCategoryMarkSectionPageStale(category: Cat, mab: MessAborter): Unit = {
     val statement = """
         insert into categories3 (
             site_id,
@@ -417,7 +418,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  override def updateCategoryMarkSectionPageStale(category: Category, mab: MessAborter) {
+  override def updateCategoryMarkSectionPageStale(category: Category, mab: MessAborter): Unit = {
     val statement = """
       update categories3 set
         page_id = ?, parent_id = ?, default_category_id = ?,

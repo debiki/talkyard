@@ -17,6 +17,8 @@
 
 package talkyard.server.api
 
+import scala.{collection => col}
+import scala.collection.Seq
 import com.debiki.core._
 import controllers.OkApiJson
 import debiki.RateLimits
@@ -94,8 +96,10 @@ class QueryDoController @Inject()(cc: ControllerComponents, tyContext: TyContext
       val listQueryJsOb = parseOptJsObject(jsOb, "listQuery")
       val searchQueryJsOb = parseOptJsObject(jsOb, "searchQuery")
       // Any nested queries or actions? (E.g. for fine grained transaction control.)
-      val nestedQueries: Opt[IndexedSeq[JsValue]] = parseOptJsArray(jsVal, "runQueries", altName = "manyQueries")
-      val nestedActions: Opt[IndexedSeq[JsValue]] = parseOptJsArray(jsVal, "doActions")
+      val nestedQueries: Opt[col.IndexedSeq[JsValue]] =
+            parseOptJsArray(jsVal, "runQueries", altName = "manyQueries")
+      val nestedActions: Opt[col.IndexedSeq[JsValue]] =
+            parseOptJsArray(jsVal, "doActions")
 
       val anyQueryDefined =
             getQueryJsOb.isDefined || listQueryJsOb.isDefined ||

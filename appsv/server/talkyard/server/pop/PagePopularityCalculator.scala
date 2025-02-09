@@ -17,6 +17,7 @@
 
 package talkyard.server.pop
 
+import scala.collection.Seq
 import com.debiki.core._
 import scala.collection.{immutable, mutable}
 import Prelude._

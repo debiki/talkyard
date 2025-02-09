@@ -17,6 +17,7 @@
 
 package controllers
 
+import scala.collection.Seq
 import com.debiki.core._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must

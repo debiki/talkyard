@@ -17,6 +17,7 @@
 
 package com.debiki.dao.rdb
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.google.{common => guava}
@@ -35,7 +36,7 @@ trait BlocksSiteDaoMixin extends SiteTransaction {
   self: RdbSiteTransaction =>
 
 
-  override def insertBlock(block: Block) {
+  override def insertBlock(block: Block): Unit = {
     require(block.ip.isDefined || block.browserIdCookie.isDefined, "TyE2UPKGJ7")
 
     val statement = s"""
@@ -65,17 +66,17 @@ trait BlocksSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def unblockIp(ip: InetAddress) {
+  def unblockIp(ip: InetAddress): Unit = {
     deleteBlock("ip = ?::inet", ip.getHostAddress)
   }
 
 
-  def unblockBrowser(browserIdCookie: String) {
+  def unblockBrowser(browserIdCookie: String): Unit = {
     deleteBlock("browser_id_cookie = ? and ip is null", browserIdCookie)
   }
 
 
-  private def deleteBlock(whereTest: String, value: String) {
+  private def deleteBlock(whereTest: String, value: String): Unit = {
     val statement = s"""
      delete from blocks3
      where site_id = ? and $whereTest

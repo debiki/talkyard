@@ -17,6 +17,7 @@
 
 package com.debiki.dao.rdb
 
+import scala.collection.Seq
 import com.debiki.core._
 import Rdb._
 
@@ -36,7 +37,7 @@ trait UsernamesSiteDaoMixin extends SiteTransaction {
   private val orderBy = "order by in_use_from"
 
 
-  def insertUsernameUsage(usage: UsernameUsage) {
+  def insertUsernameUsage(usage: UsernameUsage): Unit = {
     val statement = s"""
       insert into usernames3 (
         site_id, username_lowercase, in_use_from, in_use_to, user_id, first_mention_at)
@@ -59,7 +60,7 @@ trait UsernamesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def updateUsernameUsage(usage: UsernameUsage) {
+  def updateUsernameUsage(usage: UsernameUsage): Unit = {
     val statement = s"""
       update usernames3 set in_use_to = ?, first_mention_at = ?
       where site_id = ?

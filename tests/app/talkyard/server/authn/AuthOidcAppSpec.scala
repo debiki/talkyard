@@ -17,6 +17,7 @@
 
 package talkyard.server.authn
 
+import scala.collection.Seq
 import com.debiki.core._
 import debiki.dao.{DaoAppSuite, SiteDao}
 

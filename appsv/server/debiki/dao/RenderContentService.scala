@@ -17,6 +17,7 @@
 
 package debiki.dao
 
+import scala.collection.Seq
 import akka.actor.{Actor, ActorRef, Props}
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -366,7 +367,8 @@ class RenderContentActor(
             val nextIds: Seq[PageIdToRerender] =
                   globals.systemDao.loadPageIdsToRerender(max)
             if (nextIds.nonEmpty) {
-              val howMany = nextIds.length + (if (nextIds.length >= max) "+" else "")
+              val plus = if (nextIds.length >= max) "+" else ""
+              val howMany = s"${nextIds.length}$plus"
               logger.debug(s"Found $howMany pages to rerender: $nextIds [TyMBGRFIND]")
             }
             (nextIds, now)

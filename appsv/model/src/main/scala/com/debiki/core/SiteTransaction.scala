@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import scala.collection.Seq
 import java.net.InetAddress
 import java.{util => ju}
 import scala.collection.immutable
@@ -182,8 +183,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def insertPost(newPost: Post): Unit
   def updatePost(newPost: Post): Unit
 
-  def alterJobQueueRange(range: TimeRange, newEndWhen: When, newEndOffset: PostId)
-  def deleteJobQueueRange(range: TimeRange)
+  def alterJobQueueRange(range: TimeRange, newEndWhen: When, newEndOffset: PostId): Unit
+  def deleteJobQueueRange(range: TimeRange): Unit
 
   /** We index any approed text, or the unapproved source, see:
     * [[ed.server.search.makeElasticSearchJsonDocFor]]. [ix_unappr]
@@ -678,7 +679,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def loadTheParticipants(userIds: UserId*): immutable.Seq[Participant] = {
     val usersById = loadParticipantsAsMap(userIds)
-    userIds.to[immutable.Seq] map { id =>
+    userIds.to(immutable.Seq) map { id =>
       usersById.getOrElse(id, throw UserNotFoundException(id))
     }
   }
@@ -689,7 +690,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def loadUsersAsMap(userIds: Iterable[UserId]): Map[UserId, User] = {
     dieIf(userIds.exists(_ <= Participant.MaxGuestId), "EsE5YKG2")
-    loadParticipantsAsMap(userIds).mapValues(_.asInstanceOf[User])
+    loadParticipantsAsMap(userIds).view.mapValues(_.asInstanceOf[User]).toMap
   }
 
   def loadUserByPrimaryEmailOrUsername(emailOrUsername: String): Option[User]

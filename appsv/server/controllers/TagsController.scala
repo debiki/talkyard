@@ -17,6 +17,7 @@
 
 package controllers
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude.{IfBadAbortReq, IfBadDie, JsEmptyObj2, throwUnimpl}
 import debiki.{JsonMaker, RateLimits, SiteTpi}

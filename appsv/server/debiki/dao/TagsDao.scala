@@ -17,6 +17,7 @@
 
 package debiki.dao
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp.{throwForbidden, throwForbiddenIf}
@@ -102,7 +103,7 @@ trait TagsDao {
 
   def getTagTypesByNamesOrSlugs(namesOrSlugs: Iterable[St]): ImmSeq[Opt[TagType]] = {
     val byX = getAllTagTypesByX()
-    namesOrSlugs.to[Vec] map { nameOrSlug =>
+    namesOrSlugs.to(Vec) map { nameOrSlug =>
       // Maybe allow prefixes 'slug:' or 'name:'?  But what if a tag is named 'slug'?
       // And ':' is also used for ':desc' and ':asc', but that's maybe ok, that's
       // *after* the tag slug or name.  But what if one tag is named 'slug', another 'desc'
@@ -123,7 +124,7 @@ trait TagsDao {
 
   def resolveTypeRefs(refs: Iterable[TypeRef]): ImmSeq[Opt[TagType]] = {
     val byX = getAllTagTypesByX()
-    refs.to[Vec] map {
+    refs.to(Vec) map {
       case ParsedRef.ExternalId(refId) =>
         byX.byRefId.get(refId)
       case ParsedRef.Slug(slug) =>
@@ -334,7 +335,7 @@ trait TagsDao {
             tx.loadPostsByUniqueId(postIdsDirectlyAffected)
 
       // (Don't:  postsById.values — then we wouldn't find out if a post wasn't found.)
-      val postsAffected: Seq[Post] = postIdsDirectlyAffected.toSeq map { postId =>
+      val postsAffected: ImmSeq[Post] = postIdsDirectlyAffected.toSeq map { postId =>
         postsById.getOrElse(postId, {
           if (tagger.isStaff) abortNotFound("TyEPOST0FND025", s"No post with id $postId")
           else throwIndistinguishableNotFound("POST2TAG")  // [abrt_indist_404]

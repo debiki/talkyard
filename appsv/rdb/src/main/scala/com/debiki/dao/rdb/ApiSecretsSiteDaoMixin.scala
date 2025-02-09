@@ -17,6 +17,7 @@
 
 package com.debiki.dao.rdb
 
+import scala.collection.Seq
 import collection.immutable
 import com.debiki.core._
 import java.{sql => js}
@@ -41,7 +42,7 @@ trait ApiSecretsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  override def insertApiSecret(secret: ApiSecret) {
+  override def insertApiSecret(secret: ApiSecret): Unit = {
     val statement = s"""
       insert into api_secrets3 (
         site_id, secret_nr, user_id,

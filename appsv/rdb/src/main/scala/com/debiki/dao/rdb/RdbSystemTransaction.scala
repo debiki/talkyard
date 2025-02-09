@@ -17,6 +17,7 @@
 
 package com.debiki.dao.rdb
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import _root_.java.{util => ju}
@@ -59,12 +60,12 @@ class RdbSystemTransaction(
   // COULD move to new superclass?
   private var transactionEnded = false
 
-  def setTheOneAndOnlyConnection(connection: js.Connection) {
+  def setTheOneAndOnlyConnection(connection: js.Connection): Unit = {
     require(_theOneAndOnlyConnection.isEmpty, "DwE7PKF2")
     _theOneAndOnlyConnection = Some(connection)
   }
 
-  def createTheOneAndOnlyConnection(readOnly: Boolean) {
+  def createTheOneAndOnlyConnection(readOnly: Boolean): Unit = {
     require(_theOneAndOnlyConnection.isEmpty, "DwE8PKW2")
     _theOneAndOnlyConnection = Some(
           db.getConnection(readOnly, mustBeSerializable = true))
@@ -72,7 +73,7 @@ class RdbSystemTransaction(
 
 
   // COULD move to new superclass?
-  def commit() {
+  def commit(): Unit = {
     if (_theOneAndOnlyConnection.isEmpty)
       throw new IllegalStateException("No permanent connection created [DwE5KF2]")
     theOneAndOnlyConnection.commit()
@@ -82,7 +83,7 @@ class RdbSystemTransaction(
 
 
   // COULD move to new superclass?
-  def rollback() {
+  def rollback(): Unit = {
     if (_theOneAndOnlyConnection.isEmpty)
       throw new IllegalStateException("No permanent connection created [DwE2K57]")
     theOneAndOnlyConnection.rollback()
@@ -118,7 +119,7 @@ class RdbSystemTransaction(
       }
       else {
         val result = singleRowHandler(rs)
-        dieIf(rs.next(), "TyE6GMY9" + (if (debugCode eq null) "" else '-' + debugCode))
+        dieIf(rs.next(), "TyE6GMY9" + (if (debugCode eq null) "" else "-" + debugCode))
         Some(result)
       }
     })
@@ -206,7 +207,7 @@ class RdbSystemTransaction(
   def loadUsers(userIdsByTenant: Map[SiteId, immutable.Seq[UserId]]): Map[(SiteId, UserId), Participant] = {
     var idCount = 0
 
-    def incIdCount(ids: List[UserId]) {
+    def incIdCount(ids: List[UserId]): Unit = {
       val len = ids.length
       idCount += len
     }
@@ -226,7 +227,7 @@ class RdbSystemTransaction(
     val totalQuery = mutable.StringBuilder.newBuilder
     var allValsReversed = List[AnyRef]()
 
-    def growQuery(moreQueryAndVals: (String, List[AnyRef])) {
+    def growQuery(moreQueryAndVals: (String, List[AnyRef])): Unit = {
       if (totalQuery.nonEmpty)
         totalQuery ++= " union "
       totalQuery ++= moreQueryAndVals._1
@@ -1105,7 +1106,7 @@ class RdbSystemTransaction(
   }
 
 
-  def deleteFromIndexQueue(post: Post, siteId: SiteId) {
+  def deleteFromIndexQueue(post: Post, siteId: SiteId): Unit = {
     val statement = s"""
       delete from job_queue_t
       where site_id = ? and post_id = ? and post_rev_nr <= ?
@@ -1253,7 +1254,7 @@ class RdbSystemTransaction(
   }
 
 
-  def deletePersonalDataFromOldAuditLogEntries() {
+  def deletePersonalDataFromOldAuditLogEntries(): Unit = {
     TESTS_MISSING
 
     // Forget the last octet fairly soon, so won't be possible to identify a
@@ -1297,7 +1298,7 @@ class RdbSystemTransaction(
   }
 
 
-  def deletePersonalDataFromOldSpamCheckTasks() {
+  def deletePersonalDataFromOldSpamCheckTasks(): Unit = {
     // For now, just delete any old tasks. Later, could be nice to remember tasks
     // that resulted in spam actually being found — since that can result in the author
     // getting auto blocked; then, can be good to know why that happened.
@@ -1375,7 +1376,7 @@ class RdbSystemTransaction(
 
   /** Finds all evolution scripts below src/main/resources/db/migration and applies them.
     */
-  def applyEvolutions() {
+  def applyEvolutions(): Unit = {
     val flyway = new Flyway()
 
     // --- Temporarily, to initialize the production database -----
@@ -1404,7 +1405,7 @@ class RdbSystemTransaction(
   }
 
 
-  override def emptyDatabase() {
+  override def emptyDatabase(): Unit = {
     require(daoFactory.isTest)
 
     // There are foreign keys from sites3 to other tables and back.

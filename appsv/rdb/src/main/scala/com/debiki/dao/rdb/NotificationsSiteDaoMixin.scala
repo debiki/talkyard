@@ -17,6 +17,7 @@
 
 package com.debiki.dao.rdb
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{sql => js, util => ju}
@@ -31,7 +32,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
   self: RdbSiteTransaction =>
 
 
-  def saveDeleteNotifications(notifications: Notifications) {
+  def saveDeleteNotifications(notifications: Notifications): Unit = {
     if (notifications.isEmpty)
       return
     // Perhaps we'd better allow notifications to be created and deleted, so that any
@@ -52,7 +53,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  private def createNotf(notf: Notification) {
+  private def createNotf(notf: Notification): Unit = {
     val sql = """
       insert into notifications3(
         SITE_ID, notf_id, CREATED_AT, NOTF_TYPE,
@@ -224,19 +225,19 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def updateNotificationSkipEmail(notifications: Seq[Notification]) {
+  def updateNotificationSkipEmail(notifications: Seq[Notification]): Unit = {
     updateNotificationConnectToEmail(notifications, email = None)
   }
 
 
-  def updateNotificationConnectToEmail(notfs: Seq[Notification], email: Opt[Email]) {
+  def updateNotificationConnectToEmail(notfs: Seq[Notification], email: Opt[Email]): Unit = {
     notfs foreach {
       connectNotificationToEmail(_, email)
     }
   }
 
 
-  def connectNotificationToEmail(notification: Notification, email: Opt[Email]) {
+  def connectNotificationToEmail(notification: Notification, email: Opt[Email]): Unit = {
     val statement = i"""
       update notifications3 set email_id = ?, email_status = ?
       where site_id = ? and notf_id = ?
@@ -256,7 +257,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def markNotfsAsSeen(userId: UserId, anyNotfId: Option[NotificationId], skipEmails: Boolean) {
+  def markNotfsAsSeen(userId: UserId, anyNotfId: Option[NotificationId], skipEmails: Boolean): Unit = {
     markNotfsAsSeenSkipEmailImpl(userId, anyNotfId = anyNotfId, skipEmails = skipEmails)
   }
 

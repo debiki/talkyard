@@ -1,41 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration>
+
 <configuration>
-  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
-      <layout class="ed.stackdriver.StackdriverLayout" />
+  <import class="ed.stackdriver.StackdriverLayout"/>
+  <import class="ch.qos.logback.core.rolling.RollingFileAppender"/>
+  <import class="ch.qos.logback.core.encoder.LayoutWrappingEncoder"/>
+  <import class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy"/>
+  <import class="ch.qos.logback.core.ConsoleAppender"/>
+
+  <appender name="STDOUT" class="ConsoleAppender">
+    <encoder class="LayoutWrappingEncoder">
+      <layout class="StackdriverLayout"/>
     </encoder>
   </appender>
 
   <!-- https://logback.qos.ch/manual/appenders.html#TimeBasedRollingPolicy   -->
-  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+  <appender name="FILE" class="RollingFileAppender">
     <file>/var/log/talkyard/talkyard-app.log</file>
-    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+    <rollingPolicy class="TimeBasedRollingPolicy">
       <fileNamePattern>/var/log/talkyard/talkyard-app.%d{yyyy-ww}.log</fileNamePattern>
       <maxHistory>12</maxHistory>
       <!-- Maybe otherwise a "log loop bug" could fill up the disk? -->
       <totalSizeCap>200MB</totalSizeCap>
     </rollingPolicy>
-    <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
-      <layout class="ed.stackdriver.StackdriverLayout" />
+    <encoder class="LayoutWrappingEncoder">
+      <layout class="StackdriverLayout"/>
     </encoder>
   </appender>
 
-  <logger name="application" level="TRACE" />
-  <logger name="tysvapp" level="TRACE" />
-  <logger name="tysvapp.MemCache" level="DEBUG" />
+  <logger name="application" level="TRACE"/>
+  <logger name="tysvapp" level="TRACE"/>
+  <logger name="tysvapp.MemCache" level="DEBUG"/>
   <!-- [ty_v1] Remove.  -->
-  <logger name="ed.server" level="TRACE" />
+  <logger name="ed.server" level="TRACE"/>
 
   <!-- Nice to have here, if changing <root> level to, say, DEBUG. -->
-  <logger name="play" level="INFO" />
-  <logger name="play.shaded" level="INFO" />
-  <logger name="org.elasticsearch" level="INFO" />
-  <logger name="com.zaxxer.hikari" level="INFO" />
-  <logger name="org.flywaydb" level="INFO" />
-  <logger name="application-akka.actor" level="INFO" />
+  <logger name="play" level="INFO"/>
+  <logger name="play.shaded" level="INFO"/>
+  <logger name="org.elasticsearch" level="INFO"/>
+  <logger name="com.zaxxer.hikari" level="INFO"/>
+  <logger name="org.flywaydb" level="INFO"/>
+  <logger name="application-akka.actor" level="INFO"/>
 
   <root level="INFO">
-    <appender-ref ref="STDOUT" />
-    <appender-ref ref="FILE" />
+    <appender-ref ref="STDOUT"/>
+    <appender-ref ref="FILE"/>
   </root>
-
 </configuration>

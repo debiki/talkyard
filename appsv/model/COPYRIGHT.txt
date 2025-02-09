@@ -1,5 +1,5 @@
-Debiki is a discussion system for fruitful discussions.
-Copyright (C) 2010-2013 Kaj Magnus Lindberg (born 1979)
+Talkyard is a discussion system for fruitful discussions.
+Copyright (c) 2010-2024 Kaj Magnus Lindberg
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -28,12 +28,6 @@ components, including:
     Copyright 2006 Google Inc.
     Apache License 2.0
     http://code.google.com/p/google-diff-match-patch/
-
-  - Two files copied from LiftWeb
-    src/main/scala/com/debiki/v0/liftweb/
-    Copyright WorldWide Conferencing, LLC
-    Apache License 2.0
-    https://github.com/lift/framework
 
 
 vim: tw=72

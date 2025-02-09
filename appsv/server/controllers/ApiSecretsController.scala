@@ -17,6 +17,7 @@
 
 package controllers
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp._
@@ -40,7 +41,7 @@ class ApiSecretsController @Inject()(cc: ControllerComponents, edContext: TyCont
 
   private def listApiSecretsImpl(request: DebikiRequest[_]): Result = {
     val secrets = request.dao.listApiSecrets(limit = 100)
-    OkSafeJson(JsArray(secrets map JsApiSecret))
+    OkSafeJsonArr(JsArray(secrets map JsApiSecret))
   }
 
 

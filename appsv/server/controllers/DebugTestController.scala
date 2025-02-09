@@ -17,6 +17,7 @@
 
 package controllers
 
+import scala.collection.Seq
 import akka.pattern.ask
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -176,7 +177,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyConte
             "lastAtUnixMinute" -> numErrs.lastAtUnixMinute(),
             "numSinceStart" -> numErrs.numSinceStart()),
           "warnings" -> Json.obj(
-            "lastMinsAgo" -> JsInt32OrNull(numWarns.lastAtUnixMinute.map(nowMins - _)),
+            "lastMinsAgo" -> JsInt32OrNull(numWarns.lastAtUnixMinute().map(nowMins - _)),
             "lastAtUnixMinute" -> numWarns.lastAtUnixMinute(),
             "numSinceStart" -> numWarns.numSinceStart()))
 

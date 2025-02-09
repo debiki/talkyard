@@ -17,6 +17,7 @@
 
 package controllers
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -130,7 +131,7 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: TyContex
           .sortBy(idp => idp.guiOrder getOrElse (
                 idp.idpId.getOrElse(0) + 1000 * 1000))
     val json = JsArray(idps map JsX.JsIdentityProviderSecretConf)
-    OkSafeJson(json)
+    OkSafeJsonArr(json)
   }
 
 

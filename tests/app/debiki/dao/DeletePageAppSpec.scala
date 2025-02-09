@@ -17,6 +17,7 @@
 
 package debiki.dao
 
+import scala.collection.Seq
 import com.debiki.core._
 import debiki.EdHttp.ResultException
 import debiki._

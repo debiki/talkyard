@@ -155,7 +155,7 @@ package object logging {
       true
     }
 
-    protected def bugWarn(errorCode: String, problem: => String = "") {
+    protected def bugWarn(errorCode: String, problem: => String = ""): Unit = {
       Prelude.dieIf(Globals.isDevOrTest, errorCode, problem)
       val message = Prelude.formatErrorMessage(errorCode, problem)
       logger.warn(anySiteIdPrefix + s"BUG: $message")

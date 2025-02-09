@@ -110,7 +110,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
     }
 
 
-    def testMayNotMessage(dao: SiteDao, admin: Participant, sender: Participant, otherUser: Participant) {
+    def testMayNotMessage(dao: SiteDao, admin: Participant, sender: Participant, otherUser: Participant): Unit = {
       info("a moderate threat can message admin"); {
         val pagePath = dao.startGroupTalk(TitleSourceAndHtml("title_0482745"),
           body = textAndHtmlMaker.testBody("body_0482745"), PageType.FormalMessage,

@@ -17,6 +17,7 @@
 
 package debiki.dao
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.Globals
@@ -226,9 +227,9 @@ trait PagePathMetaDao {
       pageMetas.appendAll(remainingPageMetas)
     }
 
-    immutable.HashMap[PageId, PageMeta](pageMetas map { pageMeta =>
+    immutable.HashMap.from[PageId, PageMeta](pageMetas map { pageMeta =>
       pageMeta.pageId -> pageMeta
-    }: _*)
+    })
   }
 
 

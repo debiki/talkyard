@@ -747,15 +747,6 @@ object RateLimits {
     override def isReadLimits: Opt[Bo] = Some(true)
   }
 
-
-  object SubmitExternalForm_unused extends RateLimits {
-    val key = "ExFm"
-    val what = "submitted too many forms"
-    def maxPerFifteenSeconds = 3
-    def maxPerFifteenMinutes = 10
-    def maxPerDay = 30
-    def maxPerDayNewUser: i32 = Unlimited
-  }
 }
 
 

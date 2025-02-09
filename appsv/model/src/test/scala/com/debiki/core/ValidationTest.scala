@@ -211,7 +211,7 @@ class ValidationTest extends AnyFreeSpec with must.Matchers {    // TyT2AKB503
     }
 
     "but not uppercase" in {
-      findCategorySlugProblem("sLUg") mustBe 'defined
+      findCategorySlugProblem("sLUg") mustBe Symbol("defined")
     }
 
     "allow dashes" in {
@@ -281,13 +281,13 @@ class ValidationTest extends AnyFreeSpec with must.Matchers {    // TyT2AKB503
     import Validation.findExtIdProblem
 
     "disallow blank ext ids" in {
-      findExtIdProblem("") mustBe 'defined
+      findExtIdProblem("") mustBe Symbol("defined")
       // later:
-      //findExtIdProblem(" ") mustBe 'defined
-      //findExtIdProblem("   ") mustBe 'defined
-      //findExtIdProblem("\t") mustBe 'defined
-      //findExtIdProblem("\r") mustBe 'defined
-      //findExtIdProblem("\n") mustBe 'defined
+      //findExtIdProblem(" ") mustBe Symbol("defined")
+      //findExtIdProblem("   ") mustBe Symbol("defined")
+      //findExtIdProblem("\t") mustBe Symbol("defined")
+      //findExtIdProblem("\r") mustBe Symbol("defined")
+      //findExtIdProblem("\n") mustBe Symbol("defined")
     }
 
     "allow normal ext ids" in {
@@ -300,7 +300,7 @@ class ValidationTest extends AnyFreeSpec with must.Matchers {    // TyT2AKB503
     }
 
     "but not 129 chars" in {
-      findExtIdProblem(("1234567890" * 13) dropRight 1) mustBe 'defined
+      findExtIdProblem(("1234567890" * 13) dropRight 1) mustBe Symbol("defined")
     }
   }
 

@@ -18,6 +18,7 @@
 
 package debiki.dao
 
+import scala.collection.Seq
 import akka.actor.Actor
 import com.debiki.core
 import com.debiki.core._
@@ -284,7 +285,7 @@ class SystemDao(
 
       // Clear the Redis cache for this site, (2PKF05Y), in case we're developing
       // on localhost and there's old stuff in the Redis dev server.
-      val redisCache = new RedisCache(FirstSiteId, globals.redisClient, globals.now)
+      val redisCache = new RedisCache(FirstSiteId, globals.redisClient, globals.now _)
       redisCache.clearThisSite()
 
       firstSite
@@ -359,7 +360,7 @@ class SystemDao(
     // that could make weird things happen, when site ids get reused — e.g. in
     // tests or when restoring a backup. (2PKF05Y)
     siteIdsToDelete foreach { siteId =>
-      val redisCache = new RedisCache(siteId, globals.redisClient, globals.now)
+      val redisCache = new RedisCache(siteId, globals.redisClient, globals.now _)
       redisCache.clearThisSite()
     }
 
@@ -450,7 +451,7 @@ class SystemDao(
       // on localhost, and you empty the SQL database or import an SQL dump, that'd make
       // most/all sites disappear from the Postgres database — but we also need to clear
       // the Redis cache:
-      val redisCache = new RedisCache(newSite.id, globals.redisClient, globals.now)
+      val redisCache = new RedisCache(newSite.id, globals.redisClient, globals.now _)
       redisCache.clearThisSite()
 
       createdFromSiteId foreach { oldSiteId =>

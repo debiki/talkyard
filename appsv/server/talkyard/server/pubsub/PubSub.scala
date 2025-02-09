@@ -17,6 +17,7 @@
 
 package talkyard.server.pubsub
 
+import scala.collection.Seq
 import akka.actor._
 import akka.pattern.ask
 import akka.stream.scaladsl.SourceQueueWithComplete
@@ -279,7 +280,7 @@ class PubSubActor(val globals: Globals) extends Actor {
               logger.warn(s"$message: $howMany")
               Problem(message, siteId = siteUserId.siteId, adminInfo = howMany)
             }
-      sender ! anyProblem
+      sender() ! anyProblem
 
     case UserWatchesPages(siteId, userId, pageIds) =>
       val user = globals.siteDao(siteId).getParticipant(userId) getOrElse {
@@ -371,10 +372,10 @@ class PubSubActor(val globals: Globals) extends Actor {
 
     case DebugGetSubscribers(siteId) =>
       val state: PubSubState = debugMakeState(siteId)
-      sender ! state
+      sender() ! state
 
     case DebugGetClientsAllSites =>
-      sender ! debugMakeStateAllSites()
+      sender() ! debugMakeStateAllSites()
 
     case StrangerSeen(siteId, browserIdData) =>
       redisCacheForSite(siteId).markStrangerOnline(browserIdData)
@@ -865,7 +866,7 @@ class PubSubActor(val globals: Globals) extends Actor {
     */
   def debugMakeStateAllSites(): ClientsAllSites = {
     ClientsAllSites(
-        clientsInactiveFirst = clientsBySiteUserIdInactiveFirst.to[Vector])
+        clientsInactiveFirst = clientsBySiteUserIdInactiveFirst.to(Vector))
   }
 
 

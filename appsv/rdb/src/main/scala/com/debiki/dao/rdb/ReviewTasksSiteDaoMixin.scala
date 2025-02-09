@@ -17,6 +17,7 @@
 
 package com.debiki.dao.rdb
 
+import scala.collection.Seq
 import collection.immutable
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -43,7 +44,7 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
   }
 
 
-  override def upsertReviewTask(reviewTask: ReviewTask) {
+  override def upsertReviewTask(reviewTask: ReviewTask): Unit = {
     val statement = """
       insert into review_tasks3(
         site_id,

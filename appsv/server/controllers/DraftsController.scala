@@ -17,6 +17,7 @@
 
 package controllers
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -205,7 +206,8 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: TyContext)
     OkSafeJson(Json.obj(
       "drafts" -> JsArray(drafts map JsDraft),
       "pagePostNrsByPostId" -> JsObject(pagePostNrs),
-      "pageTitlesById" -> JsObject(pageStuffById.mapValues(stuff => JsString(stuff.title)))))
+      "pageTitlesById" -> JsObject(
+            pageStuffById.mapValues(stuff => JsString(stuff.title)).toMap)))
   }
 
 

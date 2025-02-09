@@ -17,6 +17,7 @@
 
 package debiki
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.github.benmanes.caffeine
 import scala.{collection => col}

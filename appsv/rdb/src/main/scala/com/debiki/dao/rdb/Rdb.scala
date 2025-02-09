@@ -17,6 +17,7 @@
 
 package com.debiki.dao.rdb
 
+import scala.collection.Seq
 import _root_.java.{io => jio, util => ju}
 import _root_.com.debiki.core._
 import _root_.com.debiki.core.Prelude._
@@ -419,7 +420,7 @@ object Rdb {
     val sqlArray: js.Array = rs.getArray(column)
     if (sqlArray eq null) return None
     val javaArray = sqlArray.getArray.asInstanceOf[Array[String]]
-    Some(javaArray.to[Vector])
+    Some(javaArray.to(Vector))
   }
 
   def getArrayOfInt32(rs: js.ResultSet, column: St): ImmSeq[i32] = {
@@ -431,7 +432,7 @@ object Rdb {
     val sqlArray: js.Array = rs.getArray(column)
     if (sqlArray eq null) return None
     val javaArray = sqlArray.getArray.asInstanceOf[Array[Integer]]
-    Some(javaArray.to[Vec].map(_.toInt))
+    Some(javaArray.to(Vec).map(_.toInt))
   }
 
   /** Make sure no array contains any null — just because I then don't know what'll
@@ -455,8 +456,8 @@ object Rdb {
       System.out.println(s"classNameOf(item): ${classNameOf(item)}")
     } */
     WOULD_OPTIMIZE // Can skip to[Vec], do that at the end instead? And skip toInt, or?
-    val vecOfJavaArrays = javaArrayAsArr.to[Vec]
-    val vecOfVec = vecOfJavaArrays.map(_.asInstanceOf[Array[_]].to[Vec].map(_.asInstanceOf[Int]))
+    val vecOfJavaArrays = javaArrayAsArr.to(Vec)
+    val vecOfVec = vecOfJavaArrays.map(_.asInstanceOf[Array[_]].to(Vec).map(_.asInstanceOf[Int]))
     Some(vecOfVec)
   }
 
@@ -568,7 +569,7 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
 
   // Test the data sources.
   {
-    def testDataSource(dataSource: jxs.DataSource, what: String) {
+    def testDataSource(dataSource: jxs.DataSource, what: String): Unit = {
       val connection: js.Connection =
         try dataSource.getConnection()
         catch {
@@ -583,7 +584,7 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
   }
 
 
-  def close() {
+  def close(): Unit = {
     // Results in PostgreSQL complaining that "DataSource has been closed",
     // also when you open another one (!) with a different name.
     //dataSource.asInstanceOf[pg.ds.PGPoolingDataSource].close()
@@ -855,7 +856,7 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
 
 
   private def _bind(
-        values: List[Any], pstmt: js.PreparedStatement, firstBindPos: Int = 1) {
+        values: List[Any], pstmt: js.PreparedStatement, firstBindPos: Int = 1): Unit = {
     var bindPos = firstBindPos
     for (v <- values) {
       v match {
@@ -897,12 +898,12 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
     connection
   }
 
-  def closeConnection(connection: js.Connection) {
+  def closeConnection(connection: js.Connection): Unit = {
     // Already rolled back or committed by the caller.
     _closeEtc(connection, rollback = false)
   }
 
-  private def _closeEtc(conn: js.Connection, rollback: Boolean) {
+  private def _closeEtc(conn: js.Connection, rollback: Boolean): Unit = {
     // Need to rollback before closing? Read:
     // http://download.oracle.com/javase/6/docs/api/java/sql/Connection.html:
     // "It is strongly recommended that an application explicitly commits

@@ -28,7 +28,7 @@ package object controllers {
     OkApiJson(json)
 
   @deprecated("Now", "Use OkSafeJson(JsObject) instead")
-  def OkSafeJson(json: JsArray): Result =
+  def OkSafeJsonArr(json: JsArray): Result =
     OkSafeJsValue(json)
 
   @deprecated("Now", "Use OkSafeJson(JsObject) instead")

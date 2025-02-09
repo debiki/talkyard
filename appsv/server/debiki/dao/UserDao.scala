@@ -17,6 +17,7 @@
 
 package debiki.dao
 
+import scala.collection.Seq
 import com.debiki.core._
 import debiki.EdHttp._
 import debiki.JsonMaker.NotfsAndCounts
@@ -443,7 +444,7 @@ trait UserDao {
         throwForbidden("DwE4KEF24", "Cannot suspend admins")
 
       user = user.copy(
-        suspendedAt = Some(now.toJavaDate),
+        suspendedAt = Some(now().toJavaDate),
         suspendedTill = Some(until),
         suspendedById = Some(suspendedById),
         suspendedReason = Some(reason.trim))
@@ -1103,7 +1104,7 @@ trait UserDao {
 
 
   def getMembersByUsernames(usernames: Iterable[Username]): ImmSeq[Opt[Member]] = {
-    usernames.to[Vec].map(getMemberByUsername)
+    usernames.to(Vec).map(getMemberByUsername)
   }
 
 
@@ -2641,7 +2642,7 @@ trait UserDao {
     memCache.remove(patKey(userId))
   }
 
-  def clearAllGroupsFromMemCache() {
+  def clearAllGroupsFromMemCache(): Unit = {
     memCache.remove(allGroupsKey)
     // (No need to clear group members though, that is, `groupMembersKey(..)`.)
   }

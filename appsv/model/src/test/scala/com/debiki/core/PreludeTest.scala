@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import scala.collection.Seq
 import java.{util => ju}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must
@@ -217,7 +218,7 @@ class PreludeTest extends AnyFreeSpec with must.Matchers {
   "nextRandomPageId" - {
     "be at least 5 chars and contain no vowels but `uy'" in {
       for (i <- 1 to 50) {
-        val s = nextRandomPageId
+        val s = nextRandomPageId()
         // Vowels aoei forbidden, and only lowercase chars (+ numbers) allowed.
         ("aoeiABCDEFGHIJKLMNOPQRSTUVWXYZ" intersect s) mustBe ""
         s.length must be >= 5

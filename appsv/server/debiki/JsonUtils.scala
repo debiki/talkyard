@@ -17,6 +17,7 @@
 
 package debiki
 
+import scala.{collection => col}
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import com.debiki.core
@@ -93,7 +94,7 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
       case x => throwBadJson("TyE0JSOBJ", s"$what is not a JsObject, it is a: ${classNameOf(x)}")
     }
 
-  def asJsArray(json: JsValue, what: St): Seq[JsValue] =
+  def asJsArray(json: JsValue, what: St): col.Seq[JsValue] =
     json match {
       case a: JsArray => a.value
       case x => throwBadJson("TyE0JSARR", s"$what is not a JsArray, it is a: ${classNameOf(x)}")
@@ -165,7 +166,7 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
   }
 
   def parseOptInt32Array(json: JsValue, fieldName: St): Opt[Vec[i32]] = {
-    parseOptJsArray(json, fieldName) map { arr: IndexedSeq[JsValue] =>
+    parseOptJsArray(json, fieldName) map { arr: col.IndexedSeq[JsValue] =>
       var ix = 0
       def errPrefix = s"Array '$fieldName', item $ix:"
       arr.map({
@@ -185,7 +186,7 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
   }
 
   def parseJsArray(json: JsValue, fieldName: St, altName: St = "", optional: Bo = false)
-          : Seq[JsValue] =
+          : col.Seq[JsValue] =
     readJsArray(json, fieldName, altName = altName, optional).value
 
   // Add a 2nd fn, or a param: all elems be of the same type? See below: [PARSEJSARR]
@@ -204,7 +205,7 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     }
   }
 
-  def parseOptJsArray(jv: JsValue, fieldName: St, altName: St = ""): Opt[IndexedSeq[JsValue]] = {
+  def parseOptJsArray(jv: JsValue, fieldName: St, altName: St = ""): Opt[col.IndexedSeq[JsValue]] = {
     def altVal = if (altName.isEmpty) None else (jv \ altName).toOption
     (jv \ fieldName).toOption.orElse(altVal) map {
       case a: JsArray => a.value
@@ -217,7 +218,7 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
 
   /*
   // No way to shorten this?  [PARSEJSARR]
-  (jsObj \ "newTopicTypes").asOpt[Seq[JsValue]] match {
+  (jsObj \ "newTopicTypes").asOpt[col.Seq[JsValue]] match {
     case Some(list) if list.isInstanceOf[JsArray] =>
       // Should be only one topic type. [5YKW294]
       list.asInstanceOf[JsArray].value.headOption match {

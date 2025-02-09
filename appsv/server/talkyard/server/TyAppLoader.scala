@@ -70,11 +70,11 @@ class TyAppComponents(appLoaderContext: ApplicationLoader.Context)
   val plainApiActions = new PlainApiActions(safeActions, globals, security, rateLimiter)
   val nashorn = new Nashorn(globals)
 
-  val context = new TyContext(
+  val tyCtx = new TyContext(
         globals, security, safeActions, plainApiActions, nashorn,
         materializer, controllerComponents)
 
-  globals.setEdContext(context)
+  globals.setEdContext(tyCtx)
   globals.startStuff()
 
   applicationLifecycle.addStopHook { () =>
@@ -91,61 +91,61 @@ class TyAppComponents(appLoaderContext: ApplicationLoader.Context)
 
   private def cc = controllerComponents
 
-  val loginController = new _root_.controllers.LoginController(cc, context)
-  val loginWithOpenAuthController = new _root_.controllers.LoginWithOpenAuthController(cc, context)
-  val sitePatchController = new _root_.talkyard.server.sitepatch.SitePatchController(cc, context)
+  val loginController = new _root_.controllers.LoginController(cc, tyCtx)
+  val loginWithOpenAuthController = new _root_.controllers.LoginWithOpenAuthController(cc, tyCtx)
+  val sitePatchController = new _root_.talkyard.server.sitepatch.SitePatchController(cc, tyCtx)
 
   lazy val router: Router = new _root_.router.Routes(
     httpErrorHandler,
     loginController,
-    new _root_.controllers.LoginAsGuestController(cc, context),
-    new _root_.controllers.LoginWithPasswordController(cc, context),
+    new _root_.controllers.LoginAsGuestController(cc, tyCtx),
+    new _root_.controllers.LoginWithPasswordController(cc, tyCtx),
     loginWithOpenAuthController,
-    new _root_.controllers.ImpersonateController(cc, context, loginController),
-    new talkyard.server.pubsub.SubscriberController(cc, context),
-    new _root_.controllers.EmbeddedTopicsController(cc, context),
-    new _root_.controllers.SearchController(cc, context),
-    new _root_.controllers.ResetPasswordController(cc, context),
-    new _root_.controllers.CreateSiteController(cc, context),
-    new _root_.controllers.AdminController(cc, context),
-    new _root_.controllers.SettingsController(cc, context),
-    new _root_.controllers.LegalController(cc, context),
-    new _root_.controllers.SpecialContentController(cc, context),
-    new _root_.controllers.ModerationController(cc, context),
-    new _root_.controllers.UserController(cc, context),
-    new talkyard.server.sess.SessionController(cc, context),
-    new _root_.controllers.UnsubscriptionController(cc, context),
-    new _root_.talkyard.server.summaryemails.UnsubFromSummariesController(cc, context),
-    new _root_.controllers.InviteController(cc, context),
-    new _root_.controllers.ForumController(cc, context),
-    new _root_.controllers.PageController(cc, context),
-    new _root_.talkyard.server.talk.PostsController(cc, context),
-    new _root_.controllers.ReplyController(cc, context),
-    new _root_.controllers.DraftsController(cc, context),
-    new _root_.controllers.CustomFormController(cc, context),
-    new _root_.talkyard.server.plugins.utx.UsabilityTestingExchangeController(cc, context),
-    new _root_.controllers.VoteController(cc, context),
-    new _root_.controllers.FlagController(cc, context),
-    new _root_.controllers.EditController(cc, context),
-    new _root_.controllers.PageTitleSettingsController(cc, context),
-    new _root_.controllers.GroupTalkController(cc, context),
-    new _root_.controllers.UploadsController(cc, context),
-    new _root_.controllers.CloseCollapseController(cc, context),
+    new _root_.controllers.ImpersonateController(cc, tyCtx, loginController),
+    new talkyard.server.pubsub.SubscriberController(cc, tyCtx),
+    new _root_.controllers.EmbeddedTopicsController(cc, tyCtx),
+    new _root_.controllers.SearchController(cc, tyCtx),
+    new _root_.controllers.ResetPasswordController(cc, tyCtx),
+    new _root_.controllers.CreateSiteController(cc, tyCtx),
+    new _root_.controllers.AdminController(cc, tyCtx),
+    new _root_.controllers.SettingsController(cc, tyCtx),
+    new _root_.controllers.LegalController(cc, tyCtx),
+    new _root_.controllers.SpecialContentController(cc, tyCtx),
+    new _root_.controllers.ModerationController(cc, tyCtx),
+    new _root_.controllers.UserController(cc, tyCtx),
+    new talkyard.server.sess.SessionController(cc, tyCtx),
+    new _root_.controllers.UnsubscriptionController(cc, tyCtx),
+    new _root_.talkyard.server.summaryemails.UnsubFromSummariesController(cc, tyCtx),
+    new _root_.controllers.InviteController(cc, tyCtx),
+    new _root_.controllers.ForumController(cc, tyCtx),
+    new _root_.controllers.PageController(cc, tyCtx),
+    new _root_.talkyard.server.talk.PostsController(cc, tyCtx),
+    new _root_.controllers.ReplyController(cc, tyCtx),
+    new _root_.controllers.DraftsController(cc, tyCtx),
+    new _root_.controllers.CustomFormController(cc, tyCtx),
+    new _root_.talkyard.server.plugins.utx.UsabilityTestingExchangeController(cc, tyCtx),
+    new _root_.controllers.VoteController(cc, tyCtx),
+    new _root_.controllers.FlagController(cc, tyCtx),
+    new _root_.controllers.EditController(cc, tyCtx),
+    new _root_.controllers.PageTitleSettingsController(cc, tyCtx),
+    new _root_.controllers.GroupTalkController(cc, tyCtx),
+    new _root_.controllers.UploadsController(cc, tyCtx),
+    new _root_.controllers.CloseCollapseController(cc, tyCtx),
     sitePatchController,
-    new _root_.controllers.DebugTestController(cc, context),
-    new _root_.controllers.SiteAssetBundlesController(cc, context),
-    new _root_.controllers.TagsController(cc, context),
-    new _root_.talkyard.server.emails.in.EmailsInController(cc, context),
-    new _root_.controllers.SuperAdminController(cc, context),
-    new _root_.talkyard.server.events.WebhooksController(cc, context),
-    new _root_.controllers.ApiSecretsController(cc, context),
-    new _root_.talkyard.server.authn.SsoAuthnController(cc, context),
-    new _root_.talkyard.server.api.GetController(cc, context),
-    new _root_.talkyard.server.api.ListController(cc, context),
-    new _root_.talkyard.server.api.QueryDoController(cc, context),
-    new _root_.controllers.ApiV0Controller(cc, context, sitePatchController),
-    //new _root_.controllers.Application(cc, context),
-    new _root_.controllers.ViewPageController(cc, context))
+    new _root_.controllers.DebugTestController(cc, tyCtx),
+    new _root_.controllers.SiteAssetBundlesController(cc, tyCtx),
+    new _root_.controllers.TagsController(cc, tyCtx),
+    new _root_.talkyard.server.emails.in.EmailsInController(cc, tyCtx),
+    new _root_.controllers.SuperAdminController(cc, tyCtx),
+    new _root_.talkyard.server.events.WebhooksController(cc, tyCtx),
+    new _root_.controllers.ApiSecretsController(cc, tyCtx),
+    new _root_.talkyard.server.authn.SsoAuthnController(cc, tyCtx),
+    new _root_.talkyard.server.api.GetController(cc, tyCtx),
+    new _root_.talkyard.server.api.ListController(cc, tyCtx),
+    new _root_.talkyard.server.api.QueryDoController(cc, tyCtx),
+    new _root_.controllers.ApiV0Controller(cc, tyCtx, sitePatchController),
+    //new _root_.controllers.Application(cc, tyCtx),
+    new _root_.controllers.ViewPageController(cc, tyCtx))
 
 }
 

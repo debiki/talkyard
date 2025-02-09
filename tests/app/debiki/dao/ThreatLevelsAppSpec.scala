@@ -17,6 +17,7 @@
 
 package debiki.dao
 
+import scala.collection.Seq
 import com.debiki.core._
 
 
@@ -24,7 +25,7 @@ class ThreatLevelsAppSpec extends ReviewStuffAppSuite("6gp4") {
 
   override def nestedSuites = Vector(
     new NestedPostsSuite {
-      override def beforeAll {
+      override def beforeAll: Unit = {
         dao.saveSiteSettings(SettingsToSave(
           orgFullName = Some(Some("Test Org Name")),
           maxPostsPendApprBefore = Some(Some(0)),

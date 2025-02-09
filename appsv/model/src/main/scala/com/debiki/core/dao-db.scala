@@ -139,6 +139,7 @@ object DbDao {
     // Now, scrypt though, with: n = 2^17 = 131072, r = 8, p = 1  -- no, use 2^16 = 65536
     // (2^14 was recommended in 2009 for web apps, and 2^20 for files
     // if waiting 5 seconds was okay. 2^17 is overkill I would think.)
+    // Move to the server module? [mv_scrypt_2_srv]
     val hash = SCryptUtil.scrypt(plainTextPassword, 65536, 8, 1)
     s"$ScryptPrefix$hash"
   }

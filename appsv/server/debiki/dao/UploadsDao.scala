@@ -17,6 +17,7 @@
 
 package debiki.dao
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.google.{common => guava}
@@ -68,7 +69,7 @@ trait UploadsDao {
       "DwE5KFY9", "File uploads disabled, config value missing: " +
         Globals.LocalhostUploadsDirConfValName)
 
-    val uploadedDotSuffix = '.' + checkAndGetFileSuffixLowercase(uploadedFileName)
+    val uploadedDotSuffix = "." + checkAndGetFileSuffixLowercase(uploadedFileName)
 
     // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8. Instead, use Tika.
     // (This detects mime type based on actual document content, not just the suffix.) dupl [7YKW23]
@@ -124,7 +125,7 @@ trait UploadsDao {
             (tempFile, ".jpg")
           }
           else {
-            tempCompressedFile = Some(new jio.File(tempFile.toPath + ".compressed.jpg"))
+            tempCompressedFile = Some(new jio.File(s"${tempFile.toPath}.compressed.jpg"))
             ImageUtils.convertToCompressedJpeg(image, origSize.toInt, tempCompressedFile.get)
             val compressedSize = tempCompressedFile.get.length
             val tempFileSize = tempFile.length

@@ -17,6 +17,7 @@
 
 package talkyard.server
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude.devDieIf
 import debiki.dao.SiteDao
@@ -134,11 +135,11 @@ package object http {
   type JsonPostRequest = ApiRequest[JsValue]
 
   def headersToJsonSingleMap(headers: Map[String, String]): JsObject = {
-    JsObject(headers mapValues JsString)
+    JsObject(headers.mapValues(JsString).toMap)
   }
 
   def headersToJsonMultiMap(headers: Map[String, Seq[String]]): JsObject = {
-    JsObject(headers.mapValues(vs => JsArray(vs map JsString)))
+    JsObject(headers.mapValues(vs => JsArray(vs map JsString)).toMap)
   }
 
 }

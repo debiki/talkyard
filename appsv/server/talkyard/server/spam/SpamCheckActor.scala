@@ -17,6 +17,7 @@
 
 package talkyard.server.spam
 
+import scala.collection.Seq
 import akka.actor._
 import com.debiki.core._
 import com.debiki.core.Prelude._

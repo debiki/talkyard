@@ -19,6 +19,7 @@
 package com.debiki.core
 
 
+import scala.collection.Seq
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must
 
@@ -178,7 +179,7 @@ class PagePathTest extends AnyFreeSpec with must.Matchers {
     }
 
     s"reject bad slugs" - {
-      def testRejectsBad(slug: String, errorMessagePrefix: String) {
+      def testRejectsBad(slug: String, errorMessagePrefix: String): Unit = {
         val result = PagePath.fromUrlPath(TestSiteId, slug)
         result match {
           case PagePath.Parsed.Bad(message) =>

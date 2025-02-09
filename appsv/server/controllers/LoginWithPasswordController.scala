@@ -17,6 +17,7 @@
 
 package controllers
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -79,8 +80,8 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  private def doLogin(request: ApiRequest[_], dao: SiteDao, emailOrUsername: String, password: String)
-        : (SidOk, Seq[Cookie]) = {
+  private def doLogin(request: ApiRequest[_], dao: SiteDao, emailOrUsername: St, password: St)
+        : (SidOk, ImmSeq[Cookie]) = {
     val loginAttempt = PasswordLoginAttempt(
       ip = request.ip,
       date = request.ctime,

@@ -81,7 +81,7 @@ trait SearchSiteDaoMixin extends SiteTransaction {
     runUpdateSingleRow(statement, values)
   }
 
-  def indexPostIdsSoon_unimpl(postIds: Set[PostId]) {
+  def indexPostIdsSoon_unimpl(postIds: Set[PostId]): Unit = {
     unimpl("Not implemented:  indexPostIdsSoon_unimpl")
     /* Sth like this:
     val statement = s"""
@@ -99,7 +99,7 @@ trait SearchSiteDaoMixin extends SiteTransaction {
      */
   }
 
-  def indexAllPostsOnPage(pageId: PageId) {
+  def indexAllPostsOnPage(pageId: PageId): Unit = {
     val statement = s""" -- indexAllPostsOnPage
       insert into job_queue_t (action_at, site_id, site_version, post_id, post_rev_nr)
       select
@@ -120,7 +120,7 @@ trait SearchSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def indexPagesSoon(pages: PageMeta*) {
+  def indexPagesSoon(pages: PageMeta*): Unit = {
     pages.foreach(_enqueuePage)
   }
 

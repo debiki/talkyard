@@ -17,6 +17,7 @@
 
 package controllers
 
+import scala.collection.Seq
 import talkyard.server.authn.OAuth2Settings
 import com.auth0.jwt.{JWT => a0_JWT}
 import com.auth0.jwt.interfaces.{Claim => a0_Claim, DecodedJWT => a0_DecodedJWT}
@@ -186,7 +187,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   private val AuthStateCookieName = "dwCoOAuth2State"
 
   // Discard these also if logging in with username + password?  [clear_aun_cookies]
-  private val CookiesToDiscardAfterLogin: Seq[DiscardingCookie] = Seq(
+  private val CookiesToDiscardAfterLogin: Vec[DiscardingCookie] = Vec(
     ReturnToUrlCookieName,
     ReturnToSiteOriginTokenCookieName,
     ReturnToThisSiteXsrfTokenCookieName,
@@ -932,7 +933,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // — otherwise, if just OAuth2, then it's IDP specific.
 
     def requestUserInfo(accessToken: sj_OAuth2AccessToken, anyIdToken: Opt[OidcIdToken],
-          anyUserInfo: Opt[IdpUserInfo]) {
+          anyUserInfo: Opt[IdpUserInfo]): Unit = {
       val userInfoRequest = new sj_OAuthRequest(sj_Verb.GET, idp.oidcUserInfoUrl)
 
       // Some OAuth2 IDPs want extra headers — when it's not OIDC, it's non-standard.

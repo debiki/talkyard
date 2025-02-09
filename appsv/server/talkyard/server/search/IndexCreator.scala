@@ -17,6 +17,7 @@
 
 package talkyard.server.search
 
+import scala.collection.Seq
 import com.debiki.core._
 import org.{elasticsearch => es}
 import es.action.admin.indices.create.{CreateIndexRequest => es_CreateIndexRequest}

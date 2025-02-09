@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import scala.collection.Seq
 import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.MaxTitleLength
 import java.{util => ju}

@@ -149,7 +149,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
   }
 
 
-  def insertSiteHost(siteId: SiteId, host: Hostname) {
+  def insertSiteHost(siteId: SiteId, host: Hostname): Unit = {
     val cncl = host.role match {
       case Hostname.RoleCanonical => "C"
       case Hostname.RoleRedirect => "R"

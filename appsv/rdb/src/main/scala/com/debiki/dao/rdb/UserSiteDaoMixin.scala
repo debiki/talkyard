@@ -17,6 +17,7 @@
 
 package com.debiki.dao.rdb
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.Participant.{LowestNonGuestId, LowestAuthenticatedUserId}
@@ -39,7 +40,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
      is_moderator is not null and is_moderator)"""
 
 
-  def insertInvite(invite: Invite) {
+  def insertInvite(invite: Invite): Unit = {
     val statement = """
       insert into invites3(
         site_id,
@@ -88,7 +89,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def forgetInviteEmailSentToAddress(userId: UserId, replaceWithAddr: String) {
+  def forgetInviteEmailSentToAddress(userId: UserId, replaceWithAddr: String): Unit = {
     TESTS_MISSING
     val statement = """
       update invites3 set email_address = ?
@@ -287,7 +288,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def removeGroupMembers(groupId: UserId, memberIdsToRemove: Set[UserId]) {
+  def removeGroupMembers(groupId: UserId, memberIdsToRemove: Set[UserId]): Unit = {
     dieIf(groupId < Participant.LowestAuthenticatedUserId, "TyE205RHM63")
     if (memberIdsToRemove.isEmpty) return
     val sql = s"""
@@ -302,7 +303,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def removeAllGroupParticipants(groupId: UserId) {
+  def removeAllGroupParticipants(groupId: UserId): Unit = {
     dieIf(groupId < Participant.LowestAuthenticatedUserId, "TyE5AKT2E7")
     val sql = s"""
       delete from group_participants3
@@ -326,7 +327,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def insertGroup(group: Group) {
+  def insertGroup(group: Group): Unit = {
     dieIf(group.perms.canSeeOthersEmailAdrs.is(true) &&
             !group.isStaffOrMinTrustNotThreat(TrustLevel.CoreMember),
           "TyEPATCONF3563", "Only >= core members may be configured to see others' emails")
@@ -387,7 +388,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def deleteGroup(groupId: UserId) {
+  def deleteGroup(groupId: UserId): Unit = {
     dieIf(groupId < LowestAuthenticatedUserId, "TyE205ARGN3")
     val randomNumber = Prelude.nextRandomLong().toString.take(10)
     val sql = s"""
@@ -406,7 +407,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def updateGroup(validGroup: ValidGroup) {
+  def updateGroup(validGroup: ValidGroup): Unit = {
     val group = validGroup.get
 
     val statement = """
@@ -526,7 +527,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def insertGuest(guest: Guest) {
+  def insertGuest(guest: Guest): Unit = {
     val statement = s"""
       insert into users3(
         site_id,
@@ -556,7 +557,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def insertAnonym(anon: Anonym) {
+  def insertAnonym(anon: Anonym): Unit = {
     val stmt = s"""
           insert into users3(
             site_id,
@@ -590,7 +591,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def insertMember(user: UserInclDetails) {
+  def insertMember(user: UserInclDetails): Unit = {
     try {
       runUpdate("""
         insert into users3(
@@ -1277,7 +1278,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) {
+  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs): Unit = {
     transactionCheckQuota { implicit connection =>
       // SECURITY should stop remembering old rows, or prune table if too many old rows. And after that,
       // start allowing over quota here (since will be an update only).

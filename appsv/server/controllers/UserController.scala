@@ -17,6 +17,7 @@
 
 package controllers
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.Participant.{MinUsernameLength, isGuestId}
@@ -1011,7 +1012,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // Later, load data for many pages:  [many_ifr_my_page_data]
     val pageIdsSeq: ImmSeq[PageId] =
           if (pageIds.indexOf(',') == -1) ImmSeq(pageIds)
-          else pageIds.split(',').to[ImmSeq]
+          else pageIds.split(',').to(ImmSeq)
    // For now:
     val anyMeAndStuff: Opt[MeAndStuff] = loadMyPageDataImpl(request, pageIdsSeq.head)
     val stuffJsOb = anyMeAndStuff.map(_.stuffForMe.toJson(dao))
@@ -1391,7 +1392,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   def loadGroups: Action[Unit] = GetActionRateLimited(RateLimits.ReadsFromDb) { request =>
     val groups = request.dao.getGroupsAndStatsReqrMaySee(request.requesterOrUnknown)
-    OkSafeJson(JsArray(groups map JsGroupAndStats))
+    OkSafeJsonArr(JsArray(groups map JsGroupAndStats))
   }
 
 
@@ -1455,7 +1456,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     request.theMember
 
     val json = _listAllUsersImpl(usernamePrefix, request)
-    OkSafeJson(json)
+    OkSafeJsonArr(json)
   }
 
 
@@ -1538,7 +1539,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     }
 
     val jsArr = _mkMentionOptionsJson(patAndPrefs, requester)
-    OkSafeJson(jsArr)
+    OkSafeJsonArr(jsArr)
   }
 
 

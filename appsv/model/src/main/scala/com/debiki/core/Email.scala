@@ -279,8 +279,6 @@ object EmailType {
 
   case object YouCannotReply extends EmailType(91)
 
-  case object FormFilledIn extends EmailType(411)
-
   // 501-999 could be available for plugins? — There's also an EmailOutSubType [1, 999]
   // for each plugin to use.
 
@@ -300,7 +298,6 @@ object EmailType {
     case YourAccountApproved.IntVal => YourAccountApproved
     case NewMemberJoined.IntVal => NewMemberJoined
     case YouCannotReply.IntVal => YouCannotReply
-    case FormFilledIn.IntVal => FormFilledIn
     case _ =>
       return None
   })

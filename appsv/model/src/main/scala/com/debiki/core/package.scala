@@ -17,6 +17,7 @@
 
 package com.debiki
 
+import scala.collection.Seq
 import com.debiki.core.Prelude._
 import java.{util => ju}
 import org.apache.commons.validator.routines.EmailValidator
@@ -27,6 +28,7 @@ import scala.collection.mutable
 import play.api.libs.json.JsObject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import scala.IterableOnce
 
 
 package object core {
@@ -1989,7 +1991,8 @@ package object core {
         }
         byteIx += 1
       }
-      immutable.Set[PostNr](postNrs: _*)
+      postNrs.to(Set)  // ?
+      //immutable.Set[PostNr](postNrs: _*)
     }
   }
 
@@ -2113,7 +2116,7 @@ package object core {
   implicit class RichSeq[K, V](val underlying: Seq[V]) {
     def groupByKeepOne(fn: V => K): immutable.Map[K, V] = {
       val multiMap = underlying.groupBy(fn)
-      multiMap.mapValues(many => many.head)
+      multiMap.view.mapValues(many => many.head).toMap
     }
   }
 
@@ -2159,7 +2162,7 @@ package object core {
     * and: https://www.michaelpollmeier.com/
     *                        execute-scala-futures-in-serial-one-after-the-other-non-blocking
     */
-  def runFuturesSequentially[I, R](items: TraversableOnce[I])(
+  def runFuturesSequentially[I, R](items: IterableOnce[I])(
         fn: I => Future[R])(execCtx: ExecutionContext): Future[immutable.Seq[R]] = {
     val futureResults = items.foldLeft(Future.successful[List[R]](Nil)) {
       (futureResultsThisFar: Future[List[R]], nextItem: I) =>

@@ -17,10 +17,11 @@
 
 package controllers
 
+//import scala.collection.Seq
 import com.debiki.core._
 import debiki.EdHttp._
 import play.api._
-import play.api.mvc.{Action, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents, Request => p_Request}
 import Prelude._
 import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
@@ -72,14 +73,16 @@ class UnsubscriptionController @Inject()(cc: ControllerComponents, edContext: Ty
     })
 
 
-  def showForm(emailId: EmailId): Action[Unit] = ExceptionAction(cc.parsers.empty) { request =>
+  def showForm(emailId: EmailId): Action[Unit] = ExceptionAction(cc.parsers.empty) {
+          request: p_Request[_] =>
     CSP_MISSING
     Ok(views.html.unsubscribePage(emailId, doWhat(request), nextPage(request)))
   }
 
 
   def handleForm(emailId: EmailId): Action[Map[String, Seq[String]]] =
-        ExceptionAction(cc.parsers.formUrlEncoded(maxLength = 200)) { request =>
+        ExceptionAction(cc.parsers.formUrlEncoded(maxLength = 200)) {
+            request: p_Request[_] =>
     val site = globals.lookupSiteOrThrow(request)
 
     SECURITY; SHOULD // rate limit and check email type.

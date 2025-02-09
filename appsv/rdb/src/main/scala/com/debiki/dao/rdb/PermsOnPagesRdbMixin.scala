@@ -17,6 +17,7 @@
 
 package com.debiki.dao.rdb
 
+import scala.collection.Seq
 import com.debiki.core._
 import scala.collection.immutable
 import java.{ sql => js }
@@ -87,7 +88,7 @@ trait PermsOnPagesRdbMixin extends SiteTransaction {
   }
 
 
-  def updatePermsOnPages(permsOnPages: PermsOnPages) {
+  def updatePermsOnPages(permsOnPages: PermsOnPages): Unit = {
     val statement = s"""
       update perms_on_pages3 set
         for_people_id = ?,
@@ -116,7 +117,7 @@ trait PermsOnPagesRdbMixin extends SiteTransaction {
   }
 
 
-  def deletePermsOnPages(ids: Iterable[PermissionId]) {
+  def deletePermsOnPages(ids: Iterable[PermissionId]): Unit = {
     if (ids.isEmpty) return
     val statement = s"""
       delete from perms_on_pages3

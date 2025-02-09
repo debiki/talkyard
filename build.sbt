@@ -1,5 +1,5 @@
 /**
-  * Copyright (c) 2012-2021 Kaj Magnus Lindberg
+  * Copyright (c) 2012-2025 Kaj Magnus Lindberg
   *
   * This program is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Affero General Public License as
@@ -12,7 +12,7 @@
   * GNU Affero General Public License for more details.
   *
   * You should have received a copy of the GNU Affero General Public License
-  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
   */
 
 import scala.sys.process._  // "shell command".!! = execute the command, return result
@@ -34,7 +34,11 @@ import _root_.sbtbuildinfo.BuildInfoPlugin.autoImport._
 //       com.typesafe.play:play-ahc-ws_2.12:2.9.2
 //       com.typesafe.play:play-server_2.12:2.9.2
 //
-ThisBuild / scalaVersion := "2.12.19"
+ThisBuild / scalaVersion := "2.13.16"
+
+// Scala 2.13 disables postfix notation, e.g. `something isEmpty`. Enable, so won't
+// have to modify sooo many files when upgrading to 2.13.
+ThisBuild / scalacOptions += "-language:postfixOps"
 
 
 // Show unchecked and deprecated warnings, in this project and its modules.
@@ -43,6 +47,16 @@ ThisBuild / scalaVersion := "2.12.19"
 // Causes error:
 //    bad option: -P:semanticdb:synthetics:on
 // scalacOptions in ThisBuild += "-P:semanticdb:synthetics:on"   // [scala_2_13]
+
+inThisBuild(List( // [scala_2_13]
+  // Alternatively, type: `scalafixEnable` in the sbt shell. But what about the 3
+  // other lines below?
+  semanticdbEnabled := true,
+  semanticdbOptions += "-P:semanticdb:synthetics:on", // make sure to add this
+  semanticdbVersion := scalafixSemanticdb.revision,
+  // Not needed if upgrading, not cross-building: [scalafix_build_setting]
+  // scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
+))
 
 
 val appName = "talkyard-server"
@@ -127,14 +141,14 @@ val appDependencies = Seq(
   // See: https://code.google.com/p/guava-libraries/issues/detail?id=776
   // and: https://stackoverflow.com/questions/10007994/
   //              why-do-i-need-jsr305-to-use-guava-in-scala
-  "com.google.code.findbugs" % "jsr305" % "3.0.2" % "provided",
-  // CLEAN_UP remove Spec2 use only ScalaTest, need to edit some tests.
-  "org.mockito" % "mockito-all" % "1.10.19" % "test", // I use Mockito with Specs2...
+  Dependencies.Libs.findbugsJsr304,
+
   Dependencies.Libs.scalaTest,
   Dependencies.Libs.scalaTestPlusPlay,
 
-  // SalaFix plugin, https://github.com/scala/scala-collection-compat/releases [scala_2_13]
-  "org.scala-lang.modules" %% "scala-collection-compat" % "2.11.0")
+  // Only needed if migrating Scala code to 2.13 or maybe to Scala 3 too?
+  //Dependencies.Tools.scalaCollectionCompat,
+  )
 
 
 val main = (project in file("."))

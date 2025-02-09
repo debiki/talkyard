@@ -291,7 +291,7 @@ class MailerActor(
     case NumEndToEndTestEmailsSent(siteId: SiteId) =>
       val addresses = ArrayBuffer[Email]()
       e2eTestEmails.foreach { case (siteIdColonEmailAddr: String, emailsPromise) =>
-        if (siteIdColonEmailAddr.startsWith(siteId + ":")) {
+        if (siteIdColonEmailAddr.startsWith(s"$siteId:")) {
           if (emailsPromise.isCompleted) {
             val moreAddrs = emailsPromise.future.value.get.get
             if (moreAddrs.exists(email => !Email.isE2eTestEmailAddress(email.sentTo))) {

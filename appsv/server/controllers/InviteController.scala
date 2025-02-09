@@ -17,6 +17,7 @@
 
 package controllers
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -161,7 +162,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     var oldInvitesCached: Option[Seq[Invite]] = None
 
-    val now = dao.now
+    val now = dao.now()
 
     for (toEmailAddress <- toEmailAddresses) {
       // Is toEmailAddress already a member or already invited?

@@ -17,6 +17,7 @@
 
 package  talkyard.server.dao
 
+import scala.collection.Seq
 import com.debiki.core._
 import debiki._
 import debiki.dao.{CreateForumResult, DaoAppSuite, SiteDao}

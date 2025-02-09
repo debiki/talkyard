@@ -42,7 +42,7 @@ class GlobalConfigSpec extends AnyFreeSpec with must.Matchers {
         testWithOnlyForumSpecified(conf)
       }
 
-      def testWithOnlyForumSpecified(conf: Config) {
+      def testWithOnlyForumSpecified(conf: Config): Unit = {
         import conf.createSite.quotaLimitMegabytes
         quotaLimitMegabytes(isForBlogComments = false, isTestSite = false) mustBe Some(100)
         quotaLimitMegabytes(isForBlogComments = false, isTestSite = true) mustBe Some(10)

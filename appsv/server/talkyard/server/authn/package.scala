@@ -1,5 +1,6 @@
 package talkyard.server
 
+import scala.collection.Seq
 import com.auth0.jwt.interfaces.{Claim => a0_Claim, DecodedJWT => a0_DecodedJWT}
 import com.debiki.core._
 import com.debiki.core.Prelude._

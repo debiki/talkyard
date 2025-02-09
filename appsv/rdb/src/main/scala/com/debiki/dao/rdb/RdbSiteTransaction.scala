@@ -17,6 +17,7 @@
 
 package com.debiki.dao.rdb
 
+import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.isDevOrTest // why isn't core._ enough?
 import com.debiki.core.Prelude._
@@ -81,7 +82,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     transaction
   }
 
-  def setSiteId(newId: SiteId) {
+  def setSiteId(newId: SiteId): Unit = {
     siteId = newId
   }
 
@@ -110,20 +111,20 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   var hasBeenRolledBack = false
 
   // COULD move to new superclass?
-  def createTheOneAndOnlyConnection(readOnly: Boolean, mustBeSerializable: Boolean) {
+  def createTheOneAndOnlyConnection(readOnly: Boolean, mustBeSerializable: Boolean): Unit = {
     require(_theOneAndOnlyConnection.isEmpty)
     _theOneAndOnlyConnection = Some(
           db.getConnection(readOnly = readOnly, mustBeSerializable = mustBeSerializable))
   }
 
   // COULD move to new superclass?
-  def setTheOneAndOnlyConnection(connection: js.Connection) {
+  def setTheOneAndOnlyConnection(connection: js.Connection): Unit = {
     require(_theOneAndOnlyConnection.isEmpty)
     _theOneAndOnlyConnection = Some(connection)
   }
 
   // COULD move to new superclass?
-  def commit() {
+  def commit(): Unit = {
     if (_theOneAndOnlyConnection.isEmpty)
       throw new IllegalStateException("No permanent connection created [DwE5KF2]")
     theOneAndOnlyConnection.commit()
@@ -133,7 +134,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
 
   // COULD move to new superclass?
-  def rollback() {
+  def rollback(): Unit = {
     if (_theOneAndOnlyConnection.isEmpty)
       throw new IllegalStateException("No permanent connection created [DwE2K57]")
     theOneAndOnlyConnection.rollback()
@@ -198,7 +199,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
 
   def runQueryAndForEachRow(query: String, values: List[AnyRef],
-        singleRowHandler: js.ResultSet => Any) {
+        singleRowHandler: js.ResultSet => Any): Unit = {
     runQuery(query, values, rs => {
       while (rs.next) {
         singleRowHandler(rs)
@@ -228,7 +229,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       }
       else {
         val result = singleRowHandler(rs)
-        dieIf(rs.next(), "DwE6GMY2" + (if (debugCode eq null) "" else '-' + debugCode))
+        dieIf(rs.next(), "DwE6GMY2" + (if (debugCode eq null) "" else "-" + debugCode))
         Some(result)
       }
     })
@@ -327,21 +328,21 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def runUpdateExactlyOneRow(statement: String, values: List[AnyRef] = Nil) {
+  def runUpdateExactlyOneRow(statement: String, values: List[AnyRef] = Nil): Unit = {
     val numRowsUpdated = runUpdate(statement, values)
     dieIf(numRowsUpdated != 1, "DwE8FUM1", o"""This statement modified $numRowsUpdated rows
         but should have touched exactly one row: $statement""")
   }
 
 
-  def runUpdateExactNumRows(correctNumRows: Int, statement: String, values: List[AnyRef] = Nil) {
+  def runUpdateExactNumRows(correctNumRows: Int, statement: String, values: List[AnyRef] = Nil): Unit = {
     val numRowsUpdated = runUpdate(statement, values)
     dieIf(numRowsUpdated != correctNumRows, "EsE2GYU7", o"""This statement modified $numRowsUpdated
         rows but should have modified $correctNumRows rows: $statement""")
   }
 
 
-  def deferConstraints() {
+  def deferConstraints(): Unit = {
     runUpdate("set constraints all deferred", Nil)
   }
 
@@ -473,11 +474,11 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
 
   def loadAllPageMetas(limit: Option[Int] = None): immutable.Seq[PageMeta] =
-    loadPageMetaImpl(pageIds = Nil, all = true, limit = limit).values.to[immutable.Seq]
+    loadPageMetaImpl(pageIds = Nil, all = true, limit = limit).values.to(immutable.Seq)
 
 
   def loadPageMetas(pageIds: Iterable[PageId]): immutable.Seq[PageMeta] =
-    loadPageMetaImpl(pageIds, all = false).values.to[immutable.Seq]
+    loadPageMetaImpl(pageIds, all = false).values.to(immutable.Seq)
 
 
   def loadPageMeta(pageId: PageId): Option[PageMeta] =
@@ -577,7 +578,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def updatePageMetaImpl(meta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Bo) {
+  def updatePageMetaImpl(meta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Bo): Unit = {
     if (meta == oldMeta && !markSectionPageStale)
       return
     transactionCheckQuota { transaction =>
@@ -595,7 +596,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
 
   private def _updatePageMeta(newMeta: PageMeta, anyOld: Option[PageMeta])
-        (implicit connection: js.Connection) {
+        (implicit connection: js.Connection): Unit = {
     anyOld foreach { oldMeta =>
       dieIf(!oldMeta.pageType.mayChangeRole && oldMeta.pageType != newMeta.pageType,
         "EsE7KPW24", s"Trying to change page role from ${oldMeta.pageType} to ${newMeta.pageType}")
@@ -731,7 +732,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def movePages(pageIds: Seq[PageId], fromFolder: String, toFolder: String) {
+  def movePages(pageIds: Seq[PageId], fromFolder: String, toFolder: String): Unit = {
     transactionCheckQuota { implicit connection =>
       _movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
     }
@@ -739,7 +740,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
 
   private def _movePages(pageIds: Seq[PageId], fromFolder: String,
-        toFolder: String)(implicit connection: js.Connection) {
+        toFolder: String)(implicit connection: js.Connection): Unit = {
     unimplemented("Moving pages and updating page_paths3.CANONICAL")
     /*
     if (pageIds isEmpty)
@@ -806,12 +807,12 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def insertSiteHost(host: Hostname) {
+  def insertSiteHost(host: Hostname): Unit = {
     asSystem.insertSiteHost(siteId, host)
   }
 
 
-  def createUnknownUser() {
+  def createUnknownUser(): Unit = {
     val statement = s"""
       insert into users3(
         site_id, user_id, created_at, full_name, guest_email_addr, guest_browser_id)
@@ -822,7 +823,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def updateSite(changedSite: Site) {  // xx rm?
+  def updateSite(changedSite: Site): Unit = {  // xx rm?
     val currentSite = loadSite().getOrDie("EsE7YKW2", s"Site $siteId not found")
     require(changedSite.id == this.siteId,
       "Cannot change site id [DwE32KB80]")
@@ -845,7 +846,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def updateHost(host: Hostname) {
+  def updateHost(host: Hostname): Unit = {
     val newRoleChar = host.role match {
       case Hostname.RoleCanonical => "C"
       case Hostname.RoleDuplicate => "D"
@@ -861,7 +862,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def changeCanonicalHostRoleToExtra() {
+  def changeCanonicalHostRoleToExtra(): Unit = {
     val statement = s"""
       update hosts3 set canonical = 'D'
       where site_id = ? and canonical = 'C'
@@ -872,7 +873,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def changeExtraHostsRole(newRole: Hostname.Role) {
+  def changeExtraHostsRole(newRole: Hostname.Role): Unit = {
     val letter =
       if (newRole == Hostname.RoleDuplicate) "D"
       else if (newRole == Hostname.RoleRedirect) "R"
@@ -898,7 +899,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def bumpSiteVersion() {
+  def bumpSiteVersion(): Unit = {
     val sql = """
       update sites3 set version = version + 1 where id = ?
       """
@@ -972,18 +973,18 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification]) {
+  def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification]): Unit = {
     __saveUnsentEmail(email)
     updateNotificationConnectToEmail(notfs, Some(email))
   }
 
 
-  def saveUnsentEmail(email: Email) {
+  def saveUnsentEmail(email: Email): Unit = {
     __saveUnsentEmail(email)
   }
 
 
-  private def __saveUnsentEmail(email: EmailOut) {
+  private def __saveUnsentEmail(email: EmailOut): Unit = {
     require(email.id != "?")
     require(email.failureText isEmpty)
     require(email.providerEmailId isEmpty)
@@ -1214,7 +1215,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def forgetEmailSentToAddress(userId: UserId, replaceWithAddr: String) {
+  def forgetEmailSentToAddress(userId: UserId, replaceWithAddr: String): Unit = {
     TESTS_MISSING
     val statement = """
       update emails_out3 set sent_to = ?
@@ -1560,13 +1561,13 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def insertPagePath(pagePath: PagePathWithId) {
+  def insertPagePath(pagePath: PagePathWithId): Unit = {
     insertPagePathOrThrow(pagePath)(theOneAndOnlyConnection)
   }
 
 
   private def insertPagePathOrThrow(pagePath: PagePathWithId)(
-        implicit conn: js.Connection) {
+        implicit conn: js.Connection): Unit = {
     val showPageId = pagePath.showId ? "T" | "F"
     val canonical = pagePath.canonical ? "C" | "R"
     try {
@@ -1669,7 +1670,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def moveRenamePage(newPath: PagePathWithId) {
+  def moveRenamePage(newPath: PagePathWithId): Unit = {
     transactionCheckQuota { implicit connection =>
       moveRenamePageImpl(newPath)
     }
@@ -1677,7 +1678,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
 
   private def moveRenamePageImpl(newPath: PagePathWithId)
-        (implicit conn: js.Connection) {
+        (implicit conn: js.Connection): Unit = {
 
     val pageId = newPath.pageId
 
@@ -1690,7 +1691,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     //    a 'C'anonical path to another page (which we shouldn't do,
     //    because then that page would no longer be reachable).
 
-    def changeExistingPathsToRedirects(pageId: PageId) {
+    def changeExistingPathsToRedirects(pageId: PageId): Unit = {
       val vals = List(siteId.asAnyRef, pageId)
       val stmt = """
         update page_paths3
@@ -1703,7 +1704,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
           "It seems all paths to the page were deleted moments ago"))
     }
 
-    def deleteAnyExistingRedirectFrom(newPath: PagePathWithId) {
+    def deleteAnyExistingRedirectFrom(newPath: PagePathWithId): Unit = {
       val showPageId = newPath.showId ? "T" | "F"
       var vals = List(siteId.asAnyRef, newPath.folder, e2d(newPath.pageSlug), showPageId)
       var stmt = """
