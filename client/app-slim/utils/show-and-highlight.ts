@@ -129,6 +129,12 @@ const highlightOffHandles = new Map();
 
 function flashPostImpl(head: Element | undefined, body: Element) {
   if (!head && !body) {
+    // Fyi: This happens if you start writing a new comment, scroll up, click Show-preview,
+    // to scroll to the preview. Then, cancel editing the comment, so the preview
+    // disappears (and a draft appears instead). Now, scroll up, then click Back.
+    // Now, Ty tries to navigate back to the preview — but it's gone, so this assertion
+    // fails. Harmless. But let's keep the assertion? Maybe will catch some *real* bug?
+    // Maybe this can trigger the assertion too?:
     // Opened new page, Reactjs component unmounted, post elem gone?
     // @ifdef DEBUG
     die('TyE306WKUDR2');

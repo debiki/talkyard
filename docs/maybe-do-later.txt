@@ -1332,6 +1332,11 @@ Better troubleshooting
 
 Bugs
 =====
+Start composing a reply, so an in-page preview appears. Click Like/Disagree/etc on the
+post you're replying to. Now the preview of your reply disappears! (Because the post you're
+replying to, gets forgotten from the child-post-nrs list, when patching the parent post to
+show the Like/Disagree/etc vote).  (This can also mess up the [Auto|show preview] state counter.)
+
 Can double submit a reply by double clicking Ctrl+Enter. Then, error TyE6QSADTH04
 happens.
 
