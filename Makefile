@@ -678,11 +678,12 @@ push-tagged-images:
 	@echo
 
 
+# Sync w build script. [do_after_build]
 _print_push_git_tag_command:
 	@echo "Next:"
 	@echo ""
-	@echo "    make  push_tag_to_dev_rel_branch  tag=$(version_tag)"
-	@echo "    make  push_tag_to_dev_repo  repo=origin  tag=$(version_tag)"
+	@echo "    make  push_tag_to_dev_rel_branch  tag=$(tag)"
+	@echo "    make  push_tag_to_dev_repo  repo=public  tag=$(tag)"
 	@echo ""
 
 
@@ -739,10 +740,10 @@ push_tag_to_dev_repo:
 		git push $(repo) tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX)
 	
 	@echo ""
-	@echo "Done. Now, push 'release' and bump the version number:"
+	@echo "Done. Now, push branches and bump version number:"
 	@echo ""
-	@echo "    git push $(repo) release"
 	@echo "    git checkout -B main"
+	@echo "    git push $(repo) release main"
 	@echo "    s/bump-versions.sh"
 	@echo "    git add version.txt relchans/tyse-v0-dev"
 	@echo '    git commit -m "Bump version to `cat version.txt`."'

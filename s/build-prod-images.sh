@@ -222,18 +222,16 @@ echo 'Buid completed.'
 # ----------------------
 
 
+# Sync w Makefile. [do_after_build]
 echo "You can now tag and publish the images to the '$REPO' Docker repository:"
 echo ""
 echo "    make  tag-and-push-latest-images  tag=$version_tag"
 echo "    make  push_tag_to_dev_rel_branch  tag=$version_tag"
 echo
-echo "And push a version tag to the development Git repo:"
+echo "And push a version tag to the development Git repo: (named 'public' here)"
 echo
-echo "    make  push_tag_to_dev_repo  repo=origin  tag=$version_tag"
+echo "    make  push_tag_to_dev_repo  repo=public  tag=$version_tag"
 echo
-echo "Lastly:"
-echo "    s/bump-versions.sh"
-echo ""
 
 
 # vim: et ts=2 sw=2 tw=0 list
