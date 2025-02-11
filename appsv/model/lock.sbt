@@ -30,7 +30,7 @@ Compile / dependencyOverrides ++= {
       "commons-logging" % "commons-logging" % "1.3.2",
       "commons-validator" % "commons-validator" % "1.9.0",
       "org.apache.commons" % "commons-email" % "1.6.0",
-      "org.apache.tika" % "tika-core" % "2.9.3",
+      "org.apache.tika" % "tika-core" % "3.1.0",
       "org.checkerframework" % "checker-qual" % "3.43.0",
       "org.owasp.encoder" % "encoder" % "1.3.1",
       "org.scalactic" % "scalactic_2.13" % "3.2.19",
