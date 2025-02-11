@@ -165,6 +165,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadAllDrafts(): immutable.Seq[Draft]
   def loadDraftByNr(userId: UserId, draftNr: DraftNr): Option[Draft]
   def loadDraftsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[Draft]
+  /** Sorts by date desc, if there're many drafts with the same locator. */
   def loadDraftsByLocator(userId: UserId, draftLocator: DraftLocator): immutable.Seq[Draft]
   def listDraftsRecentlyEditedFirst(userId: UserId, limit: Int): immutable.Seq[Draft]
 

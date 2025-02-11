@@ -188,7 +188,9 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
         and deleted_at is null
         and draft_type = ?
         and ($locatorClauses)
-        order by coalesce(last_edited_at, created_at) desc"""
+        order by coalesce(last_edited_at, created_at) desc,
+            -- Make tests stable:
+            draft_nr desc  """
 
     runQueryFindMany(query, values.toList, readDraft)
   }
