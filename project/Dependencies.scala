@@ -47,33 +47,15 @@ object Dependencies {
     //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
     val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.7.7"
 
-    // Database migrations.
-    // Let's stop at 5.x. Avoid v6, they did a total rewrite of the SQL parser,
-    // https://www.red-gate.com/blog/flyway-6-0-0-released:
-    //    > The SQL parser has been completely rebuilt from the ground up".
-    //
-    // But also:
-    //    > the first production release with support for: PostgreSQL 11 and 12"
-    // So, need to do sometimes-risky-upgrades, to get support for the latest PostgreSQL
-    // versions?
-    //
-    // Let's start using Diesel instead? https://docs.diesel.rs  [upgr_pg]
-    // As a command line tool, from a Docker container.
-    // It's fully open source, incl down migrations (helpful during developent),
-    // and more transparent — f.ex. Flyway stores their release notes at their website
-    // (instead of GitHub), but some old ones about 5.x have disappeared, I can find only
-    // the >= 6.x release notes. But Diesel is fully open source, everything at GitHub.
-    // I'm using Diesel in a Typescript + PostgreSQL project, and it works fine.
-    val flywaydb = "org.flywaydb" % "flyway-core" % "5.2.4"   // scala-steward:off
-
     // HikariCP — "A solid high-performance JDBC connection pool at last"
     val hikariCp = "com.zaxxer" % "HikariCP" % "6.3.0"
 
-    // ElasticSearch client, in https://mvnrepository.com.
-    // When upgrading to next major version, consider improving the mappings at the same
-    // time? Change id fields from type integer to type keyword.  [es_kwd] [ty_v1]
-    val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
-    val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "6.8.23"
+    // ElasticSearch 8 Java client. (Don't use the REST client, it's deprecated.)
+    // Can't use the ES 9 Java client — it needs Java 17, but we're on Java 11. [java_11_to_17]
+    // Latest version, as of Nov 21 2025:
+    // https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/8.19/installation.html
+    val elasticsearchClient = "co.elastic.clients" % "elasticsearch-java" % "8.19.7"
+    val elasticsearchJackson = "com.fasterxml.jackson.core" % "jackson-databind" % "2.17.0"
 
     val guava = "com.google.guava" % "guava" % "33.5.0-jre"
     val findbugsJsr304 = "com.google.code.findbugs" % "jsr305" % "3.0.2" % "provided"

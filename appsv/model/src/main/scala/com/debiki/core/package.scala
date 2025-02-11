@@ -1400,7 +1400,10 @@ package object core {
   case class PostsToIndex(
     postsToIndexBySite: Map[SiteId, immutable.Seq[Post]],
     pagesBySitePageId: Map[SitePageId, PageMeta],
+    titleIdsBySitePageId: Map[SitePageId, PostId], // [title_post_id_as_page_id]
+    bodyIdsBySitePageId: Map[SitePageId, PostId],
     tagsBySitePostId: Map[SitePostId, imm.Seq[Tag]],
+    // CLEAN_UP, REMOVE:
     tagsBySitePostId_old: Map[SitePostId, immutable.Set[TagLabel]]) {
 
     def page(siteId: SiteId, pageId: PageId): Option[PageMeta] =

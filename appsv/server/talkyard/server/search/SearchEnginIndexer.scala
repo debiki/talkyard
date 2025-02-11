@@ -22,16 +22,23 @@ import akka.actor._
 import com.debiki.core
 import com.debiki.core._
 import debiki.dao.SystemDao
+
+import co.elastic.clients.{elasticsearch => es8}
+import co.elastic.clients.transport.endpoints.{BooleanResponse => es8_BooleanResponse}
+import es8._types.{ElasticsearchException => es8_ElasticsearchException}
+/*
 import org.elasticsearch.action.bulk.BulkResponse
 import org.elasticsearch.action.ActionListener
 import org.elasticsearch.action.index.{IndexRequestBuilder, IndexResponse}
 import org.{elasticsearch => es}
+*/
 import scala.concurrent.duration._
 import Prelude._
 import talkyard.server.{TyLogger, TyLogging}
 import talkyard.server.jobs.BackgroundJobsActor
-import org.elasticsearch.common.xcontent.XContentType
+//import org.elasticsearch.common.xcontent.XContentType
 import org.postgresql.util.PSQLException
+import java.io.IOException
 import scala.concurrent.ExecutionContext
 
 
@@ -52,7 +59,8 @@ object SearchEngineIndexer extends TyLogging {
 
   def startNewActor(indexerBatchSize: Int, initialDelaySecs: i32, intervalSeconds: Int,
         executionContext: ExecutionContext,
-        elasticSearchClient: es.client.Client, actorSystem: ActorSystem, systemDao: SystemDao)
+        elasticSearchClient: es8.ElasticsearchClient,
+        actorSystem: ActorSystem, systemDao: SystemDao)
         : ActorRef = {
     implicit val execCtx = executionContext
     val actorRef = actorSystem.actorOf(Props(
@@ -104,7 +112,7 @@ case object ReplyWhenDoneIndexing
 
 class IndexingActor(
   private val batchSize: i32,
-  private val client: es.client.Client,
+  private val client: es8.ElasticsearchClient,
   private val systemDao: SystemDao) extends BackgroundJobsActor("IndexActor") {
 
   val globals: debiki.Globals = systemDao.globals
@@ -140,7 +148,7 @@ class IndexingActor(
         }
 
         // Too old indexes prevent newer major versions of ElasticSearch from starting.
-        indexCreator.deleteAnyOldIndex(OldIndexName, client)
+        //indexCreator.deleteAnyOldIndex(OldIndexName, client)
 
         doneCreatingIndexes = true
       }
@@ -177,11 +185,30 @@ class IndexingActor(
   }
 
   private def loadAndIndexPendingPosts(): Unit = {
-    val postsToIndex = systemDao.loadPostsToIndex(limit = batchSize)
+    WOULD_OPTIMIZE // If there's more than X posts, can set the index
+    // refresh_interval to -1, to avoid refreshes when indexing a lot.
+    // And set it back to 1s (the default?) or 2s afterwards. See:
+    // https://www.elastic.co/guide/en/elasticsearch/reference/8.17/indices-update-settings.html#bulk
+    // But the default behavior is nice to bulk indexing already, see:
+    // https://www.elastic.co/guide/en/elasticsearch/reference/8.17/index-modules.html#index-modules-settings
+    val postsToIndex: PostsToIndex = systemDao.loadPostsToIndex(limit = batchSize)
     postsToIndex.postsToIndexBySite foreach { case (siteId: SiteId, posts: Seq[Post]) =>
       val (toUnindex, toIndex) = posts.partition(post => {
         // Later: COULD index also deleted and hidden posts, and make available to staff.
-        postsToIndex.isPageDeleted(siteId, post.pageId) || !post.isVisible
+        // Or, better?: Store in two separate indexes [index_for_invisible].
+        // Bit hacky: We [index_title_and_body_together], so, do unto the title,
+        // what we do to the orig post.
+        val relevantPost =
+              if (!post.isTitle) post else {
+                posts.find(otr => otr.pageId == post.pageId && otr.isOrigPost) getOrElse {
+                  // Weird, we load them together. One missing, but why?
+                  // logger.warn(... ?)
+                  post
+                }
+              }
+        val unindex = postsToIndex.isPageDeleted(siteId, relevantPost.pageId) ||
+                        !relevantPost.isVisible
+        unindex
       })
       _unindexPosts(siteId, toUnindex)
       _indexPosts(siteId, toIndex, postsToIndex)
@@ -201,6 +228,14 @@ class IndexingActor(
 
 
   private def _indexPost(post: Post, siteId: SiteId, postsToIndex: PostsToIndex): Unit = {
+    if (post.isTitle) {
+      // We'll index the title & body into one ElasticSearch doc, when we encounter
+      // the body post (they're always loaded together).  [index_title_and_body_together]
+      // But skip the title here, so won't index the (tilet + body) twice.
+      COULD // debug warn if body not in postsToIndex list.
+      return
+    }
+
     val pagePostNr = s"page ${post.pageId} nr ${post.nr}"
     val pageMeta = postsToIndex.page(siteId, post.pageId) getOrElse {
       logger.warn(s"Not indexing siteid:postid $siteId:${post.id
@@ -210,8 +245,70 @@ class IndexingActor(
     val tags = postsToIndex.tags(siteId, post.id)
     val tags_old = postsToIndex.tags_old(siteId, post.id)
 
-    val doc = makeElasticSearchJsonDocFor(siteId, pageMeta, post, tags, tags_old)
-    val docId = makeElasticSearchIdFor(siteId, post)
+    val titlePostId: Opt[PostId] = postsToIndex.titleIdsBySitePageId.get(
+          SitePageId(siteId, post.pageId))
+    var anyTitlePost: Opt[Post] = None
+
+    // [ElasticSearch_join_parent_id]
+    val anyParentDocId: Opt[St] = titlePostId.map(makeElasticSearchIdFor(siteId, _))
+
+    val (doc, docId) =
+      if (post.nr == PageParts.BodyNr) {
+        anyTitlePost = Some(
+              titlePostId.flatMap(titleId =>
+                    postsToIndex.postsToIndexBySite(siteId).find(_.id == titleId)) getOrElse {
+                logger.warn(s"s$siteId: Not indexing title + body on page ${post.pageId
+                      } — title post missing, only body post id ${post.id} found.")
+                return
+              })
+
+        val doc = makeElasticSearchJsonDocFor(
+              siteId, pageMeta, post, title = anyTitlePost, anyParentDocId, tags)
+        val docId = makeElasticSearchIdFor(siteId, anyTitlePost.get)
+        (doc, docId)
+      }
+      else {
+        val doc = makeElasticSearchJsonDocFor(siteId, pageMeta, post, title = None, anyParentDocId, tags) // tags_old)
+        val docId = makeElasticSearchIdFor(siteId, post)
+        (doc, docId)
+      }
+
+    val input: java.io.Reader = new java.io.StringReader(doc.toString);
+
+    val indexReq = new es8.core.IndexRequest.Builder()
+          // Can use `waitFor(..)` when running e2e tests? So won't have to poll.  [es8_e2e]
+          // .refresh(es8._types.Refresh.WaitFor)
+          .index(IndexName)
+          .id(docId)
+          .withJson(input)
+          .routing(siteId.toString)
+          .build()
+
+    // Synchronous. Might as well? Will work as some simple "back pressure".
+    // (But we use async search *queries* thuogh.) [async_search]
+    val response: es8.core.IndexResponse =
+          try {
+            client.index(indexReq)
+          }
+          catch {
+            case ex: IOException =>
+              logger.warn("IO error indexing [TyESIX_IXPO1]", ex)
+              return
+            case ex: es8_ElasticsearchException =>
+              val prettyReason = ex.response().error().reason()
+              logger.warn(o"""ElasticsearchException indexing docId: $docId site: $siteId,
+                    error: $prettyReason [TyESIX_IXPO2]""", ex)
+              return
+          }
+
+    postsRecentlyIndexed.add(SiteIdAndPost(siteId, post))
+
+    // We [index_title_and_body_together] — don't forget to add the title post too here,
+    // (if it got indexed) so it'll get removed from the job queue.
+    anyTitlePost.foreach(ttl => postsRecentlyIndexed.add(SiteIdAndPost(siteId, ttl)))
+
+    // logger.info("Indexed with version " + response.version());
+    /*
 
     COULD_OPTIMIZE // ES has a bulk API: Could send many documents to index,
     // in one request.
@@ -237,6 +334,7 @@ class IndexingActor(
         logger.error(i"Error when indexing siteId:postId $docId, $pagePostNr:", ex)
       }
     })
+    */
   }
 
 
@@ -245,27 +343,72 @@ class IndexingActor(
     while (!postsRecentlyIndexed.isEmpty) {
       sitePostIds +:= postsRecentlyIndexed.remove()
     }
-    COULD_OPTIMIZE // batch delete all in one statement
-    sitePostIds foreach { siteIdAndPost =>
-      try systemDao.deleteFromIndexQueue(siteIdAndPost.post, siteIdAndPost.siteId)
+    val postsBySiteId: Map[SiteId, ImmSeq[Post]] = sitePostIds.groupMap(_.siteId)(_.post)
+    postsBySiteId foreach { case (siteId: SiteId, posts: ImmSeq[Post]) =>
+      try {
+        logger.debug(o"""s$siteId: Deleting ${posts.length} now indexed posts
+              from the job queue... [TyMSIX_DELIXD]""")
+        systemDao.deleteFromIndexQueue(posts, siteId)
+      }
       catch {
         case ex: PSQLException if ex.getSQLState == "40001" =>  // [PGSERZERR]
           logger.error(
-            o"""PostgreSQL serialization error when deleting
-                siteId:postId: $siteIdAndPost from index queue [EdE40001IQ]""", ex)
+            o"""s$siteId: PostgreSQL serialization error when deleting
+                ${posts.length} posts from index queue [TyESIX_40001RM]""", ex)
         case ex: Exception =>
           logger.error(
-            s"error when deleting siteId:postId: $siteIdAndPost from index queue [EdE5PKW20]", ex)
+                s"s$siteId: Error when deleting ${posts.length
+                } posts from index queue [TyESIX_5PKW20]", ex)
       }
     }
   }
 
 
-  private def _unindexPosts(siteId: SiteId, posts: Seq[Post]): Unit = {
+  private def _unindexPosts(siteId: SiteId, posts: ImmSeq[Post]): U = {
     if (posts.isEmpty)
       return
 
     COULD_OPTIMIZE // Don't unindex once per site. Do all at once instead.
+
+    val bulkOpsList = new java.util.ArrayList[es8.core.bulk.BulkOperation]()
+
+    posts foreach { post =>
+      val docId = makeElasticSearchIdFor(siteId, post)
+      val deleteOp = new es8.core.bulk.DeleteOperation.Builder()
+            .index(IndexName)
+            .id(docId)
+            .routing(siteId.toString)
+            .build()
+      val bulkOp = new es8.core.bulk.BulkOperation.Builder().delete(deleteOp).build()
+      bulkOpsList.add(bulkOp)
+    }
+
+    val bulkDeleteReq = new es8.core.BulkRequest.Builder()
+          // .refresh(es8._types.Refresh.WaitFor)  — could, if e2e tests  [es8_e2e]
+          .operations(bulkOpsList)
+          .build()
+
+    val response: es8.core.BulkResponse =
+          try {
+            // Synchronous, ok. [async_search]
+            client.bulk(bulkDeleteReq)
+          }
+          catch {
+            case ex: IOException =>
+              logger.error(s"s$siteId: IO error unindexing posts [TyESIX_UNIXPO1]", ex)
+              return
+            case ex: es8_ElasticsearchException =>
+              val prettyReason = ex.response().error().reason()
+              logger.error(o"""s$siteId: ElasticsearchException unindexing ${posts.length} posts:
+                      $prettyReason [TyESIX_UNIXPO2]""", ex)
+              return
+          }
+
+    logger.debug(s"""s$siteId: Unindexed ${posts.length} posts, deleting from
+          job queue ... [TyMSIX_Y5KF0]""")
+    systemDao.deleteFromIndexQueue(posts, siteId)
+
+    /*
     val bulkRequestBuilder = client.prepareBulk()
     posts foreach { post =>
       val deleteRequestBuilder = client.prepareDelete(
@@ -294,6 +437,7 @@ class IndexingActor(
         logger.error(s"Error when bulk unindexing ${posts.length} posts [EsE5YK02]", ex)
       }
     })
+    */
   }
 
 }

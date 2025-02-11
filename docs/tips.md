@@ -70,11 +70,21 @@ Thereafter ElasticSearch should start working again. Docs:
 https://www.elastic.co/guide/en/elasticsearch/reference/6.2/disk-allocator.html
 
 
-List indexes, & create:
+List indexes & show mappins of one:
 d/c exec search curl http://localhost:9200/_aliases?pretty
-d/c exec search curl -X PUT 'localhost:9200/posts_es6_v2_english?pretty'
+d/c exec search curl http://localhost:9200/posts_es8_v1_en?pretty
 
-List everything:  
+Create (but w/o mapping):
+d/c exec search curl -X PUT 'localhost:9200/new_test_index?pretty'
+
+d/c exec search curl -X PUT 'localhost:9200/_cluster/settings' -d '{
+   "transient" : {
+      "logger.org.elasticsearch.http.HttpTracer" : "TRACE",
+      "http.tracer.include" : [ "*posts_es8_v1_en*" ]
+   }
+}'
+
+List all indexed docs:
 http://localhost:9200/_search?pretty&size=9999
 
 List posts in site 3:  (note: routing=3)

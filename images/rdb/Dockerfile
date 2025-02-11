@@ -1,10 +1,24 @@
-FROM postgres:10.23-alpine
+# See: https://hub.docker.com/_/postgres
+FROM postgres:18.1-trixie
 
-RUN apk add --no-cache bash tree less vim curl net-tools
+LABEL org.opencontainers.image.title="Talkyard Rdb" \
+      io.talkyard.edition="se" \
+      io.talkyard.epoch="1"
+# Better:
+# https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
+
+RUN \
+  apt-get update && \
+  apt-get install -y \
+  # Nice to have:
+  tree less curl wget net-tools bash \
+  # For 'ps':
+  procps \
+  # Telnet, nice for troubleshooting SMTP problems for example.
+  telnet \
+  # software-properties-common \  ?
+  && rm -rf /var/lib/apt/lists/*
 
 COPY ./docker-entrypoint-initdb.d/ /docker-entrypoint-initdb.d/
-COPY ./chown-logs-then-exec-entrypoint.sh /
 
-ENTRYPOINT ["/chown-logs-then-exec-entrypoint.sh"]
-CMD ["postgres"]
 

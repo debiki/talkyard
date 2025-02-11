@@ -8,8 +8,21 @@
 # COULD_OPTIMIZE smaller image: Copy just what's needed from openresty_build
 # (and would need to 'apk add' some things too, to the final image).
 
-FROM alpine:3.21.3 AS openresty_build
+# Bumping to 3.21 to 3.22 was trivial, see:
+# https://github.com/openresty/docker-openresty/commit/70b5349b17eb4648fc992caf13ecd18b0f3ab104
+#
+# BUT would be good to upgr OpenSSL too?
+#  ARG RESTY_OPENSSL_VERSION="3.4.3"
+#  https://github.com/openresty/docker-openresty/commit/f7d080ac3b3fc534c42fbc87481b21c53d3ca2f7
+#
+#  OpenSSL 3.4.0 < 3.4.3 Multiple Vulnerabilities
+#  https://www.tenable.com/plugins/nessus/266295
 
+FROM alpine:3.22.1 AS openresty_build
+
+LABEL org.opencontainers.image.title="Talkyard Web" \
+      io.talkyard.edition="se" \
+      io.talkyard.version="1"
 
 # '--virtual .build_deps' lets one uninstall all these build dependencies,
 # like so:  'apk del .build_deps' (done later in this file)
@@ -407,31 +420,10 @@ COPY ssl-cert-snakeoil.pem /etc/nginx/
 
 COPY html                 /opt/nginx/html/
 
-# For development. Another directory gets mounted in prod, see <talkyard-prod-one>/docker-compose.yml.
-COPY sites-enabled-manual /etc/nginx/sites-enabled-manual/
-
-# old, remove once I've edited edm & edc
-COPY server-listen.conf   /etc/nginx/listen.conf
-
-# old, remove, doesn't specify backlog sice — and may do only once, so rather useless.
-COPY server-listen.conf   /etc/nginx/
-
-# old, remove once I've edited edm & edc
-COPY server-ssl.conf      /etc/nginx/ssl-hardening.conf
-
 COPY server-ssl.conf      /etc/nginx/
 COPY http-limits.conf     /etc/nginx/http-limits.conf.template
 
-# old, remove, now done in  <talkyard-prod-one>/conf/sites-enabled-manual/talkyard-servers.conf  instead. [ty_v1]
-COPY http-redirect-to-https.conf /etc/nginx/
-
 COPY server-limits.conf   /etc/nginx/server-limits.conf.template
-
-# old, remove once I've edited edm & edc   [vy_v1] + search for "old" everywhere here
-COPY server-locations.conf /etc/nginx/vhost.conf.template
-
-# old, too, remove, when?
-COPY server-locations.conf /etc/nginx/server.conf.template
 
 COPY server-locations.conf /etc/nginx/server-locations.conf.template
 COPY nginx.conf           /etc/nginx/nginx.conf.template

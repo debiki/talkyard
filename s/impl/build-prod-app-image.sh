@@ -9,11 +9,11 @@ set -e # exit on any error.
 set -x
 
 version="`cat version.txt | sed s/WIP/SNAPSHOT/`"
-repo=`sed -nr 's/DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env`
+repo=`sed -nr 's/DOCKER_REG_ORG=([a-zA-Z0-9\._-]*).*/\1/p' .env`
 
 sudo rm -fr target/docker-app-prod
 mkdir -p target/docker-app-prod
-cp -a images/app/{Dockerfile.prod,assets} target/docker-app-prod/
+cp -a images/app/{Dockerfile.prod,assets,migrations} target/docker-app-prod/
 cp version.txt target/docker-app-prod/
 cd target/docker-app-prod
 cp ../universal/talkyard-server-$version.zip ./
@@ -47,4 +47,4 @@ rm app/README.md
 
 docker build --tag=$repo/talkyard-app:latest --file Dockerfile.prod .
 
-echo "Image tag: $repo/talkyard-app:latest"
+echo "Image tag: $repo/talkyard-${edition}-app:latest"

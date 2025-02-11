@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# '--name test' is required, because the hostname in docker-compose (also 'test')
+# '--name test' is required, because the hostname in docker compose (also 'test')
 # is ignored when using 'run'.
 
 set -x
-docker-compose  \
+docker compose  \
   run \
   --rm \
   --name test \

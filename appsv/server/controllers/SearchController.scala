@@ -103,9 +103,12 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
                 "postId" -> hit.postId,
                 "postNr" -> hit.postNr,
                 "approvedRevisionNr" -> hit.approvedRevisionNr,
-                "approvedTextWithHighlightsHtml" ->
-                    Json.arr(hit.approvedTextWithHighligtsHtml),  // BUG: double array. Harmless, is waht the browse expects :- P
+                "approvedTextNoHighligtsSafe" -> hit.approvedTextNoHighligtsSafe.map(JsString),
+                "approvedTextHighligtsHtmlSafe" -> hit.approvedTextHighligtsHtmlSafe.map(hs =>
+                      JsArray(hs.map(JsString))),  // Fixed?: BUG: double array. Harmless, is waht the browse expects :- P
                 "currentRevisionNr" -> hit.currentRevisionNr,
+                "titleHighlightsHtmlSafe" -> hit.approvedTitleHighligtsHtmlSafe.map(hs =>
+                      JsArray(hs.map(JsString))),
                 // Later, see [post_to_json], and ThingsFoundJson.makePagesFoundSearchResponse:
                 // "pubTags" -> JsArray(postTags map JsTag),
                 // "authorIds" ->  ...  — needs  usersBrief above

@@ -1,5 +1,31 @@
-# See: https://hub.docker.com/_/eclipse-temurin, and ./Dockerfile.dev .
+# Building sqlx in Debian 13 (Trixie), and using from Ubuntu 24 (Noble)
+# should be fine, because Ubuntu 24 is based on Debian 13 — so shouldn't be
+# any wrong-libc errors or anything weird.
+#
+# (Rust has only Debian based images, Temurin (for Java) has only Ubuntu
+# based images.)
+#
+FROM rust:1.91.1-trixie AS rust_img
+
+RUN cargo install sqlx-cli --no-default-features --features native-tls,postgres
+
+
+# Ubuntu 24.04. See: https://hub.docker.com/_/eclipse-temurin, and ./Dockerfile.dev .
 FROM  eclipse-temurin:11.0.29_7-jdk-noble
+
+LABEL org.opencontainers.image.title="Talkyard App" \
+      io.talkyard.edition="se" \
+      io.talkyard.epoch="1"
+
+
+COPY --from=rust_img /usr/local/cargo/bin/sqlx     /usr/local/bin/sqlx
+
+# Delete user 'ubuntu'.
+RUN touch /var/mail/ubuntu && chown ubuntu /var/mail/ubuntu && userdel -r ubuntu
+
+# Create our own user: 'appuser'.
+RUN groupadd -r appgroup && useradd -r -s /bin/false -g appgroup appuser
+# Not needed:  chown -R appuser:appgroup /the/binary
 
 # There's no longer any JRE-only image.
 # COULD use Dockerfile.dev as build vm, and do away with the
@@ -31,8 +57,12 @@ RUN \
 # Play's HTTP and HTTPS listen ports, Java debugger port, JMX port 3333.
 EXPOSE 9000 9443 9999 3333
 
-RUN mkdir -p /opt/talkyard/uploads/ && \
-    chmod -R ugo+rw /opt/talkyard/uploads/
+# Docker volumes talkyard-v1-pub-files and -priv-files get mounted here.
+# (We create sub dirs as needed from Scala code. [pub_files_volume])
+RUN mkdir -p /opt/talkyard/pub-files/ && \
+    mkdir -p /opt/talkyard/priv-files/ && \
+    chown appuser:appgroup /opt/talkyard/pub-files/ && \
+    chown appuser:appgroup /opt/talkyard/priv-files/
 
 # Frequently modified JARs have been moved to app-lib-talkyard/ and we here copy them in a
 # separate step, so only that step will have to be pushed/pulled to/from Docker Hub.
@@ -43,6 +73,7 @@ COPY app-bin          /opt/talkyard/app/bin/
 # contain test suite OpenAuth credentials.
 COPY app-conf/app-prod.conf     /opt/talkyard/app/conf/
 COPY app-conf/logback-prod.xml  /opt/talkyard/app/conf/
+COPY migrations      /opt/talkyard/app/migrations/
 COPY version.txt     /opt/talkyard/app/
 COPY build-info      /opt/talkyard/build-info/
 
@@ -55,6 +86,12 @@ ENV PLAY_HEAP_MEMORY_MB 1024
 # Play will search for app-prod-override.conf in the same dir. See [4WDKPU2] in talkyard-prod-one.
 ENV CONFIG_FILE /opt/talkyard/app/conf/app-prod.conf
 
+# Play generates a cert that we don't need! and wants to store here.
+# How to config Play so it stops? play.server.https.enabled=false? (Nginx does TLS offload.)
+# For now:
+RUN mkdir -p /opt/talkyard/app/target/dev-mode && \
+    chown -R appuser:appgroup /opt/talkyard/app/target/dev-mode
+
 WORKDIR /opt/talkyard/app
 
 RUN \
@@ -62,6 +99,8 @@ RUN \
     # use another user to start Ty.
     sed --in-place 's#^PATH="#PATH="/opt/java/openjdk/bin:#' /etc/environment && \
     echo 'JAVA_HOME=/opt/java/openjdk\n'          >>         /etc/environment
+
+USER appuser
 
 # # this —> "Bad root server path: /opt/talkyard/app/-jvm-debug 9999", no idea why...
 # CMD ["/opt/talkyard/app/bin/talkyard-server", \
@@ -71,16 +110,15 @@ RUN \
 #   "-Dcom.sun.management.jmxremote.authenticate=false", \
 #   "-Dhttp.port=9000", \
 #   "-Dhttps.port=9443", \
-#   # SSL has security flaws. Use TLS instead. [NOSSL] [PROTOCONF]
-#   -Ddeployment.security.SSLv2Hello=false \
-#   -Ddeployment.security.SSLv3=false \
-#   -Dhttps.protocols=TLSv1.1,TLSv1.2 \
-#   -Djdk.tls.client.protocols=TLSv1.1,TLSv1.2 \
+#   # [PROTOCONF]
+#   -Dhttps.protocols=TLSv1.3,TLSv1.2 \
+#   -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2 \
 #   "-Dconfig.file=$CONFIG_FILE"]
 
 # ...but this identical command works fine:
-# the PID file might not get deleted if we shutdown during startup, see Globals.scala [65YKFU02]
-CMD rm -f /opt/talkyard/app/RUNNING_PID && exec /opt/talkyard/app/bin/talkyard-server \
+
+
+CMD exec /opt/talkyard/app/bin/talkyard-server \
   -J-Xms${PLAY_HEAP_MEMORY_MB}m \
   -J-Xmx${PLAY_HEAP_MEMORY_MB}m \
   -J-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:9999 \
@@ -90,21 +128,15 @@ CMD rm -f /opt/talkyard/app/RUNNING_PID && exec /opt/talkyard/app/bin/talkyard-s
   -Dhttp.port=9000 \
   -Dhttps.port=9443 \
   #
-  # SSL has security flaws. Use TLS. [NOSSL] COULD LATER 2020?: TLSv1=false (even later: TLSv1.1=false)
-  # About the flags: https://superuser.com/a/770465/95772
-  # and: https://blogs.oracle.com/java-platform-group/jdk-8-will-use-tls-12-as-default
-  # and: https://stackoverflow.com/questions/32912175/disabling-tls1
-  -Ddeployment.security.SSLv2Hello=false \
-  -Ddeployment.security.SSLv3=false \
   # From https://superuser.com/a/928498/95772:
-  # (Enable TLSv1.3 later, when no longer draft. Email protocol config elsewhere: [PROTOCONF])
-  -Dhttps.protocols=TLSv1.1,TLSv1.2 \
+  # (Email protocol config elsewhere: [PROTOCONF])
+  -Dhttps.protocols=TLSv1.3,TLSv1.2 \
   # Not sure what this (below) is.
   # "specific SunJSSE protocols" — https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html#InstallationAndCustomization
   # and "Controls the underlying platform TLS implementation" – https://blogs.oracle.com/java-platform-group/diagnosing-tls,-ssl,-and-https
   # = what ??? TLS isn't a "specific SunJSSE protocol", weird.
-  # Anyway, maybe makes *something* use only TLS 1.1 and 1.2 (not SSL), so let's do it:
-  -Djdk.tls.client.protocols=TLSv1.1,TLSv1.2 \
+  # Anyway, maybe makes *something* use only TLS 1.3 and 1.2 (not SSL), so let's do it:
+  -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2 \
   #
   # It's ok to use urandom, see:   [30PUK42]
   # - http://www.2uo.de/myths-about-urandom/

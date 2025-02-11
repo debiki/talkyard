@@ -10,7 +10,6 @@
 # Don't forget to add default values in the Dockerfile, [0KW2UY3]
 # and enable Nginx access_log buffering (nginx.conf).
 
-version: '3.7'
 services:
   web:
     environment:

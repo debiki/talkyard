@@ -566,10 +566,9 @@ class MailerActor(
 
     // From https://stackoverflow.com/a/47720397/694469:
     // and https://github.com/square/okhttp/blob/6c3a1607b06cf129c017aa28e6aa3baee1a66745/okhttp/src/main/java/okhttp3/TlsVersion.java#L26:
-    SECURITY; DO_AFTER // year 2020: Enable TLSv1.3? TLSv1.3 is still a draft, now 2018. [PROTOCONF]
     // Space separated list of protocols, says
     //   https://javaee.github.io/javamail/docs/api/com/sun/mail/smtp/package-summary.html
-    session.getProperties.put("mail.smtp.ssl.protocols", "TLSv1.1 TLSv1.2")
+    session.getProperties.put("mail.smtp.ssl.protocols", "TLSv1.3 TLSv1.2")  // [PROTOCONF]
 
     // This accepts self signed smtp server certs?? Could be useful during testing and development.
     // (Without: The TLS cert needs to be valid or added to the Java cert store, like here: [26UKWD2])

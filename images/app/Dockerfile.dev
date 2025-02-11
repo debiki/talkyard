@@ -1,8 +1,24 @@
-
+# Talkyard uses Ubuntu 24.04 ~= Debian 12, and Java 11, currently.
+# Could create a Debian slim JRE, see: [slim_jre].
 # Cannot upgrade to Java 17, because Nashorn has been removed.
-# This is Ubuntu though. Could create a Debian slim JRE, see: [slim_jre].
+
+
+# Build sqlx, for database migrations.
+FROM rust:1.91.1-trixie AS rust_img
+
+RUN cargo install sqlx-cli --no-default-features --features native-tls,postgres
+
+
+# Ubuntu 24.04 LTS (Noble Numbat) uses kernel 6.8, Debian 12 (Bookworm) uses kernel 6.1
+# (Debian 11 uses kernel 5.x). Noble ~= Bookwork which we used to build sqlx above.
+# (If too different, there tends to be some error like "libc.so.: version `GLIBC_2.32' not found".)
 FROM  eclipse-temurin:11.0.29_7-jdk-noble
 
+LABEL org.opencontainers.image.title="Talkyard Dev App" \
+      io.talkyard.edition="se" \
+      io.talkyard.epoch="1"
+
+COPY --from=rust_img /usr/local/cargo/bin/sqlx     /usr/local/bin/sqlx
 
 # We'll create our own user, 'owner', with the same id as the host OS user.
 # But user 'ubuntu', id 1000, often collides with 'owner' (same id),
@@ -10,40 +26,13 @@ FROM  eclipse-temurin:11.0.29_7-jdk-noble
 RUN touch /var/mail/ubuntu && chown ubuntu /var/mail/ubuntu && userdel -r ubuntu
 
 
-# If using an old version of Ubuntu or Debian (Ubuntu Focal or Debian 10),
-# there can be a misleading "insufficient memory" error, because newer Ubuntu versions >= 22
-# (JDK-Jammy) ships with glibc >= 2.35, which uses clone3 (>= 2.34 does),
-# but Docker doesn't work with clone3, until PR 42681 (fix for 42680). Which
-# is available starting with Docker v20.10.10,  but maybe not incl by default in
-# old OS versions.
-# See:
-#  A misleading "insufficient memory for the Java Runtime [...]" error:
-#  https://stackoverflow.com/questions/72841549/container-fails-to-start-insufficient-memory-for-the-java-runtime-environment-t/73970043#73970043
-#
-# https://github.com/adoptium/containers/issues/215#issuecomment-1142046045
-#
-# via:  https://stackoverflow.com/questions/74443957/insufficient-memory-while-running-eclipse-temurin17-jdk-docker-image
-# via:  https://www.google.com/search?q=Failed+to+start+thread+%22GC+Thread%230%22+-+pthread_create+failed+(EPERM)+for+attributes%3A+stacksize%3A+1024k%2C+guardsize%3A+4k%2C+detached.&oq=Failed+to+start+thread+%22GC+Thread%230%22+-+pthread_create+failed+(EPERM)+for+attributes%3A+stacksize%3A+1024k%2C+guardsize%3A+4k%2C+detached.&aqs=chrome..69i57.1225j0j1&sourceid=chrome&ie=UTF-8
-#
-#
-# (Also see:  https://docs.docker.com/engine/security/seccomp/ )
-#
-# Email about some clone3 wrapper:
-# https://sourceware.org/git/?p=glibc.git;a=commit;h=d8ea0d0168b190bdf138a20358293c939509367f
-#
-# Anyway, to upgr Docker, if needed:
-#
-# How to:  https://docs.docker.com/engine/install/ubuntu/
-# That is:  "To upgrade Docker Engine, follow the installation instructions", which is just:  (and this worked)
-#
-#     sudo apt-get update
-#     sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
-#
-
-
 RUN \
   apt-get update && \
   apt-get install -y \
+  # Diesel needs, otherwise this error:
+  #   diesel: error while loading shared libraries: libpq.so.5:
+  #      cannot open shared object file: No such file or directory
+  #libpq-dev  \
   # Required:
   # (git needed so can include Git revision in the build,
   # and show at http://server/-/build-info.)
@@ -60,6 +49,7 @@ RUN \
   telnet
   #busybox-extras
 
+# [ty_v1] Upgr sbt?
 # ADD extracts tar archives; this .tgz gets unpacked at /opt/sbt/{bin/,conf/}.
 ADD  sbt/sbt-1.4.5.tgz  /opt/
 
@@ -74,8 +64,16 @@ ADD  sbt/sbt-1.4.5.tgz  /opt/
 # Play's HTTP and HTTPS listen ports, Java debugger port, JMX port 3333.
 EXPOSE 9000 9443 9999 3333
 
-RUN mkdir -p /opt/talkyard/uploads/ && \
-    chmod -R ugo+rw /opt/talkyard/uploads/
+# Docker volumes talkyard-v1-pub-files and -priv-files get mounted here.
+# (We create sub dirs as needed from Scala code. [pub_files_volume])
+RUN mkdir -p /opt/talkyard/pub-files/ && \
+    mkdir -p /opt/talkyard/priv-files/
+    # We'll chown to the correct user in entrypoint.dev.sh — but right
+    # now, here, we don't yet know the id of that user.
+    ## In dev builds, we don't know the id of the user we'll start Talkyrad as, so let
+    ## anyone write to these dirs. (In prod builds, we chown to appuser, instead.)
+    ##chmod -R ugo+rw /opt/talkyard/pub-files/ && \
+    ##chmod -R ugo+rw /opt/talkyard/priv-files/
 
 # Add a self signed dummy cert for the dummy SMTP server (the 'fakemail' Docker container),
 # so one can test connecting to it with TLS and see if the TLS conf vals work. [26UKWD2]
@@ -167,6 +165,13 @@ ENV PLAY_HEAP_MEMORY_MB 2048
 #
 CMD \
  cd /opt/talkyard/app/ && \
+ #
+ # Apply any new database migrations in ./migrations/.
+ # Let's call from Play instead?! Play can show an error web page, if migration failed [flyway_2_sqlx]
+ # And Play knows if we want the _test database.
+ # /usr/local/bin/sqlx migrate run --database-url postgres://postgres:public@rdb/diesel_testdb2 && \
+ #
+ # Start the app server (sbt, a Scala build tool, will start Play Framework).
  exec /opt/sbt/bin/sbt \
   --mem $PLAY_HEAP_MEMORY_MB \
   -J-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:9999 \
@@ -181,11 +186,9 @@ CMD \
   -Dcom.sun.management.jmxremote.authenticate=false \
   -Dhttp.port=9000 \
   -Dhttps.port=9443 \
-  # SSL has security flaws. Use TLS instead. [NOSSL] [PROTOCONF]
-  -Ddeployment.security.SSLv2Hello=false \
-  -Ddeployment.security.SSLv3=false \
-  -Dhttps.protocols=TLSv1.1,TLSv1.2 \
-  -Djdk.tls.client.protocols=TLSv1.1,TLSv1.2 \
+  # [PROTOCONF]
+  -Dhttps.protocols=TLSv1.3,TLSv1.2 \
+  -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2 \
   # Otherwise ignored, although as per the docs it should be found since it's on the classpath.
   -Dlogback.configurationFile=/opt/talkyard/app/conf/logback.xml \
   # log4j2 problem, disable this:

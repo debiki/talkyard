@@ -55,8 +55,8 @@ package object controllers {
       created automatically, but it might take a minute. You can:""" + i"""
       |  - Wait for a short while, then reload this page, and
       |    run 'make log' to see what's happening.
-      |  - Run 'docker-compose ps' and, if the Gulp container isn't running,
-      |   'docker-compose restart gulp'.
+      |  - Run 'docker compose ps' and, if the Gulp container isn't running,
+      |   'docker compose restart gulp'.
       """
 
     def fileName(path: String) = path.takeRightWhile(_ != '/')

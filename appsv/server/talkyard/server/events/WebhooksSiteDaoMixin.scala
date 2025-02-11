@@ -532,7 +532,9 @@ trait WebhooksSiteDaoMixin {
             case _: scala.concurrent.TimeoutException => SendFailedHow.RequestTimedOut
             // Unsure precisely which of these are thrown:  (annoying! Would have
             // been better if Play's API returned an Ok Or ErrorEnum-plus-message?)
-            case _: io.netty.channel.ConnectTimeoutException => SendFailedHow.CouldntConnect
+            // Edit 2025: Why did this class disappear now when upgr to the ES 8 API?
+            // case _: io.netty.channel.ConnectTimeoutException => SendFailedHow.CouldntConnect
+
             case _: java.net.ConnectException => SendFailedHow.CouldntConnect
             case _ => SendFailedHow.OtherException
           }

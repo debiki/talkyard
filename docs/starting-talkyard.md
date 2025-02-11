@@ -6,10 +6,17 @@ Getting Talkyard up and running
 
 As operating system, you can use Debian 12 or 13 or Ubuntu 24.04.
 
-You need about 6 GB RAM for the development environment.
-And an internet connection — you'll download perhaps 1 GB Docker images and other files.
+You need at least 6 GB ? RAM for the development environment.
+And an internet connection — you'll download > 1 GB Docker images and other files.
 
-Install Docker, see: https://docs.docker.com/compose/install/.
+Install Docker, see: https://docs.docker.com/engine/install/debian/.
+On Linux, you can use [their convenience script](https://docs.docker.com/engine/install/debian/#install-using-the-convenience-script):
+
+
+```
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+```
 
 Read [A brief intro to Docker-Compose](./intro-to-docker-compose.md) — unless you know
 how to use docker-compose already.

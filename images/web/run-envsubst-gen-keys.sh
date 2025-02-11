@@ -61,10 +61,6 @@ envsubst "$vars" < /etc/nginx/http-limits.conf.template       > /etc/nginx/http-
 envsubst "$vars" < /etc/nginx/server-limits.conf.template     > /etc/nginx/server-limits.conf
 envsubst "$vars" < /etc/nginx/server-locations.conf.template  > /etc/nginx/server-locations.conf
 
-# Old, can remove? See comments in Dockerfile.  [ty_v1]
-envsubst "$vars" < /etc/nginx/vhost.conf.template  > /etc/nginx/vhost.conf
-envsubst "$vars" < /etc/nginx/server.conf.template > /etc/nginx/server.conf
-
 
 # Generate a LetsEncrypt account key; otherwise LetsEncrypt might rate limit this
 # server a bit much.  Used in init-by-lua-file.lua (search for 'account_key_path').

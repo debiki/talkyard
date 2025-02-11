@@ -146,7 +146,9 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyConte
       systemStats + outputStream.toString("utf-8")
     }
     finally {
+      ??? /*
       org.apache.lucene.util.IOUtils.closeWhileHandlingException(printStream, outputStream)
+      */
     }
     Ok(metricsText) as TEXT
   }

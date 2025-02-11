@@ -104,7 +104,8 @@ val appDependencies = Seq(
 
   // Search engine.
   Dependencies.Libs.elasticsearchClient,
-  Dependencies.Libs.elasticsearchClientTransport,
+  // Dependencies.Libs.elasticsearchClientTransport,  old, ES 6
+  Dependencies.Libs.elasticsearchJackson,
 
   Dependencies.Libs.apacheCommonsEmail,
   Dependencies.Libs.apacheCommonsLang3,

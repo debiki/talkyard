@@ -369,23 +369,29 @@ function makeTagLabelValues(tagsStuff: TagsStuff) {
 function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: St | Nr, store: Store }) {
   const pageAndHits: PageAndHits = props.pageAndHits;
   const hitsNotTitle = [];
-  let titleHit: SearchHit | U;
+  // Any search hit that matches the page title or body. And...
+  let pageHit: SearchHit | U;
+  // ... if that search hit matches the title, or body.
+  let titleHit: Bo | U;
   let bodyHit: Bo | U;
 
+  // Find out if the title or orig post matched — we want to show first.
   for (let hit of pageAndHits.hits) {
-    if (hit.postNr === TitleNr) {
-      titleHit = hit;
+    // The page title & body are in the same ElasticSearch document, with the post nr
+    // being that of the original post —  we [index_title_and_body_together].
+    if (hit.postNr === BodyNr) {
+      titleHit ||= !!hit.titleHighlightsHtmlSafe;
+      bodyHit ||= !!hit.approvedTextHighligtsHtmlSafe;
+      pageHit = hit;
     }
-    else {
-      bodyHit = bodyHit || hit.postNr === BodyNr;
-      // If the OP (orig post) is among the hits, place it first, even if some comments
-      // got scored higher by the search engine. It's simpler to interpret the search
-      // results, with the OP first (if present)? Also, we no longer prefix any orig
-      // post hit with "_in_the_page_text", so now it "must" be first.
-      const res = SearchResultHit({ hit, urlPath: pageAndHits.urlPath, key: hit.postNr });
-      hit.postNr === BodyNr ?
+
+    // If the OP (orig post) is among the hits, place it first, even if some comments
+    // got scored higher by the search engine. It's simpler to interpret the search
+    // results, with the OP first (if present)? Also, we no longer prefix any orig
+    // post hit with "_in_the_page_text", so now it "must" be first.
+    const res = SearchResultHit({ hit, urlPath: pageAndHits.urlPath });
+    hit.postNr === BodyNr ?
           hitsNotTitle.unshift(res) : hitsNotTitle.push(res);
-    }
   }
 
   // If the title matched, show the matches inline in the <h3> as the title
@@ -396,8 +402,9 @@ function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: St | Nr, 
   if (titleHit) {
     // (I wonder if any title is long enough to be split by ElasticSearch into two parts?
     // There's a max length: PageParts.MaxTitleLength in Scala.)
-    const safeHtml = titleHit.approvedTextWithHighlightsHtml.join(" <b>...</b> ");
+    const safeHtml = pageHit.titleHighlightsHtmlSafe.join(" <b>...</b> ");
     titleText = r.span({ className: 'esSERP_Hit_Text',
+          // Sanitized here: [safe_hit_highlights]
           dangerouslySetInnerHTML: { __html: safeHtml }});
   }
 
@@ -416,13 +423,15 @@ function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: St | Nr, 
 
 
 
-function SearchResultHit(props: { hit: any, urlPath: string, key?: string | number }) {
-  let hit: SearchHit = props.hit;
+function SearchResultHit(props: { hit: SearchHit, urlPath: St }) {
+  const hit: SearchHit = props.hit;
   // Any html stuff was escaped here: [7YK24W].
-  let safeHtml = hit.approvedTextWithHighlightsHtml.join(" <b>...</b> ");
-  const hitOp = hit.postNr === BodyNr ? ' c_SR_Hit-Op' : '';
+  const highlights = hit.approvedTextHighligtsHtmlSafe;
+  const safeHtml = highlights ? highlights.join(" <b>...</b> ") : hit.approvedTextNoHighligtsSafe;
+  const textHit = !!hit.approvedTextHighligtsHtmlSafe;
+  const hitOp = hit.postNr === BodyNr && textHit ? ' c_SR_Hit-Op' : '';
   return (
-    r.li({ className: 's_SR_Hit' + hitOp, key: props.key },
+    r.li({ className: 's_SR_Hit' + hitOp, key: hit.postId },
       // Maybe it's pretty clear that the text just below the title is the original
       // post? Let's skip "_in_the_page_text" — let's show only "In a comment:"
       // (for comments).
@@ -437,7 +446,9 @@ function SearchResultHit(props: { hit: any, urlPath: string, key?: string | numb
               "In ", LinkUnstyled({ to: `${props.urlPath}#post-${hit.postNr}`,   // I18N
                   className: 'esSERP_Hit_In_Where' },
                 foundWhere(hit)), ': '),
-      r.span({ className: 'esSERP_Hit_Text',
+      r.span({ className: 'c_SR_Hit_Text' +
+                  (textHit ? ' esSERP_Hit_Text' : ''), // for e2e tests. Rename?
+          // Sanitized here: [safe_hit_highlights]
           dangerouslySetInnerHTML: { __html: safeHtml }})));
 }
 

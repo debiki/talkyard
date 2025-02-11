@@ -340,11 +340,18 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
   // Typescript: PostFound. Maybe RENAME to PostSearchFound?
   def JsPostFound(hit: SearchHit, anyAuthor: Opt[Pat], avatarUrlPrefix: St,
         jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): JsObject = {
+    // To do, ES 8: Incl title with marks, if this is the orig post.
+    val htmlWithMarks = {
+      val fragments: ImmSeq[St] = hit.approvedTextHighligtsHtmlSafe.getOrElse(
+                                    hit.approvedTextNoHighligtsSafe.to(ImmSeq))
+      JsArray(fragments map JsString)
+    }
+
     Json.obj(
       "isPageTitle" -> JsBoolean(hit.postNr == PageParts.TitleNr),
       "isPageBody" -> JsBoolean(hit.postNr == PageParts.BodyNr),
       "author" -> JsPatFoundOrNull(anyAuthor, Some(avatarUrlPrefix), jsonConf, authzCtx),
-      "htmlWithMarks" -> JsArray(hit.approvedTextWithHighligtsHtml map JsString))
+      "htmlWithMarks" -> htmlWithMarks)
   }
 
 

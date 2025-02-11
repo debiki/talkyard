@@ -109,8 +109,9 @@ class SystemDao(
     }
   }
 
-  def applyEvolutions(): U = {
-    writeTxLockAllSites(_.applyEvolutions())
+
+  def applyEvolutions(databaseUrl: St, isTest: Bo): Opt[ErrMsgCode] = {
+    writeTxLockAllSites(_.applyEvolutions(databaseUrl, isTest = isTest))
   }
 
 
@@ -693,9 +694,9 @@ class SystemDao(
     }
   }
 
-  def deleteFromIndexQueue(post: Post, siteId: SiteId): U = {
+  def deleteFromIndexQueue(posts: ImmSeq[Post], siteId: SiteId): U = {
     writeTxLockAllSites { tx =>
-      tx.deleteFromIndexQueue(post, siteId)
+      tx.deleteFromIndexQueue(posts, siteId)
     }
   }
 

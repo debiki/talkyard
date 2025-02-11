@@ -54,10 +54,16 @@ $tagCatCol = hsl(0 0% 41%);
   margin-top: 25px;
 
 .s_SR li.s_SR_Hit,
-.s_SR .esSERP_Hit_Text
+.s_SR .c_SR_Hit_Text
   margin-bottom: 0.45em;
   line-height: 1.3;
   color: hsl(0 0% 23%);
+
+// Text matching the search query, highlighted
+em.hlt1
+  background: hsl(58 100% 50%);  // 60 is yellow, but 58 (a tint of red) simspler to see
+  font-style: normal;
+  color: #000;
 
 .s_SR,
 .s_SR_Hit
@@ -130,9 +136,11 @@ $tagCatCol = hsl(0 0% 41%);
   color: hsl($uiHue, 100%, 47%);
 
 .esSERP_Hit_Text
+  mark,
   .esHL1, .esHL2, .esHL3, .esHL4, .esHL5, .esHL6, .esHL7
     font-weight: bold;
   // 60 is yellow.
+  mark,
   .esHL1
     background: hsl(60, 100%, 50%);
   .esHL2

@@ -581,5 +581,98 @@ See tyworld.adoc: Custom_types.
 
 == Year 2024
 
+== Year 2025
 
+
+=== Start using sqlx, not Flyway
+
+Flyway has been working great over the years. Now in the upcoming Talkyard v1
+though, dependency problems:
+
+Can't use Flyway >= 10. It supports only Java >= 17, but Talkyard cannot
+upgrade to Java 17 because in Java 17, Nashorn is gone. (Ty uses Nashorn for
+server side rendering of React.)
+
+Can't use Flyway <= 9, because doesn't support PostgreSQL 18, and is apparently
+in practice end-of-life, only version 11 (and 10?) is getting new features &
+maintenance.
+
+Flyway command line? It's a 446 MB dowload (!), Flyway 11.3.4. Don't want to
+add that to a Docker image. Of which 158 MB is a Java runtime, probably can't
+remove that. Most other stuff looks like things Talkyard doesn't need (e.g.
+drivers for Oracle or MongoDB, or some enterprise don't-know-what things).  But
+seems simpler to switch to sqlx, than to try to trim down the Flyway
+dependencies.
+
+Other migration tools? There's Diesel, but it doesn't work with tables without
+primary keys (some Ty tables have two unique keys instead). There's Refinery,
+but it doesn't support down migrations and seems to have fewer automated tests.
+It does, however, support grouped migrations, but that looks straightforward to
+add to sqlx too. — And there's a bunch of migration tools in other languages,
+but Rust seems like a good server side & tools language to settle on (in
+addition to Scala).
+
+
+=== Stay on Java 11
+
+Stay on Java 11 for some more years, so there'll be plenty of time to switch to
+Deno for server side rendering — see the `p/m/deno/9` branch. Eclipse Temurin
+Java 11 gets security updates until 2027-10-31, see:
+https://endoflife.date/eclipse-temurin, that's the one Ty uses, see:
+images/app/Dockerfile.dev. Can also switch to Amazon Corretto 11 which isn't
+EOL until Jan 2032. And, soon the next Java LTS will be released? Java 25? Then
+Ty can jump from Java 11 to the new & upcoming Java LTS, year 2026 or 2027.
+
+
+=== Just GPG encrypt backups
+
+Don't know which "real" backup program to use, there're so many: Restic,
+Rustic, Borg, Duplicity, rclone, something in C#. And I suppose bigger orgs
+have their own internal tools already? — Let's just continue as usual, with
+gzipped PostgreSQL dumps. But in Talkyard v1, they'll be gpg encrypted, if one
+specifies a passphrase.  Also, with this "dumb" approach, bit rot is less of a
+danger?  Messes up just one backup, but if using deduplicated backup storage,
+then, might mess up all? Unless using some 99.9999… durability object storage,
+but then more tricky to make it safe against ransomware attacks?
+
+
+=== Time for Talkyard v1 (tyse-v1) `[ty_v1]`
+
+Use only Debian images, no Alpine images. Less risk for troubles, and the tiny
+size difference doesn't matter.
+
+Log to console only. Docker nowadays includes nice tools for rotating logs.
+
+==== Named volumes
+
+Don't use bind mounts; use Docker managed volumes instead, by default. Then,
+won't need to worry about user ids in the containers vs on the host.
+
+==== Pub-files, priv-files
+
+Add a `pub-files` Docker named volume, so it'll be more flexible than an `uploads`
+volume (which would be for uploaded files only). — The `pub-files` volume can store
+sitemaps too, later, and other unknown future things.
+And add a `priv-files` volume too, for uploaded files that will be served directly
+by the Ty server (not via a CDN), and other future things — maybe backups or
+takeouts that take a while to generate?
+
+
+=== Auto upgrading PostgreSQL: Let's wait
+
+Don't automatically upgrade Postgres to new major versions (e.g. 17 to 18). There's
+various tools for major versions auto upgrades:
+
+- https://github.com/tianon/docker-postgres-upgrade
+- https://github.com/pgautoupgrade/docker-pgautoupgrade
+
+But not that much time to find out which is the right one for Ty to use, _and_
+trying out that it actually works, before it's time to release Ty v1.
+
+Testing if auto upgrades work, would ideally would include waiting for new Pg
+versoins (e.g. 18 later this fall, Pg 19 next year) to get released, and auto
+upgrading a test fork of Ty. Can do that, and later, year 2027, when it's time
+to add a Deno containier (and use Deno for rendering server side, rather than
+Nashorn which is gone in Java 17), then, that's a good time to add some auto
+upgrade / maintenance-tools container too.
 

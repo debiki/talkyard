@@ -31,7 +31,7 @@ trait SystemTransaction {  RENAME // to SysTx, started already
 
   /** If test mode, deletes and recreates the database, if there's a validation error.
     */
-  def applyEvolutions(): Unit
+  def applyEvolutions(databaseUserUrl: St, isTest: Bo): Opt[ErrMsgCode]
 
   // ----- Sites
 
@@ -105,7 +105,7 @@ trait SystemTransaction {  RENAME // to SysTx, started already
   def loadJobQueueRangesBySiteId(): Map[SiteId, TimeRange]
   def loadJobQueueLengthsBySiteId(): Map[SiteId, i32]
   def loadPostsToIndex(limit: i32): PostsToIndex
-  def deleteFromIndexQueue(post: Post, siteId: SiteId): Unit
+  def deleteFromIndexQueue(posts: ImmSeq[Post], siteId: SiteId): Unit
   def addEverythingInLanguagesToIndexQueue(
         siteIds: Set[SiteId] = Set.empty, allSites: Bo = false): U
 

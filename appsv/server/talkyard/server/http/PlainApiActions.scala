@@ -199,7 +199,7 @@ class PlainApiActions(
 
         /* You can clear any maint work:
 
-        /usr/local/bin/docker-compose exec rdb psql talkyard talkyard  \
+        docker compose exec rdb psql talkyard talkyard  \
                 -c "update system_settings_t set maintenance_until_unix_secs_c = null;"
 
         // (Maybe you're running auto tests, or debugging, and the server got stuck in

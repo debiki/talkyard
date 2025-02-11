@@ -608,9 +608,6 @@ And these unique indexes:
   tags_u_id_patid
   tags_u_id_postid
 
-[upgr_pg] [ty_v1]
-Upgrade PostgreSQL. Switch from Flyway to Diesel, and upgr via psql dump export & import?
-
 [use_timestamptz]
 See: ../wip/use-timestamptz/timestamptz.wip.txt
 
@@ -957,6 +954,9 @@ See: ../wip/manage-uploads/uploads.wip.txt
 
 [uploaded_file_name]
 Bug: Names forgotten. So can't show, when listing (see [manage_uploads_wip]).
+
+[cloud_storage]  s3_storage store_in_s3
+Make it possible to save big files in e.g. Google Cloud Storage — anything S3 compatible?
 
 [sso_plus_oidc]
 Let people combine both custom OIDC IDPs with Ty SSO — that's just
@@ -1342,7 +1342,7 @@ Then, compiles Commonmark to html, finds all links etc.
 Then, a read-write-tx: If the post wasn't changed since the r/o tx, then
 save the rebuilt post.
 Also, when upgrading ElasticSearch, maybe reindex everything and improve the mapping:
-Change ids, e.g. site & category id, from type integer to type keword.  [es_kwd]
+Change ids, e.g. site & category id, from type integer to type keword.
 
 [sitemaps] [search_index_prio]
 Can map  posts3.index_prio_c, i16,  to a sitemap priority value 0.0 – 1.0?
@@ -1362,73 +1362,10 @@ Offline builds on various Linux distros, not just Debian 10?
 
 [ty_v1] Things to fix before Ty stack version 1: 0.20YY.NR —> version 1.20YY.NR
 
-Ty v1 is a major release. Server admins will be required to install Ty v1
-on a new server, and verify that it works — before shutting down one's Ty v0.
-So, it'll be OK to make changes in Ty that otherwise would have been deemed too risky.
-
-Ty v1 removes some deprecated things, e.g.: Remove class ed.server.EdAppLoader (everyone
-needs to remove `play.application.loader= ed.server.EdAppLoader` from the Play conf file)
-
-Docker volumes instead of bind mounts, see e.g.:
-  https://stackoverflow.com/questions/23544282/what-is-the-best-way-to-manage-permissions-for-docker-shared-volumes
-
-Rename Silhouette authn settings to talkyard.authn.____  instead?
-Require that the old conf vals be removed (log helpful errors.)
-
-s/typ.ts script: Check mem before upgrading, warn if too little? balloon.txt file?
-
-Use firewalld instead of ufw  [firewalld_not_ufw]
-    - recommended by the Debian wiki: https://wiki.debian.org/DebianFirewall
-    - better than ufw; ufw won't block exposed Docker ports,
-      see:  https://github.com/chaifeng/ufw-docker
-  Sth like:
-  firewall-cmd --zone=public --permanent --add-service=http
-  firewall-cmd --zone=public --permanent --add-service=https
-
-
-? Rename /opt/talkyard/conf/play-framework.conf  to  talkyard-app.conf
-so can use other tech than only Play Fmw, without the file name getting misleading.
-(There're HOCON file format parsers in rust and js too, not only Scala.)
-
-/opt/talkyard/
-    .git/
-    env-vars —> .env
-        # in env-vars file:
-        CURRENT_VERSION=...
-        PINNED_VERSION=...
-    docker-compose.yml —> versions/docker-compose.yml
-
-    version/
-        .git/
-        docker-compose.yml
-
-    conf/
-        app/
-            play-framework.conf
-        web/
-            nginx-server-blocks.conf
-        acme/
-            acme-account.key   [ty_v1] generate on the host instead so can be :ro?
-        rdb/
-            postgresql.conf
-        ...
-    volumes/
-        app/
-        cache/
-        rdb/
-        ...
-    docs/
-    old/
-        versions/
-            v1.2021.05/
-              env-vars
-              docker-compose.yml
-              backup-archives-paths.txt
-
-/opt/talkyard-backups/
-    archives/
-        ...
-
+[ty_v2]
+/opt/talkyard-vX/
+    conf/acme/acme-account.key  [ty_v2] generate on the host instead so can be :ro?
+                    (Or maybe we'll be using some Rust based http server w auto https.)
 
 [ai_spam_checks]
 Use AI (LLMs) to detect spam. Include in the AI prompt:
@@ -1455,7 +1392,7 @@ Kubernetes has release channels:
   (details: https://cloud.google.com/kubernetes-engine/docs/concepts/release-channels).
 
 
-[todoc]
+[todoc][2doc][to_doc][2_doc]
 Write docs — search for `[todoc`, find e.g. `[todoc_certs]`.
 About how to write docs:
 - https://documentation.divio.com:
@@ -1490,7 +1427,11 @@ https://docusaurus.io/docs/markdown-features/code-blocks#syntax-highlighting )
 Upgr Webdriverio from 6 to 7.
 Add Typescript-ESLint warning: no-floating-promises!
 
-[java_8_to_11] [slim_jre]
+[java_8_to_11] — done.
+Skip: [slim_jre] — no one cares.
+
+[java_11_to_17]
+Need to remove [nashorn_in_tx], use Deno instead. See the Deno branch.
 
 
 Better troubleshooting

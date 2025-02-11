@@ -8,26 +8,32 @@
 # happens below), and use all Basic features at no cost, so, no problems
 # with using ES, right. Also see decisions.adoc.
 #
-FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.8.23
+#FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.8.23
 
-# [ty_v1] mount these instead — in a conf.d?
-# In dev, mount the conf from  modules/ed-prod-one-test/conf/search/.
-COPY \
+# Docs: https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
+#FROM docker.elastic.co/elasticsearch/elasticsearch:8.17.2
+# See: https://discuss.elastic.co/t/announcement-elastic-9-0-0-rc1-is-available/376490
+# and in the script:
+#     case "$1" in  ... -v) ... es_version="$2" ...
+#     image: docker.elastic.co/elasticsearch/elasticsearch:${ES_LOCAL_VERSION}
+FROM docker.elastic.co/elasticsearch/elasticsearch:9.2.1
+
+
+LABEL org.opencontainers.image.title="Talkyard Search" \
+      io.talkyard.edition="se" \
+      io.talkyard.epoch="1"
+
+# Or maybe add configurable files in a conf/search/ directory in the prod repo?
+# Then, in dev builds, mount the conf from  modules/ed-prod-one-test/conf/search/.
+# Let's wait! No one has ever asked about fine tuning ElasticSearch, and anyway most
+# things can be done via env vars in docker-compose.override.yml, add next to ES_JAVA_OPTS.
+# In fact, maybe it's better with the default config in the image, so I can change it,
+# by updating the image. (Couldn't, however, edit people's conf/search/ dir files.)
+COPY --chown=elasticsearch:elasticsearch \
       elasticsearch.yml  \
-      log4j2.properties  \
   /usr/share/elasticsearch/config/
 
 # For troubleshooting. Oops, maybe rpm not apt?
 # RUN apt-get install -y net-tools tree
 
-# We chown /usr/share/elasticsearch/data in the entrypoint (for write access),
-# so need to be root. We 'su' back to elasticsearch in the entrypoint.
-USER root
 
-# COULD optimize?
-# http://ozzimpact.github.io/development/elasticsearch-configuration-tuning
-
-COPY entrypoint.sh /docker-entrypoint.sh
-ENTRYPOINT ["/docker-entrypoint.sh"]
-
-CMD /usr/share/elasticsearch/bin/elasticsearch

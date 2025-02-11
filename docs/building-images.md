@@ -5,7 +5,7 @@ Do this: (`make` is GNU Make)
 
 ```
 vi version.txt    # type a new vesion number
-vi .env           # change DOCKER_REPOSITORY to your own repository
+vi .env           # change DOCKER_REG_ORG to your own registry and organization.
 make prod-images  # this runs tests and builds production images
 make tag-and-push-latest-images tag=...  # pushes images to your repo
 ```

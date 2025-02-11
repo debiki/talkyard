@@ -7,5 +7,6 @@ version := ProjectDirectory.versionFileContents
 libraryDependencies ++= Seq(
   Dependencies.Play.json,
   Dependencies.Libs.postgresqlJbcdClient,
-  Dependencies.Libs.flywaydb)
+  //Dependencies.Libs.flywaydb
+  )
 

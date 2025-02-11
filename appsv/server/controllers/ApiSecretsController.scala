@@ -95,7 +95,7 @@ val maintenanceApiSecret = context.globals.conf.getOptional[St]("talkyard.mainte
       |
       |    sudo -i
       |    cd /opt/talkyard/
-      |    docker-compose restart app
+      |    docker compose restart app
       |
       |Then, include in this API request:
       |

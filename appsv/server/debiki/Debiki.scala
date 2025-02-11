@@ -29,18 +29,24 @@ object Debiki {
 
   private val logger = TyLogger("Debiki")
 
-  def createPostgresHikariDataSource(readOnly: Boolean, conf: p.Configuration, isTest: Boolean)
-        : HikariDataSource = {
+  private case class ConnConf(
+    user: St,
+    password: St,
+    server: St,
+    port: i32,
+    database: St)
 
+
+  private def _getConnectionConfig(conf: p.Configuration, isTest: Bo): ConnConf = {
     def configStr(path: String): String =
       conf.getOptional[String](path).getOrDie("TyE93KI2", "Config value missing: "+ path)
 
     // I've hardcoded credentials to the test database here, so that it
     // cannot possibly happen, that you accidentally connect to the prod
     // database. (You'll never name the prod schema "talkyard_test",
-    // with "auto-deleted" as password?)
+    // with "public" as password?)
     def user =
-      if (isTest) "talkyard_test"
+      if (isTest) "postgres" // can drop and recreate
       else configStr("talkyard.postgresql.user")
 
     def password =
@@ -55,6 +61,27 @@ object Debiki {
     val server = configStr("talkyard.postgresql.host")
     val port = configStr("talkyard.postgresql.port").toInt
 
+    ConnConf(
+          user,
+          password,
+          server,
+          port,
+          database)
+  }
+
+
+  def getPostgresDatabaseUrl(conf: p.Configuration, isTest: Bo): St = {
+    val cc = _getConnectionConfig(conf, isTest = isTest)
+    // Format: https://github.com/launchbadge/sqlx/blob/main/sqlx-cli/README.md#usage
+    // e.g. "postgres://postgres:t0ps3cret1111111111111" +
+    //          "111111111111111111111111111@localhost/my_database"
+    s"postgres://${cc.user}:${cc.password}@${cc.server}:${cc.port}/${cc.database}"
+  }
+
+
+  def createPostgresHikariDataSource(readOnly: Bo, conf: p.Configuration, isTest: Bo) = {
+    val cc = _getConnectionConfig(conf, isTest = isTest)
+
     val readOrWrite = readOnly ? "read only" | "read-write"
 
     val connectionTimeoutMs =
@@ -63,18 +90,20 @@ object Debiki {
     val socketTimeoutSeconds =
           conf.getOptional[Int]("talkyard.postgresql.socketTimeoutSecs") getOrElse 35
 
-    logger.info(o"""Connecting to database: $server:$port/$database as user $user, $readOrWrite,
+    val databaseAdr = s"${cc.server}:${cc.port}/${cc.database}"
+
+    logger.info(o"""Connecting to database: $databaseAdr as user ${cc.user}, $readOrWrite,
          connection timeout: $connectionTimeoutMs ms,
          socket timeout: $socketTimeoutSeconds s""")
 
     // Weird now with Hikari I can no longer call setReadOnly or setTransactionIsolation. [5JKF2]
     val config = new HikariConfig()
     config.setDataSourceClassName("org.postgresql.ds.PGSimpleDataSource")
-    config.setUsername(user)
-    config.setPassword(password)
-    config.addDataSourceProperty("serverName", server)
-    config.addDataSourceProperty("portNumber", port)
-    config.addDataSourceProperty("databaseName", database)
+    config.setUsername(cc.user)
+    config.setPassword(cc.password)
+    config.addDataSourceProperty("serverName", cc.server)
+    config.addDataSourceProperty("portNumber", cc.port)
+    config.addDataSourceProperty("databaseName", cc.database)
 
     // Using too-many-connections temp hack  [7YKG25P]
     if (readOnly) {
@@ -146,11 +175,12 @@ object Debiki {
       try new HikariDataSource(config)
       catch {
         case ex: Exception =>
-          logger.error(s"Error connecting to database, for ${config.getPoolName} [EsE7JK4]", ex)
+          logger.error(s"Error connecting to database $databaseAdr, for ${
+                config.getPoolName} [EsE7JK4]", ex)
           throw ex
       }
 
-    logger.info("Connected to database. [EsM2KP40]")
+    logger.info(s"Connected to database $databaseAdr. [EsM2KP40]")
 
     // Currently I'm sometimes using > 1 connection per http request (will fix later),
     // so in order to avoid out-of-connection deadlocks, set a large pool size.

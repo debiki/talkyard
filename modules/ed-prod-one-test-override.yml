@@ -1,7 +1,6 @@
 # Configures a server that uses about 1.5G RAM, and to which you can connect a debugger,
 # and some passwords.
 
-version: '3.7'
 services:
   web:
     #mem_limit: 140M
@@ -36,7 +35,7 @@ services:
   # A fake external server, for e2e tests, when the Ty server sends its own HTTP
   # requests to external things.
   fakeweb:
-    image: ${DOCKER_REPOSITORY}/fakeweb
+    image: ${DOCKER_REG_ORG}/fakeweb
     restart: always
     # Won't work — we're not in Talkyard's main repo root. Instead, these would-have-
     # been-mounted files are included in the image. [fakeweb_mount_nothing]

@@ -24,7 +24,7 @@ import com.codahale.metrics
 import com.debiki.core
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.dao.rdb.{Rdb, RdbDaoFactory}
+import com.debiki.dao.rdb.{Migrator, Rdb, RdbDaoFactory}
 import com.github.benmanes.caffeine
 import com.zaxxer.hikari.HikariDataSource
 import debiki.EdHttp._
@@ -34,7 +34,8 @@ import talkyard.server.logging.LastErrsActor
 import talkyard.server.migrations.ScalaBasedMigrations
 import talkyard.server.search.SearchEngineIndexer
 import talkyard.server.notf.NotifierActor
-import java.{lang => jl, net => jn}
+import java.{lang => jl, net => jn, io => jio}
+import java.nio.{file => jf}
 import java.util.concurrent.TimeUnit
 import talkyard.server.pubsub.{PubSub, PubSubApi, StrangerCounterApi}
 import org.{elasticsearch => es}
@@ -73,8 +74,10 @@ object Globals extends TyLogging {
   val CdnOriginConfValName = "talkyard.cdn.origin"
   val UgcOriginConfValName = "talkyard.ugc.origin"
   val UgcBaseDomainConfValName = "talkyard.ugc.baseDomain"
-  val LocalhostUploadsDirConfValName = "talkyard.uploads.localhostDir"
-  val DefaultLocalhostUploadsDir = "/opt/talkyard/uploads/"
+  // Was: "talkyard.uploads.localhostDir" in Ty v0, but now renamed.
+  val LocalhostUploadsDirConfValName = "talkyard.uploads.pubDir"
+  val DefaultPubUploadsDir = "/opt/talkyard/pub-files/uploads/"
+  val SitemapFilesDir_later = "/opt/talkyard/pub-files/sitemaps/"  // later [sitemaps]
 
   val AppSecretConfValName = "play.http.secret.key"
   val AppSecretDefVal = "change_this"
@@ -476,6 +479,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
   object socialLogin {
     //import com.mohiva.play.silhouette.impl.providers.{OAuth1Settings, OAuth2Settings}
+    // "silhouette.google.authorizationURL"  —>  "talkyard.authn.google.authorizationURL"
     import talkyard.server.authn.OAuth2Settings
 
     val googleOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
@@ -731,12 +735,22 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
   val anyCreateTestSiteHostname: Option[String] =
     getStringNoneIfBlank("talkyard.createTestSiteHostname")
 
-  val anyUploadsDir: Option[String] = {
+  val anyPublicUploadsDir: Opt[St] = {
     val value = getStringNoneIfBlank(LocalhostUploadsDirConfValName)
     val pathSlash = if (value.exists(_.endsWith("/"))) value else value.map(_ + "/")
     pathSlash match {
       case None =>
-        Some(DefaultLocalhostUploadsDir)
+        // Make sure the uploads/ sub dir exists — we've mounted  /opt/talkyard/pub-files/
+        // but it might be empty, no uploads/ sub dir.   [pub_files_volume]
+        try {
+          jf.Files.createDirectories(jf.Paths.get(DefaultPubUploadsDir))
+          Some(DefaultPubUploadsDir)
+        }
+        catch {
+          case ex: jio.IOException =>
+            logger.error("Error creating uploads/ sub dir  [TyE0UPLSUBD602]", ex)
+            None
+        }
       case Some(path) =>
         // SECURITY COULD test more dangerous dirs. Or whitelist instead?
         if (path == "/" || path.startsWith("/etc/") || path.startsWith("/bin/")) {
@@ -749,8 +763,6 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         }
     }
   }
-
-  val anyPublicUploadsDir: Option[String] = anyUploadsDir.map(_ + "public/")
 
   def settingsBySiteId(siteId: SiteId): AllSettings =
     siteDao(siteId).getWholeSiteSettings()
@@ -778,7 +790,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         in file /opt/talkyard/conf/app/play.conf,
         otherwise I won't know for sure which port to include in URLs I generate.
         Also restart the app server for the new config to take effect:
-        sudo docker-compose restart web app""")
+        sudo docker compose restart web app""")
     s"$scheme://$hostname$colonPort"
   }
   def originOf(request: p.mvc.RequestHeader): String = s"$scheme://${request.host}"
@@ -1078,7 +1090,31 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         if (isProd && _appSecret == AppSecretDefVal)
           throw AppSecretNotChangedException
 
-        setStartupStep("Connecting to database... [TyMSTART1CON2DB]")
+        // Create any missing database tables before `new State`, otherwise State
+        // creates background threads that might attempt to access the tables.
+        // Also, need to do this before creating & connecting any DataSource,
+        // otherwise there'll be this error, if trying to recreate the test database:
+        // """database "talkyard_test" is being accessed by other users""".
+        setStartupStep(
+            "Running database migrations using sqlx...  (might take a while) [TyMSTART2MIGRDB]")
+        val anyProblem = Migrator.migrateDatabase(
+              Debiki.getPostgresDatabaseUrl(conf, isTest = isOrWasTest),
+              isTest = isOrWasTest)
+
+        anyProblem foreach { (probl: ErrMsgCode) =>
+          logger.error(s"Error migrating database: ${probl.toMsgCodeStr}  [TyEMIGRRDB0]")
+          // Mabye a _fatalError?
+          _state = Bad(Some(DebikiException("TyEMIGRRDB1", i"""
+                |Error migrating database. See server logs:
+                |
+                |    docker compose logs -f --tail 99 app
+                |""")))
+          // No point in trying any more. The server admin needs to intervene, e.g. use
+          // the previous Talkyard version.
+          return
+        }
+
+        setStartupStep("Connecting to database over JDBC... [TyMSTART1CON2DB]")
 
         val readOnlyDataSource = Debiki.createPostgresHikariDataSource(readOnly = true, conf, isOrWasTest)
         val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false, conf, isOrWasTest)
@@ -1086,13 +1122,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         val dbDaoFactory = new RdbDaoFactory(
               rdb, ScalaBasedMigrations, getCurrentTime = now _, isTest = isOrWasTest)
 
-        // Create any missing database tables before `new State`, otherwise State
-        // creates background threads that might attempt to access the tables.
-        setStartupStep("Running database migrations...  (might take a while) [TyMSTART2MIGRDB]")
-
         val sysDao = new SystemDao(dbDaoFactory, cache, this)
-
-        sysDao.applyEvolutions()
 
         val sysSettings = sysDao.readTx(_.loadSystemSettings())
         updateSystemSettings(sysSettings)
@@ -1183,7 +1213,14 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
             stopPlease(state.lastErrsActorRef),
             )
 
+      // The ElasticsearchClient docs says, about `close()`: """If the underlying Transport
+      // object is shared with other API client objects, these objects will also
+      // become unavailable""" indicating that it's fine to share the transport (which Ty's
+      // sync & async clients do) and fine to close() afterwards like this. And that
+      // the 2nd call to `close()` isn't needed but let's do anyway.
       state.elasticSearchClient.close()
+      state.elasticSearchAsyncClient.close()
+
       state.redisClient.quit()
       state.dbDaoFactory.db.readOnlyDataSource.asInstanceOf[HikariDataSource].close()
       state.dbDaoFactory.db.readWriteDataSource.asInstanceOf[HikariDataSource].close()
@@ -1339,19 +1376,61 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     BUG // Don't keep retrying & logging 99999 errors if can't connect, that can
     // generate GBs of log data, filling up a whole disk!
 
+    /*
     val elasticSearchClient: es.client.transport.TransportClient =
       new es.transport.client.PreBuiltTransportClient(es.common.settings.Settings.EMPTY)
         .addTransportAddress(
           new es.common.transport.TransportAddress(
             jn.InetAddress.getByName(elasticSearchHost), 9300))
+            */
 
-    setStartupStep("Done migrating database. Starting background jobs... [TyMSTART5BGJOBS]")
+    // ------------------------------
+    import org.apache.http.HttpHost;  // For HttpHost.create()
+    //import org.apache.http.impl.client.Header
+    //import org.apache.http.impl.client.BasicHeader;  // For BasicHeader (Authorization header)
+    import org.elasticsearch.client.RestClient;  // For RestClient.builder()
+    import co.elastic.clients.transport.ElasticsearchTransport;  // For ElasticsearchTransport
+    import co.elastic.clients.transport.rest_client.RestClientTransport;  // For RestClientTransport
+    import co.elastic.clients.json.jackson.JacksonJsonpMapper;  // For JacksonJsonpMapper
+    import co.elastic.clients.elasticsearch.ElasticsearchClient;  // For ElasticsearchClient
+    import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient
+    // ------------------------------
+
+    val serverUrl = s"http://$elasticSearchHost:9200";
+
+    // This'll connect to ElasticSearch over HTTP.
+    // See: https://discuss.elastic.co/t/using-elasticserach-8-via-docker-without-certificate/303617
+    // (We aren't exposing any ports, no one can access except for the app server.)
+    // And: https://github.com/elastic/elasticsearch/blob/8.17/docs/reference/setup/install/docker/docker-compose.yml
+    // for a way to auto generate certs.
+    val restClient: org.elasticsearch.client.RestClient = org.elasticsearch.client.RestClient
+          .builder(HttpHost.create(serverUrl))
+          // Later, if authz: (although not really needed)
+          //.setDefaultHeaders(Array[org.apache.http.Header](
+          //    new org.apache.http.message.BasicHeader("Authorization", "ApiKey " + apiKey)
+          //))
+          .build()
+
+    val elasticSearchTransport: ElasticsearchTransport =
+          new co.elastic.clients.transport.rest_client.RestClientTransport(
+                restClient, new JacksonJsonpMapper())
+
+    // Synchronous. Nice (simpner) for creating indexes.
+    val elasticSearchClient: ElasticsearchClient =
+          new ElasticsearchClient(elasticSearchTransport);
+
+    // Async, for indexing & searching.
+    val elasticSearchAsyncClient: ElasticsearchAsyncClient =
+          new ElasticsearchAsyncClient(elasticSearchTransport);
+
+    setStartupStep("Connected to search engine. Starting background jobs... [TyMSTART5BGJOBS]")
 
     // Start first, so it'll start receiving errors sooner.
     val lastErrsActorRef: ActorRef = LastErrsActor.startNewActor(outer)
 
     val siteDaoFactory = new SiteDaoFactory(
-      edContext, dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient, config)
+          edContext, dbDaoFactory, redisClient, cache, usersOnlineCache,
+          elasticSearchAsyncClient, config)
 
     val mailerActorRef: ActorRef = MailerActor.startNewActor(
           actorSystem, siteDaoFactory, conf, now _, isProd)

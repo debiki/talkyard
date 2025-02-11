@@ -7,12 +7,6 @@
 # See: https://github.com/docker-library/docs/tree/master/postgres#how-to-extend-this-image
 
 
-# [ty_v1] Maybe store db files in .../data/pgdata/ ?, see:
-# https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata
-#   -e PGDATA=/var/lib/postgresql/data/pgdata \
-#   -v /custom/mount:/var/lib/postgresql/data \
-# (Also reinvestigate if better using the official images? e.g.: postgres:13.1)
-
 set -e
 
 
@@ -20,11 +14,15 @@ set -e
 # ------------------------
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
+create user repl replication login connection limit 1 encrypted password '$POSTGRES_PASSWORD';
+
 create user talkyard password '$POSTGRES_PASSWORD';
 create database talkyard;
 grant all privileges on database talkyard to talkyard;
-
-create user repl replication login connection limit 1 encrypted password '$POSTGRES_PASSWORD';
+-- Grant 'create' to user 'talkyard' so it can run database migrations. (Otherwise,
+-- only the database owner (postgres) can run DDL, e.g. create and alter tables.)
+\c talkyard
+grant create on schema public to talkyard;
 EOF
 
 
@@ -37,6 +35,8 @@ if [ -n "$CREATE_TEST_USER" ]; then
   create user talkyard_test password 'public';
   create database talkyard_test;
   grant all privileges on database talkyard_test to talkyard_test;
+  \c talkyard_test
+  grant create on schema public to talkyard_test;
 EOF
 
   # For testing OIDC login via Keycloak — seems importing a Keycloak realm
@@ -45,6 +45,8 @@ EOF
   create user keycloak_test password 'public';
   create database keycloak_test owner keycloak_test;
   grant all privileges on database keycloak_test to keycloak_test;
+  \c keycloak_test
+  grant create on schema public to keycloak_test;
 EOF
 fi
 
@@ -95,6 +97,8 @@ rsync -acv $PGDATA/pg_xlog $PEER_HOST:$PGDATA/
 # 5) Start the standby.
 EOF
 
+
+# Remove?:  [ty_v1]
 
 # Configure streaming replication *to* this server
 # ------------------------

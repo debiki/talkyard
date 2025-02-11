@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import java.{io => jio, util => ju}
 import javax.{script => js}
 import talkyard.server.linkpreviews.{LinkPreviewRendererForNashorn, LinkPreviewRenderer}
-import org.apache.lucene.util.IOUtils
+//import org.apache.lucene.util.IOUtils
 import scala.concurrent.Future
 import Nashorn._
 import jdk.nashorn.api.scripting.ScriptObjectMirror
@@ -526,7 +526,9 @@ class Nashorn(
       scriptBuilder.append(rendererScript)
     }
     finally {
+      /*
       IOUtils.closeWhileHandlingException(javascriptStream)
+      */
     }
 
     scriptBuilder.append(i"""
