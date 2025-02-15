@@ -82,9 +82,18 @@
 # Each release channel has its own branch in the talkyard-version repo.
 # And, in ./relchans/, they're checked out in sub directories, one
 # directory per release channel (Git branch).
+#
+# Since this is Talkyard epoch 1 (tyse-v1), only v1 submodules should be here,
+# so we won't accidentally update release branches for the wrong epochs.
 
+[submodule "relchans/tyse-v1-dev"]
+	path = relchans/tyse-v1-dev
+	url = https://github.com/debiki/talkyard-versions.git
+	branch = tyse-v1-dev
 
-# [submodule "relchans/tyse-v0-stable"]  — later
+# regular — later
+
+# [submodule "relchans/tyse-v1-stable"]  — later
 
 
 # ----- Vendored dependencies
@@ -173,3 +182,4 @@
 	path = images/app/sbt
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-images-app-sbt-1.4.5
+
