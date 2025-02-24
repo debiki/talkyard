@@ -149,14 +149,12 @@ object Dependencies {
     val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "8.1"
     //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
 
-    // The ElasticSearch client uses log4j-api:2.17.1 (gets evicted by 2.17.2).
-    // log4j-api already included, but not -core.
-    // Let's not upgrade beyond 2.17.2. Most projects that use Log4j are on 2.17.1
-    // (see: https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core),
-    // and there's (as of 2025-07) nothing interesting in newer versions?
-    // (Versions <= 2.17.0 are vulnerable.)
-    //  log4jApi  = "org.apache.logging.log4j" % "log4j-api" % "..."   // not needed
-    val log4jCore = "org.apache.logging.log4j" % "log4j-core" % "2.17.2"  // needed
+    // For logging ElasticSearch' request & response json. [es_req_logs]
+    // See: https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/current/java-rest-low-usage-logging.html
+    val sl4jApi = "org.slf4j" % "slf4j-api" % "1.8.0-beta2"
+    // In build.sbt, we exclude commons-logging, and use this instead:
+    val sl4jJclOverSlf4j = "org.slf4j" % "jcl-over-slf4j" % "1.8.0-beta2"
+    // "ch.qos.logback" % "logback-classic" % "1.3..."  — skip, v1.5 above already
 
 
     // ----- Metrics, tracing
