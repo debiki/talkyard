@@ -13,7 +13,16 @@ $tagCatCol = hsl(0 0% 41%);
   margin-left: 6px;
   // Make text easy to read, incl "magic" ':' and '+' and '-' tokens:
   font-size: 14px;
-  font-family: monospace;
+  // Amazingly, on Chrome in my Debian Linux VM, underscore '_' become invisible (renders
+  // as space) with 'monospace' font, unless font-size >= 107%.
+  // Someone else had the same problem: (also Chrome)
+  // https://stackoverflow.com/questions/69771194/underscore-character-not-show-in-html-input-with-font-monospace
+  // and a third person says unsetting the height worked. But not for me, but font-size works.
+  // Let's then *not* use monospace.
+  //font-family: monospace;
+  // This font looks equally nice & readable, & no underscore '_' problem:
+  // (Same font as Twitter Bootstrap v3.1.1's font for <code>, <kbd>, <pre>, <samp>.)
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 
 .s_SP_SearchB
   vertical-align: baseline;
