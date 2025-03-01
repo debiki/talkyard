@@ -19,7 +19,7 @@ Compile / dependencyOverrides ++= {
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.14.3",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.14.3",
       "com.fasterxml.jackson.module" % "jackson-module-parameter-names" % "2.14.3",
-      "com.fasterxml.jackson.module" % "jackson-module-scala_2.13" % "2.18.2",
+      "com.fasterxml.jackson.module" % "jackson-module-scala_2.13" % "2.18.3",
       "com.github.ben-manes.caffeine" % "caffeine" % "3.1.8",
       "com.github.ben-manes.caffeine" % "jcache" % "3.1.8",
       "com.github.etaty" % "rediscala_2.13" % "1.9.0",
