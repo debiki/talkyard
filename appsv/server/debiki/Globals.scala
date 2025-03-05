@@ -1336,6 +1336,9 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     setStartupStep(
           "Done migrating database. Connecting to search engine... [TyMSTART4CONSEARCH]")
 
+    BUG // Don't keep retrying & logging 99999 errors if can't connect, that can
+    // generate GBs of log data, filling up a whole disk!
+
     val elasticSearchClient: es.client.transport.TransportClient =
       new es.transport.client.PreBuiltTransportClient(es.common.settings.Settings.EMPTY)
         .addTransportAddress(
