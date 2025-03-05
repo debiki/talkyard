@@ -1,39 +1,54 @@
 --
--- PostgreSQL database dump
+-- Talkyard database schema version 1, for migrations using sqlx.
 --
+-- Previously, we were using Flyway, but because of dependency & version problems,
+-- switching to sqlx (see decisions.adoc).  This is a dump of all Flyway migrations,
+-- "squashed" into just one single migration.
 
 -- Dumped from database version 10.23
 -- Dumped by pg_dump version 10.23
 
--- Generated like so:
---   docker compose exec rdb pg_dump --username=postgres --schema-only --no-tablespaces --use-set-session-authorization  talkyard_test
--- where  talkyard_test  is the db structure in an empty schema, after having applied migrations up to incl version v426__bookmarks.sql.
+-- Dumped like so:
 --
--- Then processed in Vim like so: (to remove comments and empty lines)
+--   docker compose exec rdb pg_dump --username=postgres \
+--      --schema-only --no-tablespaces --use-set-session-authorization \
+--      talkyard_test
+--
+-- where  talkyard_test  is the db structure in a new & empty schema
+-- where migrations up to incl version v426__bookmarks.sql have been applied
+-- (that is, all migrations).
+--
+-- Then processed this dump in Vim like so: (to remove comments and empty lines)
 --   '<,'>s/^--.*$//g
 --   %s/\n\n\n\n\n\n\n/\r\r\r/g
+--
+-- And then, appended a --data-only  _data_only_dump, at the bottom. (The Flyway
+-- migrations included not only DDL, but 2 DML statements too.)
+--
+-- And commented out some SET etc, not needed.
 
 
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
+-- SET statement_timeout = 0;
+-- SET lock_timeout = 0;
+-- SET idle_in_transaction_session_timeout = 0;
+-- SET client_encoding = 'UTF8';
+-- SET standard_conforming_strings = on;
+-- SELECT pg_catalog.set_config('search_path', '', false);
+-- SET check_function_bodies = false;
+-- SET xmloption = content;
+-- SET client_min_messages = warning;
+-- SET row_security = off;
 
-SET SESSION AUTHORIZATION DEFAULT;
+-- PL/pgSQL enabled by default, apparently. Need not:
+--------
+-- SET SESSION AUTHORIZATION DEFAULT;
 
-CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+-- CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
-COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+-- COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
-
-SET SESSION AUTHORIZATION 'talkyard_test';
-
+-- SET SESSION AUTHORIZATION 'talkyard_test';
+------
 
 
 CREATE DOMAIN public.i32_d AS integer;
@@ -5335,7 +5350,20 @@ ALTER TABLE ONLY public.webhooks_t
     ADD CONSTRAINT webhooks_runasid_r_pats FOREIGN KEY (site_id_c, run_as_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
+
+
+-- The _data_only_dump:
+
+
+COPY public.system_settings_t (maintenance_until_unix_secs_c, maint_words_html_unsafe_c, maint_msg_html_unsafe_c) FROM stdin;
+\N	\N	\N
+\.
+
+
+SELECT pg_catalog.setval('public.dw1_tenants_id', 10, false);
+
+
 --
--- PostgreSQL database dump complete
+-- PostgreSQL database dump complete  (both the --schema-only and the --data-only dumps).
 --
 
