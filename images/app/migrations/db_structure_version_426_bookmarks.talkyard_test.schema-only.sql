@@ -5,6 +5,15 @@
 -- Dumped from database version 10.23
 -- Dumped by pg_dump version 10.23
 
+-- Generated like so:
+--   docker compose exec rdb pg_dump --username=postgres --schema-only --no-tablespaces --use-set-session-authorization  talkyard_test
+-- where  talkyard_test  is the db structure in an empty schema, after having applied migrations up to incl version v426__bookmarks.sql.
+--
+-- Then processed in Vim like so: (to remove comments and empty lines)
+--   '<,'>s/^--.*$//g
+--   %s/\n\n\n\n\n\n\n/\r\r\r/g
+
+
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -18,103 +27,52 @@ SET row_security = off;
 
 SET SESSION AUTHORIZATION DEFAULT;
 
---
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
---
-
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
-
-
---
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
---
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 
 SET SESSION AUTHORIZATION 'talkyard_test';
 
---
--- Name: i32_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
+
 
 CREATE DOMAIN public.i32_d AS integer;
 
-
---
--- Name: anonym_status_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.anonym_status_d AS public.i32_d
 	CONSTRAINT anonym_status_d_c_in_65535_2097151 CHECK (((VALUE)::integer = ANY (ARRAY[65535, 2097151])));
 
 
---
--- Name: i16_gz_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.i16_gz_d AS smallint
 	CONSTRAINT i16gz_c_gz CHECK ((VALUE > 0));
 
-
---
--- Name: i16_gz_lt128_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.i16_gz_lt128_d AS public.i16_gz_d
 	CONSTRAINT i16_gz_lt128_d_c_lt128 CHECK (((VALUE)::smallint < 128));
 
 
---
--- Name: answered_status_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.answered_status_d AS public.i16_gz_lt128_d;
 
-
---
--- Name: text_nonempty_inf_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_nonempty_inf_d AS text
 	CONSTRAINT text_nonempty_inf_d_c_nonempty CHECK ((length(VALUE) > 0));
 
 
---
--- Name: text_nonempty_ste60_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.text_nonempty_ste60_d AS public.text_nonempty_inf_d
 	CONSTRAINT text_nonempty_ste60_d_c_ste60 CHECK ((length((VALUE)::text) <= 60));
 
-
---
--- Name: api_version_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.api_version_d AS public.text_nonempty_ste60_d
 	CONSTRAINT api_version_d_c_in CHECK (((VALUE)::text = '0.0.1'::text));
 
 
---
--- Name: base64us_inf_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.base64us_inf_d AS public.text_nonempty_inf_d
 	CONSTRAINT base64us_inf_d_c_chars CHECK (((VALUE)::text ~ '^[a-zA-Z0-9_=-]*$'::text));
 
 
---
--- Name: base64us_len16_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.base64us_len16_d AS public.base64us_inf_d
 	CONSTRAINT base64us_len16_d_c_len16 CHECK ((length((VALUE)::text) = 16));
 
-
---
--- Name: browser_id_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.browser_id_d AS text
 	CONSTRAINT browser_id_d_c_chars CHECK ((VALUE ~ '^[a-zA-Z0-9._=-]*$'::text))
@@ -122,56 +80,28 @@ CREATE DOMAIN public.browser_id_d AS text
 	CONSTRAINT browser_id_d_c_shte60 CHECK ((length(VALUE) <= 60));
 
 
---
--- Name: bytea_len28_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.bytea_len28_d AS bytea
 	CONSTRAINT bytea_len28_d_c_len28 CHECK ((length(VALUE) = 28));
 
-
---
--- Name: bytea_len32_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.bytea_len32_d AS bytea
 	CONSTRAINT bytea_len32_d_c_len32 CHECK ((length(VALUE) = 32));
 
 
---
--- Name: bytea_len48_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.bytea_len48_d AS bytea
 	CONSTRAINT bytea_len48_d_c_len48 CHECK ((length(VALUE) = 48));
 
-
---
--- Name: bytea_len64_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.bytea_len64_d AS bytea
 	CONSTRAINT bytea_len64_d_c_len64 CHECK ((length(VALUE) = 64));
 
 
---
--- Name: i16_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.i16_d AS smallint;
 
-
---
--- Name: can_see_who_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.can_see_who_d AS public.i16_d
 	CONSTRAINT can_see_who_d_c_null_1234 CHECK (((VALUE IS NULL) OR (((VALUE)::smallint >= 1) AND ((VALUE)::smallint <= 4))));
 
-
---
--- Name: DOMAIN can_see_who_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON DOMAIN public.can_see_who_d IS '
 Says if a pat can see other pats related to something, e.g. see who
@@ -180,92 +110,44 @@ page.  See: can_see_assigned_c and  can_see_who_can_see_c.
 ';
 
 
---
--- Name: i32_lt2e9_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.i32_lt2e9_d AS public.i32_d
 	CONSTRAINT i32_lt2e9_d_c_lt2e9 CHECK (((VALUE)::integer < 2000000000));
 
-
---
--- Name: i32_lt2e9_gz_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.i32_lt2e9_gz_d AS public.i32_lt2e9_d
 	CONSTRAINT i32_lt2e9_gz_d_c_gz CHECK (((VALUE)::integer > 0));
 
 
---
--- Name: cat_id_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.cat_id_d AS public.i32_lt2e9_gz_d;
 
-
---
--- Name: closed_status_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.closed_status_d AS public.i16_gz_lt128_d;
 
 
---
--- Name: collapsed_status_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.collapsed_status_d AS public.i16_gz_lt128_d;
 
-
---
--- Name: color_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.color_d AS text
 	CONSTRAINT color_d_c_hex_or_rgb_or_hsl CHECK ((VALUE ~ '^#[a-f0-9]{3}([a-f0-9]{3})?$'::text));
 
 
---
--- Name: DOMAIN color_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON DOMAIN public.color_d IS 'CSS colors, for now lowercase hex: "#ab3", "#aabb33". Later, also rgba, hsl, hsla.';
 
-
---
--- Name: i32_nz_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.i32_nz_d AS integer
 	CONSTRAINT i32_nz_d_c_nz CHECK ((VALUE <> 0));
 
 
---
--- Name: comt_order_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.comt_order_d AS public.i32_nz_d
 	CONSTRAINT comt_order_d_c_in CHECK (((VALUE)::integer = ANY (ARRAY[1, 2, 3, 18, 50])));
 
-
---
--- Name: i16_gz_lt1024_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.i16_gz_lt1024_d AS public.i16_gz_d
 	CONSTRAINT i16_gz_lt1024_d_c_lt1024 CHECK (((VALUE)::smallint < 1024));
 
 
---
--- Name: creator_status_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.creator_status_d AS public.i16_gz_lt1024_d;
 
-
---
--- Name: DOMAIN creator_status_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON DOMAIN public.creator_status_d IS '
 Says if the poster is still author and owner. And if others have been
@@ -274,54 +156,26 @@ be looked up in pat_node_*_rels_t.
 ';
 
 
---
--- Name: deleted_status_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.deleted_status_d AS public.i16_gz_lt128_d;
 
-
---
--- Name: i16_gez_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.i16_gez_d AS smallint
 	CONSTRAINT i16gez_c_gez CHECK ((VALUE >= 0));
 
 
---
--- Name: do_vote_style_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.do_vote_style_d AS public.i16_gez_d
 	CONSTRAINT do_vote_style_d_c_lte5 CHECK (((VALUE)::smallint <= 5));
 
 
---
--- Name: doing_status_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.doing_status_d AS public.i16_gz_lt128_d;
 
-
---
--- Name: i32_gz_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.i32_gz_d AS integer
 	CONSTRAINT i32gz_c_gz CHECK ((VALUE > 0));
 
 
---
--- Name: dormant_status_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.dormant_status_d AS public.i32_gz_d;
 
-
---
--- Name: DOMAIN dormant_status_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON DOMAIN public.dormant_status_d IS '
 If not null, shows why a relationship (from a post or pat to something)
@@ -335,10 +189,6 @@ DormantBits.PostDone and PostClosed set, if the post got done.
 Or if postponed, could get DormantBits.Postponed set?
 ';
 
-
---
--- Name: email_seems_ok(character varying); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.email_seems_ok(text character varying) RETURNS boolean
     LANGUAGE plpgsql
@@ -359,10 +209,6 @@ end;
 $_$;
 
 
---
--- Name: email_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.email_d AS text
 	CONSTRAINT email_d_c_format CHECK (public.email_seems_ok((VALUE)::character varying))
 	CONSTRAINT email_d_c_lower CHECK ((lower(VALUE) = VALUE))
@@ -370,170 +216,82 @@ CREATE DOMAIN public.email_d AS text
 	CONSTRAINT email_d_c_minlen CHECK ((length(VALUE) >= 5));
 
 
---
--- Name: text_trimmed_not_empty_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.text_trimmed_not_empty_d AS text
 	CONSTRAINT text_trimmed_not_empty_d_c_not_empty CHECK ((length(VALUE) >= 1))
 	CONSTRAINT text_trimmed_not_empty_d_c_trimmed CHECK ((VALUE ~ '^(\S(.*\S)?)?$'::text));
 
-
---
--- Name: text_oneline_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_oneline_d AS public.text_trimmed_not_empty_d
 	CONSTRAINT text_oneline_d_c_print_chars CHECK (((VALUE)::text ~ '^[[:print:]]*$'::text))
 	CONSTRAINT text_oneline_d_c_ste2100 CHECK ((length((VALUE)::text) <= 2100));
 
 
---
--- Name: DOMAIN text_oneline_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON DOMAIN public.text_oneline_d IS 'A one line string — alphanumeric chars, punctuation and space are ok but not tabs or newlines or control chars. At most 2100 chars — there has to be some limit. And old IE11 had a max URL length of 2083 chars so 2100 seems nice (in case is a URL). Also, the Sitemaps protocol supports only up to 2048 chars, https://www.sitemaps.org/protocol.html.';
 
-
---
--- Name: text_oneline_60_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_oneline_60_d AS public.text_oneline_d
 	CONSTRAINT text_oneline_60_d_c_ste60 CHECK ((length((VALUE)::text) <= 60));
 
 
---
--- Name: email_name_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.email_name_d AS public.text_oneline_60_d
 	CONSTRAINT email_name_d_c_regex CHECK (((VALUE)::text !~ '[!"#$%&();<=>?@[\]^`{|}]|//|https?:|script:'::text));
 
 
---
--- Name: i64_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.i64_d AS bigint;
 
-
---
--- Name: i64_lt2e9_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.i64_lt2e9_d AS public.i64_d
 	CONSTRAINT i64_lt2e9_d_c_lt2e9 CHECK (((VALUE)::bigint < 2000000000));
 
 
---
--- Name: i64_lt2e9_gz_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.i64_lt2e9_gz_d AS public.i64_lt2e9_d
 	CONSTRAINT i64_lt2e9_gz_d_c_gz CHECK (((VALUE)::bigint > 0));
 
 
---
--- Name: event_id_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.event_id_d AS public.i64_lt2e9_gz_d;
 
-
---
--- Name: event_type_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.event_type_d AS public.i16_gz_d;
 
 
---
--- Name: f32_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.f32_d AS real;
 
-
---
--- Name: f32_gez_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.f32_gez_d AS real
 	CONSTRAINT f32gez_c_gez CHECK ((VALUE >= (0)::double precision));
 
 
---
--- Name: f32_gz_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.f32_gz_d AS real
 	CONSTRAINT f32gz_c_gz CHECK ((VALUE > (0)::double precision));
 
 
---
--- Name: f64_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.f64_d AS double precision;
 
-
---
--- Name: f64_gez_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.f64_gez_d AS double precision
 	CONSTRAINT f64gez_c_gez CHECK ((VALUE >= (0)::double precision));
 
 
---
--- Name: f64_gz_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.f64_gz_d AS double precision
 	CONSTRAINT f64gz_c_gz CHECK ((VALUE > (0)::double precision));
 
 
---
--- Name: flagged_status_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.flagged_status_d AS public.i16_gz_lt128_d;
 
 
---
--- Name: hidden_status_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.hidden_status_d AS public.i16_gz_lt128_d;
 
-
---
--- Name: text_nonempty_ste30_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_nonempty_ste30_d AS public.text_nonempty_inf_d
 	CONSTRAINT text_nonempty_ste30_d_c_ste30 CHECK ((length((VALUE)::text) <= 30));
 
 
---
--- Name: html_class_suffix_30_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.html_class_suffix_30_d AS public.text_nonempty_ste30_d
 	CONSTRAINT html_class_suffix_30_d_c_regex CHECK (((VALUE)::text ~ '^[a-zA-Z0-9_-]*$'::text));
 
 
---
--- Name: DOMAIN html_class_suffix_30_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON DOMAIN public.html_class_suffix_30_d IS 'Text that make sense to append to a CSS class: ASCII alnum and "-_", at most 30 chars.';
 
-
---
--- Name: http_url_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.http_url_d AS text
 	CONSTRAINT http_url_d_c_maxlen CHECK ((length(VALUE) <= 2100))
@@ -541,233 +299,117 @@ CREATE DOMAIN public.http_url_d AS text
 	CONSTRAINT http_url_d_c_regex CHECK ((VALUE ~ '^https?:\/\/[a-z0-9_.-]+(:[0-9]+)?(/.*)?$'::text));
 
 
---
--- Name: http_url_ste_250_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.http_url_ste_250_d AS public.http_url_d
 	CONSTRAINT http_url_ste_250_d_c_ste250 CHECK ((length((VALUE)::text) <= 250));
 
-
---
--- Name: i16_gz_lt1000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.i16_gz_lt1000_d AS public.i16_gz_d
 	CONSTRAINT i16_gz_lt1000_d_c_lt1000 CHECK (((VALUE)::smallint < 1000));
 
 
---
--- Name: i16_gz_lt10_000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.i16_gz_lt10_000_d AS public.i16_gz_d
 	CONSTRAINT i16_gz_lt10_000_d_c_lt10_000 CHECK (((VALUE)::smallint < 10000));
 
-
---
--- Name: i16_nz_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.i16_nz_d AS smallint
 	CONSTRAINT i16_nz_d_c_nz CHECK ((VALUE <> 0));
 
 
---
--- Name: i32_abs_lt2e9_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.i32_abs_lt2e9_d AS public.i32_lt2e9_d
 	CONSTRAINT i32_abs_lt2e9_d_c_gt_m2e9 CHECK (((VALUE)::integer > '-2000000000'::integer));
 
-
---
--- Name: i32_abs_lt2e9_nz_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.i32_abs_lt2e9_nz_d AS public.i32_abs_lt2e9_d
 	CONSTRAINT i32_abs_lt2e9_nz_d_c_nz CHECK (((VALUE)::integer <> 0));
 
 
---
--- Name: i32_gez_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.i32_gez_d AS integer
 	CONSTRAINT i32gez_c_gez CHECK ((VALUE >= 0));
 
-
---
--- Name: i32_gz_lt1000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.i32_gz_lt1000_d AS public.i32_gz_d
 	CONSTRAINT i32_gz_lt1000_d_c_lt1000 CHECK (((VALUE)::integer < 1000));
 
 
---
--- Name: i32_gz_lt1024_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.i32_gz_lt1024_d AS public.i32_gz_d
 	CONSTRAINT i32_gz_lt1024_d_c_lt1024 CHECK (((VALUE)::integer < 1024));
 
-
---
--- Name: i32_gz_lt10_000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.i32_gz_lt10_000_d AS public.i32_gz_d
 	CONSTRAINT i32_gz_lt10_000_d_c_lt10_000 CHECK (((VALUE)::integer < 10000));
 
 
---
--- Name: i32_gz_lt128_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.i32_gz_lt128_d AS public.i32_gz_d
 	CONSTRAINT i32_gz_lt128_d_c_lt128 CHECK (((VALUE)::integer < 128));
 
-
---
--- Name: i32_lt2e9_gt1000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.i32_lt2e9_gt1000_d AS public.i32_lt2e9_d
 	CONSTRAINT i32_lt2e9_gt1000_d_c_gt1000 CHECK (((VALUE)::integer > 1000));
 
 
---
--- Name: i64_abs_lt2e9_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.i64_abs_lt2e9_d AS public.i64_lt2e9_d
 	CONSTRAINT i64_abs_lt2e9_d_c_gt_m2e9 CHECK (((VALUE)::bigint > '-2000000000'::integer));
 
-
---
--- Name: i64_abs_lt2e9_nz_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.i64_abs_lt2e9_nz_d AS public.i64_abs_lt2e9_d
 	CONSTRAINT i64_abs_lt2e9_nz_d_c_nz CHECK (((VALUE)::bigint <> 0));
 
 
---
--- Name: i64_gez_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.i64_gez_d AS bigint
 	CONSTRAINT i64gez_c_gez CHECK ((VALUE >= 0));
 
-
---
--- Name: i64_gz_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.i64_gz_d AS bigint
 	CONSTRAINT i64gz_c_gz CHECK ((VALUE > 0));
 
 
---
--- Name: i64_lt2e9_gt1000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.i64_lt2e9_gt1000_d AS public.i64_lt2e9_d
 	CONSTRAINT i64_lt2e9_gt1000_d_c_gt1000 CHECK (((VALUE)::bigint > 1000));
 
-
---
--- Name: i64_nz_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.i64_nz_d AS bigint
 	CONSTRAINT i64_nz_d_c_nz CHECK ((VALUE <> 0));
 
 
---
--- Name: index_prio_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.index_prio_d AS public.i16_nz_d
 	CONSTRAINT index_prio_d_c_eq102 CHECK (((VALUE)::smallint = 102));
 
-
---
--- Name: jsonb_ste1000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.jsonb_ste1000_d AS jsonb
 	CONSTRAINT jsonb_ste1000_d_c_ste1000 CHECK ((pg_column_size(VALUE) <= 1000));
 
 
---
--- Name: jsonb_ste100_000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.jsonb_ste100_000_d AS jsonb
 	CONSTRAINT jsonb_ste100_000_d_c_ste100_000 CHECK ((pg_column_size(VALUE) <= 100000));
 
-
---
--- Name: jsonb_ste16000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.jsonb_ste16000_d AS jsonb
 	CONSTRAINT jsonb_ste16000_d_c_ste16000 CHECK ((pg_column_size(VALUE) <= 16000));
 
 
---
--- Name: jsonb_ste2000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.jsonb_ste2000_d AS jsonb
 	CONSTRAINT jsonb_ste2000_d_c_ste2000 CHECK ((pg_column_size(VALUE) <= 2000));
 
-
---
--- Name: jsonb_ste250_000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.jsonb_ste250_000_d AS jsonb
 	CONSTRAINT jsonb_ste250_000_d_c_ste250_000 CHECK ((pg_column_size(VALUE) <= 250000));
 
 
---
--- Name: jsonb_ste4000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.jsonb_ste4000_d AS jsonb
 	CONSTRAINT jsonb_ste4000_d_c_ste4000 CHECK ((pg_column_size(VALUE) <= 4000));
 
-
---
--- Name: jsonb_ste500_000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.jsonb_ste500_000_d AS jsonb
 	CONSTRAINT jsonb_ste500_000_d_c_ste500_000 CHECK ((pg_column_size(VALUE) <= 500000));
 
 
---
--- Name: jsonb_ste500_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.jsonb_ste500_d AS jsonb
 	CONSTRAINT jsonb_ste500_d_c_ste500 CHECK ((pg_column_size(VALUE) <= 500));
 
 
---
--- Name: jsonb_ste8000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.jsonb_ste8000_d AS jsonb
 	CONSTRAINT jsonb_ste8000_d_c_ste8000 CHECK ((pg_column_size(VALUE) <= 8000));
 
-
---
--- Name: key_hex_b64us_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.key_hex_b64us_d AS text
 	CONSTRAINT key_hex_b64us_d_c_maxlen CHECK ((length(VALUE) < 250))
@@ -776,78 +418,38 @@ CREATE DOMAIN public.key_hex_b64us_d AS text
 	CONSTRAINT key_hex_b64us_d_c_regex CHECK ((VALUE ~ '^([a-z0-9]+:)?[a-zA-Z0-9_=-]*$'::text));
 
 
---
--- Name: max_nesting_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.max_nesting_d AS public.i16_d
 	CONSTRAINT max_nesting_d_c_eq_m1_or_gtz CHECK ((((VALUE)::smallint = '-1'::integer) OR ((VALUE)::smallint >= 1)))
 	CONSTRAINT max_nesting_d_c_lte100 CHECK (((VALUE)::smallint <= 100));
 
 
---
--- Name: pat_id_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.pat_id_d AS public.i32_abs_lt2e9_nz_d;
 
-
---
--- Name: member_id_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.member_id_d AS public.pat_id_d
 	CONSTRAINT member_id_d_c_gtz CHECK (((VALUE)::integer > 0));
 
 
---
--- Name: never_always_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.never_always_d AS public.i16_d
 	CONSTRAINT never_always_d_c_in_2_3_7_8 CHECK (((VALUE)::smallint = ANY (ARRAY[2, 3, 7, 8])));
 
 
---
--- Name: page_id_d__later; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.page_id_d__later AS public.i64_lt2e9_gz_d;
 
-
---
--- Name: page_id_st_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.page_id_st_d AS public.text_nonempty_ste60_d
 	CONSTRAINT page_id_st_d_c_chars CHECK (((VALUE)::text ~ '^[a-zA-Z0-9_]*$'::text));
 
 
---
--- Name: page_sort_order_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.page_sort_order_d AS public.i16_gz_d
 	CONSTRAINT page_sort_order_d_c_lt100 CHECK (((VALUE)::smallint < 100));
 
 
---
--- Name: page_type_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.page_type_d AS public.i16_gz_lt1000_d;
 
 
---
--- Name: pat_rel_type_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.pat_rel_type_d AS public.i16_gz_lt1000_d;
 
-
---
--- Name: DOMAIN pat_rel_type_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON DOMAIN public.pat_rel_type_d IS '
 Says what a relationship from a pat to a post (or sth else) means. Ex:
@@ -856,32 +458,16 @@ Is a thing_type_d.
 ';
 
 
---
--- Name: pic_url_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.pic_url_d AS character varying
 	CONSTRAINT picurl_c_len_gz CHECK ((length((VALUE)::text) > 0))
 	CONSTRAINT picurl_c_len_max CHECK ((length((VALUE)::text) <= 2100));
 
 
---
--- Name: post_id_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.post_id_d AS public.i32_lt2e9_gz_d;
 
 
---
--- Name: post_nr_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.post_nr_d AS public.i32_abs_lt2e9_d;
 
-
---
--- Name: DOMAIN post_nr_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON DOMAIN public.post_nr_d IS '
 On each page, the Orig Post is nr 1, the first reply is nr 2, and so on.
@@ -889,16 +475,8 @@ Title posts currently have nr = 0. Comments in private sub threads will have nrs
 ';
 
 
---
--- Name: post_rel_type_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.post_rel_type_d AS public.i16_gz_lt1000_d;
 
-
---
--- Name: DOMAIN post_rel_type_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON DOMAIN public.post_rel_type_d IS '
 Says what a relationship from a post to somehting means, e.g.
@@ -907,31 +485,15 @@ Is a thing_type_d.
 ';
 
 
---
--- Name: post_type_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.post_type_d AS public.i16_gz_lt1000_d;
 
-
---
--- Name: postponed_status_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.postponed_status_d AS public.i16_gz_lt128_d;
 
 
---
--- Name: private_status_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.private_status_d AS public.i16_gz_lt1024_d
 	CONSTRAINT private_status_d_c_null_1 CHECK (((VALUE IS NULL) OR ((VALUE)::smallint = 1)));
 
-
---
--- Name: DOMAIN private_status_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON DOMAIN public.private_status_d IS '
 If not null, the page or post and all descendants, are private.
@@ -939,17 +501,9 @@ The value will show if more private pats can bee added, but for now, always 1.
 ';
 
 
---
--- Name: pseudonym_status_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.pseudonym_status_d AS public.i32_d
 	CONSTRAINT pseudonym_status_d_c_null CHECK ((VALUE IS NULL));
 
-
---
--- Name: is_valid_ext_id(character varying); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.is_valid_ext_id(text character varying) RETURNS boolean
     LANGUAGE plpgsql
@@ -962,17 +516,9 @@ end;
 $_$;
 
 
---
--- Name: ref_id_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.ref_id_d AS text
 	CONSTRAINT ref_id_d_c_valid CHECK (public.is_valid_ext_id((VALUE)::character varying));
 
-
---
--- Name: DOMAIN ref_id_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON DOMAIN public.ref_id_d IS '
 Reference id. Can be provided by API clients, when they create posts, users, tag types,
@@ -985,47 +531,23 @@ used by lots of other software.
 ';
 
 
---
--- Name: retry_nr_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.retry_nr_d AS public.i16_d
 	CONSTRAINT retry_nr_d_c_m1_gte1 CHECK ((((VALUE)::smallint = '-1'::integer) OR ((VALUE)::smallint >= 1)));
 
 
---
--- Name: DOMAIN retry_nr_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON DOMAIN public.retry_nr_d IS '-1 = manual extra retry; 1, 2, 3 ... = automatic retry nr, null = not a retry.';
 
 
---
--- Name: rev_nr_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.rev_nr_d AS public.i32_lt2e9_gz_d;
 
-
---
--- Name: DOMAIN rev_nr_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON DOMAIN public.rev_nr_d IS '
 Post revision number (if it''s been edited).
  ';
 
 
---
--- Name: review_status_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.review_status_d AS public.i16_gz_lt128_d;
 
-
---
--- Name: secret_alnum_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.secret_alnum_d AS text
 	CONSTRAINT secret_alnum_d_c_alnum CHECK ((VALUE ~ '^[a-zA-Z0-9]*$'::text))
@@ -1033,32 +555,16 @@ CREATE DOMAIN public.secret_alnum_d AS text
 	CONSTRAINT secret_alnum_d_c_minlen CHECK ((length(VALUE) >= 20));
 
 
---
--- Name: secret_status_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.secret_status_d AS public.i16_gz_d
 	CONSTRAINT secret_status_d_c_lte6 CHECK (((VALUE)::smallint <= 6));
 
 
---
--- Name: site_id_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.site_id_d AS public.i32_abs_lt2e9_nz_d;
 
-
---
--- Name: text_nonempty_ste250_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_nonempty_ste250_d AS public.text_nonempty_inf_d
 	CONSTRAINT text_nonempty_ste250_d_c_ste250 CHECK ((length((VALUE)::text) <= 250));
 
-
---
--- Name: is_trimmed(text); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.is_trimmed(value text) RETURNS boolean
     LANGUAGE plpgsql
@@ -1069,55 +575,27 @@ end;
 $_$;
 
 
---
--- Name: text_nonempty_ste250_trimmed_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.text_nonempty_ste250_trimmed_d AS public.text_nonempty_ste250_d
 	CONSTRAINT text_nonempty_ste250_trimmed_d_c_trimmed CHECK (public.is_trimmed((VALUE)::text));
 
-
---
--- Name: smtp_msg_id_out_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.smtp_msg_id_out_d AS public.text_nonempty_ste250_trimmed_d
 	CONSTRAINT smtp_msg_id_out_d_c_chars CHECK (((VALUE)::text ~ '^([a-zA-Z0-9_.+-]+@[a-z0-9_.-]+(:[0-9]+)?)?$'::text));
 
 
---
--- Name: DOMAIN smtp_msg_id_out_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON DOMAIN public.smtp_msg_id_out_d IS 'A Talkyard generated SMTP Message-ID, e.g. "abcd-123-456+hmm@forum.example.com".';
 
-
---
--- Name: text_nonempty_ste60_trimmed_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_nonempty_ste60_trimmed_d AS public.text_nonempty_ste60_d
 	CONSTRAINT text_nonempty_ste60_trimmed_d_c_trimmed CHECK (public.is_trimmed((VALUE)::text));
 
 
---
--- Name: smtp_msg_id_out_prefix_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.smtp_msg_id_out_prefix_d AS public.text_nonempty_ste60_trimmed_d
 	CONSTRAINT smtp_msg_id_out_prefix_d_c_chars CHECK (((VALUE)::text ~ '^[a-zA-Z0-9_.+-]*$'::text));
 
 
---
--- Name: DOMAIN smtp_msg_id_out_prefix_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON DOMAIN public.smtp_msg_id_out_prefix_d IS 'The start of a Talkyard generated SMTP Message-ID to the left of the "@".';
 
-
---
--- Name: smtp_msg_ids_out_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.smtp_msg_ids_out_d AS text[]
 	CONSTRAINT smtp_msg_ids_out_d_c_chars CHECK (((array_to_string(VALUE, ' '::text) || ' '::text) ~ '^([a-zA-Z0-9_.+-]+@[a-z0-9_.-]+(:[0-9]+)? )* ?$'::text))
@@ -1125,25 +603,13 @@ CREATE DOMAIN public.smtp_msg_ids_out_d AS text[]
 	CONSTRAINT smtp_msg_ids_out_d_c_size_lt_8000 CHECK ((pg_column_size(VALUE) < 8000));
 
 
---
--- Name: DOMAIN smtp_msg_ids_out_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON DOMAIN public.smtp_msg_ids_out_d IS '
 Talkyard generated SMTP Message-IDs, e.g. ["aa@b.c", "dd-11+22@ff.gg"].
  ';
 
 
---
--- Name: sub_type_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.sub_type_d AS public.i32_gz_d;
 
-
---
--- Name: DOMAIN sub_type_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON DOMAIN public.sub_type_d IS '
 Clarifies what this thing is, in more detail. E.g. for a PostType.Flag thing,
@@ -1153,32 +619,16 @@ can mean assigned-to-do-what. See Scala PatRelType.
 ';
 
 
---
--- Name: tag_id_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.tag_id_d AS public.i32_lt2e9_gz_d;
 
-
---
--- Name: text_nonempty_ste120_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_nonempty_ste120_d AS public.text_nonempty_inf_d
 	CONSTRAINT text_nonempty_ste120_d_c_ste120 CHECK ((length((VALUE)::text) <= 120));
 
 
---
--- Name: text_nonempty_ste120_trimmed_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.text_nonempty_ste120_trimmed_d AS public.text_nonempty_ste120_d
 	CONSTRAINT text_nonempty_ste120_trimmed_d_c_trimmed CHECK (public.is_trimmed((VALUE)::text));
 
-
---
--- Name: is_ok_tag_chars(text); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.is_ok_tag_chars(txt text) RETURNS boolean
     LANGUAGE plpgsql
@@ -1191,235 +641,115 @@ end;
 $_$;
 
 
---
--- Name: tag_name_120_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.tag_name_120_d AS public.text_nonempty_ste120_trimmed_d
 	CONSTRAINT tag_name_120_d_c_chars CHECK (public.is_ok_tag_chars((VALUE)::text));
 
-
---
--- Name: text_nonempty_ste15_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_nonempty_ste15_d AS public.text_nonempty_inf_d
 	CONSTRAINT text_nonempty_ste15_d_c_ste15 CHECK ((length((VALUE)::text) <= 15));
 
 
---
--- Name: DOMAIN text_nonempty_ste15_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON DOMAIN public.text_nonempty_ste15_d IS 'Non-empty text, shorter than or equal to 15 chars long.';
 
-
---
--- Name: text_nonempty_ste15_trimmed_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_nonempty_ste15_trimmed_d AS public.text_nonempty_ste15_d
 	CONSTRAINT text_nonempty_ste15_trimmed_d_c_trimmed CHECK (public.is_trimmed((VALUE)::text));
 
 
---
--- Name: DOMAIN text_nonempty_ste15_trimmed_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON DOMAIN public.text_nonempty_ste15_trimmed_d IS 'Like text_nonempty_ste15_d, but does not start or end with spaces, tabs, newlines.';
 
-
---
--- Name: tag_name_15_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.tag_name_15_d AS public.text_nonempty_ste15_trimmed_d
 	CONSTRAINT tag_name_15_d_c_chars CHECK (public.is_ok_tag_chars((VALUE)::text));
 
 
---
--- Name: DOMAIN tag_name_15_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON DOMAIN public.tag_name_15_d IS 'Like text_nonempty_ste15_trimmed_d, but allows only alnum, space and some punctuation chars.';
 
-
---
--- Name: tag_name_60_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.tag_name_60_d AS public.text_nonempty_ste60_trimmed_d
 	CONSTRAINT tag_name_60_d_c_chars CHECK (public.is_ok_tag_chars((VALUE)::text));
 
 
---
--- Name: tagtype_id_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.tagtype_id_d AS public.i32_lt2e9_gt1000_d;
 
-
---
--- Name: text_nonempty_ste1000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_nonempty_ste1000_d AS public.text_nonempty_inf_d
 	CONSTRAINT text_nonempty_ste1000_d_c_ste1000 CHECK ((length((VALUE)::text) <= 1000));
 
 
---
--- Name: text_nonempty_ste1000_trimmed_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.text_nonempty_ste1000_trimmed_d AS public.text_nonempty_ste1000_d
 	CONSTRAINT text_nonempty_ste1000_trimmed_d_c_trimmed CHECK (public.is_trimmed((VALUE)::text));
 
-
---
--- Name: text_nonempty_ste16000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_nonempty_ste16000_d AS public.text_nonempty_inf_d
 	CONSTRAINT text_nonempty_ste16000_d_c_ste16000 CHECK ((length((VALUE)::text) <= 16000));
 
 
---
--- Name: text_nonempty_ste16000_trimmed_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.text_nonempty_ste16000_trimmed_d AS public.text_nonempty_ste16000_d
 	CONSTRAINT text_nonempty_ste16000_trimmed_d_c_trimmed CHECK (public.is_trimmed((VALUE)::text));
 
-
---
--- Name: text_nonempty_ste2000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_nonempty_ste2000_d AS public.text_nonempty_inf_d
 	CONSTRAINT text_nonempty_ste2000_d_c_ste2000 CHECK ((length((VALUE)::text) <= 2000));
 
 
---
--- Name: text_nonempty_ste2000_trimmed_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.text_nonempty_ste2000_trimmed_d AS public.text_nonempty_ste2000_d
 	CONSTRAINT text_nonempty_ste2000_trimmed_d_c_trimmed CHECK (public.is_trimmed((VALUE)::text));
 
-
---
--- Name: text_nonempty_ste2100_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_nonempty_ste2100_d AS public.text_nonempty_inf_d
 	CONSTRAINT text_nonempty_ste2100_d_c_ste2100 CHECK ((length((VALUE)::text) <= 2100));
 
 
---
--- Name: text_nonempty_ste2100_trimmed_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.text_nonempty_ste2100_trimmed_d AS public.text_nonempty_ste2100_d
 	CONSTRAINT text_nonempty_ste2100_trimmed_d_c_trimmed CHECK (public.is_trimmed((VALUE)::text));
 
-
---
--- Name: text_nonempty_ste30_trimmed_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_nonempty_ste30_trimmed_d AS public.text_nonempty_ste30_d
 	CONSTRAINT text_nonempty_ste30_trimmed_d_c_trimmed CHECK (public.is_trimmed((VALUE)::text));
 
 
---
--- Name: text_nonempty_ste4000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.text_nonempty_ste4000_d AS public.text_nonempty_inf_d
 	CONSTRAINT text_nonempty_ste4000_d_c_ste4000 CHECK ((length((VALUE)::text) <= 4000));
 
-
---
--- Name: text_nonempty_ste4000_trimmed_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_nonempty_ste4000_trimmed_d AS public.text_nonempty_ste4000_d
 	CONSTRAINT text_nonempty_ste4000_trimmed_d_c_trimmed CHECK (public.is_trimmed((VALUE)::text));
 
 
---
--- Name: text_nonempty_ste500_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.text_nonempty_ste500_d AS public.text_nonempty_inf_d
 	CONSTRAINT text_nonempty_ste500_d_c_ste500 CHECK ((length((VALUE)::text) <= 500));
 
-
---
--- Name: text_nonempty_ste500_trimmed_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_nonempty_ste500_trimmed_d AS public.text_nonempty_ste500_d
 	CONSTRAINT text_nonempty_ste500_trimmed_d_c_trimmed CHECK (public.is_trimmed((VALUE)::text));
 
 
---
--- Name: text_nonempty_ste8000_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.text_nonempty_ste8000_d AS public.text_nonempty_inf_d
 	CONSTRAINT text_nonempty_ste8000_d_c_ste8000 CHECK ((length((VALUE)::text) <= 8000));
 
-
---
--- Name: text_nonempty_ste8000_trimmed_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_nonempty_ste8000_trimmed_d AS public.text_nonempty_ste8000_d
 	CONSTRAINT text_nonempty_ste8000_trimmed_d_c_trimmed CHECK (public.is_trimmed((VALUE)::text));
 
 
---
--- Name: text_oneline_120_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.text_oneline_120_d AS public.text_oneline_d
 	CONSTRAINT text_oneline_120_d_c_ste120 CHECK ((length((VALUE)::text) <= 120));
 
-
---
--- Name: text_oneline_15_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_oneline_15_d AS public.text_oneline_d
 	CONSTRAINT text_oneline_15_d_c_ste15 CHECK ((length((VALUE)::text) <= 15));
 
 
---
--- Name: DOMAIN text_oneline_15_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON DOMAIN public.text_oneline_15_d IS 'Like text_oneline_d, but at most 15 chars long.';
 
-
---
--- Name: text_oneline_30_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.text_oneline_30_d AS public.text_oneline_d
 	CONSTRAINT text_oneline_30_d_c_ste30 CHECK ((length((VALUE)::text) <= 30));
 
 
---
--- Name: thing_type_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.thing_type_d AS public.i16_gz_lt1000_d;
 
-
---
--- Name: DOMAIN thing_type_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON DOMAIN public.thing_type_d IS '
 What is something — e.g. a flag, or a comment, or a Like vote, or a group.
@@ -1430,33 +760,17 @@ they''d try to use the same table row).
 ';
 
 
---
--- Name: thing_types_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.thing_types_d AS public.i64_d
 	CONSTRAINT thing_types_d_c_in_7_56 CHECK (((VALUE)::bigint = ANY (ARRAY[(7)::bigint, (56)::bigint])));
 
-
---
--- Name: trending_period_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.trending_period_d AS public.i16_gz_d
 	CONSTRAINT trending_period_d_c_lte7 CHECK (((VALUE)::smallint <= 7));
 
 
---
--- Name: trust_level_or_staff_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.trust_level_or_staff_d AS public.i16_d
 	CONSTRAINT trustlevelstaff_c_0_8 CHECK ((((VALUE)::smallint >= 0) AND ((VALUE)::smallint <= 8)));
 
-
---
--- Name: DOMAIN trust_level_or_staff_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON DOMAIN public.trust_level_or_staff_d IS '
 
@@ -1465,79 +779,39 @@ for staff, i.e. mods = 7 and admins = 8.
 ';
 
 
---
--- Name: unwanted_status_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.unwanted_status_d AS public.i16_gz_lt128_d;
 
-
---
--- Name: url_slug_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.url_slug_d AS public.text_nonempty_ste2100_d
 	CONSTRAINT url_slug_d_c_lower CHECK ((lower((VALUE)::text) = (VALUE)::text))
 	CONSTRAINT url_slug_d_c_regex CHECK (((VALUE)::text ~ '^[[:alnum:]_-]*$'::text));
 
 
---
--- Name: DOMAIN url_slug_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON DOMAIN public.url_slug_d IS 'Chars that make sense in an URL slug — lowercase alphanumeric, and "-_".';
 
-
---
--- Name: url_slug_60_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.url_slug_60_d AS public.url_slug_d
 	CONSTRAINT url_slug_60_d_c_ste60 CHECK ((length((VALUE)::text) <= 60));
 
 
---
--- Name: DOMAIN url_slug_60_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON DOMAIN public.url_slug_60_d IS 'Like url_slug_d, but at most 60 chars long.';
 
-
---
--- Name: value_type_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.value_type_d AS public.i16_d
 	CONSTRAINT value_type_d_c_gtem3_nz CHECK ((((VALUE)::smallint >= '-3'::integer) AND ((VALUE)::smallint <> 0)))
 	CONSTRAINT value_type_d_c_lt3000_for_now CHECK (((VALUE)::smallint < 3000));
 
 
---
--- Name: webhook_id_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
-
 CREATE DOMAIN public.webhook_id_d AS public.i16_gz_d;
 
-
---
--- Name: when_mins_d; Type: DOMAIN; Schema: public; Owner: talkyard_test
---
 
 CREATE DOMAIN public.when_mins_d AS public.i32_gez_d
 	CONSTRAINT when_mins_d_c_aft_y2010 CHECK (((VALUE)::integer >= 21050000))
 	CONSTRAINT when_mins_d_c_bef_y2100 CHECK (((VALUE)::integer <= 68400000));
 
 
---
--- Name: DOMAIN when_mins_d; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON DOMAIN public.when_mins_d IS 'A point in time, in minutes (not seconds) since 1970, so fits in an i32. To catch bugs, must be between year 2010 and 2100.';
 
-
---
--- Name: contains_blank(character varying); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.contains_blank(text character varying) RETURNS boolean
     LANGUAGE plpgsql
@@ -1547,10 +821,6 @@ begin
 end;
 $$;
 
-
---
--- Name: delete_page(character varying, character varying); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.delete_page(the_site_id character varying, the_page_id character varying) RETURNS void
     LANGUAGE plpgsql
@@ -1563,10 +833,6 @@ delete from pages3 where TENANT = the_site_id and GUID = the_page_id;
 end;
 $$;
 
-
---
--- Name: emails3_sum_quota(); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.emails3_sum_quota() RETURNS trigger
     LANGUAGE plpgsql
@@ -1591,10 +857,6 @@ CREATE FUNCTION public.emails3_sum_quota() RETURNS trigger
 $$;
 
 
---
--- Name: hex_to_int(character varying); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
-
 CREATE FUNCTION public.hex_to_int(hexval character varying) RETURNS integer
     LANGUAGE plpgsql IMMUTABLE STRICT
     AS $$
@@ -1606,10 +868,6 @@ BEGIN
 END;
 $$;
 
-
---
--- Name: identities3_sum_quota(); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.identities3_sum_quota() RETURNS trigger
     LANGUAGE plpgsql
@@ -1636,10 +894,6 @@ CREATE FUNCTION public.identities3_sum_quota() RETURNS trigger
 $$;
 
 
---
--- Name: inc_next_page_id(integer); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
-
 CREATE FUNCTION public.inc_next_page_id(site_id integer) RETURNS integer
     LANGUAGE plpgsql
     AS $$
@@ -1654,10 +908,6 @@ return next_id - 1;
 end;
 $$;
 
-
---
--- Name: index_friendly(text); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.index_friendly(value text) RETURNS text
     LANGUAGE plpgsql IMMUTABLE
@@ -1677,10 +927,6 @@ end;
 $$;
 
 
---
--- Name: is_menu_spec(character varying); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
-
 CREATE FUNCTION public.is_menu_spec(text character varying) RETURNS boolean
     LANGUAGE plpgsql
     AS $_$
@@ -1690,10 +936,6 @@ end;
 $_$;
 
 
---
--- Name: is_ok_trust_level(integer); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
-
 CREATE FUNCTION public.is_ok_trust_level(trust_level integer) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
@@ -1702,10 +944,6 @@ begin
 end;
 $$;
 
-
---
--- Name: is_trimmed(character varying); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.is_trimmed(text character varying) RETURNS boolean
     LANGUAGE plpgsql
@@ -1722,10 +960,6 @@ end;
 $_$;
 
 
---
--- Name: is_valid_css_class(character varying); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
-
 CREATE FUNCTION public.is_valid_css_class(text character varying) RETURNS boolean
     LANGUAGE plpgsql
     AS $_$
@@ -1734,10 +968,6 @@ begin
 end;
 $_$;
 
-
---
--- Name: is_valid_hash_path(character varying); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.is_valid_hash_path(text character varying) RETURNS boolean
     LANGUAGE plpgsql
@@ -1750,10 +980,6 @@ end;
 $_$;
 
 
---
--- Name: is_valid_notf_level(integer); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
-
 CREATE FUNCTION public.is_valid_notf_level(notf_level integer) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
@@ -1762,10 +988,6 @@ begin
 end;
 $$;
 
-
---
--- Name: is_valid_tag_label(character varying); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.is_valid_tag_label(text character varying) RETURNS boolean
     LANGUAGE plpgsql
@@ -1776,10 +998,6 @@ begin
 end;
 $_$;
 
-
---
--- Name: notfs3_sum_quota(); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.notfs3_sum_quota() RETURNS trigger
     LANGUAGE plpgsql
@@ -1806,10 +1024,6 @@ CREATE FUNCTION public.notfs3_sum_quota() RETURNS trigger
 $$;
 
 
---
--- Name: now_utc(); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
-
 CREATE FUNCTION public.now_utc() RETURNS timestamp without time zone
     LANGUAGE plpgsql
     AS $$
@@ -1819,10 +1033,6 @@ begin
 end;
 $$;
 
-
---
--- Name: one_unless_null(boolean); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.one_unless_null(anybool boolean) RETURNS integer
     LANGUAGE plpgsql IMMUTABLE STRICT
@@ -1836,10 +1046,6 @@ end;
 $$;
 
 
---
--- Name: one_unless_null(integer); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
-
 CREATE FUNCTION public.one_unless_null(anyvalue integer) RETURNS integer
     LANGUAGE plpgsql IMMUTABLE STRICT
     AS $$
@@ -1852,10 +1058,6 @@ end;
 $$;
 
 
---
--- Name: one_unless_null(character varying); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
-
 CREATE FUNCTION public.one_unless_null(anyvarchar character varying) RETURNS integer
     LANGUAGE plpgsql IMMUTABLE STRICT
     AS $$
@@ -1867,10 +1069,6 @@ begin
 end;
 $$;
 
-
---
--- Name: page_users3_sum_quota(); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.page_users3_sum_quota() RETURNS trigger
     LANGUAGE plpgsql
@@ -1897,10 +1095,6 @@ CREATE FUNCTION public.page_users3_sum_quota() RETURNS trigger
 $$;
 
 
---
--- Name: pages3_sum_quota(); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
-
 CREATE FUNCTION public.pages3_sum_quota() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -1926,10 +1120,6 @@ CREATE FUNCTION public.pages3_sum_quota() RETURNS trigger
 $$;
 
 
---
--- Name: post_actions3_sum_quota(); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
-
 CREATE FUNCTION public.post_actions3_sum_quota() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -1953,10 +1143,6 @@ CREATE FUNCTION public.post_actions3_sum_quota() RETURNS trigger
     end;
 $$;
 
-
---
--- Name: post_read_stats3_sum_quota(); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.post_read_stats3_sum_quota() RETURNS trigger
     LANGUAGE plpgsql
@@ -1982,10 +1168,6 @@ CREATE FUNCTION public.post_read_stats3_sum_quota() RETURNS trigger
     end;
 $$;
 
-
---
--- Name: post_revs3_sum_quota(); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.post_revs3_sum_quota() RETURNS trigger
     LANGUAGE plpgsql
@@ -2029,10 +1211,6 @@ CREATE FUNCTION public.post_revs3_sum_quota() RETURNS trigger
 $$;
 
 
---
--- Name: posts3_sum_quota(); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
-
 CREATE FUNCTION public.posts3_sum_quota() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -2071,10 +1249,6 @@ CREATE FUNCTION public.posts3_sum_quota() RETURNS trigger
 $$;
 
 
---
--- Name: trim_all(character varying); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
-
 CREATE FUNCTION public.trim_all(text character varying) RETURNS character varying
     LANGUAGE plpgsql
     AS $_$
@@ -2093,10 +1267,6 @@ begin
 end;
 $_$;
 
-
---
--- Name: update_upload_ref_count(character varying, character varying); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
 
 CREATE FUNCTION public.update_upload_ref_count(the_base_url character varying, the_hash_path character varying) RETURNS void
     LANGUAGE plpgsql
@@ -2129,10 +1299,6 @@ begin
 end $$;
 
 
---
--- Name: users3_sum_quota(); Type: FUNCTION; Schema: public; Owner: talkyard_test
---
-
 CREATE FUNCTION public.users3_sum_quota() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -2160,9 +1326,9 @@ $$;
 
 SET default_with_oids = false;
 
---
--- Name: alt_page_ids3; Type: TABLE; Schema: public; Owner: talkyard_test
---
+
+
+
 
 CREATE TABLE public.alt_page_ids3 (
     site_id integer NOT NULL,
@@ -2171,10 +1337,6 @@ CREATE TABLE public.alt_page_ids3 (
     CONSTRAINT altpageids_altid_c_len CHECK (((length((alt_page_id)::text) >= 1) AND (length((alt_page_id)::text) <= 300)))
 );
 
-
---
--- Name: api_secrets3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.api_secrets3 (
     site_id integer NOT NULL,
@@ -2191,10 +1353,6 @@ CREATE TABLE public.api_secrets3 (
     CONSTRAINT apisecrets_c_secretkey_len CHECK (((length((secret_key)::text) >= 20) AND (length((secret_key)::text) <= 200)))
 );
 
-
---
--- Name: audit_log3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.audit_log3 (
     site_id integer NOT NULL,
@@ -2256,10 +1414,6 @@ CREATE TABLE public.audit_log3 (
 );
 
 
---
--- Name: backup_test_log3; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.backup_test_log3 (
     logged_at timestamp without time zone NOT NULL,
     logged_by character varying NOT NULL,
@@ -2270,10 +1424,6 @@ CREATE TABLE public.backup_test_log3 (
     CONSTRAINT backuptestlog_c_filename_len CHECK (((length((file_name)::text) >= 1) AND (length((file_name)::text) <= 200)))
 );
 
-
---
--- Name: blocks3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.blocks3 (
     site_id integer NOT NULL,
@@ -2287,10 +1437,6 @@ CREATE TABLE public.blocks3 (
     CONSTRAINT dw2_blocks_blockedat_till__c CHECK ((blocked_at <= blocked_till))
 );
 
-
---
--- Name: categories3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.categories3 (
     site_id integer NOT NULL,
@@ -2342,10 +1488,6 @@ CREATE TABLE public.categories3 (
 );
 
 
---
--- Name: drafts3; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.drafts3 (
     site_id integer NOT NULL,
     by_user_id integer NOT NULL,
@@ -2381,10 +1523,6 @@ CREATE TABLE public.drafts3 (
 );
 
 
---
--- Name: TABLE drafts3; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON TABLE public.drafts3 IS '
 Should remove, and store drafts in posts_t/nodes_t instead. [drafts3_2_nodes_t]
 With negative nrs, to indicate that they''re private (others can''t see
@@ -2396,10 +1534,6 @@ title & a body post that together become the new page draft.
 ';
 
 
---
--- Name: COLUMN drafts3.order_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.drafts3.order_c IS '
 For sorting drafts in one''s todo list (with tasks, bookmarks, drafts).
 Once drafts3 has been merged into posts_t, maybe merge posts_t.pinned_position
@@ -2408,10 +1542,6 @@ into order_c? Then use it both for sorting personal posts
 ';
 
 
---
--- Name: dw1_tenants_id; Type: SEQUENCE; Schema: public; Owner: talkyard_test
---
-
 CREATE SEQUENCE public.dw1_tenants_id
     START WITH 10
     INCREMENT BY 1
@@ -2419,10 +1549,6 @@ CREATE SEQUENCE public.dw1_tenants_id
     NO MAXVALUE
     CACHE 1;
 
-
---
--- Name: emails_out3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.emails_out3 (
     site_id integer NOT NULL,
@@ -2471,10 +1597,6 @@ CREATE TABLE public.emails_out3 (
 );
 
 
---
--- Name: flyway_schema_history; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.flyway_schema_history (
     installed_rank integer NOT NULL,
     version character varying(50),
@@ -2488,10 +1610,6 @@ CREATE TABLE public.flyway_schema_history (
     success boolean NOT NULL
 );
 
-
---
--- Name: group_participants3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.group_participants3 (
     site_id integer NOT NULL,
@@ -2507,10 +1625,6 @@ CREATE TABLE public.group_participants3 (
 );
 
 
---
--- Name: guest_prefs3; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.guest_prefs3 (
     site_id integer NOT NULL,
     ctime timestamp without time zone NOT NULL,
@@ -2523,10 +1637,6 @@ CREATE TABLE public.guest_prefs3 (
 );
 
 
---
--- Name: hosts3; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.hosts3 (
     site_id integer NOT NULL,
     host character varying NOT NULL,
@@ -2537,10 +1647,6 @@ CREATE TABLE public.hosts3 (
     CONSTRAINT hosts_c_role_in CHECK (((canonical)::text = ANY ((ARRAY['C'::character varying, 'R'::character varying, 'L'::character varying, 'D'::character varying, 'X'::character varying])::text[])))
 );
 
-
---
--- Name: identities3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.identities3 (
     idty_id_c integer NOT NULL,
@@ -2617,19 +1723,11 @@ CREATE TABLE public.identities3 (
 );
 
 
---
--- Name: COLUMN identities3.idp_user_id_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.identities3.idp_user_id_c IS '
 
 For OIDC, this is the ''sub'', Subject Identifier.
 ';
 
-
---
--- Name: idps_t; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.idps_t (
     site_id_c integer NOT NULL,
@@ -2701,19 +1799,11 @@ CREATE TABLE public.idps_t (
 );
 
 
---
--- Name: TABLE idps_t; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON TABLE public.idps_t IS '
 
 OIDC and OAuth2 providers, e.g. a company''s private Keycloak server.
 ';
 
-
---
--- Name: COLUMN idps_t.protocol_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON COLUMN public.idps_t.protocol_c IS '
 
@@ -2724,19 +1814,11 @@ the old authn for a short while).
 ';
 
 
---
--- Name: COLUMN idps_t.alias_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.idps_t.alias_c IS '
 
 Alnum lowercase, because appears in urls.
 ';
 
-
---
--- Name: COLUMN idps_t.gui_order_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON COLUMN public.idps_t.gui_order_c IS '
 
@@ -2744,10 +1826,6 @@ When logging in, identity providers with lower numbers are shown first.
 (If one has configured more than one provider.)
 ';
 
-
---
--- Name: COLUMN idps_t.sync_mode_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON COLUMN public.idps_t.sync_mode_c IS '
 
@@ -2757,10 +1835,6 @@ E.g. just login, don''t sync. Or overwrite fields in the Ty database
 with values from the IDP, maybe even update the email address.''
 ';
 
-
---
--- Name: COLUMN idps_t.oau_access_token_auth_method_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON COLUMN public.idps_t.oau_access_token_auth_method_c IS '
 
@@ -2780,10 +1854,6 @@ Also see: https://openid.net/specs/openid-connect-core-1_0.html#TokenRequest
 ';
 
 
---
--- Name: COLUMN idps_t.oidc_user_info_fields_map_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.idps_t.oidc_user_info_fields_map_c IS '
 
 How to convert custom OAuth2 user json fields to standard OIDC user info fields
@@ -2793,10 +1863,6 @@ user info step: the OAuth2 user info endpoint can return its own
 non-standard json.
 ';
 
-
---
--- Name: invites3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.invites3 (
     site_id integer NOT NULL,
@@ -2824,10 +1890,6 @@ CREATE TABLE public.invites3 (
 );
 
 
---
--- Name: job_queue_t; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.job_queue_t (
     inserted_at timestamp without time zone DEFAULT public.now_utc() NOT NULL,
     action_at timestamp without time zone NOT NULL,
@@ -2854,10 +1916,6 @@ CREATE TABLE public.job_queue_t (
     CONSTRAINT jobq_c_timerange_ofs_null CHECK ((((time_range_from_c IS NULL) = (time_range_from_ofs_c IS NULL)) AND ((time_range_from_c IS NULL) = (time_range_to_c IS NULL)) AND ((time_range_from_c IS NULL) = (time_range_to_ofs_c IS NULL))))
 );
 
-
---
--- Name: TABLE job_queue_t; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON TABLE public.job_queue_t IS '
 
@@ -2899,10 +1957,6 @@ that''s what time_range_from_ofs_c and ...to_ofs_c are for.
 ';
 
 
---
--- Name: link_previews_t; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.link_previews_t (
     site_id_c integer NOT NULL,
     link_url_c character varying NOT NULL,
@@ -2921,10 +1975,6 @@ CREATE TABLE public.link_previews_t (
     CONSTRAINT linkpreviews_c_statuscode CHECK ((status_code_c >= 0))
 );
 
-
---
--- Name: TABLE link_previews_t; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON TABLE public.link_previews_t IS '
 
@@ -2970,20 +2020,12 @@ after a while.
 ';
 
 
---
--- Name: COLUMN link_previews_t.link_url_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.link_previews_t.link_url_c IS '
 
 An extenal link that we want to show a preview for. E.g. a link to a Wikipedia page
 or Twitter tweet or YouTube video, or an external image or blog post, whatever.
 ';
 
-
---
--- Name: COLUMN link_previews_t.fetched_from_url_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON COLUMN public.link_previews_t.fetched_from_url_c IS '
 
@@ -2992,10 +2034,6 @@ not oEmbed, but instead html <title> or OpenGraph tags — then
 fetched_from_url_c would be the same as link_url_c, need not save twice.
 ';
 
-
---
--- Name: COLUMN link_previews_t.status_code_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON COLUMN public.link_previews_t.status_code_c IS '
 
@@ -3007,20 +2045,12 @@ only, in Redis, so cannot DoS attack the disk storage.  [ln_pv_fetch_errs]
 ';
 
 
---
--- Name: COLUMN link_previews_t.content_json_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.link_previews_t.content_json_c IS '
 
 Null if the request failed, got no response json. E.g. an error status code,
 or a request timeout or TCP RST?   [ln_pv_fetch_errs]
 ';
 
-
---
--- Name: links_t; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.links_t (
     site_id_c integer NOT NULL,
@@ -3042,10 +2072,6 @@ CREATE TABLE public.links_t (
 );
 
 
---
--- Name: TABLE links_t; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON TABLE public.links_t IS '
 
 The start page id is left out — only the start post id is included,
@@ -3062,10 +2088,6 @@ been fetched yet (or maybe never — maybe broken external link).
 ';
 
 
---
--- Name: notices_t; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.notices_t (
     site_id_c integer NOT NULL,
     to_pat_id_c integer NOT NULL,
@@ -3077,10 +2099,6 @@ CREATE TABLE public.notices_t (
     CONSTRAINT notices_c_firstat_lte_lastat CHECK (((first_at_c)::integer <= (last_at_c)::integer))
 );
 
-
---
--- Name: notifications3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.notifications3 (
     site_id integer NOT NULL,
@@ -3117,10 +2135,6 @@ CREATE TABLE public.notifications3 (
 );
 
 
---
--- Name: page_html_cache_t; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.page_html_cache_t (
     site_id_c integer NOT NULL,
     page_id_c character varying NOT NULL,
@@ -3143,10 +2157,6 @@ CREATE TABLE public.page_html_cache_t (
 );
 
 
---
--- Name: page_notf_prefs_t; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.page_notf_prefs_t (
     site_id integer NOT NULL,
     pat_id_c integer NOT NULL,
@@ -3166,10 +2176,6 @@ CREATE TABLE public.page_notf_prefs_t (
 );
 
 
---
--- Name: page_paths3; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.page_paths3 (
     site_id integer NOT NULL,
     parent_folder character varying(100) NOT NULL,
@@ -3188,10 +2194,6 @@ CREATE TABLE public.page_paths3 (
 );
 
 
---
--- Name: page_popularity_scores3; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.page_popularity_scores3 (
     site_id integer NOT NULL,
     page_id character varying NOT NULL,
@@ -3208,10 +2210,6 @@ CREATE TABLE public.page_popularity_scores3 (
     CONSTRAINT pagepopscores_updat_ge_popsince CHECK ((updated_at >= popular_since))
 );
 
-
---
--- Name: page_users3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.page_users3 (
     site_id integer NOT NULL,
@@ -3245,10 +2243,6 @@ CREATE TABLE public.page_users3 (
     CONSTRAINT pageusers_reason_level_c_null CHECK (((notf_reason IS NULL) OR (notf_level IS NOT NULL)))
 );
 
-
---
--- Name: pages3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.pages3 (
     site_id integer NOT NULL,
@@ -3366,10 +2360,6 @@ CREATE TABLE public.pages3 (
 );
 
 
---
--- Name: perms_on_pages3; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.perms_on_pages3 (
     site_id integer NOT NULL,
     perm_id integer NOT NULL,
@@ -3410,10 +2400,6 @@ CREATE TABLE public.perms_on_pages3 (
 );
 
 
---
--- Name: TABLE perms_on_pages3; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON TABLE public.perms_on_pages3 IS '
 Permissions on categories and pages.
 
@@ -3433,19 +2419,11 @@ RENAME to perms_on_pages_t.
 ';
 
 
---
--- Name: COLUMN perms_on_pages3.can_see_others_priv_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.perms_on_pages3.can_see_others_priv_c IS '
 If one may see a category, or a private message (a page),
 or a private comments thread on a not-private page.
 ';
 
-
---
--- Name: COLUMN perms_on_pages3.can_see_who_can_see_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON COLUMN public.perms_on_pages3.can_see_who_can_see_c IS '
 If pat can see which other pats can see a page or comment tree.
@@ -3460,10 +2438,6 @@ null means inherit, and:
 ';
 
 
---
--- Name: COLUMN perms_on_pages3.can_see_assigned_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.perms_on_pages3.can_see_assigned_c IS '
 null means inherit, and:
    1 = Can not see if a task is assigned to anyone.
@@ -3473,10 +2447,6 @@ null means inherit, and:
    4 = See precisely which individuals are assigned.
 ';
 
-
---
--- Name: post_actions3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.post_actions3 (
     site_id integer NOT NULL,
@@ -3507,10 +2477,6 @@ CREATE TABLE public.post_actions3 (
 );
 
 
---
--- Name: TABLE post_actions3; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON TABLE public.post_actions3 IS '
 To be renamed to  pat_post_rels_t or pat_node_rels_t. Currently stores votes,
 AssignedTo, and flags.  Later, flags will be kept in posts_t instead,
@@ -3520,38 +2486,22 @@ is assigned to do — maybe assigned-to-review for example. [tasks_2_nodes_t]
 ';
 
 
---
--- Name: COLUMN post_actions3.from_true_id_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.post_actions3.from_true_id_c IS '
 The true user behind an anonymous vote. Makes it possible to load all
 one''s votes, for the current page, also if one voted anonymously.
 ';
 
 
---
--- Name: COLUMN post_actions3.added_by_id_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.post_actions3.added_by_id_c IS '
 If one pat assigns another to a task.
 ';
 
-
---
--- Name: COLUMN post_actions3.order_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON COLUMN public.post_actions3.order_c IS '
 For the assignee, so han can reorder the task as han wants, in hans
 personal todo list (with tasks, bookmarks, drafts).
 ';
 
-
---
--- Name: post_read_stats3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.post_read_stats3 (
     site_id integer NOT NULL,
@@ -3562,10 +2512,6 @@ CREATE TABLE public.post_read_stats3 (
     read_at timestamp without time zone NOT NULL
 );
 
-
---
--- Name: post_revisions3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.post_revisions3 (
     site_id integer NOT NULL,
@@ -3592,10 +2538,6 @@ CREATE TABLE public.post_revisions3 (
 );
 
 
---
--- Name: post_tags3; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.post_tags3 (
     site_id integer NOT NULL,
     post_id integer NOT NULL,
@@ -3604,10 +2546,6 @@ CREATE TABLE public.post_tags3 (
     CONSTRAINT posttags_tag__c_valid CHECK (public.is_valid_tag_label(tag))
 );
 
-
---
--- Name: posts3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.posts3 (
     site_id integer NOT NULL,
@@ -3712,10 +2650,6 @@ CREATE TABLE public.posts3 (
 );
 
 
---
--- Name: TABLE posts3; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON TABLE public.posts3 IS '
 To be renamed to  posts_t.  No, to nodes_t.  Stores the actuall discussions:
 the Original Post, a title post, reply/comment posts, meta posts,
@@ -3736,10 +2670,6 @@ And bookmarks. Later.
 ';
 
 
---
--- Name: COLUMN posts3.created_by_id; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.posts3.created_by_id IS '
 If created by an anonym or pseudonym, is the id of that anonym or pseudonym.
 And to find the true author, one looks up that anon/pseudonym in pats_t,
@@ -3747,28 +2677,16 @@ and looks at the true_id_c column.
 ';
 
 
---
--- Name: COLUMN posts3.closed_status; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.posts3.closed_status IS '
 
 1: Closed, 2: Locked, 3: Frozen.
 ';
 
 
---
--- Name: COLUMN posts3.pinned_position; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.posts3.pinned_position IS '
 Rename to  order_c. Use for sorting one''s private posts: bookmarks and drafts.
 ';
 
-
---
--- Name: COLUMN posts3.answered_status_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON COLUMN public.posts3.answered_status_c IS '
 
@@ -3777,19 +2695,11 @@ COMMENT ON COLUMN public.posts3.answered_status_c IS '
 ';
 
 
---
--- Name: COLUMN posts3.doing_status_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.posts3.doing_status_c IS '
 
 1: Planned, 2: Started, 3: Paused, 4: Done.
 ';
 
-
---
--- Name: COLUMN posts3.private_status_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON COLUMN public.posts3.private_status_c IS '
 NO, skip this. Instead, use private pages  [priv_comts_pages] 
@@ -3852,10 +2762,6 @@ people could see those private-tree-in-tree.)
 ';
 
 
---
--- Name: COLUMN posts3.order_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.posts3.order_c IS '
 For sorting bookmarks in one''s todo list (together with tasks, bookmarks, drafts).
 Maybe merge posts_t.pinned_position into order_c, don''t need both?
@@ -3867,10 +2773,6 @@ and pinned_position?
 null (or 0) means in the middle (after the > 0 but before the < 0), newest first?
 ';
 
-
---
--- Name: review_tasks3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.review_tasks3 (
     site_id integer NOT NULL,
@@ -3909,10 +2811,6 @@ CREATE TABLE public.review_tasks3 (
 );
 
 
---
--- Name: sessions_t; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.sessions_t (
     site_id_c public.i32_d NOT NULL,
     pat_id_c public.i32_d NOT NULL,
@@ -3933,10 +2831,6 @@ CREATE TABLE public.sessions_t (
     CONSTRAINT settings_c_startheaders_len CHECK ((pg_column_size(start_headers_c) <= 1000))
 );
 
-
---
--- Name: settings3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.settings3 (
     site_id integer NOT NULL,
@@ -4142,36 +3036,20 @@ CREATE TABLE public.settings3 (
 );
 
 
---
--- Name: COLUMN settings3.ai_conf_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.settings3.ai_conf_c IS '
 AI configuration. Can be long, if includes custom prompts.
 ';
 
-
---
--- Name: COLUMN settings3.enable_online_status_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON COLUMN public.settings3.enable_online_status_c IS '
 If there should be any sidebar users-online list.
 ';
 
 
---
--- Name: COLUMN settings3.follow_links_to_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.settings3.follow_links_to_c IS '
 List of domains for which links should be rel=follow.
 ';
 
-
---
--- Name: sites3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.sites3 (
     id integer NOT NULL,
@@ -4233,10 +3111,6 @@ CREATE TABLE public.sites3 (
 );
 
 
---
--- Name: spam_check_queue3; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.spam_check_queue3 (
     created_at timestamp without time zone NOT NULL,
     site_id integer NOT NULL,
@@ -4289,20 +3163,12 @@ CREATE TABLE public.spam_check_queue3 (
 );
 
 
---
--- Name: system_settings_t; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.system_settings_t (
     maintenance_until_unix_secs_c public.i64_gz_d,
     maint_words_html_unsafe_c public.text_nonempty_ste500_d,
     maint_msg_html_unsafe_c public.text_nonempty_ste2000_d
 );
 
-
---
--- Name: tag_notf_levels3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.tag_notf_levels3 (
     site_id integer NOT NULL,
@@ -4312,10 +3178,6 @@ CREATE TABLE public.tag_notf_levels3 (
     CONSTRAINT tagnotflvl_notf_lvl CHECK (public.is_valid_notf_level(notf_level))
 );
 
-
---
--- Name: tags_t; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.tags_t (
     site_id_c integer NOT NULL,
@@ -4340,10 +3202,6 @@ CREATE TABLE public.tags_t (
 );
 
 
---
--- Name: TABLE tags_t; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON TABLE public.tags_t IS '
 Stores tags and user badges. The tag / badge titles, colors etc are
 in types_t (currently named tagtypes_t)
@@ -4355,10 +3213,6 @@ Use val_i32_c, val_f64_c etc primarily, and val_*_b_c only if two fields
 are needed e.g. to store a location (long & lat).
 ';
 
-
---
--- Name: COLUMN tags_t.val_type_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON COLUMN public.tags_t.val_type_c IS '
 
@@ -4382,10 +3236,6 @@ a ''{}'' after any numeric or text value, to indicate that there''s json.
 For now, urls and jsonb aren''t allowed — only numbers and plain text.
 ';
 
-
---
--- Name: tagtypes_t; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.tagtypes_t (
     site_id_c integer NOT NULL,
@@ -4416,10 +3266,6 @@ CREATE TABLE public.tagtypes_t (
 );
 
 
---
--- Name: TABLE tagtypes_t; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON TABLE public.tagtypes_t IS '
 (Will rename to types_t.)
 Types, for 1) content tags. Content tags: E.g. issue tracking tags,
@@ -4442,20 +3288,12 @@ tag, relationship, etc can have its own custom integer or jsonb value.)
 ';
 
 
---
--- Name: CONSTRAINT types_c_wantsval_valtype_null ON tagtypes_t; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON CONSTRAINT types_c_wantsval_valtype_null ON public.tagtypes_t IS '
 It''s ok to remember any value type this type wanted, previously, so
 value_type_c != null, when wants_value_c is null or <= NeverButCanContinue = 2,
 is ok.
 ';
 
-
---
--- Name: upload_refs3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.upload_refs3 (
     site_id integer NOT NULL,
@@ -4470,10 +3308,6 @@ CREATE TABLE public.upload_refs3 (
     CONSTRAINT dw2_uploadrefs_hashpathsuffix__c_len CHECK (((length((hash_path)::text) >= 1) AND (length((hash_path)::text) <= 100)))
 );
 
-
---
--- Name: uploads3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.uploads3 (
     base_url character varying NOT NULL,
@@ -4502,10 +3336,6 @@ CREATE TABLE public.uploads3 (
 );
 
 
---
--- Name: user_emails3; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.user_emails3 (
     site_id integer NOT NULL,
     user_id integer NOT NULL,
@@ -4515,10 +3345,6 @@ CREATE TABLE public.user_emails3 (
     CONSTRAINT useremails_c_email_ok CHECK (public.email_seems_ok(email_address))
 );
 
-
---
--- Name: user_stats3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.user_stats3 (
     site_id integer NOT NULL,
@@ -4564,10 +3390,6 @@ CREATE TABLE public.user_stats3 (
 );
 
 
---
--- Name: user_visit_stats3; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.user_visit_stats3 (
     site_id integer NOT NULL,
     user_id integer NOT NULL,
@@ -4580,10 +3402,6 @@ CREATE TABLE public.user_visit_stats3 (
     CONSTRAINT uservisitstats_c_gez CHECK (((num_seconds_reading >= 0) AND (num_discourse_replies_read >= 0) AND (num_discourse_topics_entered >= 0) AND (num_chat_messages_read >= 0) AND (num_chat_topics_entered >= 0)))
 );
 
-
---
--- Name: usernames3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.usernames3 (
     site_id integer NOT NULL,
@@ -4598,10 +3416,6 @@ CREATE TABLE public.usernames3 (
     CONSTRAINT usernames_c_username_len CHECK (((length((username_lowercase)::text) >= 2) AND (length((username_lowercase)::text) <= 50)))
 );
 
-
---
--- Name: users3; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.users3 (
     site_id integer NOT NULL,
@@ -4769,19 +3583,11 @@ CREATE TABLE public.users3 (
 );
 
 
---
--- Name: COLUMN users3.why_may_not_mention_msg_me_html_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.users3.why_may_not_mention_msg_me_html_c IS '
 A help text explaining why this user or group cannot be @mentioned or DM:d,
 and who to contact instead.
 ';
 
-
---
--- Name: COLUMN users3.mod_conf_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON COLUMN public.users3.mod_conf_c IS '
 Moderation settings for this group (or user), e.g. max posts per week
@@ -4789,19 +3595,11 @@ before they get a "You''re creating a lot of posts" soft warning.
 ';
 
 
---
--- Name: COLUMN users3.may_set_rel_follow_c; Type: COMMENT; Schema: public; Owner: talkyard_test
---
-
 COMMENT ON COLUMN public.users3.may_set_rel_follow_c IS '
 If this group (or user) can set rel=follow for all links (even if not in
 settings_t.follow_links_to_c).
 ';
 
-
---
--- Name: webhook_reqs_out_t; Type: TABLE; Schema: public; Owner: talkyard_test
---
 
 CREATE TABLE public.webhook_reqs_out_t (
     site_id_c public.site_id_d NOT NULL,
@@ -4843,10 +3641,6 @@ CREATE TABLE public.webhook_reqs_out_t (
 );
 
 
---
--- Name: webhooks_t; Type: TABLE; Schema: public; Owner: talkyard_test
---
-
 CREATE TABLE public.webhooks_t (
     site_id_c public.site_id_d NOT NULL,
     webhook_id_c public.webhook_id_d NOT NULL,
@@ -4887,1417 +3681,637 @@ CREATE TABLE public.webhooks_t (
 );
 
 
---
--- Name: alt_page_ids3 altpageids_p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.alt_page_ids3
     ADD CONSTRAINT altpageids_p PRIMARY KEY (site_id, alt_page_id);
 
-
---
--- Name: api_secrets3 apisecrets_nr_p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.api_secrets3
     ADD CONSTRAINT apisecrets_nr_p PRIMARY KEY (site_id, secret_nr);
 
 
---
--- Name: drafts3 drafts_byuser_nr_p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.drafts3
     ADD CONSTRAINT drafts_byuser_nr_p PRIMARY KEY (site_id, by_user_id, draft_nr);
 
-
---
--- Name: guest_prefs3 dw1_idsmpleml__p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.guest_prefs3
     ADD CONSTRAINT dw1_idsmpleml__p PRIMARY KEY (site_id, email, ctime);
 
 
---
--- Name: identities3 dw1_idsoid_tnt_oid__u; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.identities3
     ADD CONSTRAINT dw1_idsoid_tnt_oid__u UNIQUE (site_id, oid_claimed_id);
 
-
---
--- Name: pages3 dw1_pages__u; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT dw1_pages__u UNIQUE (site_id, page_id);
 
 
---
--- Name: sites3 dw1_tenants_id__p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.sites3
     ADD CONSTRAINT dw1_tenants_id__p PRIMARY KEY (id);
 
-
---
--- Name: sites3 dw1_tenants_name__u; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.sites3
     ADD CONSTRAINT dw1_tenants_name__u UNIQUE (name);
 
 
---
--- Name: users3 dw1_users_tnt_sno__p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.users3
     ADD CONSTRAINT dw1_users_tnt_sno__p PRIMARY KEY (site_id, user_id);
 
-
---
--- Name: audit_log3 dw2_auditlog__p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.audit_log3
     ADD CONSTRAINT dw2_auditlog__p PRIMARY KEY (site_id, audit_id);
 
 
---
--- Name: categories3 dw2_cats_id__p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.categories3
     ADD CONSTRAINT dw2_cats_id__p PRIMARY KEY (site_id, id);
 
-
---
--- Name: invites3 dw2_invites__p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.invites3
     ADD CONSTRAINT dw2_invites__p PRIMARY KEY (site_id, secret_key);
 
 
---
--- Name: post_actions3 dw2_postacs__p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.post_actions3
     ADD CONSTRAINT dw2_postacs__p PRIMARY KEY (site_id, to_post_id_c, rel_type_c, from_pat_id_c, sub_type_c);
 
-
---
--- Name: post_revisions3 dw2_postrevs_postid_revnr__p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.post_revisions3
     ADD CONSTRAINT dw2_postrevs_postid_revnr__p PRIMARY KEY (site_id, post_id, revision_nr);
 
 
---
--- Name: posts3 dw2_posts_id__p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.posts3
     ADD CONSTRAINT dw2_posts_id__p PRIMARY KEY (site_id, unique_post_id);
 
-
---
--- Name: upload_refs3 dw2_uploadrefs__p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.upload_refs3
     ADD CONSTRAINT dw2_uploadrefs__p PRIMARY KEY (site_id, post_id, base_url, hash_path);
 
 
---
--- Name: uploads3 dw2_uploads__p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.uploads3
     ADD CONSTRAINT dw2_uploads__p PRIMARY KEY (base_url, hash_path);
 
-
---
--- Name: emails_out3 emailsout_p_id; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.emails_out3
     ADD CONSTRAINT emailsout_p_id PRIMARY KEY (site_id, email_id_c);
 
 
---
--- Name: flyway_schema_history flyway_schema_history_pk; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.flyway_schema_history
     ADD CONSTRAINT flyway_schema_history_pk PRIMARY KEY (installed_rank);
 
-
---
--- Name: group_participants3 groupparticipants_groupid_ppid_p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.group_participants3
     ADD CONSTRAINT groupparticipants_groupid_ppid_p PRIMARY KEY (site_id, group_id, participant_id);
 
 
---
--- Name: idps_t idps_p_id; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.idps_t
     ADD CONSTRAINT idps_p_id PRIMARY KEY (site_id_c, idp_id_c);
 
-
---
--- Name: identities3 idtys_p_idtyid; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.identities3
     ADD CONSTRAINT idtys_p_idtyid PRIMARY KEY (site_id, idty_id_c);
 
 
---
--- Name: link_previews_t linkpreviews_p_linkurl_fetchurl; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.link_previews_t
     ADD CONSTRAINT linkpreviews_p_linkurl_fetchurl PRIMARY KEY (site_id_c, link_url_c, fetched_from_url_c);
 
-
---
--- Name: links_t links_p_postid_url; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.links_t
     ADD CONSTRAINT links_p_postid_url PRIMARY KEY (site_id_c, from_post_id_c, link_url_c);
 
 
---
--- Name: notifications3 notfs_p_notfid; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.notifications3
     ADD CONSTRAINT notfs_p_notfid PRIMARY KEY (site_id, notf_id);
 
-
---
--- Name: notices_t notices_p_patid_noticeid; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.notices_t
     ADD CONSTRAINT notices_p_patid_noticeid PRIMARY KEY (site_id_c, to_pat_id_c, notice_id_c);
 
 
---
--- Name: page_html_cache_t pagehtmlcache_p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.page_html_cache_t
     ADD CONSTRAINT pagehtmlcache_p PRIMARY KEY (site_id_c, page_id_c, param_comt_order_c, param_comt_nesting_c, param_width_layout_c, param_theme_id_c_u, param_is_embedded_c, param_origin_or_empty_c, param_cdn_origin_or_empty_c, param_ugc_origin_or_empty_c);
 
-
---
--- Name: page_notf_prefs_t pagenotfprefs_category_people_u; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.page_notf_prefs_t
     ADD CONSTRAINT pagenotfprefs_category_people_u UNIQUE (site_id, pages_in_cat_id_c, pat_id_c);
 
 
---
--- Name: page_notf_prefs_t pagenotfprefs_pageid_people_u; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.page_notf_prefs_t
     ADD CONSTRAINT pagenotfprefs_pageid_people_u UNIQUE (site_id, page_id, pat_id_c);
 
-
---
--- Name: page_notf_prefs_t pagenotfprefs_wholesite_people_u; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.page_notf_prefs_t
     ADD CONSTRAINT pagenotfprefs_wholesite_people_u UNIQUE (site_id, pages_in_whole_site_c, pat_id_c);
 
 
---
--- Name: page_popularity_scores3 pagepopscores_p_pageid_algid; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.page_popularity_scores3
     ADD CONSTRAINT pagepopscores_p_pageid_algid PRIMARY KEY (site_id, page_id, score_alg_c);
 
-
---
--- Name: page_users3 pageusers_page_user_p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.page_users3
     ADD CONSTRAINT pageusers_page_user_p PRIMARY KEY (site_id, page_id, user_id);
 
 
---
--- Name: perms_on_pages3 permsonpages_p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.perms_on_pages3
     ADD CONSTRAINT permsonpages_p PRIMARY KEY (site_id, perm_id);
 
-
---
--- Name: post_tags3 posttags_site_post__p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.post_tags3
     ADD CONSTRAINT posttags_site_post__p PRIMARY KEY (site_id, post_id, tag);
 
 
---
--- Name: review_tasks3 reviewtasks__p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.review_tasks3
     ADD CONSTRAINT reviewtasks__p PRIMARY KEY (site_id, id);
 
-
---
--- Name: spam_check_queue3 scq_site_postid_revnr__p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.spam_check_queue3
     ADD CONSTRAINT scq_site_postid_revnr__p PRIMARY KEY (site_id, post_id, post_rev_nr);
 
 
---
--- Name: sessions_t sessions_p_patid_createdat; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.sessions_t
     ADD CONSTRAINT sessions_p_patid_createdat PRIMARY KEY (site_id_c, pat_id_c, created_at_c);
 
-
---
--- Name: sessions_t sessions_u_hash4; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.sessions_t
     ADD CONSTRAINT sessions_u_hash4 UNIQUE (site_id_c, hash_4_http_only_c);
 
 
---
--- Name: sessions_t sessions_u_part1; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.sessions_t
     ADD CONSTRAINT sessions_u_part1 UNIQUE (site_id_c, part_1_comp_id_c);
 
-
---
--- Name: tag_notf_levels3 tagnotflvl_site_user_tag__p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.tag_notf_levels3
     ADD CONSTRAINT tagnotflvl_site_user_tag__p PRIMARY KEY (site_id, user_id, tag);
 
 
---
--- Name: tags_t tags_p_id; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.tags_t
     ADD CONSTRAINT tags_p_id PRIMARY KEY (site_id_c, id_c);
 
-
---
--- Name: tags_t tags_u_id_patid; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.tags_t
     ADD CONSTRAINT tags_u_id_patid UNIQUE (site_id_c, id_c, on_pat_id_c);
 
 
---
--- Name: tags_t tags_u_id_postid; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.tags_t
     ADD CONSTRAINT tags_u_id_postid UNIQUE (site_id_c, id_c, on_post_id_c);
 
-
---
--- Name: tagtypes_t tagtypes_p_id; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.tagtypes_t
     ADD CONSTRAINT tagtypes_p_id PRIMARY KEY (site_id_c, id_c);
 
 
---
--- Name: user_emails3 useremails_p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.user_emails3
     ADD CONSTRAINT useremails_p PRIMARY KEY (site_id, user_id, email_address);
 
-
---
--- Name: usernames3 usernames_p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.usernames3
     ADD CONSTRAINT usernames_p PRIMARY KEY (site_id, username_lowercase, in_use_from);
 
 
---
--- Name: user_stats3 userstats_p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.user_stats3
     ADD CONSTRAINT userstats_p PRIMARY KEY (site_id, user_id);
 
-
---
--- Name: user_visit_stats3 uservisitstats_p; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.user_visit_stats3
     ADD CONSTRAINT uservisitstats_p PRIMARY KEY (site_id, user_id, visit_date);
 
 
---
--- Name: webhook_reqs_out_t webhookreqsout_p_webhookid_reqnr; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.webhook_reqs_out_t
     ADD CONSTRAINT webhookreqsout_p_webhookid_reqnr PRIMARY KEY (site_id_c, webhook_id_c, req_nr_c);
 
-
---
--- Name: webhooks_t webhooks_p_id; Type: CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.webhooks_t
     ADD CONSTRAINT webhooks_p_id PRIMARY KEY (site_id_c, webhook_id_c);
 
 
---
--- Name: auditlog_forgotten_ix; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX auditlog_forgotten_ix ON public.audit_log3 USING btree (forgotten, done_at DESC);
 
-
---
--- Name: auditlog_i_doertrueid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX auditlog_i_doertrueid ON public.audit_log3 USING btree (site_id, doer_true_id_c);
 
 
---
--- Name: auditlog_i_sid_part1; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX auditlog_i_sid_part1 ON public.audit_log3 USING btree (site_id, sess_id_part_1);
 
-
---
--- Name: auditlog_i_targetpattrueid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX auditlog_i_targetpattrueid ON public.audit_log3 USING btree (site_id, target_pat_true_id_c);
 
 
---
--- Name: backup_test_log_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX backup_test_log_i ON public.backup_test_log3 USING btree (logged_at DESC);
 
-
---
--- Name: categories_u_extid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX categories_u_extid ON public.categories3 USING btree (site_id, ext_id);
 
 
---
--- Name: drafts_byuser_deldat_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX drafts_byuser_deldat_i ON public.drafts3 USING btree (site_id, by_user_id, deleted_at DESC) WHERE (deleted_at IS NOT NULL);
 
-
---
--- Name: drafts_byuser_editedat_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX drafts_byuser_editedat_i ON public.drafts3 USING btree (site_id, by_user_id, COALESCE(last_edited_at, created_at)) WHERE (deleted_at IS NULL);
 
 
---
--- Name: drafts_category_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX drafts_category_i ON public.drafts3 USING btree (site_id, category_id);
 
-
---
--- Name: drafts_i_postasid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX drafts_i_postasid ON public.drafts3 USING btree (site_id, post_as_id_c) WHERE (post_as_id_c IS NOT NULL);
 
 
---
--- Name: drafts_pageid_postnr_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX drafts_pageid_postnr_i ON public.drafts3 USING btree (site_id, page_id, post_nr);
 
-
---
--- Name: drafts_postid_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX drafts_postid_i ON public.drafts3 USING btree (site_id, post_id);
 
 
---
--- Name: drafts_touser_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX drafts_touser_i ON public.drafts3 USING btree (site_id, to_user_id);
 
-
---
--- Name: dw1_idsmpleml_version__u; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX dw1_idsmpleml_version__u ON public.guest_prefs3 USING btree (site_id, email, version) WHERE (version = 'C'::bpchar);
 
 
---
--- Name: dw1_pages_bumpedat__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw1_pages_bumpedat__i ON public.pages3 USING btree (site_id, bumped_at DESC);
 
-
---
--- Name: dw1_pages_category_about__u; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX dw1_pages_category_about__u ON public.pages3 USING btree (site_id, category_id, page_role) WHERE (page_role = 9);
 
 
---
--- Name: dw1_pages_frequentposter1id__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw1_pages_frequentposter1id__i ON public.pages3 USING btree (site_id, frequent_poster_1_id) WHERE (frequent_poster_1_id IS NOT NULL);
 
-
---
--- Name: dw1_pages_frequentposter2id__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw1_pages_frequentposter2id__i ON public.pages3 USING btree (site_id, frequent_poster_2_id) WHERE (frequent_poster_2_id IS NOT NULL);
 
 
---
--- Name: dw1_pages_frequentposter3id__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw1_pages_frequentposter3id__i ON public.pages3 USING btree (site_id, frequent_poster_3_id) WHERE (frequent_poster_3_id IS NOT NULL);
 
-
---
--- Name: dw1_pages_frequentposter4id__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw1_pages_frequentposter4id__i ON public.pages3 USING btree (site_id, frequent_poster_4_id) WHERE (frequent_poster_4_id IS NOT NULL);
 
 
---
--- Name: dw1_pages_lastreplybyid__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw1_pages_lastreplybyid__i ON public.pages3 USING btree (site_id, last_reply_by_id) WHERE (last_reply_by_id IS NOT NULL);
 
-
---
--- Name: dw1_pages_likes_bump__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw1_pages_likes_bump__i ON public.pages3 USING btree (site_id, num_likes DESC, bumped_at DESC);
 
 
---
--- Name: dw1_pages_pinorder__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw1_pages_pinorder__i ON public.pages3 USING btree (site_id, pin_order) WHERE (pin_order IS NOT NULL);
 
-
---
--- Name: dw1_pages_publishedat__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw1_pages_publishedat__i ON public.pages3 USING btree (site_id, published_at);
 
 
---
--- Name: dw1_pgpths_path__u; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX dw1_pgpths_path__u ON public.page_paths3 USING btree (site_id, page_id, parent_folder, page_slug, show_id);
 
-
---
--- Name: dw1_pgpths_path_noid_cncl__u; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX dw1_pgpths_path_noid_cncl__u ON public.page_paths3 USING btree (site_id, parent_folder, page_slug) WHERE (((show_id)::text = 'F'::text) AND ((canonical)::text = 'C'::text));
 
 
---
--- Name: dw1_pgpths_tnt_fldr_slg_cncl; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw1_pgpths_tnt_fldr_slg_cncl ON public.page_paths3 USING btree (site_id, parent_folder, page_slug, canonical);
 
-
---
--- Name: dw1_pgpths_tnt_pgid_cncl; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw1_pgpths_tnt_pgid_cncl ON public.page_paths3 USING btree (site_id, page_id, canonical);
 
 
---
--- Name: dw1_pgpths_tnt_pgid_cncl__u; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX dw1_pgpths_tnt_pgid_cncl__u ON public.page_paths3 USING btree (site_id, page_id) WHERE ((canonical)::text = 'C'::text);
 
-
---
--- Name: dw1_pstsrd_guest_ip__u; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX dw1_pstsrd_guest_ip__u ON public.post_read_stats3 USING btree (site_id, page_id, post_nr, ip) WHERE ((user_id IS NULL) OR ((user_id)::text ~~ '-%'::text));
 
 
---
--- Name: dw1_pstsrd_role__u; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX dw1_pstsrd_role__u ON public.post_read_stats3 USING btree (site_id, page_id, post_nr, user_id);
 
-
---
--- Name: dw1_tenants_creatoremail; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw1_tenants_creatoremail ON public.sites3 USING btree (creator_email_address);
 
 
---
--- Name: dw1_tenants_creatorip; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw1_tenants_creatorip ON public.sites3 USING btree (creator_ip);
 
-
---
--- Name: dw1_user_guestcookie__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw1_user_guestcookie__i ON public.users3 USING btree (site_id, guest_browser_id) WHERE (user_id < '-1'::integer);
 
 
---
--- Name: dw1_user_guestemail__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw1_user_guestemail__i ON public.users3 USING btree (site_id, primary_email_addr) WHERE (user_id < '-1'::integer);
 
-
---
--- Name: dw1_users_approvedbyid__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw1_users_approvedbyid__i ON public.users3 USING btree (site_id, approved_by_id) WHERE (approved_by_id IS NOT NULL);
 
 
---
--- Name: dw1_users_avatarmediumbaseurl__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw1_users_avatarmediumbaseurl__i ON public.users3 USING btree (avatar_medium_base_url);
 
-
---
--- Name: dw1_users_avatarmediumhashpath__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw1_users_avatarmediumhashpath__i ON public.users3 USING btree (avatar_medium_hash_path);
 
 
---
--- Name: dw1_users_avatarsmallbaseurl__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw1_users_avatarsmallbaseurl__i ON public.users3 USING btree (avatar_small_base_url);
 
-
---
--- Name: dw1_users_avatarsmallhashpath__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw1_users_avatarsmallhashpath__i ON public.users3 USING btree (avatar_small_hash_path);
 
 
---
--- Name: dw1_users_avatartinybaseurl__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw1_users_avatartinybaseurl__i ON public.users3 USING btree (avatar_tiny_base_url);
 
-
---
--- Name: dw1_users_avatartinyhashpath__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw1_users_avatartinyhashpath__i ON public.users3 USING btree (avatar_tiny_hash_path);
 
 
---
--- Name: dw1_users_site_usernamelower__u; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX dw1_users_site_usernamelower__u ON public.users3 USING btree (site_id, lower((username)::text));
 
-
---
--- Name: dw1_users_suspendebyid__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw1_users_suspendebyid__i ON public.users3 USING btree (site_id, suspended_by_id) WHERE (suspended_by_id IS NOT NULL);
 
 
---
--- Name: dw2_auditlog_doer_doneat__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_auditlog_doer_doneat__i ON public.audit_log3 USING btree (site_id, doer_id_c, done_at);
 
-
---
--- Name: dw2_auditlog_doneat__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_auditlog_doneat__i ON public.audit_log3 USING btree (site_id, done_at);
 
 
---
--- Name: dw2_auditlog_fingerprint_doneat__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_auditlog_fingerprint_doneat__i ON public.audit_log3 USING btree (site_id, browser_fingerprint, done_at);
 
-
---
--- Name: dw2_auditlog_idcookie_doneat__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_auditlog_idcookie_doneat__i ON public.audit_log3 USING btree (site_id, browser_id_cookie, done_at);
 
 
---
--- Name: dw2_auditlog_ip_doneat__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_auditlog_ip_doneat__i ON public.audit_log3 USING btree (site_id, ip, done_at);
 
-
---
--- Name: dw2_auditlog_page_doneat__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_auditlog_page_doneat__i ON public.audit_log3 USING btree (site_id, page_id, done_at) WHERE (page_id IS NOT NULL);
 
 
---
--- Name: dw2_auditlog_post_doneat__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_auditlog_post_doneat__i ON public.audit_log3 USING btree (site_id, post_id, done_at) WHERE (post_id IS NOT NULL);
 
-
---
--- Name: dw2_auditlog_uploadhashpathsuffix__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_auditlog_uploadhashpathsuffix__i ON public.audit_log3 USING btree (upload_hash_path) WHERE (upload_hash_path IS NOT NULL);
 
 
---
--- Name: dw2_blocks_blockedby__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_blocks_blockedby__i ON public.blocks3 USING btree (site_id, blocked_by_id);
 
-
---
--- Name: dw2_blocks_browseridcookie__u; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX dw2_blocks_browseridcookie__u ON public.blocks3 USING btree (site_id, browser_id_cookie) WHERE ((browser_id_cookie IS NOT NULL) AND (ip IS NULL));
 
 
---
--- Name: dw2_blocks_ip__u; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX dw2_blocks_ip__u ON public.blocks3 USING btree (site_id, ip) WHERE (ip IS NOT NULL);
 
-
---
--- Name: dw2_cats_page__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_cats_page__i ON public.categories3 USING btree (site_id, page_id);
 
 
---
--- Name: dw2_cats_page_slug__u; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX dw2_cats_page_slug__u ON public.categories3 USING btree (site_id, page_id, slug);
 
-
---
--- Name: dw2_cats_parent_slug__u; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX dw2_cats_parent_slug__u ON public.categories3 USING btree (site_id, parent_id, slug);
 
 
---
--- Name: dw2_cats_slug__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_cats_slug__i ON public.categories3 USING btree (site_id, slug);
 
-
---
--- Name: dw2_invites_createdby_at__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_invites_createdby_at__i ON public.invites3 USING btree (site_id, created_by_id, created_at);
 
 
---
--- Name: dw2_invites_deletedby__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_invites_deletedby__i ON public.invites3 USING btree (site_id, deleted_by_id) WHERE (deleted_by_id IS NOT NULL);
 
-
---
--- Name: dw2_invites_user__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_invites_user__i ON public.invites3 USING btree (site_id, user_id) WHERE (user_id IS NOT NULL);
 
 
---
--- Name: dw2_pages_createdby__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_pages_createdby__i ON public.pages3 USING btree (site_id, author_id);
 
-
---
--- Name: dw2_postacs_deletedby__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_postacs_deletedby__i ON public.post_actions3 USING btree (site_id, deleted_by_id) WHERE (deleted_by_id IS NOT NULL);
 
 
---
--- Name: dw2_postrevs_approvedby__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_postrevs_approvedby__i ON public.post_revisions3 USING btree (site_id, approved_by_id) WHERE (approved_by_id IS NOT NULL);
 
-
---
--- Name: dw2_postrevs_composedby__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_postrevs_composedby__i ON public.post_revisions3 USING btree (site_id, composed_by_id);
 
 
---
--- Name: dw2_postrevs_hiddenby__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_postrevs_hiddenby__i ON public.post_revisions3 USING btree (site_id, hidden_by_id) WHERE (hidden_by_id IS NOT NULL);
 
-
---
--- Name: dw2_postrevs_postid_prevnr__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_postrevs_postid_prevnr__i ON public.post_revisions3 USING btree (site_id, post_id, previous_nr) WHERE (previous_nr IS NOT NULL);
 
 
---
--- Name: dw2_posts_approvedbyid__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_posts_approvedbyid__i ON public.posts3 USING btree (site_id, approved_by_id) WHERE (approved_by_id IS NOT NULL);
 
-
---
--- Name: dw2_posts_closedbyid__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_posts_closedbyid__i ON public.posts3 USING btree (site_id, closed_by_id) WHERE (closed_by_id IS NOT NULL);
 
 
---
--- Name: dw2_posts_collapsedbyid__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_posts_collapsedbyid__i ON public.posts3 USING btree (site_id, collapsed_by_id) WHERE (collapsed_by_id IS NOT NULL);
 
-
---
--- Name: dw2_posts_deletedbyid__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_posts_deletedbyid__i ON public.posts3 USING btree (site_id, deleted_by_id) WHERE (deleted_by_id IS NOT NULL);
 
 
---
--- Name: dw2_posts_hiddenbyid__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_posts_hiddenbyid__i ON public.posts3 USING btree (site_id, hidden_by_id) WHERE (hidden_by_id IS NOT NULL);
 
-
---
--- Name: dw2_posts_lastapprovededitbyid__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_posts_lastapprovededitbyid__i ON public.posts3 USING btree (site_id, last_approved_edit_by_id) WHERE (last_approved_edit_by_id IS NOT NULL);
 
 
---
--- Name: dw2_posts_lasteditedbyid__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_posts_lasteditedbyid__i ON public.posts3 USING btree (site_id, curr_rev_by_id) WHERE (curr_rev_by_id IS NOT NULL);
 
-
---
--- Name: dw2_posts_numflags__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_posts_numflags__i ON public.posts3 USING btree (site_id, num_pending_flags) WHERE ((deleted_status = 0) AND (num_pending_flags > 0));
 
 
---
--- Name: dw2_posts_page_parentnr__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_posts_page_parentnr__i ON public.posts3 USING btree (site_id, page_id, parent_nr);
 
-
---
--- Name: dw2_posts_page_postnr__u; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX dw2_posts_page_postnr__u ON public.posts3 USING btree (site_id, page_id, post_nr);
 
 
---
--- Name: dw2_posts_pendingedits__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_posts_pendingedits__i ON public.posts3 USING btree (site_id, last_edit_suggestion_at) WHERE ((deleted_status = 0) AND (num_pending_flags = 0) AND (approved_rev_nr = curr_rev_nr) AND (num_edit_suggestions > 0));
 
-
---
--- Name: dw2_posts_pinnedbyid__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_posts_pinnedbyid__i ON public.posts3 USING btree (site_id, pinned_by_id) WHERE (pinned_by_id IS NOT NULL);
 
 
---
--- Name: dw2_posts_unapproved__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_posts_unapproved__i ON public.posts3 USING btree (site_id, curr_rev_last_edited_at) WHERE ((deleted_status = 0) AND (num_pending_flags = 0) AND ((approved_rev_nr IS NULL) OR (approved_rev_nr < curr_rev_nr)));
 
-
---
--- Name: dw2_uploadrefs_addedby__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_uploadrefs_addedby__i ON public.upload_refs3 USING btree (site_id, added_by_id);
 
 
---
--- Name: dw2_uploadrefs_baseurl__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_uploadrefs_baseurl__i ON public.upload_refs3 USING btree (base_url);
 
-
---
--- Name: dw2_uploadrefs_hashpathsuffix__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_uploadrefs_hashpathsuffix__i ON public.upload_refs3 USING btree (hash_path);
 
 
---
--- Name: dw2_uploads_hashpathsuffix__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX dw2_uploads_hashpathsuffix__i ON public.uploads3 USING btree (hash_path);
 
-
---
--- Name: dw2_uploads_unusedsince__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX dw2_uploads_unusedsince__i ON public.uploads3 USING btree (unused_since) WHERE (num_references = 0);
 
 
---
--- Name: emailsout_gi_createdat; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX emailsout_gi_createdat ON public.emails_out3 USING btree (created_at);
 
-
---
--- Name: emailsout_gi_secretstatus; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX emailsout_gi_secretstatus ON public.emails_out3 USING btree (secret_status_c) WHERE ((secret_status_c)::smallint = ANY (ARRAY[1, 2, 3]));
 
 
---
--- Name: emailsout_gi_sentfrom; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX emailsout_gi_sentfrom ON public.emails_out3 USING btree (sent_from_c) WHERE (sent_from_c IS NOT NULL);
 
-
---
--- Name: emailsout_i_aboutcat; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX emailsout_i_aboutcat ON public.emails_out3 USING btree (site_id, about_cat_id_c) WHERE (about_cat_id_c IS NOT NULL);
 
 
---
--- Name: emailsout_i_aboutpagestr; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX emailsout_i_aboutpagestr ON public.emails_out3 USING btree (site_id, about_page_id_str_c) WHERE (about_page_id_str_c IS NOT NULL);
 
-
---
--- Name: emailsout_i_aboutpat; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX emailsout_i_aboutpat ON public.emails_out3 USING btree (site_id, about_pat_id_c) WHERE (about_pat_id_c IS NOT NULL);
 
 
---
--- Name: emailsout_i_aboutpostid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX emailsout_i_aboutpostid ON public.emails_out3 USING btree (site_id, about_post_id_c) WHERE (about_post_id_c IS NOT NULL);
 
-
---
--- Name: emailsout_i_abouttag; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX emailsout_i_abouttag ON public.emails_out3 USING btree (site_id, about_tag_id_c) WHERE (about_tag_id_c IS NOT NULL);
 
 
---
--- Name: emailsout_i_bypat; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX emailsout_i_bypat ON public.emails_out3 USING btree (site_id, by_pat_id_c) WHERE (by_pat_id_c IS NOT NULL);
 
-
---
--- Name: emailsout_i_createdat; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX emailsout_i_createdat ON public.emails_out3 USING btree (site_id, created_at);
 
 
---
--- Name: emailsout_i_secretstatus; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX emailsout_i_secretstatus ON public.emails_out3 USING btree (site_id, secret_status_c) WHERE ((secret_status_c)::smallint = ANY (ARRAY[1, 2, 3]));
 
-
---
--- Name: emailsout_i_sentfrom; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX emailsout_i_sentfrom ON public.emails_out3 USING btree (site_id, sent_from_c) WHERE (sent_from_c IS NOT NULL);
 
 
---
--- Name: emailsout_i_topat; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX emailsout_i_topat ON public.emails_out3 USING btree (site_id, to_user_id);
 
-
---
--- Name: emailsout_u_secretvalue; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX emailsout_u_secretvalue ON public.emails_out3 USING btree (site_id, secret_value_c) WHERE (secret_value_c IS NOT NULL);
 
 
---
--- Name: flyway_schema_history_s_idx; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX flyway_schema_history_s_idx ON public.flyway_schema_history USING btree (success);
 
-
---
--- Name: groupparticipants_ppid_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX groupparticipants_ppid_i ON public.group_participants3 USING btree (site_id, participant_id);
 
 
---
--- Name: hosts_u_canonical; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX hosts_u_canonical ON public.hosts3 USING btree (site_id) WHERE ((canonical)::text = 'C'::text);
 
-
---
--- Name: hosts_u_g_hostname; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX hosts_u_g_hostname ON public.hosts3 USING btree (host) WHERE ((canonical)::text <> 'X'::text);
 
 
---
--- Name: idps_u_displayname; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX idps_u_displayname ON public.idps_t USING btree (site_id_c, display_name_c) WHERE enabled_c;
 
-
---
--- Name: idps_u_protocol_alias; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX idps_u_protocol_alias ON public.idps_t USING btree (site_id_c, protocol_c, alias_c);
 
 
---
--- Name: idtys_i_g_email; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX idtys_i_g_email ON public.identities3 USING btree (email_adr_c);
 
-
---
--- Name: idtys_i_patid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX idtys_i_patid ON public.identities3 USING btree (site_id, user_id_c);
 
 
---
--- Name: idtys_u_conffileidpid_idpusrid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX idtys_u_conffileidpid_idpusrid ON public.identities3 USING btree (site_id, conf_file_idp_id_c, idp_user_id_c) WHERE (conf_file_idp_id_c IS NOT NULL);
 
-
---
--- Name: idtys_u_idpid_idpuserid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX idtys_u_idpid_idpuserid ON public.identities3 USING btree (site_id, idp_id_c, idp_user_id_c) WHERE (idp_id_c IS NOT NULL);
 
 
---
--- Name: idtys_u_idprealmid_idprealmuserid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX idtys_u_idprealmid_idprealmuserid ON public.identities3 USING btree (site_id, idp_realm_id_c, idp_realm_user_id_c) WHERE (idp_realm_id_c IS NOT NULL);
 
-
---
--- Name: invites_emailaddr_invby_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX invites_emailaddr_invby_i ON public.invites3 USING btree (site_id, email_address, created_by_id);
 
 
---
--- Name: invites_i_addtogroupid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX invites_i_addtogroupid ON public.invites3 USING btree (site_id, add_to_group_id) WHERE (add_to_group_id IS NOT NULL);
 
-
---
--- Name: invites_invat_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX invites_invat_i ON public.invites3 USING btree (site_id, created_at DESC);
 
 
---
--- Name: ixq_actionat__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX ixq_actionat__i ON public.job_queue_t USING btree (action_at DESC);
 
-
---
--- Name: jobq_u_dowhat_cat; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX jobq_u_dowhat_cat ON public.job_queue_t USING btree (site_id, do_what_c, cat_id_c) WHERE (cat_id_c IS NOT NULL);
 
 
---
--- Name: jobq_u_dowhat_page; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX jobq_u_dowhat_page ON public.job_queue_t USING btree (site_id, do_what_c, page_id) WHERE (page_id IS NOT NULL);
 
-
---
--- Name: jobq_u_dowhat_pat; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX jobq_u_dowhat_pat ON public.job_queue_t USING btree (site_id, do_what_c, pat_id_c) WHERE (pat_id_c IS NOT NULL);
 
 
---
--- Name: jobq_u_dowhat_post; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX jobq_u_dowhat_post ON public.job_queue_t USING btree (site_id, do_what_c, post_id) WHERE (post_id IS NOT NULL);
 
-
---
--- Name: jobq_u_dowhat_site_timerange; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX jobq_u_dowhat_site_timerange ON public.job_queue_t USING btree (site_id, do_what_c) WHERE ((time_range_to_c IS NOT NULL) AND (page_id IS NULL) AND (post_id IS NULL) AND (cat_id_c IS NULL) AND (pat_id_c IS NULL) AND (type_id_c IS NULL));
 
 
---
--- Name: jobq_u_dowhat_timerange_for_now; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX jobq_u_dowhat_timerange_for_now ON public.job_queue_t USING btree (site_id, do_what_c) WHERE (time_range_to_c IS NOT NULL);
 
-
---
--- Name: jobq_u_dowhat_type; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX jobq_u_dowhat_type ON public.job_queue_t USING btree (site_id, do_what_c, type_id_c) WHERE (type_id_c IS NOT NULL);
 
 
---
--- Name: linkpreviews_i_fetch_err_at; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX linkpreviews_i_fetch_err_at ON public.link_previews_t USING btree (site_id_c, fetched_at_c) WHERE (status_code_c <> 200);
 
-
---
--- Name: linkpreviews_i_fetchedat; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX linkpreviews_i_fetchedat ON public.link_previews_t USING btree (site_id_c, fetched_at_c);
 
 
---
--- Name: linkpreviews_i_firstlinkedby; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX linkpreviews_i_firstlinkedby ON public.link_previews_t USING btree (site_id_c, first_linked_by_id_c);
 
-
---
--- Name: linkpreviews_i_g_fetch_err_at; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX linkpreviews_i_g_fetch_err_at ON public.link_previews_t USING btree (fetched_at_c) WHERE (status_code_c <> 200);
 
 
---
--- Name: linkpreviews_i_g_fetchedat; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX linkpreviews_i_g_fetchedat ON public.link_previews_t USING btree (fetched_at_c);
 
-
---
--- Name: linkpreviews_i_g_linkurl; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX linkpreviews_i_g_linkurl ON public.link_previews_t USING btree (link_url_c);
 
 
---
--- Name: links_i_addedbyid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX links_i_addedbyid ON public.links_t USING btree (site_id_c, added_by_id_c);
 
-
---
--- Name: links_i_linkurl; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX links_i_linkurl ON public.links_t USING btree (site_id_c, link_url_c);
 
 
---
--- Name: links_i_tocategoryid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX links_i_tocategoryid ON public.links_t USING btree (site_id_c, to_category_id_c);
 
-
---
--- Name: links_i_topageid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX links_i_topageid ON public.links_t USING btree (site_id_c, to_page_id_c);
 
 
---
--- Name: links_i_topostid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX links_i_topostid ON public.links_t USING btree (site_id_c, to_post_id_c);
 
-
---
--- Name: links_i_toppid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX links_i_toppid ON public.links_t USING btree (site_id_c, to_pat_id_c);
 
 
---
--- Name: links_i_totagid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX links_i_totagid ON public.links_t USING btree (site_id_c, to_tag_id_c);
 
-
---
--- Name: notfs_i_aboutcat_topat; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX notfs_i_aboutcat_topat ON public.notifications3 USING btree (site_id, about_cat_id_c, to_user_id) WHERE (about_cat_id_c IS NOT NULL);
 
 
---
--- Name: notfs_i_aboutpage_topat; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX notfs_i_aboutpage_topat ON public.notifications3 USING btree (site_id, about_page_id_str_c, to_user_id) WHERE (about_page_id_str_c IS NOT NULL);
 
-
---
--- Name: notfs_i_aboutpat_topat; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX notfs_i_aboutpat_topat ON public.notifications3 USING btree (site_id, about_pat_id_c, to_user_id) WHERE (about_pat_id_c IS NOT NULL);
 
 
---
--- Name: notfs_i_aboutpost_patreltype_frompat_subtype; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX notfs_i_aboutpost_patreltype_frompat_subtype ON public.notifications3 USING btree (site_id, about_post_id_c, action_type, by_user_id, action_sub_id) WHERE (about_post_id_c IS NOT NULL);
 
-
---
--- Name: notfs_i_aboutpostid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX notfs_i_aboutpostid ON public.notifications3 USING btree (site_id, about_post_id_c) WHERE (about_post_id_c IS NOT NULL);
 
 
---
--- Name: notfs_i_abouttag_topat; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX notfs_i_abouttag_topat ON public.notifications3 USING btree (site_id, about_tag_id_c, to_user_id) WHERE (about_tag_id_c IS NOT NULL);
 
-
---
--- Name: notfs_i_aboutthingtype_subtype; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX notfs_i_aboutthingtype_subtype ON public.notifications3 USING btree (site_id, about_thing_type_c, about_sub_type_c) WHERE (about_thing_type_c IS NOT NULL);
 
 
---
--- Name: notfs_i_bypat; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX notfs_i_bypat ON public.notifications3 USING btree (site_id, by_user_id) WHERE (by_user_id IS NOT NULL);
 
 
---
--- Name: notfs_i_bytrueid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX notfs_i_bytrueid ON public.notifications3 USING btree (site_id, by_true_id_c) WHERE (by_true_id_c IS NOT NULL);
 
-
---
--- Name: notfs_i_createdat_but_unseen_first; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX notfs_i_createdat_but_unseen_first ON public.notifications3 USING btree ((
 CASE
@@ -6306,2152 +4320,1016 @@ CASE
 END) DESC);
 
 
---
--- Name: notfs_i_createdat_if_undecided; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX notfs_i_createdat_if_undecided ON public.notifications3 USING btree (created_at) WHERE (email_status = 1);
 
-
---
--- Name: notfs_i_emailid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX notfs_i_emailid ON public.notifications3 USING btree (site_id, email_id);
 
 
---
--- Name: notfs_i_totrueid_createdat; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX notfs_i_totrueid_createdat ON public.notifications3 USING btree (site_id, to_true_id_c, created_at DESC) WHERE (to_true_id_c IS NOT NULL);
 
-
---
--- Name: INDEX notfs_i_totrueid_createdat; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON INDEX public.notfs_i_totrueid_createdat IS '
 For listing notifications to one''s aliases.
 ';
 
 
---
--- Name: notfs_i_touserid_aboutpostid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX notfs_i_touserid_aboutpostid ON public.notifications3 USING btree (site_id, to_user_id, about_post_id_c);
 
-
---
--- Name: notfs_i_touserid_createdat; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX notfs_i_touserid_createdat ON public.notifications3 USING btree (site_id, to_user_id, created_at DESC);
 
 
---
--- Name: notices_ig_noticeid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX notices_ig_noticeid ON public.notices_t USING btree (notice_id_c);
 
-
---
--- Name: pagehtmlcache_gi_updatedat; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pagehtmlcache_gi_updatedat ON public.page_html_cache_t USING btree (updated_at_c);
 
 
---
--- Name: pagenotfprefs_people_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX pagenotfprefs_people_i ON public.page_notf_prefs_t USING btree (site_id, pat_id_c);
 
-
---
--- Name: pagenotfprefs_u_pagespatcreated_patid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX pagenotfprefs_u_pagespatcreated_patid ON public.page_notf_prefs_t USING btree (site_id, pages_pat_created_c, pat_id_c);
 
 
---
--- Name: pagenotfprefs_u_pagespatrepliedto_patid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX pagenotfprefs_u_pagespatrepliedto_patid ON public.page_notf_prefs_t USING btree (site_id, pages_pat_replied_to_c, pat_id_c);
 
-
---
--- Name: pagepopscores_i_algid_allscore; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pagepopscores_i_algid_allscore ON public.page_popularity_scores3 USING btree (site_id, score_alg_c, all_score);
 
 
---
--- Name: pagepopscores_i_algid_dayscore; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX pagepopscores_i_algid_dayscore ON public.page_popularity_scores3 USING btree (site_id, score_alg_c, day_score);
 
-
---
--- Name: pagepopscores_i_algid_monthscore; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pagepopscores_i_algid_monthscore ON public.page_popularity_scores3 USING btree (site_id, score_alg_c, month_score);
 
 
---
--- Name: pagepopscores_i_algid_quarterscore; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX pagepopscores_i_algid_quarterscore ON public.page_popularity_scores3 USING btree (site_id, score_alg_c, quarter_score);
 
-
---
--- Name: pagepopscores_i_algid_triennialscore; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pagepopscores_i_algid_triennialscore ON public.page_popularity_scores3 USING btree (site_id, score_alg_c, triennial_score_c);
 
 
---
--- Name: pagepopscores_i_algid_weekscore; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX pagepopscores_i_algid_weekscore ON public.page_popularity_scores3 USING btree (site_id, score_alg_c, week_score);
 
-
---
--- Name: pagepopscores_i_algid_yearscore; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pagepopscores_i_algid_yearscore ON public.page_popularity_scores3 USING btree (site_id, score_alg_c, year_score);
 
 
---
--- Name: pages_i_answeredby; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX pages_i_answeredby ON public.pages3 USING btree (site_id, answered_by_id_c) WHERE (answered_by_id_c IS NOT NULL);
 
-
---
--- Name: pages_i_cat_bumpedat_id; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pages_i_cat_bumpedat_id ON public.pages3 USING btree (site_id, category_id, bumped_at DESC, page_id DESC);
 
 
---
--- Name: pages_i_cat_createdat_id; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX pages_i_cat_createdat_id ON public.pages3 USING btree (site_id, category_id, created_at DESC, page_id DESC);
 
-
---
--- Name: pages_i_cat_publishedat_id; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pages_i_cat_publishedat_id ON public.pages3 USING btree (site_id, category_id, published_at DESC, page_id DESC);
 
 
---
--- Name: pages_i_closedby; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX pages_i_closedby ON public.pages3 USING btree (site_id, closed_by_id_c) WHERE (closed_by_id_c IS NOT NULL);
 
-
---
--- Name: pages_i_deletedby; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pages_i_deletedby ON public.pages3 USING btree (site_id, deleted_by_id_c) WHERE (deleted_by_id_c IS NOT NULL);
 
 
---
--- Name: pages_i_doneby; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX pages_i_doneby ON public.pages3 USING btree (site_id, done_by_id_c) WHERE (done_by_id_c IS NOT NULL);
 
-
---
--- Name: pages_i_frozenby; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pages_i_frozenby ON public.pages3 USING btree (site_id, frozen_by_id_c) WHERE (frozen_by_id_c IS NOT NULL);
 
 
---
--- Name: pages_i_hiddenby; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX pages_i_hiddenby ON public.pages3 USING btree (site_id, hidden_by_id_c) WHERE (hidden_by_id_c IS NOT NULL);
 
-
---
--- Name: pages_i_lockedby; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pages_i_lockedby ON public.pages3 USING btree (site_id, locked_by_id_c) WHERE (locked_by_id_c IS NOT NULL);
 
 
---
--- Name: pages_i_pausedby; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX pages_i_pausedby ON public.pages3 USING btree (site_id, paused_by_id_c) WHERE (paused_by_id_c IS NOT NULL);
 
-
---
--- Name: pages_i_plannedby; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pages_i_plannedby ON public.pages3 USING btree (site_id, planned_by_id_c) WHERE (planned_by_id_c IS NOT NULL);
 
 
---
--- Name: pages_i_postponedby; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX pages_i_postponedby ON public.pages3 USING btree (site_id, postponed_by_id_c) WHERE (postponed_by_id_c IS NOT NULL);
 
-
---
--- Name: pages_i_publishedby; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pages_i_publishedby ON public.pages3 USING btree (site_id, published_by_id_c) WHERE (published_by_id_c IS NOT NULL);
 
 
---
--- Name: pages_i_startedby; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX pages_i_startedby ON public.pages3 USING btree (site_id, started_by_id_c) WHERE (started_by_id_c IS NOT NULL);
 
-
---
--- Name: pages_i_unwantedby; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pages_i_unwantedby ON public.pages3 USING btree (site_id, unwanted_by_id_c) WHERE (unwanted_by_id_c IS NOT NULL);
 
 
---
--- Name: pages_u_extid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX pages_u_extid ON public.pages3 USING btree (site_id, ext_id);
 
-
---
--- Name: pageusers_joinedby_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pageusers_joinedby_i ON public.page_users3 USING btree (site_id, joined_by_id);
 
 
---
--- Name: pageusers_kickedby_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX pageusers_kickedby_i ON public.page_users3 USING btree (site_id, kicked_by_id);
 
-
---
--- Name: pageusers_user_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pageusers_user_i ON public.page_users3 USING btree (site_id, user_id);
 
 
---
--- Name: participants_groupid_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX participants_groupid_i ON public.users3 USING btree (site_id, user_id) WHERE is_group;
 
-
---
--- Name: patnoderels_i_pageid_frompatid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX patnoderels_i_pageid_frompatid ON public.post_actions3 USING btree (site_id, page_id, from_pat_id_c);
 
 
---
--- Name: patnoderels_i_pageid_fromtrueid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX patnoderels_i_pageid_fromtrueid ON public.post_actions3 USING btree (site_id, page_id, from_true_id_c) WHERE (from_true_id_c IS NOT NULL);
 
-
---
--- Name: INDEX patnoderels_i_pageid_fromtrueid; Type: COMMENT; Schema: public; Owner: talkyard_test
---
 
 COMMENT ON INDEX public.patnoderels_i_pageid_fromtrueid IS '
 For finding one''s Like votes etc done anonymously on the current page.
 ';
 
 
---
--- Name: patnodesinrels_i_addedbyid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX patnodesinrels_i_addedbyid ON public.post_actions3 USING btree (site_id, added_by_id_c) WHERE (added_by_id_c IS NOT NULL);
 
-
---
--- Name: patnodesinrels_i_aspatid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX patnodesinrels_i_aspatid ON public.post_actions3 USING btree (site_id, from_true_id_c) WHERE (from_true_id_c IS NOT NULL);
 
 
---
--- Name: patrels_i_frompat_reltype_addedat; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX patrels_i_frompat_reltype_addedat ON public.post_actions3 USING btree (site_id, from_pat_id_c, rel_type_c, created_at DESC);
 
-
---
--- Name: patrels_i_frompat_reltype_addedat_0dormant; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX patrels_i_frompat_reltype_addedat_0dormant ON public.post_actions3 USING btree (site_id, from_pat_id_c, rel_type_c, created_at DESC) WHERE (dormant_status_c IS NULL);
 
 
---
--- Name: pats_i_anonintreeid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX pats_i_anonintreeid ON public.users3 USING btree (site_id, anon_in_tree_id__later_c);
 
-
---
--- Name: pats_i_anononpageid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pats_i_anononpageid ON public.users3 USING btree (site_id, anon_on_page_id_st_c);
 
 
---
--- Name: pats_i_trueid_anonintreeid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX pats_i_trueid_anonintreeid ON public.users3 USING btree (site_id, true_id_c, anon_in_tree_id__later_c);
 
-
---
--- Name: pats_i_trueid_anononpageid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX pats_i_trueid_anononpageid ON public.users3 USING btree (site_id, true_id_c, anon_on_page_id_st_c);
 
 
---
--- Name: permsonpages_on_cat_u; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX permsonpages_on_cat_u ON public.perms_on_pages3 USING btree (site_id, on_category_id, for_people_id) WHERE (on_category_id IS NOT NULL);
 
-
---
--- Name: permsonpages_on_page_u; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX permsonpages_on_page_u ON public.perms_on_pages3 USING btree (site_id, on_page_id, for_people_id) WHERE (on_page_id IS NOT NULL);
 
 
---
--- Name: permsonpages_on_post_u; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX permsonpages_on_post_u ON public.perms_on_pages3 USING btree (site_id, on_post_id, for_people_id) WHERE (on_post_id IS NOT NULL);
 
-
---
--- Name: permsonpages_on_site_u; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX permsonpages_on_site_u ON public.perms_on_pages3 USING btree (site_id, for_people_id) WHERE (on_whole_site IS NOT NULL);
 
 
---
--- Name: permsonpages_people_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX permsonpages_people_i ON public.perms_on_pages3 USING btree (site_id, for_people_id);
 
-
---
--- Name: posts_i_createdat_id; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX posts_i_createdat_id ON public.posts3 USING btree (site_id, created_at DESC, unique_post_id DESC);
 
 
---
--- Name: posts_i_createdby_createdat_id; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX posts_i_createdby_createdat_id ON public.posts3 USING btree (site_id, created_by_id, created_at DESC, unique_post_id DESC);
 
-
---
--- Name: posts_i_lastapprovedat_0deld; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX posts_i_lastapprovedat_0deld ON public.posts3 USING btree (site_id, GREATEST(approved_at, last_approved_edit_at)) WHERE ((approved_at IS NOT NULL) AND (deleted_status = 0));
 
 
---
--- Name: posts_i_patid_createdat_postid_if_bookmark_0deld; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX posts_i_patid_createdat_postid_if_bookmark_0deld ON public.posts3 USING btree (site_id, created_by_id, created_at, unique_post_id) WHERE (((type)::smallint = 51) AND (deleted_status = 0));
 
-
---
--- Name: posts_i_patid_createdat_postid_if_bookmark_deld; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX posts_i_patid_createdat_postid_if_bookmark_deld ON public.posts3 USING btree (site_id, created_by_id, created_at, unique_post_id) WHERE (((type)::smallint = 51) AND (deleted_status <> 0));
 
 
---
--- Name: posts_i_privatepatsid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX posts_i_privatepatsid ON public.posts3 USING btree (site_id, private_pats_id_c) WHERE (private_pats_id_c IS NOT NULL);
 
-
---
--- Name: posts_u_extid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX posts_u_extid ON public.posts3 USING btree (site_id, ext_id);
 
 
---
--- Name: posts_u_patid_pageid_parentnr_if_bookmark_0deld; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX posts_u_patid_pageid_parentnr_if_bookmark_0deld ON public.posts3 USING btree (site_id, created_by_id, page_id, parent_nr) WHERE (((type)::smallint = 51) AND (deleted_status = 0));
 
-
---
--- Name: postsread_i_readbyid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX postsread_i_readbyid ON public.post_read_stats3 USING btree (site_id, user_id);
 
 
---
--- Name: pps_u_extid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX pps_u_extid ON public.users3 USING btree (site_id, ext_id);
 
-
---
--- Name: pps_u_site_guest_w_browser_id; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX pps_u_site_guest_w_browser_id ON public.users3 USING btree (site_id, full_name, guest_email_addr, guest_browser_id) WHERE (guest_browser_id IS NOT NULL);
 
 
---
--- Name: pps_u_ssoid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX pps_u_ssoid ON public.users3 USING btree (site_id, sso_id);
 
-
---
--- Name: reviewtasks_completedbyid__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX reviewtasks_completedbyid__i ON public.review_tasks3 USING btree (site_id, decided_by_id) WHERE (decided_by_id IS NOT NULL);
 
 
---
--- Name: reviewtasks_createdat__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX reviewtasks_createdat__i ON public.review_tasks3 USING btree (site_id, created_at DESC);
 
-
---
--- Name: reviewtasks_createdbyid__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX reviewtasks_createdbyid__i ON public.review_tasks3 USING btree (site_id, created_by_id);
 
 
---
--- Name: reviewtasks_decided_do_soon_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX reviewtasks_decided_do_soon_i ON public.review_tasks3 USING btree (decided_at) WHERE ((decided_at IS NOT NULL) AND (completed_at IS NULL) AND (invalidated_at IS NULL));
 
-
---
--- Name: reviewtasks_open_createdat__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX reviewtasks_open_createdat__i ON public.review_tasks3 USING btree (site_id, created_at DESC) WHERE (decision IS NULL);
 
 
---
--- Name: reviewtasks_open_createdby_postid__u; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX reviewtasks_open_createdby_postid__u ON public.review_tasks3 USING btree (site_id, created_by_id, post_id) WHERE ((post_id IS NOT NULL) AND (decision IS NULL));
 
-
---
--- Name: reviewtasks_open_createdby_userid__u; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX reviewtasks_open_createdby_userid__u ON public.review_tasks3 USING btree (site_id, created_by_id, about_pat_id_c) WHERE ((post_id IS NULL) AND (decision IS NULL));
 
 
---
--- Name: reviewtasks_pageid__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX reviewtasks_pageid__i ON public.review_tasks3 USING btree (site_id, page_id) WHERE (page_id IS NOT NULL);
 
-
---
--- Name: reviewtasks_postid__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX reviewtasks_postid__i ON public.review_tasks3 USING btree (site_id, post_id) WHERE (post_id IS NOT NULL);
 
 
---
--- Name: reviewtasks_undecided_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX reviewtasks_undecided_i ON public.review_tasks3 USING btree (site_id, created_at DESC) WHERE ((decision IS NULL) AND (completed_at IS NULL) AND (invalidated_at IS NULL));
 
-
---
--- Name: reviewtasks_userid__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX reviewtasks_userid__i ON public.review_tasks3 USING btree (site_id, about_pat_id_c) WHERE (about_pat_id_c IS NOT NULL);
 
 
---
--- Name: scq_actionat__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX scq_actionat__i ON public.spam_check_queue3 USING btree (created_at DESC);
 
-
---
--- Name: secrets_user_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX secrets_user_i ON public.api_secrets3 USING btree (site_id, user_id);
 
 
---
--- Name: sessions_i_patid_createdat_active; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX sessions_i_patid_createdat_active ON public.sessions_t USING btree (site_id_c, pat_id_c, created_at_c DESC) WHERE ((deleted_at_c IS NULL) AND (expired_at_c IS NULL));
 
-
---
--- Name: settings3_site__i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX settings3_site__i ON public.settings3 USING btree (site_id);
 
 
---
--- Name: settings3_site_category; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX settings3_site_category ON public.settings3 USING btree (site_id, category_id) WHERE (category_id IS NOT NULL);
 
-
---
--- Name: settings3_site_page; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX settings3_site_page ON public.settings3 USING btree (site_id, page_id) WHERE (page_id IS NOT NULL);
 
 
---
--- Name: settings3_siteid__u; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX settings3_siteid__u ON public.settings3 USING btree (site_id) WHERE ((page_id IS NULL) AND (category_id IS NULL));
 
-
---
--- Name: sites_publid_u; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX sites_publid_u ON public.sites3 USING btree (publ_id);
 
 
---
--- Name: spamcheckqueue_next_miscl_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX spamcheckqueue_next_miscl_i ON public.spam_check_queue3 USING btree (results_at) WHERE (is_misclassified AND (misclassifications_reported_at IS NULL));
 
-
---
--- Name: tags_i_onpatid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX tags_i_onpatid ON public.tags_t USING btree (site_id_c, on_pat_id_c) WHERE (on_pat_id_c IS NOT NULL);
 
 
---
--- Name: tags_i_onpostid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX tags_i_onpostid ON public.tags_t USING btree (site_id_c, on_post_id_c) WHERE (on_post_id_c IS NOT NULL);
 
-
---
--- Name: tags_i_parentid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX tags_i_parentid ON public.tags_t USING btree (site_id_c, parent_tag_id_c) WHERE (parent_tag_id_c IS NOT NULL);
 
 
---
--- Name: tags_i_parentid_patid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX tags_i_parentid_patid ON public.tags_t USING btree (site_id_c, parent_tag_id_c, on_pat_id_c) WHERE ((parent_tag_id_c IS NOT NULL) AND (on_pat_id_c IS NOT NULL));
 
-
---
--- Name: tags_i_parentid_postid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX tags_i_parentid_postid ON public.tags_t USING btree (site_id_c, parent_tag_id_c, on_post_id_c) WHERE ((parent_tag_id_c IS NOT NULL) AND (on_post_id_c IS NOT NULL));
 
 
---
--- Name: tags_i_tagtypeid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX tags_i_tagtypeid ON public.tags_t USING btree (site_id_c, tagtype_id_c);
 
-
---
--- Name: tagtypes_i_createdby; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX tagtypes_i_createdby ON public.tagtypes_t USING btree (site_id_c, created_by_id_c);
 
 
---
--- Name: tagtypes_i_deletedby; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX tagtypes_i_deletedby ON public.tagtypes_t USING btree (site_id_c, deleted_by_id_c);
 
-
---
--- Name: tagtypes_i_descrpage; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX tagtypes_i_descrpage ON public.tagtypes_t USING btree (site_id_c, descr_page_id_c);
 
 
---
--- Name: tagtypes_i_mergedby; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX tagtypes_i_mergedby ON public.tagtypes_t USING btree (site_id_c, merged_by_id_c);
 
-
---
--- Name: tagtypes_i_mergedinto; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX tagtypes_i_mergedinto ON public.tagtypes_t USING btree (site_id_c, merged_into_tagtype_id_c);
 
 
---
--- Name: tagtypes_i_scopedto; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX tagtypes_i_scopedto ON public.tagtypes_t USING btree (site_id_c, scoped_to_pat_id_c);
 
-
---
--- Name: tagtypes_u_anypat_abbrname; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX tagtypes_u_anypat_abbrname ON public.tagtypes_t USING btree (site_id_c, COALESCE(scoped_to_pat_id_c, 0), public.index_friendly((abbr_name_c)::text));
 
 
---
--- Name: tagtypes_u_anypat_dispname; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX tagtypes_u_anypat_dispname ON public.tagtypes_t USING btree (site_id_c, COALESCE(scoped_to_pat_id_c, 0), public.index_friendly((disp_name_c)::text));
 
-
---
--- Name: tagtypes_u_anypat_longname; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX tagtypes_u_anypat_longname ON public.tagtypes_t USING btree (site_id_c, COALESCE(scoped_to_pat_id_c, 0), public.index_friendly((long_name_c)::text));
 
 
---
--- Name: tagtypes_u_anypat_urlslug; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX tagtypes_u_anypat_urlslug ON public.tagtypes_t USING btree (site_id_c, COALESCE(scoped_to_pat_id_c, 0), url_slug_c);
 
-
---
--- Name: types_u_refid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX types_u_refid ON public.tagtypes_t USING btree (site_id_c, ref_id_c) WHERE (ref_id_c IS NOT NULL);
 
 
---
--- Name: useremails_email_verified_u; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE UNIQUE INDEX useremails_email_verified_u ON public.user_emails3 USING btree (site_id, email_address) WHERE (verified_at IS NOT NULL);
 
-
---
--- Name: users_site_primaryemail_u; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE UNIQUE INDEX users_site_primaryemail_u ON public.users3 USING btree (site_id, primary_email_addr);
 
 
---
--- Name: userstats_lastseen_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX userstats_lastseen_i ON public.user_stats3 USING btree (site_id, last_seen_at DESC);
 
-
---
--- Name: userstats_nextsummary_i; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX userstats_nextsummary_i ON public.user_stats3 USING btree (next_summary_maybe_at);
 
 
---
--- Name: webhookreqsout_i_sentasid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX webhookreqsout_i_sentasid ON public.webhook_reqs_out_t USING btree (site_id_c, sent_as_id_c);
 
-
---
--- Name: webhookreqsout_i_sentat; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX webhookreqsout_i_sentat ON public.webhook_reqs_out_t USING btree (site_id_c, sent_at_c);
 
 
---
--- Name: webhooks_i_ownerid; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX webhooks_i_ownerid ON public.webhooks_t USING btree (site_id_c, owner_id_c);
 
-
---
--- Name: webhooks_i_runasid; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX webhooks_i_runasid ON public.webhooks_t USING btree (site_id_c, run_as_id_c);
 
 
---
--- Name: webhooks_ig_sendtourl; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX webhooks_ig_sendtourl ON public.webhooks_t USING btree (send_to_url_c);
 
-
---
--- Name: webhooks_ig_sentuptowhen; Type: INDEX; Schema: public; Owner: talkyard_test
---
 
 CREATE INDEX webhooks_ig_sentuptowhen ON public.webhooks_t USING btree (sent_up_to_when_c);
 
 
---
--- Name: webhooks_ig_sentuptowhen_more; Type: INDEX; Schema: public; Owner: talkyard_test
---
-
 CREATE INDEX webhooks_ig_sentuptowhen_more ON public.webhooks_t USING btree (sent_up_to_when_c) WHERE (enabled_c AND (deleted_c IS NOT TRUE) AND (done_for_now_c IS NOT TRUE) AND ((broken_reason_c IS NULL) OR ((retry_extra_times_c)::smallint >= 1)));
 
-
---
--- Name: emails_out3 emails3_sum_quota; Type: TRIGGER; Schema: public; Owner: talkyard_test
---
 
 CREATE TRIGGER emails3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON public.emails_out3 FOR EACH ROW EXECUTE PROCEDURE public.emails3_sum_quota();
 
 
---
--- Name: identities3 identities3_sum_quota; Type: TRIGGER; Schema: public; Owner: talkyard_test
---
-
 CREATE TRIGGER identities3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON public.identities3 FOR EACH ROW EXECUTE PROCEDURE public.identities3_sum_quota();
 
-
---
--- Name: notifications3 notfs3_sum_quota; Type: TRIGGER; Schema: public; Owner: talkyard_test
---
 
 CREATE TRIGGER notfs3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON public.notifications3 FOR EACH ROW EXECUTE PROCEDURE public.notfs3_sum_quota();
 
 
---
--- Name: page_users3 page_users3_sum_quota; Type: TRIGGER; Schema: public; Owner: talkyard_test
---
-
 CREATE TRIGGER page_users3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON public.page_users3 FOR EACH ROW EXECUTE PROCEDURE public.page_users3_sum_quota();
 
-
---
--- Name: pages3 pages3_sum_quota; Type: TRIGGER; Schema: public; Owner: talkyard_test
---
 
 CREATE TRIGGER pages3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON public.pages3 FOR EACH ROW EXECUTE PROCEDURE public.pages3_sum_quota();
 
 
---
--- Name: post_actions3 post_actions3_sum_quota; Type: TRIGGER; Schema: public; Owner: talkyard_test
---
-
 CREATE TRIGGER post_actions3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON public.post_actions3 FOR EACH ROW EXECUTE PROCEDURE public.post_actions3_sum_quota();
 
-
---
--- Name: post_read_stats3 post_read_stats3_sum_quota; Type: TRIGGER; Schema: public; Owner: talkyard_test
---
 
 CREATE TRIGGER post_read_stats3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON public.post_read_stats3 FOR EACH ROW EXECUTE PROCEDURE public.post_read_stats3_sum_quota();
 
 
---
--- Name: post_revisions3 post_revs3_sum_quota; Type: TRIGGER; Schema: public; Owner: talkyard_test
---
-
 CREATE TRIGGER post_revs3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON public.post_revisions3 FOR EACH ROW EXECUTE PROCEDURE public.post_revs3_sum_quota();
 
-
---
--- Name: posts3 posts3_sum_quota; Type: TRIGGER; Schema: public; Owner: talkyard_test
---
 
 CREATE TRIGGER posts3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON public.posts3 FOR EACH ROW EXECUTE PROCEDURE public.posts3_sum_quota();
 
 
---
--- Name: users3 users3_sum_quota; Type: TRIGGER; Schema: public; Owner: talkyard_test
---
-
 CREATE TRIGGER users3_sum_quota AFTER INSERT OR DELETE OR UPDATE ON public.users3 FOR EACH ROW EXECUTE PROCEDURE public.users3_sum_quota();
 
-
---
--- Name: alt_page_ids3 altpageids_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.alt_page_ids3
     ADD CONSTRAINT altpageids_r_pages FOREIGN KEY (site_id, real_page_id) REFERENCES public.pages3(site_id, page_id);
 
 
---
--- Name: api_secrets3 apisecrets_user_r_users; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.api_secrets3
     ADD CONSTRAINT apisecrets_user_r_users FOREIGN KEY (site_id, user_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: audit_log3 auditlog_doer_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.audit_log3
     ADD CONSTRAINT auditlog_doer_r_people FOREIGN KEY (site_id, doer_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: audit_log3 auditlog_doertrueid_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.audit_log3
     ADD CONSTRAINT auditlog_doertrueid_r_pats FOREIGN KEY (site_id, doer_true_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: audit_log3 auditlog_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.audit_log3
     ADD CONSTRAINT auditlog_r_pages FOREIGN KEY (site_id, page_id) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
 
---
--- Name: audit_log3 auditlog_r_posts; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.audit_log3
     ADD CONSTRAINT auditlog_r_posts FOREIGN KEY (site_id, post_id) REFERENCES public.posts3(site_id, unique_post_id) DEFERRABLE;
 
-
---
--- Name: audit_log3 auditlog_sid_part1_r_sessions; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.audit_log3
     ADD CONSTRAINT auditlog_sid_part1_r_sessions FOREIGN KEY (site_id, sess_id_part_1) REFERENCES public.sessions_t(site_id_c, part_1_comp_id_c) DEFERRABLE;
 
 
---
--- Name: audit_log3 auditlog_targetpattrueid_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.audit_log3
     ADD CONSTRAINT auditlog_targetpattrueid_r_pats FOREIGN KEY (site_id, target_pat_true_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: audit_log3 auditlog_targetuser_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.audit_log3
     ADD CONSTRAINT auditlog_targetuser_r_people FOREIGN KEY (site_id, target_pat_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: blocks3 blocks_blockedby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.blocks3
     ADD CONSTRAINT blocks_blockedby_r_people FOREIGN KEY (site_id, blocked_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: categories3 cats_defaultcat_r_cats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.categories3
     ADD CONSTRAINT cats_defaultcat_r_cats FOREIGN KEY (site_id, default_category_id) REFERENCES public.categories3(site_id, id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE;
 
 
---
--- Name: categories3 cats_page_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.categories3
     ADD CONSTRAINT cats_page_r_pages FOREIGN KEY (site_id, page_id) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
-
---
--- Name: categories3 cats_r_cats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.categories3
     ADD CONSTRAINT cats_r_cats FOREIGN KEY (site_id, parent_id) REFERENCES public.categories3(site_id, id) DEFERRABLE;
 
 
---
--- Name: drafts3 drafts_byuser_r_users; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.drafts3
     ADD CONSTRAINT drafts_byuser_r_users FOREIGN KEY (site_id, by_user_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: drafts3 drafts_category_r_cats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.drafts3
     ADD CONSTRAINT drafts_category_r_cats FOREIGN KEY (site_id, category_id) REFERENCES public.categories3(site_id, id) DEFERRABLE;
 
 
---
--- Name: drafts3 drafts_pageid_postnr_r_posts; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.drafts3
     ADD CONSTRAINT drafts_pageid_postnr_r_posts FOREIGN KEY (site_id, page_id, post_nr) REFERENCES public.posts3(site_id, page_id, post_nr) DEFERRABLE;
 
-
---
--- Name: drafts3 drafts_pageid_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.drafts3
     ADD CONSTRAINT drafts_pageid_r_pages FOREIGN KEY (site_id, page_id) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
 
---
--- Name: drafts3 drafts_postasid_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.drafts3
     ADD CONSTRAINT drafts_postasid_r_pats FOREIGN KEY (site_id, post_as_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: drafts3 drafts_postid_r_posts; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.drafts3
     ADD CONSTRAINT drafts_postid_r_posts FOREIGN KEY (site_id, post_id) REFERENCES public.posts3(site_id, unique_post_id) DEFERRABLE;
 
 
---
--- Name: drafts3 drafts_touser_r_users; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.drafts3
     ADD CONSTRAINT drafts_touser_r_users FOREIGN KEY (site_id, to_user_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: emails_out3 emailsout_aboutcat_r_cats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.emails_out3
     ADD CONSTRAINT emailsout_aboutcat_r_cats FOREIGN KEY (site_id, about_cat_id_c) REFERENCES public.categories3(site_id, id) DEFERRABLE;
 
 
---
--- Name: emails_out3 emailsout_aboutpagestr_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.emails_out3
     ADD CONSTRAINT emailsout_aboutpagestr_r_pages FOREIGN KEY (site_id, about_page_id_str_c) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
-
---
--- Name: emails_out3 emailsout_aboutpat_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.emails_out3
     ADD CONSTRAINT emailsout_aboutpat_r_pats FOREIGN KEY (site_id, about_pat_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: emails_out3 emailsout_aboutpostid_r_posts; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.emails_out3
     ADD CONSTRAINT emailsout_aboutpostid_r_posts FOREIGN KEY (site_id, about_post_id_c) REFERENCES public.posts3(site_id, unique_post_id) DEFERRABLE;
 
-
---
--- Name: emails_out3 emailsout_abouttag_r_tags; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.emails_out3
     ADD CONSTRAINT emailsout_abouttag_r_tags FOREIGN KEY (site_id, about_tag_id_c) REFERENCES public.tags_t(site_id_c, id_c) DEFERRABLE;
 
 
---
--- Name: emails_out3 emailsout_bypat_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.emails_out3
     ADD CONSTRAINT emailsout_bypat_r_pats FOREIGN KEY (site_id, by_pat_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: emails_out3 emailsout_topat_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.emails_out3
     ADD CONSTRAINT emailsout_topat_r_pats FOREIGN KEY (site_id, to_user_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: group_participants3 groupparticipants_group_r_pps; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.group_participants3
     ADD CONSTRAINT groupparticipants_group_r_pps FOREIGN KEY (site_id, group_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: group_participants3 groupparticipants_pp_r_pps; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.group_participants3
     ADD CONSTRAINT groupparticipants_pp_r_pps FOREIGN KEY (site_id, participant_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: hosts3 hosts_r_sites; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.hosts3
     ADD CONSTRAINT hosts_r_sites FOREIGN KEY (site_id) REFERENCES public.sites3(id) DEFERRABLE;
 
-
---
--- Name: idps_t idps_r_sites; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.idps_t
     ADD CONSTRAINT idps_r_sites FOREIGN KEY (site_id_c) REFERENCES public.sites3(id) DEFERRABLE;
 
 
---
--- Name: identities3 ids_user_users; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.identities3
     ADD CONSTRAINT ids_user_users FOREIGN KEY (site_id, user_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: identities3 ids_useridorig_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.identities3
     ADD CONSTRAINT ids_useridorig_r_people FOREIGN KEY (site_id, user_id_orig_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: identities3 idtys_r_idps; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.identities3
     ADD CONSTRAINT idtys_r_idps FOREIGN KEY (site_id, idp_id_c) REFERENCES public.idps_t(site_id_c, idp_id_c) DEFERRABLE;
 
-
---
--- Name: invites3 invites_addtogroup_r_pps; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.invites3
     ADD CONSTRAINT invites_addtogroup_r_pps FOREIGN KEY (site_id, add_to_group_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: invites3 invites_inviter_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.invites3
     ADD CONSTRAINT invites_inviter_r_people FOREIGN KEY (site_id, created_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: invites3 invites_user_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.invites3
     ADD CONSTRAINT invites_user_r_people FOREIGN KEY (site_id, user_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: link_previews_t linkpreviews_firstlinkedby_r_pps; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.link_previews_t
     ADD CONSTRAINT linkpreviews_firstlinkedby_r_pps FOREIGN KEY (site_id_c, first_linked_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: links_t links_addedby_r_pps; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.links_t
     ADD CONSTRAINT links_addedby_r_pps FOREIGN KEY (site_id_c, added_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: links_t links_frompostid_r_posts; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.links_t
     ADD CONSTRAINT links_frompostid_r_posts FOREIGN KEY (site_id_c, from_post_id_c) REFERENCES public.posts3(site_id, unique_post_id) DEFERRABLE;
 
-
---
--- Name: links_t links_tocatid_r_categories; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.links_t
     ADD CONSTRAINT links_tocatid_r_categories FOREIGN KEY (site_id_c, to_category_id_c) REFERENCES public.categories3(site_id, id) DEFERRABLE;
 
 
---
--- Name: links_t links_topageid_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.links_t
     ADD CONSTRAINT links_topageid_r_pages FOREIGN KEY (site_id_c, to_page_id_c) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
-
---
--- Name: links_t links_topostid_r_posts; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.links_t
     ADD CONSTRAINT links_topostid_r_posts FOREIGN KEY (site_id_c, to_post_id_c) REFERENCES public.posts3(site_id, unique_post_id) DEFERRABLE;
 
 
---
--- Name: links_t links_toppid_r_pps; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.links_t
     ADD CONSTRAINT links_toppid_r_pps FOREIGN KEY (site_id_c, to_pat_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: notifications3 notfs_aboutcat_r_cats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.notifications3
     ADD CONSTRAINT notfs_aboutcat_r_cats FOREIGN KEY (site_id, about_cat_id_c) REFERENCES public.categories3(site_id, id) DEFERRABLE;
 
 
---
--- Name: notifications3 notfs_aboutpage_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.notifications3
     ADD CONSTRAINT notfs_aboutpage_r_pages FOREIGN KEY (site_id, about_page_id_str_c) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
-
---
--- Name: notifications3 notfs_aboutpat_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.notifications3
     ADD CONSTRAINT notfs_aboutpat_r_pats FOREIGN KEY (site_id, about_pat_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: notifications3 notfs_aboutpost_reltype_frompat_subtype_r_patrels; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.notifications3
     ADD CONSTRAINT notfs_aboutpost_reltype_frompat_subtype_r_patrels FOREIGN KEY (site_id, about_post_id_c, action_type, by_user_id, action_sub_id) REFERENCES public.post_actions3(site_id, to_post_id_c, rel_type_c, from_pat_id_c, sub_type_c) DEFERRABLE;
 
-
---
--- Name: notifications3 notfs_abouttag_r_tags; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.notifications3
     ADD CONSTRAINT notfs_abouttag_r_tags FOREIGN KEY (site_id, about_tag_id_c) REFERENCES public.tags_t(site_id_c, id_c) DEFERRABLE;
 
 
---
--- Name: notifications3 notfs_bypat_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.notifications3
     ADD CONSTRAINT notfs_bypat_r_pats FOREIGN KEY (site_id, by_user_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: notifications3 notfs_bytrueid_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.notifications3
     ADD CONSTRAINT notfs_bytrueid_r_pats FOREIGN KEY (site_id, by_true_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: notifications3 notfs_totrueid_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.notifications3
     ADD CONSTRAINT notfs_totrueid_r_pats FOREIGN KEY (site_id, to_true_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: notices_t notices_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.notices_t
     ADD CONSTRAINT notices_r_pats FOREIGN KEY (site_id_c, to_pat_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: notifications3 ntfs_post_r_posts; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.notifications3
     ADD CONSTRAINT ntfs_post_r_posts FOREIGN KEY (site_id, about_post_id_c) REFERENCES public.posts3(site_id, unique_post_id) DEFERRABLE;
 
-
---
--- Name: notifications3 ntfs_r_emails; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.notifications3
     ADD CONSTRAINT ntfs_r_emails FOREIGN KEY (site_id, email_id) REFERENCES public.emails_out3(site_id, email_id_c) DEFERRABLE;
 
 
---
--- Name: notifications3 ntfs_r_sites; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.notifications3
     ADD CONSTRAINT ntfs_r_sites FOREIGN KEY (site_id) REFERENCES public.sites3(id) DEFERRABLE;
 
-
---
--- Name: notifications3 ntfs_touser_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.notifications3
     ADD CONSTRAINT ntfs_touser_r_people FOREIGN KEY (site_id, to_user_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: page_html_cache_t pagehtml_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.page_html_cache_t
     ADD CONSTRAINT pagehtml_r_pages FOREIGN KEY (site_id_c, page_id_c) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
-
---
--- Name: page_notf_prefs_t pagenotfprefs_r_cats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.page_notf_prefs_t
     ADD CONSTRAINT pagenotfprefs_r_cats FOREIGN KEY (site_id, pages_in_cat_id_c) REFERENCES public.categories3(site_id, id) DEFERRABLE;
 
 
---
--- Name: page_notf_prefs_t pagenotfprefs_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.page_notf_prefs_t
     ADD CONSTRAINT pagenotfprefs_r_pages FOREIGN KEY (site_id, page_id) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
-
---
--- Name: page_notf_prefs_t pagenotfprefs_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.page_notf_prefs_t
     ADD CONSTRAINT pagenotfprefs_r_people FOREIGN KEY (site_id, pat_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: page_popularity_scores3 pagepopscores_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.page_popularity_scores3
     ADD CONSTRAINT pagepopscores_r_pages FOREIGN KEY (site_id, page_id) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
-
---
--- Name: pages3 pages_answeredby_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_answeredby_r_pats FOREIGN KEY (site_id, answered_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: pages3 pages_category_r_categories; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_category_r_categories FOREIGN KEY (site_id, category_id) REFERENCES public.categories3(site_id, id) DEFERRABLE;
 
-
---
--- Name: pages3 pages_closedby_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_closedby_r_pats FOREIGN KEY (site_id, closed_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: pages3 pages_createdby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_createdby_r_people FOREIGN KEY (site_id, author_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: pages3 pages_deletedby_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_deletedby_r_pats FOREIGN KEY (site_id, deleted_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: pages3 pages_doneby_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_doneby_r_pats FOREIGN KEY (site_id, done_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: pages3 pages_frequentposter1_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_frequentposter1_r_people FOREIGN KEY (site_id, frequent_poster_1_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: pages3 pages_frequentposter2_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_frequentposter2_r_people FOREIGN KEY (site_id, frequent_poster_2_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: pages3 pages_frequentposter3_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_frequentposter3_r_people FOREIGN KEY (site_id, frequent_poster_3_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: pages3 pages_frequentposter4_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_frequentposter4_r_people FOREIGN KEY (site_id, frequent_poster_4_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: pages3 pages_frozenby_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_frozenby_r_pats FOREIGN KEY (site_id, frozen_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: pages3 pages_hiddenby_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_hiddenby_r_pats FOREIGN KEY (site_id, hidden_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: pages3 pages_lastreplyby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_lastreplyby_r_people FOREIGN KEY (site_id, last_reply_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: pages3 pages_lockedby_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_lockedby_r_pats FOREIGN KEY (site_id, locked_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: pages3 pages_pausedby_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_pausedby_r_pats FOREIGN KEY (site_id, paused_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: pages3 pages_plannedby_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_plannedby_r_pats FOREIGN KEY (site_id, planned_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: pages3 pages_postponedby_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_postponedby_r_pats FOREIGN KEY (site_id, postponed_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: pages3 pages_publishedby_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_publishedby_r_pats FOREIGN KEY (site_id, published_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: pages3 pages_r_sites; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_r_sites FOREIGN KEY (site_id) REFERENCES public.sites3(id) DEFERRABLE;
 
 
---
--- Name: pages3 pages_startedby_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_startedby_r_pats FOREIGN KEY (site_id, started_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: pages3 pages_unwantedby_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.pages3
     ADD CONSTRAINT pages_unwantedby_r_pats FOREIGN KEY (site_id, unwanted_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: page_users3 pageusers_joinedby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.page_users3
     ADD CONSTRAINT pageusers_joinedby_r_people FOREIGN KEY (site_id, joined_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: page_users3 pageusers_kickedby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.page_users3
     ADD CONSTRAINT pageusers_kickedby_r_people FOREIGN KEY (site_id, kicked_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: page_users3 pageusers_page_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.page_users3
     ADD CONSTRAINT pageusers_page_r_pages FOREIGN KEY (site_id, page_id) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
-
---
--- Name: page_users3 pageusers_user_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.page_users3
     ADD CONSTRAINT pageusers_user_r_people FOREIGN KEY (site_id, user_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: post_actions3 patnoderels_fromtrueid_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.post_actions3
     ADD CONSTRAINT patnoderels_fromtrueid_r_pats FOREIGN KEY (site_id, from_true_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: post_actions3 patnodesinrels_addedbyid_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.post_actions3
     ADD CONSTRAINT patnodesinrels_addedbyid_r_pats FOREIGN KEY (site_id, added_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: users3 pats_anonintree_r_nodes; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.users3
     ADD CONSTRAINT pats_anonintree_r_nodes FOREIGN KEY (site_id, anon_in_tree_id__later_c) REFERENCES public.posts3(site_id, unique_post_id) DEFERRABLE;
 
-
---
--- Name: users3 pats_anononpage_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.users3
     ADD CONSTRAINT pats_anononpage_r_pages FOREIGN KEY (site_id, anon_on_page_id_st_c) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
 
---
--- Name: users3 pats_trueid_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.users3
     ADD CONSTRAINT pats_trueid_r_pats FOREIGN KEY (site_id, true_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: perms_on_pages3 permsonpages_r_cats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.perms_on_pages3
     ADD CONSTRAINT permsonpages_r_cats FOREIGN KEY (site_id, on_category_id) REFERENCES public.categories3(site_id, id) DEFERRABLE;
 
 
---
--- Name: perms_on_pages3 permsonpages_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.perms_on_pages3
     ADD CONSTRAINT permsonpages_r_pages FOREIGN KEY (site_id, on_page_id) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
-
---
--- Name: perms_on_pages3 permsonpages_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.perms_on_pages3
     ADD CONSTRAINT permsonpages_r_people FOREIGN KEY (site_id, for_people_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: perms_on_pages3 permsonpages_r_posts; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.perms_on_pages3
     ADD CONSTRAINT permsonpages_r_posts FOREIGN KEY (site_id, on_post_id) REFERENCES public.posts3(site_id, unique_post_id) DEFERRABLE;
 
-
---
--- Name: page_paths3 pgpths_page_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.page_paths3
     ADD CONSTRAINT pgpths_page_r_pages FOREIGN KEY (site_id, page_id) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
 
---
--- Name: post_actions3 postacs_createdby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.post_actions3
     ADD CONSTRAINT postacs_createdby_r_people FOREIGN KEY (site_id, from_pat_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: post_actions3 postacs_deletedby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.post_actions3
     ADD CONSTRAINT postacs_deletedby_r_people FOREIGN KEY (site_id, deleted_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: post_actions3 postacs_r_posts; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.post_actions3
     ADD CONSTRAINT postacs_r_posts FOREIGN KEY (site_id, to_post_id_c) REFERENCES public.posts3(site_id, unique_post_id) DEFERRABLE;
 
-
---
--- Name: post_revisions3 postrevs_approvedby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.post_revisions3
     ADD CONSTRAINT postrevs_approvedby_r_people FOREIGN KEY (site_id, approved_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: post_revisions3 postrevs_composedby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.post_revisions3
     ADD CONSTRAINT postrevs_composedby_r_people FOREIGN KEY (site_id, composed_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: post_revisions3 postrevs_hiddenby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.post_revisions3
     ADD CONSTRAINT postrevs_hiddenby_r_people FOREIGN KEY (site_id, hidden_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: post_revisions3 postrevs_post_r_posts; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.post_revisions3
     ADD CONSTRAINT postrevs_post_r_posts FOREIGN KEY (site_id, post_id) REFERENCES public.posts3(site_id, unique_post_id) DEFERRABLE;
 
-
---
--- Name: post_revisions3 postrevs_prevnr_r__postrevs; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.post_revisions3
     ADD CONSTRAINT postrevs_prevnr_r__postrevs FOREIGN KEY (site_id, post_id, previous_nr) REFERENCES public.post_revisions3(site_id, post_id, revision_nr) DEFERRABLE;
 
 
---
--- Name: posts3 posts_approvedby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.posts3
     ADD CONSTRAINT posts_approvedby_r_people FOREIGN KEY (site_id, approved_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: posts3 posts_closedby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.posts3
     ADD CONSTRAINT posts_closedby_r_people FOREIGN KEY (site_id, closed_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: posts3 posts_collapsedby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.posts3
     ADD CONSTRAINT posts_collapsedby_r_people FOREIGN KEY (site_id, collapsed_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: posts3 posts_createdby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.posts3
     ADD CONSTRAINT posts_createdby_r_people FOREIGN KEY (site_id, created_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: posts3 posts_deletedby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.posts3
     ADD CONSTRAINT posts_deletedby_r_people FOREIGN KEY (site_id, deleted_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: posts3 posts_hiddenby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.posts3
     ADD CONSTRAINT posts_hiddenby_r_people FOREIGN KEY (site_id, hidden_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: posts3 posts_lastapprovededitby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.posts3
     ADD CONSTRAINT posts_lastapprovededitby_r_people FOREIGN KEY (site_id, last_approved_edit_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: posts3 posts_lasteditedby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.posts3
     ADD CONSTRAINT posts_lasteditedby_r_people FOREIGN KEY (site_id, curr_rev_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: posts3 posts_pinnedby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.posts3
     ADD CONSTRAINT posts_pinnedby_r_people FOREIGN KEY (site_id, pinned_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: posts3 posts_privatepatsid_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.posts3
     ADD CONSTRAINT posts_privatepatsid_r_pats FOREIGN KEY (site_id, private_pats_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: posts3 posts_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.posts3
     ADD CONSTRAINT posts_r_pages FOREIGN KEY (site_id, page_id) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
-
---
--- Name: post_tags3 posttags_r_posts; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.post_tags3
     ADD CONSTRAINT posttags_r_posts FOREIGN KEY (site_id, post_id) REFERENCES public.posts3(site_id, unique_post_id) DEFERRABLE;
 
 
---
--- Name: post_read_stats3 pstsrd_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.post_read_stats3
     ADD CONSTRAINT pstsrd_r_people FOREIGN KEY (site_id, user_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: post_read_stats3 pstsrd_r_posts; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.post_read_stats3
     ADD CONSTRAINT pstsrd_r_posts FOREIGN KEY (site_id, page_id, post_nr) REFERENCES public.posts3(site_id, page_id, post_nr) DEFERRABLE;
 
 
---
--- Name: review_tasks3 reviewtasks_causedby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.review_tasks3
     ADD CONSTRAINT reviewtasks_causedby_r_people FOREIGN KEY (site_id, created_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: review_tasks3 reviewtasks_complby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.review_tasks3
     ADD CONSTRAINT reviewtasks_complby_r_people FOREIGN KEY (site_id, decided_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: review_tasks3 reviewtasks_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.review_tasks3
     ADD CONSTRAINT reviewtasks_r_pages FOREIGN KEY (site_id, page_id) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
-
---
--- Name: review_tasks3 reviewtasks_r_posts; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.review_tasks3
     ADD CONSTRAINT reviewtasks_r_posts FOREIGN KEY (site_id, post_id) REFERENCES public.posts3(site_id, unique_post_id) DEFERRABLE;
 
 
---
--- Name: review_tasks3 reviewtasks_user_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.review_tasks3
     ADD CONSTRAINT reviewtasks_user_r_people FOREIGN KEY (site_id, about_pat_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: sessions_t sessions_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.sessions_t
     ADD CONSTRAINT sessions_r_pats FOREIGN KEY (site_id_c, pat_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: settings3 settings_cat_r_cats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.settings3
     ADD CONSTRAINT settings_cat_r_cats FOREIGN KEY (site_id, category_id) REFERENCES public.categories3(site_id, id) DEFERRABLE;
 
-
---
--- Name: settings3 settings_embcmtscatid_r_categories; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.settings3
     ADD CONSTRAINT settings_embcmtscatid_r_categories FOREIGN KEY (site_id, embedded_comments_category_id) REFERENCES public.categories3(site_id, id) DEFERRABLE;
 
 
---
--- Name: settings3 settings_page_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.settings3
     ADD CONSTRAINT settings_page_r_pages FOREIGN KEY (site_id, page_id) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
-
---
--- Name: settings3 settings_site_r_sites; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.settings3
     ADD CONSTRAINT settings_site_r_sites FOREIGN KEY (site_id) REFERENCES public.sites3(id) DEFERRABLE;
 
 
---
--- Name: spam_check_queue3 spamcheckqueue_r_sites; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.spam_check_queue3
     ADD CONSTRAINT spamcheckqueue_r_sites FOREIGN KEY (site_id) REFERENCES public.sites3(id) DEFERRABLE;
 
-
---
--- Name: tag_notf_levels3 tagnotflvl_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.tag_notf_levels3
     ADD CONSTRAINT tagnotflvl_r_people FOREIGN KEY (site_id, user_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: tags_t tags_onpat_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.tags_t
     ADD CONSTRAINT tags_onpat_r_pats FOREIGN KEY (site_id_c, on_pat_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: tags_t tags_onpost_r_posts; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.tags_t
     ADD CONSTRAINT tags_onpost_r_posts FOREIGN KEY (site_id_c, on_post_id_c) REFERENCES public.posts3(site_id, unique_post_id) DEFERRABLE;
 
 
---
--- Name: tags_t tags_parenttagid_onpatid_r_tags_id_onpatid; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.tags_t
     ADD CONSTRAINT tags_parenttagid_onpatid_r_tags_id_onpatid FOREIGN KEY (site_id_c, parent_tag_id_c, on_pat_id_c) REFERENCES public.tags_t(site_id_c, id_c, on_pat_id_c) DEFERRABLE;
 
-
---
--- Name: tags_t tags_parenttagid_onpostid_r_tags_id_onpostid; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.tags_t
     ADD CONSTRAINT tags_parenttagid_onpostid_r_tags_id_onpostid FOREIGN KEY (site_id_c, parent_tag_id_c, on_post_id_c) REFERENCES public.tags_t(site_id_c, id_c, on_post_id_c) DEFERRABLE;
 
 
---
--- Name: tags_t tags_parenttagid_r_tags_id; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.tags_t
     ADD CONSTRAINT tags_parenttagid_r_tags_id FOREIGN KEY (site_id_c, parent_tag_id_c) REFERENCES public.tags_t(site_id_c, id_c) DEFERRABLE;
 
-
---
--- Name: tags_t tags_r_tagtypes; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.tags_t
     ADD CONSTRAINT tags_r_tagtypes FOREIGN KEY (site_id_c, tagtype_id_c) REFERENCES public.tagtypes_t(site_id_c, id_c) DEFERRABLE;
 
 
---
--- Name: tagtypes_t tagtypes_createdby_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.tagtypes_t
     ADD CONSTRAINT tagtypes_createdby_r_pats FOREIGN KEY (site_id_c, created_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: tagtypes_t tagtypes_deleteby_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.tagtypes_t
     ADD CONSTRAINT tagtypes_deleteby_r_pats FOREIGN KEY (site_id_c, deleted_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: tagtypes_t tagtypes_descrpage_r_pages; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.tagtypes_t
     ADD CONSTRAINT tagtypes_descrpage_r_pages FOREIGN KEY (site_id_c, descr_page_id_c) REFERENCES public.pages3(site_id, page_id) DEFERRABLE;
 
-
---
--- Name: tagtypes_t tagtypes_mergedby_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.tagtypes_t
     ADD CONSTRAINT tagtypes_mergedby_r_pats FOREIGN KEY (site_id_c, merged_by_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: tagtypes_t tagtypes_mergedinto_r_tagtypes; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.tagtypes_t
     ADD CONSTRAINT tagtypes_mergedinto_r_tagtypes FOREIGN KEY (site_id_c, merged_into_tagtype_id_c) REFERENCES public.tagtypes_t(site_id_c, id_c) DEFERRABLE;
 
-
---
--- Name: tagtypes_t tagtypes_r_sites; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.tagtypes_t
     ADD CONSTRAINT tagtypes_r_sites FOREIGN KEY (site_id_c) REFERENCES public.sites3(id) DEFERRABLE;
 
 
---
--- Name: tagtypes_t tagtypes_scopedtopat_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.tagtypes_t
     ADD CONSTRAINT tagtypes_scopedtopat_r_pats FOREIGN KEY (site_id_c, scoped_to_pat_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: upload_refs3 uploadrefs_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.upload_refs3
     ADD CONSTRAINT uploadrefs_r_people FOREIGN KEY (site_id, added_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: upload_refs3 uploadrefs_r_posts; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.upload_refs3
     ADD CONSTRAINT uploadrefs_r_posts FOREIGN KEY (site_id, post_id) REFERENCES public.posts3(site_id, unique_post_id) DEFERRABLE;
 
-
---
--- Name: user_emails3 useremails_r_users; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.user_emails3
     ADD CONSTRAINT useremails_r_users FOREIGN KEY (site_id, user_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: usernames3 usernames_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.usernames3
     ADD CONSTRAINT usernames_r_people FOREIGN KEY (site_id, user_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: users3 users_approvedby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.users3
     ADD CONSTRAINT users_approvedby_r_people FOREIGN KEY (site_id, approved_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: users3 users_primaryemail_r_useremails; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.users3
     ADD CONSTRAINT users_primaryemail_r_useremails FOREIGN KEY (site_id, user_id, primary_email_addr) REFERENCES public.user_emails3(site_id, user_id, email_address) DEFERRABLE;
 
-
---
--- Name: users3 users_r_sites; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.users3
     ADD CONSTRAINT users_r_sites FOREIGN KEY (site_id) REFERENCES public.sites3(id) DEFERRABLE;
 
 
---
--- Name: users3 users_suspendeby_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.users3
     ADD CONSTRAINT users_suspendeby_r_people FOREIGN KEY (site_id, suspended_by_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: user_stats3 userstats_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.user_stats3
     ADD CONSTRAINT userstats_r_people FOREIGN KEY (site_id, user_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: user_visit_stats3 uservisitstats_r_people; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.user_visit_stats3
     ADD CONSTRAINT uservisitstats_r_people FOREIGN KEY (site_id, user_id) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
-
---
--- Name: webhook_reqs_out_t webhookreqsout_sentasid_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.webhook_reqs_out_t
     ADD CONSTRAINT webhookreqsout_sentasid_r_pats FOREIGN KEY (site_id_c, sent_as_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: webhook_reqs_out_t webhookreqsout_webhookid_r_webhooks; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.webhook_reqs_out_t
     ADD CONSTRAINT webhookreqsout_webhookid_r_webhooks FOREIGN KEY (site_id_c, webhook_id_c) REFERENCES public.webhooks_t(site_id_c, webhook_id_c) DEFERRABLE;
 
-
---
--- Name: webhooks_t webhooks_ownerid_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.webhooks_t
     ADD CONSTRAINT webhooks_ownerid_r_pats FOREIGN KEY (site_id_c, owner_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
 
 
---
--- Name: webhooks_t webhooks_r_sites; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
-
 ALTER TABLE ONLY public.webhooks_t
     ADD CONSTRAINT webhooks_r_sites FOREIGN KEY (site_id_c) REFERENCES public.sites3(id) DEFERRABLE;
 
-
---
--- Name: webhooks_t webhooks_runasid_r_pats; Type: FK CONSTRAINT; Schema: public; Owner: talkyard_test
---
 
 ALTER TABLE ONLY public.webhooks_t
     ADD CONSTRAINT webhooks_runasid_r_pats FOREIGN KEY (site_id_c, run_as_id_c) REFERENCES public.users3(site_id, user_id) DEFERRABLE;
