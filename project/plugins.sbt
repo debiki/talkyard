@@ -54,6 +54,7 @@ addDependencyTreePlugin
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.12.0")
 
 
+// [ty_v1] Remove this?  Maybe picks an ok  scala-xml  nowadays?
 // Pointless problems
 // ---------------------------------------------------------------
 

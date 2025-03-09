@@ -1991,8 +1991,7 @@ package object core {
         }
         byteIx += 1
       }
-      postNrs.to(Set)  // ?
-      //immutable.Set[PostNr](postNrs: _*)
+      postNrs.to(Set)
     }
   }
 
@@ -2116,7 +2115,7 @@ package object core {
   implicit class RichSeq[K, V](val underlying: Seq[V]) {
     def groupByKeepOne(fn: V => K): immutable.Map[K, V] = {
       val multiMap = underlying.groupBy(fn)
-      multiMap.view.mapValues(many => many.head).toMap
+      multiMap.mapValues(many => many.head).toMap
     }
   }
 
