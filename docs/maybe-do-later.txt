@@ -990,6 +990,14 @@ process, that'd almost be a self-DoS. Better delegate to other server.
 Later, support not only CommonMark but also rich text wysiwyg.
 Then first need to fix: [DRAFTPRVW] ?
 
+[inline_editor_and_preview]
+Sometimes — especially embedded comments on mobile phones — it'd be
+better with an inline/in-place editor, instead of having the editor in a separate
+frame at the bottom of the browser window.
+iOS is especially annoying (from Ty's perspective), in that it can scroll [the textarea
+where you're typing] in under the iOS keyboard (although the textarea is
+position: fixed). [ios_bugs].
+
 [html_json] [nashorn_in_tx] [save_post_lns_mentions]
 Keep sanitized html in a json array with placeholders for site origin,
 page titles (internal links), usernames, so the html can be reconstructed
@@ -1032,6 +1040,10 @@ But rename useParams to useUrlParams !?
 
 [react_components]
 Migrate from se https://mantine.dev/?
+
+More maybe-widgets:
+[double_btn]
+... ?
 
 [webhooks_todo]
 If endpoint seems broken, send emails to admins, after a while. [notf_adm_broken_webhook]

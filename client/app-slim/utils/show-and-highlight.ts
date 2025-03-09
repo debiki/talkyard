@@ -91,13 +91,16 @@ export function scrollAndFlashPostNr(postNr: PostNr, options: ShowPostOpts = {})
     // Opened new page, Reactjs component unmounted, post elem gone?
     return;
   }
-  options = addAnySidebarWidth(options);
-  // Add space for position-fixed stuff at the top: Forw/Back btns and open-sidebar btn.
-  options.marginTop = options.marginTop || 60;
-  options.marginBottom = options.marginBottom || 300;
-  utils.scrollIntoView(postElem, options, function() {
-    flashPostElem(postElem);
-  });
+  const opts = {
+    ...addAnySidebarWidth(options),
+    // Add space for position-fixed stuff at the top: Forw/Back btns and open-sidebar btn.
+    marginTop: options.marginTop || 60,
+    marginBottom: options.marginBottom || 300,
+    onDone: function() {
+      flashPostElem(postElem);
+    },
+  };
+  utils.scrollIntoView(postElem, opts);
 };
 
 

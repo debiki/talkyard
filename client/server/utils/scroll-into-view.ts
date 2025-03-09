@@ -14,7 +14,12 @@ export function elemIsVisible(...whatever): boolean {
   throw new Error('elemIsVisible called server side [TyE4AKRB067]');
 }
 
-export function makeShowPostFn(...whatever) {
+export function makeShowPostFn(...whatever): (event) => V {
+  // This fn is called server side, but the returned function isn't called
+  // server side.
+  return function() {
+    throw new Error('makeShowPostFn fn called server side [TyE4AKRB068]');
+  };
 }
 
 //------------------------------------------------------------------------------

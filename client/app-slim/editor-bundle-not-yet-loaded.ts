@@ -30,6 +30,14 @@ function ensureEditorCreated(success: (editor: any) => void) {
 }
 
 
+function ifEditorCreated(then: (editor: any) => V) {
+  if (debiki2['_editorCreated']) {
+    debiki2.editor.getOrCreateEditor(then);
+  }
+  // Else: Noop.
+}
+
+
 export function toggleWriteReplyToPostNr(postNr: PostNr, inclInReply: boolean,
       anyPostType?: PostType, inWhichFrame?: MainWin) {
   ensureEditorCreated(editor => {
@@ -71,6 +79,13 @@ export function openToWriteChatMessage(text: string, draft: Draft | undefined,
 export function openToWriteMessage(userId: number) {
   ensureEditorCreated(editor => {
     editor.openToWriteMessage(userId);
+  });
+}
+
+
+export function stopAutoScrollingToPreview() {
+  ifEditorCreated(editor => {
+    editor.stopAutoScrollingToPreview();
   });
 }
 

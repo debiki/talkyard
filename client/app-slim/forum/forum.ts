@@ -611,6 +611,7 @@ const ForumButtons = createComponent({
 
     const makeCategoryLink = (order: St, rememberSortOrder: Bo, slashSlug: St,
             text: St, linkId: St, extraClass?: St) => {
+      // Also see the editor's [Auto|show preview] button with depressed state. [double_btn]
       const explSelected = props.explSetSortOrder === order ? 'n_ExplSel ' : '';
       return NavLink({
           // The onClick handler will remember that we set the sort order explicitly,

@@ -224,6 +224,11 @@ let editorIframe: HIframeElm | U;
 let editorWrapper: HElm | U;
 let editorPlaceholder: HElm | U;
 
+// Is a number, in case we edit quickly and trigger many scroll-to-preview at almost
+// the same time — then we don't want the first done-scrolling event to forget all
+// that, instead we'll wait for as many done-scrolling as scroll-to-preview:s.
+let scrollingToPreview = 0;
+
 
 /*
 Maybe use MutationObserver — but probaly, don't, not needed?
@@ -308,7 +313,7 @@ function onLocalStorageChanged() {
 }
 
 
-addEventListener('scroll', messageCommentsIframeNewWinTopSize);
+addEventListener('scroll', messageCommentsFrameSizeScroll);
 addEventListener('message', onMessage, false);
 
 
@@ -788,9 +793,20 @@ jQuery(function($) {   // xx
 }); */
 
 
-
 function messageCommentsIframeNewWinTopSize() {
   sendToComments(calcSizes);
+}
+
+
+function messageCommentsFrameSizeScroll() {
+  messageCommentsIframeNewWinTopSize();
+
+  // If the user hanself is scrolling, stop auto scrolling the preview into view.
+  // Otherwise we'd scroll away from whatever han wants to look at, when han continues
+  // typing. (But if we're auto scrolling, ignore this event.)
+  if (scrollingToPreview <= 0) {
+    sendToEditor(['stopAutoScrollingToPreview', null]);
+  }
 }
 
 
@@ -1027,8 +1043,11 @@ function onMessage(event) {
 
     case 'scrollComments':   // RENAME to 'scrollCommentsIframe'?
       var rectToScrollIntoView = eventData[0];
-      var options = eventData[1];
-      scrollComments(rectToScrollIntoView, options);
+      var opts: ScrollIntoViewOpts = eventData[1];
+      if (opts.reason === 'ShowPreview') {
+        scrollingToPreview += 1;
+      }
+      scrollComments(rectToScrollIntoView, opts);
       break;
 
       /* CLEAN_UP remove this
@@ -1382,8 +1401,10 @@ function scrollComments(rectToScrollIntoView, options /* CalcScrollOpts */) {
 
   // This currently works only with one single comments iframe — if more,
   // then, currently we don't know which one to scroll.
-  if (numDiscussions > 1)
+  if (numDiscussions > 1) {
+    onDone();
     return;
+  }
 
   const commentsIframe = iframeElms[FirstCommentsIframeNr];
   options.parent = document.documentElement.scrollTop ? document.documentElement : document.body;
@@ -1396,7 +1417,18 @@ function scrollComments(rectToScrollIntoView, options /* CalcScrollOpts */) {
   };
   const coords /* CalcScrollResult */ = d.i.calcScrollRectIntoViewCoords(rectWithOffset, options);
   if (coords.needsToScroll) {
-    smoothScroll(document.body, coords.desiredParentLeft, coords.desiredParentTop);
+    smoothScroll(document.body, coords.desiredParentLeft, coords.desiredParentTop,
+          undefined, // duration
+          onDone);
+  }
+  else {
+    onDone();
+  }
+
+  function onDone() {
+    if (options.reason === 'ShowPreview') {
+      scrollingToPreview -= 1;
+    }
   }
 }
 

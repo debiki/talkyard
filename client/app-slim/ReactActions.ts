@@ -1023,6 +1023,14 @@ let lastFlashPostNr: PostNr | undefined;
 
 // SMALLER_BUNDLE: Move to the editor.editor.ts bundle? (Maybe move some other fns too?)
 export function showEditsPreviewInPage(ps: ShowEditsPreviewParams, inFrame?: DiscWin) {
+  const doneScrolling = _showEditsPreviewInPage(ps, inFrame);
+  if (doneScrolling !== false) {
+    ps?.onDone();
+  }
+}
+
+
+function _showEditsPreviewInPage(ps: ShowEditsPreviewParams, inFrame?: DiscWin): false | U {
   // @ifdef DEBUG
   dieIf(ps.replyToNr && ps.editingPostNr, 'TyE73KGTD02');
   dieIf(ps.replyToNr && !ps.anyPostType, 'TyE502KGSTJ46');
@@ -1031,8 +1039,11 @@ export function showEditsPreviewInPage(ps: ShowEditsPreviewParams, inFrame?: Dis
   if (eds.isInEmbeddedEditor) {
     const editorIframeHeightPx = window.innerHeight;
      // DO_AFTER 2020-09-01 send 'showEditsPreviewInPage' instead.
+    const params = { ...ps, editorIframeHeightPx };
+    delete params.onDone;
     sendToCommentsIframe(
-            ['showEditsPreview', { ...ps, editorIframeHeightPx }], inFrame);
+            ['showEditsPreview', params], inFrame);
+    // (Ty's script on the embedding page will manage scrolling into view.)
     return;
   }
 
@@ -1040,6 +1051,7 @@ export function showEditsPreviewInPage(ps: ShowEditsPreviewParams, inFrame?: Dis
   const me: Myself = store.me;
 
   if (me_uiPrefs(me).inp === UiPrefsIninePreviews.Skip) {
+    // (Don't need to scroll at all.)
     if (ps.replyToNr && ps.replyToNr !== lastFlashPostNr) {
       lastFlashPostNr = ps.replyToNr;
       flashPostNrIfThere(ps.replyToNr);
@@ -1113,9 +1125,13 @@ export function showEditsPreviewInPage(ps: ShowEditsPreviewParams, inFrame?: Dis
           isEditingBody: ps.editingPostNr === BodyNr,
           editorIframeHeightPx: ps.editorIframeHeightPx,
           highlightPreview: ps.highlightPreview,
+          onDone: ps.onDone,
         });
       }
     });
+
+    if (ps.scrollToPreview)
+      return false; // not done scrolling
   }
 }
 
@@ -1127,11 +1143,13 @@ export function scrollToPreview(ps: {
         isEditingBody?: boolean,
         editorIframeHeightPx?: number,
         highlightPreview?: boolean,
+        onDone?: () => V,
        } = {}) {
 
   if (eds.isInEmbeddedEditor) {
     const editorIframeHeightPx = window.innerHeight;   // maybe remove? [95BKAEPG240]
     sendToCommentsIframe(['scrollToPreview', { ...ps, editorIframeHeightPx }]);
+    ps.onDone?.();
     return;
   }
 
@@ -1178,13 +1196,17 @@ export function scrollToPreview(ps: {
   utils.scrollIntoViewInPageColumn(selector, {
     marginTop,
     marginBottom: 30 + editorHeight,
-    onDone: ps.highlightPreview === false ? null : function() {
-      const elem = findPreviewPost();
-      if (!elem) {
-        // We might just have navigated to a different page, fine.
-        return;
+    reason: 'ShowPreview',
+    onDone: function() {
+      if (ps.highlightPreview) {
+        const elem = findPreviewPost();
+        if (elem) {
+          flashPostElem(elem);
+        }
+        // Else: We might just have navigated to a different page, fine.
       }
-      flashPostElem(elem);
+      // We're done *scrolling* (maybe not done flashing).
+      ps.onDone?.();
     },
   });
 }
