@@ -1,7 +1,7 @@
 /**
  * License: The MIT License (MIT)
  * Copyright (C) 2013 Dustan Kasten
- * Parts copyright (C) 2020 Kaj Magnus Lindberg and Debiki AB
+ * Parts copyright (C) 2020, 2025 Kaj Magnus Lindberg
  *
  * This is smoothscroll-polyfill but with all polyfill stuff removed, I (KajMagnus) have kept
  * only the smoothScroll function, to keep down the amount of js code.
@@ -34,10 +34,6 @@
       return;
     }*/
 
-    /*
-     * globals
-     */
-    var Element = w.HTMLElement || w.Element;
     var SCROLL_TIME = 468;
 
     /*
@@ -80,9 +76,6 @@
      * @param {Object} context
      */
     function step(context) {
-      // call method again on next available frame
-      context.frame = w.requestAnimationFrame(step.bind(w, context));
-
       var time = now();
       var value;
       var currentX;
@@ -98,8 +91,6 @@
       currentX = context.startX + (context.x - context.startX) * value;
       currentY = context.startY + (context.y - context.startY) * value;
 
-      context.method.call(context.scrollable, currentX, currentY);
-
       // Done scrolling? (6284AKST4) But it's enough to be within 1 pixel, otherwise
       // the scroll animation will run, also if we don't really need to scroll
       //— because seems there's always (?) small floating point differences, e.g.
@@ -110,11 +101,20 @@
       var distX = Math.abs(currentX - context.x);
       var distY = Math.abs(currentY - context.y);
       if (distX < 1.0 && distY < 1.0) {
-        w.cancelAnimationFrame(context.frame);
         if (context.onDone) {
           context.onDone();
         }
+        return;
       }
+
+      // Scroll.
+      // (This'll generate another 'scroll' event — so, we can't call `onDone()` until
+      // the next animation frame.)
+      context.method.call(context.scrollable, currentX, currentY);
+
+      // Continue scrolling until at (context.x, y).  (We never cancel this new frame,
+      // because we need to call `onDone()` afterwards.)
+      w.requestAnimationFrame(step.bind(w, context));
     }
 
     /**
@@ -132,7 +132,6 @@
       var startY;
       var method;
       var startTime = now();
-      var frame;
 
       // define scroll context
       if (el === d.body) {
@@ -147,11 +146,6 @@
         method = scrollElement;
       }
 
-      // cancel frame when a scroll event's happening
-      if (frame) {
-        w.cancelAnimationFrame(frame);
-      }
-
       // scroll looping over a frame
       step({
         scrollable: scrollable,
@@ -163,7 +157,6 @@
         y: y,
         durationMs: durationMs,
         onDone: onDone,
-        frame: frame
       });
     }
 
