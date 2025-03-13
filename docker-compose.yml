@@ -189,7 +189,7 @@ services:
       #    # bash-4.4# su - postgres   # as root in the container
       #    $ pg_ctl reload -D /var/lib/postgresql/data/
       # or: SELECT pg_reload_conf();
-      - ./modules/ed-prod-one-test/conf/rdb/:/var/lib/postgresql/conf/
+      - ./conf/rdb/:/var/lib/postgresql/conf/
     networks:
       internal_net:
         ipv4_address: ${INTERNAL_NET_RDB_IP}
