@@ -3,10 +3,11 @@
 # Exit on error.
 set -e
 
-branch_name="$1"
+repo="$1"
+branch_name="$2"
 
 git branch -D "$branch_name"
-git push origin --delete "$branch_name"
+git push "$repo" --delete "$branch_name"
 
 
 # Delete many with the same name part:
