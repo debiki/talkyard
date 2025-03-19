@@ -165,6 +165,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadAllDrafts(): immutable.Seq[Draft]
   def loadDraftByNr(userId: UserId, draftNr: DraftNr): Option[Draft]
   def loadDraftsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[Draft]
+  /** Sorts by date desc, if there're many drafts with the same locator. */
   def loadDraftsByLocator(userId: UserId, draftLocator: DraftLocator): immutable.Seq[Draft]
   def listDraftsRecentlyEditedFirst(userId: UserId, limit: Int): immutable.Seq[Draft]
 
@@ -690,7 +691,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def loadUsersAsMap(userIds: Iterable[UserId]): Map[UserId, User] = {
     dieIf(userIds.exists(_ <= Participant.MaxGuestId), "EsE5YKG2")
-    loadParticipantsAsMap(userIds).view.mapValues(_.asInstanceOf[User]).toMap
+    loadParticipantsAsMap(userIds).mapValues(_.asInstanceOf[User]).toMap
   }
 
   def loadUserByPrimaryEmailOrUsername(emailOrUsername: String): Option[User]

@@ -241,8 +241,7 @@ object Dependencies {
     val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "6.0.1" % Test
 
     // Don't use, migrate to ScalaTest instead, some day.
-    //val specs2 = "org.specs2" %% "specs2-core" % "3.10.0" % "test"  // scala-ste  ward:off
-    val specs2 = "org.specs2" %% "specs2-core" % "4.20.9" % "test" // [scala_2_13]
+    val specs2 = "org.specs2" %% "specs2-core" % "4.20.9" % "test"
     val mockito = "org.mockito" % "mockito-all" % "1.10.19" % "test"
   }
 

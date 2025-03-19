@@ -1660,7 +1660,8 @@ function RepliesToArrow(
     r.a({ href: '#post-' + post.nr, className: 'dw-rr', key: post.nr,
         onMouseEnter: () => ReactActions.highlightPost(post.nr, true),
         onMouseLeave: () => ReactActions.highlightPost(post.nr, false),
-        onClick: utils.makeShowPostFn(thisPost.nr, post.nr) },
+        onClick: utils.makeShowPostFn(thisPost.nr, post.nr),
+      },
       author.username || author.fullName,
       // Append an up arrow to indicate that clicking the name will scroll up,
       // rather than opening an about-user dialog. ⬆ is Unicode upwards-black-arrow U+2B06.

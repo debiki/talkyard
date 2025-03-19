@@ -319,6 +319,7 @@ interface ShowEditsPreviewParams extends EditorIframeHeight {
   editingPostNr?: PostNr;
   doAsAnon?: MaybeAnon;
   highlightPreview?: boolean; // default: true
+  onDone?: () => V
 }
 
 
@@ -359,6 +360,8 @@ interface CalcScrollResult {
 interface ScrollIntoViewOpts extends CalcScrollOpts {
   duration?: number;
   onDone?: () => void;
+
+  reason?: 'ShowPreview'
 
   // If user defined selector, might cause an exception.
   maybeBadId?: boolean;

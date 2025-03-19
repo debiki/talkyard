@@ -138,7 +138,7 @@ $scrollPreviewButtonPaddingTop = 6px;
   .s_DfSts
     // Skip flex-position, it'd get placed "far away" to the right, hard to see,
     // now when the textarea is so wide (100%, no preview to the right).
-    margin-left: 33px;
+    margin-left: 30px;
     padding-top: $scrollPreviewButtonPaddingTop;
 
   // Also, there's more blank space above, because of the large "Show preview" button,
@@ -152,14 +152,47 @@ $scrollPreviewButtonPaddingTop = 6px;
     left: 21px;
     right: 21px;
 
+
+// The  [Auto|show preview]  double button.
+// ------------------------
+// Maybe break out [double_btn] Typescript & CSS?
+
+.c_E_ScrPrvw
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 47%);
+  margin: 0 0 5px 28px;
+  background: white;
+  &.auto
+    position: relative;
+    top: 2px;
+    left: 2px;
+    margin-top: -3px;    // cancel padding-top so layout-wise in same position
+    margin-right: -2px;
+    padding-top: 2px;
+    padding-left: 2px;
+    box-shadow: 1px 1px 4px hsl(0 0% 50%) inset;
+    background: hsl(0 0% 98%);
+    &:hover
+      // Highlight the whole button (both the left & right part).
+      background-color: #ebebeb;
+
+.c_E_ScrAutoB,
 .s_E_ScrPrvwB
-    margin: 0 0 5px 30px;
-    background: white;
+  display: inline-block;
+  padding: $scrollPreviewButtonPaddingTop 5px;
+  cursor: pointer;
+  background: inherit;
+  &, &:hover
     color: #222;
-    padding: $scrollPreviewButtonPaddingTop 12px;
-    cursor: pointer;
     text-decoration: none;
-    box-shadow: 2px 2px 4px rgba(0, 0, 0, 50%);
+
+.c_E_ScrAutoB
+  padding-left: 11px;
+  border-right: 1px solid hsl(0 0% 95%) !important;
+
+.s_E_ScrPrvwB
+  padding-right: 11px;
+
+// ------------------------
 
 #debiki-editor-controller
   position: fixed !important; // !important so jQuery.resizable() won't overwrite — what? but jQuery.resizable() is gone now (year 2020) since long.

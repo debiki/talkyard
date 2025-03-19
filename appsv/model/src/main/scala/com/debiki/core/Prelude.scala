@@ -1103,15 +1103,8 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
       kept
     }
 
-    // Scala 2.13 built-in, right?  [rm_to_x_opt]
-    // def toIntOption: Option[Int] =
-    //   Try(underlying.toInt).toOption
-
     def toInt64Option: Opt[i64] =
       Try(underlying.toLong).toOption
-
-    //def toFloatOption: Option[Float] = [rm_to_x_opt]
-    //  Try(underlying.toFloat).toOption
 
     def toFloat64Option: Opt[f64] =
       Try(underlying.toDouble).toOption

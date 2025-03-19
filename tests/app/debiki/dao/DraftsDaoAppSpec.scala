@@ -428,7 +428,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
     "find the anon reply draft nr — and one's old true id reply too (draftOne)" in {
       dao.readOnlyTransaction { tx =>
         tx.loadDraftsByLocator(userOne.id, draftOne.forWhat) mustBe Vec(
-              draftOne, draftSixAnonReply)
+              draftSixAnonReply, draftOne)
       }
     }
 

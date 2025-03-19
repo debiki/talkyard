@@ -54,7 +54,7 @@ export function calcScrollIntoViewCoordsInPageColumn(
 
 
 export function scrollIntoViewInPageColumn(
-    elemOrSelector: Element | string, options: ScrollIntoViewOpts = {}): boolean | undefined {
+    elemOrSelector: Element | St, options: ScrollIntoViewOpts = {}): Bo | U {
   // Warning: dupl code, see [5GUKF24] above.
   let what: Element;
   if (elemOrSelector && _.isString(elemOrSelector)) {
@@ -62,19 +62,32 @@ export function scrollIntoViewInPageColumn(
       what = $first(elemOrSelector);
     }
     catch (ex) {
-      if (options.maybeBadId) return; // expected error
+      if (!options.maybeBadId) {
+        logW(`Error finding '${elemOrSelector} [TyE702JK]`)
+      }
+      // Else: Expected error.
+      options.onDone?.();
+      if (options.maybeBadId) {
+        return; // expected error
+      }
       throw ex;
     }
   }
   else {
     what = <Element> elemOrSelector;
   }
-  if (!what)
+
+  if (!what) {
+    options.onDone?.();
     return;
+  }
+
   debiki2.dieIf(options.parent, 'EsE5GKF23');
   options.parent = $byId('esPageColumn');
-  if (!options.parent.contains(what))
+  if (!options.parent.contains(what)) {
+    options.onDone?.();
     return false;
+  }
   return scrollIntoView(what, options);
 }
 
@@ -99,17 +112,16 @@ function calcScrollIntoViewCoords(elem: Element, options: CalcScrollOpts): CalcS
 };
 
 
-export function scrollIntoView(elem, options: ScrollIntoViewOpts,
-      // remove — now incl in 'options'
-      onDone?: () => void): boolean | undefined {
-  options = options ? _.clone(options) : {};
-  onDone = onDone || options.onDone;
+export function scrollIntoView(elem: Elm, options: ScrollIntoViewOpts): Bo | U {
+  options = _.clone(options);
 
   let needsToScroll: boolean | undefined;
   if (eds.isInEmbeddedCommentsIframe) {
     delete options.parent;
     const rect = cloneRect(elem.getBoundingClientRect());
     window.parent.postMessage(JSON.stringify(['scrollComments', [rect, options]]), eds.embeddingOrigin);
+    // Maybe call `options.onDone()` after 700 ms? Then, Ty's script on the embedding page should
+    // be done scrolling, but we don't know precisely when.  [when_done_embng_scrolling]
   }
   else {
     if (!options.parent) {
@@ -123,12 +135,12 @@ export function scrollIntoView(elem, options: ScrollIntoViewOpts,
     if (needsToScroll) {
       smoothScroll(
           options.parent, coords.desiredParentLeft, coords.desiredParentTop,
-          options.duration, onDone);
+          options.duration, options.onDone);
     }
   }
 
-  if (onDone && !needsToScroll) {
-    onDone();
+  if (options.onDone && !needsToScroll) {
+    options.onDone();
   }
 
   return needsToScroll;
@@ -137,7 +149,7 @@ export function scrollIntoView(elem, options: ScrollIntoViewOpts,
 d.i.scrollIntoView = scrollIntoView;
 
 
-export function makeShowPostFn(currentPostNr: PostNr, postToShowNr: PostNr) {
+export function makeShowPostFn(currentPostNr: PostNr, postToShowNr: PostNr): (event) => V {
   // Combine this? [306KUGSTRR3]  <a href='#post-..'>  + onClick preventDefault?
   return function(event) {
     event.preventDefault();

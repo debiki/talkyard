@@ -208,6 +208,9 @@ function onMessage(event) {
     case 'showEditsPreviewInDisc': // use instead?
       ReactActions.showEditsPreviewInPage(eventData);
       break;
+    case 'stopAutoScrollingToPreview':
+      editor.stopAutoScrollingToPreview();
+      break;
     case 'scrollToPreview':
       ReactActions.scrollToPreview(eventData);
       break;

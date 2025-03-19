@@ -30,6 +30,7 @@
     </encoder>
   </appender>
 
+  <!-- [ty_v1] Remove file appender (log to stdout only). In -prod.xml too.  -->
   <!-- https://logback.qos.ch/manual/appenders.html#TimeBasedRollingPolicy   -->
   <appender name="FILE" class="RollingFileAppender">
     <file>/var/log/talkyard/talkyard-app.log</file>

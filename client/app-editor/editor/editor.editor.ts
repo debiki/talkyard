@@ -28,6 +28,22 @@ let FileAPI;
 
 let theEditor: any;
 
+enum ScrollToPreview {
+  No = 0,
+  Once = 1,
+  Auto = 2,
+}
+
+// If this is blog comments, then, auto scrolling to preview sabotages writing
+// comments on iPhones, because iOS makes the textarea scroll away under the iOS
+// keyboard, so you can no longer see what you're typing.
+// Could try to guess if this is iOS or not (see: `eds.isIos`) but for now,
+// let's just skip auto scrolling totally, for embedded comments? Simpler & safer.
+// Long term, seems an [inline_editor_and_preview] would work better, for
+// blog comments, and maybe optionally (for those who want) in forums too.
+const MaybeAutoPreview =
+        eds.isInIframe ? ScrollToPreview.No : ScrollToPreview.Auto;
+
 
 // rta supports multichar triggers (v3.1.1), and can use a custom
 // component instead of a <textarea> (v4.2.0).
@@ -52,6 +68,7 @@ export function getOrCreateEditor(success) {
     FileAPI = window['FileAPI'];
     theEditor = ReactDOM.render(Editor({}), utils.makeMountNode());
     success(theEditor);
+    debiki2['_editorCreated'] = true;
   }
 }
 
@@ -167,6 +184,7 @@ interface EditorState {
   draftStatus: DraftStatus;
   draft?: Draft;
   draftErrorStatusCode?: number;
+  scrollToPreview?: ScrollToPreview;
   safePreviewHtml: string;
   // [showPreviewWhere]: Maybe change & reuse UiPrefsIninePreviews somehow?
   onDone?:  EditsDoneHandler;
@@ -204,6 +222,7 @@ export const Editor = createFactory<any, EditorState>({
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function(): EditorState {
+    this.scrollingToPreview = 0;
     const state: EditorState = {
       store: debiki2.ReactStore.allData(),
       // For now, remember "forever" (until page reload), simpler.
@@ -214,6 +233,7 @@ export const Editor = createFactory<any, EditorState>({
       title: '',
       draftStatus: DraftStatus.NotLoaded,
       safePreviewHtml: '',
+      scrollToPreview: MaybeAutoPreview,
       replyToPostNrs: [],
       messageToUserIds: [],
       backdropOpacity: 0,
@@ -333,10 +353,22 @@ export const Editor = createFactory<any, EditorState>({
   },
 
 
-  onManualScroll: function() {
-    // Then stop auto scrolling.
-    // Start again, if pat clicks the Show Preview button?
-    delete this.scrollToPreview;
+  onManualScroll: function(event: Event) {
+    // Then stop auto scrolling — apparently there's some other post Pat wants to look at,
+    // while typing in the editor.
+    // Just first check if we're auto scrolling right now (then, don't stop). Or scrolling
+    // something else than the page (e.g. scrolling in the editor or sidebar).
+    if (this.scrollingToPreview >= 1)
+      return;
+
+    // (But this test no longer needed? Nowadays, the event listener is on #esPageColumn.)
+    const pageColElm = $first('#esPageColumn');
+    if (!pageColElm || !pageColElm.contains(event.target as Elm))
+      return;
+
+    // Pat is scrolling manually, or clicked some button that scrolls away. Stop auto
+    // scrolling to preview.
+    this.setState({ scrollToPreview: ScrollToPreview.No });
   },
 
 
@@ -366,9 +398,10 @@ export const Editor = createFactory<any, EditorState>({
     // thing?  E.g. tries to paste an image in the search field?  See this.onPaste().
     window.addEventListener('paste', this.onPaste, false);
 
-    Bliss.bind(window, {
-      'touchmove wheel': this.onManualScroll,
-    });
+    // (Need to look up again — can't append to `this.columns` which is a
+    // HTMLCollectionOf<HTMLElement>, not an array [].)
+    const pageCol = $first('#esPageColumn');
+    pageCol?.addEventListener('scroll', this.onManualScroll);
 
     // Don't scroll the main discussion area, when scrolling inside the editor.
     /* Oops this breaks scrolling in the editor and preview.
@@ -414,9 +447,8 @@ export const Editor = createFactory<any, EditorState>({
     logD("Editor: componentWillUnmount");
     window.removeEventListener('unload', this.saveDraftUseBeacon);
     window.removeEventListener('paste', this.onPaste);
-    Bliss.unbind(window, {
-      'touchmove wheel': this.onManualScroll,
-    });
+    const pageCol = $first('#esPageColumn');
+    pageCol?.removeEventListener('scroll', this.onManualScroll);
     this.saveDraftNow();
   },
 
@@ -1400,11 +1432,11 @@ export const Editor = createFactory<any, EditorState>({
           // For now, skip guidelines, for blog comments — they would break e2e tests,
           // and maybe are annoying?
           guidelines: eds.isInIframe ? undefined : anyGuidelines,
+          scrollToPreview: MaybeAutoPreview,
         };
 
         this.setState(newState, () => {
           this.focusInputFields();
-          this.scrollToPreview = true;
           this.updatePreviewSoon();
         });
       });
@@ -1568,6 +1600,10 @@ export const Editor = createFactory<any, EditorState>({
     }
   },
 
+  stopAutoScrollingToPreview: function() {
+    this.setState({ scrollToPreview: ScrollToPreview.No } satisfies Partial<EditorState>);
+  },
+
   updatePreviewNow: function() {
     // This function is debounce-d, so the editor might have been cleared
     // and closed already, or even unmounted.
@@ -1575,10 +1611,8 @@ export const Editor = createFactory<any, EditorState>({
     if (this.isGone || !state.visible)
       return;
 
-    // This cannot be a function param, because updatePreviewSoon() is debounce():d,
-    // and only args from the last invokation are sent — so any scrollToPreview = true
-    // argument, could get "debounce-overwritten".
-    const scrollToPreview = this.scrollToPreview;
+    const newScrollToPreview = state.scrollToPreview === ScrollToPreview.Once ?
+            ScrollToPreview.No : state.scrollToPreview;
 
     // (COULD verify still edits same post/thing, or not needed?)
     const isEditingBody = state.editingPostNr === BodyNr;
@@ -1595,7 +1629,8 @@ export const Editor = createFactory<any, EditorState>({
       // is available when rendering the page and one might want to see one's drafts,
       // here: [DRAFTPRVW]. But would need to sanitize server side (!).
       safePreviewHtml: safeHtml,
-    }, () => {
+      scrollToPreview: newScrollToPreview,
+    } satisfies Partial<EditorState>, () => {
       if (this.isGone) return;
       // Show an in-page preview, unless we're creating a new page.  [showPreviewWhere]
       const state: EditorState = this.state;
@@ -1603,11 +1638,20 @@ export const Editor = createFactory<any, EditorState>({
         // Then the page doesn't yet exist — cannot show any in-page preview.
       }
       else {
+        const scrollToPreview = state.scrollToPreview >= ScrollToPreview.Once;
+        if (scrollToPreview)
+          this.scrollingToPreview += 1;
+
         const params: ShowEditsPreviewParams = {
           scrollToPreview,
           safeHtml,
           editorsPageId: state.editorsPageId,
           doAsAnon: state.doAsAnon,
+          onDone: () => {
+            if (this.isGone) return;
+            if (scrollToPreview)
+              this.scrollingToPreview -= 1;
+          },
         };
         const postNrs: PostNr[] = state.replyToPostNrs;
         if (postNrs.length === 1) {
@@ -2310,6 +2354,8 @@ export const Editor = createFactory<any, EditorState>({
 
     const oldState: EditorState = this.state;
     const newState: Partial<EditorState> = { ...statePatch, visible: true };
+    // Maybe leave  state.scrollToPreview as is? If Pat toggled off auto scroll, maybe leave
+    // it disabled.
     this.setState(newState);
 
     const params: EditorStorePatch = {
@@ -2320,7 +2366,6 @@ export const Editor = createFactory<any, EditorState>({
     ReactActions.onEditorOpen(params, () => {
       if (this.isGone || !this.state.visible) return;
       this.focusInputFields();
-      this.scrollToPreview = true;
       this.updatePreviewSoon();
     });
   },
@@ -2626,10 +2671,9 @@ export const Editor = createFactory<any, EditorState>({
           r.a({ href: '#post-' + editingPostNr,
               onMouseEnter: () => ReactActions.highlightPost(editingPostNr, true),
               onMouseLeave: () => ReactActions.highlightPost(editingPostNr, false),
-              onClick: (event) => {
+              onClick: (event: MouseEvent) => {
                 event.preventDefault();
                 ReactActions.scrollAndShowPost(editingPostNr, whichFrameScrollOpts);
-                this.scrollToPreview = true;
               }},
             t.e.EditPost_2 + editingPostNr + ':'));
     }
@@ -2698,7 +2742,7 @@ export const Editor = createFactory<any, EditorState>({
             const replToAuthor: Pat | U =
                     replToPost && store_getAuthorOrMissing(store, replToPost);
 
-            let replyingToWhat;
+            let replyingToWhat: RElm | St;
             if (replToAuthor) {
               replyingToWhat = UserName({ user: replToAuthor, settings,
                   makeLink: false, onClick: null, avoidFullName: true });
@@ -2718,10 +2762,6 @@ export const Editor = createFactory<any, EditorState>({
                   onMouseLeave: () => ReactActions.highlightPost(replToPostNr, false),
                   onClick: !replToPost ? undefined : () => {
                     ReactActions.scrollAndShowPost(replToPost, whichFrameScrollOpts);
-                    // Stop auto scrolling the preview into view — since pat
-                    // apparently wants to view the post hen is replying to.
-                    // (If clicking Show Preview, we'll resume auto scrolling into view.)
-                    this.scrollToPreview = false;
                   }},
                   replyingToWhat)));
           }),
@@ -2945,17 +2985,38 @@ export const Editor = createFactory<any, EditorState>({
 
     const previewTitleTagName = !thereIsAnInPagePreview ? 'span' : 'a';
 
+    // [Auto|show preview] button:
+
+    const scrollToPreviewOnce = () => {
+      this.scrollingToPreview += 1;
+      ReactActions.scrollToPreview({
+        isEditingBody: state.editingPostNr === BodyNr,
+        isChat: page_isChat(editorsPageType),
+        onDone: () => {
+          if (this.isGone) return;
+          this.scrollingToPreview -= 1;
+        },
+      });
+    }
+
+    // If clicking [Auto|show preview] when auto-scroll-to-preview is on, this fn
+    // toggles auto scroll off.
+    const stopAutoPreview = state.scrollToPreview !== ScrollToPreview.Auto ? null : () => {
+      this.setState({ scrollToPreview: ScrollToPreview.No });
+    };
+
     const scrollToPreviewProps = !thereIsAnInPagePreview ? {} : {
       onMouseEnter: () => ReactActions.highlightPreview(true),
       onMouseLeave: () => ReactActions.highlightPreview(false),
-      onClick: () => {
-        ReactActions.scrollToPreview({
-          isEditingBody: state.editingPostNr === BodyNr,
-          isChat: page_isChat(editorsPageType),
-        });
-        // Also resume auto-scrolling the preview into view, if typing more text.
-        this.scrollToPreview = true;
-      },
+      onClick: stopAutoPreview || scrollToPreviewOnce
+    };
+
+    const autoScrollProps = !thereIsAnInPagePreview ? {} : {
+      ...scrollToPreviewProps,
+      onClick: stopAutoPreview || (() => {
+        this.setState({ scrollToPreview: ScrollToPreview.Auto });
+        scrollToPreviewOnce();
+      }),
     };
 
     const previewTitle = skipInEditorPreview ? null :
@@ -2963,10 +3024,21 @@ export const Editor = createFactory<any, EditorState>({
           r[previewTitleTagName](scrollToPreviewProps,
             t.e.PreviewC + (titleInput ? t.e.TitleExcl : '')));
 
-    // If no in-editor preview, instead well include a "Scroll to preview" button
-    // above the textarea.
+    // If no in-editor preview, instead well include an [Auto | show preview] button
+    // above the textarea. If clicking the  [Auto|  half of the button, the whole button stays
+    // depressed, and Ty auto scrolls to the preview. But if you click the  |show preview]
+    // half, then Ty scrolls just once.
+    // (Also see the forum buttons, which also have a depressed state [double_btn].)
+    const autoScrollClass = state.scrollToPreview === ScrollToPreview.Auto ? ' auto' : '';
     const scrollToPreviewBtn = !skipInEditorPreview || !thereIsAnInPagePreview ? null :
-        r.a({ ...scrollToPreviewProps, className: 's_E_ScrPrvwB' }, t.ShowPreview);
+        r.div({ className: 'c_E_ScrPrvw' + autoScrollClass },
+          // If clicking the "Auto" part of the button, start auto-scrolling
+          // the preview into view, if typing more text.
+          // And show the whole button (both "Auto" and "show preview") in a depressed state.
+          // If already auto scrolling, then, stop doing that (and render buttons as not depressed).
+          LinkButton({ ...autoScrollProps, className: 'c_E_ScrAutoB' }, "Auto"), // I18N
+          // If clicking "show preview" part, scroll the preview into view just once.
+          LinkButton({ ...scrollToPreviewProps, className: 's_E_ScrPrvwB' }, t.ShowPreview));
 
     let editorClasses = skipInEditorPreview ? 's_E-NoInEdPrvw' : 's_E-WithInEdPrvw';
 
