@@ -135,7 +135,8 @@ function TalkyardTour() {
     const isScrolling = utils.scrollIntoViewInPageColumn(
         placeAtElem, { marginTop: 90, marginBottom: 250 });
     // For now. Currently there's no scroll-done event. Edit: Now there is, but
-    // not for embedded comments. [when_done_embng_scrolling]
+    // not for embedded comments, since it's hard to know when the Ty script on the
+    // *embedding* page is done scrolling. [when_done_embng_scrolling]
     const delayMs = (step.pauseBeforeMs || 0) + (isScrolling ? 700 : 0);
     setTimeout(showDialog, delayMs);
   }
