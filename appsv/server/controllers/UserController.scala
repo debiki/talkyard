@@ -918,8 +918,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val postId = (request.body \ "postId").as[PostId]
     val numDays = -1 // (request.body \ "numDays").as[Int] // currently no longer in use
     val threatLevel = ThreatLevel.fromInt((request.body \ "threatLevel").as[Int]).getOrElse(
-      throwBadArgument("EsE8GY2W", "threatLevel"))
-    request.dao.blockGuest(postId, numDays = numDays, threatLevel, blockerId = request.theUserId)
+          throwBadArgument("EsE8GY2W", "threatLevel"))
+    request.dao.blockGuestIfAuZ(
+          postId, threatLevel, request.reqrTargetSelf.denyUnlessStaff())
     Ok
   }
 

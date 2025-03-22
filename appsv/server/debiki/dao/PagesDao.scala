@@ -127,6 +127,7 @@ trait PagesDao {
 
     val catsRootLast = getAncestorCategoriesSelfFirst(inCatId)
     val tooManyPermissions = getPermsOnPages(categories = catsRootLast)
+    val now = globals.now()
 
     // A bot might be creating the page on behalf of another user, via the API. Then,
     // the requester is the bot (it sends the HTTP request), and the creator is the human.
@@ -151,7 +152,8 @@ trait PagesDao {
           pageType, PostType.Normal, pinWhere = None,
           anySlug = anySlug, anyFolder = anyFolder,
           inCategoriesRootLast = catsRootLast,
-          tooManyPermissions),
+          tooManyPermissions,
+          now = now),
           "TyE_CRPG_REQR_PERMS")
 
     val createdByWho: Who = reqrAndCreator match {
@@ -167,7 +169,8 @@ trait PagesDao {
                 inCategoriesRootLast = catsRootLast,
                 // (This includes permissions for both the requester and target users, and
                 // everyone else, but mayCreatePage() uses only those of the creator.)
-                tooManyPermissions),
+                tooManyPermissions,
+                now = now),
                 "TyE_CRPG_TGT_PERMS")
         }
         creatorWho
@@ -306,7 +309,7 @@ trait PagesDao {
       realAuthorAndLevels, asAlias, groupIds,
       pageRole, bodyPostType, pinWhere, anySlug = anySlug, anyFolder = anyFolder,
       inCategoriesRootLast = categoryPath,
-      permissions), "EdE5JGK2W4")
+      permissions, now = now), "EdE5JGK2W4")
 
     require(!anyFolder.exists(_.isEmpty), "EsE6JGKE3")
     // (Empty slug ok though, e.g. homepage.)

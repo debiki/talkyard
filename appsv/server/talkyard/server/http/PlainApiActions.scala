@@ -588,7 +588,7 @@ class PlainApiActions(
       val isBanned = anyUserMaybeSuspended.exists(_.isBanned)
       if (isBanned) {
         return Future.successful(
-              ForbiddenResult("TyEBANND", "Account banned")
+              ForbiddenResult("TyEBANND1", "Account banned")
                   .discardingCookies(DiscardingSessionCookies: _*))
       }
 

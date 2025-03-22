@@ -10371,8 +10371,13 @@ export class TyE2eTestBrowser {
         await this.waitUntilTextMatches('.s_SED_Msg', 'TyESUSPENDED_|TyE0LGDIN_');
       },
 
-      waitForBannedError: async () => {
-        await this.waitUntilTextMatches('.s_SED_Msg', 'banned.*TyEBANND');
+      waitForBannedError: async (when?: 'WhenLoggingIn') => {
+        const msgRegex = (() => {
+          switch (when) {
+            case 'WhenLoggingIn': return 'Account banned.*TyEBANND0_';
+            default:              return 'banned.*TyEBANND1';
+        }})();
+        await this.waitUntilTextMatches('.s_SED_Msg', msgRegex);
       },
 
       dismissReloadPageAlert: async () => {

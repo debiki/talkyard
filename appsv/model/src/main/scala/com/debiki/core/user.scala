@@ -744,7 +744,10 @@ case object Participant {
     *
     * This is 2314-08-31 10:00:01. DO_BEFORE 2200-01-01: Replace w null & review constraints etc.
     */
-  val _BanMagicEpoch: i64 = 10876500001L // [ban_magic_nr]
+  val _BanMagicEpochMs: i64 = 10876500001000L // [ban_magic_nr]
+  // Oops forgot *1000 to get millis. Fixed in v0.2025.005, & v1.
+  val _BanMagicEpochBadSecs: i64 = 10876500001L
+
 }
 
 
@@ -772,7 +775,10 @@ sealed trait Pat extends HasInt32Id {
   // Later: Set to false, if banned? Add new fn: isSuspendedOrBanned?
   def suspendedTill: Opt[ju.Date]
   /** Banned users cannot log in and view their old posts — but suspended users can. */
-  def isBanned: Bo = suspendedTill.exists(_.getTime == Participant._BanMagicEpoch)
+  def isBanned: Bo = suspendedTill.exists(t =>
+        t.getTime == Participant._BanMagicEpochMs ||
+        // Oops, some dates saved as secs, should have been millis.
+        t.getTime == Participant._BanMagicEpochBadSecs)
   def isAdmin: Bo
   def isOwner: Bo
   def isModerator: Bo
@@ -823,7 +829,9 @@ sealed trait Pat extends HasInt32Id {
 
   final def isSuspendedAt(when: When): Bo = isSuspendedAt(when.toJavaDate)
   final def isSuspendedAt(when: ju.Date): Bo =
-    Participant.isSuspendedAt(when, suspendedTill = suspendedTill)
+    Participant.isSuspendedAt(when, suspendedTill = suspendedTill) ||
+          isBanned  // because of the _BanMagicEpochBadSecs instead of millis bug
+                    // and later, if suspendedTil == None means banned?  [4ELBAUPW2]
 
   def effectiveTrustLevel: TrustLevel
 
@@ -931,6 +939,14 @@ sealed trait Pat extends HasInt32Id {
     this match {
       case guest: Guest => guest
       case _ => throwWrongPatType(wantedWhat = "a guest")
+    }
+  }
+
+  def asGuestOrAnonOrThrow: PatVb = {
+    this match {
+      case guest: Guest => guest
+      case anon: Anonym => anon
+      case _ => throwWrongPatType(wantedWhat = "a guest or anon")
     }
   }
 
@@ -1178,7 +1194,7 @@ case class Anonym(
   def emailNotfPrefs: EmailNotfPrefs = EmailNotfPrefs.Unspecified
   def tinyAvatar: Opt[UploadRef] = None
   def smallAvatar: Opt[UploadRef] = None
-  def suspendedTill: Opt[ju.Date] = None // for now
+  def suspendedTill: Opt[ju.Date] = None // for now, think about later. [How_block_anons]
 
   def isAdmin: Bo = false
   def isOwner: Bo = false
@@ -2417,6 +2433,7 @@ object BrowserIdData {
   val Sysbot = BrowserIdData("127.0.0.4", None, NoFingerprint)
   // Superadmin = .3,  or  .10?  and Superbot = .4  or .20 ?
   val Forgotten = BrowserIdData("127.0.0.2", None, NoFingerprint)
+  val Test = BrowserIdData("123.45.67.89", None, NoFingerprint)
 }
 
 

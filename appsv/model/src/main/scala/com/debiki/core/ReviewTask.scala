@@ -34,7 +34,7 @@ case class ModResult(
   updatedAuthor: Option[Participant],
   updatedPageId: Option[PageId] = None,
   deletedPageId: Option[PageId] = None,
-  bannedUser: Opt[Pat] = None)
+  bannedPat: Opt[Pat] = None)
 
 object ModResult {
   val NothingChanged = ModResult(Nil, None, None, None)

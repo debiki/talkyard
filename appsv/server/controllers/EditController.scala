@@ -145,6 +145,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4JBR01")
     val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdE0DK9WY3")
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
+    val now = dao.now()
 
     // Won't need later, when true id stored in posts3/nodes_t? [posts3_true_id]
     val postAuthor: Pat =
@@ -163,6 +164,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
           dao.getAnyPrivateGroupTalkMembers(pageMeta),
           inCategoriesRootLast = categoriesRootLast,
           tooManyPermissions = dao.getPermsOnPages(categoriesRootLast),
+          now = now,
           // We're just loading the draft text
           ignoreAlias = true), "EdEZBXKSM2")
 
@@ -202,6 +204,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val anyPostId: Opt[PostId] = parseOptInt32(body, "postId")
     val newText: St = parseSt(body, "text")
     val deleteDraftNr: Opt[DraftNr] = parseOptInt32(body, "deleteDraftNr")
+    val now = dao.now()
 
     TESTS_MISSING // Do as anon  TyTANONEDIT
     val asAlias: Opt[WhichAliasPat] =
@@ -252,7 +255,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
       post, postAuthor = postAuthor, pageMeta, pageAuthor = pageAuthor,
       dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
-      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdE4JBTYE8")
+      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast),
+      now = now), "EdE4JBTYE8")
 
     val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
     val newTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(

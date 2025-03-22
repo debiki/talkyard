@@ -59,6 +59,10 @@ sealed trait AnyReqrAndTgt {
   * "Prin" is an abbreviation for 1) "principal" and 2) "principle" — let's use "prin"?
   * See: https://www.merriam-webster.com/dictionary/prin
   *
+  * This corresponds to Git's "author" and "committer". In Talkyard, the author
+  * is the "principal" (well, "target" right now, to be renamed) and the committer
+  * is "requester".
+  *
   * And RENAME this class to  ReqrAndPrin  for "requester and principal",
   * and instead of "tgt", use "prin" everywhere. (It's ok to abbreviate
   * more commonly used words, and "principal" will be "everywhere")
@@ -107,6 +111,11 @@ object ReqrAndTgt {
 
   def apply(reqrInf: ReqrInf, target: Pat): ReqrAndTgt = {
     this.apply(reqrInf.reqr, reqrInf.browserIdData, target = target)
+  }
+
+  /** When the reqr does things on behalf of hanself. (Requester = principal/target.) */
+  def self(reqr: Pat, browserIdData: BrowserIdData): ReqrAndTgt = {
+    this.apply(reqr, browserIdData, target = reqr)
   }
 
   def apply(reqr: Pat, browserIdData: BrowserIdData, target: Pat): ReqrAndTgt = {

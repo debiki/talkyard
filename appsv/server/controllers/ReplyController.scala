@@ -60,6 +60,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val postType = PostType.fromInt((body \ "postType").as[Int]) getOrElse throwBadReq(
       "DwE6KG4", "Bad post type")
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
+    val now = context.globals.now()
 
     throwForbiddenIf(isProd && postType == PostType.Bookmark,
           "TyEBOOKM0ENA1", "Bookmarks not yet enabled")
@@ -99,7 +100,8 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
       postType, pageMeta, pageAuthor = pageAuthor,
       replyToPosts, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
-      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)),
+      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast),
+      now = now),
       "TyEM0REPLY_")
 
     REFACTOR; COULD // intstead: [5FLK02]
@@ -136,6 +138,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val pageId = (body \ "pageId").as[PageId]
     val text = (body \ "text").as[String].trim
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
+    val now = context.globals.now()
 
     // Not yet supported, for chat messages.
     // val asAlias: Opt[WhichAliasPat] = ...
@@ -156,7 +159,8 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
       PostType.ChatMessage, pageMeta, pageAuthor = pageAuthor,
       replyToPosts, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
-      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)),
+      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast),
+      now = now),
       "EdEHDETG4K5")
 
     // Don't follow links in chat messages — chats don't work with search engines anyway.
@@ -346,6 +350,7 @@ object EmbeddedCommentsPageCreator {   REFACTOR; CLEAN_UP; // moe to talkyard.se
 
     val slug = None
     val folder = None
+    val now = context.globals.now()
 
     val placeInCatId = lazyCreatePageInCatId getOrElse {
       val id = siteSettings.embeddedCommentsCategoryId
@@ -360,7 +365,8 @@ object EmbeddedCommentsPageCreator {   REFACTOR; CLEAN_UP; // moe to talkyard.se
           request.theUserAndLevels, asAlias = None, dao.getGroupIdsOwnFirst(requester),
           pageRole, PostType.Normal, pinWhere = None, anySlug = slug, anyFolder = folder,
           inCategoriesRootLast = categoriesRootLast,
-          tooManyPermissions = dao.getPermsOnPages(categories = categoriesRootLast)),
+          tooManyPermissions = dao.getPermsOnPages(categories = categoriesRootLast),
+          now = now),
           "EdE7USC2R8")
 
     // This won't generate any new page notf — but the first *reply*, does. [new_emb_pg_notf]

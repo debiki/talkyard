@@ -497,7 +497,7 @@ trait AuthzSiteDaoMixin {
 
 
   def throwIfMayNotSeeReviewTaskUseCache(task: ReviewTask, forWho: Who): Unit = {
-    TESTS_MISSING // add security test, not e2e test?
+    TESTS_MISSING // [block_post_author_e2e_test]
     val postId = task.postId getOrElse { return }
     val post = loadPostByUniqueId(postId) getOrDie "TyE5WKBGP"  // there's a foreign key
     // If one has activated a pseudonym, one might need to activate one's main user account
@@ -507,7 +507,7 @@ trait AuthzSiteDaoMixin {
     val (result, debugCode) =
           _maySeePostImpl(ThePost.Here(post), Some(requester), anyTx = None)
     if (!result.may)
-      throwIndistinguishableNotFound(s"TyEM0REVTSK-$debugCode")
+      throwIndistinguishableNotFound(s"TyEM0REVTSK-$debugCode")  // [auz_banner_of_auhtor]
   }
 
 

@@ -61,6 +61,7 @@ Left to do
 -----------------------
 
 Now:
+  - [How_block_anons]?  or/and [block_true_user] from creating new anons?
   - Save persona mode in ... localStorage? Cookie? [remember_persona_mode]
   - [hide_peoples_dates]  [deanon_risk]
   - Notifications: List notifications to all one's aliases (anonyms & pseudonyms),
