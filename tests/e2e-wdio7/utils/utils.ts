@@ -324,7 +324,10 @@ talkyardAuthnToken = ${JSON.stringify(ps.authnToken)};
     let resultHtmlStr = `
 <!DOCTYPE html>
 <html>
-<head><title>Embedded comments E2E test</title></head>
+<head>
+<title>Embedded comments E2E test</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+</head>
 <body style="background: ${ps.bgColor || 'black'}; color: ${ps.color || '#ccc'}; font-family: monospace; font-weight: bold;">
 <p>Embedded comments E2E test page "${ps.pageName}".<br>
 Discussion id: "${ps.discussionId || ''}"${ieEmpty}.<br>
@@ -405,6 +408,7 @@ talkyardAuthnToken = ${JSON.stringify(ps.authnToken)};
 <html>
 <head>
 <title>Embedded comments many iframes E2E test</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <style>
 body { background: ${ps.bgColor || 'black'}; color: ${ps.color || '#ccc'}; font-family: monospace; }
 iframe { margin: 15px 0 25px; }
@@ -443,6 +447,7 @@ export function makeBlogPostIndexPageHtml(ps: { localHostname?: St, urlA: St, ur
         <html>
         <head>
         <title>Embedded comments E2E test</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <style>a { color: white }</style>
         </head>
         <body style="background: #000; color: #bbb; font-family: monospace;">
