@@ -265,6 +265,7 @@ Wro = wrong
 X   = extra
 Xl  = extra large (screen), also: Lg, Sm, Md
 Wb  = Watchbar
+Wde = wide,  Nrw = narrow
 Wbhk = webhook
 Example: s_Whatever_SaveB = save button. Or s_SomethingElse_EmT = email addresses table.
 
@@ -365,7 +366,7 @@ s_MvPD          = move post dialog
 
 s_NP            = No page, i.e. login-&-create-something-here stuff  RENAME to s_NPg
 
-Nrw             = narrow
+Nrw             = narrow,  Wde = wide
 
   U             = user
 
