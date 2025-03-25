@@ -997,6 +997,10 @@ frame at the bottom of the browser window.
 iOS is especially annoying (from Ty's perspective), in that it can scroll [the textarea
 where you're typing] in under the iOS keyboard (although the textarea is
 position: fixed). [ios_bugs].
+But now the iOS problems seems to be gone? And maybe it's pretty nice with the editor
+frame after all, since can then see the post one is replying to, while typing.
+Maybe, however:
+[show_split_pane_preview] by default, if screen wide enough.
 
 [html_json] [nashorn_in_tx] [save_post_lns_mentions]
 Keep sanitized html in a json array with placeholders for site origin,

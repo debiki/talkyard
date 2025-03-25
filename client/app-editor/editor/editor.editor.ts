@@ -41,6 +41,11 @@ enum ScrollToPreview {
 // let's just skip auto scrolling totally, for embedded comments? Simpler & safer.
 // Long term, seems an [inline_editor_and_preview] would work better, for
 // blog comments, and maybe optionally (for those who want) in forums too.
+//
+// UX: Or maybe always skip auto-scroll to preview? Isn't it more nice to see the post one
+// is replying to. But then should probably open the split pane in-editor preview, so one
+// sees how one's post will look (if the screen is wide enough). [show_split_pane_preview]
+//
 const MaybeAutoPreview =
         eds.isInIframe ? ScrollToPreview.No : ScrollToPreview.Auto;
 
