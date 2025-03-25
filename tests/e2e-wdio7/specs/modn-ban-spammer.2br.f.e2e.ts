@@ -232,7 +232,7 @@ describe(`modn-ban-spammer.2br.f  TyTMODNBANSPM`, () => {
     await maria_brB.loginDialog.loginWithPassword(maria, { resultInError: true });
   });
   it(`... an error dialog says "Banned"`, async () => {
-    await maria_brB.serverErrorDialog.waitForBannedError();
+    await maria_brB.serverErrorDialog.waitForBannedError('WhenLoggingIn');
   });
 
 
@@ -289,7 +289,7 @@ describe(`modn-ban-spammer.2br.f  TyTMODNBANSPM`, () => {
     await merche_brB.loginDialog.loginWithPassword(merche, { resultInError: true });
   });
   it(`... an error dialog says "Banned"`, async () => {
-    await merche_brB.serverErrorDialog.waitForBannedError();
+    await merche_brB.serverErrorDialog.waitForBannedError('WhenLoggingIn');
   });
 
 
@@ -369,7 +369,7 @@ describe(`modn-ban-spammer.2br.f  TyTMODNBANSPM`, () => {
     await mallory_brB.loginDialog.loginWithPassword(mallory, { resultInError: true });
   });
   it(`... an error dialog says "Banned"`, async () => {
-    await mallory_brB.serverErrorDialog.waitForBannedError();
+    await mallory_brB.serverErrorDialog.waitForBannedError('WhenLoggingIn');
   });
 
   // Angry Elk's reply to Mallory doesn't get deleted, and it's still in the

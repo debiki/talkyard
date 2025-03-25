@@ -88,6 +88,7 @@ trait MessagesDao {
       // But do let them talk with staff, e.g. ask "why am I not allowed to ...".
       // 2) TrustLevle.New members haven't spent much time at the site, and it's a bit risky to
       // let them start sending PMs directly.
+      throwForbiddenIf(sender.user.isSuspendedAt(tx.now), "TyEM0MSG_SUSP", "Account suspended")
       if ((sender.threatLevel.toInt >= ThreatLevel.ModerateThreat.toInt ||
           sender.trustLevel.isStrangerOrNewMember) && !sender.isStaff) {
         if (toMembers.exists(!_.isStaff))

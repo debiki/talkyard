@@ -33,7 +33,7 @@ import talkyard.server._
 import talkyard.server.dao.StaleStuff
 import talkyard.server.authn.{Join, Leave, JoinOrLeave, StayIfMaySee}
 import talkyard.server.authz.{AuthzCtxOnPats, AuthzCtxOnAllWithReqer, AuthzCtxWithReqer}
-import talkyard.server.authz.{ReqrAndTgt, PatAndPrivPrefs}
+import talkyard.server.authz.{StaffReqrAndTgt, ReqrAndTgt, PatAndPrivPrefs}
 
 
 case class LoginNotFoundException(siteId: SiteId, userId: UserId)
@@ -411,10 +411,52 @@ trait UserDao {
     * And the person can't log in and view their old posts — but you can if you're
     * only suspended.
     */
-  def banUser(userId: UserId, reason: St, bannedById: UserId)(tx: SiteTx, ss: StaleStuff,
-          ): Pat = {
-    _suspendOrBan(userId, until = new ju.Date(Pat._BanMagicEpoch), reason = reason,
-          suspendedById = bannedById)(tx, ss)
+  def banAuthorOf(post: Post, reason: St, bannedById: UserId)(tx: SiteTx, ss: StaleStuff,
+          ): Opt[Pat] = {
+    // (We've already checked if the banner may see the page. [auz_banner_of_auhtor])
+
+    // (Don't throw anything from here — that'd prevent the janitor actor from ever
+    // carrying out this mod task, and mod tasks later in the queue.)
+
+    val patBef: Pat = tx.loadPatVb(post.createdById) getOrElse {
+      logger.error(s"s$siteId: Can't find author of post ${post.id} [TyEBAN0ATR]")
+      return None
+    }
+
+    val patAft: Pat = patBef match {
+      case guestBef: Guest =>
+        UNTESTED
+        // Guests don't have real user accounts — we'll ban their
+        // unauthenticated guest account, and their ip addr too for a while.
+        val auditLogEntry: Opt[AuditLogEntry] = tx.loadCreatePostAuditLogEntry(post.id)
+        if (auditLogEntry.isEmpty)
+          logger.warn(o"""s$siteId: No audit log entry, when blocking author of post ${post.id},
+              who supposedly is a guest — so can't block IP addr [TyW2WKF6]""")
+
+        val guestAft = this.blockGuestSkipAuZ(
+              guestBef, auditLogEntry.map(_.browserIdData),
+              ThreatLevel.SevereThreat, blockerId = bannedById)(tx)
+
+        guestAft getOrElse guestBef // guestAft is None if already banned
+
+      case userBef: UserVb =>
+        _suspendOrBan(userBef, until = new ju.Date(Pat._BanMagicEpochMs),
+              reason = reason, suspendedById = bannedById)(tx, ss) getOrIfBad { err=>
+          logger.warn(s"s$siteId: Cound't ban pat ${patBef.id}: $err [TyEBANATR07]")
+          return None
+        }
+
+      case anonBef: Anonym =>
+        // [How_block_anons]
+        logger.warn(s"s$siteId: Baning anonyms hasn't been implemented [TyEBANATR05]")
+        return None
+
+      case other =>
+        logger.error(s"s$siteId: Can't ban a ${classNameOf(other)} [TyEBANATR03]")
+        return None
+    }
+
+    Some(patAft)
   }
 
 
@@ -428,35 +470,37 @@ trait UserDao {
     writeTx { (tx, staleStuff) =>
       val now = tx.now
       val suspendedTill = new ju.Date(now.millis + cappedDays * MillisPerDay)
-
-      _suspendOrBan(userId, until = suspendedTill, reason = reason,
-            suspendedById = suspendedById)(tx, staleStuff)
+      var user: UserVb = tx.loadTheUserInclDetails(userId)
+      _suspendOrBan(user, until = suspendedTill, reason = reason,
+            suspendedById = suspendedById)(tx, staleStuff) ifBad { err =>
+        throwForbidden(err)
+      }
     }
   }
 
 
-  /** If `until` is epoch `_BanMagicEpoch` the user is considered banned.
+  /** If `until` is epoch `_BanMagicEpochMs` the user is considered banned.
     */
-  private def _suspendOrBan(userId: UserId, until: ju.Date, reason: St, suspendedById: UserId,
-          )(tx: SiteTx, staleStuff: StaleStuff): Pat = {
-      var user = tx.loadTheUserInclDetails(userId)
-      if (user.isAdmin)
-        throwForbidden("DwE4KEF24", "Cannot suspend admins")
+  private def _suspendOrBan(userBef: UserVb, until: ju.Date, reason: St,
+          suspendedById: UserId)(tx: SiteTx, staleStuff: StaleStuff): Pat Or ErrMsgCode = Good {
 
-      user = user.copy(
+      if (userBef.isAdmin)
+        return Bad(ErrMsgCode("Cannot suspend admins", "TyE4KEF24"))
+
+      val userAft = userBef.copy(
         suspendedAt = Some(now().toJavaDate),
         suspendedTill = Some(until),
         suspendedById = Some(suspendedById),
         suspendedReason = Some(reason.trim))
 
-      tx.updateUserInclDetails(user)
-      staleStuff.addPatIds(Set(userId))
+      tx.updateUserInclDetails(userAft)
+      staleStuff.addPatIds(Set(userAft.id))
 
-      logout(user.noDetails, bumpLastSeen = false, anyTx = Some(tx, staleStuff))
+      logout(userAft.noDetails, bumpLastSeen = false, anyTx = Some(tx, staleStuff))
       terminateSessions(  // [end_sess]
-            forPatId = user.id, all = true, anyTx = Some(tx, staleStuff))
+            forPatId = userAft.id, all = true, anyTx = Some(tx, staleStuff))
 
-      user
+      userAft
   }
 
 
@@ -471,26 +515,61 @@ trait UserDao {
   }
 
 
-  def blockGuest(postId: PostId, numDays: Int, threatLevel: ThreatLevel, blockerId: UserId): Unit = {
+  def blockGuestIfAuZ(postId: PostId, threatLevel: ThreatLevel, blocker: StaffReqrAndTgt)
+          : Opt[Pat] = {
+
     val anyChangedGuest: Option[Guest] = readWriteTransaction { tx =>
-      val auditLogEntry: AuditLogEntry = tx.loadCreatePostAuditLogEntry(postId) getOrElse {
-        throwForbidden("DwE2WKF5", "Cannot block user: No audit log entry, so no ip and id cookie")
+
+      // ----- AuZ
+
+      SECURITY; TESTS_MISSING // No tests for guests?  [block_post_author_e2e_test]
+      // There's this though: [mod_bans_guest_app_test].
+
+      val post = loadPostByUniqueId(postId, Some(tx)) getOrElse {
+        security.throwIndistinguishableNotFound(s"TyE0SEE_BLOCKATR_0POST")
+      }
+      val (maySeeResult, debugCode) =
+            this.maySeePost(post, Some(blocker.reqr), maySeeUnlistedPages = true)(tx)
+      if (!maySeeResult.may) {
+        security.throwIndistinguishableNotFound(s"TyE0SEE_BLOCKATR_$debugCode")
       }
 
-      blockGuestImpl(auditLogEntry.browserIdData, auditLogEntry.doerId,
-          numDays, threatLevel, blockerId)(tx)
+      // ----- Block
+
+      // (We'll look up by post author id, below, if audit log entry missing.)
+      val auditLogEntry: Opt[AuditLogEntry] = tx.loadCreatePostAuditLogEntry(postId)
+
+      if (auditLogEntry.isEmpty)
+        logger.warn(o"""s$siteId: No audit log entry, when blocking author of post $postId,
+              who supposedly is a guest — so can't block ip addr [TyW2WKF5]""")
+
+      val patId = auditLogEntry.map(_.doerId) getOrElse {
+        post.createdById
+      }
+      // Later: Can theoretically be different, if changed author. [post_authors]
+      devDieIf(patId != post.createdById, "TyE603SKL46")
+
+      val guest = tx.loadTheParticipant(patId) match {
+        case g: Guest => g
+        case _: Anonym =>
+          // [How_block_anons]?
+          throwBadReq("TyE0GUEST522", "Can't block anonyms, not implemented")
+        case x =>
+          throwBadReq("TyE0GUEST523", "Author is not a guest user")
+      }
+
+      blockGuestSkipAuZ(guest, auditLogEntry.map(_.browserIdData),
+            threatLevel, blockerId = blocker.reqr.id)(tx)
     }
     anyChangedGuest.foreach(g => removeUserFromMemCache(g.id))
+    anyChangedGuest
   }
 
 
   /** Returns any guest whose threat level got changed and should be uncached.
     */
-  def blockGuestImpl(browserIdData: BrowserIdData, guestId: UserId, numDays: Int,
-        threatLevel: ThreatLevel, blockerId: UserId)(tx: SiteTransaction): Option[Guest] = {
-
-      if (!Participant.isGuestId(guestId))
-        throwForbidden("DwE4WKQ2", "Cannot block authenticated users. Suspend them instead")
+  def blockGuestSkipAuZ(guest: Guest, browserIdData: Opt[BrowserIdData],
+        threatLevel: ThreatLevel, blockerId: UserId)(tx: SiteTx): Option[Guest] = {
 
       // Hardcode 2 & 6 weeks for now. Asking the user to choose # days –> too much for him/her
       // to think about. Block the ip for a little bit shorter time, because might affect
@@ -501,15 +580,16 @@ trait UserDao {
       val cookieBlockedTill =
         Some(new ju.Date(tx.now.millis + OneWeekInMillis * 6))
 
-      val ipBlock = Block(
+      val ipBlock = browserIdData map { brIdData => Block(
         threatLevel = threatLevel,
-        ip = Some(browserIdData.inetAddress),  // include ip
-        browserIdCookie = None,                // skip cookie
+        ip = Some(brIdData.inetAddress),   // include ip
+        browserIdCookie = None,            // skip cookie
         blockedById = blockerId,
         blockedAt = tx.now.toJavaDate,
         blockedTill = ipBlockedTill)
+      }
 
-      val browserIdCookieBlock = browserIdData.idCookie map { idCookie =>
+      val browserIdCookieBlock = browserIdData.flatMap(_.idCookie) map { idCookie =>
         Block(
           threatLevel = threatLevel,
           ip = None,                        // skip ip
@@ -522,25 +602,24 @@ trait UserDao {
       // COULD catch dupl key error when inserting IP block, and update it instead, if new
       // threat level is *worse* [6YF42]. Aand continue anyway with inserting browser id
       // cookie block.
-      tx.insertBlock(ipBlock)
+      ipBlock foreach tx.insertBlock
       browserIdCookieBlock foreach tx.insertBlock
 
-      // Also set the user's threat level, if the new level is worse.
-      tx.loadGuest(guestId) foreach { guest =>
-        if (!guest.lockedThreatLevel.exists(_.toInt >= threatLevel.toInt)) {
-          // The new threat level is worse than the previous (if any).
-          tx.updateGuest(
-            guest.copy(lockedThreatLevel = Some(threatLevel)))
-          return Some(guest)
-        }
+      // Update threat level, if new level is worse.
+      if (!guest.lockedThreatLevel.exists(_.toInt >= threatLevel.toInt)) {
+        // The new threat level is worse than the previous.
+        val worseGuest = guest.copy(lockedThreatLevel = Some(threatLevel))
+        tx.updateGuest(worseGuest)
+        return Some(worseGuest)
       }
+
       None
   }
 
 
-  def unblockGuest(postNr: PostNr, unblockerId: UserId): Unit = {
+  def unblockGuest(postId: PostId, unblockerId: UserId): Unit = {
     val anyChangedGuest = readWriteTransaction { tx =>
-      val auditLogEntry: AuditLogEntry = tx.loadCreatePostAuditLogEntry(postNr) getOrElse {
+      val auditLogEntry: AuditLogEntry = tx.loadCreatePostAuditLogEntry(postId) getOrElse {
         throwForbidden("DwE5FK83", "Cannot unblock guest: No audit log entry, IP unknown")
       }
       tx.unblockIp(auditLogEntry.browserIdData.inetAddress)
@@ -806,29 +885,27 @@ trait UserDao {
               return Bad(problem)
             }
 
-      addUserStats(UserStats(loginGrant.user.id, lastSeenAt = tx.now))(tx)
+      val user: UserBr = loginGrant.user
+      if (user.isBanned)
+        throwForbidden("TyEBANND0_", o"""Account banned""")
 
-      // What? isSuspendedAt checks only suspendedTill ? what about suspendedAt? [4ELBAUPW2]
-      // (Fine for now, maybe need to fix later though)
-      if (!loginGrant.user.isSuspendedAt(loginAttempt.date))
-        return Good(loginGrant)
-
-      val user = tx.loadUserInclDetails(loginGrant.user.id) getOrElse throwForbidden(
-        "DwE05KW2", "User not found, id: " + loginGrant.user.id)
-      // Still suspended?
-      if (user.suspendedAt.isDefined) {
+      if (user.isSuspendedAt(loginAttempt.date)) {
+        val userVb = tx.loadTheUserInclDetails(user.id)
         val forHowLong = user.suspendedTill match {
-          case None => "forever"
+          case None =>
+            // Dead code, currently always set if is suspended or banned. [4ELBAUPW2]
+            "forever"
           case Some(date) => "until " + toIso8601NoT(date)
         }
         throwForbidden("TyEUSRSSPNDD_", o"""Account suspended $forHowLong,
-            reason: ${user.suspendedReason getOrElse "?"}""")
+              reason: ${userVb.suspendedReason getOrElse "?"}""")
       }
 
-      // Not suspended, is past end date.
+      addUserStats(UserStats(user.id, lastSeenAt = tx.now))(tx)
       loginGrant
     }
 
+    // Tiny optimization: Cache user, will need, next http request.
     // Don't save any site cache version, because user specific data doesn't change
     // when site specific data changes. [pat_cache]
     memCache.put(

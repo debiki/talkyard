@@ -1075,9 +1075,6 @@ interface TalkyardTranslations {
     ShowEditorAgain: string;
     Minimize: string;
 
-    IPhoneKbdSpace_1: string;
-    IPhoneKbdSpace_2: string;
-
     PreviewInfo: string;
     CannotType: string;
 

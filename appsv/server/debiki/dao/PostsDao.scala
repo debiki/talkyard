@@ -103,7 +103,7 @@ trait PostsDao {
           asAlias = if (reqrAndReplyer.areNotTheSame) None else asAlias,
           groupIds = this.getOnesGroupIds(reqrAndLevels.user),
           postType, pageMeta, pageAuthor = pageAuthor, replyToPosts, privTalkMembers,
-          inCategoriesRootLast = catsRootLast, tooManyPermissions),
+          inCategoriesRootLast = catsRootLast, tooManyPermissions, now = now()),
           "TyEM0REPLY1")
 
     if (reqrAndReplyer.areNotTheSame) {
@@ -111,7 +111,7 @@ trait PostsDao {
       throwNoUnless(Authz.mayPostReply(
             replyerAndLevels, asAlias, this.getOnesGroupIds(replyerAndLevels.user),
             postType, pageMeta, pageAuthor = pageAuthor, replyToPosts, privTalkMembers,
-            inCategoriesRootLast = catsRootLast, tooManyPermissions),
+            inCategoriesRootLast = catsRootLast, tooManyPermissions, now = now()),
             "TyEM0REPLY2")
     }
 
@@ -281,7 +281,7 @@ trait PostsDao {
       postType, page.meta, pageAuthor = pageAuthor,
       replyToPosts, tx.loadAnyPrivateGroupTalkMembers(page.meta),
       tx.loadCategoryPathRootLast(page.meta.categoryId, inclSelfFirst = true),
-      tx.loadPermsOnPages()), "EdEMAY0RE")
+      tx.loadPermsOnPages(), now = now), "EdEMAY0RE")
 
     // ----- Generate id, nr
 
@@ -839,7 +839,7 @@ trait PostsDao {
           PostType.ChatMessage, page.meta, pageAuthor = pageAuthor,
           replyToPosts = Nil, tx.loadAnyPrivateGroupTalkMembers(page.meta),
           tx.loadCategoryPathRootLast(page.meta.categoryId, inclSelfFirst = true),
-          tx.loadPermsOnPages()), "EdEMAY0CHAT")
+          tx.loadPermsOnPages(), now = now()), "EdEMAY0CHAT")
 
       val (reviewReasons: Seq[ReviewReason], _) =
         throwOrFindNewPostReviewReasons(page.meta, authorAndLevels, tx)
@@ -1234,7 +1234,7 @@ trait PostsDao {
             tx.loadAnyPrivateGroupTalkMembers(page.meta),
             inCategoriesRootLast = tx.loadCategoryPathRootLast(
                   page.meta.categoryId, inclSelfFirst = true),
-            tooManyPermissions = tx.loadPermsOnPages()), "EdE6JLKW2R")
+            tooManyPermissions = tx.loadPermsOnPages(), now = now()), "EdE6JLKW2R")
 
       // COULD don't allow sbd else to edit until 3 mins after last edit by sbd else?
       // so won't create too many revs quickly because 2 edits.
@@ -1966,6 +1966,7 @@ trait PostsDao {
       val page = newPageDao(pageId, tx)
       val postBefore = page.parts.thePostByNr(postNr)
       val Seq(postOrigAuthor, changer) = tx.loadTheParticipants(postBefore.createdById, reqr.id)
+      // See post? See  [granular_perms] comment below too.
       throwIfMayNotSeePage(page, Some(changer))(tx)
 
       val postAfter = postBefore.copy(tyype = newType)
@@ -1984,6 +1985,8 @@ trait PostsDao {
 
       // Test if the changer is allowed to change the post type in this way.
       REFACTOR // Move this to new fn Authz.mayAlterPost(..., Alter.PostType)  ? [alterPage]
+      // Maybe mods & core members shouldn't always be able to change type  [granular_perms]
+      // (on pages they can see)?
       if (changer.isStaffOrCoreMember) {
         (postBefore.tyype, postAfter.tyype) match {
           case (before, after) if before == PostType.Normal && after.isWiki =>
@@ -3388,9 +3391,12 @@ trait PostsDao {
         val memberAfter = member.copyWithMaxThreatLevel(ThreatLevel.ModerateThreat)
         tx.updateUserInclDetails(memberAfter)
       }
-      else {
-        blockGuestImpl(theBrowserIdData, user.id, numDays = 31,
-          threatLevel = ThreatLevel.ModerateThreat, blockerId = SystemUserId)(tx)
+      else user match {
+        case guest: Guest =>
+          this.blockGuestSkipAuZ(guest, Some(theBrowserIdData),
+              threatLevel = ThreatLevel.ModerateThreat, blockerId = SystemUserId)(tx)
+        case x =>
+          // [How_block_anons]?
       }
 
       SECURITY ; BUG // minor: if the author has posted > numThings post, only the most recent ones

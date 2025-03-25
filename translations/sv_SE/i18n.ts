@@ -1221,9 +1221,6 @@ var t_sv_SE: TalkyardTranslations = t = {
     ShowEditorAgain: "Visa editor istället",
     Minimize: "Minimera",
 
-    IPhoneKbdSpace_1: "(This gray space is reserved",
-    IPhoneKbdSpace_2: "for the iPhone keyboard.)",
-
     PreviewInfo: "Här kan du förhandsgranska din text.",
     CannotType: "Du kan inte skriva här.",
 

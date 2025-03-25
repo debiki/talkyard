@@ -21,6 +21,7 @@ import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.TitleSourceAndHtml
+import talkyard.server.authz.ReqrAndTgt
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must
@@ -66,10 +67,18 @@ class ReviewStuffAppSuite(randomString: String)
       }
     }
 
+    RENAME // to replySkiqAuZ, maybe stop using?
     def reply(memberId: UserId, text: String): InsertPostResult = {
       dao.insertReplySkipAuZ(textAndHtmlMaker.testBody(text), thePageId,
         replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
         Who(memberId, browserIdData), dummySpamRelReqStuff)
+    }
+
+    def replyIfAuZ(author: Pat, text: String): InsertPostResult = {
+      dao.insertReplyIfAuZ(textAndHtmlMaker.testBody(text), thePageId,
+            replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
+            reqrAndReplyer = ReqrAndTgt.self(author, BrowserIdData.Test),
+            dummySpamRelReqStuff)
     }
 
     def approveButUndo(reviewTask: ReviewTask): Unit = {

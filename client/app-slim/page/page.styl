@@ -185,19 +185,25 @@ html.c_Html-EdLeft
     // @media (min-width: ???)
     // then can hardcode left — since editor has max width.  [ed_left_max_width]
 
-html.es-forum.c_Html-EdLeft
+// On forum topic list pages, the editor gets 60% of the space, since
+// now the editor includes the preview too (there's no page to show any
+// in-page-preview in).
+// And on discussion pages, if the user has clicked Preview (so that the textarea
+// and preview are shown side by side, like on a topic list page).
+html.c_Html-EdLeft:has(.s_E-Prv),
+html.c_Html-EdLeft.es-forum   // or add .s_E-Prv also if topic list view? [ed_prv_orig_splits]
   &:not(.es-watchbar-open)
+    // Move both the topbar and the page itself to the right, to leave space
+    // for the editor:
     .s_Tb-Fxd,
     #esPageColumn
-      // On forum topic list pages, the editor gets 60% of the space, since
-      // now the editor includes the preview too (there's no page to show any
-      // in-page-preview in).
       left: calc(100% * 0.60);  // [ed_left_width]
 
+  // If the left sidebar is open, add its width:
   &.es-watchbar-open
     .s_Tb-Fxd,
     #esPageColumn
-      left: calc((100% - 230px) * 0.60 + 230px);  // [ed_left_width]
+      left: calc((100% - 230px) * 0.60 + 230px);  // [ed_left_width] $watchbarWidth
 
 
 // Page width & padding

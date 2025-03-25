@@ -275,9 +275,12 @@ object Authz {
     anySlug: Option[String],
     anyFolder: Option[String],
     inCategoriesRootLast: immutable.Seq[Category],
-    tooManyPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
+    tooManyPermissions: immutable.Seq[PermsOnPages],
+    now: When): MayMaybe = {
 
     val anyUser: Opt[Pat] = userAndLevels.anyUser
+    if (anyUser.exists(_.isSuspendedAt(now)))
+      return NoMayNot("TyEM0CRP_SUSP", "Account suspended")
 
     val mayWhat = checkPermsOnPages(
           anyUser, asAlias = asAlias, groupIds,
@@ -506,9 +509,13 @@ object Authz {
     replyToPosts: immutable.Seq[Post],
     privateGroupTalkMemberIds: Set[UserId],
     inCategoriesRootLast: immutable.Seq[Category],
-    tooManyPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
+    tooManyPermissions: immutable.Seq[PermsOnPages],
+    now: When,
+    ): MayMaybe = {
 
     val user = userAndLevels.user
+    if (user.isSuspendedAt(now))
+      return NoMayNot("TyEM0RE_SUSP", "Account suspended")
 
     SHOULD // check perms on post too, not just page.  Need post author. [posts3_true_id]
     val mayWhat = checkPermsOnPages(
@@ -591,10 +598,13 @@ object Authz {
     privateGroupTalkMemberIds: Set[UserId],
     inCategoriesRootLast: immutable.Seq[Category],
     tooManyPermissions: immutable.Seq[PermsOnPages],
+    now: When,
     ignoreAlias: Bo = false,
     ): MayMaybe = {
 
     val user = userAndLevels.user
+    if (user.isSuspendedAt(now))
+      return NoMayNot("TyEM0ED_SUSP", "Account suspended")
 
     if (post.isDeleted && !user.isStaff)
       return NoNotFound("TyEM0EDPOSTDELD")

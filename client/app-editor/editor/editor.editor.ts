@@ -41,6 +41,11 @@ enum ScrollToPreview {
 // let's just skip auto scrolling totally, for embedded comments? Simpler & safer.
 // Long term, seems an [inline_editor_and_preview] would work better, for
 // blog comments, and maybe optionally (for those who want) in forums too.
+//
+// UX: Or maybe always skip auto-scroll to preview? Isn't it more nice to see the post one
+// is replying to. But then should probably open the split pane in-editor preview, so one
+// sees how one's post will look (if the screen is wide enough). [show_split_pane_preview]
+//
 const MaybeAutoPreview =
         eds.isInIframe ? ScrollToPreview.No : ScrollToPreview.Auto;
 
@@ -3006,6 +3011,7 @@ export const Editor = createFactory<any, EditorState>({
     };
 
     const scrollToPreviewProps = !thereIsAnInPagePreview ? {} : {
+      className: 'c_E_PrvwTtl',
       onMouseEnter: () => ReactActions.highlightPreview(true),
       onMouseLeave: () => ReactActions.highlightPreview(false),
       onClick: stopAutoPreview || scrollToPreviewOnce
@@ -3036,10 +3042,19 @@ export const Editor = createFactory<any, EditorState>({
           // the preview into view, if typing more text.
           // And show the whole button (both "Auto" and "show preview") in a depressed state.
           // If already auto scrolling, then, stop doing that (and render buttons as not depressed).
-          LinkButton({ ...autoScrollProps, className: 'c_E_ScrAutoB' }, "Auto"), // I18N
+          //
+          // But skip if in an embedded comments section — on iOS, if auto scrolling to show
+          // the preview, then, the editor scrolls in under the iOS keyboard, so you can't see
+          // what you're typing. But if *not* embedded, then the editor and comment-being-
+          // -previewed are in the same frame (namely the main window) and then this
+          // doesn't happen. (Could do this only if iOS and embedded, but safer to just
+          // check if we're embedded, in case the is-iOS check doesn't work?)
+          eds.isInIframe ? null :
+              LinkButton({ ...autoScrollProps, className: 'c_E_ScrAutoB' }, "Auto"), // I18N
           // If clicking "show preview" part, scroll the preview into view just once.
-          LinkButton({ ...scrollToPreviewProps, className: 's_E_ScrPrvwB' }, t.ShowPreview));
-
+          LinkButton({ ...scrollToPreviewProps, className: 's_E_ScrPrvwB' },
+            rFr({}, r.span({ className: 's_E_ScrPrvwB_Scr2' }, "Scroll to "), "preview")));
+                                                  // I18N was:  t.ShowPreview
     let editorClasses = skipInEditorPreview ? 's_E-NoInEdPrvw' : 's_E-WithInEdPrvw';
 
 
@@ -3128,10 +3143,15 @@ export const Editor = createFactory<any, EditorState>({
                   primary: state.showMinimized, tabIndex: 3 },
                 state.showMinimized ? t.e.ShowEditorAgain : t.e.Minimize),
               Button({ onClick: this.togglePreview, id: 'esPreviewBtn', tabIndex: 2 },
-                state.showOnlyPreview ? t.EditV : t.PreviewV),
+                state.showOnlyPreview
+                    ? rFr({},
+                        r.span({ className: 'c_E_PrvB' }, t.EditV),
+                        // If wide screen, so textarea & preview visible side by side, then,
+                        // "Hide preview" makes more sense than "Edit", since
+                        // is editing already.  [textarea_and_preview_both_visible]
+                        r.span({ className: 'c_E_PrvB-Lg' }, "Hide preview")) // I18N
+                    : t.PreviewV),
               anyViewHistoryButton)),
-            r.div({ className: 's_E_iPhoneKbd' },
-              t.e.IPhoneKbdSpace_1, r.br(), t.e.IPhoneKbdSpace_2),
 
             eds.isInEmbeddedEditor ? null :  // [RESEMBEDTR]
               r.div({ className: 's_Resizor-Up', ref: 'resizeHandle' }),

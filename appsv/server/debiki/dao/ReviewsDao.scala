@@ -381,7 +381,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
                   post, decidedById = decidedById, doingTasksNow = modTasks,
                   browserIdData)(tx, staleStuff)
             if (decision == DeleteAndBanSpammer) {
-              val bannedUser = banUser(post.createdById, reason = "DeleteAndBanSpammer",
+              val bannedPat: Opt[Pat] = this.banAuthorOf(post, reason = "DeleteAndBanSpammer",
                     bannedById = decidedById)(tx, staleStuff)
 
               // Has the spammer posted more spam? We'll delete it too, by looking up
@@ -412,7 +412,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
                       doingTasksNow = Nil, browserIdData)(tx, staleStuff)
               }
 
-              res = res.copy(bannedUser = Some(bannedUser))
+              res = res.copy(bannedPat = bannedPat)
             }
             res
         }

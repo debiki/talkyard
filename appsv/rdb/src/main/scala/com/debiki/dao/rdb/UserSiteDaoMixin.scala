@@ -873,9 +873,9 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def loadMemberInclDetailsById(userId: UserId): Option[MemberVb] = {
-    require(Participant.isRoleId(userId), "DwE5FKE2")
-    _loadMemberVbByFieldValue("user_id", userId.asAnyRef)
+  def loadMemberInclDetailsById(id: MembId): Opt[MemberVb] = {
+    require(Pat.isMember(id), s"s$siteId: Not a member id: $id [DwE5FKE2]")
+    _loadMemberVbByFieldValue("user_id", id.asAnyRef)
   }
 
 
@@ -924,6 +924,10 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
   def loadParticipantsInclDetailsByIdsAsMap_wrongGuestEmailNotfPerf(
         ids: Iterable[UserId]): immutable.Map[UserId, ParticipantInclDetails] = {
+    // But can't I split on ids <= MaxGuestOrAnonId and > MinMemberId, and run 2
+    // queries, one for guests & anons, one for members? To load the correct
+    // guest email notif prefs. See  [load_guests_vb].  Usually not needed though,
+    // and one less query, the way it's now, hmm.
     loadParticipantsInclDetails_wrongGuestEmailNotfPerf_Impl[UserId](
       ids.map(_.asAnyRef), "user_id", _.id)
   }
@@ -932,6 +936,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   def loadParticipantsInclDetailsByExtIdsAsMap_wrongGuestEmailNotfPerf(
         extImpIds: Iterable[ExtId])
         : immutable.Map[ExtId, ParticipantInclDetails] = {
+    // (See  [load_guests_vb].)
     loadParticipantsInclDetails_wrongGuestEmailNotfPerf_Impl[ExtId](
       extImpIds, "ext_id", _.extId.getOrDie("TyE205HKSD63"))
   }

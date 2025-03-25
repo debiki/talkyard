@@ -122,7 +122,8 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: TyContext)
               postType, pageMeta, pageAuthor = pageAuthor,
               Vector(post), dao.getAnyPrivateGroupTalkMembers(pageMeta),
               inCategoriesRootLast = categoriesRootLast,
-              tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXK3M2")
+              tooManyPermissions = dao.getPermsOnPages(categoriesRootLast),
+              now = now), "EdEZBXK3M2")
       }
       else {
         // Won't need later, when true id stored in posts3/nodes_t? [posts3_true_id]
@@ -138,6 +139,7 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: TyContext)
               dao.getAnyPrivateGroupTalkMembers(pageMeta),
               inCategoriesRootLast = categoriesRootLast,
               tooManyPermissions = dao.getPermsOnPages(categoriesRootLast),
+              now = now,
               // We're just saving a draft, can choose an ok alias later if needed.
               ignoreAlias = true), "TyEZBXK3M3")
       }

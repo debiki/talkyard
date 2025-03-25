@@ -233,6 +233,9 @@ object EdHttp {  // REFACTOR move to  talkyard.server.http object methods?
   def throwUnauthorized(errCode: String, message: String = "") =
     throw ResultException(UnauthorizedResult(errCode, message))
 
+  def throwForbidden(err: ErrMsgCode) =
+    throw ResultException(ForbiddenResult(err.code, err.message))
+
   def throwForbidden(errCode: String, message: String = "", details: String = "") =
     throw ResultException(ForbiddenResult(errCode, message, details))
 

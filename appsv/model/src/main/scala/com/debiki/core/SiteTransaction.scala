@@ -602,7 +602,6 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadAllUsernameUsages(): Seq[UsernameUsage]
   def isUsernameInUse(username: String): Boolean = loadUsernameUsages(username).nonEmpty
 
-  COULD // add fn: loadPatVb(patId): Opt[PatVb] ?
   def loadParticipant(userId: UserId): Option[Participant]
   def loadTheParticipant(userId: UserId): Participant =
     loadParticipant(userId).getOrElse(throw UserNotFoundException(userId))
@@ -654,6 +653,11 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadGuest(userId: UserId): Option[Guest] = {
     dieIf(userId > Participant.MaxGuestId, "EsE8FY032")
     loadParticipant(userId).map(_.asGuestOrThrow)
+  }
+
+  def loadGuestOrAnon(patId: PatId): Opt[PatVb] = {
+    dieIf(patId > Participant.MaxGuestOrAnonId, "TyE8FY094")
+    loadParticipant(patId).map(_.asGuestOrAnonOrThrow)
   }
 
   def loadTheGuest(userId: UserId): Guest = {
@@ -737,9 +741,17 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def loadMembersVbById(userIds: Iterable[MembId]): ImmSeq[MemberVb]
 
+  def loadPatVb(patId: PatId): Opt[PatVb] = {  // ParticipantInclDetails
+    // [load_guests_vb]
+    if (patId <= Pat.MaxGuestOrAnonId) this.loadGuestOrAnon(patId)
+    else this.loadMembersVbById(ImmSeq(patId)).headOption
+  }
+
+  RENAME // to loadPatVbsById_wrongGuestEmailNotfPerf(...):  Map[PatId, PatVb]
   def loadParticipantsInclDetailsByIdsAsMap_wrongGuestEmailNotfPerf(ids: Iterable[UserId])
         : immutable.Map[UserId, ParticipantInclDetails]
 
+  RENAME // to loadPatVbsByExtId_wrongGuestEmailNotfPerf(...):  Map[PatId, PatVb]
   def loadParticipantsInclDetailsByExtIdsAsMap_wrongGuestEmailNotfPerf(extImpIds: Iterable[ExtId])
         : immutable.Map[ExtId, ParticipantInclDetails]
 

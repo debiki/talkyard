@@ -2,6 +2,8 @@ All End-to-End tests and where to find them
 ============================================
 
 Test ids: TyTE2E... = end-to-end test, TyTIT... = integration test.
+Or why not just:  TyTE_ ... = e2e tests, TyTI_.. = intergration (e.g. AnonymAppSpec)
+and TyTU_ .. = unit tests (usually not listed here though).
 
 RENAME this file to tests-map.txt
 
@@ -1547,7 +1549,16 @@ spam: (4BKS0)
           - spam-basic-akismet-false-negatives.2browsers.test.ts  TyT63MKWYT37
           - spam-basic-safe-browsing-api-blocked.2browsers.test.ts  TyTSPSAFEBRAPI
   ban spammer:
+    who is a user:
             - modn-ban-spammer.2br.f  TyTMODNBANSPM
+    who is a guest:
+            - TESTS_MISSING  [block_post_author_e2e_test]
+                there's this though:  TyTI_TRUST_THREAT_LV.[mod_bans_guest_app_test]
+
+trust levels,
+threat levels:
+            - ThreatLevelsAppSpec  TyTI_TRUST_THREAT_LV
+
 
 delete user:    NEXT was a bug, when deleted by admin
   deletes henself:
