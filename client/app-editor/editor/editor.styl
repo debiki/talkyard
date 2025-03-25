@@ -565,27 +565,9 @@ html.mouse .rta__entity
   @media (min-width: $spacyButtonsMinWidth)
     display: inline;
 
-.s_E_iPhoneKbd
-  display: none;
-
-// iPhone is problematic, needs these special fixes.
+// iPhone is problematic, needs these special fixes. Edit, year 2025: Now it works better,
+// just one fix left, is it still needed?
 html.s_iphone
-  .s_E-E
-    // Leave lots of space for the keyboard. The iPhone keyboard doesn't trigger any resize event,
-    // when appearing — it just covers the lower parts of the window, sometimes also the lower
-    // parts of a <textarea>, making the lower parts impossible to edit (without canceling
-    // the keyboard, scrolling down and opening it again).
-    #editor-after-borders
-      height: 73%;
-
-    .s_E_iPhoneKbd
-      display: block;
-      position: absolute;
-      bottom: 25px;
-      left: 30px;
-      font-size: 14px;
-      color: gray;
-
   // Prevent iPhone from zooming in on input fields — which it does if the font size is <= 16 px.
   // Based on:
   //   https://stackoverflow.com/questions/2989263/

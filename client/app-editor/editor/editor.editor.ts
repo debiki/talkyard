@@ -3130,8 +3130,6 @@ export const Editor = createFactory<any, EditorState>({
               Button({ onClick: this.togglePreview, id: 'esPreviewBtn', tabIndex: 2 },
                 state.showOnlyPreview ? t.EditV : t.PreviewV),
               anyViewHistoryButton)),
-            r.div({ className: 's_E_iPhoneKbd' },
-              t.e.IPhoneKbdSpace_1, r.br(), t.e.IPhoneKbdSpace_2),
 
             eds.isInEmbeddedEditor ? null :  // [RESEMBEDTR]
               r.div({ className: 's_Resizor-Up', ref: 'resizeHandle' }),

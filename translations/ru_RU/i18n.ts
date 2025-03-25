@@ -1223,9 +1223,6 @@ var t_ru_RU: TalkyardTranslations = t = {
     ShowEditorAgain: "Показать редактор снова",
     Minimize: "Минимизировать",
 
-    IPhoneKbdSpace_1: "(Это серое пространство зарезервировано",
-    IPhoneKbdSpace_2: "для клавиатуры iPhone.)",
-
     PreviewInfo: "Здесь вы можете просмотреть, как будет выглядеть ваш пост.",
     CannotType: "Вы не можете здесь печатать.",
 
