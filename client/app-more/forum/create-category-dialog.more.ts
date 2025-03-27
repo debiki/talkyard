@@ -43,6 +43,8 @@ let editCategoryDialog;
 
 export function getEditCategoryDialog(success: (dialog) => void) {
   // Could just return the dialog instead of sending to a callback. Old code.
+  // (The editor-buldle.js, with debikiSlugify(), has alraedy been loaded,
+  // see morebundle.getEditCategoryDialog(). [5FK2W08])
   if (editCategoryDialog) {
     success(editCategoryDialog);
   }

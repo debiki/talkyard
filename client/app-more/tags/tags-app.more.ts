@@ -72,7 +72,10 @@ const AllTagsPanel = createFactory({
   componentDidMount: function() {
     // Or maybe:
     // Server.listTagTypes({ forThings: ThingType.Pats + ThingType.Posts, inclStats: true });
-    Server.loadTagsAndStats(() => this.setState({ doneLoading: true }));
+    Server.loadEditorAndMoreBundles(() =>  // loads window.debikiSlugify [5FK2W08]
+          Server.loadTagsAndStats(() => {
+            this.setState({ doneLoading: true });
+          }));
     // We might need to load cats too? E.g. if some tags can be used in only specific cats.
 
     // Later: (no longer works, tags just got reimplemented)
