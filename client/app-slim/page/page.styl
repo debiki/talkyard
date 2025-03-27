@@ -369,11 +369,15 @@ html.es-watchbar-open:not(.esSidebarsOverlayPage)
 //  — otherwise the Open-watchbar button (to the left) will push the
 // page title (or categories breadcrumbs), to the right, so becomes un-aligned
 // with the page text.
+// Update, 2025-03: Oh that happens also with `margin-top: -10px`. Let's
+// change to position: relative, -10px instead.
 
 @media (min-width: 1300px)
   .dw-forum.container,
   .esPage > .container
-    margin-top: - $moveSectionTitleUpPx;
+    // margin-top: - $moveSectionTitleUpPx;
+    position: relative;
+    top: - $moveSectionTitleUpPx;
 
   .esPage .s_Tb_Pg_Cs
     padding-top: 0;  // else sth like 4px
