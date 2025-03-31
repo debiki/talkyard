@@ -67,7 +67,7 @@ object Dependencies {
     val flywaydb = "org.flywaydb" % "flyway-core" % "5.2.4"   // scala-steward:off
 
     // HikariCP — "A solid high-performance JDBC connection pool at last"
-    val hikariCp = "com.zaxxer" % "HikariCP" % "6.2.1"
+    val hikariCp = "com.zaxxer" % "HikariCP" % "6.3.0"
 
     // ElasticSearch client, in https://mvnrepository.com.
     // When upgrading to next major version, consider improving the mappings at the same
