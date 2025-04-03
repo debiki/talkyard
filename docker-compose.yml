@@ -25,7 +25,7 @@ services:
       # [ty_v1] Rename to just sites-enabled, here and in prod too — remove
       # sites-enabled-auto-gen.
       - ./images/web/sites-enabled-manual/:/etc/nginx/sites-enabled-manual/:ro
-      - ./images/web/ed-lua/:/opt/talkyard/lua/:ro
+      - ./images/web/ty-lua/:/opt/talkyard/lua/:ro
       - ./images/web/assets/:/opt/talkyard/assets/:ro   # [NGXSTC]
       - ./images/web/ty-media/:/opt/talkyard/ty-media/:ro
       # Mount Lua packages dir, so can upgrade packages by running

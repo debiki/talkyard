@@ -481,7 +481,7 @@ ENV \
 # Frequently edited, so do last.
 
 COPY ty-media /opt/talkyard/ty-media
-COPY ed-lua   /opt/talkyard/lua/
+COPY ty-lua   /opt/talkyard/lua/
 COPY assets   /opt/talkyard/assets
 
 
