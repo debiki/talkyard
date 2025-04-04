@@ -21,7 +21,7 @@ Compile / dependencyOverrides ++= {
       "com.sun.activation" % "jakarta.activation" % "1.2.1",
       "com.sun.mail" % "jakarta.mail" % "1.6.7",
       "com.typesafe.play" % "play-functional_2.13" % "2.10.6",
-      "com.typesafe.play" % "play-json_2.13" % "2.10.6",
+      "com.typesafe.play" % "play-json_2.13" % "3.0.4",
       "commons-beanutils" % "commons-beanutils" % "1.9.4",
       "commons-codec" % "commons-codec" % "1.18.0",
       "commons-collections" % "commons-collections" % "3.2.2",

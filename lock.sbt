@@ -66,7 +66,7 @@ Compile / dependencyOverrides ++= {
       "com.typesafe.play" % "play-exceptions" % "2.9.5",
       "com.typesafe.play" % "play-filters-helpers_2.13" % "2.9.5",
       "com.typesafe.play" % "play-functional_2.13" % "2.10.6",
-      "com.typesafe.play" % "play-json_2.13" % "2.10.6",
+      "com.typesafe.play" % "play-json_2.13" % "3.0.4",
       "com.typesafe.play" % "play-server_2.13" % "2.9.5",
       "com.typesafe.play" % "play-streams_2.13" % "2.9.5",
       "com.typesafe.play" % "play-ws-standalone-json_2.13" % "2.2.9",
