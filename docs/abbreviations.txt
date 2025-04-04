@@ -205,6 +205,7 @@ Pp = participant  NO change to Pat
 P, Pg = page
 Pop = popular
 Prvw = preview
+Purp = purpose
 Pv = Preview, e.g. LnPv = link preview
 Po = post
 Re  = reply  NO! Change to Ry — doesn't Re mean "regarding" as well?

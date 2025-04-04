@@ -333,6 +333,7 @@ export function cloneRect(rect: ClientRect | Rect): Rect {
 // to clone the event target bounding rectangle, if need to use it a bit later,
 // e.g. after the more-bundle.js has been loaded.
 //
+// RENAME to  event_cloneTargetRect
 export function cloneEventTargetRect(event): Rect {
   return cloneRect(event.target.getBoundingClientRect());
 }

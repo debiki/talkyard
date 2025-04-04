@@ -1,17 +1,24 @@
 
 $sideSpace = 20px;
 
-.s_ExplDrp_Ttl
-  margin: 6px 50px 7px 12px;  // 50px = space for a close [X] button
-  font-size: 17px;
-  font-style: italic;
+.s_ExplDrp_Ttl,
+.s_ExplDrp_DescIt
+  margin: 9px 50px 3px 20px;  // 50px = space for a close [X] button
 
+.s_ExplDrp_Ttl
+  // If it's a "Purpose:" header, then, text follows below, so, add a bit more space.
+  &.n_Purp
+    margin-bottom: 0.6ex;
+  font-size: 15px;
+  font-weight: bold;
+  color: hsl(0 0% 33%); // otherwise bold is a bit too strong
 
 // If the action-item (e.g. a button) is at the top of the dialog, add some padding.
 .esCloseCross + .s_ExplDrp_ActIt
   padding-top: 7px;
 
 .s_ExplDrp_ActIt + .s_NotfPrefDD_Ttl,
+.s_ExplDrp_ActIt + .s_ExplDrp_ActIt,
 .esExplDrp_entry + .s_NotfPrefDD_Ttl
   margin-top: 14px;
 
@@ -25,6 +32,8 @@ $sideSpace = 20px;
   .esExplDrp_ActIt_Expl
     margin: 0 0 7px $sideSpace;
 
+  .e_AsgB
+    margin-left: 9px; // $sideSpace = 20px is a bit much
   // No hover. The button instead has some :hover style.
 
 

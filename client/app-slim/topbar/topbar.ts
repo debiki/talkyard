@@ -297,9 +297,36 @@ export const TopBar = createComponent({
     const showTitle = isBitDown && anyUnsafeTitleSource;
 
     if (catsOrHomeLink || showTitle) {
-      const anyTitle = !showTitle ? null :
-          r.div({ className: 's_Tb_Pg_Ttl' },  // [title_plain_txt]
-            anyUnsafeTitleSource);
+      // The title, if clicked, shows the Change Page dialog, since when we've scrolled down
+      // on a page, the in-page title isn't visible any longer (especially if it's a long chat)
+      // but it's still nice to have access to the Change dialog.
+      // For chat pages, the Change dialog also shows the chat purpose — the orig post (with
+      // the purpose text) is typically is far, far away, at the beginning of the chat history.
+
+      // But if it's not a chat, and we're not the author or a mod, then, there'd be
+      // nothing in the Change dialog, so don't show it.
+      // But how do we know if it *would* be empty, if opened? The correct approach might be
+      // to break out a fn from  ChangePageDialog  that (depending on a param) either
+      // creates the dialog content, or just returns true iff there's sth to render,
+      // and call that fn from here. [empty_change_page_dlg]  But for now:
+      const isOwnPage = store_thisIsMyPage(store);
+      const isChat = page_isChat(page.pageRole);
+      // Sometimes, should show dialog, if is core member. Oh well, the *important* thing
+      // is to always show, if is a *chat* (so can see the chat purpose).
+      const showDiagOnClick = isOwnPage || isStaff(me) || isChat;
+
+      const className = 's_Tb_Pg_Ttl';
+      const anyTitle = !showTitle ? null : (
+          !showDiagOnClick
+            ? r.div({ className }, anyUnsafeTitleSource)  // [title_plain_txt]
+            : Button({ className,
+                onClick: (event: MouseEvent) => {
+                  const rect = cloneEventTargetRect(event);
+                  morebundle.openChangePageDialog(rect, { page, showViewAnswerButton: true });
+                }},
+                anyUnsafeTitleSource, r.span({ className: 'caret' })));  // [title_plain_txt]
+
+
       noCatsMaybeTitle = isSectionPage;
       CatsAndTitle = () =>
           r.div({ className: 's_Tb_Pg' },

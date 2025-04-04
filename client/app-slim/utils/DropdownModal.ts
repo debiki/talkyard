@@ -280,7 +280,8 @@ export const DropdownModal = createComponent({
     if (this.state.hideBackdrop) backdropStyle.display = 'none';
 
     const dialogClassName = props.dialogClassName2 ? ' ' + props.dialogClassName2 : '';
-    const notTooWideClass = props.allowFullWidth ? '' : ' esDropModal-NotTooWide';
+    const notTooWideClass = props.allowFullWidth ? '' : (props.allowWide ?
+                              ' esDropModal-NotSuperWide' : ' esDropModal-NotTooWide');
     const onHide = props.closeOnClickOutside !== false ? props.onHide : undefined;
     return (
       rb.Modal({ show: props.show, onHide,

@@ -657,7 +657,7 @@ export function me_uiPrefs(me: Myself): UiPrefs {
 
 /// Oops should use at more places. [me_isPageMember]
 ///
-function me_isPageMember(me: Me, page: Page): Bo {
+export function me_isPageMember(me: Me, page: Page): Bo {
   if (page.pageMemberIds.indexOf(me.id) >= 0)
     return true;
 

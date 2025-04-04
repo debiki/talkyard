@@ -365,7 +365,7 @@ const TitleAndLastChatMessages = createComponent({
         title,
         r.div({ className: 'esChatChnl_about'},
           thisIsTheWhat,
-          r.div({}, t.c.Purpose),
+          r.div({}, t.c.Purpose), // [chat_purpose_header]
           origPostBody),
         scrollUpTips,
         messages,
