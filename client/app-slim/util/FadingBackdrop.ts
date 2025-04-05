@@ -33,10 +33,15 @@ export var FadingBackdrop = createComponent({
     return { backdropOpacity: 0 };
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   // dupl code, also in editor.ts, remove that, and start using this instead [4KEF0YUU2]
   showForMillis: function(millis: number) {
     this.setState({ backdropOpacity: 0.83 });
     var fadeBackdrop = () => {
+       if (this.isGone) return;
        var opacity = this.state.backdropOpacity;
        var nextOpacity = opacity < 0.01 ? 0 : opacity - 0.009;
        this.setState({ backdropOpacity: nextOpacity });
