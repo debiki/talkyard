@@ -1220,6 +1220,8 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   openToEditChatTitleAndPurpose: function() {   // RENAME to  openToEditChatPurpose only (not title)
+    // We'll _hide_the_scroll_to_preview_btns, since there isn't any in-page preview,
+    // when editing a chat purpose.
     this.editPost(BodyNr);
   },
 
@@ -2971,6 +2973,8 @@ export const Editor = createFactory<any, EditorState>({
 
     const thereIsAnInPagePreview =
         me_uiPrefs(me).inp !== UiPrefsIninePreviews.Skip &&
+        // If editing a chat purpose, we _hide_the_scroll_to_preview_btns.
+        !(page_isChat(editorsPageType) && editingPostNr === BodyNr) &&
         // If we're creating a new page, there's not any place to show an in-page preview.
         !(state.newForumTopicCategoryId || state.newPageRole);
 
