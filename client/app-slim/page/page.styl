@@ -190,8 +190,8 @@ html.c_Html-EdLeft
 // in-page-preview in).
 // And on discussion pages, if the user has clicked Preview (so that the textarea
 // and preview are shown side by side, like on a topic list page).
-html.c_Html-EdLeft:has(.s_E-Prv),
-html.c_Html-EdLeft.es-forum   // or add .s_E-Prv also if topic list view? [ed_prv_orig_splits]
+html.c_Html-EdLeft:has(.s_E-SplitOr),
+html.c_Html-EdLeft.es-forum   // or add .s_E-SplitOr also if topic list view? [ed_prv_orig_splits]
   &:not(.es-watchbar-open)
     // Move both the topbar and the page itself to the right, to leave space
     // for the editor:
