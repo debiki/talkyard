@@ -145,7 +145,7 @@ object Dependencies {
 
     // See: https://github.com/logfellow/logstash-logback-encoder/releases
     // and: https://mvnrepository.com/artifact/net.logstash.logback/logstash-logback-encoder
-    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "8.0"
+    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "8.1"
     //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
 
     // The ElasticSearch client uses Log4j. log4j-api already included, but not -core.
