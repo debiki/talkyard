@@ -2375,7 +2375,7 @@ function showNewPage(ps: ShowNewPageParams) {
     if (page_isChat(page.pageRole)) clazz = ' es-chat';
     if (page.pageRole === PageRole.Forum) clazz = ' es-forum';
     if (page.pageRole === PageRole.MindMap) clazz += ' dw-hz';
-    else clazz += ' dw-vt';
+    else clazz += ' dw-vt';  // not [2D_LAYOUT]
     clazz += (!page.pageRole ? '' : ' s_PT-' + page.pageRole);     // [5J7KTW2]
     clazz += (!page.pageLayout ? '' : ' s_PL-' + page.pageLayout);
     return clazz;
