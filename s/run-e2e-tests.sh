@@ -315,7 +315,7 @@ function runAllE2eTests {
   $r s/wdio-7 --only d.sessions-logout-elsewhere.4br --cd -i $args
   $r s/wdio-7 --only d.sessions-staff-logout-others.4br --cd -i $args
 
-  $r s/wdio --only hide-unhide-tips.2br $args
+  $r s/wdio-7 --only hide-unhide-tips.2br.f --cd -i $args
   $r s/wdio-7 --only show-admin-notices.2br --cd -i $args
 
   $r s/wdio-7 --only editor-toolbar-preview.1br --cd -i $args
