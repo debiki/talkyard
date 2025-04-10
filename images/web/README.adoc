@@ -1,4 +1,18 @@
 
+Ty uses LetsEncrypt and lua-resty-acme to generate HTTPS certs.
+
+The lua-resty-acme onfig is here:
+
+  ./ty-lua/init-by-lua-file.lua
+
+And lua-resty-acme is here:
+
+  ./openresty-pkgs/usr-local-openresty-site/lualib/resty/acme
+
+To upgrade Nginx / OpenResty, see:
+
+  ./openresty/README.adoc
+
 
 == Writing Lua code
 

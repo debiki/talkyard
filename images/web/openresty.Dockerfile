@@ -7,11 +7,12 @@
 
 # COULD_OPTIMIZE smaller image: Copy just what's needed from openresty_build
 # (and would need to 'apk add' some things too, to the final image).
-FROM alpine:3.19 AS openresty_build
+
+FROM alpine:3.21.3 AS openresty_build
 
 
 # '--virtual .build_deps' lets one uninstall all these build dependencies,
-# like so:  'apk del .build_deps' (done at the end of this file)
+# like so:  'apk del .build_deps' (done later in this file)
 #
 RUN apk add --no-cache --virtual .build_deps \
         build-base \
@@ -26,13 +27,14 @@ RUN apk add --no-cache --virtual .build_deps \
         make \
         perl-dev \
         readline-dev \
-        openssl-dev \
-        pcre-dev \
+        openssl3-dev \
+        pcre2-dev \
         zlib-dev \
         # Installs /usr/bin/envsubst
         gettext
 
-
+# These we want in the final image.
+#
 RUN apk add --no-cache \
         curl \
         #gd \
@@ -43,14 +45,14 @@ RUN apk add --no-cache \
         openssl \
         # opm (OpenResty package manager) uses Perl.
         perl \
-        zlib
-
-
-# Add 'bash' so we can 'docker exec' into the container, + some tools
-# (wget & less already works).  And gdb, for backtracing core dumps. [NGXCORED]
-RUN apk add --no-cache bash tree net-tools gdb \
-  # Telnet, nice for troubleshooting.
-  busybox-extras
+        tzdata \
+        zlib \
+        #
+        # Add 'bash' so we can 'docker exec' into the container, + some tools
+        # (wget & less already works).  And gdb, for backtracing core dumps. [NGXCORED]
+        bash tree net-tools gdb \
+        # Telnet, nice for troubleshooting.
+        busybox-extras
 
 
 COPY openresty/source /tmp/openresty-source
@@ -112,7 +114,7 @@ ARG CONFIG="\
   # Or maybe works now with OpenResty?
   --with-http_v2_module \
   \
-  # Let's wait? DO_AFTER 2024-07-01:
+  # Let's wait? DO_AFTER 2024-07-01:  or in [ty_v1]
   # --with-http_v3_module \
   \
   # --with-ipv6 \
@@ -153,13 +155,21 @@ ARG CONFIG="\
   # --with-stream_geoip_module=dynamic \
   \
   # asynchronous file I/O (AIO) on FreeBSD and Linux
-  --with-file-aio \
+  # --with-file-aio   — deprecated, as of Resty 1.27
   \
   # Thread pools.
   --with-threads \
   \
   \
   # Disable modules: (Nginx and Lua)
+  \
+  # Disabled by https://github.com/openresty/docker-openresty/blob/master/alpine/Dockerfile:
+  --without-http_rds_json_module \
+  --without-http_rds_csv_module \
+  --without-lua_rds_parser \
+  --without-mail_pop3_module \
+  --without-mail_imap_module \
+  --without-mail_smtp_module \
   \
   # Is needed for 'charset utf-8;', see nginx.conf.
   #--without-http_charset_module \
@@ -471,7 +481,7 @@ ENV \
 # Frequently edited, so do last.
 
 COPY ty-media /opt/talkyard/ty-media
-COPY ed-lua   /opt/talkyard/lua/
+COPY ty-lua   /opt/talkyard/lua/
 COPY assets   /opt/talkyard/assets
 
 

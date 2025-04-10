@@ -150,8 +150,12 @@ function registerEventHandlersFireLoginOut() {
  * If the URL query string contains 2d=true/false, enables/disables
  * horizontal comments. If the screen is narrow, forces one-column-layout.
  * Returns the layout type in use: 'OneColumnLayout' or 'TreeLayout'.
+ *
+ * 2D layout disabled, not in use. But let's keep, commented in, so it'll at least compile,
+ * and it'll be simlper to add back some day.  The optimizer (gulp-uglify / uglify-js)
+ * ought to tree-shake it away anyway.
  */
-function chooseInitialLayout() {
+function chooseInitialLayout__not_in_use() {
   const queryString = window.location.search;
   const shallEnable2d = queryString.indexOf('2d=true') !== -1;
   const shallDisable2d = queryString.indexOf('2d=false') !== -1 ||
@@ -208,7 +212,7 @@ function chooseInitialLayout() {
 function renderPageInBrowser() {
   debiki2.ReactStore.initialize();
 
-  // const _2dLayout = chooseInitialLayout() === 'TreeLayout';   // [2D_LAYOUT]
+  // const _2dLayout = chooseInitialLayout__not_in_use() === 'TreeLayout';   // [2D_LAYOUT]
   // if (_2dLayout) {
   //   debiki2.utils.onMouseDetected(debiki2.Server.load2dScriptsBundleStart2dStuff);
   // }

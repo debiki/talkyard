@@ -27,7 +27,7 @@ object Dependencies {
   }
 
   object Play {
-    val json = "com.typesafe.play" %% "play-json" % "2.10.6"
+    val json = "org.playframework" %% "play-json" % "3.0.4"
   }
 
   object Libs {
@@ -67,7 +67,7 @@ object Dependencies {
     val flywaydb = "org.flywaydb" % "flyway-core" % "5.2.4"   // scala-steward:off
 
     // HikariCP — "A solid high-performance JDBC connection pool at last"
-    val hikariCp = "com.zaxxer" % "HikariCP" % "6.2.1"
+    val hikariCp = "com.zaxxer" % "HikariCP" % "6.3.0"
 
     // ElasticSearch client, in https://mvnrepository.com.
     // When upgrading to next major version, consider improving the mappings at the same
@@ -75,7 +75,7 @@ object Dependencies {
     val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
     val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "6.8.23"
 
-    val guava = "com.google.guava" % "guava" % "33.4.0-jre"
+    val guava = "com.google.guava" % "guava" % "33.4.6-jre"
     val findbugsJsr304 = "com.google.code.findbugs" % "jsr305" % "3.0.2" % "provided"
 
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
@@ -104,11 +104,11 @@ object Dependencies {
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.3.1"
 
     // See: https://github.com/jhy/jsoup/releases
-    val jsoup = "org.jsoup" % "jsoup" % "1.18.3"
+    val jsoup = "org.jsoup" % "jsoup" % "1.19.1"
 
     // See: https://github.com/FasterXML/jackson-module-scala/tags
     // and: https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-scala
-    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.18.2"
+    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.18.3"
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
     // ScribeJava is listed by Microsoft as compatible with Azure,
@@ -138,10 +138,10 @@ object Dependencies {
 
     // Fluentd better understands json logs.
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.16"
+    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.18"
 
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
-    val logbackCore = "ch.qos.logback" % "logback-core" % "1.5.16"
+    val logbackCore = "ch.qos.logback" % "logback-core" % "1.5.18"
 
     // See: https://github.com/logfellow/logstash-logback-encoder/releases
     // and: https://mvnrepository.com/artifact/net.logstash.logback/logstash-logback-encoder

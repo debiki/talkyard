@@ -256,6 +256,8 @@ declare namespace debiki2 {
       closeSidebar: () => void;
       openSidebar: () => void;
       showAdminGuide: () => void;
+      showUsers: () => V;
+      highligtDuringMillis: (ms: Nr) => V;
     }
   }
 
@@ -394,6 +396,7 @@ declare namespace debiki2 {
   function pat_name(pat: Me | Pat | LazyCreatedAnon | NewAnon): St;
   function pat_isMe(pat: UserInclDetails | Me | Pat | PatId): pat is Me;
   function pat_isMember(pat: UserInclDetails | Me | Pat | PatId): Bo;
+  function me_isPageMember(me: Me, page: Page): Bo;  // change to `pat_isPageMember`?
   var isGuest;
   function pat_isGuest(pat: UserInclDetails | Me | Pat): Bo;
   function user_isGuest(pat: UserInclDetails | Me | Pat): Bo;
@@ -405,6 +408,8 @@ declare namespace debiki2 {
   function pat_isMoreAdv(pat: PatVb | Me): Bo;
   function anonStatus_toStr(anonStatus: AnonStatus, verb?: Verbosity): St;
   var page_isGroupTalk;
+
+  function pat_isAuthorOf(pat: Me | Pat, post: Post, patsById: PpsById): Bo;
 
   function store_getAuthorOrMissing(store: DiscStore, post: Post): Pat;
   function store_getUserOrMissing(store: DiscStore, userId: PatId, errorCode2?: St): Pat;
@@ -558,7 +563,8 @@ declare namespace debiki2 {
   }
 
   namespace page {
-    var Post;
+    function Post(props: PostProps): RElm;
+    function PostBody(props: PostProps): RElm;
     function CatsOrHomeLink(ps: { page: PageTypeAncestors,
           store: Store, forTopbar?: Bo, skipHome?: true }): RElm | N;
     namespace Hacks {

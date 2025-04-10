@@ -11,17 +11,14 @@ Compile / dependencyOverrides ++= {
       "com.fasterxml.jackson.core" % "jackson-databind" % "2.14.3",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.14.3",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.14.3",
-      "com.google.code.findbugs" % "jsr305" % "3.0.2",
       "com.google.errorprone" % "error_prone_annotations" % "2.36.0",
-      "com.google.guava" % "failureaccess" % "1.0.2",
-      "com.google.guava" % "guava" % "33.4.0-jre",
+      "com.google.guava" % "failureaccess" % "1.0.3",
+      "com.google.guava" % "guava" % "33.4.6-jre",
       "com.google.guava" % "listenablefuture" % "9999.0-empty-to-avoid-conflict-with-guava",
       "com.google.j2objc" % "j2objc-annotations" % "3.0.0",
       "com.lambdaworks" % "scrypt" % "1.4.0",
       "com.sun.activation" % "jakarta.activation" % "1.2.1",
       "com.sun.mail" % "jakarta.mail" % "1.6.7",
-      "com.typesafe.play" % "play-functional_2.13" % "2.10.6",
-      "com.typesafe.play" % "play-json_2.13" % "2.10.6",
       "commons-beanutils" % "commons-beanutils" % "1.9.4",
       "commons-codec" % "commons-codec" % "1.18.0",
       "commons-collections" % "commons-collections" % "3.2.2",
@@ -33,11 +30,14 @@ Compile / dependencyOverrides ++= {
       "org.apache.tika" % "tika-core" % "2.9.3",
       "org.checkerframework" % "checker-qual" % "3.48.3",
       "org.flywaydb" % "flyway-core" % "5.2.4",
+      "org.jspecify" % "jspecify" % "1.0.0",
       "org.owasp.encoder" % "encoder" % "1.3.1",
+      "org.playframework" % "play-functional_2.13" % "3.0.4",
+      "org.playframework" % "play-json_2.13" % "3.0.4",
       "org.postgresql" % "postgresql" % "42.7.5",
       "org.scalactic" % "scalactic_2.13" % "3.2.19",
       "org.slf4j" % "slf4j-api" % "2.0.16"
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH 7e8752f40b72140e8e66fd0d77c6ffc8caa72706
+// LIBRARY_DEPENDENCIES_HASH a073142bfde98a420a9af3f7fb70505c67ab7657

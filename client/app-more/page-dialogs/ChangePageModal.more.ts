@@ -31,6 +31,8 @@ interface ChangePageDiagState extends ChangePageDiagParams {
   store: Store
   isOpen: Bo
   atRect: Rect
+  pullLeft?: Bo
+  windowWidth?: Nr
 }
 
 
@@ -69,6 +71,9 @@ const ChangePageDialog = createComponent({
       ...props,
       isOpen: true,
       atRect,
+      pullLeft: props.pullLeft ||
+          props.showViewAnswerButton, // (hack) then it's the icon to the left of the title
+      windowWidth: window.innerWidth,
     } satisfies Partial<ChangePageDiagState>);
   },
 
@@ -90,6 +95,10 @@ const ChangePageDialog = createComponent({
     const isOwnOrCore = isOwnOrStaff || user_isTrustMinNotThreat(me, TrustLevel.CoreMember);
     const isStaffOrTrusted = isStaff(me) || user_isTrustMinNotThreat(me, TrustLevel.Trusted);
 
+    let anyChatPurpose: RElm | U;
+    let anyViewMembersBtn: RElm | U;
+    let anyEditPurposeBtn: RElm | U;
+    let anyLeaveButton: RElm | U;
     let anyViewAnswerButton;
     let changeStatusTitle;
     let setNewListItem;
@@ -137,6 +146,59 @@ const ChangePageDialog = createComponent({
       // @endif
 
       const origPost = page.postsByNr[BodyNr];
+
+      const isChat = page_isChat(page.pageRole);
+      if (isChat) {
+        anyChatPurpose = rFr({},
+            // Maybe it's obvious that this text is the chat purpose? It'd typically start with
+            // "Here you can ...". Could skip?  Or, show the title again, with an edit button
+            // just after? And an edit button after the purpose, too?
+            r.div({ className: 's_ExplDrp_Ttl n_Purp' }, t.c.Purpose), // [chat_purpose_header]
+            r.div({ className: 's_ExplDrp_DescIt' },
+              debiki2.page.PostBody({ store, post: origPost })));
+
+        // A list chat members button, unless it's a joinless chat (which one doesn't need
+        // to join to post messages, doesn't have members (unless type changed to joinless,
+        // when there already were members, hmm)). [0_joinless_chat_members]
+        anyViewMembersBtn = page.pageRole === PageRole.JoinlessChat ? null :
+            r.div({ className: 's_ExplDrp_ActIt' },
+              Button({
+                onClick: () => {
+                  // REFACTOR: Break out fn!  [break_out_view_chat_membs_fn]
+                  ReactActions.setPagebarOpen(true);
+                  sidebar.contextBar.showUsers();
+                  setTimeout(() => { // [highl_contextbar]
+                    sidebar.contextBar.highligtDuringMillis(700);
+                  })
+                  this.close();
+                }},
+                // Elsewhere, id: 'e2eWB_ViewPeopleB'
+                r.span({ className: 'e_ChPgD_ViewMembB'  }, t.wb.ViewChatMembers),
+                ));
+
+        const isChatMember = me_isPageMember(me, page);
+
+        // UX BUG, harmles: Can leave chat page, when editor open & typing a message already.
+        // Then, when submitting, there's this error:  [leave_chat_ux_bug]
+        //    "not a member of this chat channel [EsE4UGY7]".
+        anyLeaveButton = !isChatMember ? null : r.div({ className: 's_ExplDrp_ActIt' },
+            Button({
+                onClick: () => {
+                  Server.leavePage();
+                  this.close();
+                }},
+                // Elsewhere, id: 'e2eWB_LeaveB'
+                r.span({ className: 'e_ChPgD_LeaveB'  }, t.wb.LeaveThisChat),
+                ));
+
+        anyEditPurposeBtn = !isOwnOrStaff ? null : r.div({ className: 's_ExplDrp_ActIt' },
+            Button({ className: 'e_ChPgD_EdPurpB',
+                onClick: () => {
+                  editor.openToEditChatTitleAndPurpose();
+                  this.close();
+                }},
+                t.wb.EditChat));
+      }
 
       // Ideas and Problems can be solved [tpc_typ_solv], and then
       // pat cannot change their doing status, unless un-selecting
@@ -309,11 +371,46 @@ const ChangePageDialog = createComponent({
       }
     }
 
+    // If ever opening, although empty, that'd be a bug.  [empty_change_page_dlg]
+    // (It's safe to forget to update this list — there'll be a debug build assertion failure.)
+    // @ifdef DEBUG
+    dieIf(state.isOpen && !(
+          anyChatPurpose
+          || anyViewMembersBtn
+          || anyLeaveButton
+          || anyEditPurposeBtn
+          || anyViewAnswerButton
+          || changeStatusTitle
+          || setNewListItem
+          || setPlannedListItem
+          || setStartedListItem
+          || setDoneListItem
+          || assignBtn
+          || changeCategoryListItem
+          || changeTopicTypeListItem
+          || reopenListItem
+          || closeListItem
+          || deletePageListItem
+          || undeletePageListItem
+          || changeComtOrderListItem
+          || changeComtNestingListItem), 'TyEEMPYTCHAPAD');
+    // @endif
+
     return (
       DropdownModal({ show: state.isOpen, onHide: this.close, atRect: state.atRect,
-          pullLeft: state.showViewAnswerButton, // (hack) then it's the icon to the left of the title
-          showCloseButton: true, dialogClassName2: 's_ChPgD' },
+          pullLeft: state.pullLeft, windowWidth: state.windowWidth,
+          showCloseButton: true, dialogClassName2: 's_ChPgD',
+          allowWide: !!anyChatPurpose,
+          },
+        anyChatPurpose,
+        anyViewMembersBtn,
+        anyLeaveButton,
+        anyEditPurposeBtn,
         anyViewAnswerButton,
+        // If is a chat, and pat is a mod or the page owner, then, there's chat related
+        // buttons above, and alter page buttons below — then, nice with a separator line
+        // in between.
+        isOwnOrStaff && anyChatPurpose ? r.hr() : null,
         changeStatusTitle,
         setNewListItem,
         setPlannedListItem,

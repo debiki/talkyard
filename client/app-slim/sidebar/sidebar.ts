@@ -194,6 +194,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   },
 
   highligtDuringMillis: function(millis: number) {
+    // But `fadingBackdrop` is undef, if called too soon. [highl_contextbar]
     this.refs.fadingBackdrop.showForMillis(millis);
   },
 

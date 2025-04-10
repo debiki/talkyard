@@ -119,9 +119,14 @@
 .esNotfs
   .esNotf
     color: hsl($uiHue, 80%, 38%);
-  li
+  & > li
     list-style: none;
-    padding: 8px 0;
+    // UX COULD_COMPACT_IF_MOUSE
+    padding: 6px 0;
+    & > a
+      // Don't be 100% wide (which display: block would be), or clicking whitespace
+      // to the right, would follow the link.
+      display: inline-block;
 
 .s_Dfs li
   list-style-type: none;

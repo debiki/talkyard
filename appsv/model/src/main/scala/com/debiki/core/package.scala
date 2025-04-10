@@ -2252,6 +2252,8 @@ package object core {
   def FORCED_REFLOW = ()  // Browser side only. Makes it slow.
   def COULD_FREE_MEM = () // Browser side, can set null sth to free mem, but then maybe harder to debug.
   def UX = ()             // Usability can be improved.
+  def COULD_COMPACT_IF_MOUSE = ()  // Could place elems closer (in the browser), if there's
+                                   // a mouse, since then fat thingers isn't a problem.
   def RESPONSIVE = ()     // Would look better with responsive layout. Browser side only.
   def DB_CONFICT = ()     // When the same db rows might be updated by different transaction,
                           // causing deadlocks / rollbacks / delays.

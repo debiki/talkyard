@@ -29,7 +29,10 @@
   list-style-type: none
 
 .dw-ar-p-hd,
+// If vertical layout (rather than a 2D comments tree layout), restrict the width of
+// all posts on the page.
 .DW.dw-vt .dw-t,
+// If horizontal 2D tree layout [2D_LAYOUT], only restrict the width of the root post.
 .DW.dw-hz .dw-ar-t
   max-width: 830px
   width: 100%

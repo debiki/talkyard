@@ -287,10 +287,15 @@ const SingleTopic = createComponent({
   viewChatMembers: function() {
     // This is a bit weird: interacting with the contextbar in two different ways. Oh well.
     // Which approach is best? Perhaps wait until after [redux] rewrite.
+    // [break_out_view_chat_membs_fn]
     ReactActions.setPagebarOpen(true);  // way 1
     sidebar.contextBar.showUsers();     // way 2
     this.refs.actionsDropdown.hideBackdrop();
-    sidebar.contextBar.highligtDuringMillis(700);
+    // Wait until opened by showUsers(), otherwise there's a "Cannot read properties of undefined"
+    // error in sidebar.ts.  [highl_contextbar]
+    setTimeout(() => {
+      sidebar.contextBar.highligtDuringMillis(700);
+    });
   },
 
   openLeavePageDialog: function() {
@@ -298,6 +303,7 @@ const SingleTopic = createComponent({
     // If the current page is a forum = sub community, then this'll move the forum from the
     // sub communities section, to the recent section, and if clicking & viewing it again,
     // it won't be auto-joined just because of that. [5JKW20Z]
+    // Harmless bug, if currently composing a chat message: [leave_chat_ux_bug].
     Server.leavePage();
   },
 
@@ -328,6 +334,7 @@ const SingleTopic = createComponent({
     // (Or load lazily, when opening the dropdown?)
     const isAuthorOrStaff = isStaff(me);
 
+    // UX BUG: Skip if joinless chat. [0_joinless_chat_members]
     const viewMembersButtonTitle = !isChat ? t.wb.ViewPeopleHere : (
         isAuthorOrStaff ? t.wb.ViewAddRemoveMembers : t.wb.ViewChatMembers);
 

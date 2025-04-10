@@ -73,7 +73,7 @@ export const TitleEditor = createComponent({
 
   componentDidMount: function() {
     // COULD load title source text here instead of always including it server side [5S02MR4].
-    Server.loadEditorAndMoreBundles(() => {
+    Server.loadEditorAndMoreBundles(() => {  // loads window.debikiSlugify [5FK2W08]
       if (this.isGone) return;
       this.setState({ editorScriptsLoaded: true });
     });

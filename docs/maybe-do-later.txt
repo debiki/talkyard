@@ -248,6 +248,9 @@ Rename User to Participant and User to Member.  Participant = Guest or Member, M
 Rename variables named like "member" to "user", "memberOrGroup" to "member", "user" to "participant"
 Rename "indie" to user" and "people" to "members"
 
+[0_joinless_chat_members]
+Don't show chat members list, if is joinless?
+
 [private_chats] Later.
 
 [private_pats][some_pub_priv_prefs]  Unlisted / less-visible / "hidden"? users?

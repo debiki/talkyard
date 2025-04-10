@@ -157,7 +157,8 @@ class SiteTpi protected (
 
     val pageTypeClass = anyCurrentPageRole.map(" s_PT-" + _.toInt) getOrElse ""     // [5J7KTW2]
     val pageLayoutClass = anyCurrentPageLayout.map(" s_PL-" + _.toInt) getOrElse ""
-    "DW dw-pri" + pageTypeClass + pageLayoutClass + chatClass + forumClass + customClass + " "
+    // [2D_LAYOUT] "dw-vt" means *not* 2D layout (vt = vertical layout).
+    "DW dw-pri dw-vt" + pageTypeClass + pageLayoutClass + chatClass + forumClass + customClass
   }
 
   def xsrfToken: String = debikiRequest.xsrfToken.value
@@ -457,8 +458,12 @@ class PageTpi(
   private val horizontalComments = false  // [2D_LAYOUT]
 
 
+  /* Break out a separate horizontalLayout: Bo class instead, an iff true,
+     add "hz" instead of "vt"? [2D_LAYOUT]
   override def debikiHtmlTagClasses: String =
+    // Oops, needs to add  dw-vt  on *all* pages, also user profile "automatic" pages. (Fixed.)
     super.debikiHtmlTagClasses + (if (horizontalComments) "dw-hz " else "dw-vt ")
+    */
 
 
   def renderedPage = xml.Unparsed(cachedPageHtml)

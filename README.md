@@ -97,7 +97,7 @@ Talkyard is 140 000  (111 359 + 32 653 = 144 012) lines of code and comments
 Plus about 60 000 (59 425) lines test code.
 Server side code complexity: 5538, client side (a React.js web app): 8478.
 
-scc modules/ed-core/src  modules/ty-dao-rdb/src/ client/app-* client/embedded-comments/  client/serviceworker/  client/*.ts  app/  s/  Makefile to-talkyard/src/  gulpfile.js images/web/ed-lua/  images/web/*.conf  images/app/Dockerfile.*  images/rdb/
+scc modules/ed-core/src  modules/ty-dao-rdb/src/ client/app-* client/embedded-comments/  client/serviceworker/  client/*.ts  app/  s/  Makefile to-talkyard/src/  gulpfile.js images/web/ty-lua/  images/web/*.conf  images/app/Dockerfile.*  images/rdb/
 
 scc tests/
 

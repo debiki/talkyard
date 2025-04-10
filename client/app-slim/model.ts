@@ -2693,6 +2693,7 @@ interface ShowNewPageParams {
 interface ChangePageDiagParams {
   page: Page,
   showViewAnswerButton?: true,
+  pullLeft?: Bo
 }
 
 
@@ -2991,6 +2992,7 @@ interface DropdownProps extends SharedDiagParams {
 interface SharedDiagParams {
   atRect?: Rect;
   pullLeft?: Bo;
+  allowWide?: Bo  // see [dropdown_width]
   allowFullWidth?: Bo;
   closeOnClickOutside?: false; // default true
   onHide?: () => V;

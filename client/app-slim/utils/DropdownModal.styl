@@ -6,6 +6,7 @@
     width: 100%;
     height: 0;
 
+.esDropModal-NotSuperWide,
 .esDropModal-NotTooWide
   .esDropModal_content
     max-width: 89%; // so always some emptiness outside that one can click to close. [4YK8ST2]
@@ -15,6 +16,11 @@
   .esDropModal-NotTooWide
     .esDropModal_content
       max-width: 560px; // or annoyingly wide. [dropdown_width]
+
+@media (min-width: 899px)  // (800px / 89% * 100% = 899px)
+  .esDropModal-NotSuperWide
+    .esDropModal_content
+      max-width: 800px; // [dropdown_width]
 
 .esDropModal_CloseB
   // This doesn't work well: sometimes overlaps long contents.
@@ -34,6 +40,9 @@
   background: white;
   min-width: 150px;
   margin-right: 6px;
+  & > hr
+    margin: 5px 0 10px;
+    border-top: 1px solid hsl(0 0% 87%);
 
 .esDropModal_header
   font-style: italic;

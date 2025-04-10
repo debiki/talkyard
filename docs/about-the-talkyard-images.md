@@ -10,7 +10,7 @@ This is a HTTP server: OpenResty, an Nginx distribution with Lua.
 
 Nginx serves uploaded files and transpiled Javascript and CSS directly
 from the file system. Also does some request rate limiting.
-And outgoing bandwith limiting, see `images/web/ed-lua/lua-limit-bandwidth`,
+And outgoing bandwith limiting, see `images/web/ty-lua/lua-limit-bandwidth`,
 to reduce? elliminate? the risk that you get a surprise bill from your cloud provider
 for high bandwidth costs.
 

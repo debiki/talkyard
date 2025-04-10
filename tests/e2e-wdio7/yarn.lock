@@ -1251,10 +1251,10 @@ chrome-launcher@^0.15.0:
     is-wsl "^2.2.0"
     lighthouse-logger "^1.0.0"
 
-chromedriver@^133.0.0:
-  version "133.0.0"
-  resolved "https://registry.yarnpkg.com/chromedriver/-/chromedriver-133.0.0.tgz#56dedd23974f986ef5fb1ec3402d2d5b845e35dc"
-  integrity sha512-7arRrtD9WGSlemMLE4IOoD42OSKKyOtQP/Z0x/WB5jYSaCzcI95j67EK0wQ2w1y5IjSJnYvnmXOJM6Nla4OG2w==
+chromedriver@^135.0.1:
+  version "135.0.1"
+  resolved "https://registry.yarnpkg.com/chromedriver/-/chromedriver-135.0.1.tgz#26e2e1b597ffeb73d0c76aa45403515a9a853cec"
+  integrity sha512-MLAS4t9dkttp1R1O2o/1nvtNIxg1dBTx7OE3ZCSrrFz+EFowd0wRAO7H5j918hw0i8+30yODq99p8CumvqRS9Q==
   dependencies:
     "@testim/chrome-version" "^1.1.4"
     axios "^1.7.4"

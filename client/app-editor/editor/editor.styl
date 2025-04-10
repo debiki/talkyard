@@ -1,15 +1,23 @@
 
 $spaceForButtons = 46px;
 
-$showPreviewMinWidth = 900px;
+$splitPreviewMinWidth = 1000px;
+$spacyButtonsMinWidthWithSplit = 1150px;
 // It'd be nice to change this to 1100? when the editor is placed to the left — then it's
 // much more narrow. But let's wait, complicated enough already. And if the page isn't
 // somewhat wide, the Place-Left button isn't shown anyway right now.
 // $eitherTextareaOrPreviewMaxWidth = 1100px; // ?
 
-$autoMaximizeEditorMaxWidth = 700px;
+// Here, either the <textarea> or the preview is shown (but not both),
+// since width < $splitPreviewMinWidth.
+$autoMaximizeEditorMaxWidth = 600px;
 $spacyButtonsMinWidth = 450px;
 $spacyYMinHeight = 400px;
+
+previewFullWidth()
+  width: 100%;
+  // Space for the [Submit][Cancel] etc buttons, and the [Edit] button (to hide the preview).
+  bottom: $spaceForButtons;
 
 // Without this, height = auto, and won't be full size, in Firefox (but fine in Chrome, weird).
 .DW.DW .rta__textarea
@@ -40,8 +48,8 @@ $spacyYMinHeight = 400px;
   .form-group
     margin-bottom: 0;
 
-  @media (max-width: 700px)  // is that $autoMaximizeEditorMaxWidth?
-    // Now don't list all stuff side by side, instead, one per row.
+  @media (max-width: 700px)
+    // Pretty narrow. Don't list all stuff side by side, instead, one per row.
     flex-direction: column;
 
 .esEdtr_titleEtc_title
@@ -282,11 +290,15 @@ tighterEditorTopButtons()
     textarea.rta__textarea.editor
       overflow-y: scroll;
 
+    // Nice with a bit _space_between the  Submit/Cancel/Maximize and the Preview buttons.
+    .esEdtr_cycleMaxHzBtn
+      margin-right: 2em !important;
+
 // On forum topic list pages, there's no in-page preview — instead, the preview
 // is inside the editor. Then, the editor needs more space, say, 60% instead of 45%:
 html.es-forum #debiki-editor-controller.c_E-PlaceLeft,
 // If split pane textarea & preview on a discussion page, then, need the same extra width.
-#debiki-editor-controller.c_E-PlaceLeft.s_E-Prv
+#debiki-editor-controller.c_E-PlaceLeft.s_E-SplitOr
   width: calc(100% * 0.60);  // [ed_left_width]
 
 
@@ -309,7 +321,7 @@ html.es-watchbar-open #debiki-editor-controller
 
 // Extra wide, on topic list pages — but subtract the watchbar width.
 html.es-watchbar-open.es-forum #debiki-editor-controller,  // or rm? [ed_prv_orig_splits]
-html.es-watchbar-open #debiki-editor-controller.s_E-Prv
+html.es-watchbar-open #debiki-editor-controller.s_E-SplitOr
   &.c_E-PlaceLeft
     // Try using $watchbarWidth instead of 230, hmm.
     width: calc((100% - 230px) * 0.60);  // [ed_left_width]
@@ -328,7 +340,7 @@ html.es-watchbar-open #debiki-editor-controller.s_E-Prv
     // --- /dupl
 
   // Editor maximized and split horizontally (textarea above, preview below).
-  @media (min-width: $showPreviewMinWidth + 1)
+  @media (min-width: $autoMaximizeEditorMaxWidth + 1)
     &.s_E-SplitHz
       .editor-area
         width: 100%;
@@ -356,9 +368,26 @@ html.es-watchbar-open #debiki-editor-controller.s_E-Prv
       border: none !important;
     // --- /dupl
 
-  @media (max-width: $showPreviewMinWidth)
-    .esEdtr_cycleMaxHzBtn
-      display: none;
+  // If screen wide enough, we show the cycle-PlaceLeft/Max/Horiz button. But
+  // not the Maximize button:  (both Place-left and Maximize buttons is a bit much)
+  .c_E_MaxB
+    display: none;
+
+  @media (max-width: $autoMaximizeEditorMaxWidth)
+    // When auto maximizing, hide the Maximize button.
+    .c_E_MaxB
+      display: none !important;
+
+  @media (max-width: $splitPreviewMinWidth - 1)
+    // Hide the Place Left button, since the window is [too_narrow_for_Place_left]. But if
+    // already placed-left, show it, so can [click to Max then click back to normal].
+    &:not(.c_E-PlaceLeft):not(.s_E-Max)
+      .esEdtr_cycleMaxHzBtn
+        display: none;
+      // But a Maximize button makes sense also when the window is a bit narrow.
+      // (It skips Place-left, jumps directly to full screen editor.)
+      .c_E_MaxB
+        display: inline-block;
 
     &.s_E-Min
       top: initial;
@@ -473,15 +502,23 @@ html.es-watchbar-open #debiki-editor-controller.s_E-Prv
         &:focus
           box-shadow: 0 1px 3px 2px hsl($uiHue, 100%, 79%);
 
-    // Show _either_textarea_or_preview.
-    //@media (max-width: $eitherTextareaOrPreviewMaxWidth)
-    //  html.c_Html-EdLeft .preview-area
-    //    theStuffBelow()  (the 3 lines)
-    @media (max-width: $showPreviewMinWidth)
+#debiki-editor-controller:not(.s_E-Max)
+  .editor-area
+    @media (max-width: $splitPreviewMinWidth - 1)
+      // Window too narrow to show both <textarea> and editor. We'll use
+      // the full width, and show either or.
       width: 100%;
       .editor-area-after-borders
         right: 0;
 
+  &.s_E-SplitOrPrv
+    // SplitOrPrv means that if the screen is too narrow, we'll _show_only_the preview.
+    // So, hide the editor <textarea>.
+    @media (max-width: $splitPreviewMinWidth - 1)
+      .editor-area
+        display: none;
+
+#debiki-editor-controller
   .preview-area
 
     width: 50%
@@ -508,30 +545,28 @@ html.es-watchbar-open #debiki-editor-controller.s_E-Prv
       background: white
       overflow: auto
 
-    // Show _either_textarea_or_preview.
-    //@media (max-width: $eitherTextareaOrPreviewMaxWidth)
-    //  html.c_Html-EdLeft .preview-area
-    //    theStuffBelow()  (3 lines)
-    @media (max-width: $showPreviewMinWidth)
-      display: none;
-      width: 100%;
-      bottom: $spaceForButtons;  // also just below...
+  &:not(.s_E-Max) .preview-area
+    @media (max-width: $splitPreviewMinWidth - 1)
+      // If screen to narrow to show <textarea> and preview side by side, then, if
+      // showing the preview (but not the <textarea>), then it should be full width.
+      previewFullWidth()
 
-  // ... If the textarea is placed left, in split-textarea-preview mode, the editor might be
+  &.s_E-SplitOrE:not(.s_E-Max)
+    // SplitOrE means that if the screen is too narrow, we'll _show_only_the editor.
+    // So, hide the preview.
+    @media (max-width: $splitPreviewMinWidth - 1)
+      .preview-area
+        display: none;
+
+  &.s_E-OnlyPrv
+    .preview-area
+      previewFullWidth()
+
+  // If the textarea is placed left, in split-textarea-preview mode, the editor might be
   // a bit narrow, so the bottom of the preview pane would overlap the rightmost part of
   // the Submit/Cancel/Hide-Preview buttons <div>. Therefore, make the preview a bit shorter.
   &.c_E-PlaceLeft .preview-area
     bottom: $spaceForButtons; // instead of 0
-
-  //@media (max-width: $eitherTextareaOrPreviewMaxWidth)
-  //  html.c_Html-EdLeft .preview-area
-  //    theStuffBelow()  (1 line display: ..)
-  .editor-area,
-  .preview-area
-    @media (min-width: $showPreviewMinWidth + 1)
-      // In case JS has adden display: none, and via CSS we've hidden the Show-preview button,
-      // then we need to ensure the preview is indeed visible again now when the win width is wider:
-      display: block !important;
 
   .submit-cancel-btns
     // This'll place the Preview button just to the left of the middle of the editor,
@@ -544,7 +579,7 @@ html.es-watchbar-open #debiki-editor-controller.s_E-Prv
     //@media (max-width: $eitherTextareaOrPreviewMaxWidth)
     //  html.c_Html-EdLeft .preview-area
     //    theStuffBelow()  (1 line width: ...)
-    @media (max-width: $showPreviewMinWidth)
+    @media (max-width: $splitPreviewMinWidth - 1)
       width: 100%;
 
     position: absolute;
@@ -555,11 +590,14 @@ html.es-watchbar-open #debiki-editor-controller.s_E-Prv
       margin: 0;
       @media (min-width: $spacyButtonsMinWidth)
         margin-right: 5px;
-    .esEdtr_cycleMaxHzBtn,
-    #esPreviewBtn
+    .esEdtr_cycleMaxHzBtn
       min-width: 65px;
-    #esPreviewBtn,
+    .c_E_HidPrvB,
+    .c_E_BotOrEB,
+    .c_E_BotOrPrvB,
+    .c_E_HidEB,
     #esMinimizeBtn
+      min-width: 60px;
       float: right;
       margin: 0;
       @media (min-width: $spacyButtonsMinWidth)
@@ -567,17 +605,7 @@ html.es-watchbar-open #debiki-editor-controller.s_E-Prv
     //@media (max-width: $eitherTextareaOrPreviewMaxWidth)
     //  html.c_Html-EdLeft .preview-area
     //    theStuffBelow()
-    @media (min-width: $showPreviewMinWidth + 1)
-      // Let's try with these present always —  it's nice, actually, to be able to see an
-      // in-editor preview too, if one want's to look a the post one replies to (while
-      // seeing both the editor & preview simultaneously).
-      // But we'll change the hide-preview title from "Edit" to "Hide preview", on
-      // large screens (...-Lg) where the [textarea_and_preview_both_visible].
-      #esPreviewBtn
-        .c_E_PrvB
-          display: none;
-        .c_E_PrvB-Lg
-          display: inline-block;
+    @media (min-width: $splitPreviewMinWidth)
       #esMinimizeBtn
         display: none;
 
@@ -585,8 +613,48 @@ html.es-watchbar-open #debiki-editor-controller.s_E-Prv
     margin-left: 1em;
     vertical-align: middle;
 
-.c_E_PrvB-Lg
+
+// ----- Hide/show Show Prevew buttons  [toggle_preview_btns]
+
+.c_E_HidPrvB,
+.c_E_HidEB,
+.c_E_BotOrEB
+.c_E_BotOrPrvB
   display: none;
+
+// If screen to small to show <textarea> and preview side by side, we are showing
+// just one, depending on which preview related buttons the user has clicked.
+//
+// This unhides a button to show the other thing (preview or <textarea>) instead:
+//
+@media (max-width: $splitPreviewMinWidth - 1)
+  .s_E-OnlyE,
+  .s_E-SplitOrE
+    .c_E_BotOrPrvB
+      display: block;
+
+  .s_E-OnlyPrv,
+  .s_E-SplitOrPrv
+    .c_E_BotOrEB
+      display: block;
+
+// If screen wide enough, we might be showing the <textarea> and preview side by side.
+//
+@media (min-width: $splitPreviewMinWidth)
+  // If we're showing *only* the <textarea> or preview, unhide a button that shows
+  // both side by side:
+  .s_E-OnlyE,
+  .s_E-OnlyPrv
+    .c_E_BotOrEB
+      display: block;
+
+  // If we're showing both the <textarea> and preview, unhide two button that hides
+  // the <textarea> or preview, respectively:
+  .s_E-SplitOrE,
+  .s_E-SplitOrPrv
+    .c_E_HidPrvB,
+    .c_E_HidEB
+      display: Block;
 
 // ----- Maximized editor
 
@@ -618,12 +686,6 @@ hideScrollButtons()
 @media (max-width: $autoMaximizeEditorMaxWidth)  // case 2
   html:not(.dw-embedded-editor)
     hideScrollButtons()
-
-// When editor maximized (because of clicking the Maximize button, rather than the screen
-// being small), there's a preview already, to the right, or below. So, no need for
-// a Preview button.
-.s_E-Max #esPreviewBtn
-  display: none;
 
 // -----
 
@@ -684,13 +746,31 @@ html.mouse .rta__entity
 
 
 // Compact buttons if narrow screen, so won't wrap to 2nd line.
-@media (max-width: $spacyButtonsMinWidth - 1)
-  #esMinimizeBtn
+compactButtons()
+  #debiki-editor-controller .submit-cancel-btns button
+    margin: 0 1px 0 0;
     padding-left: 6px;  // instead of 12px
-    padding-right: 6px;
-  #esPreviewBtn
-    padding-left: 7px;
-    padding-right: 7px;
+    padding-right: 5px;
+
+  // Give a shared class? Or _wrap_preview_btns_in_div?
+  #esMinimizeBtn,
+  .c_E_HidPrvB,
+  .c_E_BotOrEB,
+  .c_E_BotOrPrvB,
+  .c_E_HidEB
+    margin: 0 0 0 1px !important;
+    // They're all float:right.  Looks nice with some more _space_between the left
+    // buttons (Submit, Cancel) and the right (Preview, Minimize etc) buttons.
+    position: relative;
+    right: -2px;
+
+@media (max-width: $spacyButtonsMinWidth - 1)
+  compactButtons()
+
+// If the screen is just wide enough to show a split-<textarea>-preview, there's not
+// much space for the buttons.
+@media (min-width: $splitPreviewMinWidth) and (max-width: $spacyButtonsMinWidthWithSplit)
+  compactButtons()
 
 .c_AliasB
   margin-left: 1ex;

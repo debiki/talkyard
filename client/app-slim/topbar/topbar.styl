@@ -782,12 +782,20 @@ html.esSidebarsOverlayPage
     padding: 2px $paddingLeftRight 2px;
     position: relative;
     top: -4px;
+    // Or:
+    padding: 3px $paddingLeftRight 4px;  // simpler to click, if mobile?
+    top: -3px;
+
     pointer-events: auto;
     font-weight: bold;
     color: hsl(0 0% 25%);
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
+    border: none; // removes .btn border (it's a dropdown button)
+    .caret
+      margin-left: 0.6ex;
+
     @media (max-height: $tallHeight - 1px)
       // Smaller screen, so smaller font — more space for the actual content.
       top: -2px;

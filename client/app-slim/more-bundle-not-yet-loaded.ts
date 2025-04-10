@@ -28,6 +28,8 @@
 // Lazy loaded dialogs
 //========================
 
+// COULD REFACTOR: Would be better with a `withEditorBundle(editor => ...)` than all these
+// functions that all of them call `Server.loadMoreScriptsBundle()`?  [5FK2W08]
 
 export function openTagDropdown(atRect, ps: {
       tag?: Tag, tagName: St, tagType: TagType, anyValue?, me: Me }) {

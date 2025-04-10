@@ -28,6 +28,21 @@ let FileAPI;
 
 let theEditor: any;
 
+// If there should be any _in_editor preview side-by-side with the <textarea> in the editor,
+// or, if ShowOnlyPreview, instead of the <textarea>.
+enum SplitEditor {
+  ShowOnlyEditor = 1,
+  // Shows the editor <textarea> to the left and a preview to the right, but if the
+  // screen isn't wide enough, then shows only the <textarea>, and to see a preview,
+  // one needs to click a Preview button  (or the Scroll to Preview button to scroll
+  // to the *in-page* preview).
+  ShowBothOrEditor = 2,
+  // Shows both, but if screen narrow, shows the preview, not the <textarea>.
+  ShowBothOrPreview = 3,
+  ShowOnlyPreview = 4,
+}
+
+
 enum ScrollToPreview {
   No = 0,
   Once = 1,
@@ -204,8 +219,7 @@ interface EditorState {
   searchResults?: any;
 
   showMinimized?: boolean;
-  showOnlyPreview?: boolean;
-  canPlaceLeft?: Bo;  // undef means false
+  splitEditor: SplitEditor;
   placeLeft?: Bo;
   showMaximized?: boolean;
   splitHorizontally?: boolean;
@@ -230,8 +244,6 @@ export const Editor = createFactory<any, EditorState>({
     this.scrollingToPreview = 0;
     const state: EditorState = {
       store: debiki2.ReactStore.allData(),
-      // For now, remember "forever" (until page reload), simpler.
-      canPlaceLeft: window.innerWidth >= WinDims.MinEditorLeftWidth && !eds.isInIframe,
       visible: false,
       text: '',
       caretPos: 0,
@@ -245,6 +257,7 @@ export const Editor = createFactory<any, EditorState>({
       isUploadingFile: false,
       fileUploadProgress: 0,
       uploadFileXhr: null,
+      splitEditor: SplitEditor.ShowBothOrEditor,
     };
     return state;
   },
@@ -1220,6 +1233,8 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   openToEditChatTitleAndPurpose: function() {   // RENAME to  openToEditChatPurpose only (not title)
+    // We'll _hide_the_scroll_to_preview_btns, since there isn't any in-page preview,
+    // when editing a chat purpose.
     this.editPost(BodyNr);
   },
 
@@ -2301,7 +2316,8 @@ export const Editor = createFactory<any, EditorState>({
 
     // The next layout after the default (which is the editor at the bottom, and the
     // discussion above), is the editor to the left, and the discussion to the right.
-    const newPlaceLeft = state.canPlaceLeft && !state.placeLeft &&
+    // (Place-left not implemented for embedded comments though, that is, if `isInIframe`.)
+    const newPlaceLeft = !eds.isInIframe && !state.placeLeft &&
             // But if we're already using another layout, we'll cycle back to normal first.
             !state.showMaximized;
 
@@ -2314,6 +2330,13 @@ export const Editor = createFactory<any, EditorState>({
     // In full screen layout, we first show the preview to the right of the editable textarae,
     // then below it.
     const newSplitHorizontally = state.showMaximized && !state.splitHorizontally;
+
+    this.setLeftMaxHoriz(newPlaceLeft, newShowMaximized, newSplitHorizontally);
+  },
+
+
+  setLeftMaxHoriz: function(newPlaceLeft: Bo, newShowMaximized: Bo, newSplitHorizontally: Bo) {
+    const state: EditorState = this.state;
 
     if (eds.isInEmbeddedEditor && newShowMaximized !== state.showMaximized) {
       window.parent.postMessage(JSON.stringify(['maximizeEditor', newShowMaximized]),
@@ -2330,10 +2353,9 @@ export const Editor = createFactory<any, EditorState>({
   },
 
 
-  togglePreview: function() {
-    const state: EditorState = this.state;
+  togglePreview: function(splitEditor: SplitEditor) {
     this.setState({
-      showOnlyPreview: !state.showOnlyPreview,
+      splitEditor,
       showMinimized: false,
     });
   },
@@ -2665,9 +2687,15 @@ export const Editor = createFactory<any, EditorState>({
     // ----- "Reply to" or "Editing" text
 
     const whichFrameScrollOpts: ShowPostOpts = { inFrame: state.inFrame };
+    const isEditingChatPurpose = page_isChat(editorsPageType) && editingPostNr === BodyNr;
 
     let doingWhatInfo: any;
-    if (_.isNumber(editingPostNr)) {
+    if (isEditingChatPurpose) {
+      // Don't make this click-and-scrollable, wouldn't work well in a 9999 comments long chat
+      // (to scroll all the way back to the orig post = the purpose text).
+      doingWhatInfo = r.span({}, "Edit chat purpose:"); // I18N
+    }
+    else if (_.isNumber(editingPostNr)) {
       doingWhatInfo =
         r.span({},
           // "Edit post X:"
@@ -2969,22 +2997,26 @@ export const Editor = createFactory<any, EditorState>({
 
     // ----- Preview
 
+    // There can be 2 previews:
+    //  - An _in_editor preview, side by side with, or instead of [the <textrea> where one types
+    //    one's new post].
+    //  - An in-page preview, shown where one's comment would appear if one clicks Submit.
+
     const thereIsAnInPagePreview =
         me_uiPrefs(me).inp !== UiPrefsIninePreviews.Skip &&
+        // If editing a chat purpose, we _hide_the_scroll_to_preview_btns.
+        !isEditingChatPurpose &&
         // If we're creating a new page, there's not any place to show an in-page preview.
         !(state.newForumTopicCategoryId || state.newPageRole);
 
-    // Don't show any in-editor preview, if we're showing an in-page preview,
-    // and hasn't configured double previews (in editor too).
-    // UX Actually, always show double previews, if replying, and wide screen? [showPreviewWhere]
-    const skipInEditorPreview =
-        thereIsAnInPagePreview &&
-        myUiPrefs.inp !== UiPrefsIninePreviews.Double &&
-        // If the editor is full screen (i.e. textarea and preview split screen),
-        // then show an in-editor preview as usual.
-        !(state.showMaximized || state.splitHorizontally || state.showOnlyPreview);
+    const showInEditorPreview =  // [showPreviewWhere]
+        state.splitEditor !== SplitEditor.ShowOnlyEditor ||
+        // If one clicks Maximize so the editor is full screen (i.e. textarea and
+        // preview split screen), we always show an in-editor preview. (The Place-left
+        // and Maximize buttons are available only if the screen is wide enough.)
+        state.showMaximized || state.splitHorizontally;
 
-    const previewHelp = skipInEditorPreview ? null :
+    const previewHelp = !showInEditorPreview ? null :
         r.div({ className: 'dw-preview-help' },
           help.HelpMessageBox({ message: previewHelpMessage }));
 
@@ -3025,7 +3057,7 @@ export const Editor = createFactory<any, EditorState>({
       }),
     };
 
-    const previewTitle = skipInEditorPreview ? null :
+    const previewTitle = !showInEditorPreview ? null :
         r.div({},
           r[previewTitleTagName](scrollToPreviewProps,
             t.e.PreviewC + (titleInput ? t.e.TitleExcl : '')));
@@ -3036,7 +3068,7 @@ export const Editor = createFactory<any, EditorState>({
     // half, then Ty scrolls just once.
     // (Also see the forum buttons, which also have a depressed state [double_btn].)
     const autoScrollClass = state.scrollToPreview === ScrollToPreview.Auto ? ' auto' : '';
-    const scrollToPreviewBtn = !skipInEditorPreview || !thereIsAnInPagePreview ? null :
+    const scrollToPreviewBtn = showInEditorPreview || !thereIsAnInPagePreview ? null :
         r.div({ className: 'c_E_ScrPrvw' + autoScrollClass },
           // If clicking the "Auto" part of the button, start auto-scrolling
           // the preview into view, if typing more text.
@@ -3055,27 +3087,30 @@ export const Editor = createFactory<any, EditorState>({
           LinkButton({ ...scrollToPreviewProps, className: 's_E_ScrPrvwB' },
             rFr({}, r.span({ className: 's_E_ScrPrvwB_Scr2' }, "Scroll to "), "preview")));
                                                   // I18N was:  t.ShowPreview
-    let editorClasses = skipInEditorPreview ? 's_E-NoInEdPrvw' : 's_E-WithInEdPrvw';
+    let editorClasses = !showInEditorPreview ? 's_E-NoInEdPrvw' : 's_E-WithInEdPrvw';
 
 
     // ----- Editor size
 
     editorClasses += eds.isInEmbeddedEditor ? '' : ' editor-box-shadow';
     editorClasses += state.placeLeft ? ' c_E-PlaceLeft' : '';
-    editorClasses += state.showMaximized ? ' s_E-Max' : '';
     editorClasses += state.splitHorizontally ? ' s_E-SplitHz' : '';
-    editorClasses += state.showMinimized ? ' s_E-Min' : (
-        state.showOnlyPreview ? ' s_E-Prv' : ' s_E-E');
-
-    const editorStyles = state.showOnlyPreview ? { display: 'none' } : null;
-    const previewStyles = state.showOnlyPreview ? { display: 'block' } : null;
+    editorClasses +=
+        state.showMinimized ? ' s_E-Min' : ' s_E-E' + (
+        state.showMaximized ? ' s_E-Max' : (
+        state.splitEditor === SplitEditor.ShowOnlyEditor ? ' s_E-OnlyE' : (
+        state.splitEditor === SplitEditor.ShowOnlyPreview ?  ' s_E-OnlyPrv' : (
+        ' s_E-SplitOr ' + (
+              state.splitEditor === SplitEditor.ShowBothOrPreview ?
+                    's_E-SplitOrPrv' :
+                    's_E-SplitOrE')))));  // SplitEditor.ShowBothOrEditor
 
     // [.cycle_editor_layout]
     const editorLayoutIndexAndName =
         !state.showMaximized
-            ? (state.canPlaceLeft && !state.placeLeft
+            ? (!eds.isInIframe && !state.placeLeft
                   ? [2, t.e.PlaceLeft || "Place left"]
-                  : [3, t.e.Maximize])
+                  : [3, t.e.Maximize])  // _dupl_nr_3
             : (state.splitHorizontally
                   ? [1, t.e.ToNormal]
                   : [4, t.e.TileHorizontally]);
@@ -3104,7 +3139,9 @@ export const Editor = createFactory<any, EditorState>({
           guidelinesElem,
           similarTopicsTips,
           r.div({ id: 'editor-after-borders' },
-            r.div({ className: 'editor-area', style: editorStyles },
+            // CLEAN_UP QUICK: Fix indentation.
+            state.splitEditor === SplitEditor.ShowOnlyPreview && !state.showMaximized ? null :
+            r.div({ className: 'editor-area' },
               r.div({ className: 'editor-area-after-borders' },
                 r.div({ className: 's_E_DoingRow' },
                   state.placeLeft ? topbar.OpenWatchbarButton() : null,
@@ -3123,8 +3160,8 @@ export const Editor = createFactory<any, EditorState>({
                     pageRoleDropdown)),
                 textareaButtons,
                 textarea)),
-             skipInEditorPreview ? null :
-               r.div({ className: 'preview-area', style: previewStyles },
+             !showInEditorPreview ? null :
+               r.div({ className: 'preview-area' },
                 previewTitle,
                 previewHelp,
                 r.div({ className: 'preview', id: 't_E_Preview',
@@ -3134,23 +3171,48 @@ export const Editor = createFactory<any, EditorState>({
                 saveButtonTitle),
               Button({ onClick: this.onCancelClick, tabIndex: 1, className: 'e_EdCancelB' },
                 cancelButtonTitle),
+
+              // This button gets hidden (using CSS), if window [too_narrow_for_Place_left].
               Button({ onClick: this.cycleMaxHorizBack,
                   className: 'esEdtr_cycleMaxHzBtn c_EdLayout-' + editorLayoutIndex,
                   tabIndex: 4 }, maximizeAndHorizSplitBtnTitle),
-              // These two buttons are hidden via CSS if the window is wide. Higher tabIndex
+              // This button gets shown instead, if window [too_narrow_for_Place_left].
+              Button({ onClick: () => this.setLeftMaxHoriz(false, true, false),
+                  className: `c_E_MaxB c_EdLayout-3`,  // _dupl_nr_3
+                  tabIndex: 4 }, t.e.Maximize),
+
+              // Could _wrap_preview_btns_in_div — they're all float: right (the buttons below).
+
+              // This button is hidden via CSS if the window is wide. Higher tabIndex
               // because float right.
               Button({ onClick: this.toggleMinimized, id: 'esMinimizeBtn',
                   primary: state.showMinimized, tabIndex: 3 },
                 state.showMinimized ? t.e.ShowEditorAgain : t.e.Minimize),
-              Button({ onClick: this.togglePreview, id: 'esPreviewBtn', tabIndex: 2 },
-                state.showOnlyPreview
-                    ? rFr({},
-                        r.span({ className: 'c_E_PrvB' }, t.EditV),
-                        // If wide screen, so textarea & preview visible side by side, then,
-                        // "Hide preview" makes more sense than "Edit", since
-                        // is editing already.  [textarea_and_preview_both_visible]
-                        r.span({ className: 'c_E_PrvB-Lg' }, "Hide preview")) // I18N
-                    : t.PreviewV),
+
+              // These four buttons are also hidden/shown using CSS,   I18N
+              // they're not visible all at the same time. [toggle_preview_btns]
+              Button({ onClick: () => this.togglePreview(SplitEditor.ShowOnlyEditor),
+                  className: 'c_E_HidPrvB', tabIndex: 2,
+                  },
+                  'Hide preview'
+                  ),
+              Button({ onClick: () => this.togglePreview(SplitEditor.ShowBothOrEditor),
+                  className: 'c_E_BotOrEB', tabIndex: 2,
+                  },
+                  state.splitEditor >= SplitEditor.ShowBothOrPreview ?
+                      'Show editor' : 'Show preview' // t.EditV
+                  ),
+              Button({ onClick: () => this.togglePreview(SplitEditor.ShowBothOrPreview),
+                  className: 'c_E_BotOrPrvB', tabIndex: 2,
+                  },
+                  'Show preview'  // t.PreviewV
+                  ),
+              Button({ onClick: () => this.togglePreview(SplitEditor.ShowOnlyPreview),
+                  className: 'c_E_HidEB', tabIndex: 2,
+                  },
+                  'Hide editor'
+                  ),
+
               anyViewHistoryButton)),
 
             eds.isInEmbeddedEditor ? null :  // [RESEMBEDTR]
