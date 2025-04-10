@@ -340,7 +340,7 @@ html.es-watchbar-open #debiki-editor-controller.s_E-SplitOr
     // --- /dupl
 
   // Editor maximized and split horizontally (textarea above, preview below).
-  @media (min-width: $splitPreviewMinWidth)
+  @media (min-width: $autoMaximizeEditorMaxWidth + 1)
     &.s_E-SplitHz
       .editor-area
         width: 100%;
@@ -368,9 +368,26 @@ html.es-watchbar-open #debiki-editor-controller.s_E-SplitOr
       border: none !important;
     // --- /dupl
 
+  // If screen wide enough, we show the cycle-PlaceLeft/Max/Horiz button. But
+  // not the Maximize button:  (both Place-left and Maximize buttons is a bit much)
+  .c_E_MaxB
+    display: none;
+
+  @media (max-width: $autoMaximizeEditorMaxWidth)
+    // When auto maximizing, hide the Maximize button.
+    .c_E_MaxB
+      display: none !important;
+
   @media (max-width: $splitPreviewMinWidth - 1)
-    .esEdtr_cycleMaxHzBtn
-      display: none;
+    // Hide the Place Left button, since the window is [too_narrow_for_Place_left]. But if
+    // already placed-left, show it, so can [click to Max then click back to normal].
+    &:not(.c_E-PlaceLeft):not(.s_E-Max)
+      .esEdtr_cycleMaxHzBtn
+        display: none;
+      // But a Maximize button makes sense also when the window is a bit narrow.
+      // (It skips Place-left, jumps directly to full screen editor.)
+      .c_E_MaxB
+        display: inline-block;
 
     &.s_E-Min
       top: initial;
@@ -485,7 +502,11 @@ html.es-watchbar-open #debiki-editor-controller.s_E-SplitOr
         &:focus
           box-shadow: 0 1px 3px 2px hsl($uiHue, 100%, 79%);
 
+#debiki-editor-controller:not(.s_E-Max)
+  .editor-area
     @media (max-width: $splitPreviewMinWidth - 1)
+      // Window too narrow to show both <textarea> and editor. We'll use
+      // the full width, and show either or.
       width: 100%;
       .editor-area-after-borders
         right: 0;
@@ -497,6 +518,7 @@ html.es-watchbar-open #debiki-editor-controller.s_E-SplitOr
       .editor-area
         display: none;
 
+#debiki-editor-controller
   .preview-area
 
     width: 50%
@@ -523,12 +545,13 @@ html.es-watchbar-open #debiki-editor-controller.s_E-SplitOr
       background: white
       overflow: auto
 
+  &:not(.s_E-Max) .preview-area
     @media (max-width: $splitPreviewMinWidth - 1)
       // If screen to narrow to show <textarea> and preview side by side, then, if
       // showing the preview (but not the <textarea>), then it should be full width.
       previewFullWidth()
 
-  &.s_E-SplitOrE
+  &.s_E-SplitOrE:not(.s_E-Max)
     // SplitOrE means that if the screen is too narrow, we'll _show_only_the editor.
     // So, hide the preview.
     @media (max-width: $splitPreviewMinWidth - 1)

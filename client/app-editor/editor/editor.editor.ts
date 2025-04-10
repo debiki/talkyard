@@ -220,7 +220,6 @@ interface EditorState {
 
   showMinimized?: boolean;
   splitEditor: SplitEditor;
-  canPlaceLeft?: Bo;  // undef means false
   placeLeft?: Bo;
   showMaximized?: boolean;
   splitHorizontally?: boolean;
@@ -245,8 +244,6 @@ export const Editor = createFactory<any, EditorState>({
     this.scrollingToPreview = 0;
     const state: EditorState = {
       store: debiki2.ReactStore.allData(),
-      // For now, remember "forever" (until page reload), simpler.
-      canPlaceLeft: window.innerWidth >= WinDims.MinEditorLeftWidth && !eds.isInIframe,
       visible: false,
       text: '',
       caretPos: 0,
@@ -2319,7 +2316,8 @@ export const Editor = createFactory<any, EditorState>({
 
     // The next layout after the default (which is the editor at the bottom, and the
     // discussion above), is the editor to the left, and the discussion to the right.
-    const newPlaceLeft = state.canPlaceLeft && !state.placeLeft &&
+    // (Place-left not implemented for embedded comments though, that is, if `isInIframe`.)
+    const newPlaceLeft = !eds.isInIframe && !state.placeLeft &&
             // But if we're already using another layout, we'll cycle back to normal first.
             !state.showMaximized;
 
@@ -2332,6 +2330,13 @@ export const Editor = createFactory<any, EditorState>({
     // In full screen layout, we first show the preview to the right of the editable textarae,
     // then below it.
     const newSplitHorizontally = state.showMaximized && !state.splitHorizontally;
+
+    this.setLeftMaxHoriz(newPlaceLeft, newShowMaximized, newSplitHorizontally);
+  },
+
+
+  setLeftMaxHoriz: function(newPlaceLeft: Bo, newShowMaximized: Bo, newSplitHorizontally: Bo) {
+    const state: EditorState = this.state;
 
     if (eds.isInEmbeddedEditor && newShowMaximized !== state.showMaximized) {
       window.parent.postMessage(JSON.stringify(['maximizeEditor', newShowMaximized]),
@@ -3103,9 +3108,9 @@ export const Editor = createFactory<any, EditorState>({
     // [.cycle_editor_layout]
     const editorLayoutIndexAndName =
         !state.showMaximized
-            ? (state.canPlaceLeft && !state.placeLeft
+            ? (!eds.isInIframe && !state.placeLeft
                   ? [2, t.e.PlaceLeft || "Place left"]
-                  : [3, t.e.Maximize])
+                  : [3, t.e.Maximize])  // _dupl_nr_3
             : (state.splitHorizontally
                   ? [1, t.e.ToNormal]
                   : [4, t.e.TileHorizontally]);
@@ -3166,9 +3171,15 @@ export const Editor = createFactory<any, EditorState>({
                 saveButtonTitle),
               Button({ onClick: this.onCancelClick, tabIndex: 1, className: 'e_EdCancelB' },
                 cancelButtonTitle),
+
+              // This button gets hidden (using CSS), if window [too_narrow_for_Place_left].
               Button({ onClick: this.cycleMaxHorizBack,
                   className: 'esEdtr_cycleMaxHzBtn c_EdLayout-' + editorLayoutIndex,
                   tabIndex: 4 }, maximizeAndHorizSplitBtnTitle),
+              // This button gets shown instead, if window [too_narrow_for_Place_left].
+              Button({ onClick: () => this.setLeftMaxHoriz(false, true, false),
+                  className: `c_E_MaxB c_EdLayout-3`,  // _dupl_nr_3
+                  tabIndex: 4 }, t.e.Maximize),
 
               // Could _wrap_preview_btns_in_div — they're all float: right (the buttons below).
 
