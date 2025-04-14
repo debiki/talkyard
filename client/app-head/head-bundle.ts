@@ -181,6 +181,7 @@ if (_narrow) {
 // see: https://stackoverflow.com/a/979995/694469  for more details.
 try {
   var _searchParams = new URLSearchParams(location.search);
+  var _embHow = _searchParams.get('embHow'); // [emb_forum]
   var _ssoHow = _searchParams.get('ssoHow');
   var _class = _searchParams.get('htmlClass');
   if (_class) {
@@ -287,6 +288,7 @@ if (!eds.isInEmbeddedEditor) {
   loadGlobalStaffScript: @{ tpi.globals.loadGlobalStaffScript.toString },
   */
 
+eds.embHow = _embHow;
 eds.ssoHow = _ssoHow;
 
 // Backw compat CLEAN_UP convert old js code in these 'namespaces' to Typescript instead [4KSWPY]
@@ -298,7 +300,8 @@ var debiki = { internal: {}, v0: { util: {}} };
 // And remove typs.
 var typs: PageSession = {
   xsrfTokenIfNoCookies: _volatileData.xsrfTokenIfNoCookies,
-  canUseCookies: navigator.cookieEnabled
+  canUseCookies: navigator.cookieEnabled &&
+      !eds.isInIframe,  // [iframe_cookies_always_broken]
 };
 
 // API, for custom scripts, e.g. MathJax. Type declaration in model.ts [5ABJH72].

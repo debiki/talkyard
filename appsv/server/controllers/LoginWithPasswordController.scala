@@ -30,7 +30,7 @@ import javax.inject.Inject
 import org.scalactic.{Bad, Good}
 import play.api.mvc._
 import play.api.libs.json._
-import talkyard.server.security.{EdSecurity, SidOk}
+import talkyard.server.security.{EdSecurity, SidOk, XsrfOk}
 import org.owasp.encoder.Encode
 import talkyard.server.TyLogging
 import talkyard.server.authn.LoginWithSecretController
@@ -63,13 +63,20 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     val site = globals.lookupSiteOrThrow(request.request)
     val dao = globals.siteDao(site.id)
 
-    val (sid, cookies) = doLogin(request, dao, email, password)
+    val (sid, xsrfToken, cookies) = _doLogin(request, dao, email, password)
 
     val response = anyReturnToUrl match {
       case None =>
-        OkSafeJson(Json.obj(
-          "weakSessionId" -> JsString(
-            if (maybeCannotUseCookies) sid.value else ""))) // [NOCOOKIES]
+        OkSafeJson({
+          if (maybeCannotUseCookies)
+            Json.obj(
+                "weakSessionId" -> JsString(sid.value),               // [NOCOOKIES]
+                "xsrfTokenIfNoCookies" -> JsString(xsrfToken.value))  // [emb_forum_xsrf_token]
+          else
+            Json.obj(
+                "weakSessionId" -> JsString(""),
+                "xsrfTokenIfNoCookies" -> JsString(""))
+        })
       case Some(url) =>
         // (We aren't in an iframe — we don't login and *redirect* in iframes. So cookies
         // are 1st party cookies and should work.)
@@ -80,8 +87,8 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  private def doLogin(request: ApiRequest[_], dao: SiteDao, emailOrUsername: St, password: St)
-        : (SidOk, ImmSeq[Cookie]) = {
+  private def _doLogin(request: ApiRequest[_], dao: SiteDao, emailOrUsername: St, password: St)
+        : (SidOk, XsrfOk, ImmSeq[Cookie]) = {
     val loginAttempt = PasswordLoginAttempt(
       ip = request.ip,
       date = request.ctime,
@@ -126,9 +133,9 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     }
 
     dao.pubSub.userIsActive(request.siteId, loginGrant.user, request.theBrowserIdData)
-    val (sid, _, sidAndXsrfCookies) =
+    val (sid: SidOk, xsrfToken: XsrfOk, sidAndXsrfCookies) =
           createSessionIdAndXsrfToken(request, loginGrant.user.id)
-    (sid, sidAndXsrfCookies)
+    (sid, xsrfToken, sidAndXsrfCookies)
   }
 
 
@@ -233,7 +240,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
             throwUnprocessableEntity("DwE805T4", s"$errorMessage, please try again.")
         }
 
-      val (anySid: Option[SidOk], loginCookies: List[Cookie]) = try {
+      val (anySid: Opt[SidOk], anyXsrfToken: Opt[XsrfOk], loginCookies: List[Cookie]) = try {
         val newMember = dao.createPasswordUserCheckPasswordStrong(userData, request.theBrowserIdData)
         if (newMember.email.nonEmpty && !isServerInstaller) {
           sendEmailAddressVerificationEmail(newMember, anyReturnToUrl, request.host, request.dao)
@@ -242,14 +249,14 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
           TESTS_MISSING // no e2e tests for this
           // Apparently the staff wants to know that all email addresses actually work.
           // (But if no address specifeid — then, just below, we'll log the user in directly.)
-          (None, Nil)
+          (None, None, Nil)
         }
         else {
           dieIf(newMember.email.isEmpty && requireVerifiedEmail, "EdE2GKF06")
           dao.pubSub.userIsActive(request.siteId, newMember, request.theBrowserIdData)
-          val (sid, _, sidAndXsrfCookies) =
+          val (sid: SidOk, xsrfToken: XsrfOk, sidAndXsrfCookies) =
                 createSessionIdAndXsrfToken(request, newMember.id)
-          (Some(sid), sidAndXsrfCookies)
+          (Some(sid), Some(xsrfToken), sidAndXsrfCookies)
         }
       }
       catch {
@@ -264,22 +271,33 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
           (None, Nil)
       }
 
-      val weakSessionId =
-        if (!maybeCannotUseCookies) "" else {
-          // If anySid is absent because one needs to verify one's email before logging in,
+      val (weakSessionId: St, xsrfToken: St) =
+        if (maybeCannotUseCookies) {
+          // If pat is now logged in, we need to incl the sid-parts-1-and-2 and the xsrf-token
+          // in the json, since the browser can't access or send-them-back via cookies.
+          //
+          // But if anySid is absent because one needs to verify one's email before logging in,
           // and this is for embedded blog comments, and 3rd party cookies are blocked — then,
           // when one clicks the verify-email-address link, one will get redirected
           // back to the blog, with a one-time-login-secret included the hash fragment.
           // Talkyard's javascript on the embedding blog post page then sends this secret
           // to the iframe, which sends it to the server, and gets back a session id
           // — without logging in again. [TyT072FKHRPJ5]
-          anySid.map(_.value).getOrElse("") // [NOCOOKIES]
+          //
+          (anySid.map(_.value).getOrElse(""),           // [NOCOOKIES]
+              anyXsrfToken.map(_.value).getOrElse(""))  // [emb_forum_xsrf_token]
+        }
+        else {
+          // The browser gets the sid and xsrf token in cookies, no need to incl in
+          // the json response.
+          ("", "")
         }
 
       val responseJson = Json.obj(  // ts: AuthnResponse
         "userCreatedAndLoggedIn" -> JsBoolean(loginCookies.nonEmpty),
         "emailVerifiedAndLoggedIn" -> JsBoolean(emailVerifiedAt.isDefined),
-        "weakSessionId" -> JsString(weakSessionId))
+        "weakSessionId" -> JsString(weakSessionId),
+        "xsrfTokenIfNoCookies" -> JsString(xsrfToken))
 
       COULD_OPTIMIZE // Clear login related cookies? [clear_aun_cookies]
       // Done already in the OAuth login controller; it clears these: CookiesToDiscardAfterLogin.

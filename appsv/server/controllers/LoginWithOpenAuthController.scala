@@ -46,7 +46,7 @@ import debiki.JsonUtils._
 import talkyard.server._
 import talkyard.server._
 import talkyard.server.http._
-import talkyard.server.security.EdSecurity
+import talkyard.server.security.{EdSecurity, SidOk, XsrfOk}
 import IdentityProvider.{ProtoNameOidc, ProtoNameOAuth2, ProtoNameOAuth10a}
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
@@ -102,6 +102,7 @@ private case class OngoingAuthnState(
   stateString: St,
   oauth2StateUseCount: j_AtomicInteger,
   selectAccountAtIdp: Bo = false,
+  avoidCookies: Bo = false,
   lastStepAt: When,
   nextStep: St,
   extIdentity: Opt[OpenAuthDetails] = None,
@@ -289,6 +290,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     val isInLoginPopup = request.rawQueryString.contains("isInLoginPopup")
     val mayCreateUser = !request.rawQueryString.contains("mayNotCreateUser")
+    val avoidCookies = request.rawQueryString.contains("avoidCookies")
     val useServerGlobalIdpBo: Bo = useServerGlobalIdp is true
 
     val (authnXsrfToken, authnXsrfCookie) = makeAuthnXsrfToken(request.underlying)
@@ -311,6 +313,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
                 "_scribejava_"),
           oauth2StateUseCount = new j_AtomicInteger(0),
           selectAccountAtIdp = selectAccountAtIdp is true,
+          avoidCookies = avoidCookies,
           lastStepAt = globals.now(),
           nextStep = "redir_back")
 
@@ -1623,16 +1626,16 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         authnState: OngoingAuthnState): Result = {
 
     request.dao.pubSub.userIsActive(request.siteId, member, request.theBrowserIdData)
-    val (sid, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request, member.id)
+    val (sid: SidOk, xsrfToken: XsrfOk, sidAndXsrfCookies) =
+          createSessionIdAndXsrfToken(request, member.id)
 
     var maybeCannotUseCookies =
-      request.headers.get(EdSecurity.AvoidCookiesHeaderName) is EdSecurity.Avoid
+          request.headers.get(EdSecurity.AvoidCookiesHeaderName).is(EdSecurity.Avoid) ||
+          authnState.avoidCookies  // [authn_popup_0_cookies]
 
-    def weakSessionIdOrEmpty =
-      if (maybeCannotUseCookies)
-        sid.value
-      else
-        ""
+    def getWeakSidAndXsrfIfNoCookies(): (St, St) =
+          if (maybeCannotUseCookies) (sid.value, xsrfToken.value)
+          else ("", "")
 
     val response =
       if (isAjax(request.underlying)) {
@@ -1643,6 +1646,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         // it'd be a load-whole-html-page GET request, after having gotten
         // redirected back from the IDP.)
         //
+        val (weakSessionIdOrEmpty, xsrfTokenOrEmpty) = getWeakSidAndXsrfIfNoCookies()
         OkSafeJson(Json.obj(  // ts: AuthnResponse
           // Remove `origNonceBack` from here? Already checked before showing
           // the create user dialog:  create-user-dialog.more.ts  [br_authn_nonce].
@@ -1652,7 +1656,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           // In case we're in a login popup for [an embedded <iframe> with cookies disabled],
           // send the session id in the response body, so the <iframe> can access it
           // and remember it for the current page load.
-          "weakSessionId" -> JsString(weakSessionIdOrEmpty))) // [NOCOOKIES]
+          "weakSessionId" -> JsString(weakSessionIdOrEmpty),    // [NOCOOKIES]
+          "xsrfTokenIfNoCookies" -> JsString(xsrfTokenOrEmpty))) // [emb_forum_xsrf_token]
       }
       else {
         // In case we need to do a cookieless login:
@@ -1661,14 +1666,21 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         // use cookies (because of e.g. Safari's "Intelligent Tracking Prevention").
         // However, we've remembered already, in a 1st party cookie (in the login popup?),
         // if 3rd party iframe cookies not work.
+        // Update: For some reason, donesn't work, for embedded *forums*. So, now
+        // we remember also in the authn state. [authn_popup_0_cookies]
         maybeCannotUseCookies ||=
           request.getHostCookieVal(AvoidCookiesCookieName) is EdSecurity.Avoid
 
         CSP_MISSING
-        def handleResultInWinOpener: p_Result =
+        def handleResultInWinOpener: p_Result = {
+          val (weakSessionIdOrEmpty, xsrfTokenOrEmpty) = getWeakSidAndXsrfIfNoCookies()
           Ok(views.html.authn.sendAuthnResultToOpenerCloseCurWin(
                 origNonceBack = authnState.browserNonce,
-                weakSessionId = weakSessionIdOrEmpty).body) as HTML // [NOCOOKIES]
+                weakSessionId = weakSessionIdOrEmpty, // [NOCOOKIES]
+                // If this is an embedded *forum*, the browser might not yet have any
+                // xsrf token. [emb_forum_xsrf_token]
+                xsrfTokenIfNoCookies = xsrfTokenOrEmpty).body) as HTML
+        }
 
         val returnToUrl: St = authnState.returnToUrl  // [49R6BRD2]
         if (returnToUrl.startsWith(

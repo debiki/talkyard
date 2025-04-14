@@ -110,6 +110,11 @@ function onMessage(event) {
         const mainWin = debiki2.getMainWin();
         mainWin.typs.weakSessionId = eventData.weakSessionId;
         typs.weakSessionId = eventData.weakSessionId;
+        if (eventData.xsrfToken) {
+          // If xsrfTokenIfNoCookies already set, use it, should be newer.
+          typs.xsrfTokenIfNoCookies ||= eventData.xsrfToken;
+        }
+
         // This sends 'justLoggedIn' to other iframes, so they'll get updated too.
         ReactActions.loadMyself(function(resp: FetchMeResponse) {
           if (resp.me) {
@@ -130,7 +135,8 @@ function onMessage(event) {
         // creating different Talkyard sites at the same something.localhost address.
       }
       break;
-    case 'justLoggedIn':
+    case 'justLoggedIn': {
+      const event: JustLoggedInEvent = eventData;
       // The getMainWin().typs.weakSessionId has been updated already, by
       // makeUpdNoCookiesTempSessionIdFn() or in the 'case:' just above, lets check:
       // @ifdef DEBUG
@@ -143,16 +149,20 @@ function onMessage(event) {
             `this is main frame: ${window === mainWin}, ` +
             `mainWin.typs: ${JSON.stringify(mainWin.typs)} [TyE60UKTTGL35]`);
       }
+      if (!mainWin.typs.xsrfTokenIfNoCookies) {
+        logAndDebugDie(`justLoggedIn but not xsrf token [TyE60UKTTGL37]`);
+      }
       // mainWin.theStore.me was updated by ReactActions.loadMyself():
       dieIf(!mainWin.theStore.me, 'justLoggedIn but mainWin.theStore.me missing [TyE406MR4E2]');
-      dieIf(!eventData.user, 'justLoggedIn but user missing [TyE406MR4E3]');
+      dieIf(!event.user, 'justLoggedIn but user missing [TyE406MR4E3]');
       // DO_AFTER v0.2021.31:
-      //dieIf(!eventData.stuffForMe, 'justLoggedIn but stuffForMe missing [TyE406MR4E4]');
+      //dieIf(!event.stuffForMe, 'justLoggedIn but stuffForMe missing [TyE406MR4E4]');
       // Could assert present also in setNewMe() and loadMyself(), and change
       // param to cannot-be-undefined.
       // @endif
-      ReactActions.setNewMe(eventData.user, eventData.stuffForMe);
+      ReactActions.setNewMe(event.user as Me, event.stuffForMe);
       break;
+    }
     case 'logoutServerAndClientSide':
       Server.logoutServerAndClientSide();
       break;

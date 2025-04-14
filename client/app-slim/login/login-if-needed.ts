@@ -354,6 +354,8 @@ export function continueAfterLogin(anyReturnToUrl?: St) {
       const typs: PageSession = getMainWin().typs;
       dieIf(!typs.canUseCookies && !typs.weakSessionId,
           `No weak session:  ${JSON.stringify(typs)}  [TyE50286KT]`);
+      dieIf(!typs.canUseCookies && !typs.xsrfTokenIfNoCookies,
+          `No xsrf token:  ${JSON.stringify(typs)}  [TyE50286KU]`);
       // @endif
 
       // Continue doing things in this same window, if it's a "real" window,

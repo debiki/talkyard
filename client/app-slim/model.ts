@@ -3226,6 +3226,22 @@ interface BrowserCode {
 
 
 // =========================================================================
+//  Embedding page messages
+// =========================================================================
+
+
+interface JustLoggedInEvent {
+  pubSiteId?: St
+  user?: Me
+  stuffForMe?: StuffForMe;
+  xsrfToken?: St
+  weakSessionId?: St
+  rememberEmbSess?: Bo
+}
+
+
+
+// =========================================================================
 //  Server requests and responses
 // =========================================================================
 
@@ -3289,6 +3305,8 @@ interface EditPageResponse {
 }
 
 
+/// See: appsv/server/views/authn/sendAuthnResultToOpenerCloseCurWin.scala.html
+///
 interface LoginPopupLoginResponse {
   status: 'LoginOk' | 'LoginFailed';  // CLEAN_UP REMOVE no longer needed [J0935RKSDM]
   origNonceBack?: St;
@@ -3301,6 +3319,7 @@ interface LoginPopupLoginResponse {
   // Needed because Safari and FF block 3rd party cookies, see: docs/safari-itp-firefox-etp.md.
   //
   weakSessionId?: string;  // [NOCOOKIES]
+  xsrfTokenIfNoCookies?: St
 }
 
 interface AuthnResponse {
@@ -3310,6 +3329,7 @@ interface AuthnResponse {
   userCreatedAndLoggedIn: boolean;
   emailVerifiedAndLoggedIn: boolean;
   weakSessionId?: string;
+  xsrfTokenIfNoCookies?: St
 }
 
 
@@ -3566,6 +3586,8 @@ interface ServerVars {
   embeddingScriptV?: Nr;
   embeddingOrigin?: string;
 
+  embHow?: 'Forum' | St  // or sth else (invalid). A url param
+
   // Wrap in an obj so they can be updated all at the same time?
   // ---------------
   // (In an embedded editor, they're updated dynamically, depending on which
@@ -3580,7 +3602,7 @@ interface ServerVars {
   // When creating new site.
   baseDomain?: string;
 
-  ssoHow?: 'RedirPage' | 'LoginPopup' | St // or sth else (invalid)
+  ssoHow?: 'RedirPage' | 'LoginPopup' | St // or sth else (invalid). A url param
 
   newPasswordData?: NewPasswordData;
 }

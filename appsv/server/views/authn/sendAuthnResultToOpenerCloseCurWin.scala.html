@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(origNonceBack: String, weakSessionId: String)
+@(origNonceBack: String, weakSessionId: String, xsrfTokenIfNoCookies: String)
 
 <!DOCTYPE html>
 <html>
@@ -26,6 +26,7 @@
     @* Typescript interface: LoginPopupLoginResponse  *@
     origNonceBack: '@origNonceBack',
     weakSessionId: '@weakSessionId',  // [NOCOOKIES]
+    xsrfTokenIfNoCookies: '@xsrfTokenIfNoCookies',  // [emb_forum_xsrf_token]
     status: 'LoginOk'
   });
   window.close();

@@ -57,6 +57,9 @@ enum ScrollToPreview {
 // Long term, seems an [inline_editor_and_preview] would work better, for
 // blog comments, and maybe optionally (for those who want) in forums too.
 //
+// Let's skip, for embedded forums too, for now. Not sure what'd happen on iOS  [emb_forum]
+// and other phones.
+//
 // UX: Or maybe always skip auto-scroll to preview? Isn't it more nice to see the post one
 // is replying to. But then should probably open the split pane in-editor preview, so one
 // sees how one's post will look (if the screen is wide enough). [show_split_pane_preview]
@@ -286,6 +289,11 @@ export const Editor = createFactory<any, EditorState>({
       // @endif
       return debiki2.ReactStore.allData();
     }
+
+    // Embedded forums use just one <iframe> (unlike embedded blog comments, which
+    // have editor & session iframes too), so we can just return the store. [emb_forum]
+    if (eds.embHow === 'Forum')
+      return debiki2.ReactStore.allData();
 
     // @ifdef DEBUG
     dieIf(!inFrame && !this.state.inFrame, 'TyE604RMJ46');
@@ -1451,7 +1459,7 @@ export const Editor = createFactory<any, EditorState>({
           doAsAnon: doAsOpts.doAsAnon,
           // For now, skip guidelines, for blog comments — they would break e2e tests,
           // and maybe are annoying?
-          guidelines: eds.isInIframe ? undefined : anyGuidelines,
+          guidelines: eds.isInIframe && eds.embHow !== 'Forum' ? undefined : anyGuidelines,
           scrollToPreview: MaybeAutoPreview,
         };
 
@@ -2316,7 +2324,9 @@ export const Editor = createFactory<any, EditorState>({
 
     // The next layout after the default (which is the editor at the bottom, and the
     // discussion above), is the editor to the left, and the discussion to the right.
-    // (Place-left not implemented for embedded comments though, that is, if `isInIframe`.)
+    // (Place-left not implemented for embedded comments though, that is, if `isInIframe`.
+    // Let's skip for embedded forums too [emb_forum], for now, `eds.embHow === 'Forum'`
+    // — might look complicated with many sidebars (watchbar, editor, preview) in an iframe.)
     const newPlaceLeft = !eds.isInIframe && !state.placeLeft &&
             // But if we're already using another layout, we'll cycle back to normal first.
             !state.showMaximized;
@@ -3081,6 +3091,7 @@ export const Editor = createFactory<any, EditorState>({
           // -previewed are in the same frame (namely the main window) and then this
           // doesn't happen. (Could do this only if iOS and embedded, but safer to just
           // check if we're embedded, in case the is-iOS check doesn't work?)
+          // Let's skip, for embedded forums too, for now. [emb_forum]
           eds.isInIframe ? null :
               LinkButton({ ...autoScrollProps, className: 'c_E_ScrAutoB' }, "Auto"), // I18N
           // If clicking "show preview" part, scroll the preview into view just once.

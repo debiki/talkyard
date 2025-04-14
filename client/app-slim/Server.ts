@@ -1302,7 +1302,7 @@ export function loginWithAuthnToken(authnToken: St | Ay,
 
 
 export function loginWithOneTimeSecret(oneTimeLoginSecret: string,
-    onDone: (weakSesionId: string) => void) {  // no, gets a { weakSessionId: .. } ?!
+    onDone: (resp: { weakSessionId: St, xsrfTokenIfNoCookies: St }) => V) {
   get(`/-/v0/login-with-secret?oneTimeSecret=${oneTimeLoginSecret}`,
       makeUpdNoCookiesTempSessionIdFn(onDone));
 }
@@ -1329,7 +1329,7 @@ export function getCurSid12Maybe3(): St | N {  // [ts_authn_modl]
 }
 
 
-export function rememberTempSession(ps: { weakSessionId: St }) {  // [ts_authn_modl]
+export function rememberTempSession(ps: { weakSessionId: St, xsrfTokenIfNoCookies: St }) {  // [ts_authn_modl]
   const onOk = function() {};
   makeUpdNoCookiesTempSessionIdFn(onOk)(ps);
 }
@@ -1346,7 +1346,12 @@ function makeUpdNoCookiesTempSessionIdFn<R>(  // [ts_authn_modl]
     // should set the session id in the main embedded window, that is, the one with all comments.
     const mainWin = getMainWin();
     const typs: PageSession = mainWin.typs;
+
     typs.weakSessionId = response.weakSessionId;
+
+    if (response.xsrfTokenIfNoCookies)
+      typs.xsrfTokenIfNoCookies = response.xsrfTokenIfNoCookies;
+
     typs.sessType = sessType;
     // We'll tell any other iframes that we logged in, via a 'justLoggedIn' message. [JLGDIN]
     if (onDone) {
@@ -1362,6 +1367,7 @@ export function deleteTempSessId() {  // [ts_authn_modl]
   const typs: PageSession = mainWin.typs;
   delete typs.weakSessionId;
   delete typs.sessType;
+  // (Need not delete:  typs.xsrfTokenIfNoCookies)
   try {
     // Can this throw?
     getSetCookie('dwCoSid', null);
@@ -1654,6 +1660,15 @@ export function loadMyself(onOkMaybe: (resp: FetchMeResponse) => Vo) {
         `main frame name: ${mainWin.name}, ` +
         `this is main frame: ${window === mainWin}, ` +
         `mainWin.typs: ${JSON.stringify(typs)} [TyE603FKNFD5]`);
+    debugger;
+  }
+  else if (!typs.canUseCookies && !typs.xsrfTokenIfNoCookies) {
+    console.error(`Cannot POST anything: No mainWin.typs.xsrfTokenIfNoCookies. ` +
+        `(But there's a weakSessionId.)` +
+        `This frame name: ${window.name}, ` +
+        `main frame name: ${mainWin.name}, ` +
+        `this is main frame: ${window === mainWin}, ` +
+        `mainWin.typs: ${JSON.stringify(typs)} [TyE603FKNFD6]`);
     debugger;
   }
   // @endif

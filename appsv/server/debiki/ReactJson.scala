@@ -906,6 +906,7 @@ class JsonMaker(dao: SiteDao) {
     // Somewhat dupl code. (2WB4G7)
     val meJsOb = Json.obj(
       "dbgSrc" -> "2FBS6Z8",
+      "id" -> JsNumber(NoUserId),
       "trustLevel" -> TrustLevel.StrangerDummyLevel,
       "notifications" -> JsArray(),
       "watchbar" -> makeStrangersWatcbarJson(),

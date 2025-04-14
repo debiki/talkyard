@@ -98,7 +98,7 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: TyCo
 
       val guestUser = dao.loginAsGuest(loginAttempt)
 
-      val (sid, _, sidAndXsrfCookies) =
+      val (sid, xsrfToken, sidAndXsrfCookies) =
             security.createSessionIdAndXsrfToken(request, guestUser.id)
 
       var responseJson = Json.obj(  // ts: AuthnResponse
@@ -112,6 +112,7 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: TyCo
         // and then this is typically totally fine (people rarely post blog comments, and if they
         // do, probably they reply to only one blog post).
         responseJson += "weakSessionId" -> JsString(sid.value)  // [NOCOOKIES]
+        responseJson += "xsrfTokenIfNoCookies" -> JsString(xsrfToken.value) // [emb_forum_xsrf_token]
       }
 
       val response = OkSafeJson(responseJson)

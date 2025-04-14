@@ -702,6 +702,8 @@ const enum Pats {
   FutureAnonId = -4,
   MaxGuestId = -2,
   NoPatId = 0,
+  MinMemberId = 1,
+  SystemId = 1,
   MinNotSysMemberId = 10,
   MinAuthnMemberId = 100,
 }

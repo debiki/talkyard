@@ -709,8 +709,13 @@ ReactStore.activateVolatileData = function() {
   // and a user in the session-iframe.html — then, use that session and user.
   // This makes it possible to dynamically add new blog comments iframes,
   // and they'll be already-logged-in — works also if session cookies blocked.
+  //
+  // (But if we're in an embedded forum, there's just one iframe, and we'll
+  // skip all this.)
+
   let sessFrameStore: SessWinStore;
-  if (eds.isInIframe) {
+
+  if (eds.isInIframe && eds.embHow !== 'Forum') {
     try {
       const sessFrame = getMainWin();
       sessFrameStore = sessFrame.theStore;
@@ -842,7 +847,12 @@ ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffFo
   store.user = newMe; // try to remove the .user field, use .me instead
   store.me = newMe;
 
-  theStore_addOnlineUser(me_toBriefUser(newMe));
+  if (newMe.id) {
+    theStore_addOnlineUser(me_toBriefUser(newMe));
+  }
+  else {
+    // Not logged in (not as member, nor as guest).
+  }
 
   watchbar_markAsRead(store.me.watchbar, store.currentPageId);
 
@@ -851,7 +861,13 @@ ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffFo
 
   // Add any topics not included in the cached json, because they're access
   // restricted (but the current user can see them). [add_restr_topics]
-  if (_.isArray(store.topics)) {
+  //
+  // (We check if `me.id` is non-zero, rather than requiring `me.isAuthenticated` —
+  // maybe guests will be able to create pages, and see their own, until their guest
+  // session ends. They might open Talkyard in new browser tabs, logged in as guest,
+  // and then this code would run.)
+  //
+  if (_.isArray(store.topics) && store.me.id) {
     const currentPage: Page = store.currentPage;
     store.topics = store.topics.concat(store.me.restrictedTopics);
     store.topics.sort((t: Topic, t2: Topic) =>
@@ -1040,6 +1056,9 @@ function theStore_setOnlineUsers(numStrangersOnline: number, usersOnline: BriefU
 
 
 function theStore_addOnlineUser(user: BriefUser) {
+  // @ifdef DEBUG
+  dieIf(!_.isNumber(user?.id), `User lacks id: ${JSON.stringify(user)} [TyE30DKS52]`);
+  // @endif
   // Updating state in-place, oh well.
   if (store.userIdsOnline) {
     store.userIdsOnline[user.id] = true;
