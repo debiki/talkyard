@@ -26,6 +26,7 @@ import debiki.JsonUtils.{asJsObject, parseOptInt32}
 import debiki.JsonUtils.parseOptZeroSomeNone
 import debiki.dao.SiteDao
 import talkyard.server.{TyContext, TyController, parser}
+import talkyard.server.authn.MinAuthnStrength
 import talkyard.server.http._
 import talkyard.server.authz.Authz
 import javax.inject.Inject
@@ -45,7 +46,9 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
 
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
 
-  def editTitleSaveSettings: Action[JsValue] = PostJsonAction(RateLimits.EditPost,
+  def editTitleSaveSettings: Action[JsValue] = PostJsonAction(
+          RateLimits.EditPost,
+          MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
           maxBytes = 2000, canUseAlias = true) {
         request: JsonPostRequest =>
     import request.{body, dao, theRequester => trueEditor} // [alias_4_principal]

@@ -189,7 +189,9 @@ class TyController(cc: ControllerComponents, val context: TyContext)
       cc.parsers.json(maxLength = maxBytes))(f)
 
 
-  def PostFilesAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)(
+  def PostFilesAction(rateLimits: RateLimits,
+        minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
+        maxBytes: Int, allowAnyone: Boolean = false)(
         f: ApiRequest[Either[p.mvc.MaxSizeExceeded, MultipartFormData[TemporaryFile]]] => Result)
       : Action[Either[MaxSizeExceeded, MultipartFormData[TemporaryFile]]] = {
     // BodyParsers.parse.maxLength wants a "Materializer", whatever is that?. Later, when
@@ -199,7 +201,7 @@ class TyController(cc: ControllerComponents, val context: TyContext)
     //   http://stackoverflow.com/questions/36004414/play-2-5-migration-error-custom-action-with-bodyparser-could-not-find-implicit
     implicit val materializer = context.akkaStreamMaterializer
     PlainApiAction(cc.parsers.maxLength(maxBytes, cc.parsers.multipartFormData),
-      rateLimits, allowAnyone = allowAnyone)(f)
+      rateLimits, minAuthnStrength, allowAnyone = allowAnyone)(f)
   }
 
 

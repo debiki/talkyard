@@ -26,6 +26,7 @@ import debiki.EdHttp._
 import debiki.JsonUtils._
 import debiki.dao.SiteDao
 import talkyard.server.{TyContext, TyController}
+import talkyard.server.authn.MinAuthnStrength
 import talkyard.server.authz.Authz
 import talkyard.server.http._
 import talkyard.server.parser
@@ -45,7 +46,8 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def createPage: Action[JsValue] = PostJsonAction(
-        RateLimits.CreateTopic, maxBytes = 20 * 1000, canUseAlias = true) {
+        RateLimits.CreateTopic, MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+        maxBytes = 20 * 1000, canUseAlias = true) {
         request =>
     import request.{dao, theRequester => requester}
     // Similar to Do API with CreatePageParams. [create_page]
@@ -247,7 +249,9 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   MOVE // to UserController maybe?
-  def changePatNodeRels: Action[JsValue] = PostJsonAction(RateLimits.JoinSomething,
+  def changePatNodeRels: Action[JsValue] = PostJsonAction(
+          RateLimits.JoinSomething,
+          MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
           maxBytes = 200) { req =>
     import req.dao
     val bodyJo: JsObject = asJsObject(req.body, "the request body")
@@ -268,7 +272,10 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   */
 
 
-  def acceptAnswer: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100,
+  def acceptAnswer: Action[JsValue] = PostJsonAction(
+        RateLimits.TogglePage,
+        MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+        maxBytes = 100,
         canUseAlias = true) { request =>
     import request.{dao, reqr}
     val body = asJsObject(request.body, "acceptAnswer request body")
@@ -285,8 +292,10 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def unacceptAnswer: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100,
-        canUseAlias = true) { request =>
+  def unacceptAnswer: Action[JsValue] = PostJsonAction(
+        RateLimits.TogglePage,
+        MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+        maxBytes = 100, canUseAlias = true) { request =>
     import request.{dao, reqr}
     val body = asJsObject(request.body, "unacceptAnswer request body")
     val pageId = parseSt(body, "pageId")
@@ -301,7 +310,10 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def togglePageClosed: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100,
+  def togglePageClosed: Action[JsValue] = PostJsonAction(
+          RateLimits.TogglePage,
+          MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+          maxBytes = 100,
           canUseAlias = true) { request =>
     import request.{dao, reqr}
     val body = asJsObject(request.body, "Page-closed request body")
@@ -318,7 +330,9 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def deletePages: Action[JsValue] = PostJsonAction(
-          RateLimits.TogglePage, maxBytes = 1000, canUseAlias = true) { req =>
+          RateLimits.TogglePage,
+          MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+          maxBytes = 1000, canUseAlias = true) { req =>
     import req.dao
     val body = asJsObject(req.body, "Delete pages request body")
     val pageIds = (body \ "pageIds").as[Seq[PageId]]
@@ -330,7 +344,9 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def undeletePages: Action[JsValue] = PostJsonAction(
-          RateLimits.TogglePage, maxBytes = 1000, canUseAlias = true) { req =>
+          RateLimits.TogglePage,
+          MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+          maxBytes = 1000, canUseAlias = true) { req =>
     import req.dao
     val body = asJsObject(req.body, "Undelete pages request body")
     val pageIds = (body \ "pageIds").as[Seq[PageId]]
@@ -341,8 +357,10 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def addUsersToPage: Action[JsValue] = PostJsonAction(RateLimits.JoinSomething, maxBytes = 100) {
-        request =>
+  def addUsersToPage: Action[JsValue] = PostJsonAction(
+        RateLimits.JoinSomething,
+        MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+        maxBytes = 100) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val userIds = (request.body \ "userIds").as[Set[UserId]]
     // Later, also:  SiteDao.checkAliasOrThrowForbidden ?  [anon_priv_msgs]
@@ -351,7 +369,9 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def removeUsersFromPage: Action[JsValue] = PostJsonAction(RateLimits.JoinSomething,
+  def removeUsersFromPage: Action[JsValue] = PostJsonAction(
+        RateLimits.JoinSomething,
+        MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
         maxBytes = 100) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val userIds = (request.body \ "userIds").as[Set[UserId]]
@@ -361,13 +381,18 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def joinPage: Action[JsValue] = PostJsonAction(RateLimits.JoinSomething, maxBytes = 100) {
-        request =>
+  def joinPage: Action[JsValue] = PostJsonAction(
+        RateLimits.JoinSomething,
+        MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+        maxBytes = 100) { request =>
     joinOrLeavePage(join = true, request)
   }
 
 
-  def leavePage: Action[JsValue] = PostJsonAction(RateLimits.JoinSomething, maxBytes = 100) {
+  def leavePage: Action[JsValue] = PostJsonAction(
+        RateLimits.JoinSomething,
+        MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+        maxBytes = 100) {
         request =>
     joinOrLeavePage(join = false, request)
   }
@@ -391,7 +416,10 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def configWatchbar: Action[JsValue] = PostJsonAction(RateLimits.ViewPage, maxBytes = 500) {
+  def configWatchbar: Action[JsValue] = PostJsonAction(
+          RateLimits.ViewPage,
+          MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+          maxBytes = 500) {
           request =>
     import request.{dao, theRequesterId}
     val pageId = (request.body \ "removePageIdFromRecent").as[PageId]

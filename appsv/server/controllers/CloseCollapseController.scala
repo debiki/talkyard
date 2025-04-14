@@ -20,6 +20,7 @@ package controllers
 import com.debiki.core._
 import debiki._
 import debiki.EdHttp.throwForbidden
+import talkyard.server.authn.MinAuthnStrength
 import talkyard.server.http._
 import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
@@ -34,26 +35,35 @@ class CloseCollapseController @Inject()(cc: ControllerComponents, edContext: TyC
   extends TyController(cc, edContext) {
 
 
-  def hidePost: Action[JsValue] = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) { apiReq =>
+  def hidePost: Action[JsValue] = PostJsonAction(
+        RateLimits.CloseCollapsePost,
+        MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+        maxBytes = 100) { apiReq =>
     val hide = (apiReq.body \ "hide").as[Boolean]
     changeStatus(apiReq, if (hide) PostStatusAction.HidePost else PostStatusAction.UnhidePost)
   }
 
 
-  def collapsePost: Action[JsValue] = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) {
-        apiReq =>
+  def collapsePost: Action[JsValue] = PostJsonAction(
+        RateLimits.CloseCollapsePost,
+        MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+        maxBytes = 100) { apiReq =>
     changeStatus(apiReq, PostStatusAction.CollapsePost)
   }
 
 
-  def collapseTree: Action[JsValue] = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) {
-        apiReq =>
+  def collapseTree: Action[JsValue] = PostJsonAction(
+        RateLimits.CloseCollapsePost,
+        MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+        maxBytes = 100) { apiReq =>
     changeStatus(apiReq, PostStatusAction.CollapseTree)
   }
 
 
-  def closeTree: Action[JsValue] = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) {
-        apiReq =>
+  def closeTree: Action[JsValue] = PostJsonAction(
+        RateLimits.CloseCollapsePost,
+        MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+        maxBytes = 100) { apiReq =>
     changeStatus(apiReq, PostStatusAction.CloseTree)
   }
 

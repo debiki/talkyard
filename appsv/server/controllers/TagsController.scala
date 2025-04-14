@@ -24,6 +24,7 @@ import debiki.{JsonMaker, RateLimits, SiteTpi}
 import debiki.JsonUtils.parseJsArray
 import debiki.EdHttp._
 import talkyard.server.{TyContext, TyController}
+import talkyard.server.authn.MinAuthnStrength
 import play.api.libs.json._
 import javax.inject.Inject
 import play.api.mvc.{Action, ControllerComponents}
@@ -40,7 +41,10 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def tagsApp(whatever: St): Action[Unit] = AsyncGetAction { req =>
+  def tagsApp(whatever: St): Action[Unit] = AsyncGetActionRateLimited(
+          RateLimits.ReadsFromDb,
+          MinAuthnStrength.EmbeddingStorageSid12,  // [if_emb_forum]
+          ) { req =>
     _root_.controllers.dieIfAssetsMissingIfDevTest()
     RENAME // templates.users  to maybe  templates.moreApp?
     val htmlStr = views.html.templates.users(SiteTpi(req)).body
@@ -50,7 +54,9 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def upsertType: Action[JsValue] = PostJsonAction(
-        RateLimits.CreateTagCatPermGroup, maxBytes = 2000) { req =>
+        RateLimits.CreateTagCatPermGroup,
+        MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+        maxBytes = 2000) { req =>
     import req.{dao, theRequester => reqer}
 
     // Later: Make this configurable, per tag type. [tag_perms]  For now:
@@ -148,7 +154,9 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def updateTags: Action[JsValue] = PostJsonAction(
-          RateLimits.EditPost, maxBytes = 5000) { req =>
+          RateLimits.EditPost,
+          MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+          maxBytes = 5000) { req =>
     import req.{body, dao}
 
     // Later, more granular access control. [priv_tags] [tag_perms]  For now:

@@ -929,6 +929,8 @@ Make  login-required work also for embeded comments.
 
 [emb_forum]
 Make it possible to embedd a forum, or fourm cateory (no just blog comments).
+Later, disallow all the  [if_emb_forum]  endpoints, if is embedded, but *not* a forum
+(that is, for blog comments, or sth else unexpected).
 
 [emb_ifr_shortcuts]
 Make shortcuts work also if there're many iframes with blog comments comments

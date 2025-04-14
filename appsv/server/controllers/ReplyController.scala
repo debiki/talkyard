@@ -132,7 +132,9 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def handleChatMessage: Action[JsValue] = PostJsonAction(RateLimits.PostReply,
+  def handleChatMessage: Action[JsValue] = PostJsonAction(
+        RateLimits.PostReply,
+        MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
         maxBytes = MaxPostSize) { request =>
     import request.{body, dao, reqr}
     val pageId = (body \ "pageId").as[PageId]
