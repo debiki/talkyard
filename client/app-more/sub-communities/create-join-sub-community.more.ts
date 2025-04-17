@@ -64,7 +64,7 @@ export function joinOrCreateSubCommunity(store: Store) {
   function selectAndJoin() {
     selectSubCommunity(store, (forum: Forum) => {
       Server.joinPage(forum.pageId, () => {
-        location.assign(forum.path);
+        page.Hacks.navigateTo(forum.path);
       });
     });
   }
@@ -121,7 +121,7 @@ const CreateForumDialog = createFactory({
       createSampleTopics: false,
       topicListStyle: TopicListLayout.ExcerptBelowTitle,
     }, () => {
-      location.assign(newForumPath);
+      page.Hacks.navigateTo(newForumPath);
     });
     this.close();
   },

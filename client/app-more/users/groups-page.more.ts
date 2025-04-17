@@ -79,7 +79,7 @@ export const ListGroupsComponent = React.createFactory<RouteChildProps>(function
 
   const callShowCreateDialog = () => {
     showCreateGroupDialog((newGroup: Group) => {
-      location.assign(GroupsRoot + newGroup.username);
+      page.Hacks.navigateTo(GroupsRoot + newGroup.username);
     });
   }
 

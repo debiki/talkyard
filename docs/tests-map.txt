@@ -539,6 +539,8 @@ groups:
   permissions, custom groups:
           - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
           - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46
+  delete group:
+            - TyTGRP_DEL  TESTS_MISSING
   privacy: [_priv]
 
 

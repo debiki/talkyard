@@ -341,6 +341,10 @@ export function continueAfterLogin(anyReturnToUrl?: St) {
     // or 2) on an ordinary page in a login-required site (not a login popup),
     // or 3) an embedded comments page login popup window.
     if (anyReturnToUrl && anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1) {
+      // [emb_forum] This won't work in a login-required embedded forum? Then should
+      // use `page.Hacks.navigateTo()` instead. But would that load all admin scripts,
+      // for example, if we're in fact in the admin area? Let's wait. (No one has asked
+      // for login-required *embedded* forums yet.)
       window.location.assign(anyReturnToUrl);
     }
     else {

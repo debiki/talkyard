@@ -1690,13 +1690,13 @@ export function openNotificationSource(notf: Notification) {
 }
 
 
-export function openPage(pageId: string) {   // CLEAN_UP use LinkButton and href= instead
-  window.location.assign(linkToPageId(pageId));
+export function openPage(pageId: string) {
+  page.Hacks.navigateTo(linkToPageId(pageId));
 }
 
 
-export function openPagePostNr(pageId: string, postNr: number) { // CLEAN_UP use LinkButton and href
-  window.location.assign(linkToPageId(pageId) + '#post-' + postNr);
+export function openPagePostNr(pageId: string, postNr: number) {
+  page.Hacks.navigateTo(linkToPageId(pageId) + '#post-' + postNr);
 }
 
 

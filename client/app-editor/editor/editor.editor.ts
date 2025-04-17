@@ -2193,12 +2193,14 @@ export const Editor = createFactory<any, EditorState>({
         deleteDraftNr: this.anyDraftNr(),
         doAsAnon: state.doAsAnon,
       };
-      // [DRAFTS_BUG] This doesn't delete the draft? (if any)
+      // [DRAFTS_BUG] This doesn't delete the draft? (if any) — Update, y2025: could it
+      // have been `location.assign()` that aborted the delete-draft http request?
+      // If so, should have been solved now, since using `navigateTo()` instead,
+      // which is a single-page-app navigation, won't abort any request.
       Server.createPage(data, (newPageId: string) => {
-        // Could, but not needed, since assign() below:
-        //   this.callOnDoneCallback(true);
+        this.callOnDoneCallback(true);
         this.clearAndCloseFineIfGone();
-        window.location.assign('/-' + newPageId);
+        page.Hacks.navigateTo('/-' + newPageId);
       });
     });
   },
@@ -2218,10 +2220,9 @@ export const Editor = createFactory<any, EditorState>({
       // [DRAFTS_BUG] I think this *does* delete any draft?  this.anyDraftNr() below
       Server.startPrivateGroupTalk(state.title, state.text, state.newPageRole,
           state.messageToUserIds, this.anyDraftNr(), (pageId: PageId) => {
-        // Could, but not needed, since assign() below:
-        //   this.callOnDoneCallback(true);
+        this.callOnDoneCallback(true);
         this.clearAndCloseFineIfGone();
-        window.location.assign('/-' + pageId);
+        page.Hacks.navigateTo('/-' + pageId);
       });
     });
   },
