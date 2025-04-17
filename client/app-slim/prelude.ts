@@ -365,6 +365,7 @@ export function getMainWin(): MainWin {  // QUICK RENAME to win_getSessWin() ?
     }
     catch (ex) {
       // Maybe got deleted by scripts on the embedding page? Then what?
+      // HARMLESS_BUG ANNOYING Happens if is [emb_forum]. Then, uninteresting
       logW(`Main win '${lookingForName}' not found [TyE0MAINWIN]`);
     }
   }
