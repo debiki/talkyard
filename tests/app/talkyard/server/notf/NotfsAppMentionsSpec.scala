@@ -181,7 +181,7 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
       }
       "and approves it" in {
         val p = fisrtChatMessage
-        dao.moderatePostInstantly(p.id, p.currentRevisionNr,
+        dao.moderatePostInstantly(pageId = p.pageId, postId = p.id, p.currentRevisionNr,
               ReviewDecision.Accept, moderator)
       }
     }
@@ -219,8 +219,8 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
       info("staff notified about member2's first post")
       countTotalNumNotfs() mustBe expectedTotalNumNotfs
       info("staff approves")
-      dao.moderatePostInstantly(firstPost.id, firstPost.currentRevisionNr,
-            ReviewDecision.Accept, moderator)
+      dao.moderatePostInstantly(pageId = firstPost.pageId, postId = firstPost.id,
+            firstPost.currentRevisionNr, ReviewDecision.Accept, moderator)
     }
 
     "and about member3's first chat messages" in {
@@ -231,8 +231,8 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
       info("staff notified about member3's first post")
       countTotalNumNotfs() mustBe expectedTotalNumNotfs
       info("staff approves")
-      dao.moderatePostInstantly(firstPost.id, firstPost.currentRevisionNr,
-        ReviewDecision.Accept, moderator)
+      dao.moderatePostInstantly(pageId = firstPost.pageId, postId = firstPost.id,
+            firstPost.currentRevisionNr, ReviewDecision.Accept, moderator)
     }
 
     "create specific people mentions (in a chat)" - {

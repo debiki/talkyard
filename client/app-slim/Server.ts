@@ -1188,9 +1188,10 @@ export function saveSpecialContent(specialContent: SpecialContent, success: () =
 }
 
 
-export function moderatePostOnPagePatchStore(post: Post, decision: ReviewDecision,
-          onOk: (_: StorePatch) => V) {
+export function moderatePostOnPagePatchStore(pageId: PageId, post: Post,
+          decision: ReviewDecision, onOk: (_: StorePatch) => V) {
   const data = {
+    pageId,
     postId: post.uniqueId,
     postRevNr: post.currRevNr,
     decision,

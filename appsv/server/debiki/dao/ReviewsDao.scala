@@ -213,24 +213,22 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
     * annoying? Because then one might moderate many things quickly in a row.
     * Then, Undo better?)
     */
-  def moderatePostInstantly(postId: PostId, postRevNr: PostRevNr,
+  def moderatePostInstantly(pageId: PageId, postId: PostId, postRevNr: PostRevNr,
           decision: ReviewDecision, moderator: Participant): ModResult = {
-    // Tests:
-    //    - modn-from-disc-page-appr-befr.2browsers.test.ts  TyTE2E603RTJ
 
     dieIf(!moderator.isStaff, "TyE5KRDL356")
     // More authz in the tx below.
 
     dieIf(decision != ReviewDecision.Accept
-          && decision != ReviewDecision.DeletePostOrPage,
-          // Need to fix this first: [incl_all_mod_results].
-          // && decision != ReviewDecision.DeleteAndBanSpammer,
+            && decision != ReviewDecision.DeletePostOrPage
+            && decision != ReviewDecision.DeleteAndBanSpammer,
           "TYE06SAKHJ34",
           s"Unexpected moderatePostInstantly() decision: $decision")
 
     val modResult = writeTx { (tx, staleStuff) =>
       val post = tx.loadPost(postId).get
       throwIfMayNotSeePost(post, Some(moderator))(tx)
+      throwForbiddenIf(post.pageId != pageId, "TyEMODPAGEID", "Mod from page: Wrong page id")
 
       val allTasks = tx.loadReviewTasksAboutPostIds(Seq(post.id))
       val tasksToDecide = allTasks.filterNot(task =>
@@ -397,11 +395,10 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
                 (post2Id, _tasksForPost2) <- pendingTasksByPostId
                 post2 <- tx.loadPost(post2Id)
               } {
-                // If banning a spammer directly from a page, then, we should return all
-                // res2:s too to the browser, not only res. [incl_all_mod_results]
+                // If banning a spammer directly from a page, then, we return all
+                // res2:s too to the browser, not only res.
                 // So if a spammer posts a page and a comment on the page, then, if banning
-                // via the comment, the moderator sees that this deletes the spammer's
-                // whole page.
+                // via the comment, the moderator sees that this deletes the page too.
                 val res2 = rejectAndDeletePost(
                       post2, decidedById = decidedById,
                       // We aren't doing any of these tasks now — the ones we're handling,
@@ -410,6 +407,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
                       // via `tx.loadReviewTasksAboutPostIds()`, although we have them
                       // already in _tasksForPost2, oh well.
                       doingTasksNow = Nil, browserIdData)(tx, staleStuff)
+                res = res.add(res2)
               }
 
               res = res.copy(bannedPat = bannedPat)
@@ -563,25 +561,25 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
     // Maybe got moved to an new page?
     val pageId = post.pageId
 
-    val (updatedPosts, deletedPageId, closeRemainingTasks)  =
+    val (updatedPosts: Vec[Post], deletedPageIds: Set[PageId], closeRemainingTasks: Bo)  =
             if (post.isDeleted) {
               // Fine, just update the mod tasks. [apr_deld_post]
               // (There're races: mods reviewing and deleting, and others maybe
               // deleting the post or ancestor posts — fine.)
-              (Nil, None, false)
+              (Vec.empty, Set.empty, false)
             }
             // If staff deletes many posts by this user, mark it as a moderate threat?
             // That'll be done from inside update-because-deleted fn below. [DETCTHR]
             else if (taskIsForBothTitleAndBody) {
               deletePagesImpl(Seq(pageId), reqr, asAlias = None /*[anon_mods]*/)(tx, staleStuff)
               // Posts not individually deleted, instead, whole page gone // [62AKDN46]
-              (Seq.empty, Some(pageId), true)
+              (Vec.empty, Set(pageId), true)
             }
             else {
               val updPost =
                     deletePostImpl(pageId = post.pageId, postNr = post.nr, deletedBy = reqr,
                           tx, staleStuff).updatedPost
-              (updPost.toSeq, None, true)
+              (updPost.to(Vec), Set.empty, true)
             }
 
     // It's annoying if [other review tasks for the same post] would
@@ -595,8 +593,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
     ModResult(
           updatedPosts = updatedPosts,
           updatedAuthor = None,
-          updatedPageId = deletedPageId,
-          deletedPageId = deletedPageId)
+          deletedPageIds = deletedPageIds)
   }
 
 

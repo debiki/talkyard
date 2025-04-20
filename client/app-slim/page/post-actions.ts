@@ -476,7 +476,7 @@ export const PostActions = createComponent({
             secondaryButonTitle: t.Cancel,
             small: true,
             onPrimaryClick: () => {
-              Server.moderatePostOnPagePatchStore(post, decision, () => {
+              Server.moderatePostOnPagePatchStore(page.pageId, post, decision, () => {
                 scrollAndFlashPostNr(post.nr);
               });
             },
@@ -485,13 +485,16 @@ export const PostActions = createComponent({
       }
       const spacePage = post.nr === BodyNr ? " page" : '';
       approveOrDeleteBtns =
-          rFragment({},
+          rFr({},
             // English is fine — this is for staff. 0I18N.
             ModBtn(ReviewDecision.Accept,
                   "Approve" + spacePage, 's_PA_ModB-Apr'),
             ModBtn(ReviewDecision.DeletePostOrPage,
                   // (Need not repeate the word "page" here.)
-                  "Reject and delete", 's_PA_ModB-Rej'));
+                  "Reject and delete", 's_PA_ModB-Rej'),
+            ModBtn(ReviewDecision.DeleteAndBanSpammer,
+                  "Delete, ban spammer", 's_PA_ModB-Ban'),
+            );
     }
 
     return (

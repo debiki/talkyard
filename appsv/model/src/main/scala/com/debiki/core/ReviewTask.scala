@@ -17,27 +17,39 @@
 
 package com.debiki.core
 
-import scala.collection.Seq
 import com.debiki.core.Prelude._
 import java.{util => ju}
-import scala.collection.immutable
 
 
 /**
   * @param updatedPosts — if the moderation decision affected some posts, e.g.
-  *  a post got approved and un-hidden, or it got deleted.
-  * @param updatedAuthor — if the mod decision affected the post *author*,
+  *  a post got approved and un-hidden, or it got deleted, or all posts by
+  *  this author got deleted (if banning a spammer).
+  * @param updatedAuthor — later: If the mod decision affected the post *author*,
   *  e.g. hens [[ThreatLevel]] changed.
+  * @param deletedPageIds — if some pages got deleted, e.g. new user banned, and
+  *   all hans pages (say, spam) got deleted.
   */
 case class ModResult(
   updatedPosts: Seq[Post],
-  updatedAuthor: Option[Participant],
-  updatedPageId: Option[PageId] = None,
-  deletedPageId: Option[PageId] = None,
-  bannedPat: Opt[Pat] = None)
+  updatedAuthor: Opt[Pat],
+  deletedPageIds: Set[PageId] = Set.empty,
+  bannedPat: Opt[Pat] = None) {
+
+  def add(more: ModResult): ModResult = {
+    val thisPostIds = this.updatedPosts.map(_.id).toSet
+    val newPosts = more.updatedPosts.filterNot(p => thisPostIds.contains(p.id))
+    // Not currently supposed to happen:  (but `this.bannedPat.isDefined` is fine)
+    dieIf(more.updatedAuthor.isDefined, "TyE703SKSJM")
+    dieIf(more.bannedPat.isDefined, "TyE703SKSJK")
+    this.copy(
+          updatedPosts = this.updatedPosts ++ newPosts,
+          deletedPageIds = this.deletedPageIds ++ more.deletedPageIds)
+  }
+}
 
 object ModResult {
-  val NothingChanged = ModResult(Nil, None, None, None)
+  val NothingChanged = ModResult(Nil, None)
 }
 
 
@@ -169,7 +181,7 @@ object ReviewDecision {
 case class ReviewTask(  //  RENAME to ModTask
                         // (else confusing with  approve-before and *review*-after)
   id: ReviewTaskId,
-  reasons: immutable.Seq[ReviewReason],
+  reasons: Seq[ReviewReason],
   createdById: UserId,
   createdAt: ju.Date,
   createdAtRevNr: Option[Int] = None,
