@@ -450,8 +450,8 @@ const PatTopPanel = createComponent({
       const thisUserIsWhat = pat_isBanned(user)
           ? t.upp.UserBanned
           : t.upp.UserSuspended(moment(user.suspendedTillEpoch).format('YYYY-MM-DD HH:mm'));
-      suspendedInfo = r.div({},
-        thisUserIsWhat, r.br(),
+      suspendedInfo = r.div({ className: 'c_UP_Ab_Susp' },
+        r.b({}, thisUserIsWhat), r.br(),
         t.upp.ReasonC + user.suspendedReason);
     }
 

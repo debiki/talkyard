@@ -721,7 +721,9 @@ export function user_isSuspended(user: UserInclDetails, nowMs: WhenMs): boolean 
 
 export function pat_isBanned(user: Pat): Bo {
   // See [ban_magic_nr] server side.
-  return user.suspendedTillEpoch === 10876500001;
+  return user.suspendedTillEpoch === 10876500001000 ||
+          // Oops, secs, but should have been millis. Fixed in v0.2025.005, & v1.
+          user.suspendedTillEpoch === 10876500001;
 }
 
 
