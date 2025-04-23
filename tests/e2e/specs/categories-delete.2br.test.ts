@@ -260,6 +260,8 @@ describe(`categories-delete.2br   TyTE2ECATDEL01`, () => {
 
   it(`Now Michael sees the category in the categories list, again`, () => {
     michael_brB.topbar.clickHome();
+    // For whatever reason, now suddenly 2025-04, the undeleted cat won't appear w/o page reload.
+    michael_brB.refresh2();
     michael_brB.forumButtons.clickViewCategories();
     michael_brB.forumCategoryList.waitForCategories();
     assert.eq(michael_brB.forumCategoryList.isCategoryVisible(

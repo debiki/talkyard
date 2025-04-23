@@ -3933,7 +3933,7 @@ export class TyE2eTestBrowser {
         await this.waitAndClick('.esWB_T-Current .esWB_T_Link');
         await this.waitAndClick('#e2eWB_ViewPeopleB');
         await this.waitUntilModalGone();
-        await this.waitForVisible('.esCtxbar_list_title');
+        await this.waitForVisible('.c_Cb_P-Users .esCtxbar_list_title');
       },
 
       clickLeaveChat: async () => {

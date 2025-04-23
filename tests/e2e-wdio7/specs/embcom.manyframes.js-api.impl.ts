@@ -153,11 +153,21 @@ export function addEmbComManyFramesTests(ps: {
     await maria_brB.go2(ps.embeddingOrigin + embPage1SlashSlug);
   });
 
+  it(`... waits for Talykard to load`, async () => {
+    // Ty's API won't work, if called too soon. Wait for the session, the editor and
+    // the first comments iframe to load:
+    await waitForNumIframes(maria_brB, 2 + 1);
+  });
+
   it(`The embedding web app calls Ty's js API: Adds discussion 222`, async () => {
     await maria_brB.execute(function() {
       window['talkyardAddCommentsIframe']({
             appendInside: '#comment_iframes', discussionId: '222' });
     })
+  });
+
+  it(`... there are 2 + 2 iframes`, async () => {
+    await waitForNumIframes(maria_brB, 2 + 2);
   });
 
   if (ps.usingSingleSignOn) {
@@ -301,6 +311,9 @@ export function addEmbComManyFramesTests(ps: {
       window['talkyardAddCommentsIframe']({
             appendInside: '#comment_iframes', discussionId: '222' });
     });
+  });
+  it(`... there are 2 + 3 iframes`, async () => {
+    await waitForNumIframes(maria_brB, 2 + 3);
   });
   it(`The comments are there again`, async () => {
     await maria_brB.switchToEmbeddedCommentsIrame({ discId: '222' });
