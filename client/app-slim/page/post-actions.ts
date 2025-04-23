@@ -493,6 +493,11 @@ export const PostActions = createComponent({
                   // (Need not repeate the word "page" here.)
                   "Reject and delete", 's_PA_ModB-Rej'),
             ModBtn(ReviewDecision.DeleteAndBanSpammer,
+                  // SHOULD BUG Ooops, unbanning, posting more —>
+                  //    You cannot post more posts until a moderator has reviewed your previous posts.
+                  //    Our spam detection system thinks some of your posts look like spam, sorry. [TyENEWMBRSPM_]
+                  // But their posts might have gotten deleted, when banning them, so,
+                  // might not be anything for a mod to review & approve. Hmm.
                   "Delete, ban spammer", 's_PA_ModB-Ban'),
             );
     }
