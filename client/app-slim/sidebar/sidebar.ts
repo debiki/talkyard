@@ -741,10 +741,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
         r.button({ className: 'btn btn-default', onClick: () => {
               morebundle.openAddPeopleDialog({ curPatIds: page.pageMemberIds,
                       onChanges: (res: PatsToAddRemove) => {
-                Server.addUsersToPage(res.addPatIds, () => {
-                  util.openDefaultStupidDialog({ body: "Now I've added him/her/them. Currently you need " +
-                    "to reload the page (hit F5) to see them in the users list." }); // [5FKE0WY2] also in e2e
-                });
+                Server.addUsersToPage(res.addPatIds, () => {});
               }});
             },
             id: 'e2eCB_AddPeopleB' },
@@ -824,6 +821,7 @@ function makeUsersContent(store: Store, users: BriefUser[], myId: UserId,
         r.div({ key: user.id, className: 'esPresence ' + presenceClass,
             onClick: (event: MouseEvent) =>
                 morebundle.openAboutUserDialog(user.id, event.target) },
+          // (Currently, we're showing name and pic only, but [badges_not_shown_in_user_lists].)
           avatar.AvatarAndName({ user, origins: store, ignoreClicks: true }),
           thatsYou,
           presEna && r.span({ className: 'esPresence_icon',

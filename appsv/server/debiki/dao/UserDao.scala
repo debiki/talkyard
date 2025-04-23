@@ -1438,7 +1438,7 @@ trait UserDao {
 
     val joinOrLeave = if (join) Join else Leave
 
-    val databaseResult = _joinLeavePage_updateDb(Set(who.id), pageId,
+    val databaseResult = _joinLeavePage_updateDb_ifAuZ(Set(who.id), pageId,
           joinOrLeave, who, anyTx = None)
 
     if (!databaseResult.anyChange)
@@ -1503,7 +1503,7 @@ trait UserDao {
 
     val chatsInclForbidden = tx.loadOpenChatsPinnedGlobally()
     val chatsPatLeft = chatsInclForbidden flatMap { page =>
-      val result = _joinLeavePage_updateDb(Set(user.id), page.pageId,
+      val result = _joinLeavePage_updateDb_ifAuZ(Set(user.id), page.pageId,
             StayIfMaySee, Who.System, Some((tx, staleStuff)))
       if (result.anyChange) Some(result.pageMeta)
       else None
@@ -1512,8 +1512,8 @@ trait UserDao {
   }
 
 
-  def addUsersToPage(userIds: Set[UserId], pageId: PageId, byWho: Who): U = {
-    val result = _joinLeavePage_updateDb(userIds, pageId, Add, byWho, anyTx = None)
+  def addUsersToPageIfAuZ(userIds: Set[UserId], pageId: PageId, byWho: Who): U = {
+    val result = _joinLeavePage_updateDb_ifAuZ(userIds, pageId, Add, byWho, anyTx = None)
     if (result.anyChange) {
       dieIf(result.patIdsCouldntJoin.size >= userIds.size, "TyE603MRDL",
             "No user added, but still anyChange is true")
@@ -1523,8 +1523,8 @@ trait UserDao {
   }
 
 
-  def removeUsersFromPage(userIds: Set[UserId], pageId: PageId, byWho: Who): U = {
-    val result = _joinLeavePage_updateDb(userIds, pageId, Remove, byWho, anyTx = None)
+  def removeUsersFromPageIfAuZ(userIds: Set[UserId], pageId: PageId, byWho: Who): U = {
+    val result = _joinLeavePage_updateDb_ifAuZ(userIds, pageId, Remove, byWho, anyTx = None)
     if (result.anyChange) {
       _joinLeavePage_updateWatchbar(
             userIds = userIds, couldntAdd = Set.empty, Remove, pageToJoinLeave = result.pageMeta)
@@ -1532,7 +1532,7 @@ trait UserDao {
   }
 
 
-  private def _joinLeavePage_updateDb(userIds: Set[UserId], pageId: PageId,
+  private def _joinLeavePage_updateDb_ifAuZ(userIds: Set[UserId], pageId: PageId,
           joinOrLeave: JoinOrLeave, byWho: Who, anyTx: Opt[(SiteTx, StaleStuff)])  // REFACTOR use TxCtx
           : JoinLeavePageDbResult = {
 
@@ -1556,7 +1556,7 @@ trait UserDao {
       _joinLeavePageOrThrow(userIds, pageId, joinOrLeave, byWho, couldntAdd, tx)
     }
 
-    SHOULD // push new member notf to browsers, so that this gets updated: [5FKE0WY2]
+    UX; SHOULD // push new member notf to browsers, so that this gets updated:
     // - new members' watchbars
     // - everyone's context bar (the users list)
     // - the Join Chat button (disappears/appears)
@@ -1583,7 +1583,7 @@ trait UserDao {
         // already done above, but results currently forgotten — pass back from
         // _joinLeavePageOrThrow() to here?
 
-        COULD_OPTIMIZE  // Pass on pat from _joinLeavePage_updateDb() to here.  [.2x_load_memb]
+        COULD_OPTIMIZE  // Pass pat from _joinLeavePage_updateDb_ifAuZ() to here [.2x_load_memb]
         val pat = getTheUser(userId, anyTx = None)
         val patAuthzCtx = getAuthzCtxOnPagesForPat(pat)
         _addRemovePagesToWatchbar(Some(pageToJoinLeave), patAuthzCtx, addOrRemove = joinOrLeave
@@ -1616,7 +1616,7 @@ trait UserDao {
           security.throwIndistinguishableNotFound("42PKD0")
 
     // AuthZ check 1/3:  May the *requester* see the page? (Hen might be sbd else than userIds.)
-    throwIfMayNotSeePage(pageMeta, Some(reqer))(tx)
+    throwIfMayNotSeePage(pageMeta, Some(reqer))(tx)  // [reqr_see_join_page]
 
     // Right now, to join a forum page =  [sub_communities], one just adds it to one's watchbar.
     // But we don't add/remove the user from the page members list, so nothing to do here.

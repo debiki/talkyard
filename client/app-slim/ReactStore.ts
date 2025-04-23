@@ -2055,14 +2055,31 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
     store.pageMetaBriefById[pageMeta.pageId] = pageMeta;
   });
 
+  const currentPage: Page | U = store.currentPage;
+
+  _.each(storePatch.pageMemberIdsByPageId, (membIds: MembId[], pageId: PageId) => {
+    // For now, only upd the current page.
+    // UNTESTED: What about cached pages?
+    //
+    // @ifdef DEBUG
+    // The patch should incl all page members, so we can show their names in e.g.
+    // the "Users in this chat" list:
+    for (let mId of membIds) {
+      const patInPatch = storePatch.patsBrief?.find(p => p.id === mId);
+      dieIf(!patInPatch, `Page member ${mId} missing from store patch [TyE6FNJ6LL]`);
+    }
+    // @endif
+    if (currentPage?.pageId === pageId) {
+      currentPage.pageMemberIds = membIds;
+    }
+  });
+
   _.each(storePatch.deletePageIds || [], (id: PageId) => {
     const page: Page = store.pagesById[id];
     if (page) {
       page.pageDeletedAtMs = 1; // for now,  also at: [206KDH35R]
     }
   });
-
-  const currentPage: Page | U = store.currentPage;
 
   let changesComtSortOrder: U | Bo;
 

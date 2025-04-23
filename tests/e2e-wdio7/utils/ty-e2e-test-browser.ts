@@ -5755,11 +5755,7 @@ export class TyE2eTestBrowser {
       clickRemoveFromPage: async () => {
         await this.aboutUserDialog.waitForLoaded();
         await this.waitAndClick('#e2eUD_RemoveB');
-        // Later: this.#br.waitUntilModalGone();
-        // But for now:  [5FKE0WY2]
-        await this.waitForVisible('.esStupidDlg');
-        await this.failIfAnyForbiddenWordsError();
-        await this.#br.refresh();
+        await this.waitUntilModalGone();
       },
     }
 
@@ -5865,7 +5861,7 @@ export class TyE2eTestBrowser {
         // this.#br.click('#e2eAddUsD_SubmitB');
       },
 
-      submit: async (ps: { closeStupidDialogAndRefresh?: true } = {}) => {
+      submit: async () => {
           // Sometimes the click fails (maybe the dialog resizes, once a member is selected, so
           // the Submit button moves a bit?). Then, the Add More Group Members button will
           // remain occluded.
@@ -5877,13 +5873,7 @@ export class TyE2eTestBrowser {
           if (!isGone)
             throw `Not yet gone: ${submitSelector}`;
         });
-        // Later: this.#br.waitUntilModalGone();
-        // But for now:  [5FKE0WY2]
-        if (ps.closeStupidDialogAndRefresh) {
-          await this.waitForVisible('.esStupidDlg');
-          await this.failIfAnyForbiddenWordsError();
-          await this.#br.refresh();
-        }
+        await this.waitUntilModalGone();
       }
     };
 
@@ -11044,7 +11034,7 @@ export class TyE2eTestBrowser {
         for (const un of usernames) {
           await this.addUsersToPageDialog.addOneUser(un);
         }
-        await this.addUsersToPageDialog.submit({ closeStupidDialogAndRefresh: true });
+        await this.addUsersToPageDialog.submit();
         // was:  _.each(usernames, this.contextbar.assertUserPresent);
         for (const un of usernames) {
           await this.contextbar.assertUserPresent(un);

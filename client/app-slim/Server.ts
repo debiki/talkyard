@@ -2134,16 +2134,14 @@ export function insertChatMessage(text: string, deleteDraftNr: DraftNr | undefin
 
 
 export function addUsersToPage(userIds: UserId[], success) {
-  postJsonSuccess('/-/add-users-to-page', () => {
-    // Send new store data in the reply? [5FKE0WY2]
+  postAndPatchStore('/-/add-users-to-page', () => {
     success();
   }, { pageId: getPageId(), userIds: userIds });
 }
 
 
 export function removeUsersFromPage(userIds: UserId[], success) {
-  postJsonSuccess('/-/remove-users-from-page', () => {
-    // Send new store data in the reply? [5FKE0WY2]
+  postAndPatchStore('/-/remove-users-from-page', () => {
     success();
   }, { pageId: getPageId(), userIds: userIds });
 }

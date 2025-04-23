@@ -30,9 +30,10 @@ import talkyard.server.authn.MinAuthnStrength
 import talkyard.server.authz.Authz
 import talkyard.server.http._
 import talkyard.server.parser
+import talkyard.server.JsX.JsTagTypeArray
 import java.{util => ju}
 import javax.inject.Inject
-import play.api.libs.json.{JsObject, JsArray, JsString, JsValue, Json}
+import play.api.libs.json.{JsObject, JsArray, JsString, JsNumber, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import talkyard.server.JsX.JsLongOrNull
 
@@ -364,8 +365,9 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val pageId = (request.body \ "pageId").as[PageId]
     val userIds = (request.body \ "userIds").as[Set[UserId]]
     // Later, also:  SiteDao.checkAliasOrThrowForbidden ?  [anon_priv_msgs]
-    request.dao.addUsersToPage(userIds, pageId, request.who)
-    Ok
+    request.dao.addUsersToPageIfAuZ(userIds, pageId, request.who)
+    val respJson = _makePageMembersResponse(pageId, request.theUser, request.dao)
+    OkSafeJson(respJson)
   }
 
 
@@ -376,8 +378,46 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val pageId = (request.body \ "pageId").as[PageId]
     val userIds = (request.body \ "userIds").as[Set[UserId]]
     // Later, also: SiteDao.checkAliasOrThrowForbidden ?  [anon_priv_msgs]
-    request.dao.removeUsersFromPage(userIds, pageId, request.who)
-    Ok
+    request.dao.removeUsersFromPageIfAuZ(userIds, pageId, request.who)
+    val respJson = _makePageMembersResponse(pageId, request.theUser, request.dao)
+    OkSafeJson(respJson)
+  }
+
+
+  /** Note: The caller should have verified that `reqr` may see `pageId`.
+    */
+  private def _makePageMembersResponse(pageId: PageId, reqr: Pat, dao: SiteDao): JsObject = {
+
+    val membIds: Set[PatId] = dao.readTx { tx =>
+      // Double check if reqr may see page.  Already checked here: [reqr_see_join_page].
+      // (A race: If an admin revokes reqr's access to pageId, this might fail,
+      // although the changes to the page have alraedy been made. — The fix would be
+      // to remove this double check, which runs in its own tx.)
+      val pageMeta = tx.loadThePageMeta(pageId)
+      dao.throwIfMayNotSeePage(pageMeta, Some(reqr))(tx)
+
+      tx.loadMessageMembers(pageId)
+    }
+
+    // Bit dupl code. [pats_by_id_json]
+    val patsById: Map[PatId, Pat] = dao.getParticipantsAsMap(membIds)
+
+    // Currently, [badges_not_shown_in_user_lists], so, None.
+    val tagsAndBadges: TagsAndBadges = TagsAndBadges.None
+    val tagTypes = dao.getTagTypes(tagsAndBadges.tagTypeIds)
+
+    val patsJsArr = JsArray(patsById.values.toSeq map { pat =>
+      talkyard.server.JsX.JsPat(pat, tagsAndBadges)
+    })
+
+    val membIdsArr: JsArray = JsArray(membIds.toSeq.map(id => JsNumber(id)))
+
+    Json.obj(  // Typescript: PageMembersStorePatch
+        "storePatch" -> Json.obj(
+            "patsBrief" -> patsJsArr,
+            "tagTypes" -> JsTagTypeArray(tagTypes, inclRefId = reqr.isStaff),
+            "pageMemberIdsByPageId" ->
+                Json.obj(pageId -> membIdsArr)))
   }
 
 

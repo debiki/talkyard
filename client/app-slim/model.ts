@@ -2267,8 +2267,12 @@ interface HasStorePatch {
 /**
  * Describes how to update parts of the store. Can be e.g. a new chat message and the author.
  */
-interface StorePatch
-      extends EditorStorePatch, TagTypesStorePatch, PatsStorePatch, PageTweaksStorePatch {
+interface StorePatch extends
+      EditorStorePatch,
+      TagTypesStorePatch,
+      PatsStorePatch,
+      PageMembersStorePatch,
+      PageTweaksStorePatch {
   // Specified by the server, so old messages (that arive after the browser has been upgraded)
   // can be discarded.
   appVersion?: string;
@@ -2323,8 +2327,16 @@ interface TagTypesStorePatch {
 interface PatsStorePatch {
   // DEPRECATED name:
   usersBrief?: Pat[];
-  // Use instead:
+  // Use instead:  RENAME to  patsBr  for consistency?
   patsBrief?: Pat[];
+}
+
+interface PageMembersStorePatch {
+  patsBrief?: Pat[];
+  tagTypes?: TagType[];
+
+  // The page members lists aren't incl in StorePatch.pageMetasBrief.
+  pageMemberIdsByPageId?: { [pageId: PageId]: PatId[] };
 }
 
 interface PageTweaksStorePatch {

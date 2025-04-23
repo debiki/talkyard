@@ -89,8 +89,8 @@ class UserStatsAppSpec extends DaoAppSuite() {
         textAndHtmlMaker.testTitle("twoMessagesChatTopicId"),
         textAndHtmlMaker.testBody("chat purpose 2953"),
         owner.id, browserIdData, dao, Some(categoryId))
-      dao.addUsersToPage(Set(owner.id), twoMessagesChatTopicId, byWho = ownerWho)
-      dao.addUsersToPage(Set(moderator.id), twoMessagesChatTopicId, byWho = ownerWho)
+      dao.addUsersToPageIfAuZ(Set(owner.id), twoMessagesChatTopicId, byWho = ownerWho)
+      dao.addUsersToPageIfAuZ(Set(moderator.id), twoMessagesChatTopicId, byWho = ownerWho)
       chat(owner.id, twoMessagesChatTopicId, "chat message 1")(dao)
       // Needs to be a different member, otherwise the prev chat message gets appended to, instead.
       chat(moderator.id, twoMessagesChatTopicId, "chat message 2")(dao)
@@ -168,7 +168,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... posts a chat message, stats get updated" in {
       playTimeMillis(1000)
-      dao.addUsersToPage(Set(member1.id), addMessagesChatTopicId, byWho = ownerWho)
+      dao.addUsersToPageIfAuZ(Set(member1.id), addMessagesChatTopicId, byWho = ownerWho)
       chat(member1.id, addMessagesChatTopicId, "Chat chat")(dao)
       val correctStats = currentStats.copy(
         lastSeenAt = currentTime,

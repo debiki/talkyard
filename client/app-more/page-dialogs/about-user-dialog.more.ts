@@ -229,11 +229,6 @@ const AboutUser = createComponent({
     const props: AboutUserProps = this.props;
     const user = props.user;
     Server.removeUsersFromPage([user.id], () => {
-
-      // [redux] send a page-members patch [5FKE0WY2]
-      util.openDefaultStupidDialog({ body: "Now I've removed him/her from this topic. " +
-          "Currently you need to refresh the page (hit F5) now, to see this change." })
-
       if (this.isGone) return;
       props.close();
     });

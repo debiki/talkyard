@@ -4847,10 +4847,7 @@ export class TyE2eTestBrowser {
       clickRemoveFromPage: () => {
         this.aboutUserDialog.waitForLoaded();
         this.waitAndClick('#e2eUD_RemoveB');
-        // Later: this.#br.waitUntilModalGone();
-        // But for now:  [5FKE0WY2]
-        this.waitForVisible('.esStupidDlg');
-        this.#br.refresh();
+        this.waitUntilModalGone();
       },
     }
 
@@ -4934,7 +4931,7 @@ export class TyE2eTestBrowser {
         // this.#br.click('#e2eAddUsD_SubmitB');
       },
 
-      submit: (ps: { closeStupidDialogAndRefresh?: true } = {}) => {
+      submit: () => {
           // Sometimes the click fails (maybe the dialog resizes, once a member is selected, so
           // the Submit button moves a bit?). Then, the Add More Group Members button will
           // remain occluded.
@@ -4946,12 +4943,7 @@ export class TyE2eTestBrowser {
           if (!isGone)
             throw `Not yet gone: ${submitSelector}`;
         });
-        // Later: this.#br.waitUntilModalGone();
-        // But for now:  [5FKE0WY2]
-        if (ps.closeStupidDialogAndRefresh) {
-          this.waitForVisible('.esStupidDlg');
-          this.#br.refresh();
-        }
+        this.waitUntilModalGone();
       }
     };
 
@@ -8934,7 +8926,7 @@ export class TyE2eTestBrowser {
       addPeopleToPageViaContextbar: (usernames: string[]) => {
         this.contextbar.clickAddPeople();
         _.each(usernames, this.addUsersToPageDialog.addOneUser);
-        this.addUsersToPageDialog.submit({ closeStupidDialogAndRefresh: true });
+        this.addUsersToPageDialog.submit();
         _.each(usernames, this.contextbar.assertUserPresent);
       }
     }
