@@ -161,7 +161,7 @@ function showCreateGroupDialog(onCreated: NewGroupCallback) {
 
 
 const CreateGroupDialog = React.createFactory<{}>(function() {
-  const [onCreatedCallback, setOnCreatedCallback] = React.useState<[NewGroupCallback]>(null);
+  const [onCreatedCallback, setOnCreatedCallback] = React.useState<[NewGroupCallback] | N>(null);
   const [username, setUsername] = React.useState<ValueOk<string>>({});
   const [fullName, setFullName] = React.useState<ValueOk<string>>({});
   pub_setOnCreatedCallback = setOnCreatedCallback;
@@ -177,8 +177,7 @@ const CreateGroupDialog = React.createFactory<{}>(function() {
     };
     Server.createGroup(newGroupNoId, (newGroupWithId: Group) => {
       onCreatedCallback[0](newGroupWithId);
-      // But how does the dialog ever get closed? There's no
-      // setOnCreatedCallback(null) here?
+      setOnCreatedCallback(null);
     });
   }
 
