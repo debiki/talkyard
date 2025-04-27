@@ -124,8 +124,8 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
       oldChatTopicId = createPage(PageType.OpenChat,
         textAndHtmlMaker.testTitle("oldChatTopicId"), textAndHtmlMaker.testBody("chat purpose 2953"),
         owner.id, browserIdData, dao, Some(categoryId))
-      dao.addUsersToPage(Set(owner.id), oldChatTopicId, byWho = ownerWho)
-      dao.addUsersToPage(Set(moderator.id), oldChatTopicId, byWho = ownerWho)
+      dao.addUsersToPageIfAuZ(Set(owner.id), oldChatTopicId, byWho = ownerWho)
+      dao.addUsersToPageIfAuZ(Set(moderator.id), oldChatTopicId, byWho = ownerWho)
       dao.savePageNotfPrefIfAuZ(
         PageNotfPref(owner.id, NotfLevel.Normal, pageId = Some(oldChatTopicId)),
         reqrTgt = sysAndOwner)
@@ -156,12 +156,12 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
         PageNotfPref(owner.id, NotfLevel.Normal, pageId = Some(chatTopicManyJoinedId)),
         reqrTgt = sysAndOwner)
 
-      dao.addUsersToPage(Set(owner.id), chatTopicManyJoinedId, byWho = ownerWho)
-      dao.addUsersToPage(Set(moderator.id), chatTopicManyJoinedId, byWho = ownerWho)
-      dao.addUsersToPage(Set(member1.id), chatTopicManyJoinedId, byWho = ownerWho)
-      dao.addUsersToPage(Set(member2.id), chatTopicManyJoinedId, byWho = ownerWho)
-      dao.addUsersToPage(Set(member3.id), chatTopicManyJoinedId, byWho = ownerWho)
-      dao.addUsersToPage(Set(member4.id), chatTopicManyJoinedId, byWho = ownerWho)
+      dao.addUsersToPageIfAuZ(Set(owner.id), chatTopicManyJoinedId, byWho = ownerWho)
+      dao.addUsersToPageIfAuZ(Set(moderator.id), chatTopicManyJoinedId, byWho = ownerWho)
+      dao.addUsersToPageIfAuZ(Set(member1.id), chatTopicManyJoinedId, byWho = ownerWho)
+      dao.addUsersToPageIfAuZ(Set(member2.id), chatTopicManyJoinedId, byWho = ownerWho)
+      dao.addUsersToPageIfAuZ(Set(member3.id), chatTopicManyJoinedId, byWho = ownerWho)
+      dao.addUsersToPageIfAuZ(Set(member4.id), chatTopicManyJoinedId, byWho = ownerWho)
 
       countTotalNumNotfs() mustBe expectedTotalNumNotfs
     }
@@ -181,7 +181,7 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
       }
       "and approves it" in {
         val p = fisrtChatMessage
-        dao.moderatePostInstantly(p.id, p.currentRevisionNr,
+        dao.moderatePostInstantly(pageId = p.pageId, postId = p.id, p.currentRevisionNr,
               ReviewDecision.Accept, moderator)
       }
     }
@@ -219,8 +219,8 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
       info("staff notified about member2's first post")
       countTotalNumNotfs() mustBe expectedTotalNumNotfs
       info("staff approves")
-      dao.moderatePostInstantly(firstPost.id, firstPost.currentRevisionNr,
-            ReviewDecision.Accept, moderator)
+      dao.moderatePostInstantly(pageId = firstPost.pageId, postId = firstPost.id,
+            firstPost.currentRevisionNr, ReviewDecision.Accept, moderator)
     }
 
     "and about member3's first chat messages" in {
@@ -231,8 +231,8 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
       info("staff notified about member3's first post")
       countTotalNumNotfs() mustBe expectedTotalNumNotfs
       info("staff approves")
-      dao.moderatePostInstantly(firstPost.id, firstPost.currentRevisionNr,
-        ReviewDecision.Accept, moderator)
+      dao.moderatePostInstantly(pageId = firstPost.pageId, postId = firstPost.id,
+            firstPost.currentRevisionNr, ReviewDecision.Accept, moderator)
     }
 
     "create specific people mentions (in a chat)" - {
@@ -336,7 +336,7 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
       }
 
       "in an empty chat (no one but oneself), won't notify people not in the chat" in {
-        dao.addUsersToPage(Set(moderator.id), chatTopicTwoId, byWho = ownerWho)
+        dao.addUsersToPageIfAuZ(Set(moderator.id), chatTopicTwoId, byWho = ownerWho)
         val chatPost = chat(moderator.id, chatTopicTwoId,
             s"Hi @all")(dao)
         expectedTotalNumNotfs += 0
@@ -344,8 +344,8 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
       }
 
       "in a chat with one other member, and edit-remove, chat-append" in {
-        dao.addUsersToPage(Set(moderator.id), chatTopicOneId, byWho = ownerWho)
-        dao.addUsersToPage(Set(member1.id), chatTopicOneId, byWho = ownerWho)
+        dao.addUsersToPageIfAuZ(Set(moderator.id), chatTopicOneId, byWho = ownerWho)
+        dao.addUsersToPageIfAuZ(Set(member1.id), chatTopicOneId, byWho = ownerWho)
 
         info("say '... @all ...'")
         val chatPost = chat(moderator.id, chatTopicOneId,
@@ -421,7 +421,7 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
         listUsersNotifiedAbout(chatPost.id) mustBe Set(
             member1.id, member2.id, member3.id, member4.id, owner.id)
 
-        dao.removeUsersFromPage(Set(member4.id), chatTopicManyJoinedId, byWho = ownerWho)
+        dao.removeUsersFromPageIfAuZ(Set(member4.id), chatTopicManyJoinedId, byWho = ownerWho)
 
         info("edit-remove '@all'")
         edit(chatPost, moderator.id, "No one.")(dao)

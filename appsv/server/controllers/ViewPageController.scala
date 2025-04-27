@@ -569,6 +569,16 @@ object ViewPageController {
     // include it in the response — the browser knows already.
     // However if this is the first page the user looks at, not yet logged in,
     // then, it might have no xsrf token — need to include. (But not session id.)
+    //
+    COULD // also incl if the  Sec-Fetch-Dest  header (if incl)   [emb_forum_xsrf_token]
+    // is any of:  fencedframe,  frame (?),  iframe.
+    // Because then cookies almost certainly don't work, because the Ty page
+    // is either 1) embedded blog comments (then xsrfTokenIfNoCookies should be present
+    // already, because then the  /-/embedded-commments  endpoint is used,
+    // so then we already know it's an iframe)  or 2) an embeded forum  (and then
+    // cookies won't work, and we don't know yet that the page is embedded
+    // — except for by looking at that header, here.
+    //
     xsrfTokenIfNoCookies foreach { token =>
       volatileJson = volatileJson + ("xsrfTokenIfNoCookies" -> JsString(token))   // [NOCOOKIES]
     }

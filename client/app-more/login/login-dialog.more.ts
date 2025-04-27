@@ -735,6 +735,9 @@ function ExtIdpAuthnBtn(props: ExtIdpAuthnBtnProps) {
           ? `/-/authn/oauth2/${providerLowercase}`     // always this instead?
           : `/-/login-openauth/${providerLowercase}`); // old, try to remove
 
+    const mainWin = getMainWin();
+    const canUseCookies = win_canUseCookies(mainWin);
+
     const urlPathAndQuery = urlPath +
         '?' + mayNotCreateUser +
         `nonce=${props.authnNonce}&` +
@@ -745,6 +748,7 @@ function ExtIdpAuthnBtn(props: ExtIdpAuthnBtnProps) {
         // window.opener, and then closes this popup. [49R6BRD2]
         (eds.isInLoginWindow ? '' : 'isInLoginPopup&') +
         (useServerGlobalIdp ? 'useServerGlobalIdp=true&' : '') +
+        (canUseCookies ? '' : 'avoidCookies&') +  // [authn_popup_0_cookies]
         `returnToUrl=${props.anyReturnToUrl || ''}`;
 
     const url = origin() + urlPathAndQuery;
@@ -763,8 +767,7 @@ function ExtIdpAuthnBtn(props: ExtIdpAuthnBtnProps) {
       // in the blog comments iframes — then, tell the server
       // to include the session id in the response body, so we can access it browser side.
       // Also see Server.ts. [NOCOOKIES]
-      const mainWin = getMainWin();
-      if (!win_canUseCookies(mainWin)) {
+      if (!canUseCookies) {
         // (We can use cookies here in this login window — they're 1st party cookies.
         // But not in the main window — which should be an embedded comments iframe,
         // that is, 3rd party cookies, blocked.)

@@ -49,6 +49,7 @@ export const GroupMembers = React.createFactory<GroupMembersProps>(function(prop
   }, [me.id]);
 
   function listAndSetMembers() {
+    // Later: Incl badges too? But right now, [badges_not_shown_in_user_lists].
     Server.listGroupMembers(group.id, (members) => {
       if (myId.current !== me.id) return;
       setMembers(members);

@@ -94,13 +94,13 @@ d.i.createLoginPopup = function(url) {
       // any weakSessionId and could remember it directly.
       // Then weakSessionId is undefined here, [5028KTDN306] and then don't
       // overwrite the main win's session id with undefined.
-      if (result.weakSessionId) {
+      if (result.weakSessionId || result.xsrfTokenIfNoCookies) {
         // Remember the session in getMainWin().typs.weakSessionId:
         debiki2.Server.rememberTempSession(result); // [NOCOOKIES]
       }
     }
     catch (ex) {
-      console.warn("Error remembering weakSessionId [TyE04KS4M]", ex);
+      console.warn("Error remembering weakSessionId or xsrf token [TyE04KS4M]", ex);
     }
 
     d.i.handleLoginResponse = null;

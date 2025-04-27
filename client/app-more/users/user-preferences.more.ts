@@ -1104,14 +1104,17 @@ const AccountTabForGroup = React.createFactory<any>(function(props: { member: Gr
     util.openDefaultStupidDialog({  // dupl code [DELYESNO]
       body: `Delete group '${group.fullName || group.username}'? Cannot be undone.`,
       primaryButtonTitle: t.Cancel,
-      secondaryButonTitle: t.upp.YesDelete,  // UX red color (still keep Cancel = blue primary color)
+      secondaryButonTitle: t.upp.YesDelete,  // UX SHOULD red color (keep Cancel = blue primary)
       onCloseOk: (number) => {
         if (!number || number === 1) {
           // Click outside dialog, or on primary button = cancel, do nothing.
         }
         else {
           dieIf(number !== 2, 'TyE6UKBA');
-          Server.deleteGroup(group.id, () => location.assign(GroupsRoot));
+          // TESTS_MISSING, TyTGRP_DEL
+          Server.deleteGroup(group.id, () => {
+            page.Hacks.navigateTo(GroupsRoot);
+          });
         }
       },
     });
@@ -1231,7 +1234,8 @@ const AccountTab = createFactory<any, any>({
           dieIf(number !== 2, 'TyE6UKBA');
           Server.deleteUser(user.id, anonUsername => {
             // If deleted oneself, navigate outside React-Router, so the page will reload
-            // and the browser forgets all in-mem things about the current user.
+            // and the browser forgets all in-mem things about the current user. That is,
+            // use `window.location.assign()`.
             const newPath = UsersRoot + anonUsername;
             if (isMe || this.isGone) {
               window.location.assign(newPath);

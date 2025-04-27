@@ -906,6 +906,7 @@ class JsonMaker(dao: SiteDao) {
     // Somewhat dupl code. (2WB4G7)
     val meJsOb = Json.obj(
       "dbgSrc" -> "2FBS6Z8",
+      "id" -> JsNumber(NoUserId),
       "trustLevel" -> TrustLevel.StrangerDummyLevel,
       "notifications" -> JsArray(),
       "watchbar" -> makeStrangersWatcbarJson(),
@@ -1535,10 +1536,14 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  def makeStorePatchDeletePages(pageIds: Seq[PageId], appVersion: String): JsObject = {
-    Json.obj(
-      "appVersion" -> appVersion,
-      "deletePageIds" -> JsArray(pageIds map JsString))
+  def addStorePatchDeletePages(json0: JsObject, pageIds: Set[PageId], appVersion: St)
+          : JsObject = {
+    var json = json0
+    if ((json \ "appVersion").isEmpty) {
+      json += "appVersion" -> JsString(appVersion)
+    }
+    json += "deletePageIds" -> JsArray(pageIds.to(Seq) map JsString)
+    json
   }
 
 

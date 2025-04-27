@@ -3933,7 +3933,7 @@ export class TyE2eTestBrowser {
         await this.waitAndClick('.esWB_T-Current .esWB_T_Link');
         await this.waitAndClick('#e2eWB_ViewPeopleB');
         await this.waitUntilModalGone();
-        await this.waitForVisible('.esCtxbar_list_title');
+        await this.waitForVisible('.c_Cb_P-Users .esCtxbar_list_title');
       },
 
       clickLeaveChat: async () => {
@@ -5755,11 +5755,7 @@ export class TyE2eTestBrowser {
       clickRemoveFromPage: async () => {
         await this.aboutUserDialog.waitForLoaded();
         await this.waitAndClick('#e2eUD_RemoveB');
-        // Later: this.#br.waitUntilModalGone();
-        // But for now:  [5FKE0WY2]
-        await this.waitForVisible('.esStupidDlg');
-        await this.failIfAnyForbiddenWordsError();
-        await this.#br.refresh();
+        await this.waitUntilModalGone();
       },
     }
 
@@ -5865,7 +5861,7 @@ export class TyE2eTestBrowser {
         // this.#br.click('#e2eAddUsD_SubmitB');
       },
 
-      submit: async (ps: { closeStupidDialogAndRefresh?: true } = {}) => {
+      submit: async () => {
           // Sometimes the click fails (maybe the dialog resizes, once a member is selected, so
           // the Submit button moves a bit?). Then, the Add More Group Members button will
           // remain occluded.
@@ -5877,13 +5873,7 @@ export class TyE2eTestBrowser {
           if (!isGone)
             throw `Not yet gone: ${submitSelector}`;
         });
-        // Later: this.#br.waitUntilModalGone();
-        // But for now:  [5FKE0WY2]
-        if (ps.closeStupidDialogAndRefresh) {
-          await this.waitForVisible('.esStupidDlg');
-          await this.failIfAnyForbiddenWordsError();
-          await this.#br.refresh();
-        }
+        await this.waitUntilModalGone();
       }
     };
 
@@ -7520,6 +7510,7 @@ export class TyE2eTestBrowser {
 
       __deletePageSelector: '.s_ChPgD .e_DelPgB',
       __undeletePageSelector: '.s_ChPgD .e_UndelPgB',
+      __deletedPostSel: (postNr: PostNr) => `#post-${postNr}.s_P-Dd`,
 
       refreshUntilBodyHidden: async (postNr: PostNr) => {  // RENAME to refreshUntilPostBodyHidden
         await this.waitUntil(async () => {
@@ -7551,7 +7542,11 @@ export class TyE2eTestBrowser {
       },
 
       waitForPostVisibleAsDeleted: async (postNr: PostNr) => {
-        await this.waitForDisplayed(`#post-${postNr}.s_P-Dd`);
+        await this.waitForDisplayed(this.topic.__deletedPostSel(postNr));
+      },
+
+      isPostVisibleAsDeleted: async (postNr: PostNr): Pr<Bo> => {
+        return await this.isDisplayed(this.topic.__deletedPostSel(postNr));
       },
 
       assertPostHidden: async  (postNr: PostNr) => {
@@ -7567,8 +7562,16 @@ export class TyE2eTestBrowser {
         assert.ok(!await this.isVisible(`#post-${postNr}.s_P-Hdn`));
       },
 
+      banSpammerViaPostNr: async (postNr: PostNr) => {
+        await this.topic.__rejectOrBanImpl(postNr, 'Ban');
+      },
+
       rejectPostNr: async (postNr: PostNr) => {
-        const selector = `#post-${postNr} + .esPA .s_PA_ModB-Rej`;
+        await this.topic.__rejectOrBanImpl(postNr, 'Rej');
+      },
+
+      __rejectOrBanImpl: async (postNr: PostNr, rejOrBan: 'Rej' | 'Ban') => {
+        const selector = `#post-${postNr} + .esPA .s_PA_ModB-${rejOrBan}`;
         await this.waitAndClick(selector);
         await this.stupidDialog.yesIAmSure();
         if (postNr === c.BodyNr) {
@@ -9606,7 +9609,7 @@ export class TyE2eTestBrowser {
       },
 
       users: {
-        usernameSelector: '.dw-username',
+        usernameSelector: '.e_AdminUsersList .dw-username',
         enabledUsersTabSelector: '.e_EnabledUsB',
         waitingUsersTabSelector: '.e_WaitingUsB',
 
@@ -9639,6 +9642,13 @@ export class TyE2eTestBrowser {
         assertUserListed: async (member: { username: St }) => {
           await this.adminArea.users.waitForLoaded();
           await this.assertAnyTextMatches(this.adminArea.users.usernameSelector, member.username);
+        },
+
+        assertUsenamesAreAndOrder: async (usernames: St[]) => {
+          await this.adminArea.users.waitForLoaded();
+          const actualUsernames = await this.waitAndGetListTexts(
+                  this.adminArea.users.usernameSelector);
+          tyAssert.deepEq(usernames, actualUsernames);
         },
 
         assertUserAbsent: async (member: { username: St }) => {
@@ -11024,7 +11034,7 @@ export class TyE2eTestBrowser {
         for (const un of usernames) {
           await this.addUsersToPageDialog.addOneUser(un);
         }
-        await this.addUsersToPageDialog.submit({ closeStupidDialogAndRefresh: true });
+        await this.addUsersToPageDialog.submit();
         // was:  _.each(usernames, this.contextbar.assertUserPresent);
         for (const un of usernames) {
           await this.contextbar.assertUserPresent(un);

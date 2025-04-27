@@ -1,16 +1,16 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
-import fs = require('fs');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
+import assert from '../utils/ty-assert';
+import * as fs from 'fs';
+import server from '../utils/server';
+import * as utils from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import make = require('../utils/make');
-import lad = require('../utils/log-and-die');
-import c = require('../test-constants');
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import settings from '../utils/settings';
+import { die } from '../utils/log-and-die';
+import c from '../test-constants';
+import { IsWhere } from '../test-types';
 
 const mariasCommentOne = 'mariasCommentOne';
 const mariasCommentTwo = 'mariasCommentTwo';
@@ -19,19 +19,14 @@ const embeddingOrigin = 'http://e2e-test-emb-forum.localhost:8080';
 const embPageOneSlug = 'emb-page-one.html';
 const embPageTwoSlug = 'emb-page-two.html';
 
-
-
-
-
-let everyonesBrowsers;
-let richBrowserA;
-let richBrowserB;
+let brA: TyE2eTestBrowser;
+let brB: TyE2eTestBrowser;
 let owen: Member;
-let owensBrowser: TyE2eTestBrowser;
+let owen_brA: TyE2eTestBrowser;
 let maria: Member;
-let mariasBrowser: TyE2eTestBrowser;
+let maria_brB: TyE2eTestBrowser;
 let michael: Member;
-let michaelsBrowser: TyE2eTestBrowser;
+let michael_brB: TyE2eTestBrowser;
 
 const localHostname = 'e2e-test-emb-forum';
 
@@ -45,41 +40,38 @@ let discussionPageUrl: string;
 
 describe("embedded-forum-no-cookies-login  TyT5029FKRDE", () => {
 
-  it("import a site", () => {
-    lad.die('Unimpl [395023PFS]');
-
+  it("import a site", async () => {
     const builder = buildSite();
     forum = builder.addTwoPagesForum({  // or: builder.addLargeForum
       title: "Some E2E Test",
       members: undefined, // default = everyone
     });
-    assert(builder.getSite() === forum.siteData);
+    assert.eq(builder.getSite(), forum.siteData);
     const site: SiteData2 = forum.siteData;
     site.meta.localHostname = localHostname;
     site.settings.allowEmbeddingFrom = embeddingOrigin;
-    siteIdAddress = server.importSiteData(forum.siteData);
+    siteIdAddress = await server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
     server.skipRateLimits(siteId);
     discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;
   });
 
-  it("initialize people", () => {
-    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
-    richBrowserA = new TyE2eTestBrowser(browserA);
-    richBrowserB = new TyE2eTestBrowser(browserB);
+  it("initialize people", async () => {
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
     owen = forum.members.owen;
-    owensBrowser = richBrowserA;
+    owen_brA = brA;
 
     maria = forum.members.maria;
-    mariasBrowser = richBrowserB;
+    maria_brB = brB;
     michael = forum.members.michael;
-    michaelsBrowser = richBrowserB;
+    michael_brB = brB;
 
     // http://e2e-test-emb-forum.localhost:8080/
   });
 
-  it("create two embedding pages", () => {
+  it("create two embedding pages", async () => {
     const dir = 'target';
     //fs.writeFileSync(`${dir}/${pageShortSlug}`, makeHtml('short', 0, '#005'));
     fs.writeFileSync(`${dir}/${embPageOneSlug}`, makeHtml('one', 2000, '#405'));
@@ -97,7 +89,7 @@ describe("embedded-forum-no-cookies-login  TyT5029FKRDE", () => {
 iframe {
   width: calc(100% - 40px);
   margin-left: 10px;
-  height: 300px;
+  height: 1200px;
 }
 </style>
 </head>
@@ -107,10 +99,12 @@ iframe {
 
 <!--
 <script>talkyardServerUrl='${settings.scheme}://${localHostname}.localhost';</script>
--->
 <script async defer src="${siteIdAddress.origin}/-/talkyard-embedded-forum.js"></script>
+-->
 <div class="talkyard-forum" style="margin-top: 45px;">
-<iframe src="${settings.scheme}://${localHostname}.localhost">Oops iframe didn't want to load</iframe>
+<iframe src="${settings.scheme}://${localHostname}.localhost?embHow=Forum">
+  Oops iframe didn't want to load
+</iframe>
 
 <hr>
 <p>/End of page.</p>
@@ -118,8 +112,8 @@ iframe {
 </html>`;
   }
 
-  it("Maria opens a tall embedding page, does *not* scroll to comment-1", () => {
-    mariasBrowser.go(embeddingOrigin + '/' + embPageOneSlug);
+  it("Maria opens a tall embedding page, does *not* scroll to comment-1", async () => {
+    await maria_brB.go2(embeddingOrigin + '/' + embPageOneSlug);
   });
 
 });

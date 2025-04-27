@@ -398,6 +398,7 @@ function runAllE2eTests {
   $r s/wdio --only mod-review.2br.mtime $args  # RENAME to modn-by-moderator-not-admin
 
   $r s/wdio-7 --only modn-from-disc-page-appr-befr.2br.f --cd -i $args
+  $r s/wdio-7 --only modn-ban-from-disc-page.2br.f --cd -i $args
   $r s/wdio --only modn-from-disc-page-review-after.2browsers $args
 
   # TESTS_MISSING

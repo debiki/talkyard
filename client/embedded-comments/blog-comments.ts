@@ -21,6 +21,7 @@
 
 /// <reference path="comments-count.ts" />
 /// <reference path="../app-slim/constants.ts" />
+/// <reference path="../app-slim/model.ts" />
 
 
 declare const debiki: any | undefined;
@@ -839,7 +840,7 @@ function messageCommentsIframeToMessageMeToScrollTo(postNr) {
 }
 
 
-function onMessage(event) {
+function onMessage(message) {
   if (!sessionIframe) return;
 
   // The message is a "[eventName, eventData]" string because IE <= 9 doesn't support
@@ -850,14 +851,14 @@ function onMessage(event) {
   var eventName;
   var eventData;
   try {
-    if (typeof event.data === 'string') {
-      var json = JSON.parse(event.data);
+    if (typeof message.data === 'string') {
+      var json = JSON.parse(message.data);
       eventName = json[0];
       eventData = json[1];
     }
     else {
-      eventName = event.data[0];
-      eventData = event.data[1];
+      eventName = message.data[0];
+      eventData = message.data[1];
     }
   }
   catch (error) {
@@ -868,7 +869,7 @@ function onMessage(event) {
   // COULD REFACTOR: Actually, child iframes can message each other directly;
   // need not send via the parent.
 
-  if (sessionIframe.contentWindow === event.source) {
+  if (sessionIframe.contentWindow === message.source) {
     // @ifdef DEBUG
     if (eventName !== 'iframeInited')
       throw Error(`Unexpected message from session iframe: ${eventName}  TyE4MREJ36`);
@@ -879,7 +880,7 @@ function onMessage(event) {
     return;
   }
 
-  const anyFrameAndNr: [HIframeElm, Nr] | U = findIframeThatSent(event);
+  const anyFrameAndNr: [HIframeElm, Nr] | U = findIframeThatSent(message);
   if (!anyFrameAndNr)
     return;
 
@@ -1038,7 +1039,7 @@ function onMessage(event) {
       // The comments iframe will calculate the rectangle to scroll into view,
       // and then reply with a 'scrollComments' message, because the actual scrolling
       // needs to happen here in the parent frame.
-      sendToComments(event.data);
+      sendToComments(message.data);
       break;
 
     case 'scrollComments':   // RENAME to 'scrollCommentsIframe'?
@@ -1076,35 +1077,40 @@ function onMessage(event) {
             `for details (its name is 'edComments-1').`)
       break;
 
-    case 'justLoggedIn':
-      const u = eventData.user || {};
+    case 'justLoggedIn': {
+      const event: JustLoggedInEvent = eventData;
+      const u: any = event.user || {};
       logM(`Logged in as ${u.username || u.fullName} in iframe`);
       // @ifdef DEBUG
       // Here, session id part 3 must not be included — it must not be seen
       // by the embedding website (only by code directly on the Talkyard domain).
       // So, the length should be:  SidLengthCharsPart1 + SidLengthCharsPart2 = 16 + 24
       // for the new fancy sessions. Whilst the old silly sids include a '.' dot.
-      if (eventData.weakSessionId && eventData.weakSessionId.length !== 16 + 24
-            && eventData.weakSessionId.indexOf('.') === -1)
+      if (event.weakSessionId && event.weakSessionId.length !== 16 + 24
+            && event.weakSessionId.indexOf('.') === -1)
         throw Error(`tySid12 should be 16 + 24 = ${16 + 24} chars but is ${
-                eventData.weakSessionId.length} chars [TyEBADSID12LEN]`);
+                event.weakSessionId.length} chars [TyESID12LEN]`);
+      if (event.weakSessionId && !event.xsrfToken)
+        throw Error(`A sid, but no xsrf token [TyESID0XSRF]`);
       // @endif
-      if (eventData.rememberEmbSess) try {
+
+      if (event.rememberEmbSess) try {
         const item = {
-          pubSiteId: eventData.pubSiteId,
-          weakSessionId: eventData.weakSessionId,
+          pubSiteId: event.pubSiteId,
+          weakSessionId: event.weakSessionId,
+          xsrfToken: event.xsrfToken,
         };
         const isUndef = item.weakSessionId === 'undefined'; // this'd be a bug elsewhere
         /*
         Got changed to  SessionType.AutoToken (bitfield). Setting name: 'rememberEmbSess'.
-        if (eventData.sessionType === 'AuthnToken') {
+        if (event.sessionType === 'AuthnToken') {
           // Then the embedding page includes a 'authnToken' token,
           // if we're logged in — don't combine that with localStorage, would get
           // too complicated?
         }
         else */
         if (!item.weakSessionId || isUndef) {
-          logW(`weakSessionId missing [TyE0WKSID]: ${JSON.stringify(eventData)}`);
+          logW(`weakSessionId missing [TyE0WKSID]: ${JSON.stringify(event)}`);
           if (isUndef) {
             debugger;
           }
@@ -1122,8 +1128,9 @@ function onMessage(event) {
       catch (ex) {
         logW(`Error setting 'talkyardSession' in  theStorage [TyESETWKSID]`, ex);
       }
-      sendToOtherIframes(event.data, iframeNr);
+      sendToOtherIframes(message.data, iframeNr);
       break;
+    }
 
     case 'logoutClientSideOnly':
       logM(eventData.why || `Logged out`);
@@ -1134,7 +1141,7 @@ function onMessage(event) {
       catch (ex) {
         logW(`Error removing 'talkyardSession' from  theStorage [TyERMWKSID]`, ex);
       }
-      sendToOtherIframes(event.data, iframeNr);
+      sendToOtherIframes(message.data, iframeNr);
       if (isFromCommentsIframe) {
         showEditor(false);
       }
@@ -1151,7 +1158,7 @@ function onMessage(event) {
     case 'onEditorOpen':
       assertIsFromEditorToComments();
       showEditor(true);
-      sendToComments(event.data);
+      sendToComments(message.data);
       break;
     case 'showEditsPreview':  // REMOVE DO_AFTER 2020-09-01 deprecated
     case 'showEditsPreviewInPage':
@@ -1160,11 +1167,11 @@ function onMessage(event) {
       throw Error('TyE306MWEG25_06');
       // @endif
       assertIsFromEditorToComments();
-      sendToComments(event.data);
+      sendToComments(message.data);
       break;
     case 'scrollToPreview':
       assertIsFromEditorToComments();
-      sendToComments(event.data);
+      sendToComments(message.data);
       break;
     case 'hideEditorAndPreview': // CLEAN_UP REMOVE_AFTER 2021-10-01 this line only.
       // REMOVE
@@ -1174,7 +1181,7 @@ function onMessage(event) {
     case 'hideEditor':
       assertIsFromEditorToComments();
       showEditor(false);
-      sendToComments(event.data);
+      sendToComments(message.data);
       break;
     case 'maximizeEditor':
       setEditorMaximized(eventData);
@@ -1188,7 +1195,7 @@ function onMessage(event) {
       throw Error('TyE306MWEG25_01');
       // @endif
       assertIsFromCommentsToEditor();
-      sendToEditor(event.data);
+      sendToEditor(message.data);
       break;
     case 'handleReplyResult':
       // REMOVE
@@ -1196,7 +1203,7 @@ function onMessage(event) {
       throw Error('TyE306MWEG25_02');
       // @endif
       assertIsFromEditorToComments();
-      sendToComments(event.data);
+      sendToComments(message.data);
       break;
     case 'editorEditPost':
       // REMOVE
@@ -1204,7 +1211,7 @@ function onMessage(event) {
       throw Error('TyE306MWEG25_03');
       // @endif
       assertIsFromCommentsToEditor();
-      sendToEditor(event.data);
+      sendToEditor(message.data);
       break;
     case 'handleEditResult':
       // REMOVE
@@ -1212,10 +1219,10 @@ function onMessage(event) {
       throw Error('TyE306MWEG25_04');
       // @endif
       assertIsFromEditorToComments();
-      sendToComments(event.data);
+      sendToComments(message.data);
       break;
     case 'patchTheStore':
-      sendToOtherIframes(event.data, iframeNr);
+      sendToOtherIframes(message.data, iframeNr);
       break;
   }
 }

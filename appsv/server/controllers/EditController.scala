@@ -367,7 +367,10 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def changePostType: Action[JsValue] = PostJsonAction(RateLimits.EditPost, maxBytes = 300) { request =>
+  def changePostType: Action[JsValue] = PostJsonAction(
+        RateLimits.EditPost,
+        MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+        maxBytes = 300) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val postNr = (request.body \ "postNr").as[PostNr]
     val newTypeInt = (request.body \ "newType").as[Int]

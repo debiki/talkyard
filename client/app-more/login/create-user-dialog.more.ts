@@ -338,6 +338,7 @@ export var CreateUserDialogContent = createClassAndFactory({
         });
       }
       else {
+        // page.Hacks.navigateTo(returnToUrl); — this might be needed, if is an [emb_forum]?
         window.location.assign(returnToUrl);
         // In case the location didn't change, reload the page, otherwise user specific things
         // won't appear.

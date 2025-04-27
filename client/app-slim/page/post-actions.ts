@@ -476,7 +476,7 @@ export const PostActions = createComponent({
             secondaryButonTitle: t.Cancel,
             small: true,
             onPrimaryClick: () => {
-              Server.moderatePostOnPagePatchStore(post, decision, () => {
+              Server.moderatePostOnPagePatchStore(page.pageId, post, decision, () => {
                 scrollAndFlashPostNr(post.nr);
               });
             },
@@ -485,13 +485,21 @@ export const PostActions = createComponent({
       }
       const spacePage = post.nr === BodyNr ? " page" : '';
       approveOrDeleteBtns =
-          rFragment({},
+          rFr({},
             // English is fine — this is for staff. 0I18N.
             ModBtn(ReviewDecision.Accept,
                   "Approve" + spacePage, 's_PA_ModB-Apr'),
             ModBtn(ReviewDecision.DeletePostOrPage,
                   // (Need not repeate the word "page" here.)
-                  "Reject and delete", 's_PA_ModB-Rej'));
+                  "Reject and delete", 's_PA_ModB-Rej'),
+            ModBtn(ReviewDecision.DeleteAndBanSpammer,
+                  // SHOULD BUG Ooops, unbanning, posting more —>
+                  //    You cannot post more posts until a moderator has reviewed your previous posts.
+                  //    Our spam detection system thinks some of your posts look like spam, sorry. [TyENEWMBRSPM_]
+                  // But their posts might have gotten deleted, when banning them, so,
+                  // might not be anything for a mod to review & approve. Hmm.
+                  "Delete, ban spammer", 's_PA_ModB-Ban'),
+            );
     }
 
     return (

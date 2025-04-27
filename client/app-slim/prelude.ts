@@ -349,10 +349,12 @@ export function getMainWin(): MainWin {  // QUICK RENAME to win_getSessWin() ?
   }
 
   if (win.name !== lookingForName) {
-    // We're in the embedded editor iframe window, or in an embedded comments iframe
+    // We're in 1) an embedded forum iframe, or 2) an embedded editor or comments iframe
     // but not in the one we're looking for (which is the #talkyard-session iframe).
     // @ifdef DEBUG
-    dieIf(win.name !== 'edEditor' && !/edComments-[0-9]+/.test(win.name),
+    dieIf(eds.embHow !== 'Forum'
+        && win.name !== 'edEditor'
+        && !/edComments-[0-9]+/.test(win.name),
           `This window has an unexpected name: '${win.name}' TyE7S2RME75`);
     // The parent window is the embedding window, e.g. a blog post with
     // comments embedded. It can have one or many iframes with embedded comments.
@@ -363,6 +365,7 @@ export function getMainWin(): MainWin {  // QUICK RENAME to win_getSessWin() ?
     }
     catch (ex) {
       // Maybe got deleted by scripts on the embedding page? Then what?
+      // HARMLESS_BUG ANNOYING Happens if is [emb_forum]. Then, uninteresting
       logW(`Main win '${lookingForName}' not found [TyE0MAINWIN]`);
     }
   }

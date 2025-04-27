@@ -1,16 +1,16 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
-import fs = require('fs');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
+import assert from '../utils/ty-assert';
+import * as fs from 'fs';
+import server from '../utils/server';
+import * as utils from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import make = require('../utils/make');
-import lad = require('../utils/log-and-die');
-import c = require('../test-constants');
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import settings from '../utils/settings';
+import { die } from '../utils/log-and-die';
+import c from '../test-constants';
+import { IsWhere } from '../test-types';
 
 const mariasCommentOne = 'mariasCommentOne';
 const mariasCommentTwo = 'mariasCommentTwo';
@@ -20,19 +20,14 @@ const embPageOneSlug = 'emb-page-one.html';
 const embPageTwoSlug = 'emb-page-two.html';
 const ssoDummyLoginSlug = 'sso-dummy-login.html';
 
-
-
-
-
-let everyonesBrowsers;
-let richBrowserA;
-let richBrowserB;
+let brA: TyE2eTestBrowser;
+let brB: TyE2eTestBrowser;
 let owen: Member;
-let owensBrowser: TyE2eTestBrowser;
+let owen_brA: TyE2eTestBrowser;
 let maria: Member;
-let mariasBrowser: TyE2eTestBrowser;
+let maria_brB: TyE2eTestBrowser;
 let michael: Member;
-let michaelsBrowser: TyE2eTestBrowser;
+let michael_brB: TyE2eTestBrowser;
 
 const localHostname = 'e2e-test-emb-forum';
 
@@ -60,15 +55,15 @@ const mariasSsoId = 'mariasSsoId';
 
 describe("embedded-forum-no-cookies-login  TyT5029FKRDE", () => {
 
-  it("import a site", () => {
-    lad.die('Unimpl [8608RKTHS]');
+  it("import a site", async () => {
+    die('Unimpl [8608RKTHS]');
 
     const builder = buildSite();
     forum = builder.addTwoPagesForum({  // or: builder.addLargeForum
       title: "Some E2E Test",
       members: undefined, // default = everyone
     });
-    assert(builder.getSite() === forum.siteData);
+    assert.eq(builder.getSite(), forum.siteData);
     const site: SiteData2 = forum.siteData;
     site.meta.localHostname = localHostname;
     site.settings.allowEmbeddingFrom = embeddingOrigin;
@@ -76,29 +71,28 @@ describe("embedded-forum-no-cookies-login  TyT5029FKRDE", () => {
     site.settings.ssoUrl = ssoUrl;
     site.settings.enableApi = true;
     site.apiSecrets = [apiSecret];
-    siteIdAddress = server.importSiteData(forum.siteData);
+    siteIdAddress = await server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
     server.skipRateLimits(siteId);
     discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;
   });
 
-  it("initialize people", () => {
-    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
-    richBrowserA = new TyE2eTestBrowser(browserA);
-    richBrowserB = new TyE2eTestBrowser(browserB);
+  it("initialize people", async () => {
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
     owen = forum.members.owen;
-    owensBrowser = richBrowserA;
+    owen_brA = brA;
 
     maria = forum.members.maria;
-    mariasBrowser = richBrowserB;
+    maria_brB = brB;
     michael = forum.members.michael;
-    michaelsBrowser = richBrowserB;
+    michael_brB = brB;
 
     // http://e2e-test-emb-forum.localhost:8080/
   });
 
-  it("create two embedding pages", () => {
+  it("create two embedding pages", async () => {
     const dir = 'target';
 
     fs.writeFileSync(`${dir}/${ssoDummyLoginSlug}`,
@@ -148,36 +142,36 @@ iframe {
   // Can auto ins API secret elsewhere too, [5ABKR2038]
   /*
 
-  it("Owen goes to the admin area, the API tab", () => {
-    owensBrowser.adminArea.goToApi(siteIdAddress.origin, { loginAs: owen });
+  it("Owen goes to the admin area, the API tab", async () => {
+    await owensBrowser.adminArea.goToApi(siteIdAddress.origin, { loginAs: owen });
   });
 
-  it("... generates an API secret, copies it", () => {
-    owensBrowser.adminArea.apiTab.generateSecret();
+  it("... generates an API secret, copies it", async () => {
+    await owensBrowser.adminArea.apiTab.generateSecret();
   });
 
   let apiSecret: string;
 
-  it("... copies the secret key", () => {
-    apiSecret = owensBrowser.adminArea.apiTab.showAndCopyMostRecentSecret();
+  it("... copies the secret key", async () => {
+    apiSecret = await owensBrowser.adminArea.apiTab.showAndCopyMostRecentSecret();
   });
 
-  it("... goes to the login settings", () => {
-    owensBrowser.adminArea.goToLoginSettings();
+  it("... goes to the login settings", async () => {
+    await owensBrowser.adminArea.goToLoginSettings();
   });
 
-  it("... and types an SSO login URL", () => {
-    owensBrowser.scrollToBottom(); // just speeds the test up slightly
-    owensBrowser.adminArea.settings.login.typeSsoUrl(ssoUrl);
+  it("... and types an SSO login URL", async () => {
+    await owensBrowser.scrollToBottom(); // just speeds the test up slightly
+    await owensBrowser.adminArea.settings.login.typeSsoUrl(ssoUrl);
   });
 
-  it("... and enables SSO", () => {
-    owensBrowser.scrollToBottom(); // just speeds the test up slightly
-    owensBrowser.adminArea.settings.login.setEnableSso(true);
+  it("... and enables SSO", async () => {
+    await owensBrowser.scrollToBottom(); // just speeds the test up slightly
+    await owensBrowser.adminArea.settings.login.setEnableSso(true);
   });
 
-  it("... and saves the new settings", () => {
-    owensBrowser.adminArea.settings.clickSaveAll();
+  it("... and saves the new settings", async () => {
+    await owensBrowser.adminArea.settings.clickSaveAll();
   }); */
 
 
@@ -185,36 +179,36 @@ iframe {
 
   let oneTimeLoginSecret;
 
-  it("The remote server does an API request to Talkyard, to synchronize her account", () => {
-mariasBrowser.debug();
+  it("The remote server does an API request to Talkyard, to synchronize her account", async () => {
+await maria_brB.debug();
     const externalMaria = utils.makeExternalUserFor(maria, { ssoId: mariasSsoId });
-    oneTimeLoginSecret = server.apiV0.upsertUserGetLoginSecret({ origin: siteIdAddress.origin,
+    oneTimeLoginSecret = await server.apiV0.upsertUserGetLoginSecret({ origin: siteIdAddress.origin,
         apiRequesterId: c.SysbotUserId, apiSecret: apiSecret.secretKey, externalUser: externalMaria });
   });
 
-  it("... gets back a one time login secret", () => {
+  it("... gets back a one time login secret", async () => {
     console.log(`Got back login secret: ${ oneTimeLoginSecret }`);
-    assert(oneTimeLoginSecret);
+    assert.ok(oneTimeLoginSecret);
 settings.debugEachStep=true;
   });
 
-  it("... redirects Maria to the Talkyard login-with-secret endpoint", () => {
-    mariasBrowser.rememberCurrentUrl();
-    mariasBrowser.apiV0.loginWithSecret({
+  it("... redirects Maria to the Talkyard login-with-secret endpoint", async () => {
+    await maria_brB.rememberCurrentUrl();
+    await maria_brB.apiV0.loginWithSecret({
       origin: siteIdAddress.origin,
       oneTimeSecret: oneTimeLoginSecret,
       thenGoTo: embeddingOrigin + '/' + embPageOneSlug,
     });
-    mariasBrowser.waitForNewUrl();
+    await maria_brB.waitForNewUrl();
   });
 
-  it("The Talkayrd server logs her in, and redirects her back to where she started", () => {
-    const url = mariasBrowser.getUrl();
-    //assert.equal(url, discussionPageUrl);
+  it("The Talkayrd server logs her in, and redirects her back to where she started", async () => {
+    const url = await maria_brB.getUrl();
+    //assert.eq(url, discussionPageUrl);
   });
 
-  it("Maria opens a tall embedding page, does *not* scroll to comment-1", () => {
-    //mariasBrowser.go(embeddingOrigin + '/' + embPageOneSlug);
+  it("Maria opens a tall embedding page, does *not* scroll to comment-1", async () => {
+    //await mariasBrowser.go2(embeddingOrigin + '/' + embPageOneSlug);
   });
 
 });

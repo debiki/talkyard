@@ -18,6 +18,7 @@
 package controllers   // MOVE this file to  talkyard.server.modn
 
 import com.debiki.core._
+import debiki.JsonUtils.{parseInt32, parseSt}
 import debiki.JsonMaker
 import debiki.EdHttp._
 import talkyard.server.http.{ApiRequest, GetRequest}
@@ -94,28 +95,41 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: TyCont
     import request.{dao, body}
     // Tests:
     // - modn-from-disc-page-appr-befr.2browsers.test.ts  TyTE2E603RTJ
+    // - modn-ban-from-disc-page.2br.f  TyTEBANFROMDISC.TyTMODN_SUSPLS
     // - tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTAPRTGDPO
 
-    val postId = (body \ "postId").as[PostId]
-    val postRevNr = (body \ "postRevNr").as[Int]
-    val decisionInt = (body \ "decision").as[Int]
+    // In the response, we'll include only changes visible on `curPageId`, so the
+    // mod won't find out about things han maybe cannot see. We'll also
+    // verify that `postId` is indeed located on `curPageId`.
+    val curPageId = parseSt(body, "pageId")
+    val postId = parseInt32(body, "postId")
+    val postRevNr = parseInt32(body, "postRevNr")
+    val decisionInt = parseInt32(body, "decision")
     val decision = ReviewDecision.fromInt(decisionInt).getOrThrowBadRequest(
           "TyE05RKJTR3", s"Bad review decision int: $decisionInt")
 
-    throwBadRequestIf(decision != ReviewDecision.Accept
-          && decision != ReviewDecision.DeletePostOrPage,
-          // Need to fix this first: [incl_all_mod_results], before banning from pages
-          // (rather than from the review queue). So wait:
-          // && decision != ReviewDecision.DeleteAndBanSpammer,
+    throwBadRequestIf(
+          decision != ReviewDecision.Accept
+            && decision != ReviewDecision.DeletePostOrPage
+            && decision != ReviewDecision.DeleteAndBanSpammer,
           "TyE305RKDJ3",
           s"That decision not allowed here: $decision")
 
-    val modResult = dao.moderatePostInstantly(postId = postId, postRevNr = postRevNr,
-          decision, moderator = request.theRequester)
+    // (If `postId` isn't on page `curPageId`, or if the mod cannot see post `postId`,
+    // this'll throw Forbidden.)
+    val modResult = dao.moderatePostInstantly(pageId = curPageId, postId = postId,
+          postRevNr = postRevNr, decision, moderator = request.theRequester)
 
-    val patchJson = {
-      if (modResult.updatedPosts.nonEmpty) {
-        val postIds = modResult.updatedPosts.map(_.id).toSet
+    // Don't show what happened to posts on other pages, if any.  Maybe the mod isn't
+    // allowed to see some other page with, say, [a comment by a spammer now getting banned]
+    // — maybe an admin just moved such a page to a category the mod can't see  [mods_cant_see]
+    // (although unlikely).
+    val updatedPostsSamePage: Seq[Post] =
+          modResult.updatedPosts.filter(p => p.pageId == curPageId)
+
+    var patchJson = {
+      if (updatedPostsSamePage.nonEmpty) {
+        val postIds = updatedPostsSamePage.map(_.id).toSet
         dao.jsonMaker.makeStorePatchForPostIds(
               postIds, showHidden = true, inclUnapproved = true,
               // Or can this in some rare cases accidentally un-squash some squashed comments
@@ -123,14 +137,17 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: TyCont
               maySquash = false,
               dao)
       }
-      else if (modResult.deletedPageId.nonEmpty) {  // [62AKDN46]
-        dao.jsonMaker.makeStorePatchDeletePages(
-              modResult.deletedPageId.toSeq, globals.applicationVersion)
-      }
       else {
-        // Need not update anything browser side.
         JsEmptyObj
       }
+    }
+
+    // Don't show if other pages the mod maybe can't see, got deleted. [mods_cant_see]
+    val deletedPageIdsSamePage: Set[PageId] = modResult.deletedPageIds.filter(_ == curPageId)
+
+    if (deletedPageIdsSamePage.nonEmpty) {  // [62AKDN46]
+      patchJson = dao.jsonMaker.addStorePatchDeletePages(
+            patchJson, deletedPageIdsSamePage, globals.applicationVersion)
     }
 
     OkSafeJson(patchJson)

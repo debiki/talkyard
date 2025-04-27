@@ -109,7 +109,7 @@ export function pat_isMe(pat: UserInclDetails | Me | Pat | PatId): pat is Me {
 export function pat_isMember(pat: UserInclDetails | Me | Pat | PatId): Bo {
   if (!pat) return false;
   const patId: PatId = _.isObject(pat) ? (pat as Pat).id : pat
-  return patId > MaxGuestId;
+  return patId >= Pats.MinMemberId; // but sometimes  MinAuthnMemberId  is better, hmm
 }
 export const user_isMember = pat_isMember;  // CLEAN_UP REMOVE QUICK SMALLER_BUNDLE
 

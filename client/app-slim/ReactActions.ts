@@ -119,9 +119,13 @@ export function loadMyself(onOkMaybe?: (resp: FetchMeResponse) => Vo) {
         mainWin.theStore.me = _.cloneDeep(newMe);
       }
       sendToOtherIframes([  // [confusing_loadMyself]
-        'justLoggedIn', { user: newMe, stuffForMe,
-              weakSessionId, pubSiteId: eds.pubSiteId,  // [JLGDIN]
-              sessionType: null, rememberEmbSess }]);
+        'justLoggedIn', {
+              user: newMe,
+              stuffForMe,
+              weakSessionId,
+              xsrfToken: typs.xsrfTokenIfNoCookies,
+              pubSiteId: eds.pubSiteId,  // [JLGDIN]
+              rememberEmbSess } satisfies JustLoggedInEvent]);
     }
 
     setNewMe(newMe, stuffForMe);  // [confusing_loadMyself]
@@ -177,7 +181,6 @@ export function logoutClientSideOnly(ps: { goTo?: St, skipSend?: Bo, msg?: St } 
     // Probaby not needed, since reload() below, but anyway:
     patchTheStore({ setEditorOpen: false });
     const sessWin: MainWin = getMainWin();
-    delete sessWin.typs.weakSessionId;   // can skip? Already done by deleteTempSessId() above
     sessWin.theStore.me = 'TyMLOGDOUT' as any;
   }
 
@@ -1687,13 +1690,13 @@ export function openNotificationSource(notf: Notification) {
 }
 
 
-export function openPage(pageId: string) {   // CLEAN_UP use LinkButton and href= instead
-  window.location.assign(linkToPageId(pageId));
+export function openPage(pageId: string) {
+  page.Hacks.navigateTo(linkToPageId(pageId));
 }
 
 
-export function openPagePostNr(pageId: string, postNr: number) { // CLEAN_UP use LinkButton and href
-  window.location.assign(linkToPageId(pageId) + '#post-' + postNr);
+export function openPagePostNr(pageId: string, postNr: number) {
+  page.Hacks.navigateTo(linkToPageId(pageId) + '#post-' + postNr);
 }
 
 

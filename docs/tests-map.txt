@@ -539,6 +539,8 @@ groups:
   permissions, custom groups:
           - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
           - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46
+  delete group:
+            - TyTGRP_DEL  TESTS_MISSING
   privacy: [_priv]
 
 
@@ -1398,7 +1400,9 @@ admin:
           - (missing) [5AEWBN0]
   members tab:
     really many members:
-          - many-users-mention-list-join-group.2browsers.test.ts   TESTS_MISSING  TyT60295KTDT
+            - many-users-mention-list-join-group.2browsers.test.ts   TESTS_MISSING  TyT60295KTDT
+    suspended users:
+            - modn-ban-from-disc-page.2br.f  TyTEBANFROMDISC.TyTMODN_SUSPLS
   terminate someone else's sessions:
             - d.sessions-staff-logout-others.4br  TyTESESLGOOTR
 
@@ -1433,6 +1437,7 @@ review after:
     invalidating review tasks: [2VSP5Q8]
       band & delete all:
             - modn-ban-spammer.2br.f  TyTMODNBANSPM
+            - modn-ban-from-disc-page.2br.f  TyTEBANFROMDISC.TyTMODN_TASKINV
       reject-delete post:
             - admin-review-invalidate-for-reply.2browsers.test.ts  TyT6KWB42A
       reject-delete page:
@@ -1481,9 +1486,11 @@ review after:
           - modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ.TyTE2E407RKS
     staff can reply to not yet approved pages and comments:
             - topic-prominent-pats-reply-approve.2br.d  TyTPROMPATS_REAPR.TyTREBEFAPR
+            - modn-ban-from-disc-page.2br.f  TyTEBANFROMDISC.TyTREBEFAPR
   require approval before, if trust less than:
           - modn-approve-before.2browsers.test.ts  TyTE2E52RKDHI
           - modn-appr-bef-comb-w-revw-aftr.2browsers.test.ts  TyTE2E05RKD3
+          - modn-ban-from-disc-page.2br.f  TyTEBANFROMDISC
           - server side: TyT305RKTH205
   require approval before, if threat:
             - topic-prominent-pats-reply-approve.2br.d  TyTPROMPATS_REAPR.TyTAPRTHRT
@@ -1495,6 +1502,7 @@ review after:
   hide completed review tasks:
           - modn-review-after.2browsers.test.ts  TyTE2E402GRM.TyT05KD2SM1
           - modn-approve-before.2browsers.test.ts  TyTE2E52RKDHI.TyT05KD2SM1
+          - modn-ban-from-disc-page.2br.f  TyTEBANFROMDISC.TyT05KD2SM1
 
   approve deleted post:
           - TESTS_MISSING   [apr_deld_post]
@@ -1506,6 +1514,8 @@ review after:
             - modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ
             - tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTAPRTGDPO
             - topic-prominent-pats-reply-approve.2br.d  TyTPROMPATS_REAPR.TyTAPRTHRT
+    deletes spammer's all other posts:
+            - modn-ban-from-disc-page.2br.f  TyTEBANFROMDISC
     other mod moderates just after, from moderation page:
           - TESTS_MISSING TyT204RKSTEM
 
@@ -1551,6 +1561,7 @@ spam: (4BKS0)
   ban spammer:
     who is a user:
             - modn-ban-spammer.2br.f  TyTMODNBANSPM
+            - modn-ban-from-disc-page.2br.f  TyTEBANFROMDISC
     who is a guest:
             - TESTS_MISSING  [block_post_author_e2e_test]
                 there's this though:  TyTI_TRUST_THREAT_LV.[mod_bans_guest_app_test]

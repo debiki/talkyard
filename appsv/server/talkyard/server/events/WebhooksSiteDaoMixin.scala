@@ -29,6 +29,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import org.scalactic.{Good, Or, Bad}
 import scala.util.{Success, Failure}
+import WebhooksSiteDaoMixin._
 
 
 
@@ -54,6 +55,12 @@ trait WebhooksSiteDaoMixin {
     if (globals.isProd) 3 else 1.5
 
   val MaxRetryDelaySecs: i32 = 180 * 60
+
+  /** If a webhook results in an unknown Talkyard error this many times, we'll mark it
+    * as broken, won't try again. But just once is fine? Maybe was just a database
+    * serialization error or one-time unusual thing.
+    */
+  private val MaxWebhookBugRetries = 3
 
   val WebhookRequestTimeoutSecs = 20
 
@@ -120,13 +127,43 @@ trait WebhooksSiteDaoMixin {
       catch {
         // Don't let one webhook, mess up all webhooks.
         case ex: Exception =>
-          logger.error(s"s$siteId: Error sending webhook ${whk.id}, marking it broken", ex)
+          // This'd be a Talkyard bug. Maybe harmless? if there's some exception I forgot
+          // to handle somehow.
+          val retriedNumTimes =
+                whk.retriedNumTimes.map(_ + 1) orElse {
+                  // If there's an old failure, this must be the first retry (since
+                  // it's not the 2nd or 3rd or ... — retriedNumTimes is empty).
+                  if (whk.lastFailedHow.isDefined) Some(1)
+                  else None
+                }
+          val retryExtraTimes =
+                whk.retryExtraTimes flatMap { n =>
+                  if (n <= 1) None else Some(n - 1)
+                }
+          val markBroken =
+                retriedNumTimes.exists(_ >= MaxWebhookBugRetries) &&
+                retryExtraTimes.forall(_ <= 0)
+
+          val willRetryMsg =
+                if (markBroken) "marking it broken [TyEWHK_BUGBROKEN]"
+                else s"will retry ${MaxWebhookBugRetries - whk.retriedNumTimes.getOrElse(0)
+                        } times [TyEWHK_BUGBRETRY]"
+
+          logger.error(s"s$siteId: Error sending webhook ${whk.id}, $willRetryMsg", ex)
+
           writeTx { (tx, _) =>
             COULD // remember this in-memory instead, if for some reason the upsert fails.
             tx.upsertWebhook(whk.copy(
-                  failedSince = Some(tx.now),
+                  failedSince = whk.failedSince.orElse(Some(tx.now)),
                   lastFailedHow = Some(SendFailedHow.TalkyardBug),
-                  brokenReason = Some(WebhookBrokenReason.TalkyardBug))(IfBadDie))
+                  lastErrMsgOrResp = Some(ex.toString),
+                  retriedNumTimes = retriedNumTimes,
+                  retryExtraTimes = retryExtraTimes,
+                  brokenReason =
+                      whk.brokenReason.orElse(
+                          if (markBroken) Some(WebhookBrokenReason.TalkyardBug)
+                          else None)
+                  )(IfBadDie))
           }
       }
     }
@@ -160,7 +197,8 @@ trait WebhooksSiteDaoMixin {
       val lastReq = tx.loadWebhookReqsOutRecentFirst(webhookId = webhook.id, limit = 1)
       val (nextReqNr: i32, anyRetryNr: Opt[RetryNr]) = lastReq.headOption match {
         case None =>
-          if (webhook.retriedNumTimes.isDefined) {
+          if (webhook.retriedNumTimes.isDefined &&
+              webhook.lastFailedHow.isNot(SendFailedHow.TalkyardBug)) {
             // Could happen, if the webhook got imported, but not the reqs out.
             logger.warn(o"""$brokenPrefix — but why no reqs in webhook_reqs_out_t?
                   Whatever, I'll try again. [TyEWHKREQOUTMSNG]""")
@@ -277,14 +315,29 @@ trait WebhooksSiteDaoMixin {
       return ()
     }
 
-    // ----- Save and send the request
+    // ----- Save the request, and send it
+
+    def fakeBug(reqToSend: WebhookReqOut, bugIfTextFound: St): U = {
+      if (!globals.isProdLive) {
+        fakeBugImpl(webhook, reqToSend, bugIfTextFound)
+      }
+    }
+
+    fakeBug(reqToSend, "__fakebug_webhook_bef_db_ins__")
 
     writeTx { (tx, _) =>
       // The webhook response fields are blank — only the send-to fields, filled in.
       tx.insertWebhookReqOut(reqToSend)
     }
 
+    fakeBug(reqToSend, "__fakebug_webhook_bef_send__")
+
     val futureReqWithResp: Future[WebhookReqOut] = sendWebhookRequest(reqToSend)
+
+    fakeBug(reqToSend, "__fakebug_webhook_aft_send__")
+
+
+    // ----- Update with result
 
     futureReqWithResp onComplete {
       case Success(reqMaybeResp: WebhookReqOut) =>
@@ -463,6 +516,39 @@ trait WebhooksSiteDaoMixin {
                 failedHow = Some(failedHow),
                 errMsg = Some(s"${classNameOf(ex)}: ${ex.getMessage}"))
       })(globals.execCtx)
+  }
+
+}
+
+
+object WebhooksSiteDaoMixin {
+
+  /** E2e test helper
+    *
+    * In dev-test, this fails a webhook for a while, but then it'll start working.
+    * For example, posting a comment that includes the text:
+    *    "__fakebug_webhook_bef_db_ins__ 3",  makes the webhook
+    * fail, 3 times, just before inserting the webhook request into the db.
+    * But then, after 3 failures, it'll start working.
+    *
+    * This is to see how *bugs* in Talkyard are handled, there's hopefully no other
+    * way to trigger any such bugs if they exist.
+   */
+  def fakeBugImpl(webhook: Webhook, reqToSend: WebhookReqOut, bugIfTextFound: St): U = {
+    val jsonSt = reqToSend.sentJson.toString
+    val ix = jsonSt.indexOf(bugIfTextFound)
+    if (ix == -1)
+      return
+
+    val startWorkingAfter: Opt[i32] =
+      jsonSt.substring(ix + bugIfTextFound.length + 1).trim.takeWhile(_.isDigit).toIntOption
+
+    startWorkingAfter.foreach { okAfter =>
+      if (webhook.retriedNumTimes.exists(_ >= okAfter))
+        return
+    }
+
+    throw new RuntimeException(s"Webhook dummy error, $bugIfTextFound")
   }
 
 }

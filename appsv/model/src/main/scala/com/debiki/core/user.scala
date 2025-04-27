@@ -351,11 +351,13 @@ case object Participant {
 
 
   // Can talk with, and can listen to notifications. But 1..9 = special. And -X = guests.
-  val LowestNormalMemberId: Int = Group.EveryoneId  // [S7KPWG42]
+  def LowestNormalMemberId: Int = Group.EveryoneId  // [S7KPWG42]
 
   /** Cannot talk with members with lower ids (System, SuperAdmin, Deactivated, Deleted users). */
-  val LowestTalkToMemberId: Int = Group.EveryoneId  // or 9, same as anonymous users?
-  assert(LowestTalkToMemberId == 10)
+  def LowestTalkToMemberId: Int = Group.EveryoneId  // or 9, same as anonymous users?
+  // Oops, now with `WebhooksSiteDaoMixinSpec`, is sometimes not yet inited (is still 0),
+  // so comment out for now:
+  //assert(LowestTalkToMemberId == 10, s"LowestTalkToMemberId is: $LowestTalkToMemberId")
 
   // NO!  This will instead be  SuperBot?
   // ?? val UnknownBotId = -2  // bots that accesses any public api endpoints, no api secret

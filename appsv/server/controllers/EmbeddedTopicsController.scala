@@ -195,6 +195,13 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
       skipUsersOnline = true,
       // This'll insert a noCookieXsrfToken JSON field, so the browser will remember
       // to not use cookies.
+      //
+      // This works for embedded *comments*, since they use the  /-/embedded-comments
+      // endpoint, and then we know that we should inlcude an xsrf token (that is,
+      // this code here then runs, and adds the token).
+      // Embedded *forums*, however, don't have their own endpoint; therefore we have
+      // to send the xsrf token in other ways, see: [emb_forum_xsrf_token].
+      //
       xsrfTokenIfNoCookies = newXsrfToken)
 
     futureResponse

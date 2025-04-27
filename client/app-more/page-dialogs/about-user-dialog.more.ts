@@ -229,11 +229,6 @@ const AboutUser = createComponent({
     const props: AboutUserProps = this.props;
     const user = props.user;
     Server.removeUsersFromPage([user.id], () => {
-
-      // [redux] send a page-members patch [5FKE0WY2]
-      util.openDefaultStupidDialog({ body: "Now I've removed him/her from this topic. " +
-          "Currently you need to refresh the page (hit F5) now, to see this change." })
-
       if (this.isGone) return;
       props.close();
     });
@@ -290,10 +285,27 @@ const AboutUser = createComponent({
     const userIsPageMember = (page_isGroupTalk(page.pageRole) &&
         // Use [me_isPageMember] instead, in case any group user is in, is a member?
         _.includes(page.pageMemberIds, user.id));
-    const removeFromPageButton = userIsPageMember &&
-        (isStaff(me) || store_thisIsMyPage(store)) && !userIsMe
-      ? Button({ onClick: this.removeFromPage, id: 'e2eUD_RemoveB' }, t.aud.RmFromTpc)
-      : null;
+
+    const removeFromPageBtn = userIsPageMember && (isStaff(me) || store_thisIsMyPage(store))
+          ? Button({ onClick: () => {
+              if (!userIsMe) {
+                this.removeFromPage();
+              }
+              else {
+                // If removing oneself, better confirm, in case the chat is private,
+                // and one can't see it after having left it.
+                // TESTS_MISSING
+                util.openDefaultStupidDialog({
+                      body: "Remove yourself?", // I18N
+                      primaryButtonTitle: t.YesDoThat,
+                      secondaryButonTitle: t.NoCancel,
+                      small: true,
+                      onPrimaryClick: () => {
+                        this.removeFromPage();
+                      } });
+              }
+            }, id: 'e2eUD_RemoveB' }, t.aud.RmFromTpc)
+          : null;
 
     const extraInfoNewline =
         props.extraInfo ? r.div({ className: 's_UD_ExtrInf' }, props.extraInfo) : null;
@@ -312,7 +324,7 @@ const AboutUser = createComponent({
           sendMessageButton,
           viewInAdminAreaButton,
           viewProfileButton,
-          removeFromPageButton),
+          removeFromPageBtn),
         avatar.Avatar({ user: user, origins: store,
             size: AvatarSize.Medium, clickOpensUserProfilePage: true }),
         r.div({},

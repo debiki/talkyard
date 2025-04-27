@@ -251,6 +251,7 @@ const UserList = createFactory<any>({
   },
 
   loadUsers: function(prevProps) {
+    // Right now, [badges_not_shown_in_user_lists].
     Server.listCompleteUsers(this.props.whichUsers, users => {
       if (this.isGone) return;
       this.setState({ users });

@@ -24,6 +24,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
 import debiki.JsonUtils.parseOptInt32
+import talkyard.server.authn.MinAuthnStrength
 import talkyard.server.http._
 import play.api.libs.json._
 import play.api.mvc._
@@ -293,7 +294,10 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def listTopics(categoryId: CatId): Action[U] = GetAction { request =>
+  def listTopics(categoryId: CatId): Action[U] = GetActionRateLimited(
+        RateLimits.ReadsFromDb,
+        MinAuthnStrength.EmbeddingStorageSid12,  // [if_emb_forum]
+        ) { request =>
     // Tests:
     //  - category-perms.2br.d
 
@@ -333,7 +337,10 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
   /** Doesn't include per category recent topics.
     */
   // Break out to [CatsAndTagsController]?
-  def listCategoriesAllSections(): Action[Unit] = GetActionRateLimited() { request =>
+  def listCategoriesAllSections(): Action[Unit] = GetActionRateLimited(
+        RateLimits.ReadsFromDb,
+        MinAuthnStrength.EmbeddingStorageSid12,  // [if_emb_forum]
+        ) { request =>
     // Tested here: TyT5WKB2QR0
     val jsArr = loadCatsJsArrayMaySee(request)
     OkSafeJson(Json.obj("catsAllSects" -> jsArr))
@@ -342,7 +349,10 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   /** Includes the per category most recently active topics. [per_cat_topics]
     */
-  def listCategoriesAndTopics(forumId: PageId): Action[Unit] = GetAction { request =>
+  def listCategoriesAndTopics(forumId: PageId): Action[Unit] = GetActionRateLimited(
+        RateLimits.ReadsFromDb,
+        MinAuthnStrength.EmbeddingStorageSid12,  // [if_emb_forum]
+        ) { request =>
     // Tests:
     //  - category-perms.2br.d
 

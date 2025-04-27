@@ -406,7 +406,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def downloadPersonalData(userId: UserId): Action[Unit] = GetActionRateLimited(
-        RateLimits.DownloaPersonalData) { request: GetRequest =>
+        RateLimits.DownloaPersonalData,
+        // Don't:  MinAuthnStrength.EmbeddingStorageSid12 — better require strong sid.
+        ) { request: GetRequest =>
     import request.{dao, theRequester => requester}
     throwForbiddenIf(userId != requester.id && !requester.isAdmin,
       "TyE2PKAQX8", "Cannot download someone else's data")
@@ -1269,7 +1271,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
   def loadNotifications(userId: UserId, upToWhenMs: Long): Action[Unit] =
-        GetActionRateLimited(RateLimits.ExpensiveGetRequest) { request =>
+        GetActionRateLimited(
+            RateLimits.ExpensiveGetRequest,
+            MinAuthnStrength.EmbeddingStorageSid12,  // [if_emb_forum]
+            ) { request =>
     // [to_paginate]
     loadNotificationsImpl(userId, upToWhen = None, request)
   }
@@ -1298,7 +1303,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def snoozeNotifications(): Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
+  def snoozeNotifications(): Action[JsValue] = PostJsonAction(
+        RateLimits.ConfigUser,
+        MinAuthnStrength.EmbeddingStorageSid12,  // [if_emb_forum]
         maxBytes = 200, ignoreAlias = true) { request =>
     import request.{dao, theRequesterId}
     val untilWhen: Option[When] =

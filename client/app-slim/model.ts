@@ -2267,8 +2267,12 @@ interface HasStorePatch {
 /**
  * Describes how to update parts of the store. Can be e.g. a new chat message and the author.
  */
-interface StorePatch
-      extends EditorStorePatch, TagTypesStorePatch, PatsStorePatch, PageTweaksStorePatch {
+interface StorePatch extends
+      EditorStorePatch,
+      TagTypesStorePatch,
+      PatsStorePatch,
+      PageMembersStorePatch,
+      PageTweaksStorePatch {
   // Specified by the server, so old messages (that arive after the browser has been upgraded)
   // can be discarded.
   appVersion?: string;
@@ -2323,8 +2327,16 @@ interface TagTypesStorePatch {
 interface PatsStorePatch {
   // DEPRECATED name:
   usersBrief?: Pat[];
-  // Use instead:
+  // Use instead:  RENAME to  patsBr  for consistency?
   patsBrief?: Pat[];
+}
+
+interface PageMembersStorePatch {
+  patsBrief?: Pat[];
+  tagTypes?: TagType[];
+
+  // The page members lists aren't incl in StorePatch.pageMetasBrief.
+  pageMemberIdsByPageId?: { [pageId: PageId]: PatId[] };
 }
 
 interface PageTweaksStorePatch {
@@ -3226,6 +3238,22 @@ interface BrowserCode {
 
 
 // =========================================================================
+//  Embedding page messages
+// =========================================================================
+
+
+interface JustLoggedInEvent {
+  pubSiteId?: St
+  user?: Me
+  stuffForMe?: StuffForMe;
+  xsrfToken?: St
+  weakSessionId?: St
+  rememberEmbSess?: Bo
+}
+
+
+
+// =========================================================================
 //  Server requests and responses
 // =========================================================================
 
@@ -3289,6 +3317,8 @@ interface EditPageResponse {
 }
 
 
+/// See: appsv/server/views/authn/sendAuthnResultToOpenerCloseCurWin.scala.html
+///
 interface LoginPopupLoginResponse {
   status: 'LoginOk' | 'LoginFailed';  // CLEAN_UP REMOVE no longer needed [J0935RKSDM]
   origNonceBack?: St;
@@ -3301,6 +3331,7 @@ interface LoginPopupLoginResponse {
   // Needed because Safari and FF block 3rd party cookies, see: docs/safari-itp-firefox-etp.md.
   //
   weakSessionId?: string;  // [NOCOOKIES]
+  xsrfTokenIfNoCookies?: St
 }
 
 interface AuthnResponse {
@@ -3310,6 +3341,7 @@ interface AuthnResponse {
   userCreatedAndLoggedIn: boolean;
   emailVerifiedAndLoggedIn: boolean;
   weakSessionId?: string;
+  xsrfTokenIfNoCookies?: St
 }
 
 
@@ -3566,6 +3598,8 @@ interface ServerVars {
   embeddingScriptV?: Nr;
   embeddingOrigin?: string;
 
+  embHow?: 'Forum' | St  // or sth else (invalid). A url param
+
   // Wrap in an obj so they can be updated all at the same time?
   // ---------------
   // (In an embedded editor, they're updated dynamically, depending on which
@@ -3580,7 +3614,7 @@ interface ServerVars {
   // When creating new site.
   baseDomain?: string;
 
-  ssoHow?: 'RedirPage' | 'LoginPopup' | St // or sth else (invalid)
+  ssoHow?: 'RedirPage' | 'LoginPopup' | St // or sth else (invalid). A url param
 
   newPasswordData?: NewPasswordData;
 }

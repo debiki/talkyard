@@ -27,6 +27,7 @@ import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
 import scala.collection.{mutable => mut}
+import talkyard.server.authn.MinAuthnStrength
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.{PatAndPrivPrefs}
 import javax.inject.Inject
@@ -43,7 +44,9 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   import context.globals
 
 
-  def listTopicsByUser(userId: PatId): Action[U] = GetActionRateLimited() { request =>
+  def listTopicsByUser(userId: PatId): Action[U] = GetActionRateLimited(
+        minAuthnStrength = MinAuthnStrength.EmbeddingStorageSid12,  // [if_emb_forum]
+        ) { request =>
     import request.{dao, requesterOrUnknown, requester}
 
     // Return Not Found directly, using the cache, if no such user.  Bit dupl [_6827]
@@ -73,7 +76,9 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   def listPostsByUser(authorId: UserId, postType: Opt[i32], relType: Opt[Int],
           which: Opt[Int]): Action[U] =
-          GetActionRateLimited() { req: GetRequest =>
+        GetActionRateLimited(
+            minAuthnStrength = MinAuthnStrength.EmbeddingStorageSid12,  // [if_emb_forum]
+            ) { req: GetRequest =>
     import req.{dao, requesterOrUnknown}
 
     // Return Not Found directly, using the cache, if no such user.  Bit dupl [_6827]
@@ -155,7 +160,9 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def listPostsWithTag(typeIdOrSlug: St): Action[U] = GetActionRateLimited(
-          RateLimits.ReadsFromDb) { req =>
+          RateLimits.ReadsFromDb,
+          MinAuthnStrength.EmbeddingStorageSid12,  // [if_emb_forum]
+          ) { req =>
     import req.dao
     // Later, excl private tags (once implemented). [priv_tags]
 
@@ -328,7 +335,9 @@ class PostsController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def downloadUsersContent(authorId: UserId): Action[Unit] = GetActionRateLimited(
-        RateLimits.DownloadOwnContentArchive) { request: GetRequest =>
+        RateLimits.DownloadOwnContentArchive,
+        // But don't reduce  minAuthnStrength, even if embedded forum.
+        ) { request: GetRequest =>
     // These responses can be huge; don't prettify the json.
     _listPostsImpl(authorId, onlyPostType = None, all = true, request)
   }

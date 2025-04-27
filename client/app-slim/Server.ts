@@ -1188,9 +1188,10 @@ export function saveSpecialContent(specialContent: SpecialContent, success: () =
 }
 
 
-export function moderatePostOnPagePatchStore(post: Post, decision: ReviewDecision,
-          onOk: (_: StorePatch) => V) {
+export function moderatePostOnPagePatchStore(pageId: PageId, post: Post,
+          decision: ReviewDecision, onOk: (_: StorePatch) => V) {
   const data = {
+    pageId,
     postId: post.uniqueId,
     postRevNr: post.currRevNr,
     decision,
@@ -1302,7 +1303,7 @@ export function loginWithAuthnToken(authnToken: St | Ay,
 
 
 export function loginWithOneTimeSecret(oneTimeLoginSecret: string,
-    onDone: (weakSesionId: string) => void) {  // no, gets a { weakSessionId: .. } ?!
+    onDone: (resp: { weakSessionId: St, xsrfTokenIfNoCookies: St }) => V) {
   get(`/-/v0/login-with-secret?oneTimeSecret=${oneTimeLoginSecret}`,
       makeUpdNoCookiesTempSessionIdFn(onDone));
 }
@@ -1329,7 +1330,7 @@ export function getCurSid12Maybe3(): St | N {  // [ts_authn_modl]
 }
 
 
-export function rememberTempSession(ps: { weakSessionId: St }) {  // [ts_authn_modl]
+export function rememberTempSession(ps: { weakSessionId: St, xsrfTokenIfNoCookies: St }) {  // [ts_authn_modl]
   const onOk = function() {};
   makeUpdNoCookiesTempSessionIdFn(onOk)(ps);
 }
@@ -1346,7 +1347,12 @@ function makeUpdNoCookiesTempSessionIdFn<R>(  // [ts_authn_modl]
     // should set the session id in the main embedded window, that is, the one with all comments.
     const mainWin = getMainWin();
     const typs: PageSession = mainWin.typs;
+
     typs.weakSessionId = response.weakSessionId;
+
+    if (response.xsrfTokenIfNoCookies)
+      typs.xsrfTokenIfNoCookies = response.xsrfTokenIfNoCookies;
+
     typs.sessType = sessType;
     // We'll tell any other iframes that we logged in, via a 'justLoggedIn' message. [JLGDIN]
     if (onDone) {
@@ -1362,6 +1368,7 @@ export function deleteTempSessId() {  // [ts_authn_modl]
   const typs: PageSession = mainWin.typs;
   delete typs.weakSessionId;
   delete typs.sessType;
+  // (Need not delete:  typs.xsrfTokenIfNoCookies)
   try {
     // Can this throw?
     getSetCookie('dwCoSid', null);
@@ -1654,6 +1661,15 @@ export function loadMyself(onOkMaybe: (resp: FetchMeResponse) => Vo) {
         `main frame name: ${mainWin.name}, ` +
         `this is main frame: ${window === mainWin}, ` +
         `mainWin.typs: ${JSON.stringify(typs)} [TyE603FKNFD5]`);
+    debugger;
+  }
+  else if (!typs.canUseCookies && !typs.xsrfTokenIfNoCookies) {
+    console.error(`Cannot POST anything: No mainWin.typs.xsrfTokenIfNoCookies. ` +
+        `(But there's a weakSessionId.)` +
+        `This frame name: ${window.name}, ` +
+        `main frame name: ${mainWin.name}, ` +
+        `this is main frame: ${window === mainWin}, ` +
+        `mainWin.typs: ${JSON.stringify(typs)} [TyE603FKNFD6]`);
     debugger;
   }
   // @endif
@@ -2118,16 +2134,14 @@ export function insertChatMessage(text: string, deleteDraftNr: DraftNr | undefin
 
 
 export function addUsersToPage(userIds: UserId[], success) {
-  postJsonSuccess('/-/add-users-to-page', () => {
-    // Send new store data in the reply? [5FKE0WY2]
+  postAndPatchStore('/-/add-users-to-page', () => {
     success();
   }, { pageId: getPageId(), userIds: userIds });
 }
 
 
 export function removeUsersFromPage(userIds: UserId[], success) {
-  postJsonSuccess('/-/remove-users-from-page', () => {
-    // Send new store data in the reply? [5FKE0WY2]
+  postAndPatchStore('/-/remove-users-from-page', () => {
     success();
   }, { pageId: getPageId(), userIds: userIds });
 }

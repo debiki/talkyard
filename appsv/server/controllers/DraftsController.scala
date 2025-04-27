@@ -174,8 +174,10 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def listDrafts(userId: UserId): Action[Unit] = GetActionRateLimited(RateLimits.ReadsFromDb) {
-        request: GetRequest =>
+  def listDrafts(userId: UserId): Action[Unit] = GetActionRateLimited(
+        RateLimits.ReadsFromDb,
+        MinAuthnStrength.EmbeddingStorageSid12,  // [if_emb_forum]
+        ) { request: GetRequest =>
     import request.{dao, theRequester => requester}
 
     // Tested here: [7WKABZP2]

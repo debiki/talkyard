@@ -105,7 +105,7 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: TyContex
 
         val user = dao.getTheUser(userId)
         dao.pubSub.userIsActive(siteId, user, request.theBrowserIdData)
-        val (sid, _, sidAndXsrfCookies) =
+        val (sid, xsrfToken, sidAndXsrfCookies) =
               security.createSessionIdAndXsrfToken(request, user.id)
 
         val response = if (request.isAjax) {
@@ -113,7 +113,8 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: TyContex
           SECURITY // a session cookie will get attached too — would be good if it could
           // be deleted server side. [serversid]
           OkSafeJson(Json.obj(
-            "weakSessionId" -> JsString(sid.value)))  // [NOCOOKIES]
+            "weakSessionId" -> JsString(sid.value),               // [NOCOOKIES]
+            "xsrfTokenIfNoCookies" -> JsString(xsrfToken.value))) // [emb_forum_xsrf_token]
         }
         else {
           // Remove server origin, so one cannot somehow get redirected to a phishing website
@@ -241,11 +242,12 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: TyContex
     val (user, _) =
           upsertUser(extUser, req, mayOnlyInsertNotUpdate = true)
 
-    val (sid, _, _) =
+    val (sid, xsrfToken, _) =
           security.createSessionIdAndXsrfToken(req, user.id)
 
     OkSafeJson(Json.obj(
-      "weakSessionId" -> JsString(sid.value)))  // [NOCOOKIES]
+      "weakSessionId" -> JsString(sid.value),               // [NOCOOKIES]
+      "xsrfTokenIfNoCookies" -> JsString(xsrfToken.value))) // [emb_forum_xsrf_token]
   }
 
 

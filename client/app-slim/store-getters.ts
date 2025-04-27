@@ -102,7 +102,7 @@ export function store_getUserOrMissing(store: DiscStore, userId: PatId,
       logError(`Participant ${userId} missing [TyE0PP-${errorCode2}]`);
     }
     return {
-      id: userId,
+      id: isNaN(userId) ? Pats.NoPatId : userId,
       // The first char is shown in the avatar image [7ED8A2M]. Use a square, not a character,
       // so it'll be easier to debug-find-out that something is amiss.
       fullName: `□ missing, id: ${userId} [EsE4FK07_]`,

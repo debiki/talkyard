@@ -113,17 +113,18 @@ class StackdriverLayout extends LayoutBase[ILoggingEvent] {
     totalJson.toString + CoreConstants.LINE_SEPARATOR
     */
 
-    val json =
-      if (isErrorOrWarning)
-        makeErrorOrWarningJson(event, message)
-      else
-        makeNormalJson(event, message)
+    var json: JsObject = makeNormalJson(event, message)
+
+    if (isErrorOrWarning) {
+      json = addMoreInfo(json, event)
+    }
 
     json.toString + CoreConstants.LINE_SEPARATOR
   }
 
 
-  def makeErrorOrWarningJson(event: ILoggingEvent, message: String): JsObject = {
+  def addMoreInfo(json0: JsObject, event: ILoggingEvent): JsObject = {
+    var json = json0
     // Expensive. Not sure if can be null or empty?
     val callerData = event.getCallerData
     val reportLocationJson =
@@ -137,10 +138,6 @@ class StackdriverLayout extends LayoutBase[ILoggingEvent] {
       }
       else JsNull
 
-    var json = makeKvsJson(event)
-    json += "eventTime" -> JsString(toIso8601T(System.currentTimeMillis()))
-    json += "message" -> JsString(message)
-    json += "severity" -> JsString(event.getLevel.levelStr)
     json += "serviceContext" -> Json.obj(
        "service" -> "talkyard-app",
        "version" -> generatedcode.BuildInfo.version)
@@ -151,6 +148,7 @@ class StackdriverLayout extends LayoutBase[ILoggingEvent] {
 
   def makeNormalJson(event: ILoggingEvent, message: String): JsObject = {
     var json = makeKvsJson(event)
+    json += "eventTime" -> JsString(toIso8601T(System.currentTimeMillis()))
     json += "message" -> JsString(message)
     json += "severity" -> JsString(event.getLevel.levelStr)
     json

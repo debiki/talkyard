@@ -240,15 +240,10 @@ describe("embcom.sort-order-op-likes-btn-txt.2br.ec  TyTEMBSORTLIKETXT", () => {
 
 
   it("Maria adds a comment", async () => {
-    // RACE E2EBUG: The login dialog somitimes pops up, although Maria is logged
-    // in already. — Does the test somehow click the button, before Maria's
-    // personal data has been added?
-    // 2024-06-18: Happened again: "Waiting for visible:  .s_MB_Name" repeated until timeout.
-    // 2024-06-20: Again
-    // await mariasBrowser.metabar.waitUntilLoggedIn(); // not needed, let's skip?
-    // 2024-09-09: Again. Annoying.
-    await mariasBrowser.pause(2000); // let's just do this, for now. There're more
-                                     // important things to do.
+    // Wait until Maria's data added, otherwise if clicking Reply before that,
+    // the login dialog pops up and the test breaks.
+    await mariasBrowser.switchToEmbeddedCommentsIrame();
+    await mariasBrowser.waitForMyDataAdded();
     await mariasBrowser.complex.replyToEmbeddingBlogPost("Hi I am here");
   });
 

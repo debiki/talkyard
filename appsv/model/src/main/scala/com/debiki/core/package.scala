@@ -796,6 +796,9 @@ package object core {
     val Never = new When(9100010001000L)
     val EndOfTime = Never
 
+    /** For auto tests. */
+    val JanOne2020HalfPastFive = new When(1577900000L * 1000)
+
     def fromDate(date: ju.Date) = new When(date.getTime)
     def fromOptDate(anyDate: Option[ju.Date]): Option[When] = anyDate.map(When.fromDate)
     def fromMillis(millis: UnixMillis) = new When(millis)

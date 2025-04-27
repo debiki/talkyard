@@ -25,6 +25,7 @@ import debiki.EdHttp._
 import debiki.dao.UploadsDao._
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.http.ApiRequest
+import talkyard.server.authn.MinAuthnStrength
 import java.{io => jio}
 import javax.inject.Inject
 import play.api._
@@ -111,7 +112,10 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: TyContext
 
   def uploadPublicFile: Action[Either[
             MaxSizeExceeded, MultipartFormData[Files.TemporaryFile]]] =
-        PostFilesAction(RateLimits.UploadFile, maxBytes = maxBytesLargeFile) { request =>
+        PostFilesAction(
+              RateLimits.UploadFile,
+              MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+              maxBytes = maxBytesLargeFile) { request =>
     import request.dao
 
     // This handles many uploaded files.
@@ -162,7 +166,10 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: TyContext
   }
 
 
-  def removeAvatar: Action[JsValue] = PostJsonAction(RateLimits.UploadFile, maxBytes = 200) { request =>
+  def removeAvatar: Action[JsValue] = PostJsonAction(
+        RateLimits.UploadFile,
+        MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+        maxBytes = 200) { request =>
     request.dao.setUserAvatar(request.theReqerId, tinyAvatar = None, smallAvatar = None,
       mediumAvatar = None, request.theBrowserIdData)
     Ok
@@ -173,8 +180,11 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: TyContext
     * for the tiny, small and medium avatars. Oh well.)
     */
   def uploadAvatar(userId: UserId)
-        : Action[Either[MaxSizeExceeded, MultipartFormData[Files.TemporaryFile]]] =
-        PostFilesAction(RateLimits.UploadFile, maxBytes = MaxAvatarUploadSizeBytes) { request =>
+            : Action[Either[MaxSizeExceeded, MultipartFormData[Files.TemporaryFile]]] =
+        PostFilesAction(
+              RateLimits.UploadFile,
+              MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
+              maxBytes = MaxAvatarUploadSizeBytes) { request =>
 
     if (!request.theUser.isAuthenticated)
       throwForbidden("EdE8YWM2", o"""Only authenticated users (but not guests) may upload avatars.
