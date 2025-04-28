@@ -5873,7 +5873,6 @@ export class TyE2eTestBrowser {
           if (!isGone)
             throw `Not yet gone: ${submitSelector}`;
         });
-        await this.waitUntilModalGone();
       }
     };
 

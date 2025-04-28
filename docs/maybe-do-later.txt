@@ -444,6 +444,9 @@ Need an approvalStatus [ApprovedStatus] field?
 Or:  0,1,2 = undec, apr, rej by sys.  4,8,16 by trusted,  core member,  32,64,128 by staff  ?
    bits 1,2                           3,4                 5,6           7,8
 
+[deleted_comment_not_loaded]
+If is admin or mod, or deleted-comment-author, do load, or show a button to load, delete comment?
+
 [7YKU24] UNPOLITE SHOULD stop auto approving chat messages.
 
 [flat-comments]:

@@ -302,11 +302,12 @@ describe(`modn-ban-from-disc-page.2br.f  TyTEBANFROMDISC`, () => {
   it(`... it's been deleted`, async () => {
     await modya_brA.topic.waitUntilPageDeleted();
   });
+  /*
   it(`... and Mallory's two comments (same page) also deleted`, async () => {
-    // Ooops but these won't be loaded ,since deld.
+    // Ooops but [deleted_comment_not_loaded].
     await modya_brA.topic.waitForPostVisibleAsDeleted(c.FirstReplyNr);
     await modya_brA.topic.waitForPostVisibleAsDeleted(c.SecondReplyNr);
-  });
+  }); */
 
   it(`Modya goes to Mallory's other new topic`, async () => {
     await modya_brA.go2(mallorysPagesFn().topicTwoUrl);
@@ -323,7 +324,8 @@ describe(`modn-ban-from-disc-page.2br.f  TyTEBANFROMDISC`, () => {
     const counts = await modya_brA.topic.countReplies();
     assert.deepEq(counts, {
           numNormal: 0, numDrafts: 0, numPreviews: 0, numUnapproved: 0,
-          // Deleted comments aren't loaded, unless there's non-deleted replies to them.
+          // Currently, [deleted_comment_not_loaded], unless there's non-deleted
+          // replies to them.
           numDeleted: 0 });
   });
 
