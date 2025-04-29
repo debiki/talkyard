@@ -238,7 +238,7 @@ object Dependencies {
     // See: https://github.com/playframework/scalatestplus-play/releases
     // and: https://mvnrepository.com/artifact/org.scalatestplus.play/scalatestplus-play
     // v6 is for Play 2.9, v7 for Play 3.0.
-    val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "6.0.1" % Test
+    val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1" % Test
 
     // Don't use, migrate to ScalaTest instead, some day.
     val specs2 = "org.specs2" %% "specs2-core" % "4.20.9" % "test"
