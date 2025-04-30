@@ -27,7 +27,7 @@ Compile / dependencyOverrides ++= {
       "commons-logging" % "commons-logging" % "1.3.2",
       "commons-validator" % "commons-validator" % "1.9.0",
       "org.apache.commons" % "commons-email" % "1.6.0",
-      "org.apache.tika" % "tika-core" % "2.9.3",
+      "org.apache.tika" % "tika-core" % "3.1.0",
       "org.jspecify" % "jspecify" % "1.0.0",
       "org.owasp.encoder" % "encoder" % "1.3.1",
       "org.playframework" % "play-functional_2.13" % "3.0.4",
