@@ -162,7 +162,7 @@ Compile / dependencyOverrides ++= {
       "org.elasticsearch.plugin" % "transport-netty4-client" % "6.8.23",
       "org.flywaydb" % "flyway-core" % "5.2.4",
       "org.hdrhistogram" % "HdrHistogram" % "2.1.9",
-      "org.jsoup" % "jsoup" % "1.19.1",
+      "org.jsoup" % "jsoup" % "1.20.1",
       "org.jspecify" % "jspecify" % "1.0.0",
       "org.lz4" % "lz4-java" % "1.8.0",
       "org.osgi" % "org.osgi.namespace.extender" % "1.0.1",
