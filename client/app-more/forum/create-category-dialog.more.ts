@@ -366,6 +366,8 @@ const CatSettings = createClassAndFactory({
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label' }, "Description"),
         r.div({},
+          // [emb_forum_nav_bug] Would be nice if this opened a dialog instead? So won't need
+          // to go to a different page? (on a different domain, if is an embedded forum.)
           r.a({ href: linkToRedirToAboutCategoryPage(category.id), target: '_blank' },
             "Edit description ", r.span({ className: 'icon-link-ext' }))),
         r.span({ className: 'help-block' },

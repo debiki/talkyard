@@ -450,7 +450,7 @@ const LoginDialogContent = createClassAndFactory({
           r.p({ className: 's_LD_NotFound_Details' },
             t.ld.IfYouThinkExistsThen +
             (props.isLoggedIn ? t.ld.LoggedInAlready : '') +
-            t.ld.ElseGoToHome_1, r.a({ className: 's_LD_NotFound_HomeL', href: '/' },
+            t.ld.ElseGoToHome_1, LinkUnstyled({ className: 's_LD_NotFound_HomeL', to: '/' },
               t.ld.ElseGoToHome_2)));
 
     const loginDlg = isSignUp ? null :

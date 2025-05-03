@@ -39,11 +39,11 @@ var SearchPageComponent = createReactClass(<any> {
   displayName: 'SearchPageComponent',
 
   render: function() {
-    return rFragment({},
+    return rFr({},
         r.div({ className: 'esLegal_home container', style: { marginTop: '20px' } },
           // href="/" will be wrong if coming from the forum and it's base path isn't /, but e.g.
           // /forum/. Ignore this minor problem, for now. [7KUFS25]
-          r.a({ className: 'esLegal_home_link', href: '/' }, "Home",
+          LinkUnstyled({ className: 'esLegal_home_link', to: '/' }, "Home",
             r.span({ className: 'esLegal_home_arw' }, ' →'))),
         r.div({},
           Route({ path: SearchRootPath, component: SearchPageContentComponent, exact: true })));
@@ -404,7 +404,7 @@ function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: St | Nr, 
   return (
     r.li({ className: 's_SR', key: props.key },
       r.h3({ className: 'c_SR_Ttl' + titleHitClass + bodyHitClass },
-        r.a({ href: pageAndHits.urlPath }, titleText)),
+        LinkUnstyled({ to: pageAndHits.urlPath }, titleText)),
         // Looks ugly. People will mostly understand anyway? And if not,
         // barely matters? Or they'll discover by clicking?
         // r.span({ className: 'c_F_TsL_T_Cat_Expl' }, t.ft.inC, ' '), 
@@ -428,7 +428,7 @@ function SearchResultHit(props: { hit: any, urlPath: string, key?: string | numb
       // (for comments).
       hit.postNr === TitleNr || hit.postNr === BodyNr ? null :
         r.span({ className: 'esSERP_Hit_In' },
-              "In ", r.a({ href: `${props.urlPath}#post-${hit.postNr}`,   // I18N
+              "In ", LinkUnstyled({ to: `${props.urlPath}#post-${hit.postNr}`,   // I18N
                   className: 'esSERP_Hit_In_Where' },
                 foundWhere(hit)), ': '),
       r.span({ className: 'esSERP_Hit_Text',

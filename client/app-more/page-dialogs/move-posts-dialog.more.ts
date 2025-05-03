@@ -69,9 +69,19 @@ const MovePostsDialog = createComponent({
         post.postType === PostType.BottomComment ? PostType.Normal : PostType.BottomComment;
     Server.changePostType(post.nr, otherSectionType, () => {
       util.openDefaultStupidDialog({
+        onCloseOk: this.close,
         body: r.div({},
           "Moved. ",
-          r.a({ href: `/-${store.currentPageId}#post-${post.nr}` }, "Click here to view"))
+          LinkUnstyled({ to: `/-${store.currentPageId}#post-${post.nr}`,
+                // We're already on the destination page, so LinkUnstyled does nothing `onClick`,
+                // unless: [_same_or_other_pg] (but still nice w link, can right click & copy url)
+                onClick: () => {
+                  utils.scrollIntoViewInPageColumn(
+                        `#post-${post.nr}`, { marginTop: 150, marginBottom: 300 });
+                  this.close();
+                }
+              },
+              "Click here to view"))
       });
     });
   },
@@ -90,9 +100,14 @@ const MovePostsDialog = createComponent({
       else {
         // Let the user decide him/herself if s/he wants to open a new page.
         const newPostUrl = '/-' + this.state.newPageId + '#post-' + postAfter.nr;
+        let closeFn: () => V;
         util.openDefaultStupidDialog({
+          withCloseFn: fn => closeFn = fn,
+          onCloseOk: this.close,
           body: r.div({},
-            "Moved. ", r.a({ href: newPostUrl }, "Click here to view it."))
+            // This link is to another page, so it works. [_same_or_other_pg]
+            "Moved. ", LinkUnstyled({ to: newPostUrl, afterClick: () => { closeFn(); }},
+                "Click here to view it."))
         });
       }
       if (this.state.closeCaller) this.state.closeCaller();

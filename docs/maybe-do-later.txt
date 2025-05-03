@@ -935,6 +935,9 @@ Make it possible to embedd a forum, or fourm cateory (no just blog comments).
 Later, disallow all the  [if_emb_forum]  endpoints, if is embedded, but *not* a forum
 (that is, for blog comments, or sth else unexpected).
 
+[emb_forum_nav_bug]
+<a> nav, instead of single-page-app nav —> gets logged out (and auto logged in).
+
 [emb_ifr_shortcuts]
 Make shortcuts work also if there're many iframes with blog comments comments
 visible at the same time.
