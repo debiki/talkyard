@@ -98,7 +98,7 @@ object Dependencies {
     // See: https://tika.apache.org
     // Need to upgrade soon, DO_BEFORE 2025-04-01,
     //    see: https://tika.apache.org/3.0.0-BETA/index.html
-    val apacheTika = "org.apache.tika" % "tika-core" % "2.9.3"
+    val apacheTika = "org.apache.tika" % "tika-core" % "2.9.4"
 
     // See: https://github.com/OWASP/owasp-java-encoder/releases
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.3.1"
