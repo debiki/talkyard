@@ -353,6 +353,10 @@ class TextAndHtmlTest extends AnyFreeSpec with must.Matchers {
       TESTS_MISSING // ipv6 addr?
     }
 
+    "follow links  TyTFOLLOWLNS" - {
+      TESTS_MISSING // Do follow links
+    }
+
   }
 
 }

@@ -732,9 +732,6 @@ sealed abstract class PageType(
     */
   def isGroupTalk: Boolean = false
 
-  // Also see [WHENFOLLOW].
-  def shallFollowLinks: Boolean = false
-
   def canClose: Boolean = !isSection
 
   def canBeSolved: Bo = false
@@ -757,15 +754,15 @@ object PageType {
 
   def InfoPageMaxId: Int = WebPage.toInt
 
+  // Only staff can create these.
+  @deprecated
   case object CustomHtmlPage extends PageType(1) {
-    // Only staff can create these — so ok to follow links.
-    override def shallFollowLinks = true
     override def canHaveReplies = false
   }
 
+  // Only staff can create these.
+  @deprecated
   case object WebPage extends PageType(2) {
-    // Only staff can create these — so ok to follow links.
-    override def shallFollowLinks = true
   }
 
   case object Code extends PageType(3) {

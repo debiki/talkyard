@@ -90,7 +90,7 @@ function makeHtmlUrlReplacerRule(md, defaultInlineRule) {
     if (!eds.uploadsUrlPrefixCommonmark)
       return defaultInlineRule(tokens, idx, options, env, self);
 
-    // Inside an html tag, replace any /-/u/... (uploads) match with the CDN address.
+    // Inside an html tag, replace any /-/u/... (uploads) match with the CDN or UGC address.
     const token = tokens[idx];
     const content = token.content;
     token.content = content.replace(uploadsRegexInTag, '$1' + eds.uploadsUrlPrefixCommonmark + '$3');

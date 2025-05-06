@@ -151,7 +151,7 @@ case class ActionDoer(dao: SiteDao, reqrInf: ReqrInf, mab: MessAborter) {
     val renderSettings = dao.makePostRenderSettings(pageType)
     dao.textAndHtmlMakerNoTx(_site).forBodyOrComment(
           params.bodySource, embeddedOriginOrEmpty = renderSettings.embeddedOriginOrEmpty,
-          allowClassIdDataAttrs = true, followLinks = pageType.shallFollowLinks)
+          allowClassIdDataAttrs = true, relFollowTo = renderSettings.relFollowTo)
   }
 
   private def _throwNotFound(code: St, msg: St): Nothing = {

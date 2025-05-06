@@ -728,6 +728,18 @@ case class EffectiveSettings(
     EffectiveSettings.getLinesNotCommentedOut(allowCorsFrom)
   }
 
+  def relFollowTo: imm.Seq[St] = {
+    _ownDomainsParsed ++ _followLinksToParsed
+  }
+
+  private def _ownDomainsParsed: imm.Seq[St] = {
+    EffectiveSettings.getLinesNotCommentedOut(ownDomains)
+  }
+
+  private def _followLinksToParsed: imm.Seq[St] = {
+    EffectiveSettings.getLinesNotCommentedOut(followLinksTo)
+  }
+
   /** The allowEmbeddingFrom field, but with any url path removed (if included, iframe won't
     * load at all in Chrome — url path not allowed? Weird, should be allowed:
     *    https://www.w3.org/TR/CSP2/#frame_ancestors, but this different docs says it's *not* allowed?:
@@ -784,7 +796,7 @@ object EffectiveSettings {
   val UrlPathRegex: Regex = """^(https?:\/\/)?([^\/]+)(\/.*)?$""".r
 
 
-  def getLinesNotCommentedOut(text: String): Seq[String] = {
+  def getLinesNotCommentedOut(text: String): imm.Seq[String] = {
     text.split("\n").map(_.trim).filterNot(
           line => line.isEmpty || line.startsWith("#"))
   }

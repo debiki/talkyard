@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2021 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2025 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as

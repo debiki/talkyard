@@ -2524,6 +2524,9 @@ interface Settings extends TopicInterfaceSettings, SettingsDiscPropsOldNames {
   contribAgreement: ContribAgreement;
   contentLicense: ContentLicense;
 
+  ownDomains: St
+  followLinksTo: St
+
   languageCode: string;
   googleUniversalAnalyticsTrackingId: string;
 

@@ -2839,6 +2839,32 @@ const AdvancedSettings = createFactory({
             canonicalHostnameSamp, " (with status 302 Found):"),
           r.pre({}, redirectingHostnames.join('\n'))));
 
+    const ownDomains =
+        Setting2(props, { type: 'textarea', label: "Your domains",
+          className: 's_A_Ss_YrDoms',
+          // [rel_follow_incl_subdoms]
+          help: r.span({}, "Links to your domains, incl subdomains, will be rel=follow. " +
+              "You can add many domains, one per line. Lines starting with # are ignored."),
+          placeholder: "www.your-website.com",
+          getter: (s: Settings) => s.ownDomains,
+          update: (newSettings: Settings, target) => {
+            newSettings.ownDomains = target.value;
+          }
+        });
+
+    const followLinksTo =
+        Setting2(props, { type: 'textarea', label: "Follow links to",
+          className: 's_A_Ss_FolLns',
+          // [rel_follow_incl_subdoms]
+          help: r.span({}, "Links to these 3rd party domains, incl subdomains, " +
+              "will be rel=follow. Lines starting with # are ignored."),
+          placeholder: "www.external-website.com",
+          getter: (s: Settings) => s.followLinksTo,
+          update: (newSettings: Settings, target) => {
+            newSettings.followLinksTo = target.value;
+          }
+        });
+
     const googleAnalyticsId =
         Setting2(props, { type: 'text', label: "Google Analytics 4 Tag ID",
           help: r.span({}, "A tag ID, e.g. ", r.samp({}, "G-123ABC456D"),
@@ -2874,6 +2900,8 @@ const AdvancedSettings = createFactory({
         changeHostnameFormGroup,
         duplicatingHostsFormGroup,
         redirectingHostsFormGroup,
+        ownDomains,
+        followLinksTo,
         dangerZoneTitle,
         deleteSiteFormGroup));
 

@@ -972,6 +972,7 @@ sanitizing,
 clean html:
   [rel_nofollow]:
           - sanitize-posts.2browsers.test.ts  TyT603RMDL3.TyTRELNOFLW01
+          - TyTFOLLOWLNS  TESTS_MISSING  in TextAndHtmlTest
   [reverse_tabnabbing]:
           - sanitize-posts.2browsers.test.ts  TyT603RMDL3.TyTREVTABNAB01
 

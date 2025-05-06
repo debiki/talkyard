@@ -1,0 +1,60 @@
+
+Globals.scala:
+
+~~~~
+    /** User-generated content (UGC) can (if configured) be accessed via an UGC CDN.
+      * Then, the CDN subdomains are like "u-aabbcc112233" or "a-..."  for user-generated
+      * content, and admins' custom site assets (site specific scripts & styles).
+      */
+    val anySiteByUgcPrefixAndIdHostnameRegex: Opt[Regex] = anyUgcBaseDomain map { ugcBaseDomain =>
+      s"""^([au]-)(.*)\\.$ugcBaseDomain$$""".r
+    }
+
+   ...
+
+   /** Looks up a site by hostname, or directly by id.
+     *
+     * By id: If a HTTP request specifies a hostname like "site-<id>.<baseDomain>",
+     * for example:  site-123.example.com,
+     * then the site is looked up directly by id.
+——>  * Or if it's via a CDN: "u-<id>.cdn.example.com" for user-generated content,
+——>  * or "a-<id>..." for scripts and styles added by admins.
+     */
+
+    // If the hostname is  "u-<site-pub-id>" or "a-...",  then it's a CDN subdomain for
+    // user-generated contents (UGC).
+~~~~
+
+PageTpi:
+
+~~~~
+
+       // For embedded comments pages, relative links don't work — then need to include
+       // the Talkyard server origin in the links. [REMOTEORIGIN] [60MRKDJ56]
+       "embeddedOriginOrEmpty" -> renderParams.embeddedOriginOrEmpty,
+       "anyCdnOrigin" -> JsStringOrNull(renderParams.anyCdnOrigin),
++      "anyUgcOrigin" -> JsStringOrNull(globals.anyUgcOriginFor(site)),
+~~~~
+
+~~~~
+ export function linkToUpload(origins: Origins, uploadsPath: string): string {
+-  // If there's a CDN, always access uploaded pics via the CDN. Or,
+-  // if we're in an embedded comments discussion, access the pics via the Talkyard
+-  // server's origin = the remote origin. Otherwise, no origin needed (empty string).
+-  const origin = origins.anyCdnOrigin || origins.embeddedOriginOrEmpty;
++  // If 1) there's a UGC CDN, always access uploaded pics via that. Or if 2) we're
++  // in an embedded comments discussion, access the pics via the Talkyard server's
++  // origin = the remote origin, otherwise the pic urls would resolve relative to
++  // the *blog*'s address, but the blog doesn't host the pics (they'd be 404 Not Found).
++  // Otherwise 3) no origin needed (empty string).
++  const origin = origins.anyUgcOrigin || origins.anyCdnOrigin || origins.embeddedOriginOrEmpty;
+~~~~
+
+commit dce5b3faa0cce6bbdaaf55bae4c9773d545f80f6
+Author: Kaj Magnus Lindberg <kajmagnus3@gmail.com>
+Date:   Mon May 22 00:36:51 2023 +0200
+
+    Support UGC subdomains
+    
+
+

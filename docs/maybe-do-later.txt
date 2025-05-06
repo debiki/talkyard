@@ -464,7 +464,8 @@ How do that, UX wise? Maybe ask, when *opening* instead of when *saving*? and al
 save a draft by default? Because maybe short of time when saving (e.g. need to run and
 catch the subway, happens to me all the time) then it's annoying with questions.
 
-[relfollow]:
+[relfollow] [WHENFOLLOW]
+Mostly done:
 Add a 'rel=follow links to domains: ...' config value,
 so peope can follow links to their own domains.
 Domains where rel=nofollow should not be added to links.

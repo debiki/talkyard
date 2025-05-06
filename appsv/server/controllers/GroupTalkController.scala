@@ -66,12 +66,15 @@ class GroupTalkController @Inject()(cc: ControllerComponents, edContext: TyConte
     throwForbiddenIf(sender.id == SystemUserId, "EsE4GK8F4",
       "The System user cannot send private messages")
 
+    // Old comment. Now there's Settings.ownDomains and followLinksTo, that's better.
+    // -----
     // Don't follow links inside a chat; chats don't work well with search engines anyway, and
     // higher risk people say/write/link-to weird things, because chats = chatty = less moderated.
+    // -----
     val postRenderSettings = dao.makePostRenderSettings(pageRole)
     val bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(text,
       embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
-      allowClassIdDataAttrs = true, followLinks = false)
+      allowClassIdDataAttrs = true, relFollowTo = postRenderSettings.relFollowTo)
     val titleSourceAndHtml = TitleSourceAndHtml(title)
 
     val pagePath = dao.startGroupTalk(
