@@ -1,19 +1,27 @@
 #!/usr/bin/bash
 
-if [ ! -d  ~/.nix-profile ]; then
+if [ -n "$IN_NIX_SHELL" ]; then
+  : # Noop. In a Nix shell, fine.
+elif [ -z "$(which nix)" ]; then
   echo
   echo "First install Nix — see docs/starting-talkyard.md.  Bye for now."
   echo
   exit 1
-fi
-
-if [ -z "$IN_NIX_SHELL" ]; then
+else
   echo
   echo "First start Nix shell:"
   echo
-  echo "    nix-shell"
+  echo "    nix develop"
   echo
   echo "Then try this script again (inside the Nix shell).  Bye."
+  echo
+  exit 1
+fi
+
+if [ -z "$(which deno)" ]; then
+  echo
+  echo "Wrong Nix shell?  I don't see any 'deno' executable, but I need"
+  echo "Deno to run s/tyd.ts, which is written in Typescript.  Error.  Bye."
   echo
   exit 1
 fi
@@ -30,6 +38,8 @@ fi
 make git-subm-init-upd
 
 # Download ts-node — s/tyd.js (below) calls tyd.ts (Typescript).
+# Update, y2025: But isn't this directory vendored now? Gets downloaded by Git, when
+# updating submodules (above)?
 make node_modules
 
 s/tyd.js "$@"

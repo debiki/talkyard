@@ -16,6 +16,7 @@ On Linux, you can:
 sudo -i
 curl -fsSL https://get.docker.com -o install-docker.sh
 sh install-docker.sh
+# [ty_v1] Skip this:
 curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 docker-compose --version  # should print "docker-compose version ... build ..."
@@ -59,16 +60,18 @@ how to use docker-compose already.
     and a file change notifier:  (hmm maybe use `gpg` instead, it's the same as gpg2
     at least in Debian 11?)
 
+    [ty_v1] Skip Make? getting it via a Nix flake instead. The other tools too? Not Git though.
+
     ```
     sudo apt install git make curl jq gpg gnupg2 inotify-tools
     ```
 
-1.  Install the Nix package manager 2.5.1 or a later 2.x,
-    see https://nixos.org/download.html#nix-verify-installation.
-    Nix gives you all build tools, no need to modify your host OS.
-    For example, Nodejs 14. And later, Deno, and Rust build stuff.
+1.  Install the Nix package manager, see: see https://nixos.org/download.html.
 
-    Get the installation script and signature:
+    Nix gives you all build tools, no need to modify your host OS.
+    For example, Nodejs 22, Deno, Yarn.
+
+    Get the installation script and signature: (replace 2.5.1 with the current version)
 
     ```
     curl -o install-nix-2.5.1      https://releases.nixos.org/nix/nix-2.5.1/install
@@ -116,7 +119,7 @@ how to use docker-compose already.
 1. Start Talkyard from inside Nix-shell: (`s/tyd` is a Talkyard development helper script)
 
     ```
-    nix-shell
+    nix develop
     s/tyd up
     ```
 

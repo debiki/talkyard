@@ -30,9 +30,6 @@ dnsmasq. You can make `*.localhost` work like so: (do this only once)
 
 Then restart NetworkManager:
 
-    sudo service network-manager restart
-
-    # Hmm seems now it's instead: (Debian 11)
     sudo systemctl restart NetworkManager
 
 Wait half a minute, then this should work: `ping whatever.localhost`.
@@ -51,7 +48,7 @@ dns=dnsmasq
 EOF
 ```
 
-#### Qubes OS, Debian 11 Standalone VM
+#### Qubes OS, Debian 11 or 12 Standalone VM
 
 Assuming you use a stand-alone Debian qube (i.e. VM) for developing
 Talkyard, then, **follow the instructions** for **Debian** (!) just above.
@@ -65,12 +62,12 @@ inside the qube itself won't work. In dom0, do this:
 
 And apparently you need to reboot the qube too.
 
-#### Qubes OS, Debian 11 AppVM
+#### Qubes OS, Debian 11 or 12 AppVM
 
-In the relevant Debian 11 TemplateVM:
+In the relevant Debian 11 or 12 TemplateVM:
 
-- Add the file `/etc/NetworkManager/dnsmasq.d/wildcard.localhost.conf` ans shown in the Ubuntu section above.
-- Add the file `/etc/NetworkManager/conf.d/00-use-dnsmasq.conf` ans shown in the Debian section above.
+- Add the file `/etc/NetworkManager/dnsmasq.d/wildcard.localhost.conf` as shown in the Ubuntu section above.
+- Add the file `/etc/NetworkManager/conf.d/00-use-dnsmasq.conf` as shown in the Debian section above.
 
 In dom0, type this: (type, since you cannot cross-VM-paste to dom0)
 
