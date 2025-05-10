@@ -114,7 +114,7 @@ Compile / dependencyOverrides ++= {
       "joda-time" % "joda-time" % "2.10.10",
       "net.logstash.logback" % "logstash-logback-encoder" % "8.0",
       "net.sf.jopt-simple" % "jopt-simple" % "5.0.2",
-      "nl.grons" % "metrics4-scala_2.13" % "4.2.9",
+      "nl.grons" % "metrics4-scala_2.13" % "4.3.4",
       "org.apache.commons" % "commons-email" % "1.6.0",
       "org.apache.commons" % "commons-lang3" % "3.17.0",
       "org.apache.httpcomponents" % "httpasyncclient" % "4.1.2",
