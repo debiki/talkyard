@@ -30,7 +30,7 @@ export function listenForLinkPreviewIframeSizeMessages() {
 function onMessageFromChildIframe(event: WindowEventMap['message']) {
   // TESTS_MISSING  TyT037MKAH24
 
-  logT('onMessageFromChildIframe: ' + JSON.stringify(event.data));
+  //logT('onMessageFromChildIframe: ' + JSON.stringify(event.data));
   if (!_.isArray(event.data))
     return;
 

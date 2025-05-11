@@ -938,6 +938,10 @@ Later, disallow all the  [if_emb_forum]  endpoints, if is embedded, but *not* a 
 [emb_forum_nav_bug]
 <a> nav, instead of single-page-app nav —> gets logged out (and auto logged in).
 
+[iframe_jump_bug]
+When opening & closing a dialog in an iframe (e.g show-likes, about-user ...), the parent
+window (embedding page) jumps up/down to show as much as possible of the iframe. Why? Annoying.
+
 [emb_ifr_shortcuts]
 Make shortcuts work also if there're many iframes with blog comments comments
 visible at the same time.

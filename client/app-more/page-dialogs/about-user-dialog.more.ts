@@ -313,10 +313,7 @@ const AboutUser = createComponent({
     // See goup list tests:
     //      - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyTSEEPATSGROUPS
     const groupList = userDetailed && GroupList(
-        userDetailed, groupsMaySee, 's_UP_Ab_Stats_Stat_Groups_Group',  // COULD rename css class
-        // `false`: Use r.a() not a Link() because we're not inside a React Router.
-        // UX COULD place all dialog roots inside the router elem, so Link() will work?
-        false);
+        userDetailed, groupsMaySee, 's_UP_Ab_Stats_Stat_Groups_Group'); // COULD rename css class
 
     return (
       r.div({ 'data-username': user.username },
