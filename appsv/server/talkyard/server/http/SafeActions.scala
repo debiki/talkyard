@@ -311,7 +311,7 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
             "TyEDATABCONN1", "")
         else
           (o"""Talkyard's application server suddenly can no longer connect
-            to the PostgreSQL database server""",
+            to the PostgreSQL database server. — Maybe the database ran out of disk?""",
             "TyEDATABCONN2", "Or did a query take too long?")
       }
 
