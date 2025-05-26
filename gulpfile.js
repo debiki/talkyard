@@ -415,7 +415,7 @@ var jqueryJsFiles = [
 // For both touch devices and desktops.
 // (parten-header.js and parent-footer.js wraps and lazy loads the files inbetween,
 // see client/embedded-comments/readme.txt.)
-// Sync w Makefile [embcmts_js_files]
+// Sync w Makefile [embcmts_js_files]  [dupl_emb_comts_forum]
 var embeddedJsFiles = [
       'client/embedded-comments/parent-header.js',
       'client/third-party/bliss.shy.js',
@@ -426,6 +426,19 @@ var embeddedJsFiles = [
       //'target/client/app-2d/utterscroll/utterscroll-init-tips.js',
       'client/app-slim/utils/calcScrollRectIntoViewCoords.js',
       'target/client/blog-comments-typescript.js',
+      'client/embedded-comments/parent-footer.js'];
+
+// Sync w Makefile [emb_forum_js_files]  [dupl_emb_comts_forum]
+var embeddedForumJsFiles = [
+      'client/embedded-comments/parent-header.js',
+      'client/third-party/bliss.shy.js',
+      'client/third-party/smoothscroll-tiny.js',
+      //'client/third-party/jquery-scrollable.js',
+      //'client/third-party/jquery.browser.js',
+      //'target/client/embedded-comments/debiki-utterscroll-iframe-parent.js',
+      //'target/client/app-2d/utterscroll/utterscroll-init-tips.js',
+      'client/app-slim/utils/calcScrollRectIntoViewCoords.js',
+      'target/client/embedded-forum-typescript.js',
       'client/embedded-comments/parent-footer.js'];
 
 
@@ -546,6 +559,7 @@ var moreTypescriptProject = typeScript.createProject("client/app-more/tsconfig.j
 var staffTypescriptProject = typeScript.createProject("client/app-staff/tsconfig.json");
 var editorTypescriptProject = typeScript.createProject("client/app-editor/tsconfig.json");
 var blogCommentsTypescriptProject = typeScript.createProject("client/embedded-comments/tsconfig.json");
+var embeddedForumTypescriptProject = typeScript.createProject("client/embedded-forum/tsconfig.json");
 /*
 var _2dTypescriptProject = typeScript.createProject({  // [SLIMTYPE]
   target: 'ES5',
@@ -635,7 +649,7 @@ gulp.task('compileEditorTypescript-concatScripts',
 }));
 
 
-gulp.task('compileBlogCommentsTypescript', () => {
+gulp.task('compileBlogCommentsTypescript', () => {  // [dupl_emb_comts_forum]
   return compileTypescript(blogCommentsTypescriptProject);
 });
 gulp.task('compileBlogCommentsTypescript-concatScripts',
@@ -643,6 +657,14 @@ gulp.task('compileBlogCommentsTypescript-concatScripts',
   return makeConcatStream('talkyard-comments.js', embeddedJsFiles, 'DoCheckNewer', false);
 }));
 
+
+gulp.task('compileEmbeddedForumTypescript', () => {  // [dupl_emb_comts_forum]
+  return compileTypescript(embeddedForumTypescriptProject);
+});
+gulp.task('compileEmbeddedForumTypescript-concatScripts',
+        gulp.series('compileEmbeddedForumTypescript',() => {
+  return makeConcatStream('talkyard-forum.js', embeddedForumJsFiles, 'DoCheckNewer', false);
+}));
 
 
 function makeConcatStream(outputFileName, filesToConcat, checkIfNewer, versioned) {
@@ -683,6 +705,7 @@ gulp.task('compileConcatAllScripts', gulp.series(  // speed up w gulp.parallel? 
   'compileStaffTypescript-concatScripts',
   'compileEditorTypescript-concatScripts',
   'compileBlogCommentsTypescript-concatScripts',
+  'compileEmbeddedForumTypescript-concatScripts',
   'bundleZxcvbn'));
 
 
@@ -962,6 +985,10 @@ gulp.task('watch', gulp.series((done) => {
   gulp.watch(['client/embedded-comments/**/*.js', 'client/embedded-comments/**/*.ts'],
       gulp.series('compileBlogCommentsTypescript-concatScripts'))
     .on('change', logChangeFn('Blog comments typescript'));
+
+  gulp.watch(['client/embedded-forum/**/*.js', 'client/embedded-forum/**/*.ts'],
+      gulp.series('compileEmbeddedForumTypescript-concatScripts'))
+    .on('change', logChangeFn('Embedded forum typescript'));
 
   gulp.watch(
       'client/**/*.styl',
