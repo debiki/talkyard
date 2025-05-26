@@ -104,11 +104,11 @@ describe("embedded-forum-no-cookies-login  TyT5029FKRDE", () => {
   });
 
 
-  function makeHtml(pageName: string, extraHeight: number, bgColor: string): string {
+  function makeHtml(pageName: string, bgColor: string): string {
     return `
 <html>
 <head>
-<title>Embedded forum E2E test</title>
+<title>Embedded forum SSO E2E test</title>
 <style>
 iframe {
   width: calc(100% - 40px);
@@ -121,12 +121,13 @@ iframe {
 <p>Embedded forum E2E test page ${pageName}. Ok to delete. [205KDGJURM2]
 <hr>
 
-<!--
-<script>talkyardServerUrl='${settings.scheme}://${localHostname}.localhost';</script>
--->
-<script async defer src="${siteIdAddress.origin}/-/talkyard-embedded-forum.js"></script>
+<script>
+talkyardServerUrl='${settings.scheme}://${localHostname}.localhost';
+</script>
+
+<script async defer src="${siteIdAddress.origin}/-/talkyard-forum.js"></script>
+
 <div class="talkyard-forum" style="margin-top: 45px;">
-<iframe src="${settings.scheme}://${localHostname}.localhost">Oops iframe didn't want to load</iframe>
 
 <hr>
 <p>/End of page.</p>

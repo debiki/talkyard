@@ -392,6 +392,7 @@ export class TyE2eTestBrowser {
   #hostsVisited = {};
   #isWhere: IsWhere | U;
   #isOnEmbeddedCommentsPage = false;
+  #isOnEmbeddedForumPage = false;
   #useCommentsIframe: { discussionId: St } | U;
 
   isOnEmbeddedPage(): boolean {
@@ -735,11 +736,16 @@ export class TyE2eTestBrowser {
       // .DW = discussion / topic list page.  .btn = e.g. a Continue-after-having-verified
       // -one's-email-addr page.
       // ('ed-comments' is old, deprecated, class name.)
-      await this.waitForExist('.DW, .talkyard-comments, .ed-comments, .btn');
+      await this.waitForExist('.DW, .talkyard-forum, .talkyard-comments, .ed-comments, .btn');
       this.#isOnEmbeddedCommentsPage =
           await (await this.$('.talkyard-comments')).isExisting() ||
           await (await this.$('.ed-comments')).isExisting();
-      this.#isWhere = this.#isOnEmbeddedCommentsPage ? IsWhere.EmbeddingPage : IsWhere.Forum;
+      this.#isOnEmbeddedForumPage =
+          await (await this.$('.talkyard-forum')).isExisting();
+      this.#isWhere =
+            this.#isOnEmbeddedCommentsPage || this.#isOnEmbeddedForumPage
+                ? IsWhere.EmbeddingPage
+                : IsWhere.Forum;
     }
 
 
@@ -9387,7 +9393,7 @@ export class TyE2eTestBrowser {
 
         embedded: {
           goHere: async (origin?: St) => {
-            await this.go((origin || '') + '/-/admin/settings/embedded-comments');
+            await this.go2((origin || '') + '/-/admin/settings/embedded-comments');
           },
 
           setAllowEmbeddingFrom: async (value: St) => {
