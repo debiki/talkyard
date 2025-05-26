@@ -117,7 +117,7 @@ class SiteTpi protected (
   def anyCurrentPageMeta: Option[PageMeta] = None
 
   def anyDiscussionId: Option[AltPageId] = None
-  def anyEmbeddingUrl: Option[String] = None
+  def anyEmbeddingUrl: Option[String] = request.embeddingUrlParam  // [emb_forum]
   def lazyCreatePageInCatId: Option[CategoryId] = None
 
   def anyEmbeddingOrigin: Option[String] = anyEmbeddingUrl map { url =>
@@ -193,6 +193,8 @@ class SiteTpi protected (
       else "StartPage"
     }
 
+    val embgUrl = request.embeddingUrlParam
+
     // Some more [server_static_vars] are derived, browser side.
     var safeStaticJson = Json.obj(
           "doWhat" -> doWhat,
@@ -226,6 +228,7 @@ class SiteTpi protected (
           "embeddedPageAltId" -> JsStringOrNull(anyDiscussionId), // @Html(discussionIdOrUndefined),
           "lazyCreatePageInCatId" -> JsNumberOrNull(lazyCreatePageInCatId), //@Html(lazyCreatePageInCatId),
           // ----------------------
+          "embgUrl" -> JsStringOrNull(embgUrl),
 
           "assetUrlPrefix" -> assetUrlPrefix,
           "uploadsUrlPrefixCommonmark" -> uploadsUrlPrefix,

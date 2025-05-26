@@ -3619,11 +3619,16 @@ interface ServerVars {
   // For embedded comments.
   isInEmbeddedCommentsIframe: boolean;
   isInEmbeddedEditor: boolean;
+  isInEmbForum?: Bo  // currently same as embHow === 'Forum'
+  //isInEmbForumComts?: Bo // maybe ?
 
   embeddingScriptV?: Nr;
+  // Deprecated, use  embgOrigin  instead? Not incorrectly cache server side.
   embeddingOrigin?: string;
 
   embHow?: 'Forum' | St  // or sth else (invalid). A url param
+  embgUrl?: St
+  embgOrigin?: St
 
   // Wrap in an obj so they can be updated all at the same time?
   // ---------------

@@ -62,6 +62,9 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
 
     import request.dao
 
+    devDieIf(request.embeddingUrlParam.get != embeddingUrl, "TyEEMBURLS",
+        s"request.embeddingUrlParam: ${request.embeddingUrlParam}, embeddingUrl: $embeddingUrl")
+
     // Later, the params can optionally be signed with PASTEO,  [blog_comments_sso]
     // for those who are worried that end users edit the html and type their own
     // category or discussion ids. (There's always access control though.)

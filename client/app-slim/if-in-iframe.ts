@@ -36,7 +36,7 @@ export function startIframeMessages() {
       JSON.stringify(['iframeInited', {}]),
       eds.embeddingOrigin);
 
-  if (eds.isInEmbeddedCommentsIframe)
+  if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum)
     syncDocSizeWithIframeSize();
 }
 
@@ -81,6 +81,7 @@ function onMessage(event) {
   switch (eventName) {
     case 'loginWithAuthnToken':
       // This gets sent to the first comments iframe only. [1st_com_frame]
+      dieIf(!eds.isInEmbeddedCommentsIframe && !eds.isInEmbForum, 'TyE305RK2');
       const authnToken = eventData;
       // REFACTOR to Authn.loginWithToken, calls Server and loadMyself()? [ts_authn_modl]
       Server.loginWithAuthnToken(authnToken, SessionType.AutoTokenSiteCustomSso,
@@ -92,7 +93,7 @@ function onMessage(event) {
       break;
     case 'loginWithOneTimeSecret':
       // This gets sent to the first comments iframe only. [1st_com_frame]
-      dieIf(!eds.isInEmbeddedCommentsIframe, 'TyE50KH4');
+      dieIf(!eds.isInEmbeddedCommentsIframe && !eds.isInEmbForum, 'TyE50KH4');
       const oneTimeLoginSecret = eventData;
       // REFACTOR to Authn.loginWithOneTimeSecret? [ts_authn_modl]
       Server.loginWithOneTimeSecret(oneTimeLoginSecret, function() {
@@ -103,7 +104,7 @@ function onMessage(event) {
       break;
     case 'resumeWeakSession':
       // This gets sent to the first comments iframe only. [1st_com_frame]
-      dieIf(!eds.isInEmbeddedCommentsIframe, 'TyE305RK3');
+      dieIf(!eds.isInEmbeddedCommentsIframe && !eds.isInEmbForum, 'TyE305RK3');
       const pubSiteId = eventData.pubSiteId;
       if (eds.pubSiteId === pubSiteId) {
         // REFACTOR break out fn Authn.loginWithOldSession()?  [ts_authn_modl]
@@ -271,12 +272,27 @@ function syncDocSizeWithIframeSize() {
     // outside the iframe.  2) Don't use document.body.clientHeight — it might be
     // too small, before iframe resized. 3) body.offsetHeight can be incorrect
     // if nested elems have margin-top.  But this works fine:  [iframe_height]
-    var discussion = $byId('dwPosts');
-    var currentWidth = discussion.clientWidth;
-    var currentDiscussionHeight = discussion.clientHeight;
+    const discussion = $byId('dwPosts');
+    const currentWidth = discussion.clientWidth;
+    const currentDiscussionHeight = discussion.clientHeight;
 
-    // Make space for any notf prefs dialog — it can be taller than the emb cmts
-    // iframe height, before there're any comments. [IFRRESIZE]
+    // In embedded forums, there's a footer too, and sometimes an editor.
+    const anyFooter = $first('footer');
+    const footerMargin = 28; // see page.styl [footer_margin_top]
+    const footerHeight = anyFooter && (anyFooter.clientHeight + footerMargin) || 0;
+
+    // (There's an 1px border, so don't use `.clientHeight` — it ignores borders.
+    // Hmm, but then the iframe starts growin 1px at a time, forever! So, don't.
+    // But why not?)
+    const anyEditor = $first('#debiki-editor-controller');
+    // Or skip? [dont_incl_editor_in_ifram_height]
+    const editorHeight = 0; // anyEditor && anyEditor.clientHeight || 0;
+
+    // Skip, included in anyEditor already:
+    //const anyEditorBtns = $first('.submit-cancel-btns');
+
+    // Make space for any dialogs, e.g. the notf prefs dialog — they can be taller than
+    // the emb cmts iframe height, before there're any comments. [IFRRESIZE]
     const anyDialog = $first('.esDropModal_content');
     let dialogHeightPlusPadding = 0;
     if (anyDialog) {
@@ -285,7 +301,9 @@ function syncDocSizeWithIframeSize() {
       // Was: anyDialog.clientHeight + 30, but that didn't incl whitespace above.
     }
 
-    const currentHeight = Math.max(currentDiscussionHeight, dialogHeightPlusPadding);
+    const currentHeight = Math.max(
+            currentDiscussionHeight + footerHeight + editorHeight,
+            dialogHeightPlusPadding);
 
     if (lastWidth === currentWidth && lastHeight === currentHeight)
       return;

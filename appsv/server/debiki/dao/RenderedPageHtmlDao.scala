@@ -98,7 +98,7 @@ trait RenderedPageHtmlDao {
             jsonResult.version, cachedHtmlContent, cachedVersion,
             jsonResult.pageTitleUnsafe, jsonResult.customHeadTags,
             anyDiscussionId = pageRequest.altPageId,
-            anyEmbeddingUrl = pageRequest.embeddingUrl,
+            anyEmbeddingUrl = pageRequest.embeddingUrl.orElse(pageRequest.embeddingUrlParam),
             // Page already exists — no lazy-create-in-category needed.
             lazyCreatePageInCatId = None)
 

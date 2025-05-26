@@ -50,6 +50,16 @@ export function ExtVerbLink(url: St): RElm {
 
 /**
  * Redirects the URL path only — preserves query string and hash fragment.
+ *
+ * Doesn't seem to work from inside an <iframe>: ReactRouter's Redirect somehow
+ * redirects to the embedd*ing* websites origin [react_redir_broken_iframe]
+ * + the embedded Talkyard forum path, resulting in a security error.
+ * And wouldn't work anyway, since wrong domain. But why does this happen?
+ * ReactRouter gives just a /local/path to History.pushState(state, unused, newPath),
+ * don't know what makes the *origin* then change. —
+ * Here's the source: (as of 2025-05)
+ *    <ty-repo>/node_modules/react-router/cjs/react-router.js
+ * But history.push(localPath) works just fine. [hist_push_in_iframe]
  */
 export function RedirPath(props: RedirPathProps) {
   // @ifdef DEBUG

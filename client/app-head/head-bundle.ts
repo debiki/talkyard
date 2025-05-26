@@ -182,6 +182,7 @@ if (_narrow) {
 try {
   var _searchParams = new URLSearchParams(location.search);
   var _embHow = _searchParams.get('embHow'); // [emb_forum]
+  var _embgUrl = _searchParams.get('embgUrl'); // [emb_forum]
   var _ssoHow = _searchParams.get('ssoHow');
   var _class = _searchParams.get('htmlClass');
   if (_class) {
@@ -266,6 +267,10 @@ eds.isIos = _ios;
   */
 eds.isInIframe = _isInIframe;
 eds.isInEmbeddedCommentsIframe = _isInEmbCmtsIframe && !eds.isInEmbeddedEditor;
+eds.isInEmbForum = _isInIframe && _embHow === 'Forum';
+if (eds.isInEmbForum) {
+  _doc.className += ' n_InEmbForum';
+}
   /*
   isInAdminArea: @{ if (isAdminApp) "true" else "false" },
   isRtl: @{ if (tpi.isRtlLanguage) "true" else "false" },
@@ -288,6 +293,14 @@ if (!eds.isInEmbeddedEditor) {
   loadGlobalStaffScript: @{ tpi.globals.loadGlobalStaffScript.toString },
   */
 
+// ignore server side, and 'embeddingUrl' too, except for looking up page?
+// Don't incl in static page html?
+eds.embgUrl = _embgUrl;
+                                        //  "https: //  hostname"
+eds.embgOrigin = _embgUrl && _embgUrl.match(/^[^/]*\/\/[^/]+/)[0];  // [extr_origin]
+eds.embeddingOrigin = eds.embgOrigin;   // for now. Remove 'embeddingOrigin' later?
+                                        // Need to review usage in the editor though.
+
 eds.embHow = _embHow;
 eds.ssoHow = _ssoHow;
 
@@ -303,6 +316,38 @@ var typs: PageSession = {
   canUseCookies: navigator.cookieEnabled &&
       !eds.isInIframe,  // [iframe_cookies_always_broken]
 };
+
+// Make pushState() and replaceState() work in iframes — not sure why, but only
+// *sometimes* the browser complains that: [hist_push_in_iframe])
+//
+//   Uncaught SecurityError: Failed to execute 'pushState' on 'History':
+//   A history state object with URL
+//       'http://e2e-test-www.localhost:8080/-/users/maria'
+//   cannot be created in a document with origin
+//       'http://e2e-test-emb-forum.localhost'
+//   and URL
+//       'http://e2e-test-emb-forum.localhost/latest?embHow=Forum&embgUrl=http%3A%2F%2Fe2e-test-www.localhost%3A8080%2Femb-page-one.html&logLevel=trace&embeddingScriptV=2'.
+//
+// But with the origin included, that doesn't happen.
+// For now, don't:  `eds.embgOrigin !== location.origin` — would affect blog comments too.
+//
+if (eds.isInEmbForum) {
+  const origPushState = window.history.pushState;
+  const origReplaceState = window.history.replaceState;
+
+  window.history.pushState = function(state, unused, url) {
+    let betterUrl = url;
+    if (url[0] === '/') betterUrl = location.origin + url;
+    origPushState.call(window.history, state, unused, betterUrl);
+  };
+
+  window.history.replaceState = function(state, unused, url) {
+    let betterUrl = url;
+    if (url[0] === '/') betterUrl = location.origin + url;
+    origReplaceState.call(window.history, state, unused, betterUrl);
+  };
+}
+
 
 // API, for custom scripts, e.g. MathJax. Type declaration in model.ts [5ABJH72].
 var talkyard = {};

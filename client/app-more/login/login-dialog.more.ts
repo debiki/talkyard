@@ -114,7 +114,10 @@ const LoginDialog = createClassAndFactory({
   open: function(isSignUp: boolean, loginReason: LoginReason,
         anyReturnToUrl?: string, callback?: () => void, preventClose?: boolean) {
 
-    dieIf(isInSomeEmbCommentsIframe(), 'Login dialog in some emb cmnts iframe [EdE5KER2]');
+    // (But if we're in an embedded forum, then we do show the login dialog, in the <iframe> —
+    // embedded forum iframes are typically wider, so less likely to cause UX problems.)
+    dieIf(isInSomeEmbCommentsIframe() && !eds.isInEmbForum,
+          'Login dialog in some emb cmnts iframe [EdE5KER2]');
     const state: LoginDialogState = this.state;
     const store: Store = state.store;
 
