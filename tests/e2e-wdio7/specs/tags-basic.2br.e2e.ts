@@ -5,7 +5,7 @@ import assert from '../utils/ty-assert';
 import server from '../utils/server';
 import { buildSite } from '../utils/site-builder';
 import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
-import { j2s } from '../utils/log-and-die';
+import { j2s, logDebug } from '../utils/log-and-die';
 import c from '../test-constants';
 
 let brA: TyE2eTestBrowser;
@@ -323,17 +323,31 @@ describe(`tags-basic.2br  TyTE2ETAGSBSC`, () => {
     let origPostAuthor: St | U;
 
     it(`${who} sees these post tags: ${j2s(tagsByPostNr)}`, async () => {
-      pagePath = await br().urlPath();
-      pageId = await br().getPageId();
-      origPostAuthor = await br().topic.getPostAuthorUsername(c.BodyNr);
+      // Reload until tags processed server side and are shown.
+      let actualTagTitles: St[] | U;
+      let expectedTags: St[] | U;
+      await br().waitUntil(async () => {
+        pagePath = await br().urlPath();
+        pageId = await br().getPageId();
+        origPostAuthor = await br().topic.getPostAuthorUsername(c.BodyNr);
 
-      // Dupl code [.check_post_tags]
-      // Might need to wait for the server to re-render the page?
-      for (const [postNr, tags] of tagsByPostNr) {
-        const actualTagTitles: St[] =
-              await br().topic.getTags({ forPostNr: postNr, howManyTags: tags.length });
-        assert.deepEq(actualTagTitles.sort(), tags.sort());
-      }
+        // Dupl code [.check_post_tags]
+        // Might need to wait for the server to re-render the page?
+        for (const [postNr, tags] of tagsByPostNr) {
+          actualTagTitles =
+                await br().topic.getTags({ forPostNr: postNr });
+          expectedTags = tags;
+          if (!_.isEqual(actualTagTitles.sort(), tags.sort())) {
+            logDebug(`Wrong tags, actual: ${
+                  j2s(actualTagTitles)}, expected: ${j2s(expectedTags)}`);
+            return false;
+          }
+        }
+        return true;
+      }, {
+        refreshBetween: true,
+        message: () => `Reloading until tags appear`,
+      });
     });
 
     const origPostTags = tagsByPostNr.get(c.BodyNr);

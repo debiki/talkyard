@@ -7369,7 +7369,7 @@ export class TyE2eTestBrowser {
         await this.tagsDialog.waitUntilDisplayedCloseAnySecurityTips();
       },
 
-      getTags: async (ps: { forPostNr?: PostNr, howManyTags: Nr, within?: Sel }): Pr<St[]> => {
+      getTags: async (ps: { forPostNr?: PostNr, howManyTags?: Nr, within?: Sel }): Pr<St[]> => {
         const postNr = ps.forPostNr || c.BodyNr;
         const sel =
                 (ps.within || '') + ' ' +
