@@ -1432,7 +1432,8 @@ review after:
       with tags:
             - tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTAPRTGDPO
 
-    undoReviewDecision: [4JKWWD4]
+    undoReviewDecision:
+            - TESTS_MISSING  [4JKWWD4]
     ... lots of stuff ...
     bad user auto-banned:
     invalidating review tasks: [2VSP5Q8]
@@ -1541,6 +1542,9 @@ review after:
     #    Memah get a @mention notfs — directly.
     #    Alice deletes.
     #    Memah visits reply — not found.
+
+  accept unreviewed:
+            - TESTS_MISSING  TyTMODACPTUNREV
 
 report post,
 flag post,

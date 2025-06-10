@@ -16,3 +16,9 @@ type RElm = JSX.Element;
 // }
 //
 type RElmClass = JSX.ElementClass;
+
+
+// For <input type="checkbox">, <input type="text"> etc.
+//
+type RInpEvt = React.ChangeEvent<HTMLInputElement>;
+

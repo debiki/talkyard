@@ -144,6 +144,7 @@ Eff = effective, but Fx = effect
 Emb = embedded or embedding
 Feat = feature
 FI  = file input
+Fil = filter
 Flg = flag
 F   = Forum, e.g. c_F_Ts = forum topics
 Fx  = Effect (standard abbr), but Eff = effective

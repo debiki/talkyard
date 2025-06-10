@@ -117,8 +117,10 @@ export function linkToEmbeddedDiscussions(): string {
   return origin();
 }
 
-export function linkToReviewPage(): string {
-  return origin() + '/-/admin/review/all';
+export function linkToReviewPage(ps: { patId?: PatId } = {}): St {
+  let url = origin() + '/-/admin/review';
+  if (ps.patId) url += `?patId=${ps.patId}`;
+  return url;
 }
 
 export function linkToStaffInvitePage(): string {

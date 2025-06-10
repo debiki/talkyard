@@ -83,6 +83,11 @@ class TyController(cc: ControllerComponents, val context: TyContext)
   def StaffGetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiActionStaffOnly(NoRateLimits, cc.parsers.empty)(f)
 
+  def StaffGetActionRateLimited(
+        rateLimits: RateLimits = RateLimits.ExpensiveGetRequest,
+        )(f: GetRequest => Result): Action[Unit] =
+    PlainApiActionStaffOnly(NoRateLimits, cc.parsers.empty)(f)
+
   def AsyncAdminGetAction(f: GetRequest => Future[Result]): Action[Unit] =
     PlainApiActionAdminOnly(NoRateLimits, cc.parsers.empty).async(f)
 

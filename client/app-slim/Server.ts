@@ -1200,23 +1200,30 @@ export function moderatePostOnPagePatchStore(pageId: PageId, post: Post,
 }
 
 
-export function loadReviewTasks(success: (tasks: ReviewTask[]) => void) {
-  get('/-/load-review-tasks', response => handleReviewTasksResponse(response, success));
+export function loadReviewTasks(filter: ReviewTaskFilter, onOk: (tasks: ReviewTask[]) => V) {
+  const query = (!filter.patId ? '' : 'patId=' + filter.patId) +
+                (!filter.onlyPending ? '' : '&onlyPending=true');
+  get('/-/load-review-tasks?' + query, response => handleReviewTasksResponse(response, onOk));
 }
 
 
-export function makeReviewDecision(taskId: number, revisionNr: number, decision: ReviewDecision,
-      success: (tasks: ReviewTask[]) => void) {
+export function makeReviewDecision(ps: { taskId: Nr, revisionNr: Nr, decision: ReviewDecision,
+          filter: ReviewTaskFilter }, onOk: (tasks: ReviewTask[]) => V) {
   postJsonSuccess('/-/make-review-decision',
-        response => handleReviewTasksResponse(response, success),
-        { taskId, revisionNr, decision });
+        response => handleReviewTasksResponse(response, onOk), ps);
 }
 
 
-export function undoReviewDecision(taskId: number, success: (tasks: ReviewTask[]) => void) {
+export function undoReviewDecision(ps: { taskId: Nr, filter: ReviewTaskFilter },
+        onOk: (tasks: ReviewTask[]) => V) {
   postJsonSuccess('/-/undo-review-decision',
-      response => handleReviewTasksResponse(response, success),
-      { taskId });
+        response => handleReviewTasksResponse(response, onOk), ps);
+}
+
+
+export function acceptAllUnreviewed(filter: ReviewTaskFilter, onOk: (tasks: ReviewTask[]) => V) {
+  postJsonSuccess('/-/accept-all-unreviewed',
+        resp => handleReviewTasksResponse(resp, onOk), { filter });
 }
 
 

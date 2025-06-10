@@ -137,14 +137,14 @@ interface ReactRouterLocation {
 }
 
 interface ReactRouterMatch {
-  params: UrlParamsMap; // params in the URL path and query string
+  params: UrlParamsMap; // params in the URL path, but *not* query string
   isExact: Bo; // if the entire URL matches, no trailing chars
   path: St;
   url: St;
 }
 
 
-// Query params — but can also also be params in the url path?
+// *Not* query params. *Only* params from the url path.
 type UrlParamsMap = { [paramName: string]: St };
 
 
@@ -221,6 +221,15 @@ interface ReviewTask {
   pageTitle?: string;
   post?: PostToReview;
   flags: Flag[];
+}
+
+
+interface ReviewTaskFilter {
+  onlyPending: Bo
+  patId?: PatId
+  // Later, could:
+  //     usernameFilter: Opt[St],
+  //     emailFilter: Opt[St]
 }
 
 

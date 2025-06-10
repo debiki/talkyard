@@ -369,7 +369,6 @@ const AdminAppComponent = createReactClass(<any> {
     // [React_Router_v51] skip render(), use hooks and useParams instead.
     const childRoutes = Switch({},
         RedirAppend({ path: ar + 'users', append: '/enabled' }),
-        RedirAppend({ path: ar + 'review', append: '/all' }),
         RedirAppend({ path: ar + 'settings', append: defaultSettingsPath }),
         RedirAppend({ path: ar + 'customize', append: '/basic' }),
         Route({ path: ar + 'dashboard', render: () => DashboardPanel(childProps) }),
@@ -379,7 +378,7 @@ const AdminAppComponent = createReactClass(<any> {
         Route({ path: ar + 'customize', render: () => CustomizePanel(childProps) }),
         Route({ path: ar + 'backup', render: () => BackupPanel(childProps) }),
         Route({ path: ar + 'api', render: () => ApiPanel(childProps) }),
-        Route({ path: ar + 'review', render: () => ReviewAllPanel(childProps) }),
+        Route({ path: ar + 'review', render: (ps) => ReviewAllPanel({ ...childProps, ...ps }) }),
         Route({ path: ar + 'inspect', render: () => InspectPanel(childProps) }));
 
     return (

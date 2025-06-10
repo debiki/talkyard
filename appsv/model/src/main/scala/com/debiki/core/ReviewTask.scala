@@ -114,6 +114,19 @@ object ReviewDecision {
   require(InteractLike.IntVal == PostVoteType.Like.IntVal + 1200)
 
 
+  /** Marks a post or edit that's already visible, but pending review-after-the-fact, as ok,
+    * but without actually reviewing it.
+    *
+    * This is helpful for corner case communities that have 999+ pending review tasks,
+    * because they use sth else than Talkyard to approve their users before they can join
+    * the forum, but Talkyard still kept generating review tasks.
+    *
+    * Edit: Yes, let's accept those too. Otherwise too complicated! Is a rare
+    * corner case anyway.  Old:
+    *      However, won't accept *unapproved* posts, that is, posts that aren't
+    *      yet visible at all
+    */
+  case object AcceptUnreviewedId extends ReviewDecision(1993)
 
   private val LastAcceptId = 1999
 
@@ -138,6 +151,7 @@ object ReviewDecision {
     case InteractWikify.IntVal => InteractWikify
     //case InteractTopicDoingStatus.IntVal => InteractTopicDoingStatus
     case InteractLike.IntVal => InteractLike
+    case AcceptUnreviewedId.IntVal => AcceptUnreviewedId
     case DeletePostOrPage.IntVal => DeletePostOrPage
     case DeleteAndBanSpammer.IntVal => DeleteAndBanSpammer
     case _ => return None
@@ -222,7 +236,7 @@ case class ReviewTask(  //  RENAME to ModTask
   require(!completedAt.exists(_.getTime < createdAt.getTime), "EsE0YUL72")
   require(!invalidatedAt.exists(_.getTime < createdAt.getTime), "EsE5GKP2")
   require(completedAt.isEmpty || invalidatedAt.isEmpty, "EsE2FPW1")
-  require((decidedAt.isEmpty && completedAt.isEmpty) || decision.isDefined, "EsE0YUM4")
+  require((decidedAt.isEmpty && completedAt.isEmpty) || decision.isDefined, s"EsE0YUM4, task: $this")
   require(!decidedAtRevNr.exists(_ < FirstRevisionNr), "EsE1WL43")
   require(!postId.exists(_ <= 0), "EsE3GUL80")
   // pageId defined = is for title & body.
@@ -279,6 +293,19 @@ case class ReviewTask(  //  RENAME to ModTask
 
 }
 
+
+case class ModTaskFilter(
+  onlyPending: Bo,
+  patId: Opt[PatId],
+  usernameFilter: Opt[St],
+  emailFilter: Opt[St],
+  // Later: Might need a review task id offset too, if many w same timestamp (e.g.
+  // if importing / generating lots of things with the same timestamp programatically).
+  olderOrEqualTo: Opt[ju.Date])
+
+object ModTaskFilter {
+  val Empty = ModTaskFilter(false, None, None, None, None)
+}
 
 
 /* Keep for a while, mentioned in ReviewReason. [L4KDUQF2]

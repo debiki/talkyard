@@ -172,13 +172,18 @@ export const UserProfileAdminView = createFactory({
       return r.p({}, "Loading...");
 
     const isMe = user.id === me.id;
+
+    const viewModTasks =
+        LinkButton({ to: linkToReviewPage({ patId: user.id }), className: 'e_VwModTsksB' },
+          "View moderation tasks");
+
     const showPublProfileButton =
         ExtLinkButton({ href: this.publicProfileLink(), className: 'e_VwPblPrfB' },
           "View Public Profile");
 
     if (user.isGroup)
-      return rFragment({},
-        r.div({ className: 'pull-right' },
+      return rFr({},
+        r.div({ className: 'c_A_Us_U_VwBs' },
           showPublProfileButton),
         r.p({ style: { clear: 'both' }},
           "A group: ",
@@ -399,8 +404,9 @@ export const UserProfileAdminView = createFactory({
             impOn ? null : r.span({},
               ` — Impersonating others is disabled in this forum`));
 
-    return rFragment({},
-      r.div({ className: 'pull-right' },
+    return rFr({},
+      r.div({ className: 'c_A_Us_U_VwBs' },
+        viewModTasks,
         showPublProfileButton),
 
       r.div({ className: 'esA_Us_U_Rows'},

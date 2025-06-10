@@ -17,6 +17,7 @@
 
 /// <reference path="../../../node_modules/moment/moment.d.ts" />
 /// <reference path="../staff-prelude.staff.ts" />
+/// <reference path="./oop-method.staff.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.admin {
@@ -231,8 +232,18 @@ const InvitedUsersPanel = createFactory<any>({
 });
 
 
+interface UserListState {
+  users?: UserInclDetailsWithStats[]
+  usernameFilter?: St
+  emailAdrFilter?: St
+}
+
 const UserList = createFactory<any>({
   displayName: 'UserList',
+
+  getInitialState: function() {
+    return {};
+  },
 
   componentDidMount: function() {
     this.loadUsers();
@@ -259,15 +270,28 @@ const UserList = createFactory<any>({
   },
 
   render: function() {
-    if (!this.state || !this.state.users)
+    const state: UserListState = this.state;
+    if (!state.users)
       return r.p({}, "Loading...");
 
+    // UX COULD_OPTIMIZE: Load at most 500 users, if more, only those matching the filter?
+    // UX Fuzzy search for username? But should a fuzzy username index be in Postgres
+    // or ElasticSearch?
+    const allUsers: UserInclDetailsWithStats[] = state.users;
+    let users = allUsers;
+    users = !state.usernameFilter ? users :
+            _.filter(users, (u: UserInclDetailsWithStats) =>
+                                  u.username.indexOf(state.usernameFilter) >= 0);
+    users = !state.emailAdrFilter ? users :
+            _.filter(users, (u: UserInclDetailsWithStats) =>
+                                  u.email.indexOf(state.emailAdrFilter) >= 0);
+
     const now = new Date().getTime();
-    let userRows = this.state.users.map((user: UserInclDetailsWithStats) => {
+    let userRows = users.map((user: UserInclDetailsWithStats) => {
       return UserRow({ user: user, now: now, key: user.id, whichUsers: this.props.whichUsers });
     });
 
-    if (!this.state.users.length)
+    if (!users.length)
       userRows = r.tr({}, r.td({ className: 'e_NoSuchUsers' }, "No such users."));
 
     const actionHeader = this.props.whichUsers === 'WaitingUsers'
@@ -276,6 +300,19 @@ const UserList = createFactory<any>({
 
     return (r.div({},
       r.div({ className: 'esAdminSectionIntro' }, this.props.intro),
+      r.div({ className: 'c_A_Fils' },
+        // Break out [query_field_and_q_param]?
+        Input({ type: 'text', className: 'e_UnFil',
+            label: "Username filter",
+            value: state.usernameFilter,
+            onChange: (event: RInpEvt) =>
+                this.setState({ usernameFilter: event.target.value }) }),
+        Input({ type: 'text', className: 'e_EmFil',
+            label: "Email filter",
+            value: state.emailAdrFilter,
+            onChange: (event: RInpEvt) =>
+                this.setState({ emailAdrFilter: event.target.value }) }),
+        ),
       r.div({ className: 'dw-users-to-review e_AdminUsersList' },
         r.table({ className: 'table' },
           r.thead({},
@@ -348,12 +385,6 @@ const UserRow = createFactory<any>({
         ? r.td({}, actions)
         : null;
 
-    const usernameElem = r.span({ className: 'dw-username' }, user.username);
-    let fullNameElem: RElm | U;
-    if (user.fullName) {
-      fullNameElem = r.span({ className: 'dw-fullname' }, ' (' + user.fullName + ')');
-    }
-
     const threatLevel = user_threatLevel(user);
     const isDeactivated = !!user.deactivatedAt;
     const isDeleted = !!user.deletedAt;
@@ -405,7 +436,7 @@ const UserRow = createFactory<any>({
 
     return (
       r.tr({},
-        r.td({}, Link({ to: linkToUserInAdminArea(user) }, usernameElem, fullNameElem), modifiers),
+        r.td({}, LinkToPatAdminArea(user), modifiers),
         r.td({}, user.email, emailNotVerified),
         actionsCell,
         r.td({}, lastSeen),

@@ -22,6 +22,24 @@
   namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
+const r = ReactDOMFactories;
+
+
+export function LinkToPatAdminArea(pat: Pat): RElm {
+  const usernameElem = !pat.username ? null :
+          r.span({ className: 'dw-username' }, pat.username);
+  let fullNameElem: RElm | St | U;
+  if (pat.fullName) {
+    const nameMaybeParens = !usernameElem ? pat.fullName :
+            ' (' + pat.fullName + ')';
+    fullNameElem = r.span({ className: 'dw-fullname' }, nameMaybeParens);
+  }
+  else if (!usernameElem) {
+    fullNameElem = 'TyE0NAME';
+  }
+  return Link({ to: linkToUserInAdminArea(pat) }, usernameElem, fullNameElem)
+}
+
 
 export function reviewTask_doneOrGone(reviewTask: ReviewTask): boolean {
   return !!reviewTask.completedAtMs || !!reviewTask.invalidatedAtMs;

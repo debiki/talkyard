@@ -822,7 +822,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def nextReviewTaskId(): ReviewTaskId
   def upsertReviewTask(reviewTask: ReviewTask): Unit
   def loadReviewTask(id: ReviewTaskId): Option[ReviewTask]
-  def loadReviewTasks(olderOrEqualTo: Option[ju.Date], limit: Int): Seq[ReviewTask]
+  def loadReviewTasks(filter: ModTaskFilter, limit: Int): Seq[ReviewTask]
   def loadAllReviewTasks(): Seq[ReviewTask]
   def loadReviewTasksAboutUser(userId: UserId, limit: Int, orderBy: OrderBy): Seq[ReviewTask]
   def loadReviewTasksAboutPostIds(postIds: Iterable[PostId]): immutable.Seq[ReviewTask]
