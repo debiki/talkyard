@@ -30,6 +30,7 @@ then use:
 
 Panels that load data template?  Maybe:
 
-  export const ListGroupsComponent = React.createFactory<RouteChildProps>(function ...
+  export const ListGroupsComponent = React.createFactory<ReactRouterProps>(function ...
 
 */
+

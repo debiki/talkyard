@@ -31,7 +31,7 @@ const ModalHeader = rb.ModalHeader;
 const ModalTitle = rb.ModalTitle;
 
 
-export const ListGroupsComponent = React.createFactory<RouteChildProps>(function(props) {
+export const ListGroupsComponent = React.createFactory<ReactRouterProps>(function(props) {
   const store: Store = useStoreState()[0];
   const me: Myself = store.me;
   const myId = React.useRef(me.id);

@@ -94,8 +94,15 @@ interface MayMayNot {
 }
 
 
-/// See: https://reactrouter.com/web/api/location — but Ty's interface is safer?
-/// — it hides some history object fields we sholudn't use. [.mut_hist]
+// =========================================================================
+//  URL & router
+// =========================================================================
+
+/// Doesn't work:  (Maybe because isn't using AMD / ES6 modules?)
+/// bash# yarn add @types/react-router-dom
+/// /// <reference path="../../../node_modules/@types/react-router/index.d.ts" />
+///
+/// Instead, and also let's not expose some history object fields we sholudn't use. [_mut_hist]
 ///
 interface ReactRouterProps {
   history: ReactRouterHistory;
@@ -103,13 +110,14 @@ interface ReactRouterProps {
   location: ReactRouterLocation;
   // How this route path matched the URL.
   match: ReactRouterMatch;
+  // children: any  ?
 }
 
 interface ReactRouterHistory {
-  // Don't use, changes at any time. Use location (below) instead. [.mut_hist]
-  // length,
-  // action,
-  // location
+  // Don't use, changes at any time. Use location (below) instead. [_mut_hist]
+  // length: Nr
+  // action: St
+  // location: RouteLocation
 
   // But the functions are okay?:
   push: (path, state?) => Vo;
@@ -189,6 +197,11 @@ const enum FragActionType {
   ComposeTopic = 31,
   ComposeDirectMessage = 32,
 }
+
+
+// =========================================================================
+//
+// =========================================================================
 
 
 
@@ -3720,47 +3733,13 @@ interface MyVersionIsMessageFromSw extends MessageFromServiceWorker {
 
 
 // =========================================================================
-//  External things whose @types won't work
-// =========================================================================
-
-// Why won't work? Maybe because isn't using AMD / ES6 modules.
-
-// Doesn't work:
-// bash# yarn add @types/react-router-dom
-// /// <reference path="../../../node_modules/@types/react-router/index.d.ts" />
-// and then using RouteChildrenProps. Why won't work? Who cares. Instead:
-interface RouteChildProps {
-  match: RouteMatch;
-  location: RouteLocation;
-  history: RouteHistory;
-  children: any;
-}
-interface RouteMatch {
-  path: string;
-  url: string;
-  isExact: boolean;
-  params: { [paramName: string]: string };
-}
-interface RouteLocation {
-  pathname: string;
-  search: string;
-  hash: string;
-}
-interface RouteHistory {
-  length: number;
-  action: string;
-  location: RouteLocation;
-}
-
-
-
-// =========================================================================
 //  Public API  [PUB_API]
 // =========================================================================
 
 // This is used both by Talkyard's client side code, and by Talkyard admins who
 // add LaTeX or code highlighting script tags.  (So cannot be placed in
 // <root>/tests/e2e/pub-api.ts .)
+// Update 2025: Moving to OpenAPI and other repo: https://github.com/debiki/talkyard-api-docs
 
 interface TalkyardApi {  // [5ABJH72]
   postElemPostProcessor?: (elem: any) => void;

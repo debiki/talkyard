@@ -124,7 +124,7 @@ const UserPageComponent = createReactClass(<any> {
   },
 
   loadUserAnyDetails: function(redirectToCorrectUsername?: false) {
-    const location: RouteLocation = this.props.location;
+    const location: ReactRouterLocation = this.props.location;
     const params = this.props.match.params;
     const usernameOrId: string | number = params.usernameOrId;
 
