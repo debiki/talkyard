@@ -178,7 +178,7 @@ Compile / dependencyOverrides ++= {
       "org.owasp.encoder" % "encoder" % "1.3.1",
       "org.playframework" % "play-functional_2.13" % "3.0.4",
       "org.playframework" % "play-json_2.13" % "3.0.4",
-      "org.postgresql" % "postgresql" % "42.7.5",
+      "org.postgresql" % "postgresql" % "42.7.7",
       "org.reactivestreams" % "reactive-streams" % "1.0.4",
       "org.scala-lang.modules" % "scala-java8-compat_2.13" % "1.0.0",
       "org.scala-lang.modules" % "scala-parser-combinators_2.13" % "1.1.2",
