@@ -167,7 +167,7 @@ object Dependencies {
 
     // See: https://mvnrepository.com/artifact/nl.grons/metrics4-scala
     // and: https://github.com/erikvanoosten/metrics-scala/tags
-    val metrics4Scala = "nl.grons" %% "metrics4-scala" % "4.2.9"
+    val metrics4Scala = "nl.grons" %% "metrics4-scala" % "4.3.5"
 
 
     // ----- Decoding JWT:s
