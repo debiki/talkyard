@@ -159,7 +159,7 @@ object Dependencies {
     // See: https://github.com/dropwizard/metrics/releases
     // and: https://metrics.dropwizard.io/4.2.0/manual/core.html
     // and: https://mvnrepository.com/artifact/io.dropwizard.metrics/metrics-core
-    val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.30"
+    val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.33"
 
     // Deprecated. SHOULD migrate to OpenTelemetry, they say, https://opentelemetry.io/.
     // 1.8.1 exists now.
