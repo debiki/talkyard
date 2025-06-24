@@ -104,7 +104,7 @@ object Dependencies {
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.3.1"
 
     // See: https://github.com/jhy/jsoup/releases
-    val jsoup = "org.jsoup" % "jsoup" % "1.19.1"
+    val jsoup = "org.jsoup" % "jsoup" % "1.21.1"
 
     // See: https://github.com/FasterXML/jackson-module-scala/tags
     // and: https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-scala
