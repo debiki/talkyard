@@ -36,7 +36,7 @@ import play.api.http.{HeaderNames => p_HNs}
 import play.api.mvc.{Results => p_Results}
 import talkyard.server.TyLogging
 import talkyard.server.authn.MinAuthnStrength
-import JsonUtils.{parseOptSt, asJsObject, parseOptJsObject, parseOptBo}
+import JsonUtils.{asJsObject, parseOptJsObject, parseOptBo}
 
 
 /** Play Framework Actions for requests to Talkyard's HTTP API.
@@ -264,7 +264,8 @@ class PlainApiActions(
 
       // [APIAUTHN]  If there's an Authorization header, we'll use it but ignore
       // any cookie.
-      val futureResult =
+      // _Catch synchronous errors, so we can add CORS headers.
+      var futureResult: Future[Result] =
         try {
           request.headers.get("Authorization") match {
             case Some(authHeaderValue) =>
@@ -285,17 +286,23 @@ class PlainApiActions(
                     request, corsInfo, site, siteDao, siteSettings, block)
           }
         }
-        catch {
-          // Dupl code [RESLTEXC]
-          case ResultException(result) =>
-            // So can add CORS headers below.
-            Future.successful(result)
-        }
+        catch HttpResults(request, globals).exceptionToSuccessResultHandler
 
       // ----- Add CORS headers?
 
+      // Add, also for error messages. Otherwise, extremely frustrating if error responses,
+      // e.g. 400 or 404 etc, don't have CORS headrs — then, if in a browser,
+      // you'll see just: "Failed to fetch" but no way to know what went wrong
+      // (the response json with the error message wouldn't be available).
+
       if (corsHeaders.isEmpty) futureResult
-      else futureResult.map(_.withHeaders(corsHeaders.toSeq: _*))(executionContext)
+      else {
+        // _Catch async errors, so there's a result to add CORS headers to.
+        futureResult = futureResult.recover(
+              HttpResults(request, globals).exeptionToResultHandler,
+              )(executionContext)
+        futureResult.map(_.withHeaders(corsHeaders.toSeq: _*))(executionContext)
+      }
     }
 
 

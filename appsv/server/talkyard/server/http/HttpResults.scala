@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2012-2015 Kaj Magnus Lindberg
+ * Copyright (c) 2012-2025 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -12,7 +12,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package talkyard.server.http
@@ -22,227 +22,75 @@ import com.debiki.core.DbDao.EmailAddressChangedException
 import com.debiki.core.Prelude._
 import org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace
 import debiki._
-import talkyard.server.security.EdSecurity
-import play.api.mvc._
-import play.api.libs.typedmap.TypedKey
-import scala.concurrent.{ExecutionContext, Future}
-import SafeActions._
+import debiki.EdHttp.ResultException
+import play.api.mvc.{Request => p_Request, Result => p_Result, Results => p_Results}
+import scala.concurrent.Future
 import talkyard.server.TyLogging
 
 
-object SafeActions {
-  val TracerSpanKey: TypedKey[io.opentracing.Span] = TypedKey[io.opentracing.Span]("tracerSpan")
-}
+case class HttpResults(request: p_Request[_], globals: Globals) extends TyLogging {
+  import HttpResults._
 
-
-/**
- * These actions check Debiki's session id cookie, and always
- * require a valid xsrf token for POST requests.
- * Also understand Debiki's internal throwBadReq etcetera functions.
- */
-class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayBodyParsers)
-  extends TyLogging {
-
-  import EdHttp._
-
-  /** IE9 blocks cookies in iframes unless the site in the iframe clarifies its
-    * in a P3P header (Platform for Privacy Preferences). (But Debiki's embedded comments
-    * needs to work in iframes.) See:
-    * - http://stackoverflow.com/questions/389456/cookie-blocked-not-saved-in-iframe-in-internet-explorer
-    * - http://stackoverflow.com/questions/7712327/any-recommendation-for-p3p-policy-editor
-    * - http://stackoverflow.com/a/16475093/694469
-    * - http://www.w3.org/P3P/details.html (don't read it! :-P simply use the below workaround
-    *     instead)
-    *
-    * Apparently the policy is legally binding, but I'm not a lawyer so I don't want to construct
-    * any policy. Also, the policy would vary from site to site, in case Debiki is installed
-    * by other people than me. So it ought to be customizable. Fortunately, the P3P standard
-    * is dying and abandoned. So work around the dead standard by including a dummy header,
-    * that makes IE9 happy. Write it as a single word, so IE doesn't think that e.g.
-    * "is" or "not" actually means something.
-    */
-  def MakeInternetExplorerSaveIframeCookiesHeader: (PageId, PageId) =  // move to PlainApiActions?
-    "P3P" -> """CP="This_is_not_a_privacy_policy""""
-
-
-  val allowFakeIp: Boolean = {
-    val allow = !globals.isProd ||
-      globals.conf.getOptional[Boolean]("talkyard.allowFakeIp").getOrElse(false)
-    if (allow) {
-      logger.info("Enabling fake IPs [TyM0Fk258]")
-    }
-    allow
+  val exceptionToSuccessResultHandler: PartialFunction[Throwable, Future[p_Result]] = {
+    exeptionToResultHandler.andThen(r => Future.successful(r))
   }
 
-
-  /**
-   * Converts DebikiHttp.ResultException to nice replies,
-   * e.g. 403 Forbidden and a user friendly message,
-   * instead of 500 Internal Server Error and a stack trace or Ooops message.
-   */
-  object ExceptionAction extends ActionBuilder[Request, AnyContent] {
-    SECURITY // stop using ExceptionAction at most places — change to PlainApiActionImpl + rate limits
-
-    val parser: BodyParser[AnyContent] = parsers.anyContent  // [play26ask]
-
-    override implicit protected def executionContext: ExecutionContext =
-      globals.executionContext
-
-    def invokeBlock[A](requestNoTracing: Request[A], block: Request[A] => Future[Result])
-          : Future[Result] = {
-      if (Globals.isDevOrTest && globals.secure) {
-        val isHttp = requestNoTracing.headers.get("X-Forwarded-Proto") is "http"
-        if (isHttp) {
-          return Future.successful(ForbiddenResult("TyE0HTTPS",
-              o"""This dev-test server uses https but the request is over http.
-              Likely this would make something fail, e.g. a test."""))
-        }
-      }
-
-      val tracerSpan = {
-        val path = requestNoTracing.path
-        val traceOpName =
-          if (path.startsWith("/-/v0/") || path == "/manifest.webmanifest") {
-            path
-          }
-          else if (path.startsWith("/-/")) {
-            val withoutPrefix = path.drop("/-/".length)
-            var opName = withoutPrefix.takeWhile(_ != '/')
-            if (withoutPrefix.contains('/')) {
-              opName += "/*"
-            }
-            "/-/" + opName
-          }
-          else {
-            "/view-page"
-          }
-        globals.tracer.buildSpan(traceOpName).start()
-      }
-
-      val request = requestNoTracing.addAttr(TracerSpanKey, tracerSpan)
-      var exceptionThrown = true
-
-      var futureResult = try {
-        val fr = block(request)
-        exceptionThrown = false
-        fr
-      }
-      catch {
-        // Dupl code [RESLTEXC]
+  def exeptionToResultHandler: PartialFunction[Throwable, p_Result] = {
         case ex: NotFoundEx =>
-          Future.successful(Results.NotFound(ex.getMessage))
+          p_Results.NotFound(ex.getMessage)
         case ex: BadRequestEx =>
-          Future.successful(Results.BadRequest(ex.getMessage))
+          p_Results.BadRequest(ex.getMessage)
         case ex: ForbiddenEx =>
-          Future.successful(Results.Forbidden(ex.getMessage))
+          p_Results.Forbidden(ex.getMessage)
         case ex: UnimplementedEx =>
-          Future.successful(Results.NotImplemented(ex.getMessage))
+          p_Results.NotImplemented(ex.getMessage)
         case ex: OverQuotaException =>
-          Future.successful(Results.Forbidden(o"""You cannot do that, because this site's
-            disk quota has been exceeded, sorry. [DwE7GH4R2]"""))
+          p_Results.Forbidden(o"""You cannot do that, because this site's
+            disk quota has been exceeded, sorry. [DwE7GH4R2]""")
         case ex: UserNotFoundException =>
-          Future.successful(Results.NotFound(
-            s"User '${ex.userId}' not found [DwE404US3R]"))
+          p_Results.NotFound(
+            s"User '${ex.userId}' not found [DwE404US3R]")
         case ex: PageNotFoundException =>
-          Future.successful(Results.NotFound(
-            s"Page '${ex.pageId}' not found [DwE404WU5]"))
+          p_Results.NotFound(
+            s"Page '${ex.pageId}' not found [DwE404WU5]")
         case ex: PostNotFoundException =>
-          Future.successful(Results.NotFound(
-            s"Post ${ex.postNr} on page '${ex.pageId}' not found [DwE404GP3]"))
+          p_Results.NotFound(
+            s"Post ${ex.postNr} on page '${ex.pageId}' not found [DwE404GP3]")
         case ex: EmailAddressChangedException =>
-          Future.successful(Results.Forbidden(
-            "The email address related to this request has been changed. Access denied"))
+          p_Results.Forbidden(
+            "The email address related to this request has been changed. Access denied")
         case ResultException(result) =>
-          Future.successful(result)
+          result
         case ex: play.api.libs.json.JsResultException =>
-          Future.successful(Results.BadRequest(s"Bad JSON: $ex [TyEPARSEJSN1]"))
+          p_Results.BadRequest(s"Bad JSON: $ex [TyEPARSEJSN1]")
         case ex: debiki.JsonUtils.BadJsonException =>
-          Future.successful(Results.BadRequest(s"Bad JSON: $ex [TyEPARSEJSN2]"))
-        case Globals.AppSecretNotChangedException =>
-          Future.successful(BadAppSecretError)
-        case Globals.StillConnectingException =>
-          Future.successful(ImStartingError)
-        case ex: Globals.DatabasePoolInitializationException =>
-          Future.successful(databaseGoneError(request, ex, startingUp = true))
-        case ex: java.sql.SQLTransientConnectionException =>
-          Future.successful(databaseGoneError(request, ex, startingUp = false))
-        case ex: RuntimeException =>
-          Future.successful(internalError(request, ex, "DwE500REX"))
-        case ex: Exception =>
-          Future.successful(internalError(request, ex, "DwE500EXC"))
-        case ex: Error =>
-          Future.successful(internalError(request, ex, "DwE500ERR"))
-      }
-      finally {
-        if (exceptionThrown) {
-          tracerSpan.finish()
-        }
-      }
-
-      // A bit dupl code [RESLTEXC]  maybe copy more cases from above to here?
-      futureResult = futureResult recover {
-        case ex: NotFoundEx =>
-          Results.NotFound(ex.getMessage)
-        case ex: BadRequestEx =>
-          Results.BadRequest(ex.getMessage)
-        case ex: ForbiddenEx =>
-          Results.Forbidden(ex.getMessage)
-        case ex: UnimplementedEx =>
-          Results.NotImplemented(ex.getMessage)
-        case ResultException(result) => result
-        case ex: play.api.libs.json.JsResultException =>
-          Results.BadRequest(s"Bad JSON: $ex [TyEPARSEJSN3]")
-        case ex: debiki.JsonUtils.BadJsonException =>
-          Results.BadRequest(s"Bad JSON: $ex [TyEPARSEJSN4]")
+          p_Results.BadRequest(s"Bad JSON: $ex [TyEPARSEJSN2]")
         case Globals.AppSecretNotChangedException =>
           BadAppSecretError
         case Globals.StillConnectingException =>
-          ImStartingError
+          imStartingError(globals)
         case ex: Globals.DatabasePoolInitializationException =>
-          databaseGoneError(request, ex, startingUp = true)
+          databaseGoneError(request, ex, startingUp = true, globals)
         case ex: java.sql.SQLTransientConnectionException =>
-          databaseGoneError(request, ex, startingUp = false)
+          databaseGoneError(request, ex, startingUp = false, globals)
         case ex: RuntimeException =>
-          internalError(request, ex, "DwE500REXA")
+          internalError(request, ex, "DwE500REX", globals)
         case ex: Exception =>
-          internalError(request, ex, "DwE500EXCA")
+          internalError(request, ex, "DwE500EXC", globals)
         case ex: Error =>
-          internalError(request, ex, "DwE500ERRA")
-      }
-
-      val anyNewFakeIp = request.queryString.get("fakeIp").flatMap(_.headOption)
-
-      futureResult = futureResult map { result =>
-        if (!exceptionThrown) {
-          tracerSpan.finish()
-        }
-        anyNewFakeIp match {
-          case None => result
-          case Some(fakeIp) => result.withCookies(security.SecureCookie("dwCoFakeIp", fakeIp))
-        }
-      }
-
-      def setTestPasswordCookie(paramName: String, cookieName: String): Unit = {
-        val anyPassword = request.queryString.get(paramName).flatMap(_.headOption)
-        anyPassword foreach { password =>
-          futureResult = futureResult map { result =>
-            result.withCookies(security.SecureCookie(cookieName, password, maxAgeSeconds = Some(600)))
-          }
-        }
-      }
-      setTestPasswordCookie("e2eTestPassword", "esCoE2eTestPassword")
-      setTestPasswordCookie("forbiddenPassword", "esCoForbiddenPassword")
-
-      futureResult
-    }
+          internalError(request, ex, "DwE500ERR", globals)
   }
+}
 
-  private def internalError(request: Request[_], throwable: Throwable,
-        errorCode: String) = {
+
+object HttpResults extends TyLogging {
+
+  private def internalError(request: p_Request[_], throwable: Throwable,
+        errorCode: St, globals: Globals) = {
     val url = request.method + " //" + request.host + request.uri
     logger.error(s"Replying internal error to: $url [$errorCode]",
       throwable)
-    Results.InternalServerError(i"""500 Internal Server Error
+    p_Results.InternalServerError(i"""500 Internal Server Error
       |
       |Something went wrong: [$errorCode]
       |
@@ -251,7 +99,7 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
   }
 
   private val BadAppSecretError = {
-    Results.InternalServerError(i"""500 Internal Server Error
+    p_Results.InternalServerError(i"""500 Internal Server Error
       |
       |Admin: Please edit the '${Globals.AppSecretConfValName}' config value,
       |in file ${talkyard.server.ProdConfFilePath}.
@@ -263,8 +111,8 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
       |""")
   }
 
-  private val ImStartingError = {
-    Results.InternalServerError(i"""500 Internal Server Error
+  private def imStartingError(globals: Globals) = {
+    p_Results.InternalServerError(i"""500 Internal Server Error
       |
       |The server is starting:
       |    ${globals.startupStep}
@@ -274,7 +122,8 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
   }
 
 
-  private def databaseGoneError(request: Request[_], throwable: Throwable, startingUp: Boolean) = {
+  private def databaseGoneError(request: p_Request[_], throwable: Throwable, startingUp: Bo,
+          globals: Globals): p_Result = {
     val url = request.method + " //" + request.host + request.uri
     val rootCause = getRootCause(throwable)
 
@@ -359,7 +208,7 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
         |    docker-compose exec rdb bash
         |""")
 
-    Results.InternalServerError(i"""500 Internal Server Error
+    p_Results.InternalServerError(i"""500 Internal Server Error
       |
       |$errorMessage [$errorCode]
       |$hasItStoppedPerhaps
@@ -368,15 +217,15 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
       |""")
   }
 
-  def isRoleNotFoundException(throwable: Throwable) =
+  private def isRoleNotFoundException(throwable: Throwable) =
     throwable.isInstanceOf[org.postgresql.util.PSQLException] &&
       RoleMissingRexec.matches(throwable.getMessage)
 
-  def isDatabaseNotFoundException(throwable: Throwable) =
+  private def isDatabaseNotFoundException(throwable: Throwable) =
     throwable.isInstanceOf[org.postgresql.util.PSQLException] &&
       DatabaeMissingRexec.matches(throwable.getMessage)
 
-  def isBadPasswordException(throwable: Throwable) =
+  private def isBadPasswordException(throwable: Throwable) =
     throwable.isInstanceOf[org.postgresql.util.PSQLException] &&
       throwable.getMessage.contains("assword")
 
