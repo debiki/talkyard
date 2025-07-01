@@ -27,7 +27,7 @@ object Dependencies {
   }
 
   object Play {
-    val json = "org.playframework" %% "play-json" % "3.0.4"
+    val json = "org.playframework" %% "play-json" % "3.0.5"
   }
 
   object Libs {
