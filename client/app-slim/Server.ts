@@ -2779,12 +2779,11 @@ const forbiddenWordsFound: [St, St[]][] = [];
 
   // Check session storage:
   if (!wordsStr) {
-    const wordsJsonStr = getFromSessionStorage('e2eTestSpecialWords');
-    if (wordsJsonStr) {
-      const wordsObj = JSON.parse(wordsJsonStr);
-      words = wordsObj[0];
-      okInPresence = wordsObj[1];
-      shouldFind = wordsObj[2];
+    const wordsArr = getFromSessionStorage('e2eTestSpecialWords');
+    if (wordsArr) {
+      words = wordsArr[0];
+      okInPresence = wordsArr[1];
+      shouldFind = wordsArr[2];
     }
   }
 
@@ -2816,8 +2815,17 @@ export function setE2eTestForbiddenWords(words: St[], okInPresence: Bo, count: S
   forbiddenWordsOkInPresence = okInPresence;
   shouldFindWords = count;
   shouldWordCounts = {};
-  putInSessionStorage('e2eTestSpecialWords', JSON.stringify([
-        forbiddenWords, forbiddenWordsOkInPresence, shouldFindWords]));
+
+  // Could move the rest to ty-e2e-test-browser.ts, barely matters. SMALLER_BUNDLE
+  putInSessionStorage('e2eTestSpecialWords', [
+        forbiddenWords, forbiddenWordsOkInPresence, shouldFindWords]);
+  // Remove any old special words from the query params — they might be different
+  // from the new words.
+  var newUrl = location.pathname +
+        location.search.replace(
+            /(e2eTestForbiddenWords|e2eTestForbiddenWordsOkInPresence|e2eTestShouldFindWords)=[^&;]+[&;]?/g, '') +
+        location.hash;
+  history.pushState(null /* state */, '' /* unused */, newUrl);
 }
 
 export function getE2eTestForbiddenWords(): [St[], Bo | U, St[]] {

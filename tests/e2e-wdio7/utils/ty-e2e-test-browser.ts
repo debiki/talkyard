@@ -4937,6 +4937,7 @@ export class TyE2eTestBrowser {
             talkyardUsername: St, azureFullName: St, idpName: St }) => {
         // Now there's some info text, and one needs to login again via the IDP,
         // to find out directly, if it works or not.
+        await this.waitForDisplayed('.e_EmAdr');
         await this.assertTextIs('.e_EmAdr', ps.matchingEmail);
         await this.assertTextIs('.e_TyUn', ps.talkyardUsername);
         await this.assertTextIs('.e_NameAtIdp', ps.azureFullName);
