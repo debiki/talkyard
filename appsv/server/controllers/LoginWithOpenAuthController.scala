@@ -181,10 +181,10 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   private val ReturnToUrlCookieName = "dwCoReturnToUrl"
   private val ReturnToSiteOriginTokenCookieName = "dwCoReturnToSite"
   private val ReturnToThisSiteXsrfTokenCookieName = "dwCoReturnToSiteXsrfToken"
-  private val AvoidCookiesCookieName = "TyCoAvoidCookies"
-  private val IsInLoginWindowCookieName = "dwCoIsInLoginWindow"
-  private val IsInLoginPopupCookieName = "dwCoIsInLoginPopup"
-  private val MayCreateUserCookieName = "dwCoMayCreateUser"
+  private val AvoidCookiesCookieName = "TyCoAvoidCookies"        // remove?
+  private val IsInLoginWindowCookieName = "dwCoIsInLoginWindow"  // remove?
+  private val IsInLoginPopupCookieName = "dwCoIsInLoginPopup"    // remove?
+  private val MayCreateUserCookieName = "dwCoMayCreateUser"      // remove?
   private val AuthStateCookieName = "dwCoOAuth2State"
 
   // Discard these also if logging in with username + password?  [clear_aun_cookies]
@@ -1940,8 +1940,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     authnStateCache.put(nextNonce, authnState.copy(nextStep = "create_user"))
 
     val anyIsInLoginWindowCookieValue = request.getHostCookieVal(IsInLoginWindowCookieName)
+    val isInLoginWin = !authnState.isInLoginPopup || anyIsInLoginWindowCookieValue.isDefined
 
-    val result = if (anyIsInLoginWindowCookieValue.isDefined) {
+    val result = if (isInLoginWin) {
       // Continue running in the login window, by returning a complete HTML page that
       // shows a create-user dialog. (This happens if 1) we're in a create site
       // wizard, then there's a dedicated login step in a login window,
