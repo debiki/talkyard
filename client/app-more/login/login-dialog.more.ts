@@ -196,18 +196,19 @@ const LoginDialog = createClassAndFactory({
    * Clears login related cookies so e.g. any lingering return-to-url won't cause troubles.
    */
   setLoginRelatedCookies: function() {
-    getSetCookie('dwCoReturnToUrl', null);
-    getSetCookie('dwCoReturnToSite', null);
+    //getSetCookie('dwCoReturnToUrl', null);
+    //getSetCookie('dwCoReturnToSite', null);
     // Don't clear dwCoReturnToSiteXsrfToken — that'd break parallel login, [PRLGIN]
     // and break OAuth login if opens the login dialog, clicks "Google" to open a Google
     // login popup, then closes and reopens the login dialog, and then logs in at Google
     // in the popup.
-    getSetCookie('dwCoIsInLoginPopup', null);
-    getSetCookie('dwCoMayCreateUser', null);
-    getSetCookie('dwCoOAuth2State', null);
+    //getSetCookie('dwCoIsInLoginPopup', null);
+    //getSetCookie('dwCoMayCreateUser', null);
+    //getSetCookie('dwCoOAuth2State', null);
     getSetCookie('esCoImp', null);
     //getSetCookie('TyCoPersona', null);
 
+    // Later, use [login_query_params] instead of these cookies?
     if (!eds.isInLoginWindow) {
       // We're in a login popup, not in a dedicated "full screen" login window.
       getSetCookie('dwCoIsInLoginWindow', null);
@@ -738,6 +739,8 @@ function ExtIdpAuthnBtn(props: ExtIdpAuthnBtnProps) {
     const mainWin = getMainWin();
     const canUseCookies = win_canUseCookies(mainWin);
 
+    // These [login_query_params] are better than cookies — always work, also if
+    // cookies blocked somehow.
     const urlPathAndQuery = urlPath +
         '?' + mayNotCreateUser +
         `nonce=${props.authnNonce}&` +
