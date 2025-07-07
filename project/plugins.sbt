@@ -17,14 +17,14 @@ resolvers ++= Seq(
   // For SBT BuildInfo:
   Resolver.sbtPluginRepo("releases")) // =  https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/
 
-// Use the Play sbt plugin for Play projects. Can't upgrade to 2.9 until using [scala_2_13].
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.9.7")
+// Use the Play sbt plugin for Play projects.
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.9.8")
 
 // A refactoring and linting tool for Scala
 // Docs: https://scalacenter.github.io/scalafix/
 // There's plugins, e.g.: https://github.com/scala/scala-collection-compat?tab=readme-ov-file#collection213upgrade
 // for upgrading collections from 2.12 to 2.13. (That plugin is added in ../build.sbt.)
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.2")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.3")
 // Can get [scala_2_13] migration help by doing?:
 //  scalafixAll dependency:Collection213Upgrade@org.scala-lang.modules:scala-collection-migrations:<version>
 // where  <version>  is the scala-collection-migrations version?
