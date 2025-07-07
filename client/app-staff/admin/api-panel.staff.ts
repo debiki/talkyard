@@ -119,7 +119,7 @@ const ApiSecretItem = createComponent({
           "Here's Sysbot and the secret value, in a Basic Auth HTTP header, " +
           "base 64 encoded: (don't send to anyone!)"),
         r.pre({},
-          `Authorization: ${btoa(userIdAndSecret)}`)),
+          `Authorization: Basic ${btoa(userIdAndSecret)}`)),
       closeButtonTitle: "Close",
     });
   },

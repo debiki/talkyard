@@ -18,9 +18,11 @@
 package controllers   // MOVE this file to  talkyard.server.modn
 
 import com.debiki.core._
-import debiki.JsonUtils.{parseInt32, parseSt}
+import com.debiki.core.Prelude.unimplIf
+import debiki.JsonUtils._
 import debiki.JsonMaker
 import debiki.EdHttp._
+import debiki.RateLimits
 import talkyard.server.http.{ApiRequest, GetRequest}
 import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
@@ -52,14 +54,25 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: TyCont
   // Approving new mebmers:
   // See   /-/edit-member   controllers.UserController.editMember
 
-  def loadReviewTasks: Action[Unit] = StaffGetAction { request =>
-    loadReviewTasksdReplyJson(request)
+  def loadReviewTasks(onlyPending: Opt[Bo], usernameFilter: Opt[St], emailFilter: Opt[St],
+          patId: Opt[i32]) : Action[Unit] = StaffGetActionRateLimited(RateLimits.ReadsFromDb,
+          ) { req =>
+    unimplIf(usernameFilter.isDefined, "usernameFilter")
+    unimplIf(emailFilter.isDefined, "emailFilter")
+    val filter = ModTaskFilter(
+          onlyPending = onlyPending.getOrElse(false),
+          patId = patId,
+          usernameFilter = usernameFilter,
+          emailFilter = emailFilter,
+          olderOrEqualTo = None)
+    loadReviewTasksdReplyJson(req, filter)
   }
 
 
-  private def loadReviewTasksdReplyJson(request: ApiRequest[_]): mvc.Result = {
-    val (reviewStuff, reviewTaskCounts, usersById, pageMetaById) = request.dao.loadReviewStuff(
-      olderOrEqualTo = None, limit = 100, request.who)
+  private def loadReviewTasksdReplyJson(request: ApiRequest[_], filter: ModTaskFilter)
+          : mvc.Result = {
+    val (reviewStuff, reviewTaskCounts, usersById, pageMetaById) =
+          request.dao.loadReviewStuff(filter, limit = 100, request.who)
     OkSafeJson(
       Json.obj(
         "reviewTasks" -> JsArray(reviewStuff.map(JsonMaker.reviewStufToJson)),
@@ -73,21 +86,26 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: TyCont
   }
 
 
-  def makeReviewDecision: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
-    val taskId = (request.body \ "taskId").as[ReviewTaskId]
-    val anyRevNr = (request.body \ "revisionNr").asOpt[Int]
-    val decisionInt = (request.body \ "decision").as[Int]
+  def makeReviewDecision: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { req =>
+    import req.dao
+    val body: JsObject = asJsObject(req.body, "request body")
+    val taskId: ReviewTaskId = parseInt32(body, "taskId")
+    val anyRevNr = parseOptInt32(body, "revisionNr")
+    val decisionInt = parseInt32(body, "decision")
     val decision = ReviewDecision.fromInt(decisionInt) getOrElse throwBadArgument("EsE5GYK2", "decision")
-    request.dao.makeReviewDecisionIfAuthz(taskId, request.who, anyRevNr = anyRevNr, decision)
-    loadReviewTasksdReplyJson(request)
+    val filter = parseModTaskFilter(body, "filter")
+    dao.makeReviewDecisionIfAuthz(taskId, req.who, anyRevNr = anyRevNr, decision)
+    loadReviewTasksdReplyJson(req, filter)
   }
 
 
-  def tryUndoReviewDecision: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
-    val taskId = (request.body \ "taskId").as[ReviewTaskId]
-    val couldBeUndone = request.dao.tryUndoReviewDecisionIfAuthz(taskId, request.who)
-    // OkSafeJson(Json.obj("couldBeUndone" -> couldBeUndone))  CLEAN_UP remove couldBeUndone in client/app/ too.
-    loadReviewTasksdReplyJson(request)
+  def tryUndoReviewDecision: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { req =>
+    import req.dao
+    val body: JsObject = asJsObject(req.body, "request body")
+    val taskId: ReviewTaskId = parseInt32(body, "taskId")
+    val filter = parseModTaskFilter(body, "filter")
+    val couldBeUndone = dao.tryUndoReviewDecisionIfAuthz(taskId, req.who)
+    loadReviewTasksdReplyJson(req, filter)
   }
 
 
@@ -153,6 +171,35 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: TyCont
     OkSafeJson(patchJson)
   }
 
+
+  def acceptAllUnreviewed: Action[JsValue] = AdminPostJsonAction(maxBytes = 100) { req =>
+    TESTS_MISSING // TyTMODACPTUNREV  — So disabled by default (feature flag).
+    import req.dao
+    val site = dao.theSite()
+    val flagName = "ffApproveUnreviewed"
+    val flagOn = site.isFeatureEnabled(flagName, globals.config.featureFlags)
+    throwForbiddenIf(isProd && !flagOn,
+          "TyE0ACPTUNREV", s"You need to enable the $flagName feature flag.")
+    val body: JsObject = asJsObject(req.body, "request body")
+    val filter = parseModTaskFilter(body, "filter")
+    throwBadReqIf(!filter.onlyPending, "TyE07MMTL2", "Can only accept pending tasks")
+    dao.acceptAllUnreviewed(filter, req.theReqrTargetSelf.denyUnlessAdmin())
+    loadReviewTasksdReplyJson(req, filter)
+  }
+
+
+  def parseModTaskFilter(jOb: JsObject, fieldName: St): ModTaskFilter = {
+    val filterJo = parseOptJsObject(jOb, fieldName) getOrElse {
+      return ModTaskFilter.Empty
+    }
+    val filter = ModTaskFilter(
+          onlyPending = parseBoDef(filterJo, "onlyPending", false),
+          patId = parseOptI32(filterJo, "patId"),
+          usernameFilter = None,
+          emailFilter = None,
+          olderOrEqualTo = None)
+    filter
+  }
 
   /*
   def hideNewPostSendPm

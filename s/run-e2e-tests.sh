@@ -350,7 +350,7 @@ function runAllE2eTests {
   # There're more category tests below. [.more_cat_tests]
 
   $r s/wdio-7 --only badges-basic.2br --cd -i $args
-  # E2EBUG: Flappy
+  # E2EBUG: Flappy. Fixed now?
   $r s/wdio-7 --only tags-basic.2br --cd -i $args
   $r s/wdio-7 --only tags-badges-not-missing.2br --cd -i $args
 

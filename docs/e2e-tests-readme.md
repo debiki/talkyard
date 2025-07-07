@@ -25,6 +25,7 @@ We use Webdriver.io: https://webdriver.io/docs/api and Typescript.
 
 And you need Yarn: https://yarnpkg.com/en/docs/install
 And a compiler so you can build Fibers: (which Webdriver.io v6 sync mode uses)
+[ty_v1] No, no Fibers, remove this.
 
     sudo apt-get install g++ build-essential  # do once only
 

@@ -246,7 +246,7 @@ trait UploadsDao {
         val renderResult = context.nashorn.renderAndSanitizeCommonMark(  // [nashorn_in_tx]
               post.currentSource, NashornParams(site getOrElse theSite(),
               embeddedOriginOrEmpty = "",
-              allowClassIdDataAttrs = false, followLinks = false,
+              allowClassIdDataAttrs = false, relFollowTo = Nil,
               mayMention = _ => Map.empty.withDefaultValue(true)))
         findUploadRefsInHtml(renderResult.safeHtml, pubId)
       }

@@ -23,11 +23,19 @@ import debiki.{Nashorn, TextAndHtml}
 import talkyard.server.rendr.NashornParams
 
 
+/**
+  * @param embeddedOriginOrEmpty
+  * @param pageRole
+  * @param siteId
+  * @param pubSiteId
+  * @param relFollowTo Not incl in the page_html_cache_t lookup key.
+  */
 case class PostRendererSettings(
   embeddedOriginOrEmpty: String,
   pageRole: PageType,
   siteId: SiteId,
-  pubSiteId: PubSiteId)
+  pubSiteId: PubSiteId,
+  relFollowTo: Seq[St])
 
 
 sealed abstract class IfCached
@@ -55,9 +63,8 @@ class PostRenderer(private val nashorn: Nashorn) {
     }
 
     val isBody = post.nr == PageParts.BodyNr
-    val followLinks = isBody && settings.pageRole.shallFollowLinks
     if (post.nr == PageParts.TitleNr) {
-      nashorn.sanitizeHtml(post.currentSource, followLinks)
+      nashorn.sanitizeHtml(post.currentSource, relFollowTo = settings.relFollowTo)
     }
     else if (post.tyype == PostType.CompletedForm) {
       CompletedFormRenderer.renderJsonToSafeHtml(post.currentSource) getMakeGood { errorMessage =>
@@ -69,7 +76,7 @@ class PostRenderer(private val nashorn: Nashorn) {
       // Reuse @mentions? [4WKAB02] [filter_mentions]
       val renderParams = NashornParams(site,
             embeddedOriginOrEmpty = settings.embeddedOriginOrEmpty,
-            allowClassIdDataAttrs = isBody, followLinks = followLinks,
+            allowClassIdDataAttrs = isBody, relFollowTo = settings.relFollowTo,
             mayMention = _ => Map.empty.withDefaultValue(true))
       val renderResult = nashorn.renderAndSanitizeCommonMark(
             post.currentSource, renderParams)

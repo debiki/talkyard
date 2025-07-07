@@ -288,6 +288,8 @@ const enum ReviewDecision {
   // InteractTopicDoingStatus = 1221
   InteractLike = 1241,
 
+  AcceptUnreviewedId = 1993,
+
   // 3nnn = Request changes.
   // 5nnn = Reject.
   DeletePostOrPage = 5001,

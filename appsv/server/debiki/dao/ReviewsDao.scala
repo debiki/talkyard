@@ -27,6 +27,7 @@ import java.{util => ju}
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{immutable, mutable}
 import play.{api => p}
+import talkyard.server.authz.AdminReqrAndTgt
 import talkyard.server.dao._
 
 
@@ -330,6 +331,37 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
 
 
 
+  /** Some communities have other ways to review and approve their users. But
+    * didn't disable reviews and approvals, and now have lots of uninteresting
+    * review tasks.
+    * This method marks all review tasks as done (as looks-fine), so they can
+    * "get rid" of them. — Only for admins.
+    */
+  def acceptAllUnreviewed(filter: ModTaskFilter, reqrTgt: AdminReqrAndTgt)
+          : Iterable[ModResult] = {
+    TESTS_MISSING  // TyTMODACPTUNREV
+    require(filter.onlyPending, "TyE603MSRKJLL")
+    writeTx { (tx, staleStuff) =>
+      val modTasks: Seq[ModTask] = tx.loadReviewTasks(
+            filter, limit = 100) // see On2 below, and: [mod_acpt_all_limit]
+
+      val postIds = modTasks.flatMap(_.postId).toSet
+      val postsById = tx.loadPostsByUniqueId(postIds)
+
+      for (post <- postsById.values) yield {
+        val tasksThisPost = modTasks.filter(t => t.postId.is(post.id)) // [On2], fine, limit 100
+        doModTaskNow(
+              post,
+              tasksThisPost,
+              decision = ReviewDecision.AcceptUnreviewedId,
+              decidedById = reqrTgt.reqr.id,
+              )(tx, staleStuff)
+      }
+    }
+  }
+
+
+
   private def doModTaskNow(post: Post, modTasks: Seq[ModTask],
           decision: ModDecision, decidedById: UserId)
           (tx: SiteTx, staleStuff: StaleStuff): ModResult = {
@@ -367,11 +399,14 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
     import ReviewDecision._
 
     val result: ModResult = decision match {
-          case Accept if !post.isCurrentVersionApproved =>
+          case Accept | AcceptUnreviewedId
+                if !post.isCurrentVersionApproved =>
+            TESTS_MISSING  // if is AcceptUnreviewedId  TyTMODACPTUNREV
             approveAndPublishPost(post, decidedById = decidedById,
                   tasksToAccept = modTasks)(tx, staleStuff)
-          case Accept | InteractEdit | InteractReply |
+          case Accept | AcceptUnreviewedId | InteractEdit | InteractReply |
                 InteractAcceptAnswer | InteractWikify | InteractLike =>
+            TESTS_MISSING  // if is AcceptUnreviewedId  TyTMODACPTUNREV
             reviewAcceptPost(post, tasksToAccept = modTasks, decision,
                   decidedById = decidedById)(tx, staleStuff)
           case DeletePostOrPage | DeleteAndBanSpammer =>
@@ -875,19 +910,18 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
 
   /** Note: Any Guest:s returned were loaded via `..._wrongGuestEmailNotfPerf()`.
     */
-  def loadReviewStuff(olderOrEqualTo: Opt[ju.Date], limit: Int, forWho: Who)
+  def loadReviewStuff(filter: ModTaskFilter, limit: i32, forWho: Who)
         : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, PatVb], Map[PageId, PageMeta]) =
     readTx { tx =>
       val requester = tx.loadTheParticipant(forWho.id)
-      _loadStuffImpl(olderOrEqualTo, limit, requester, tx)
+      _loadStuffImpl(filter, limit, requester, tx)
     }
 
 
-  private def _loadStuffImpl(olderOrEqualTo: Opt[ju.Date], limit: Int,
-        requester: Pat, tx: SiteTx)
+  private def _loadStuffImpl(filter: ModTaskFilter, limit: i32, requester: Pat, tx: SiteTx)
         : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, PatVb], Map[PageId, PageMeta]) = {
 
-    val reviewTasksMaybeNotSee = tx.loadReviewTasks(olderOrEqualTo, limit)
+    val reviewTasksMaybeNotSee = tx.loadReviewTasks(filter, limit)
     val taskCounts = tx.loadReviewTaskCounts(requester.isAdmin)
 
     val postIds = reviewTasksMaybeNotSee.flatMap(_.postId).toSet

@@ -56,7 +56,7 @@ export const emailLabel = (isForGuest: boolean) => rFragment({},
 
 
 export const GroupList = function(member: UserDetailsStatsGroups, groupsMaySee: Group[],
-      listItemClassName: string, canUseLink?: false) {
+      listItemClassName: string) {
   let maxTrustLevelGroup = Groups.AllMembersId;
   member.groupIdsMaySee.forEach(id => {
     // Staff users are included in all built-in groups. [COREINCLSTAFF]
@@ -79,12 +79,12 @@ export const GroupList = function(member: UserDetailsStatsGroups, groupsMaySee: 
     const name = group.fullName || group.username;
     const urlPath = linkToUserProfilePage(group);
     return (
-      r.li({ key: groupId, className: listItemClassName },
-        // If we aren't inside a ReactRouter route, then, Link() won't work,
-        // throws an error.
-        canUseLink === false
-            ? r.a({ href: urlPath, target: '_blank' }, name)
-            : Link({ to: urlPath }, name)));
+        r.li({ key: groupId, className: listItemClassName },
+            // Don't use <Link> — the <GroupList> is shown in the about-user-dialog,
+            // but it's outside any <Router> root, so there'd be an error:
+            //   """Invariant failed: You should not use <Link> outside a <Router>""".
+            // This one, though, works outside ReactRouter roots:
+            LinkUnstyled({ to: urlPath }, name)));
   });
 }
 

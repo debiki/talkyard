@@ -502,7 +502,7 @@ declare namespace debiki2 {
   function linkToAdminApi(): string;
   function linkToAdminPageModerationSettings(): string;
   function linkToAdminPageEmbeddedSettings(): string;
-  function linkToReviewPage(): string;
+  function linkToReviewPage(ps?: { patId?: PatId }): St;
   function linkToStaffInvitePage(): string;
   function linkToInspect(what: 'priv-prefs'): St;
   function externalLinkToAdminHelp(): string;

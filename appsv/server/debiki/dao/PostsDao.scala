@@ -1100,7 +1100,7 @@ trait PostsDao {
     val combinedTextAndHtml = textAndHtmlMaker.forBodyOrComment(  // [nashorn_in_tx]
       newCombinedText,
       embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
-      followLinks = false)
+      relFollowTo = postRenderSettings.relFollowTo)
 
     val editedPost = lastPost.copy(
       approvedSource = Some(combinedTextAndHtml.text),
@@ -2425,9 +2425,7 @@ trait PostsDao {
                   postBefore.currentSource,
                   embeddedOriginOrEmpty = renderSettings.embeddedOriginOrEmpty,
                   allowClassIdDataAttrs = postBefore.nr == PageParts.BodyNr,
-                  // [WHENFOLLOW]
-                  followLinks = postBefore.nr == PageParts.BodyNr &&
-                        pageMeta.pageType.shallFollowLinks)
+                  relFollowTo = renderSettings.relFollowTo)
           }
 
     // Later: update lastApprovedEditAt, lastApprovedEditById too [upd_last_apr_editor].
@@ -2599,9 +2597,7 @@ trait PostsDao {
                     post.currentSource,
                     embeddedOriginOrEmpty = renderSettings.embeddedOriginOrEmpty,
                     allowClassIdDataAttrs = post.nr == PageParts.BodyNr,
-                    // [WHENFOLLOW]
-                    followLinks = post.nr == PageParts.BodyNr &&
-                          pageMeta.pageType.shallFollowLinks)
+                    relFollowTo = renderSettings.relFollowTo)
             }
 
       // Don't need to update lastApprovedEditAt, because this post has been invisible until now.

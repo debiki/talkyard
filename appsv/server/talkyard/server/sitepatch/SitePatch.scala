@@ -459,7 +459,7 @@ case class SimpleSitePatch(
           val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
           val textAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
                 bodySource, embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
-                followLinks = false)
+                relFollowTo = postRenderSettings.relFollowTo)
           textAndHtml.safeHtml
         }
 
@@ -620,7 +620,7 @@ case class SimpleSitePatch(
           val textAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
                 postPatch.bodySource,
                 embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
-                followLinks = false)
+                relFollowTo = postRenderSettings.relFollowTo)
           textAndHtml.safeHtml
         }
 

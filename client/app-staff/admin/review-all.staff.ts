@@ -47,24 +47,68 @@ const ReviewReasons = {
   userAboutTextEdited: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 23),
 };
 
+interface ReviewAllPanelProps extends AdminPanelProps, ReactRouterProps {
+}
+
+
+interface ReviewAllPanelState {
+  reviewTasks?: ReviewTask[]
+  isLoading?: Bo
+  hideComplTasks: Bo
+  onlyPatId?: PatId
+  onlyPat?: Pat
+  notFoundId?: PatId
+  spammersById?: { [patId: PatId]: true }
+  nowMs?: WhenMs
+  showComplicated?: Bo
+}
+
 
 export const ReviewAllPanel = createFactory({
   displayName: 'ReviewAllPanel',
 
   getInitialState: function() {
+    const props: ReviewAllPanelProps = this.props;
+    const queryParams = new URLSearchParams(props.location.search);
+    const anyPatIdSt: St | U = queryParams.get('patId');
+    const anyPatId = anyPatIdSt && parseInt(anyPatIdSt);
+    // (0 —> undefined = everyone, fine.)
+    const onlyPatId = anyPatId && !isNaN(anyPatId) ? anyPatId : undefined;
     return {
       // UX COULD change to false — but then e2e tests break.
       hideComplTasks: false,
-    };
+      onlyPatId,
+      showComplicated: !!queryParams.get('showComplicated'),
+    } satisfies ReviewAllPanelState;
   },
 
   componentDidMount: function() {
     let promise: Promise<void> = Server.loadEditorAndMoreBundlesGetDeferred();
-    Server.loadReviewTasks((reviewTasks: ReviewTask[]) => {
+    const state: ReviewAllPanelState = this.state;
+    const filter: ReviewTaskFilter = {  // could _break_out_filter
+      onlyPending: state.hideComplTasks,
+      patId: state.onlyPatId,
+    };
+    Server.loadReviewTasks(filter, (reviewTasks: ReviewTask[]) => {
       promise.then(() => {
         this.updateTaskList(reviewTasks);
       });
     });
+
+    // Pat `onlyPatId` won't have been loaded above, if there aren't any mod tasks about han.
+    if (state.onlyPatId) {
+      const loadingId = state.onlyPatId;
+      this.loadingPatId = loadingId;
+      Server.loadPatVvbPatchStore(loadingId, (resp: LoadPatVvbResponse | NotFoundResponse) => {
+        if (this.isGone) return;
+        this.loadingPatId = null; // (or only if correct id)
+        const newState: Partial<ReviewAllPanelState> = resp === 404
+              ? { onlyPat: null, notFoundId: loadingId }
+              : { onlyPat: resp.user, notFoundId: null };
+        this.setState(newState);
+      });
+    }
+
     // Don't reload tasks too frequently — don't want to accidentally DoS attack the server :-/
     let debounceMs = 2500;
     // @ifdef DEBUG
@@ -75,7 +119,27 @@ export const ReviewAllPanel = createFactory({
   },
 
   reloadTaskListDebounced: function() {
-    Server.loadReviewTasks(this.updateTaskList)
+    const state: ReviewAllPanelState = this.state;
+    const filter: ReviewTaskFilter = {  // could _break_out_filter
+      onlyPending: state.hideComplTasks,
+      patId: state.onlyPatId,
+    };
+    // (Could update `state.isLoading`)
+    Server.loadReviewTasks(filter, this.updateTaskList)
+  },
+
+  // (Not debounced, oh well.)
+  reloadWithNewFilter: function(ps: { hideComplTasks: Bo }) {
+    const state: ReviewAllPanelState = this.state;
+    const filter: ReviewTaskFilter = {  // could _break_out_filter
+      onlyPending: ps.hideComplTasks,
+      patId: state.onlyPatId,
+    };
+    this.setState({ isLoading: true });
+    Server.loadReviewTasks(filter, (tasks: ReviewTask[]) => {
+      this.setState({ ...ps, isLoading: false });
+      this.updateTaskList(tasks);
+    });
   },
 
   updateTaskList: function(reviewTasks: ReviewTask[]) {
@@ -102,7 +166,7 @@ export const ReviewAllPanel = createFactory({
       reviewTasks,
       spammersById,
       nowMs: getNowMs(),
-    });
+    } satisfies Partial<ReviewAllPanelState>);
     setTimeout(this.countdownUndoTimeout, 1000);
   },
 
@@ -114,7 +178,8 @@ export const ReviewAllPanel = createFactory({
   countdownUndoTimeout: function() {
     if (this.isGone) return;
     const nowMs = getNowMs();
-    const tasks: ReviewTask[] = this.state.reviewTasks;
+    const state: ReviewAllPanelState = this.state;
+    const tasks: ReviewTask[] = state.reviewTasks;
     const anyJustCompleted = _.some(tasks, (task: ReviewTask) => {
       if (task.completedAtMs || task.invalidatedAtMs || !task.decidedAtMs)
         return false;
@@ -138,19 +203,43 @@ export const ReviewAllPanel = createFactory({
     setTimeout(this.countdownUndoTimeout, 1000);
   },
 
+  acceptAllUnreviewed: function() {
+    util.openDefaultStupidDialog({
+      body: "Accept all? (actually, 100 at a time)",  // [mod_acpt_all_limit]
+      primaryButtonTitle: "Yes, bulk accept",
+      secondaryButonTitle: "No, cancel",
+      small: true,
+      onPrimaryClick: () => {
+        const state: ReviewAllPanelState = this.state;
+        const filter: ReviewTaskFilter = {  // could _break_out_filter
+          onlyPending: state.hideComplTasks,
+          patId: state.onlyPatId,
+        };
+        // TESTS_MISSING  TyTMODACPTUNREV
+        Server.acceptAllUnreviewed(filter, this.updateTaskList);
+      },
+    });
+  },
+
   render: function() {
-    if (!this.state.reviewTasks)
+    const state: ReviewAllPanelState = this.state;
+    if (!state.reviewTasks)
       return r.p({}, "Loading...");
 
-    const store: Store = this.props.store;
+    const props: ReviewAllPanelProps = this.props;
+    const store: Store = props.store;
 
-    let elems = this.state.reviewTasks.map((reviewTask: ReviewTask, index: number) => {
-      if (this.state.hideComplTasks && reviewTask_doneOrGone(reviewTask))
+    let elems = state.reviewTasks.map((reviewTask: ReviewTask, index: number) => {
+      if (state.hideComplTasks && reviewTask_doneOrGone(reviewTask))
         return null;
-      const isSpammer = this.state.spammersById[reviewTask.post?.createdById];
+      const isSpammer = state.spammersById[reviewTask.post?.createdById];
+      const filter: ReviewTaskFilter = {  // could _break_out_filter
+        onlyPending: state.hideComplTasks,
+        patId: state.onlyPatId,
+      };
       return ReviewTask({ reviewTask, key: reviewTask.id, isSpammer,
           updateTaskList: this.updateTaskList,
-          store, nowMs: this.state.nowMs, taskIndex: index });
+          store, nowMs: state.nowMs, taskIndex: index, filter });
     });
 
     if (!_.some(elems, x => x))  // maybe null items, see above
@@ -168,24 +257,59 @@ export const ReviewAllPanel = createFactory({
     });
 
     const hideComplTasks =
-      Input({ type: 'checkbox', checked: this.state.hideComplTasks,
+      Input({ type: 'checkbox', checked: state.hideComplTasks,
         className: 'e_HideCompl',
-        onChange: (event) => this.setState({ hideComplTasks: event.target.checked }),
-        label: "Hide completed review tasks" });
+        disabled: state.isLoading,
+        onChange: (event) => {
+          const hideComplTasks = event.target.checked;
+          this.reloadWithNewFilter({ hideComplTasks });
+        },
+        label: "Hide completed moderation tasks" });
 
     return (
       r.div({ className: 's_A_Rvw' },
         helpText,
-        hideComplTasks,
+
+        !state.notFoundId ? null :
+              r.div({ className: 's_A_Rvw_PatNF' },
+                `User id ${state.notFoundId} not found.`),
+        !state.onlyPat ? null :
+              r.div({ className: 's_A_Rvw_Pat' },
+                r.h3({}, "Moderation tasks related to:  ", // '...to:&thinsp;'
+                    LinkToPatAdminArea(state.onlyPat))),
+
+        r.div({ className: '' },
+          hideComplTasks,
+          // This is usually a bad idea! Only show, if ?showComplicated(=true) in a query param.
+          !state.showComplicated ? null : r.div({},
+              Button({ onClick: () => this.acceptAllUnreviewed(), className: 'e_AcptAllB' },
+                  "Accept all review tasks"),
+              r.span({ className: 'help-block' },
+                "You can bulk accept all, without review, if you're confident there are no issues.")),
+          // Later?:  Break out [query_field_and_q_param]?
+          // Input({ label: "Username filter", ... }),
+          // Input({ label: "Email filter", ... }),
+          ),
+
         elems));
   }
 });
 
 
+interface ReviewTaskProps {
+  key: St | Nr
+  store: Store
+  nowMs: WhenMs
+  reviewTask: ReviewTask
+  taskIndex: Nr
+  filter: ReviewTaskFilter
+  isSpammer?: Bo
+  updateTaskList: (reviewTasks: ReviewTask[]) => V
+}
+
+
 interface ReviewTaskState {
   justDecidedAtMs?: Nr;
-  justDecided?;
-
 }
 
 
@@ -291,12 +415,13 @@ const ReviewTask = createComponent({
 
   makeReviewDecision: function(decision: ReviewDecision) {
     const revisionNr = (this.props.reviewTask.post || {}).currRevNr;
-    Server.makeReviewDecision(this.props.reviewTask.id, revisionNr, decision, this.props.updateTaskList);
+    const props: ReviewTaskProps = this.props;
+    Server.makeReviewDecision({ taskId: props.reviewTask.id, revisionNr,
+          decision, filter: props.filter }, props.updateTaskList);
     /*
           (alreadyDecided?: { decision: ReviewDecision, decidedAtMs: WhenMs }) => {
       if (this.isGone) return;
       this.setState({
-        justDecided: decision,        CLEAN_UP remove this field
         justDecidedAtMs: getNowMs(),  CLEAN_UP remove this field
         couldBeUndone: undefined,     CLEAN_UP remove this field
       });
@@ -305,11 +430,12 @@ const ReviewTask = createComponent({
 
   undoReviewDecision: function() {
     // TESTS_MISSING  [4JKWWD4]
-    Server.undoReviewDecision(this.props.reviewTask.id, this.props.updateTaskList); /*(couldBeUndone: boolean) => {
+    const props: ReviewTaskProps = this.props;
+    Server.undoReviewDecision({ taskId: props.reviewTask.id, filter: props.filter },
+          props.updateTaskList); /*(couldBeUndone: boolean) => {
       if (this.isGone) return;
       if (couldBeUndone) {
         this.setState({
-          justDecided: null,
           justDecidedAtMs: null,
           couldBeUndone: true,
         });
@@ -323,8 +449,9 @@ const ReviewTask = createComponent({
   },
 
   render: function() {
-    const reviewTask: ReviewTask = this.props.reviewTask;
-    const store: Store = this.props.store;
+    const props: ReviewTaskProps = this.props;
+    const reviewTask: ReviewTask = props.reviewTask;
+    const store: Store = props.store;
     const state: ReviewTaskState = this.state;
 
     const post: PostToReview = reviewTask.post;
@@ -339,7 +466,7 @@ const ReviewTask = createComponent({
 
     const author = store_getUserOrMissing(store, post.createdById);
 
-    const authorIsBannedSpammer: Bo = pat_isBanned(author) || this.props.isSpammer;
+    const authorIsBannedSpammer: Bo = pat_isBanned(author) || props.isSpammer;
 
     // Is it better with the go-to _link_after the post, or in the text, before?
     const linkToPost = '/-'+ post.pageId + (post.nr >= FirstReplyNr ? '#post-'+ post.nr : '');
@@ -380,7 +507,7 @@ const ReviewTask = createComponent({
       const byWho = !decider ? null :
               r.span({}, " by ", UserNameLink({ user: decider, store }));
       let whatWasDone: St;
-      switch (reviewTask.decision || state.justDecided) {
+      switch (reviewTask.decision) {
         case ReviewDecision.Accept: whatWasDone = " Accepted"; break;
         case ReviewDecision.InteractEdit: whatWasDone = " Seems fine: Edited"; break;
         case ReviewDecision.InteractReply: whatWasDone = " Seems fine: Replied to"; break;
@@ -388,6 +515,7 @@ const ReviewTask = createComponent({
         case ReviewDecision.InteractWikify: whatWasDone = " Seems fine: Wikified"; break;
         //case ReviewDecision.InteractTopicDoingStatus: whatWasDone = " Seems fine: ... ?"; break;
         case ReviewDecision.InteractLike: whatWasDone = " Seems fine: Liked"; break;
+        case ReviewDecision.AcceptUnreviewedId: whatWasDone = " Accepted without review"; break;
         case ReviewDecision.DeletePostOrPage: whatWasDone = " Deleted"; break;
         case ReviewDecision.DeleteAndBanSpammer: whatWasDone = " Deleted, author banned,"; break;
         default: whatWasDone = 'TyEWAWADON';
@@ -411,7 +539,7 @@ const ReviewTask = createComponent({
     else if (!reviewTask.completedAtMs && (state.justDecidedAtMs || reviewTask.decidedAtMs)) {
       undoDecisionButton =
           UndoReviewDecisionButton({ justDecidedAtMs: state.justDecidedAtMs,
-              reviewTask, nowMs: this.props.nowMs, undoReviewDecision: this.undoReviewDecision });
+              reviewTask, nowMs: props.nowMs, undoReviewDecision: this.undoReviewDecision });
     }
 
     if (reviewTask.completedAtMs || reviewTask.decidedAtMs || state.justDecidedAtMs
@@ -520,7 +648,7 @@ const ReviewTask = createComponent({
     const pageIdPostNrIndexClass =
       ' e_Pg-Id-' + post.pageId +
       ' e_P-Nr-' + post.nr +
-      ' e_RT-Ix-' + (this.props.taskIndex + 1); // let's start at 1? Simpler when writing e2e code?
+      ' e_RT-Ix-' + (props.taskIndex + 1); // let's start at 1? Simpler when writing e2e code?
     const e2eClasses = pageIdPostNrIndexClass + isDeletedClass + isWaitingClass;
 
     const numVotes =

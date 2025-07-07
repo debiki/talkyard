@@ -197,7 +197,8 @@ esac
 rm -f ./target/build-exit-status
 
 set -x
-nix-shell --run "./s/impl/build-prod-images.sh $version_tag $*"
+# (We should be in a Nix shell already, so need not use `nix-shell --run "..."`.)
+./s/impl/build-prod-images.sh $version_tag $*
 echo $? | tee ./target/build-exit-code
 set +x
 

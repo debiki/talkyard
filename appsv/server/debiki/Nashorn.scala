@@ -19,7 +19,7 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import java.{io => jio}
+import java.{io => jio, util => ju}
 import javax.{script => js}
 import talkyard.server.linkpreviews.{LinkPreviewRendererForNashorn, LinkPreviewRenderer}
 import org.apache.lucene.util.IOUtils
@@ -30,6 +30,7 @@ import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import talkyard.server.TyLogging
 import talkyard.server.rendr.NashornParams
 import scala.collection.mutable.ArrayBuffer
+import scala.jdk.CollectionConverters._  // for asJava below
 
 
 
@@ -168,6 +169,14 @@ class Nashorn(
   }
 
 
+  /** Takes a React store serialized to a string, and runs React server side to
+    * render html to show in the browser. Won't render complete html pages — we still
+    * need to wrap the rendered html in `<html><body>` tags and some more stuff,
+    * see [assemble_whole_page_html].
+    *
+    * (Follow/nofollow links info not needed — already handled when rendering individual
+    * posts to html, and that html is included in the reactStoreJsonString.)
+    */
   def renderPage(reactStoreJsonString: String): String Or ErrorMessage = {
     if (isTestSoDisableScripts)
       return Good("Scripts disabled [EsM6YKW2]")
@@ -177,7 +186,7 @@ class Nashorn(
   }
 
 
-  private def renderPageImpl[R](engine: js.Invocable, reactStoreJsonString: String)
+  private def renderPageImpl[R](engine: js.Invocable, reactStoreJsonString: St)
         : String Or ErrorMessage = {
     val timeBefore = System.currentTimeMillis()
 
@@ -248,10 +257,11 @@ class Nashorn(
               requesterId = SystemUserId))
 
     val (safeHtmlNoPreviews, mentions) = withJavascriptEngine(engine => {
+      val relFollowTo_javaList: ju.List[St] = renderParams.relFollowTo.asJava
       val resultObj: Object = engine.invokeFunction("renderAndSanitizeCommonMark",
             commonMarkSource,
             true.asInstanceOf[Object],  // was: renderParams.allowClassIdDataAttrs
-            renderParams.followLinks.asInstanceOf[Object],
+            relFollowTo_javaList,
             // renderParams.mayMention  // Later? [filter_mentions] @Mentions that didn't
                                         // generate any notifications could get another
                                         // color, e.g. dark gray not blue?
@@ -300,18 +310,19 @@ class Nashorn(
   }
 
 
-  def sanitizeHtml(text: String, followLinks: Boolean): String = {
-    sanitizeHtmlReuseEngine(text, followLinks, None)
+  def sanitizeHtml(text: St, relFollowTo: Seq[St]): St = {
+    sanitizeHtmlReuseEngine(text, relFollowTo, None)
   }
 
 
-  private def sanitizeHtmlReuseEngine(text: St, followLinks: Bo,
+  private def sanitizeHtmlReuseEngine(text: St, relFollowTo: Seq[St],
         javascriptEngine: Opt[js.Invocable]): St = {
     if (isTestSoDisableScripts)
       return "Scripts disabled [EsM44GY0]"
     def sanitizeWith(engine: js.Invocable): String = {
+      val relFollowTo_javaList: ju.List[St] = relFollowTo.asJava
       val safeHtml = engine.invokeFunction(
-          "sanitizeHtmlServerSide", text, followLinks.asInstanceOf[Object])
+            "sanitizeHtmlServerSide", text, relFollowTo_javaList)
       safeHtml.asInstanceOf[String]
     }
     javascriptEngine match {
@@ -615,10 +626,15 @@ object Nashorn {
     |
     |// Returns [html, mentions] if ok, else a string with an error message
     |// and exception stack trace.
-    |function renderAndSanitizeCommonMark(source, allowClassIdDataAttrs, followLinks,
-    |       instantLinkPreviewRenderer, uploadsUrlPrefixCommonmark) {
+    |function renderAndSanitizeCommonMark(source, allowClassIdDataAttrs, relFollowToJava,
+    |            instantLinkPreviewRenderer, uploadsUrlPrefixCommonmark) {
     |  var exceptionAsString;
     |  try {
+    |    // Convert from java.util.List[St] to Javascript St[].
+    |    //print('In renderAndSanitizeCommonMark. relFollowToJava length: ' + relFollowToJava.length);
+    |    var relFollowTo = Java.from(relFollowToJava);
+    |    // console.debug('relFollowTo: ' + JSON.stringify(relFollowTo));
+    |
     |    theStore = null; // Fail fast. Don't use here, might not have been inited.
     |    eds.uploadsUrlPrefixCommonmark = uploadsUrlPrefixCommonmark;  // [7AKBQ2]
     |    debiki.internal.serverSideLinkPreviewRenderer = instantLinkPreviewRenderer;
@@ -629,7 +645,7 @@ object Nashorn {
     |    var allowClassAndIdAttr = allowClassIdDataAttrs;
     |    var allowDataAttr = allowClassIdDataAttrs;
     |    var html = googleCajaSanitizeHtml(
-    |          unsafeHtml, allowClassAndIdAttr, allowDataAttr, followLinks);
+    |          unsafeHtml, allowClassAndIdAttr, allowDataAttr, relFollowTo);
     |    // Fail fast — simplify detection of reusing without reinitialzing:
     |    eds.uploadsUrlPrefixCommonmark = 'TyE4GKFWB0';
     |    debiki.internal.serverSideLinkPreviewRenderer = 'TyE56JKW20';
@@ -645,15 +661,49 @@ object Nashorn {
     |
     |// (Don't name this function 'sanitizeHtml' because it'd then get overwritten by
     |// a function with that same name from a certain sanitize-html npm module.)
-    |function sanitizeHtmlServerSide(source, followLinks) {
+    |function sanitizeHtmlServerSide(source, relFollowToJava) {
     |  try {
     |    // This function calls both Google Caja and the sanitize-html npm module. CLEAN_UP RENAME.
-    |    return googleCajaSanitizeHtml(source, false, false, followLinks);
+    |    var relFollowTo = Java.from(relFollowToJava);
+    |    //console.log('sanitizeHtmlServerSide,  source: ' + source + '   relFollowTo: ' +
+    |    //    JSON.stringify(relFollowTo) + '  relFollowToJava: ' + JSON.stringify(relFollowToJava));
+    |    var res = googleCajaSanitizeHtml(source, false, false, relFollowTo);
+    |    //console.log('sanitizeHtmlServerSide,  res: ' + res);
+    |    return res;
     |  }
     |  catch (e) {
     |    printStackTrace(e);
     |  }
     |  return "Error sanitizing HTML on server [DwE5GBCU6]";
+    |}
+    |
+    |
+    |var URL = Java.type('java.net.URL');
+    |
+    |// Used by our custom code in googleCajaSanitizeHtml().
+    |//
+    |// If 'example.com' specified, we follow links to subdomains too, e.g.
+    |// 'www.example.com'. [rel_follow_incl_subdoms]
+    |//
+    |// (Since URLSearchParams isn't available in Nashorn we use java.net.URL instead.)
+    |//
+    |function nashorn_shallFollowUrl(url, followTo) {
+    |  try {
+    |    var javaUrl = new URL(url);
+    |    //console.debug("nashorn_shallFollowUrl url: " + url);
+    |    //console.debug("nashorn_shallFollowUrl Protocol: " + javaUrl.getProtocol());
+    |    //console.debug("nashorn_shallFollowUrl Host: " + javaUrl.getHost());
+    |    //console.debug("nashorn_shallFollowUrl Path: " + javaUrl.getPath());
+    |    //console.debug("nashorn_shallFollowUrl Query: " + javaUrl.getQuery());
+    |    //console.debug("nashorn_shallFollowUrl Ref (Fragment): " + javaUrl.getRef());
+    |    var host = javaUrl.getHost();
+    |    var equal = host === followTo;
+    |    var subdom = host && host.endsWith('.' + followTo);
+    |    //console.debug("nashorn_shallFollowUrl(): equal=" + equal + " subdom=" + subdom);
+    |    return equal || subdom;
+    |  } catch (ex) {
+    |    console.warn("nashorn_shallFollowUrl: Error parsing URL: " + ex);
+    |  }
     |}
     |"""
 

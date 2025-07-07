@@ -255,6 +255,8 @@ class RenderContentActor(
       return tinyResult
 
     // Render for medium width.
+    COULD_OPTIMIZE // ? Don't need to construct all page json again, if just done above?
+                    // Or are there render settings therein
     val mediumParams = tinyParams.copy(widthLayout = WidthLayout.Medium)
     val mediumResult = renderIfNeeded(sitePageId, mediumParams, dao, freshStoreJsonHash = None)
     if (mediumResult.isBad)

@@ -74,7 +74,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val postRenderSettings = dao.makePostRenderSettings(pageRole)
     val bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(bodyText,
       embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
-      allowClassIdDataAttrs = true, followLinks = pageRole.shallFollowLinks)
+      allowClassIdDataAttrs = true, relFollowTo = postRenderSettings.relFollowTo)
 
     val titleSourceAndHtml = TitleSourceAndHtml(titleText)
 

@@ -1,0 +1,13 @@
+For now, maybe add max num own/follow-domains? — Max 2k chars db constr, maybe that can be ok.
+
+UGC domain, see:
+    commit dce5b3faa0cce6bbdaaf55bae4c9773d545f80f6
+    Author: Kaj Magnus Lindberg <kajmagnus3@gmail.com>
+    Date:   Mon May 22 00:36:51 2023 +0200
+
+        Support UGC subdomains
+        
+        And use publ site id in superadmin app.
+
+
+Upd demo sites: rel-follow to SX

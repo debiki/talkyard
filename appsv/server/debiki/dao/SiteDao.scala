@@ -206,7 +206,7 @@ class SiteDao(
           tx, if (useMemCache) Some(this) else None, whichPosts)
 
   REFACTOR // Change textAndHtmlMaker to maketextAndHtmlMaker(pageType: PageType)  Edit: Also incl page id  [ln_pv_az]
-  // which automatically knows the right embeddedOriginOrEmpty and followLinks etc,
+  // which automatically knows the right embeddedOriginOrEmpty etc,
   // so won't need to always use makePostRenderSettings() below before
   // using textAndHtmlMaker?
   @deprecated // might create a new tx
@@ -214,6 +214,7 @@ class SiteDao(
   def textAndHtmlMakerNoTx(site: Site) = new TextAndHtmlMaker(site, context.nashorn)
 
   def makePostRenderSettings(pageType: PageType): PostRendererSettings = {
+    val settings = this.getWholeSiteSettings()
     val embeddedOriginOrEmpty =
           if (pageType == PageType.EmbeddedComments) theSiteOrigin()
           else ""
@@ -221,7 +222,8 @@ class SiteDao(
           embeddedOriginOrEmpty = embeddedOriginOrEmpty,
           pageRole = pageType,
           siteId = siteId,
-          thePubSiteId())
+          thePubSiteId(),
+          relFollowTo = settings.relFollowTo)
   }
 
 

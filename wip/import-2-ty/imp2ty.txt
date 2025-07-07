@@ -1,0 +1,53 @@
+Idea: Dump the database to be imported to Talkyard, e.g. MyBB or phpBB or who knows what, into some binary dump file. E.g. ProtoBuf. And import to Postgres using COPY FROM STDIN — that's super fast.
+
+Gemini Flash says:
+>  2. Protocol Buffers (ProtoBuf)
+>  Pros: Excellent performance, very compact, strong schema enforcement, widely adopted, great tooling, good for inter-service communication and long-term data storage. Supports schema evolution well.
+
+Schema enforcement is nice? Then, simpler for strangers to write exporters — they "just" need to serialize the discussion forum s(MyBB, phpBB etc) into Ty's ProtoBuf format?
+
+Other software:
+   Discourse requires [the database software that the source forum uses] to be installed on the Discourse *production* server. That's doesn't make sense in Ty's case — Ty is multitenant, and we can't install lots of other unrelated software on the prod servers.
+
+Standardized ProtoBuf files seems better, for Ty?
+
+Or maybe Avro or CapnProto or sth else, but a compact binary format w schema enforcement?
+
+
+Note: ProtoBuf:
+    """Total Size of the Message
+    Any proto in serialized form must be <2GiB"""
+
+So, don't bundle uploads (imgs, videos) w database contents. Maybe 1 ProtoBuf per table? So won't > 2 GB.
+& uploads via rsync? rclone? in separate gigantic zip?
+
+
+Avro seems better for Ty's use case. Don't use ProtoBuf, use Avro?
+    Space efficient for small messages:  https://benchmark.sourcemeta.com/#jsonresume
+    and for tiny:  https://benchmark.sourcemeta.com/#circlecimatrix
+
+    That's nice when storing or copying backups, and also if talking with a browser.
+
+    It's the most compact format, except for Json BinPack,
+
+    Can split Avro binary files, and concatenate, from what I read. But don't think ProtoBuf supports.
+    — That's nice if transferring a huge db dump in smaller parts?
+
+JsonBinpack: Don't use, because:
+  - Abandonware risk: https://github.com/sourcemeta/jsonbinpack
+  - Benchmarks missing: There's many for tiny payloads (10 - 100 bytes) and a few for small (a few KB), but none for medium, say 10 KB+, or bigger.
+        But Ty's binary dumps would be biiiiggger.
+  - Only a C++ implementation, nothing in Java, Javascript etc?
+  - Only json? Avro supports more types, e.g. can have maps with numeric keys? (json = only string keys)
+
+  Found out about Json BinPack via:
+      https://news.ycombinator.com/item?id=41291219
+      a|  https://arxiv.org/abs/2211.12799
+          Benchmarking JSON BinPack
+          > developed to improve network performance and reduce the operational costs of Internet-based software systems
+       
+       In the Benhcmarks, BinPack + gzip is usually a bit more compact than Avro + gzip, but not always.
+
+    More papers by the same authors:
+        https://arxiv.org/search/cs?searchtype=author&query=Viotti,+J+C
+

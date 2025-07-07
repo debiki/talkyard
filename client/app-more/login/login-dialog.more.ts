@@ -196,18 +196,19 @@ const LoginDialog = createClassAndFactory({
    * Clears login related cookies so e.g. any lingering return-to-url won't cause troubles.
    */
   setLoginRelatedCookies: function() {
-    getSetCookie('dwCoReturnToUrl', null);
-    getSetCookie('dwCoReturnToSite', null);
+    //getSetCookie('dwCoReturnToUrl', null);
+    //getSetCookie('dwCoReturnToSite', null);
     // Don't clear dwCoReturnToSiteXsrfToken — that'd break parallel login, [PRLGIN]
     // and break OAuth login if opens the login dialog, clicks "Google" to open a Google
     // login popup, then closes and reopens the login dialog, and then logs in at Google
     // in the popup.
-    getSetCookie('dwCoIsInLoginPopup', null);
-    getSetCookie('dwCoMayCreateUser', null);
-    getSetCookie('dwCoOAuth2State', null);
+    //getSetCookie('dwCoIsInLoginPopup', null);
+    //getSetCookie('dwCoMayCreateUser', null);
+    //getSetCookie('dwCoOAuth2State', null);
     getSetCookie('esCoImp', null);
     //getSetCookie('TyCoPersona', null);
 
+    // Later, use [login_query_params] instead of these cookies?
     if (!eds.isInLoginWindow) {
       // We're in a login popup, not in a dedicated "full screen" login window.
       getSetCookie('dwCoIsInLoginWindow', null);
@@ -450,7 +451,7 @@ const LoginDialogContent = createClassAndFactory({
           r.p({ className: 's_LD_NotFound_Details' },
             t.ld.IfYouThinkExistsThen +
             (props.isLoggedIn ? t.ld.LoggedInAlready : '') +
-            t.ld.ElseGoToHome_1, r.a({ className: 's_LD_NotFound_HomeL', href: '/' },
+            t.ld.ElseGoToHome_1, LinkUnstyled({ className: 's_LD_NotFound_HomeL', to: '/' },
               t.ld.ElseGoToHome_2)));
 
     const loginDlg = isSignUp ? null :
@@ -531,6 +532,9 @@ const LoginDialogContent = createClassAndFactory({
             orJustTypeName());
     }
 
+
+    // ---- Lokcal authn or OIDC?
+
     const ss = store.settings;
 
     const customIdps: IdentityProviderPubFields[] = ss.customIdps || [];
@@ -554,7 +558,35 @@ const LoginDialogContent = createClassAndFactory({
     const useOnlyCustomIdps = ss.useOnlyCustomIdps && canUseCustomIdps;
     const allowLocalSignup = ss.allowLocalSignup !== false && !useOnlyCustomIdps;
 
-    let content;
+
+    // ---- Custom title and intro?
+
+    let customHtml: RElm | NU = null;
+    const anyConf: AuthnDiagConfV0 | NU = store.authnDiagConf?.c0[0];
+    const anyIntro = anyConf && (anyConf.headerText || anyConf.introHtml || anyConf.imageUrl);
+    const isStaffSpace = location.pathname.startsWith(UrlPaths.AdminArea)
+
+    // If logging in to the admin area, ignore any login dialog custom html, so any
+    // cutom html bugs won't prevent admins from logging in and fixing the bugs.
+    if (anyIntro && !isStaffSpace) {
+      // (Below, 'AuD_Cu' = "_Au_thentication _D_ialog _Cu_stomization".)
+      customHtml = r.div({ className: 'c_AuD_Cu' },
+          // If you want some HTML elements in the title, e.g. <h1>...</h1><h2>..</h2>  or <b>,
+          // you can leave headerText empty, and place the title in introHtml instead.
+          !anyConf.headerText ? null :
+              r.h1({ className: 'c_AuD_Cu_Ttl' }, anyConf.headerText),
+          !anyConf.introHtml ? null :
+              r.div({ className: 'c_AuD_Cu_Intro',
+                  // Only admins can edit this html.
+                  dangerouslySetInnerHTML: { __html: anyConf.introHtml }}),
+          !anyConf.imageUrl ? null :
+              r.figure({ className: 'c_AuD_Cu_Fig' }, r.img({ src: anyConf.imageUrl })),
+          );
+    }
+
+    // ---- Assemble dialog
+
+    let content: RElm | U;
 
     const anySsoUrl = makeSsoUrl(store, location.toString());
 
@@ -570,36 +602,14 @@ const LoginDialogContent = createClassAndFactory({
         "You're logged in but seems you cannot access this part of the site " +  // I18N
         "(if it exists). " +
         "Can you login as a user with higher permissions?")
-      content =
+      content = rFr({},
+          customHtml,
           r.div({ style: { textAlign: 'center' }},
             ExtLinkButton({ href: anySsoUrl, className: 's_LD_SsoB btn-primary' },
               t.LogIn),
-            loggedInButMayNotAccess);
+            loggedInButMayNotAccess));
     }
     else {
-      let customHtml: RElm | NU = null;
-      const anyConf: AuthnDiagConfV0 | NU = store.authnDiagConf?.c0[0];
-      const anyIntro = anyConf && (anyConf.headerText || anyConf.introHtml || anyConf.imageUrl);
-      const isStaffSpace = location.pathname.startsWith(UrlPaths.AdminArea)
-
-      // If logging in to the admin area, ignore any login dialog custom html, so any
-      // cutom html bugs won't prevent admins from logging in and fixing the bugs.
-      if (anyIntro && !isStaffSpace) {
-        // (Below, 'AuD_Cu' = "_Au_thentication _D_ialog _Cu_stomization".)
-        customHtml = r.div({ className: 'c_AuD_Cu' },
-            // If you want some HTML elements in the title, e.g. <h1>...</h1><h2>..</h2>  or <b>,
-            // you can leave headerText empty, and place the title in introHtml instead.
-            !anyConf.headerText ? null :
-                r.h1({ className: 'c_AuD_Cu_Ttl' }, anyConf.headerText),
-            !anyConf.introHtml ? null :
-                r.div({ className: 'c_AuD_Cu_Intro',
-                    // Only admins can edit this html.
-                    dangerouslySetInnerHTML: { __html: anyConf.introHtml }}),
-            !anyConf.imageUrl ? null :
-                r.figure({ className: 'c_AuD_Cu_Fig' }, r.img({ src: anyConf.imageUrl })),
-            );
-      }
-
       const confOr = (custom: St | U, def: St): St | N => {
         if (isStaffSpace || !custom) return def;
         if (custom === '-') return null;  // [dash_hides_label]
@@ -738,6 +748,8 @@ function ExtIdpAuthnBtn(props: ExtIdpAuthnBtnProps) {
     const mainWin = getMainWin();
     const canUseCookies = win_canUseCookies(mainWin);
 
+    // These [login_query_params] are better than cookies — always work, also if
+    // cookies blocked somehow.
     const urlPathAndQuery = urlPath +
         '?' + mayNotCreateUser +
         `nonce=${props.authnNonce}&` +

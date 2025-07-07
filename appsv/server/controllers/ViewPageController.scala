@@ -368,11 +368,16 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
   private def getPageAsHtmlImpl(request: GetRequest): Future[Result] = {
     // Similar to loadPost and getPageAsJsonImpl, keep in sync. [7PKW0YZ2]
     dieIfAssetsMissingIfDevTest()
+    def queryStr: St = {
+      val queryString = request.request.target.queryString
+      if (queryString.isEmpty) ""
+      else "?" + queryString
+    }
 
     val specifiedPagePath = PagePath.fromUrlPath(request.siteId, request.request.path) match {
       case PagePath.Parsed.Good(path) => path
       case PagePath.Parsed.Bad(error) => throwBadRequest("TyEPAGEPATH", error)
-      case PagePath.Parsed.Corrected(newPath) => throwTemporaryRedirect(newPath)
+      case PagePath.Parsed.Corrected(newPath) => throwTemporaryRedirect(newPath + queryStr)
     }
 
     val dao = request.dao
@@ -470,7 +475,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
       // Later: Could set cache-control 1 day or 1 week? So won't be totally forever.
       // And perhaps add a checkbox "[x] Redirect permanently (cache-control 1 week)
       // in the admin area.
-      return Future.successful(Results.SeeOther(correctPagePath.value))
+      return Future.successful(Results.SeeOther(correctPagePath.value + queryStr))
     }
 
     if (request.user.isEmpty)

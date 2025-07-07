@@ -287,7 +287,18 @@ export const DropdownModal = createComponent({
       rb.Modal({ show: props.show, onHide,
           onShow: () => this.setState({ hideBackdrop: false }),
           dialogClassName: 'esDropModal' + notTooWideClass + dialogClassName,
-          backdropStyle: backdropStyle },
+          backdropStyle: backdropStyle,
+          //
+          // Leave this as is, default true? Maybe annoying if anything else gets focused.
+          // restoreFocus: true,
+          //
+          // However, if in an iframe, when restoring the focus, the embedding window jumps
+          // down/up so the iframe as much as possible fits in the window  [iframe_jump_bug]
+          // — annoying.  Let's try this:
+          // https://react-bootstrap.github.io/react-overlays/api/Modal#restoreFocusOptions
+          // But doesn't work! Let's comment out for now.
+          // restoreFocusOptions: {  preventScroll: true },
+        },
         content));
   }
 });

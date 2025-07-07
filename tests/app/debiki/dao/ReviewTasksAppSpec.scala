@@ -17,22 +17,19 @@
 
 package debiki.dao
 
-import scala.collection.Seq
 import com.debiki.core._
-import java.{util => ju}
 import scala.collection.immutable
 
 
 class ReviewTasksAppSpec extends DaoAppSuite {
 
   "ReviewTasksDao can" - {
-    val now = new ju.Date()
 
     "find no tasks when there are none" in {
       globals.systemDao.getOrCreateFirstSite()
       val dao = globals.siteDao(Site.FirstSiteId)
       val (stuff, taskCounts, usersById, pageMetaById) = dao.loadReviewStuff(
-          olderOrEqualTo = None, limit = 999, forWho = Who.System)
+            ModTaskFilter.Empty, limit = 999, forWho = Who.System)
       stuff.length mustBe 0
 
       taskCounts.numUrgent mustBe 0
@@ -89,7 +86,7 @@ class ReviewTasksAppSpec extends DaoAppSuite {
 
       info("find the tasks")
       val (stuff, taskCounts, usersById, pageMetaById) =
-        dao.loadReviewStuff(olderOrEqualTo = None, limit = 999, forWho = Who.System)
+        dao.loadReviewStuff(ModTaskFilter.Empty, limit = 999, forWho = Who.System)
       taskCounts.numUrgent mustBe 1
       taskCounts.numOther mustBe 1
       stuff.length mustBe 2

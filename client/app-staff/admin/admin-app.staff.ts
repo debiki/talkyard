@@ -369,7 +369,6 @@ const AdminAppComponent = createReactClass(<any> {
     // [React_Router_v51] skip render(), use hooks and useParams instead.
     const childRoutes = Switch({},
         RedirAppend({ path: ar + 'users', append: '/enabled' }),
-        RedirAppend({ path: ar + 'review', append: '/all' }),
         RedirAppend({ path: ar + 'settings', append: defaultSettingsPath }),
         RedirAppend({ path: ar + 'customize', append: '/basic' }),
         Route({ path: ar + 'dashboard', render: () => DashboardPanel(childProps) }),
@@ -379,7 +378,7 @@ const AdminAppComponent = createReactClass(<any> {
         Route({ path: ar + 'customize', render: () => CustomizePanel(childProps) }),
         Route({ path: ar + 'backup', render: () => BackupPanel(childProps) }),
         Route({ path: ar + 'api', render: () => ApiPanel(childProps) }),
-        Route({ path: ar + 'review', render: () => ReviewAllPanel(childProps) }),
+        Route({ path: ar + 'review', render: (ps) => ReviewAllPanel({ ...childProps, ...ps }) }),
         Route({ path: ar + 'inspect', render: () => InspectPanel(childProps) }));
 
     return (
@@ -2839,6 +2838,32 @@ const AdvancedSettings = createFactory({
             canonicalHostnameSamp, " (with status 302 Found):"),
           r.pre({}, redirectingHostnames.join('\n'))));
 
+    const ownDomains =
+        Setting2(props, { type: 'textarea', label: "Your domains",
+          className: 's_A_Ss_YrDoms',
+          // [rel_follow_incl_subdoms]
+          help: r.span({}, "Links to your domains, incl subdomains, will be rel=follow. " +
+              "You can add many domains, one per line. Lines starting with # are ignored."),
+          placeholder: "www.your-website.com",
+          getter: (s: Settings) => s.ownDomains,
+          update: (newSettings: Settings, target) => {
+            newSettings.ownDomains = target.value;
+          }
+        });
+
+    const followLinksTo =
+        Setting2(props, { type: 'textarea', label: "Follow links to",
+          className: 's_A_Ss_FolLns',
+          // [rel_follow_incl_subdoms]
+          help: r.span({}, "Links to these 3rd party domains, incl subdomains, " +
+              "will be rel=follow. Lines starting with # are ignored."),
+          placeholder: "www.external-website.com",
+          getter: (s: Settings) => s.followLinksTo,
+          update: (newSettings: Settings, target) => {
+            newSettings.followLinksTo = target.value;
+          }
+        });
+
     const googleAnalyticsId =
         Setting2(props, { type: 'text', label: "Google Analytics 4 Tag ID",
           help: r.span({}, "A tag ID, e.g. ", r.samp({}, "G-123ABC456D"),
@@ -2874,6 +2899,8 @@ const AdvancedSettings = createFactory({
         changeHostnameFormGroup,
         duplicatingHostsFormGroup,
         redirectingHostsFormGroup,
+        ownDomains,
+        followLinksTo,
         dangerZoneTitle,
         deleteSiteFormGroup));
 

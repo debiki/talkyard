@@ -40,6 +40,8 @@ object LinkPreviewHtml {
     // be used for paid links (or "nofollow" is also ok, but not "ugc" — search
     // engines can penalize that).
     // rel=nofollow also added here: [rel_nofollow].
+    // But we want  relFollowTo  param here, to know if no/follow? [WHENFOLLOW]  Not that
+    // important, can fix later.
     val relAttrs = "nofollow noopener ugc"
 
     <aside class={s"s_LnPv s_LnPv-Blk $extraLnPvCssClasses clearfix"}>{

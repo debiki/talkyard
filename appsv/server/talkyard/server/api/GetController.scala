@@ -75,7 +75,7 @@ class GetController @Inject()(cc: ControllerComponents, edContext: TyContext)
         // For now.  [get_pat_api_secr]
         // In private communities, names are private, so it's simpler to just
         // disallow these requests always, unless there's an API secret.
-        throwForbiddenIf(!req.isViaApiSecret, "TyE0APISECR_", "API secret missing")
+        throwUnauthorizedIf(!req.isViaApiSecret, "TyE0APISECR_", "API secret missing")
 
         GetPatsImpl.getPats(req, getQueryJson, refs, inclFieldsJs) getOrIfBad { problem =>
           return BadReqResult("TyEGETPATS", problem)

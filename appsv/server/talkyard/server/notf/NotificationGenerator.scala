@@ -1279,12 +1279,13 @@ object NotificationGenerator {
 
     // Do twice? First to find all mentions, then, find out which ones one may not mention,
     // then, do again but color @someone_one_may_not_mention in gray not blue? [filter_mentions]
+    // [ext_markup_processor]
     val result = nashorn.renderAndSanitizeCommonMark(
       // BUG? COULD incl origin here, so links won't be interpreted relative any
       // web browser client's address? — Right now, no images incl in reply notf emails
       // anyway, so need not fix now.
       text, NashornParams(site, embeddedOriginOrEmpty = "",
-            allowClassIdDataAttrs = false, followLinks = false,
+            allowClassIdDataAttrs = false, relFollowTo = Nil,
             mayMention = _ => Map.empty.withDefaultValue(true)))
 
     result.mentions

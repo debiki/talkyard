@@ -110,14 +110,13 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     COULD_OPTIMIZE // Don't commonmark-format bookmarks — they're just plain text
     // anyway. [dont_format_bookmarks]
-    // For now, don't follow links in replies. COULD rel=follow if all authors + editors = trusted.
     // (Here, and at other calls to forBodyOrComment(), is a better place to remember
     // whom to mention — so the author will know for sure; compare with: [filter_mentions].)
     val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
     val textAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
-      text,
-      embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
-      followLinks = false)
+          text,
+          embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
+          relFollowTo = postRenderSettings.relFollowTo)
 
     val result = dao.insertReplySkipAuZ(textAndHtml, pageId = pageId, replyToPostNrs,
           postType, deleteDraftNr, request.who, // [alias_4_principal]
@@ -165,12 +164,11 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
       now = now),
       "EdEHDETG4K5")
 
-    // Don't follow links in chat messages — chats don't work with search engines anyway.
     val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
     val textAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
-      text,
-      embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
-      followLinks = false)
+          text,
+          embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
+          relFollowTo = postRenderSettings.relFollowTo)
     val result = dao.insertChatMessage(
       textAndHtml, pageId = pageId, deleteDraftNr, request.who, request.spamRelatedStuff)
 

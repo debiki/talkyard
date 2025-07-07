@@ -452,11 +452,11 @@ export const PostActions = createComponent({
           title: t.pa.ReportThisPost });
     }
 
-    const adminLink = !me.isAdmin || !isEmbeddedOrigPost ? null : rFragment({},
-      r.a({ className: 'dw-a dw-a-other-topics icon-link-ext', href: linkToEmbeddedDiscussions(),
-        target: '_blank' }, t.pa.DiscIx),
-      r.a({ className: 'dw-a dw-a-admin icon-link-ext', href: linkToReviewPage(),
-        target: '_blank' }, t.pa.Admin));
+    const adminLink = !me.isAdmin || !isEmbeddedOrigPost ? null : rFr({},
+        LinkUnstyled({ className: 'dw-a dw-a-other-topics icon-link-ext',
+            to: linkToEmbeddedDiscussions(), target: '_blank' }, t.pa.DiscIx),
+        r.a({ className: 'dw-a dw-a-admin icon-link-ext',
+            href: linkToReviewPage(), target: '_blank' }, t.pa.Admin));
 
     // BUG? approveOrDeleteBtns won't appear for embedded comments?
     // Instead of this test, should be a post.approvedStatus field. [ApprovedStatus]

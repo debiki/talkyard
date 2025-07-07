@@ -4937,6 +4937,7 @@ export class TyE2eTestBrowser {
             talkyardUsername: St, azureFullName: St, idpName: St }) => {
         // Now there's some info text, and one needs to login again via the IDP,
         // to find out directly, if it works or not.
+        await this.waitForDisplayed('.e_EmAdr');
         await this.assertTextIs('.e_EmAdr', ps.matchingEmail);
         await this.assertTextIs('.e_TyUn', ps.talkyardUsername);
         await this.assertTextIs('.e_NameAtIdp', ps.azureFullName);
@@ -5873,7 +5874,6 @@ export class TyE2eTestBrowser {
           if (!isGone)
             throw `Not yet gone: ${submitSelector}`;
         });
-        await this.waitUntilModalGone();
       }
     };
 
@@ -7370,7 +7370,7 @@ export class TyE2eTestBrowser {
         await this.tagsDialog.waitUntilDisplayedCloseAnySecurityTips();
       },
 
-      getTags: async (ps: { forPostNr?: PostNr, howManyTags: Nr, within?: Sel }): Pr<St[]> => {
+      getTags: async (ps: { forPostNr?: PostNr, howManyTags?: Nr, within?: Sel }): Pr<St[]> => {
         const postNr = ps.forPostNr || c.BodyNr;
         const sel =
                 (ps.within || '') + ' ' +

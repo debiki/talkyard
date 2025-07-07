@@ -105,10 +105,11 @@ GET   /-/privacy-policy          controllers.LegalController.viewPrivacyPolicyPa
 GET   /-/load-special-content   controllers.SpecialContentController.loadContent(rootPageId, contentId)
 POST  /-/save-special-content   controllers.SpecialContentController.saveContent
 
-GET   /-/load-review-tasks      controllers.ModerationController.loadReviewTasks
+GET   /-/load-review-tasks      controllers.ModerationController.loadReviewTasks(onlyPending: Option[Boolean], usernameFilter: Option[String], emailFilter: Option[String], patId: Option[Int])
 POST  /-/make-review-decision   controllers.ModerationController.makeReviewDecision
 POST  /-/undo-review-decision   controllers.ModerationController.tryUndoReviewDecision
 POST  /-/moderate-from-page     controllers.ModerationController.moderateFromPage
+POST  /-/accept-all-unreviewed  controllers.ModerationController.acceptAllUnreviewed
 
 GET   /-/users/                 controllers.UserController.viewUserPage(whatever = "")
 GET   /-/users/*whatever        controllers.UserController.viewUserPage(whatever)

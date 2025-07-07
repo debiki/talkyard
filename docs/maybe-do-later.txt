@@ -444,6 +444,9 @@ Need an approvalStatus [ApprovedStatus] field?
 Or:  0,1,2 = undec, apr, rej by sys.  4,8,16 by trusted,  core member,  32,64,128 by staff  ?
    bits 1,2                           3,4                 5,6           7,8
 
+[deleted_comment_not_loaded]
+If is admin or mod, or deleted-comment-author, do load, or show a button to load, delete comment?
+
 [7YKU24] UNPOLITE SHOULD stop auto approving chat messages.
 
 [flat-comments]:
@@ -461,7 +464,8 @@ How do that, UX wise? Maybe ask, when *opening* instead of when *saving*? and al
 save a draft by default? Because maybe short of time when saving (e.g. need to run and
 catch the subway, happens to me all the time) then it's annoying with questions.
 
-[relfollow]:
+[relfollow] [WHENFOLLOW]
+Mostly done:
 Add a 'rel=follow links to domains: ...' config value,
 so peope can follow links to their own domains.
 Domains where rel=nofollow should not be added to links.
@@ -840,6 +844,13 @@ not self-join). Group Managers and Adders then get notified
 then the site staff get notified. Also, if the group managers don't handle the request
 within X days, then the site staff get notified? (Passive group managers = not good.)
 
+[query_field_and_q_param]
+The same search field on different admin pages, e.g. users, review tasks, groups?
+See GitHub, they have [author:___ labels:____] fields on each page, e.g. Issues,
+Pull Requests, Discussions. And an url query param, e.g.
+    https://github.com/launchbadge/sqlx/pulls?q=is%3Apr+label%3Abreaking
+
+
 [lazy-upd-link-origins]
 If moves CDN to a different address, or moves Talkyard server to a new address,
 then, lazily regenerate html with the correct addresses, for links to uploaded
@@ -931,6 +942,13 @@ Make  login-required work also for embeded comments.
 Make it possible to embedd a forum, or fourm cateory (no just blog comments).
 Later, disallow all the  [if_emb_forum]  endpoints, if is embedded, but *not* a forum
 (that is, for blog comments, or sth else unexpected).
+
+[emb_forum_nav_bug]
+<a> nav, instead of single-page-app nav —> gets logged out (and auto logged in).
+
+[iframe_jump_bug]
+When opening & closing a dialog in an iframe (e.g show-likes, about-user ...), the parent
+window (embedding page) jumps up/down to show as much as possible of the iframe. Why? Annoying.
 
 [emb_ifr_shortcuts]
 Make shortcuts work also if there're many iframes with blog comments comments

@@ -17,7 +17,6 @@
 
 package debiki
 
-import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import talkyard.server.rendr.{RenderParams, NashornParams}
@@ -74,10 +73,10 @@ object TitleSourceAndHtml {
 
 case class LinksFound(
   uploadRefs: Set[UploadRef],
-  externalLinks: immutable.Seq[String],
-  internalLinks: Set[String],
-  extLinkDomains: Set[String],
-  extLinkIpAddresses: immutable.Seq[String])
+  externalLinks: Seq[St],
+  internalLinks: Set[St],
+  extLinkDomains: Set[St],
+  extLinkIpAddresses: Seq[St])
 
 
 
@@ -104,7 +103,7 @@ sealed abstract class TextAndHtml extends SourceAndHtml {  RENAME // to PostSour
     */
   override def internalLinks: Set[String]
 
-  def externalLinks: immutable.Seq[String]
+  def externalLinks: Seq[St]
 
   /** Domain names used in links. Check against a domain block list.
     */
@@ -113,7 +112,7 @@ sealed abstract class TextAndHtml extends SourceAndHtml {  RENAME // to PostSour
   /** Raw ip addresses (ipv4 or 6) of any links that use raw ip addresses rather than
     * domain names. If there is any, the post should probably be blocked as spam?
     */
-  def extLinkIpAddresses: immutable.Seq[String]
+  def extLinkIpAddresses: Seq[St]
 
   def externalLinksOnePerLineHtml: String = {  // [4KTF0WCR]
     TESTS_MISSING
@@ -194,7 +193,7 @@ object TextAndHtml {
   /** Links will have rel="nofollow noopener". ul, ol, code, blockquote and
     * much more is allowed.
     *
-    * Or could instead use  Nashorn.sanitizeHtml(text: String, followLinks: Boolean) ?
+    * Or could instead use  Nashorn.sanitizeHtml(text: St, relFollowTo: Seq[St]) ?
     * But it's slow, if importing a whole site. How deal with this?
     * Maybe just let admins-that-import-a-site set a flag that everything has been
     * sanitized already?_ COULD move server side js to external Nodejs or V8
@@ -246,7 +245,7 @@ object TextAndHtmlMaker {   MOVE // to just  TextAndHtml
   val Ipv4AddressRegex: Regex = """[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+""".r
 
 
-  def findLinks(html: String): immutable.Seq[String] = {
+  def findLinks(html: St): Seq[St] = {
     // Tested here:  tests/app/debiki/TextAndHtmlTest.scala
 
     val result = mutable.ArrayBuffer[String]()
@@ -318,24 +317,24 @@ class TextAndHtmlMaker(
     val usernameMentions: Set[String],
     override val uploadRefs: Set[UploadRef],
     override val internalLinks: Set[String],
-    val externalLinks: immutable.Seq[String],
+    val externalLinks: Seq[St],
     val extLinkDomains: immutable.Set[String],
-    val extLinkIpAddresses: immutable.Seq[String],
+    val extLinkIpAddresses: Seq[St],
     val embeddedOriginOrEmpty: String,
-    val followLinks: Boolean,
+    val relFollowTo: Seq[St],
     val allowClassIdDataAttrs: Boolean) extends TextAndHtml {
 
     def append(text: String): TextAndHtml = {
       append(new TextAndHtmlMaker(site = site, nashorn).apply(
         text, RenderParams(embeddedOriginOrEmpty = embeddedOriginOrEmpty,
-                followLinks = followLinks,
+                relFollowTo = relFollowTo,
                 allowClassIdDataAttrs = allowClassIdDataAttrs)))
     }
 
     def append(moreTextAndHtml: TextAndHtml): TextAndHtml = {
       val more = moreTextAndHtml.asInstanceOf[TextAndHtmlImpl]
       if (!nashorn.globals.isProd) {
-        dieIf(followLinks != more.followLinks, "TyE306MKSLN2")
+        dieIf(relFollowTo != more.relFollowTo, "TyE306MKSLN2")
         dieIf(embeddedOriginOrEmpty != more.embeddedOriginOrEmpty, "TyE306MKSLN3")
       }
 
@@ -345,13 +344,13 @@ class TextAndHtmlMaker(
         usernameMentions = usernameMentions ++ more.usernameMentions,
         uploadRefs = uploadRefs ++ more.uploadRefs,
         // CLEAN_UP this  toSet  toSeq  makes no sense.
-        externalLinks = (externalLinks.toSet ++ more.externalLinks.toSet).to(immutable.Seq),
+        externalLinks = (externalLinks.toSet ++ more.externalLinks.toSet).to(Seq),
         internalLinks = internalLinks ++ more.internalLinks,
         extLinkDomains = extLinkDomains ++ more.extLinkDomains,
         extLinkIpAddresses = (extLinkIpAddresses.toSet ++
-              more.extLinkIpAddresses.toSet).to(immutable.Seq),
+              more.extLinkIpAddresses.toSet).to(Seq),
         embeddedOriginOrEmpty = embeddedOriginOrEmpty,
-        followLinks = followLinks,
+        relFollowTo = relFollowTo,
         allowClassIdDataAttrs = allowClassIdDataAttrs)
     }
   }
@@ -367,7 +366,7 @@ class TextAndHtmlMaker(
           usernameMentions = Set.empty, uploadRefs = Set.empty,
           internalLinks = Set.empty, externalLinks = Nil, extLinkDomains = Set.empty,
           extLinkIpAddresses = Nil, embeddedOriginOrEmpty = "",
-          followLinks = false, allowClassIdDataAttrs = false)
+          relFollowTo = Nil, allowClassIdDataAttrs = false)
     }
   }
 
@@ -380,7 +379,7 @@ class TextAndHtmlMaker(
             internalLinks = Set.empty, externalLinks = Nil,
             extLinkDomains = Set.empty,
             extLinkIpAddresses = Nil, embeddedOriginOrEmpty = "",
-            followLinks = false, allowClassIdDataAttrs = false)
+            relFollowTo = Nil, allowClassIdDataAttrs = false)
     }
   }
 
@@ -389,21 +388,24 @@ class TextAndHtmlMaker(
   def forTitle(title: String): TitleSourceAndHtml =
     TitleSourceAndHtml(title)
 
-  def forBodyOrComment(text: String, embeddedOriginOrEmpty: String = "",
-        followLinks: Boolean = false, allowClassIdDataAttrs: Boolean = false): TextAndHtml =
+  CLEAN_UP // Remove default params for `relFollowTo`, so lower bug risk. But then would need
+  // to update lots of auto tests, annoying. Maybe add a test build wrapper fn, w default Nil?
+  // See `def test` below.
+  def forBodyOrComment(text: St, embeddedOriginOrEmpty: St = "",
+        relFollowTo: Seq[St] = Nil, allowClassIdDataAttrs: Bo = false): TextAndHtml =
     apply(text, RenderParams(
           embeddedOriginOrEmpty = embeddedOriginOrEmpty,
-          followLinks = followLinks, allowClassIdDataAttrs = allowClassIdDataAttrs))
+          relFollowTo = relFollowTo, allowClassIdDataAttrs = allowClassIdDataAttrs))
 
   // COULD escape all CommonMark so becomes real plain text
   def forBodyOrCommentAsPlainTextWithLinks(text: String): TextAndHtml =
     apply(text, RenderParams(embeddedOriginOrEmpty = "",
-          followLinks = false, allowClassIdDataAttrs = false))
+          relFollowTo = Nil, allowClassIdDataAttrs = false))
 
   def forHtmlAlready(html: String): TextAndHtml = {
     findLinksEtc(html, RenderCommonmarkResult(html, Set.empty),
         embeddedOriginOrEmpty = "",
-        followLinks = false, allowClassIdDataAttrs = false)
+        relFollowTo = Nil, allowClassIdDataAttrs = false)
   }
 
   private def apply(text: St, renderParams: RenderParams): TextAndHtml = {
@@ -419,17 +421,17 @@ class TextAndHtmlMaker(
                   site,
                   embeddedOriginOrEmpty = renderParams.embeddedOriginOrEmpty,
                   allowClassIdDataAttrs = renderParams.allowClassIdDataAttrs,
-                  followLinks = renderParams.followLinks,
+                  relFollowTo = renderParams.relFollowTo,
                   mayMention))  // later: mayLinkTo, too
     findLinksEtc(text, renderResult, embeddedOriginOrEmpty = renderParams.embeddedOriginOrEmpty,
-          followLinks = renderParams.followLinks,
+          relFollowTo = renderParams.relFollowTo,
           allowClassIdDataAttrs = renderParams.allowClassIdDataAttrs)
   }
 
 
-  private def findLinksEtc(text: String, renderResult: RenderCommonmarkResult,
-        embeddedOriginOrEmpty: String, followLinks: Boolean,
-        allowClassIdDataAttrs: Boolean): TextAndHtmlImpl = {
+  private def findLinksEtc(text: St, renderResult: RenderCommonmarkResult,
+        embeddedOriginOrEmpty: St, relFollowTo: Seq[St],
+        allowClassIdDataAttrs: Bo): TextAndHtmlImpl = {
     val linksFound = findLinksAndUplRefs(renderResult.safeHtml)
     new TextAndHtmlImpl(
           text,
@@ -441,7 +443,7 @@ class TextAndHtmlMaker(
           extLinkDomains = linksFound.extLinkDomains,
           extLinkIpAddresses = linksFound.extLinkIpAddresses,
           embeddedOriginOrEmpty = embeddedOriginOrEmpty,
-          followLinks = followLinks,
+          relFollowTo = relFollowTo,
           allowClassIdDataAttrs = allowClassIdDataAttrs)
   }
 
@@ -451,7 +453,7 @@ class TextAndHtmlMaker(
   //
   def findLinksAndUplRefs(safeHtml: String): LinksFound = {
 
-    val allLinks: Seq[String] = TextAndHtmlMaker.findLinks(safeHtml)
+    val allLinks: Seq[St] = TextAndHtmlMaker.findLinks(safeHtml)
 
     val uploadRefs: Set[UploadRef] =
           UploadsDao.findUploadRefsInLinks(allLinks.toSet, site.pubId)
@@ -538,7 +540,7 @@ class TextAndHtmlMaker(
           text, safeHtml = text, usernameMentions = Set.empty, uploadRefs = Set.empty,
           internalLinks = Set.empty, externalLinks = Nil,
           extLinkDomains = Set.empty, extLinkIpAddresses = Nil,
-          embeddedOriginOrEmpty = "", followLinks = false,
+          embeddedOriginOrEmpty = "", relFollowTo = Nil,
           allowClassIdDataAttrs = false)
   }
 
@@ -566,9 +568,9 @@ case class SafeStaticSourceAndHtml(
   override def usernameMentions: Set[String] = Set.empty
   override def uploadRefs: Set[UploadRef] = Set.empty
   override def internalLinks: Set[String] = Set.empty
-  override def externalLinks: immutable.Seq[String] = Nil
+  override def externalLinks: Seq[St] = Nil
   override def extLinkDomains: Set[String] = Set.empty
-  override def extLinkIpAddresses: immutable.Seq[String] = Nil
+  override def extLinkIpAddresses: Seq[St] = Nil
   override def append(moreTextAndHtml: TextAndHtml): TextAndHtml = die("TyE50396SK")
   override def append(text: String): TextAndHtml = die("TyE703RSKTDH")
 }

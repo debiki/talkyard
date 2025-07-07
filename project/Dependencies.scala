@@ -27,7 +27,7 @@ object Dependencies {
   }
 
   object Play {
-    val json = "org.playframework" %% "play-json" % "3.0.4"
+    val json = "org.playframework" %% "play-json" % "3.0.5"
   }
 
   object Libs {
@@ -45,7 +45,7 @@ object Dependencies {
     // supports listener-notify.
     // https://stackoverflow.com/questions/21632243/
     //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
-    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.7.5"
+    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.7.7"
 
     // Database migrations.
     // Let's stop at 5.x. Avoid v6, they did a total rewrite of the SQL parser,
@@ -75,7 +75,7 @@ object Dependencies {
     val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
     val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "6.8.23"
 
-    val guava = "com.google.guava" % "guava" % "33.4.6-jre"
+    val guava = "com.google.guava" % "guava" % "33.4.8-jre"
     val findbugsJsr304 = "com.google.code.findbugs" % "jsr305" % "3.0.2" % "provided"
 
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
@@ -98,17 +98,17 @@ object Dependencies {
     // See: https://tika.apache.org
     // Need to upgrade soon, DO_BEFORE 2025-04-01,
     //    see: https://tika.apache.org/3.0.0-BETA/index.html
-    val apacheTika = "org.apache.tika" % "tika-core" % "2.9.3"
+    val apacheTika = "org.apache.tika" % "tika-core" % "2.9.4"
 
     // See: https://github.com/OWASP/owasp-java-encoder/releases
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.3.1"
 
     // See: https://github.com/jhy/jsoup/releases
-    val jsoup = "org.jsoup" % "jsoup" % "1.19.1"
+    val jsoup = "org.jsoup" % "jsoup" % "1.21.1"
 
     // See: https://github.com/FasterXML/jackson-module-scala/tags
     // and: https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-scala
-    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.18.3"
+    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.19.0"
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
     // ScribeJava is listed by Microsoft as compatible with Azure,
@@ -145,10 +145,14 @@ object Dependencies {
 
     // See: https://github.com/logfellow/logstash-logback-encoder/releases
     // and: https://mvnrepository.com/artifact/net.logstash.logback/logstash-logback-encoder
-    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "8.0"
+    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "8.1"
     //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
 
-    // The ElasticSearch client uses Log4j. log4j-api already included, but not -core.
+    // The ElasticSearch client uses log4j-api:2.17.1 (gets evicted by 2.17.2).
+    // log4j-api already included, but not -core.
+    // Let's not upgrade beyond 2.17.2. Most projects that use Log4j are on 2.17.1
+    // (see: https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core),
+    // and there's (as of 2025-07) nothing interesting in newer versions?
     // (Versions <= 2.17.0 are vulnerable.)
     //  log4jApi  = "org.apache.logging.log4j" % "log4j-api" % "..."   // not needed
     val log4jCore = "org.apache.logging.log4j" % "log4j-core" % "2.17.2"  // needed
@@ -159,7 +163,7 @@ object Dependencies {
     // See: https://github.com/dropwizard/metrics/releases
     // and: https://metrics.dropwizard.io/4.2.0/manual/core.html
     // and: https://mvnrepository.com/artifact/io.dropwizard.metrics/metrics-core
-    val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.30"
+    val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.33"
 
     // Deprecated. SHOULD migrate to OpenTelemetry, they say, https://opentelemetry.io/.
     // 1.8.1 exists now.
@@ -167,7 +171,7 @@ object Dependencies {
 
     // See: https://mvnrepository.com/artifact/nl.grons/metrics4-scala
     // and: https://github.com/erikvanoosten/metrics-scala/tags
-    val metrics4Scala = "nl.grons" %% "metrics4-scala" % "4.2.9"
+    val metrics4Scala = "nl.grons" %% "metrics4-scala" % "4.3.5"
 
 
     // ----- Decoding JWT:s
@@ -238,7 +242,7 @@ object Dependencies {
     // See: https://github.com/playframework/scalatestplus-play/releases
     // and: https://mvnrepository.com/artifact/org.scalatestplus.play/scalatestplus-play
     // v6 is for Play 2.9, v7 for Play 3.0.
-    val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "6.0.1" % Test
+    val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "6.0.2" % Test
 
     // Don't use, migrate to ScalaTest instead, some day.
     val specs2 = "org.specs2" %% "specs2-core" % "4.20.9" % "test"

@@ -1251,10 +1251,10 @@ chrome-launcher@^0.15.0:
     is-wsl "^2.2.0"
     lighthouse-logger "^1.0.0"
 
-chromedriver@^135.0.2:
-  version "135.0.2"
-  resolved "https://registry.yarnpkg.com/chromedriver/-/chromedriver-135.0.2.tgz#73ed7dc6d11306b12f92097a4aae51ed6bc030b4"
-  integrity sha512-/X3VecpIhFFRW/TazgsA/S9RVIcBaMJ6zkZ8Gf8PGn4prB1A/S0JFdgxALjXnbqyjxCi45JUl+5q4rVY65pvQA==
+chromedriver@^137.0.1:
+  version "137.0.1"
+  resolved "https://registry.yarnpkg.com/chromedriver/-/chromedriver-137.0.1.tgz#a7c1eeb0c0b091a1e2505b384b4df8aaceb133fb"
+  integrity sha512-H4amLfsU3zubwD9X7me9Ajd8z3+MARfJ90gLV6PEKdad0Jgmh3fAGnCuz8Ew8yeuoSJ5ycb/vGEvyqgGVFAjJQ==
   dependencies:
     "@testim/chrome-version" "^1.1.4"
     axios "^1.7.4"
@@ -2681,18 +2681,6 @@ lazystream@^1.0.0:
   dependencies:
     readable-stream "^2.0.5"
 
-libsodium-sumo@^0.7.0:
-  version "0.7.9"
-  resolved "https://registry.yarnpkg.com/libsodium-sumo/-/libsodium-sumo-0.7.9.tgz#dff3d6144849e30d9b9a7bf628d28243f1c49102"
-  integrity sha512-DcfJ57zlSlcmQU4s8KOX78pT0zKx5S9RLi0oyDuoIgm4K95+VNSaOidK/y9lUK4lxft14PtTPjoBy8tmLk1TDQ==
-
-libsodium-wrappers-sumo@0.7.9:
-  version "0.7.9"
-  resolved "https://registry.yarnpkg.com/libsodium-wrappers-sumo/-/libsodium-wrappers-sumo-0.7.9.tgz#d15a346870c8e339baf1518f06b0ddccfa1e1046"
-  integrity sha512-XLgLkqY973PngrRElbjOH0y7bJKYEfMWVpWPmW5iuhBjO6zXvHYQWtN52MVEeie/h98ZXN1Aw9BE+GzxQVAfLg==
-  dependencies:
-    libsodium-sumo "^0.7.0"
-
 lighthouse-logger@^1.0.0, lighthouse-logger@^1.3.0:
   version "1.4.2"
   resolved "https://registry.yarnpkg.com/lighthouse-logger/-/lighthouse-logger-1.4.2.tgz#aef90f9e97cd81db367c7634292ee22079280aaa"
@@ -3087,11 +3075,6 @@ mute-stream@0.0.8:
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.8.tgz#1630c42b2251ff81e2a283de96a5497ea92e5e0d"
   integrity sha512-nnbWWOkoWyUsTjKrhgD0dcz22mdkSnpYqbEjIm2nhwhuxlSkpywJmBo8h0ZqJdkp73mb90SssHkN4rsRaBAfAA==
 
-nan@^2.14.0:
-  version "2.14.2"
-  resolved "https://registry.yarnpkg.com/nan/-/nan-2.14.2.tgz#f5376400695168f4cc694ac9393d0c9585eeea19"
-  integrity sha512-M2ufzIiINKCuDfBSAUr1vWQ+vuVcA9kqx8JJUsbQi6yf1uGRyb7HfpdfUr5qLXf3B/t8dPvcjhKMmlfnP47EzQ==
-
 nanoid@3.3.3:
   version "3.3.3"
   resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.3.tgz#fd8e8b7aa761fe807dba2d1b98fb7241bb724a25"
@@ -3286,14 +3269,6 @@ parse-ms@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/parse-ms/-/parse-ms-2.1.0.tgz#348565a753d4391fa524029956b172cb7753097d"
   integrity sha512-kHt7kzLoS9VBZfUsiKjv43mr91ea+U05EyKkEtqp7vNbHxmaVuEqN7XxeEVnGrMtYOAxGrDElSi96K7EgO1zCA==
-
-paseto.js@^0.1.7:
-  version "0.1.7"
-  resolved "https://registry.yarnpkg.com/paseto.js/-/paseto.js-0.1.7.tgz#8709ba987e1925d44f60f206c83b7fe30d1efa05"
-  integrity sha512-WKExhDdcUmpEv9S2ufSuvjRcFQD1RPa5WL94euCmcQ7p/o0hcJuidRTKVx/YQ4f5VqAdz6Eyx7qs77QS8cA/+Q==
-  dependencies:
-    libsodium-wrappers-sumo "0.7.9"
-    nan "^2.14.0"
 
 path-exists@^2.0.0:
   version "2.1.0"

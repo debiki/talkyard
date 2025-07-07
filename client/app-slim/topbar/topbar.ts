@@ -675,22 +675,22 @@ export const TopBar = createComponent({
           help.HelpMessageBox({ message: <HelpMessage> {
             id: '94ktj',
             version: 1,
-            content: rFragment({},
+            content: rFr({},
               r.i({}, "Admin to do: "),
-              "Configure ", r.a({ href: linkToAdminPage() }, "settings")),
+              "Configure ", LinkUnstyled({ to: linkToAdminPage() }, "settings")),
           }}),
           help.HelpMessageBox({ message: <HelpMessage> {
             id: '40ehw',
             version: 1,
-            content: rFragment({},
+            content: rFr({},
               "Create ",
-              r.a({ href: linkToGroups() }, "groups"), '?'),
+              LinkUnstyled({ to: linkToGroups() }, "groups"), '?'),
           }}),
           help.HelpMessageBox({ message: <HelpMessage> {
             id: '25fwk6',
             version: 1,
-            content: rFragment({},
-              r.a({ href: linkToStaffInvitePage() }, "Invite people")),
+            content: rFr({},
+              LinkUnstyled({ to: linkToStaffInvitePage() }, "Invite people")),
           }}));
 
 
@@ -866,6 +866,8 @@ export const SearchForm = createComponent({
     const afterClick = this.props.closeDropdown;
     return (
         r.form({ className: 'c_SchD', ref: 'form',
+            // [emb_forum_nav_bug]  Enter submits the <form>, which triggers a page
+            // reload — tiny bit slower, and annoying, if embedded forum.
             method: 'get', acceptCharset: 'UTF-8', action: searchEndpoint },
           r.div({ className: 'c_SchD_QnB' },  // QnB = query field and button
             r.input({ type: 'text', tabIndex: '1',
@@ -877,9 +879,9 @@ export const SearchForm = createComponent({
               t.Search)),
           r.div({ className: 'c_SchD_X' },
             // UX: These should activate on Space, not just Enter? [sch_b_space]
-            r.a({ className: 'c_SchD_X_B', href: searchUrl, target: '_blank',
+            LinkUnstyled({ className: 'c_SchD_X_B', href: searchUrl, target: '_blank',
                   tabIndex: '3' }, "Search in new tab"),  // I18N
-            r.a({ className: 'c_SchD_X_B', href: searchUrlAdvanced,
+            LinkUnstyled({ className: 'c_SchD_X_B', href: searchUrlAdvanced,
                   tabIndex: '4' }, t.AdvSearch))));
   }
 });

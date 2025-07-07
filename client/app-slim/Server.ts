@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2021 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2025 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -1200,23 +1200,30 @@ export function moderatePostOnPagePatchStore(pageId: PageId, post: Post,
 }
 
 
-export function loadReviewTasks(success: (tasks: ReviewTask[]) => void) {
-  get('/-/load-review-tasks', response => handleReviewTasksResponse(response, success));
+export function loadReviewTasks(filter: ReviewTaskFilter, onOk: (tasks: ReviewTask[]) => V) {
+  const query = (!filter.patId ? '' : 'patId=' + filter.patId) +
+                (!filter.onlyPending ? '' : '&onlyPending=true');
+  get('/-/load-review-tasks?' + query, response => handleReviewTasksResponse(response, onOk));
 }
 
 
-export function makeReviewDecision(taskId: number, revisionNr: number, decision: ReviewDecision,
-      success: (tasks: ReviewTask[]) => void) {
+export function makeReviewDecision(ps: { taskId: Nr, revisionNr: Nr, decision: ReviewDecision,
+          filter: ReviewTaskFilter }, onOk: (tasks: ReviewTask[]) => V) {
   postJsonSuccess('/-/make-review-decision',
-        response => handleReviewTasksResponse(response, success),
-        { taskId, revisionNr, decision });
+        response => handleReviewTasksResponse(response, onOk), ps);
 }
 
 
-export function undoReviewDecision(taskId: number, success: (tasks: ReviewTask[]) => void) {
+export function undoReviewDecision(ps: { taskId: Nr, filter: ReviewTaskFilter },
+        onOk: (tasks: ReviewTask[]) => V) {
   postJsonSuccess('/-/undo-review-decision',
-      response => handleReviewTasksResponse(response, success),
-      { taskId });
+        response => handleReviewTasksResponse(response, onOk), ps);
+}
+
+
+export function acceptAllUnreviewed(filter: ReviewTaskFilter, onOk: (tasks: ReviewTask[]) => V) {
+  postJsonSuccess('/-/accept-all-unreviewed',
+        resp => handleReviewTasksResponse(resp, onOk), { filter });
 }
 
 
@@ -2772,12 +2779,11 @@ const forbiddenWordsFound: [St, St[]][] = [];
 
   // Check session storage:
   if (!wordsStr) {
-    const wordsJsonStr = getFromSessionStorage('e2eTestSpecialWords');
-    if (wordsJsonStr) {
-      const wordsObj = JSON.parse(wordsJsonStr);
-      words = wordsObj[0];
-      okInPresence = wordsObj[1];
-      shouldFind = wordsObj[2];
+    const wordsArr = getFromSessionStorage('e2eTestSpecialWords');
+    if (wordsArr) {
+      words = wordsArr[0];
+      okInPresence = wordsArr[1];
+      shouldFind = wordsArr[2];
     }
   }
 
@@ -2809,8 +2815,17 @@ export function setE2eTestForbiddenWords(words: St[], okInPresence: Bo, count: S
   forbiddenWordsOkInPresence = okInPresence;
   shouldFindWords = count;
   shouldWordCounts = {};
-  putInSessionStorage('e2eTestSpecialWords', JSON.stringify([
-        forbiddenWords, forbiddenWordsOkInPresence, shouldFindWords]));
+
+  // Could move the rest to ty-e2e-test-browser.ts, barely matters. SMALLER_BUNDLE
+  putInSessionStorage('e2eTestSpecialWords', [
+        forbiddenWords, forbiddenWordsOkInPresence, shouldFindWords]);
+  // Remove any old special words from the query params — they might be different
+  // from the new words.
+  var newUrl = location.pathname +
+        location.search.replace(
+            /(e2eTestForbiddenWords|e2eTestForbiddenWordsOkInPresence|e2eTestShouldFindWords)=[^&;]+[&;]?/g, '') +
+        location.hash;
+  history.pushState(null /* state */, '' /* unused */, newUrl);
 }
 
 export function getE2eTestForbiddenWords(): [St[], Bo | U, St[]] {

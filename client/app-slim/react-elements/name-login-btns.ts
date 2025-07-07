@@ -97,7 +97,7 @@ export const NameLoginBtns = createComponent({
       userNameElem =
           r.span({ className: 'dw-u-info' },
             t.LoggedInAs,
-            r.a({ className: 's_MB_Name', href: linkToUserProfilePage(me), target },
+            LinkUnstyled({ className: 's_MB_Name', to: linkToUserProfilePage(me), target },
               !me.fullName ? null : r.span({ className: 'esP_By_F' }, me.fullName + ' '),
               !me.username ? null : r.span({ className: 'esP_By_U' }, '@' + me.username)));
       logoutBtnElem = !showAuthnBtns ? null :

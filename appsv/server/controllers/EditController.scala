@@ -260,14 +260,10 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
     val newTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
-      newText,
-      embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
-      allowClassIdDataAttrs = postNr == PageParts.BodyNr,
-      // When follow links? Previously:
-      // followLinks = postToEdit.createdByUser(page.parts).isStaff && editor.isStaff
-      // But that won't work for wikis (staff might accidentally change a non-staff user's link
-      // to rel=follow). For now, instead:
-      followLinks = postNr == PageParts.BodyNr && pageMeta.pageType.shallFollowLinks)
+          newText,
+          embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
+          allowClassIdDataAttrs = postNr == PageParts.BodyNr,
+          relFollowTo = postRenderSettings.relFollowTo)
 
     request.dao.editPostIfAuth(pageId = pageId, postNr = postNr, deleteDraftNr = deleteDraftNr,
           request.who, // [alias_4_principal]

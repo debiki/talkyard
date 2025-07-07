@@ -178,25 +178,29 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   private val LoginTimeoutMins = 15
   private val Separator = '|'
 
-  private val ReturnToUrlCookieName = "dwCoReturnToUrl"
-  private val ReturnToSiteOriginTokenCookieName = "dwCoReturnToSite"
+  CLEAN_UP // Later: Remove commented-out cookies, and old commented out Silhouette code too.
+  // Try to stop using the remaining cookies too? And use [login_query_params] instead?
+  //
+  //private val ReturnToUrlCookieName = "dwCoReturnToUrl"
+  //private val ReturnToSiteOriginTokenCookieName = "dwCoReturnToSite"
   private val ReturnToThisSiteXsrfTokenCookieName = "dwCoReturnToSiteXsrfToken"
   private val AvoidCookiesCookieName = "TyCoAvoidCookies"
   private val IsInLoginWindowCookieName = "dwCoIsInLoginWindow"
-  private val IsInLoginPopupCookieName = "dwCoIsInLoginPopup"
-  private val MayCreateUserCookieName = "dwCoMayCreateUser"
-  private val AuthStateCookieName = "dwCoOAuth2State"
+  //private val IsInLoginPopupCookieName = "dwCoIsInLoginPopup"
+  //private val MayCreateUserCookieName = "dwCoMayCreateUser"
+  //private val AuthStateCookieName = "dwCoOAuth2State"
 
   // Discard these also if logging in with username + password?  [clear_aun_cookies]
   private val CookiesToDiscardAfterLogin: Vec[DiscardingCookie] = Vec(
-    ReturnToUrlCookieName,
-    ReturnToSiteOriginTokenCookieName,
+    //ReturnToUrlCookieName,
+    //ReturnToSiteOriginTokenCookieName,
     ReturnToThisSiteXsrfTokenCookieName,
     AvoidCookiesCookieName,
     IsInLoginWindowCookieName,
-    IsInLoginPopupCookieName,
-    MayCreateUserCookieName,
-    AuthStateCookieName).map(DiscardingSecureCookie)
+    //IsInLoginPopupCookieName,
+    //MayCreateUserCookieName,
+    //AuthStateCookieName
+    ).map(DiscardingSecureCookie)
 
   def conf: Configuration = globals.rawConf
 
@@ -288,6 +292,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     throwBadReqIfLowEntropy(nonce, paramName = "nonce", "TyENONCEENTROPY")
     throwBadParamIf(returnToUrl.obviouslyBadUrl, "TyE502MSKG", "returnToUrl", returnToUrl)
 
+    //  Nowadays, partly using [login_query_params] instead of cookies:
     val isInLoginPopup = request.rawQueryString.contains("isInLoginPopup")
     val mayCreateUser = !request.rawQueryString.contains("mayNotCreateUser")
     val avoidCookies = request.rawQueryString.contains("avoidCookies")
@@ -1494,11 +1499,11 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     val loginAttempt = OpenAuthLoginAttempt(
       ip = request.ip, date = globals.now().toJavaDate, oauthDetails)
 
-    val mayCreateNewUser = authnState.mayCreateUser && {
+    val mayCreateNewUser = authnState.mayCreateUser /* && {
       // This not needed? Already incl in authnState for all code paths, right.
       val mayCreateNewUserVal = request.getHostCookieVal(MayCreateUserCookieName)
       mayCreateNewUserVal isNot "false"
-    }
+    } */
 
     // COULD let tryLogin() return a LoginResult and use pattern matching, not exceptions.
     //var showsCreateUserDialog = false
@@ -1940,8 +1945,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     authnStateCache.put(nextNonce, authnState.copy(nextStep = "create_user"))
 
     val anyIsInLoginWindowCookieValue = request.getHostCookieVal(IsInLoginWindowCookieName)
+    val isInLoginWin = !authnState.isInLoginPopup || anyIsInLoginWindowCookieValue.isDefined
 
-    val result = if (anyIsInLoginWindowCookieValue.isDefined) {
+    val result = if (isInLoginWin) {
       // Continue running in the login window, by returning a complete HTML page that
       // shows a create-user dialog. (This happens if 1) we're in a create site
       // wizard, then there's a dedicated login step in a login window,
@@ -1982,7 +1988,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // end of the caller, tryLoginOrShowCreateUserDialog()  [.clearing_cookies].
     result.discardingCookies(
       DiscardingSecureCookie(IsInLoginWindowCookieName),
-      DiscardingSecureCookie(ReturnToUrlCookieName))
+      //DiscardingSecureCookie(ReturnToUrlCookieName)
+      )
   }
 
 

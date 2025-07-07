@@ -32,6 +32,9 @@ import scala.collection.mutable.ArrayBuffer
 trait ReviewTasksSiteDaoMixin extends SiteTransaction {
   self: RdbSiteTransaction =>
 
+  // This constraint:  reviewtasks_c_decided_compl_match_decision
+  // verifies that  'decided_at' and 'completed_at' are both null, if  `decision is null`.
+  val isPendingSql = "decision is null and invalidated_at is null"
 
   override def nextReviewTaskId(): ReviewTaskId = {
     val query = """
@@ -139,10 +142,30 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
   }
 
 
-  override def loadReviewTasks(olderOrEqualTo: Option[ju.Date], limit: Int): Seq[ReviewTask] = {
+  override def loadReviewTasks(filter: ModTaskFilter, limit: Int): Seq[ReviewTask] = {
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef)
 
-    val andCreatedBefore = olderOrEqualTo map { date =>
+    val andOnlyPending =
+          if (!filter.onlyPending) ""
+          else s"and $isPendingSql"
+
+    val andPatIdEq = filter.patId map { patId =>
+      values.append(patId.asAnyRef)
+      "and about_pat_id_c = ?"
+    } getOrElse ""
+
+    /* These need an inner join with the users table, users3. Let's wait, not important now.
+    val andUsernameLike = filter.usernameFilter map { username =>
+      values.append(username)
+      ???
+    } getOrElse ""
+
+    val andEmailLike = filter.emailFilter map { emailAdr =>
+      values.append(emailAdr)
+      ???
+    } getOrElse "" */
+
+    val andCreatedBefore = filter.olderOrEqualTo map { date =>
       values.append(date.asTimestamp)
       "and created_at <= ?"
     } getOrElse ""
@@ -151,7 +174,14 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
 
     // Sort by id, desc, if same timestamp, because higher id likely means more recent.
     val query = i"""
-      select * from review_tasks3 where site_id = ? $andCreatedBefore
+      select * from review_tasks3
+      where
+          site_id = ?
+          $andOnlyPending
+          $andPatIdEq
+          -- andUsernameLike
+          -- andEmailLike
+          $andCreatedBefore
       order by created_at desc, id desc limit ?
       """
     runQueryFindMany(query, values.toList, rs => {

@@ -465,8 +465,11 @@ describe(`alias-anons-edit-alter.2br.f  TyTALIANONEDALTR`, () => {
           /TyEFORBWDS_.+req url:.+words: +\["memah"/s);
   });
 
-  it(`ttt: Alice replies ...`, async () => {
+  it(`ttt: Alice clears forbidden words`, async () => {
     await alice_brA.clearForbiddenWords(); // or save() fails because of "Memah"
+  });
+
+  it(`ttt: Alice replies ...`, async () => {
     await alice_brA.refreshNothingElse();
     await alice_brA.topic.clickReplyToOrigPost();
   });
