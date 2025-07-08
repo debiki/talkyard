@@ -89,7 +89,8 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def forgetInviteEmailSentToAddress(userId: UserId, replaceWithAddr: String): Unit = {
+  /** Returns num invite emails sent-to forgotten. */
+  def forgetInviteEmailSentToAddress(userId: UserId, replaceWithAddr: String): i32 = {
     TESTS_MISSING
     val statement = """
       update invites3 set email_address = ?

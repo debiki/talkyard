@@ -437,7 +437,9 @@ const AboutMember = createComponent({
           r.div({ className: 'form-group' },
             r.label({}, t.EmailAddress),
             r.div({},
-              r.samp({ className: 'e_PrimEmAdr' }, user.email),
+              user.email
+                  ? r.samp({ className: 'e_PrimEmAdr' }, user.email)
+                  : r.span({ className: 'e_0EmAdr' }, "No email address. "), // I18N
               NavLink({ to: this.props.emailsLoginsPath,
                   className: 'btn s_UP_Prefs_ChangeEmailB' },
                 isSelfOrAdmin ? t.ChangeDots : t.MoreDots)),
@@ -1263,6 +1265,7 @@ const AccountTab = createFactory<any, any>({
     const loginMethods: UserAccountLoginMethod[] = this.state.loginMethods;
 
     const emailAddressesList =
+      !emailAddrs.length ? r.div({ className: 's_UP_EmLg_0Em' }, "No email address") :
       r.ul({ className: 's_UP_EmLg_EmL' },
         emailAddrs.map((addr: UserAccountEmailAddr) => {
           let status = '';
@@ -1318,6 +1321,9 @@ const AccountTab = createFactory<any, any>({
           : (this.state.showAddEmailInput || this.state.isAddingEmail
               ? null
               : Button({ onClick: () => this.setState({ showAddEmailInput: true }),
+                    // UX SHOULD: If the user didn't have any email addr before,
+                    // ask if han wants to start getting notified via email, once the
+                    // address has been verified.  [users_w_0_email]
                     className: 'e_AddEmail' },
                   t.upp.AddEmail)));
 

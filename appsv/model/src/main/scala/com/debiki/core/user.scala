@@ -28,6 +28,7 @@ import Participant._
 import java.text.Normalizer
 import java.util.Date
 import play.api.libs.json.JsObject
+import org.scalactic.Good
 
 
 
@@ -163,7 +164,7 @@ sealed abstract class NewUserData {
 case class NewPasswordUserData(
   name: Option[String],
   username: String,
-  email: String,
+  email: String,  // should be:  anyEmail: Opt[EmailAdr] instead?  [silly_empty_email]
   password: Option[String],
   ssoId: Option[String],
   createdAt: When,
@@ -190,7 +191,9 @@ case class NewPasswordUserData(
     reviewedAt = None,
     reviewedById = None,
     primaryEmailAddress = email,
-    emailNotfPrefs = EmailNotfPrefs.Receive,
+    emailNotfPrefs =
+        if (email.isEmpty) EmailNotfPrefs.DontReceive  // [silly_empty_email]
+        else EmailNotfPrefs.Receive,
     emailVerifiedAt = emailVerifiedAt.map(_.toJavaDate),
     passwordHash = passwordHash,
     isOwner = isOwner,
@@ -201,7 +204,8 @@ case class NewPasswordUserData(
 
   dieIfBad(Validation.checkName(name), "TyE6KWB2A1", identity)
   dieIfBad(Validation.checkUsername(username), "TyE5FKA2K0", identity)
-  dieIfBad(Validation.checkEmail(email), "TyE4WKBJ7Z", identity)
+  if (email.isEmpty) dieIf(emailVerifiedAt.isDefined, "TyE703SMLBV4")
+  else dieIfBad(Validation.checkEmail(email), "TyE4WKBJ7Z", identity)
   // Password: See security.throwErrorIfPasswordTooWeak, instead.
 
   // If SSO is enabled, then, cannot also have password login.
@@ -222,8 +226,11 @@ object NewPasswordUserData {
         extId: Option[ExtId] = None,
         ssoId: Option[String] = None,
         createdAt: When,
-        isAdmin: Boolean, isOwner: Boolean, isModerator: Boolean = false,
-        emailVerifiedAt: Option[When] = None,
+        isAdmin: Bo,
+        isOwner: Bo,
+        isModerator: Bo = false,
+        emailVerifiedAt: Opt[When] = None,
+        requireVerifiedEmail: Bo = true,
         trustLevel: TrustLevel = TrustLevel.NewMember,
         threatLevel: ThreatLevel = ThreatLevel.HopefullySafe): NewPasswordUserData Or ErrorMessage = {
     extId.flatMap(Validation.findExtIdProblem) foreach { problem =>
@@ -235,7 +242,9 @@ object NewPasswordUserData {
     for {
       okName <- Validation.checkName(name)
       okUsername <- Validation.checkUsername(username)
-      okEmail <- Validation.checkEmail(email)
+      okEmail <- (
+            if (!requireVerifiedEmail && email.isEmpty) Good("")  // [silly_empty_email]
+            else Validation.checkEmail(email))
       // Password: See security.throwErrorIfPasswordTooWeak, instead.
     }
     yield {
@@ -1382,7 +1391,7 @@ case class UserInclDetails( // ok for export
   isApproved: Option[Boolean],
   reviewedAt: Option[ju.Date],
   reviewedById: Option[UserId],
-  primaryEmailAddress: String,
+  primaryEmailAddress: String,  // later:  anyEmail: Opt[EmailAdr] instead? [silly_empty_email]
   emailNotfPrefs: EmailNotfPrefs,
   emailVerifiedAt: Option[ju.Date] = None,
   mailingListMode: Boolean = false,

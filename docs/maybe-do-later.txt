@@ -387,8 +387,9 @@ Migrate to ScribeJava, [migr_to_scribejava]
 [per_site_email_domain]
 Optionally configure email settings in the admin area, per site.
 
-[no-email]:
+[users_w_0_email]
 Let people create accounts without specifying any email address. Like at Reddit.
+Just fixed — works now, right? (2025-07) One minor UX thing left, see: [users_w_0_email]
 
 [many_emails] [email_privacy]
 Let someone create many accounts with the same email address.

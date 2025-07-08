@@ -256,7 +256,7 @@ export const UserProfileAdminView = createFactory({
     // UX maybe there're in rare cases reasons for doing this? (rather than just a bad luck click)
     // COULD pop up a "Do you really want to..." dialog?
     // TESTS_MISSING [5AEWBN0]
-    const hideSetUnverifiedButton = isMe && user.emailVerifiedAtMs;
+    const hideSetUnverifiedButton = isMe && user.emailVerifiedAtMs || !user.email;
 
     // Admins shouldn't be able to uanpprove themselves? That's just confusing?
     // And to unapprove an admin, first demote hen, so is no longer admin.
@@ -266,10 +266,12 @@ export const UserProfileAdminView = createFactory({
 
     const emailAddrRow = makeRow(
         "Email: ",
-        rFr({}, user.email, (user.emailVerifiedAtMs ? '' : r.b({}, " — not verified"))),
+        !user.email
+              ? r.span({ className: 'e_0Em' }, "No email address")
+              : rFr({}, user.email, (user.emailVerifiedAtMs ? '' :
+                                        r.b({ className: 'e_Em0Verif' }, " — not verified"))),
         rFr({},
-
-          user.emailVerifiedAtMs ? null :
+          !user.email || user.emailVerifiedAtMs ? null :
               Button({ onClick: this.resendEmailAddrVerifEmail, className: 's_SendEmVerifEmB' },
                 "Send verification email"),
 

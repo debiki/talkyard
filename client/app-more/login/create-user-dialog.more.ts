@@ -81,12 +81,9 @@ function getAddressVerificationEmailSentDialog() {
 }
 
 
-interface CreateUserPostData extends CreateUserParams {
-  username: string;
-  fullName: string;
-  email: string;
-  password?: string;
-  returnToUrl?: string;
+interface CreateUserPostData extends UserData {
+  returnToUrl?: St
+  authDataCacheKey?: St
 }
 
 
@@ -161,9 +158,27 @@ const CreateUserDialog = createClassAndFactory({
 
 
 interface CreateUserDialogContentState {
-  okayStatuses;
-  userData;
+  okayStatuses: OkStatuses
+  userData: UserData;
   badNonceBack?: true | 'YesButIgnore';
+  theWrongEmailAddress?: St
+}
+
+// If create-user fields have been filled in and look ok (then, true, else false).
+// Or just isn't needed (then, true, as if had been filled in correctly).
+interface OkStatuses {
+  fullName: Bo
+  email: Bo
+  username: Bo
+  password: Bo
+}
+
+// (Could split into: GuestUserData (w/o username or pwd) and UserData.)
+interface UserData {
+  fullName: St
+  email: St
+  username: St
+  password?: St
 }
 
 
@@ -265,11 +280,12 @@ export var CreateUserDialogContent = createClassAndFactory({
   },
 
   updateValueOk: function(what, value, isOk) {
-    const data = this.state.userData;
-    const okayStatuses = this.state.okayStatuses;
+    const state: CreateUserDialogContentState = this.state;
+    const data: UserData = state.userData;
+    const okayStatuses: OkStatuses = state.okayStatuses;
     data[what] = value;
     okayStatuses[what] = isOk;
-    this.setState({ userData: data, okayStatuses: okayStatuses });
+    this.setState({ userData: data, okayStatuses } satisfies CreateUserDialogContentState);
 
     // Check strength again since e.g. fullName might now be (or no longer be)
     // part of the password. But not until we've rerendered everything and sent new
@@ -285,8 +301,9 @@ export var CreateUserDialogContent = createClassAndFactory({
 
   doCreateUser: function() {
     const props: CreateUserDialogContentProps = this.props;
+    const state: CreateUserDialogContentState = this.state;
     const returnToUrl: St | U = props.anyReturnToUrl;
-    const postData: CreateUserPostData = { ...this.state.userData, returnToUrl };
+    const postData: CreateUserPostData = { ...state.userData, returnToUrl };
     waitUntilAcceptsTerms(props.store, props.loginReason === LoginReason.BecomeOwner, () => {
       if (props.authDataCacheKey) { // [4WHKTP06]
         postData.authDataCacheKey = props.authDataCacheKey;
@@ -364,8 +381,9 @@ export var CreateUserDialogContent = createClassAndFactory({
   },
 
   handleErrorResponse: function(failedRequest: HttpRequest) {
+    const state: CreateUserDialogContentState = this.state;
     if (hasErrorCode(failedRequest, '_EsE403WEA_')) {
-      this.setState({ theWrongEmailAddress: this.state.userData.email });
+      this.setState({ theWrongEmailAddress: state.userData.email });
       util.openDefaultStupidDialog({
         // (This is for admins, don't translate. [5JKBWS2])
         body: "Wrong email address. Please use the email address you specified in the config file.",
@@ -389,20 +407,20 @@ export var CreateUserDialogContent = createClassAndFactory({
     const emailHelp = props.idpHasVerifiedEmail && hasEmailAddressAlready ?
         t.cud.EmailVerifBy_1 + props.idpName + t.cud.EmailVerifBy_2 : null;
 
-    // Undefined —> use the default, which is True.  ... but for now, always require email [0KPS2J]
-    const emailOptional = false; // store.settings.requireVerifiedEmail === false;
-    const wrongAddr = this.state.theWrongEmailAddress;
+    // Undefined —> use the default, which is True.
+    const emailRequired = store.settings.requireVerifiedEmail !== false;
+    const wrongAddr = state.theWrongEmailAddress;
 
     const emailInput =
         EmailInput({ label: emailLabel(isForGuest), id: 'e2eEmail',
           onChangeValueOk: (value, isOk) => this.setEmailOk(value, isOk), tabIndex: 1,
           // If email already provided by e.g. Google, don't let the user change it.
           disabled: hasEmailAddressAlready, defaultValue: props.email, help: emailHelp,
-          required: !isForGuest, // [0KPS2J] store.settings.requireVerifiedEmail !== false,
+          required: emailRequired,
           // If is first site admin signup, and the admin keeps using an email address we know is
           // not the one in the config file, then tell hen to use the addr in the config file.
           // (This is for admins, don't translate. [5JKBWS2])
-          error: this.state.userData.email !== wrongAddr || !wrongAddr ?
+          error: state.userData.email !== wrongAddr || !wrongAddr ?
               null : "Use the email address you specified in the config file." });
 
     const usernameInputMaybe = isForGuest ? null :
@@ -422,7 +440,20 @@ export var CreateUserDialogContent = createClassAndFactory({
         id: 'e2eFullName', defaultValue: props.fullName, tabIndex: 1,
         onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
 
-    const disableSubmit = _.includes(_.values(this.state.okayStatuses), false);
+    const okStatuses: OkStatuses = state.okayStatuses;
+    const allOk = isForGuest
+          ? (
+              // Guests just need a name. Email optional, but if specified, should look ok.
+              okStatuses.fullName !== false &&
+              (!state.userData.email || okStatuses.email !== false)
+            )
+          : (
+              // Real user accounts need a username and password. Email and full name are optional.
+              okStatuses.username  !== false &&
+              okStatuses.password  !== false &&
+              (okStatuses.email    !== false || !state.userData.email && !emailRequired) &&
+              (okStatuses.fullName !== false || !state.userData.fullName)
+            );
 
     return (
       r.form({ className: 'esCreateUser' },
@@ -434,7 +465,7 @@ export var CreateUserDialogContent = createClassAndFactory({
         // the full-name-input was a password verification field.
         !isForGuest ? fullNameInput : null,
         passwordInputMaybe,
-        PrimaryButton({ onClick: this.doCreateUser, disabled: disableSubmit, id: 'e2eSubmit',
+        PrimaryButton({ onClick: this.doCreateUser, disabled: !allOk, id: 'e2eSubmit',
             tabIndex: 2 }, isForGuest ? t.Submit : t.cud.CreateAccount)));
   }
 });
