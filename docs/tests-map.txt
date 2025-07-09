@@ -1761,6 +1761,7 @@ notifications:
           - notfs-mark-all-as-read  TyT5BKAR24H
   mark all as read:
           - notfs-mark-all-as-read  TyT5BKAR24H
+          - TESTS_MISSING  TyTNOTF_GUEST_SEEN:  A *guest* marks one & all as seen
   mark post one views as seen:
           - notfs-mark-seen-as-seen  TyT2AKBR0T
   about topics one may not see:
