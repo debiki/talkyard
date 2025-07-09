@@ -84,7 +84,7 @@ object Dependencies {
     val apacheCommonsCodec = "commons-codec" % "commons-codec" % "1.18.0"
 
     // See: https://commons.apache.org/proper/commons-validator/changes-report.html
-    val apacheCommonsValidator = "commons-validator" % "commons-validator" % "1.9.0"
+    val apacheCommonsValidator = "commons-validator" % "commons-validator" % "1.10.0"
 
     // See: https://commons.apache.org/proper/commons-email/changes-report.html
     val apacheCommonsEmail = "org.apache.commons" % "commons-email" % "1.6.0"

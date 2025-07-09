@@ -25,7 +25,7 @@ Compile / dependencyOverrides ++= {
       "commons-digester" % "commons-digester" % "2.1",
       "commons-io" % "commons-io" % "2.19.0",
       "commons-logging" % "commons-logging" % "1.3.2",
-      "commons-validator" % "commons-validator" % "1.9.0",
+      "commons-validator" % "commons-validator" % "1.10.0",
       "org.apache.commons" % "commons-email" % "1.6.0",
       "org.apache.tika" % "tika-core" % "2.9.4",
       "org.checkerframework" % "checker-qual" % "3.49.3",
