@@ -7626,7 +7626,15 @@ export class TyE2eTestBrowser {
 
       refreshUntilPostNotPendingApproval: async (postNr: PostNr) => {
         await this.waitUntil(async () => {
-          return await this.topic.isPostNotPendingApproval(postNr);
+          await this.topic.waitForLoaded();
+          switch (postNr) {
+            case c.TitleNr:
+              return ! await this.topic._isTitlePendingApprovalVisible();
+            case c.BodyNr:
+              return ! await this.topic._isOrigPostPendingApprovalVisible();
+            default:
+              return await this.topic.isPostNotPendingApproval(postNr);
+          }
         }, {
           refreshBetween: true,
           message: `Waiting for post nr ${postNr} to get approved`,
@@ -9399,6 +9407,21 @@ export class TyE2eTestBrowser {
           duplHostnamesSelector: '.s_A_Ss_S-Hostnames-Dupl pre',
           redirHostnamesSelector: '.s_A_Ss_S-Hostnames-Redr pre',
 
+          goHere: async (origin: St, ps: { loginAs?: Member } = {}) => {
+            await this.go2((origin || '') + '/-/admin/settings/site');
+            if (ps.loginAs) {
+              await this.loginDialog.loginWithPassword(ps.loginAs);
+            }
+          },
+
+          setOwnDomains: async (text: St): Pr<V> => {
+            await this.waitAndSetValue('.s_A_Ss_YrDoms textarea', text);
+          },
+
+          setExternalDomains: async (text: St): Pr<V> => {
+            await this.waitAndSetValue('.s_A_Ss_FolLns textarea', text);
+          },
+
           getHostname: async (): Pr<St> => {
             return await this.waitAndGetVisibleText('.esA_Ss_S_Hostname');
           },
@@ -9467,6 +9490,11 @@ export class TyE2eTestBrowser {
 
         viewPublProfile: async () => {
           await this.waitAndClick('.e_VwPblPrfB');
+        },
+
+        viewModTasks: async () => {
+          await this.waitAndClick('.e_VwModTsksB');
+          await this.adminArea.review.waitUntilLoaded();
         },
 
         assertUsernameIs: async (usernameOrMember: St | Member) => {
@@ -9969,6 +9997,12 @@ export class TyE2eTestBrowser {
           await this.topic.clickPostActionButton(`.e_RT-Ix-${index} .e_A_Rvw_Tsk_AcptB`);
           await this.waitUntilModalGone();
           await this.waitUntilLoadingOverlayGone();
+        },
+
+        bulkAcceptAll: async () => {
+          await this.waitAndClick('.e_AcptAllB');
+          await this.waitAndClick('.e_AcptAllD .e_SD_CloseB.btn-primary');
+          await this.waitUntilModalGone();
         },
 
         rejectDeleteTaskIndex: async (index: Nr) => {

@@ -322,6 +322,7 @@ function runAllE2eTests {
 
   $r s/wdio-7 --only editor-toolbar-preview.1br --cd -i $args
   $r s/wdio --only sanitize-posts.2browsers $args
+  $r s/wdio-7 --only rel-follow-own-domains.2br.f --cd -i $args
 
   $r s/wdio-7 --only votes-and-best-first.d.2br --cd -i $args
   $r s/wdio-7 --only comment-sort-order.d.2br --cd -i $args
@@ -559,6 +560,8 @@ function runAllE2eTests {
 
   # Moderation   (4862065)
   # ------------
+
+  $r s/wdio-7 --only modn-review-specific-user.3br.f --cd -i $args
 
   $r s/wdio-7 --only modn-ban-spammer.2br.f.e2e.ts --cd -i $args
 

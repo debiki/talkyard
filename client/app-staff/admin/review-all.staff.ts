@@ -205,6 +205,7 @@ export const ReviewAllPanel = createFactory({
 
   acceptAllUnreviewed: function() {
     util.openDefaultStupidDialog({
+      dialogClassName: 'e_AcptAllD',
       body: "Accept all? (actually, 100 at a time)",  // [mod_acpt_all_limit]
       primaryButtonTitle: "Yes, bulk accept",
       secondaryButonTitle: "No, cancel",

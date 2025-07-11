@@ -5014,7 +5014,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       if (relFollow === -1) {
         // rel=nofollow added here: [rel_nofollow] too.
         console.debug('newAttribs.rel = nofollow');
-        newAttribs.rel = 'nofollow';  // TyTRELNOFLW01
+        newAttribs.rel = 'nofollow';  // Tests: TyTRELNOFLW01
       }
 
       // Stop [reverse_tabnabbing],  TyTREVTABNAB01

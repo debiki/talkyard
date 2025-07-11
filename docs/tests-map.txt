@@ -977,6 +977,7 @@ sanitizing,
 clean html:
   [rel_nofollow]:
           - sanitize-posts.2browsers.test.ts  TyT603RMDL3.TyTRELNOFLW01
+          - rel-follow-own-domains.2br.f  TyTFOLLOWLNS  TyTRELNOFLW01
           - TyTFOLLOWLNS  TESTS_MISSING  in TextAndHtmlTest
   [reverse_tabnabbing]:
           - sanitize-posts.2browsers.test.ts  TyT603RMDL3.TyTREVTABNAB01
@@ -1549,7 +1550,7 @@ review after:
     #    Memah visits reply — not found.
 
   accept unreviewed:
-            - TESTS_MISSING  TyTMODACPTUNREV
+            - modn-review-specific-user.3br.f  TyTMOD_REVW_USR.TyTMODACPTUNREV
 
 report post,
 flag post,
