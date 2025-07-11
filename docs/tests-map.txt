@@ -108,6 +108,9 @@ authn:
   single sign-on: (3093533)
   guest:  # copy-edit unsubscribe.2browsers.test.ts + use signUpLogInAs_Real_Guest
           - embedded-comments-guest-login-email-notf-unsbscribe.test.ts  TyT5WBK0267
+          - login-guest-or-user-without-email.3br.f  TyTLGI_GST_OR_WO_EML
+  switch between login / join / guest dialog:
+          - login-guest-or-user-without-email.3br.f  TyTLGI_GST_OR_WO_EML.TyTSWITCH_LGI_D
   cookieless:
           - embedded-comments-no-cookies-guest.test.ts        TyT295KBF6301
           - embedded-comments-no-cookies-verif-email.test.ts  TyT795KB69285
@@ -126,6 +129,8 @@ authn:
             - TESTS_MISSING
     suspended user resets password:
             - TESTS_MISSING  [email_lgi_susp]
+    password user w/o email addr:
+            - login-guest-or-user-without-email.3br.f  TyTLGI_GST_OR_WO_EML.TyTLGI_USR_0EM
   forgot password -
     reset it:
           - password-login-reset.2br.f  TyT5KAES20W
@@ -1768,6 +1773,8 @@ notifications:
           - notf-prefs-private-groups.2browsers.test.ts   TyT406WMDKG26
   about replies in topics where one has replied:
           - notf-prefs-pages-replied-to.2br.test.ts  TyTE2E402SM53
+  guests see notf dot, or not? Hmm:
+            - TESTS_MISSING  TyTNOTF_GUEST_DOT # let's wait
   new topics:
           - api-upsert-page-notfs.2browsers.test.ts  TyT502RKTLXM296
           - ... more, which?

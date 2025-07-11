@@ -4262,6 +4262,21 @@ export class TyE2eTestBrowser {
         dieIf(nameInHtml !== username, `Wrong username in topbar: ${nameInHtml} [EdE2WKG04]`);
       },
 
+      canJoinAs_Real_Guest: async (): Pr<Bo> => {  // RENAME remove '_Real_' [8JTW4]
+        await this.waitForDisplayed('.c_AuD_SwitchB');
+        return this.isDisplayed('.c_AuD_2Gst .c_AuD_SwitchB');
+      },
+
+      switchToJoinAsGuest: async (): Pr<V> => {
+        this.waitAndClick('.c_AuD_2Gst .c_AuD_SwitchB');
+        this.waitForDisplayed('.e_4Gst #e2eFullName');
+      },
+
+      is_Real_Guest_SignUp: async (): Pr<Bo> => {  // RENAME remove '_Real_' [8JTW4]
+        await this.waitForDisplayed('.e_IsSgU');
+        return this.isDisplayed('.e_IsSgU.e_4Gst');
+      },
+
       // For guests, there's a combined signup and login form.
       signUpLogInAs_Real_Guest: async (name: St, email?: St) => {  // RENAME remove '_Real_' [8JTW4]
         await this.loginDialog.fillInFullName(name);
@@ -8125,8 +8140,8 @@ export class TyE2eTestBrowser {
         }
       },
 
-      openActivityFor: async (who: St | UserId, origin?: St) => {
-        await this.go((origin || '') + `/-/users/${who}/activity/posts`);
+      openActivityFor: async (who: St | UserId | Member, origin?: St) => {
+        await this.go((origin || '') + `/-/users/${who.username || who}/activity/posts`);
         await this.waitUntilLoadingOverlayGone();
       },
 
@@ -8594,8 +8609,8 @@ export class TyE2eTestBrowser {
           await this.waitAndClick('.s_UP_Prf_Nav_EmLgL');
           // Break out fn:  waitForLoaded();  ?
           if ((await this.urlPath()).startsWith(c.UsersUrlPrefix)) {
-            // Wait for user emails loaded.
-            await this.waitForVisible('.s_UP_EmLg_EmL');
+            // Wait for no email adr, or user email adrs loaded.
+            await this.waitForVisible('.s_UP_EmLg_0Em, .s_UP_EmLg_EmL');
           }
           else {
             // Currently (May 2019) just this section with a delete button.
@@ -8807,6 +8822,10 @@ export class TyE2eTestBrowser {
             return adrs;
           },
 
+          waitUntilNoEmailAdr: async () => {
+            await this.waitForVisible('.s_UP_EmLg_0Em');
+          },
+
           waitUntilEmailAddressListed: async (addrRegexStr: St,
                   opts: { shallBeVerified?: Bo } = {}) => {
             const verified = opts.shallBeVerified ? '.e_EmVerfd' : (
@@ -8814,19 +8833,30 @@ export class TyE2eTestBrowser {
             await this.waitUntilTextMatches('.s_UP_EmLg_EmL_It_Em' + verified, addrRegexStr);
           },
 
-          waitAndAssertLoginMethod: async (ps: { providerName: St, username?: St,
+          waitAndAssertLoginMethod: async (ps: { providerName?: St, password?: Bo, username?: St,
                     emailAddr?: St, index?: Nr }) => {
+            dieIf(!!ps.providerName === !!ps.password, 'TyE602RKLS53'); // either or
+
             const howSel = '.s_UP_EmLg_LgL_It_How';
             await this.waitForDisplayed(howSel);
-            await this.assertNthTextMatches(howSel, ps.index || 1,
-                    ps.providerName.toLowerCase(), undefined, { caseless: true });
+            if (ps.providerName) {
+              await this.assertNthTextMatches(howSel, ps.index || 1,
+                      ps.providerName.toLowerCase(), undefined, { caseless: true });
+            }
+            else {
+              await this.assertNthTextMatches(howSel, ps.index || 1, "Password");
+              await this.assertNthTextMatches('.s_UP_EmLg_LgL_It_Un', ps.index || 1, ps.username);
+            }
 
-            if (ps.username || ps.emailAddr) {
-              dieIf(!!ps.index, 'unimpl TyE530RKTMD');
+            if (ps.username) {
+              dieIf(!!ps.index, 'unimpl TyE530RKTMD2');
               const actualUsername = await this.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_Un');
-              const actualEmail = await this.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_Em');
-              // Don't convert to lowercase:
+              // Don't convert to lowercase.
               tyAssert.eq(actualUsername, ps.username);
+            }
+            if (ps.emailAddr) {
+              dieIf(!!ps.index, 'unimpl TyE530RKTMD3');
+              const actualEmail = await this.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_Em');
               tyAssert.eq(actualEmail, ps.emailAddr);
             }
           },
@@ -9196,8 +9226,8 @@ export class TyE2eTestBrowser {
             await this.setCheckbox('#e_ApproveUsersCB', isRequired);
           },
 
-          clickAllowGuestLogin: async () => {
-            await this.waitAndClick('#e2eAllowGuestsCB');
+          setAllowGuestLogin: async (allowed: Bo) => {
+            await this.setCheckbox('#e2eAllowGuestsCB', allowed);
           },
 
           setExpireIdleAfterMinutes: async (minutes: Nr) => {

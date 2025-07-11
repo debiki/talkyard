@@ -7400,10 +7400,6 @@ export class TyE2eTestBrowser {
             this.setCheckbox('#e_ApproveUsersCB', isRequired);
           },
 
-          clickAllowGuestLogin: () => {
-            this.waitAndClick('#e2eAllowGuestsCB');
-          },
-
           setExpireIdleAfterMinutes: (minutes: number) => {
             this.scrollIntoViewInPageColumn('.e_LgoIdlAftMins input');
             this.waitAndSetValue('.e_LgoIdlAftMins input', minutes, { checkAndRetry: true });

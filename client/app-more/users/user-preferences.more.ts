@@ -1264,8 +1264,11 @@ const AccountTab = createFactory<any, any>({
     const emailAddrs: UserAccountEmailAddr[] = this.state.emailAddresses;
     const loginMethods: UserAccountLoginMethod[] = this.state.loginMethods;
 
-    const emailAddressesList =
-      !emailAddrs.length ? r.div({ className: 's_UP_EmLg_0Em' }, "No email address") :
+    const emailAddressesList = (
+      !emailAddrs.length
+          // Tests:
+          //   - TyTLGI_GST_OR_WO_EML.TyTLGI_USR_0EM
+          ? r.div({ className: 's_UP_EmLg_0Em' }, "No email address") :
       r.ul({ className: 's_UP_EmLg_EmL' },
         emailAddrs.map((addr: UserAccountEmailAddr) => {
           let status = '';
@@ -1311,7 +1314,7 @@ const AccountTab = createFactory<any, any>({
               isPrimary || !isVerified ? null :
                 Button({ onClick: () => this.setPrimary(addr.emailAddress),
                     className: 'e_MakeEmPrimaryB' }, t.upp.MakePrimary)));
-        }));
+        })));
 
     // Don't show the Add button again after one email added. Then it's harder to see
     // the "check your inbox" message.

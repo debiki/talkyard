@@ -312,6 +312,8 @@ function runAllE2eTests {
   $r s/wdio --only navigation-as-stranger $args
   # Also:  embedded-comments-navigation-as-guest  further below.
 
+  $r s/wdio-7 --only login-guest-or-user-without-email.3br.f --cd -i $args
+
   $r s/wdio-7 --only d.sessions-logout-elsewhere.4br --cd -i $args
   $r s/wdio-7 --only d.sessions-staff-logout-others.4br --cd -i $args
 
