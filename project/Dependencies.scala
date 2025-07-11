@@ -90,7 +90,7 @@ object Dependencies {
     val apacheCommonsEmail = "org.apache.commons" % "commons-email" % "1.6.0"
 
     // See: https://commons.apache.org/proper/commons-lang/changes-report.html
-    val apacheCommonsLang3 = "org.apache.commons" % "commons-lang3" % "3.17.0"
+    val apacheCommonsLang3 = "org.apache.commons" % "commons-lang3" % "3.18.0"
 
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
