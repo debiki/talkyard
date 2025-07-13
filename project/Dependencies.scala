@@ -155,7 +155,7 @@ object Dependencies {
     // and there's (as of 2025-07) nothing interesting in newer versions?
     // (Versions <= 2.17.0 are vulnerable.)
     //  log4jApi  = "org.apache.logging.log4j" % "log4j-api" % "..."   // not needed
-    val log4jCore = "org.apache.logging.log4j" % "log4j-core" % "2.17.2"  // needed
+    val log4jCore = "org.apache.logging.log4j" % "log4j-core" % "2.25.1"  // needed
 
 
     // ----- Metrics, tracing
