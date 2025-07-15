@@ -143,9 +143,11 @@ describe("emb-disc-cats  TyT03RKHJF59", () => {
     // No custom category — cat A is the default.
     fs.writeFileSync(`${dir}/${pageNoCatSlug}`, makeHtml('nocat', '', '#500'));
     // Custom category id.
-    fs.writeFileSync(`${dir}/${pageBbbSlug}`, makeHtml('bbb', `extid:${catBExtId}`, '#040'));
+    // (Let's try both 'rid:' and 'extid:'.  'rid:' is what everyone should use
+    // — 'extid:' is legacy, deprecated.)
+    fs.writeFileSync(`${dir}/${pageBbbSlug}`, makeHtml('bbb', `rid:${catBExtId}`, '#040'));
     fs.writeFileSync(`${dir}/${pageCccSlug}`, makeHtml('ccc', `extid:${catCExtId}`, '#005'));
-    fs.writeFileSync(`${dir}/${pageDddSlug}`, makeHtml('ddd', `extid:${catDExtId}`, '#005'));
+    fs.writeFileSync(`${dir}/${pageDddSlug}`, makeHtml('ddd', `rid:${catDExtId}`, '#005'));
     // Custom category, and Memah gets notified.
     fs.writeFileSync(`${dir}/${pageNnnSlug}`, makeHtml('nnn', `extid:${catNExtId}`, '#405'));
     // Staff, restricted.
