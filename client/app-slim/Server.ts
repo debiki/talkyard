@@ -1686,7 +1686,7 @@ export function loadMyself(onOkMaybe: (resp: FetchMeResponse) => Vo) {
   // Therefore, BUG: If many comments iframes, will *look* as if changing notf
   // level, has no effect. But in fact it works.
   let pageIds = getPageId();
-  if (eds.isInEmbeddedCommentsIframe) {
+  if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) {
     try {
       const mainWin = getMainWin();
       if (mainWin.tydyn) {

@@ -172,7 +172,7 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
     if (what === r.a && !newProps.onClick) {
       let isExternal = newProps.ext || eds.isInEmbeddedCommentsIframe;
       // @ifdef DEBUG
-      dieIf(isServerSide() && eds.isInEmbeddedCommentsIframe, 'TyE2KWT05');
+      dieIf(isServerSide() && (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum), 'TyE2KWT05');
       // @endif
 
       const href = newProps.href;

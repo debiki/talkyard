@@ -292,8 +292,9 @@ export const Editor = createFactory<any, EditorState>({
 
     // Embedded forums use just one <iframe> (unlike embedded blog comments, which
     // have editor & session iframes too), so we can just return the store. [emb_forum]
-    if (eds.embHow === 'Forum')
-      return debiki2.ReactStore.allData();
+    // Update: Now they don't use just 1, instead, same as for emb comts. So comment out:
+    //if (eds.embHow === 'Forum')
+    //  return debiki2.ReactStore.allData();
 
     // @ifdef DEBUG
     dieIf(!inFrame && !this.state.inFrame, 'TyE604RMJ46');

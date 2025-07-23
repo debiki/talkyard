@@ -113,7 +113,12 @@ function onMessage(event) {
         typs.weakSessionId = eventData.weakSessionId;
         if (eventData.xsrfToken) {
           // If xsrfTokenIfNoCookies already set, use it, should be newer.
-          typs.xsrfTokenIfNoCookies ||= eventData.xsrfToken;
+          if (!mainWin.typs.xsrfTokenIfNoCookies) {
+            mainWin.typs.xsrfTokenIfNoCookies = eventData.xsrfToken;
+            typs.xsrfTokenIfNoCookies = eventData.xsrfToken;
+            // mainWin.typs.sessType = eventData.sessType;   ?
+            // typs.sessType = eventData.sessType;           ?
+          }
         }
 
         // This sends 'justLoggedIn' to other iframes, so they'll get updated too.

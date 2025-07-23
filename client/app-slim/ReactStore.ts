@@ -898,6 +898,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffFo
       readingProgress.lastViewedPostNr >= FirstReplyNr) {
     if (eds.isInEmbeddedCommentsIframe) {
       // Don't scroll — usually people come back to look at the blog post, not the comments.
+      // But what about eds.isInEmbForum, scroll or not?
     }
     else if (ReactActions.findUrlFragmentAction()) {
       // Then other code [7WKBQ28] scrolls to the anchored post instead.

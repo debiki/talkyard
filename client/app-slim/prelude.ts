@@ -318,7 +318,10 @@ export function getMainWin(): MainWin {  // QUICK RENAME to win_getSessWin() ?
   // comments iframe, in another browser tab. So if we were to continue below,
   // we could find the main win from the *wrong* browser tab with the wrong
   // React store. )
-  if ((!eds.isInIframe || eds.embHow === 'Forum') && !win_isLoginPopup()) {
+  // If editor in forum, so no other iframes:
+  //if ((!eds.isInIframe || eds.embHow === 'Forum') && !win_isLoginPopup()) {
+  // Separate editor iframe:
+  if (!eds.isInIframe && !win_isLoginPopup()) {
     return window as MainWin;
   }
 
@@ -349,10 +352,11 @@ export function getMainWin(): MainWin {  // QUICK RENAME to win_getSessWin() ?
   }
 
   if (win.name !== lookingForName) {
-    // We're in an embedded editor or comments iframe but not in the one we're looking for
-    // (which is the #talkyard-session iframe).
+    // We're in an embedded editor or forum or comments iframe but not in the one we're
+    // looking for (which is the #talkyard-session iframe).
     // @ifdef DEBUG
     dieIf(win.name !== 'edEditor'
+        // The embedded forum frame has the same name, 'edComments-1'.
         && !/edComments-[0-9]+/.test(win.name),
           `This window has an unexpected name: '${win.name}' TyE7S2RME75`);
     // The parent window is the embedding window, e.g. a blog post with

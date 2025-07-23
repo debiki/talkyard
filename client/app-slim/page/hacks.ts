@@ -219,14 +219,14 @@ function makeMentionsInEmbeddedCommentsPointToTalkyardServer() {
   // If not an embedded comments page, relative user profile links in mentions, work fine
   // — need do nothing. However, in embedded comments pages, relative links would  [6JKD2A]
   // resolve to (non existing) pages on the embedding server.
-  // Make them point to the Talkyard server instead.
+  // Make them point to the Talkyard server instead. Same for embedded forums.
   //
   // (This could alternatively be done, by including the Takyard server origin, when
   // rendering the comments from Markdown to HTML. But this approach (below) is simpler,
   // and works also if the Talkyard server moves to a new address (won't need
   // to rerender all comments and pages).)
 
-  if (!eds.isInEmbeddedCommentsIframe)
+  if (!eds.isInEmbeddedCommentsIframe && !eds.isInEmbForum)
     return;
 
   const mentions = debiki2.$all('.dw-p-bd .esMention[href]:not([href^="http"])');

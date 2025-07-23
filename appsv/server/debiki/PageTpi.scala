@@ -426,7 +426,7 @@ class SiteTpi protected (
   */
 class EditPageTpi(
   request: GetRequest,
-  override val anyEmbeddingUrl: Option[String],
+  //override val anyEmbeddingUrl: Option[String],
 ) extends SiteTpi(request) {
   override def anyCurrentPageRole: Opt[PageType] = Some(PageType.EmbeddedComments)
 }
@@ -443,7 +443,7 @@ class PageTpi(
   private val pageTitleUnsafe: Option[String],
   override val anyCustomMetaTags: FindHeadTagsResult,
   override val anyDiscussionId: Option[AltPageId],
-  override val anyEmbeddingUrl: Option[String],
+  //override val anyEmbeddingUrl: Option[String],
   override val lazyCreatePageInCatId: Option[CategoryId],
 ) extends
     SiteTpi(pageReq, json = None, pageTitleUnsafe = pageTitleUnsafe) {

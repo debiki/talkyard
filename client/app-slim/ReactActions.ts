@@ -173,7 +173,7 @@ export function logoutClientSideOnly(ps: { goTo?: St, skipSend?: Bo, msg?: St } 
     actionType: actionTypes.Logout
   });
 
-  if (eds.isInEmbeddedCommentsIframe && !ps.skipSend) {
+  if ((eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) && !ps.skipSend) {
     // Tell the editor iframe that we've logged out.
     // And maybe we'll redirect the embedd*ing* window.  [sso_redir_par_win]
     sendToOtherIframes(['logoutClientSideOnly', ps]);
@@ -352,7 +352,7 @@ export function showForumIntro(visible: boolean) {
 
 export function editPostWithNr(postNr: PostNr, inWhichWin?: MainWin) {
   login.loginIfNeededReturnToPost(LoginReason.LoginToEdit, postNr, () => {
-    if (eds.isInEmbeddedCommentsIframe) {
+    if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) {
       // [many_embcom_iframes]
       sendToEditorIframe(['editorEditPost', postNr]);
     }
@@ -573,7 +573,7 @@ export function scrollAndShowPost(postOrNr: Post | PostNr, anyShowPostOpts?: Sho
 
   // ----- Dupl code [0396AKTSSJ46]
   let editorHeight = 0;
-  if (eds.isInEmbeddedCommentsIframe) {
+  if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) {
     try {
       editorHeight = window.parent.frames['edEditor'].innerHeight || 0;
     }
@@ -1028,7 +1028,7 @@ let lastFlashPostNr: PostNr | undefined;
 export function showEditsPreviewInPage(ps: ShowEditsPreviewParams, inFrame?: DiscWin) {
   const doneScrolling = _showEditsPreviewInPage(ps, inFrame);
   if (doneScrolling !== false) {
-    ps?.onDone();
+    ps.onDone?.();
   }
 }
 
@@ -1089,7 +1089,7 @@ function _showEditsPreviewInPage(ps: ShowEditsPreviewParams, inFrame?: DiscWin):
   // main iframe; it doesn't know which page we're looking at. Or 2) we're in
   // a chat — then, currently no page id included. Or 3) if we're in the api
   // section, then there's no page.
-  dieIf(!ps.editorsPageId && !eds.isInEmbeddedCommentsIframe &&
+  dieIf(!ps.editorsPageId && !eds.isInEmbeddedCommentsIframe && !eds.isInEmbForum &&
       !isChat && location.pathname.indexOf(ApiUrlPathPrefix) === -1, 'TyE630KPR5');
   // @endif
 
@@ -1172,7 +1172,7 @@ export function scrollToPreview(ps: {
   // If we're in an embedded comments iframe, then, there's another iframe for the
   // editor. Then scroll a bit more, so that other iframe won't occlude the preview.
   let editorHeight = ps.editorIframeHeightPx || 0;
-  if (eds.isInEmbeddedCommentsIframe) {
+  if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) {
     // This is better? Works also when starting scrolling from inside the comments
     // iframe — then, the editor iframe hasn't sent any message that included
     // its height, so `= ps.editorIframeHeightPx` (just above) won't work . But this
@@ -1251,7 +1251,7 @@ export function hideEditorAndPreview(ps?: HideEditorAndPreviewParams, inFrame?) 
   // @ifdef DEBUG
   dieIf(!page, 'TyE407AKSHPW24');
   dieIf(ps.replyToNr && isChat, 'TyE62SKHSW604');
-  dieIf(!ps.editorsPageId && !eds.isInEmbeddedCommentsIframe &&
+  dieIf(!ps.editorsPageId && !eds.isInEmbeddedCommentsIframe && !eds.isInEmbForum &&
       !isChat && location.pathname.indexOf(ApiUrlPathPrefix) === -1, 'TyE6QSADTH04');
   // @endif
 
@@ -1415,7 +1415,7 @@ function deleteDraftImpl(draftPost: Post | U, draftDeletor: DraftDeletor,
 
 export function composeReplyTo(parentNr: PostNr, replyPostType: PostType) {
   const inclInReply = true; // legacy — was for multireplies: toggle incl-in-reply or not
-  if (eds.isInEmbeddedCommentsIframe) {
+  if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) {
     sendToEditorIframe(['editorToggleReply', [parentNr, inclInReply, replyPostType]]);
   }
   else {

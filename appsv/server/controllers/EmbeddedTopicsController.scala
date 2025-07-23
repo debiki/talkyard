@@ -122,7 +122,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
         val tpi = new PageTpi(pageRequest, jsonStuff.reactStoreJsonString, jsonStuff.version,
               "Lazy page [TyMLAZYPAGE]", WrongCachedPageVersion,
               jsonStuff.pageTitleUnsafe, jsonStuff.customHeadTags,
-              anyDiscussionId = discussionId, anyEmbeddingUrl = Some(embeddingUrl),
+              anyDiscussionId = discussionId, //, anyEmbeddingUrl = Some(embeddingUrl),
               lazyCreatePageInCatId = Some(lazyCreateInCatId))
         val htmlString = views.html.templates.page(tpi).body
         val renderedPage = RenderedPage(htmlString, "NoJson-1WB4Z6",
@@ -211,10 +211,11 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
   }
 
 
-  def showEmbeddedEditor(embeddingUrl: St, embeddingScriptV: Opt[i32]): Action[U] =
+  // Remove embeddingUrl — but wait until client side scripts have been updated (browser cache expire & refetch).
+  def showEmbeddedEditor(embeddingUrl: Opt[St], embgUrl: Opt[St], embeddingScriptV: Opt[i32]): Action[U] =
         AsyncGetActionMaybeSkipCookies(avoidCookies = true) { request =>
 
-    val tpi = new EditPageTpi(request, anyEmbeddingUrl = Some(embeddingUrl))
+    val tpi = new EditPageTpi(request) // , anyEmbeddingUrl = Some(embeddingUrl))
     val htmlStr = views.html.embeddedEditor(tpi, embeddingScriptV = embeddingScriptV).body
 
     // (The callee needs to know the embedding origin, so the callee can know if
@@ -222,7 +223,9 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
     // so techies can test on localhost.)
     UX; SHOULD // not auto allow localhost. Add it explicitly instead.
     ViewPageController.addVolatileJsonAndPreventClickjacking2(htmlStr,
-        unapprovedPostAuthorIds = Set.empty, request, embeddingUrl = Some(embeddingUrl))
+        unapprovedPostAuthorIds = Set.empty, request,
+              // Ooops, should use  embgUlr. Better move embeddingUrl backw compat to there?
+              embeddingUrl = embeddingUrl)
   }
 }
 

@@ -116,7 +116,8 @@ export function scrollIntoView(elem: Elm, options: ScrollIntoViewOpts): Bo | U {
   options = _.clone(options);
 
   let needsToScroll: boolean | undefined;
-  if (eds.isInEmbeddedCommentsIframe) {
+  if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) {
+    // Might not work for embedded topic lists? Only for embedded discussions?
     delete options.parent;
     const rect = cloneRect(elem.getBoundingClientRect());
     window.parent.postMessage(JSON.stringify(['scrollComments', [rect, options]]), eds.embeddingOrigin);

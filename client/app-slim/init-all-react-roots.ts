@@ -124,6 +124,8 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate'
 
     // (Currently always false, however maybe start using, if adding options for hiding
     // nav buttons, if in emb forum iframe?)
+    // Update 2025: We might be in an embedded forum,  eds.isInEmbForum, but then
+    // isEmbCmts is false then too.
     const isEmbCmts: boolean = eds.isInEmbeddedCommentsIframe;
     // @ifdef DEBUG
     dieIf(isEmbCmts, 'TyE2RKBP3');

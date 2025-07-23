@@ -74,7 +74,7 @@ export const StupidDialog = createComponent({
 
   open: function(stuff: StupidDialogStuff) {
     const winWidth = window.innerWidth;
-    const atX = eds.isInEmbeddedCommentsIframe ? winWidth / 2 : undefined;
+    const atX = eds.isInIframe ? winWidth / 2 : undefined;  // was: isInEmbeddedCommentsIframe
     this.setState({ isOpen: true, stuff, atX, winWidth }, () => {
       if (stuff.withCloseFn) {
         stuff.withCloseFn(this.close);
@@ -126,7 +126,7 @@ export const StupidDialog = createComponent({
 
     // CLEAN_UP, SMALLER_BUNDLE: use the same type of dialog for both non-iframe and iframe.
     let result;
-    if (!eds.isInEmbeddedCommentsIframe) {
+    if (!eds.isInEmbeddedCommentsIframe && !eds.isInEmbForum) {
       result = (
         Modal({
             show: this.state.isOpen,
