@@ -20,7 +20,7 @@ Compile / dependencyOverrides ++= {
       "com.sun.activation" % "jakarta.activation" % "1.2.1",
       "com.sun.mail" % "jakarta.mail" % "1.6.7",
       "commons-beanutils" % "commons-beanutils" % "1.9.4",
-      "commons-codec" % "commons-codec" % "1.18.0",
+      "commons-codec" % "commons-codec" % "1.19.0",
       "commons-collections" % "commons-collections" % "3.2.2",
       "commons-digester" % "commons-digester" % "2.1",
       "commons-io" % "commons-io" % "2.19.0",
