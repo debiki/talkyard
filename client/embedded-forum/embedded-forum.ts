@@ -337,12 +337,12 @@ function createSessionFrame() {
     name: 'edComments',
     title: "Talkyard comments helper iframe",
     src: serverOrigin + '/-/session-iframe',
-    height: 0, // don't `hide()` [.hdn_iframe]
     'aria-hidden': true,
     style: {
       padding: 0,
       margin: 0,
       width: '100%',
+      height: 0, // don't `hide()` [.hdn_iframe]
       border: 'none',
       overflow: 'hidden'
     },
