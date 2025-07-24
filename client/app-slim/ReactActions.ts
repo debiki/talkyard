@@ -1256,7 +1256,7 @@ export function hideEditorAndPreview(ps?: HideEditorAndPreviewParams, inFrame?) 
   // @endif
 
   let patch: StorePatch = {};
-  let highlightPostNrAfter: PostNr;
+  let highlightPostNrAfter: PostNr | U;
 
   if (isOtherPage) {
     // The preview is gone already, since we've navigated away.
@@ -1292,7 +1292,7 @@ export function hideEditorAndPreview(ps?: HideEditorAndPreviewParams, inFrame?) 
   patchTheStore(patch);
 
   // And then, later:
-  if (!isOtherPage) {
+  if (!isOtherPage && highlightPostNrAfter) {
     setTimeout(() => {
       flashPostNrIfThere(highlightPostNrAfter);
     }, 200);
