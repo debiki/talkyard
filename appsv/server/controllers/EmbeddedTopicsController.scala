@@ -107,7 +107,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
               comtOrder = discProps.comtOrder,
               comtOffset = None,
               widthLayout = if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium,
-              isEmbedded = true,
+              isEmbedded = true,   // but also [emb_forum_is_emb], not only emb comments
               origin = request.origin,
               anyCdnOrigin = globals.anyCdnOrigin,
               anyUgcOrigin = globals.anyUgcOriginFor(request.site),

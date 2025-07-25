@@ -2299,7 +2299,7 @@ function showNewPage(ps: ShowNewPageParams) {
   const oldPage: Page = store.currentPage;
   store.currentPage = newPage;
   store.currentPageId = newPage.pageId;
-  if (eds.isInIframe) {
+  if (eds.isInIframe) {  // why false:  store.isEmbedded — oh, [emb_forum_is_emb]
     eds.embeddedPageId = newPage.pageId;  // [annoying_4HKW28] [4HKW28]
   }
   if (newPage.pageId) {

@@ -144,7 +144,7 @@ class PageRequest[A](
           //discProps.comtNesting — later
           comtOffset = anyOffset,
           widthLayout = if (isMobile) WidthLayout.Tiny else WidthLayout.Medium,
-          isEmbedded = embeddingUrl.nonEmpty,
+          isEmbedded = embeddingUrl.nonEmpty,   // [emb_forum_is_emb] This might work?
           origin = origin,
           anyCdnOrigin = dao.globals.anyCdnOrigin,
           anyUgcOrigin = dao.globals.anyUgcOriginFor(site),

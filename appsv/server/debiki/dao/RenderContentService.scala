@@ -230,7 +230,7 @@ class RenderContentActor(
       return result
     }
 
-    val isEmbedded = pageMeta.pageType == PageType.EmbeddedComments
+    val isEmbedded = pageMeta.pageType == PageType.EmbeddedComments   // but also [emb_forum_is_emb], not only emb comments
 
     // Render for tiny width
     // A bit dupl code. [2FKBJAL3]
