@@ -1253,6 +1253,11 @@ interface SessWinStore {
 }
 
 
+interface SettingsStore {
+  settings: SettingsVisibleClientSide
+}
+
+
 /// Can be 1) the main ('top') browser win (incl topbar, editor, sidebars etc), or
 /// 2) a copy of the store in an embedded comments iframe.  [many_embcom_iframes]
 ///
@@ -1263,6 +1268,7 @@ interface DiscStore extends SessWinStore {
   currentPageId?: PageId;
   currentCategories: Cat[];   // RENAME [concice_is_nice] curCats — or remove, use curCatsById.values instead?
   curCatsById: { [catId: CatId]: Cat };
+  allCategoriesHacky?: Category[]; // ?? [incl_hacky_cats_in_DiscStore]?
   usersByIdBrief: { [userId: number]: Pat };  // = PatsById
   pagesById: { [pageId: string]: Page };
 
@@ -1278,6 +1284,9 @@ interface DiscStore extends SessWinStore {
   curDiscProps?: DiscPropsDerived
   indicatedPersona?: PersonaMode      // ? move to SessWinStore ?
 }
+
+
+type EditorsStore = DiscStore & Origins & SettingsStore
 
 
 interface Store extends Origins, DiscStore, PartialEditorStoreState {
@@ -1309,7 +1318,7 @@ interface Store extends Origins, DiscStore, PartialEditorStoreState {
 
   // For all site sections, loaded lazily, and updated in a hacky way, for now, so have a look,
   // and refactor (?), before using it for anything more.
-  allCategoriesHacky?: Category[];
+  allCategoriesHacky?: Category[]; // [incl_hacky_cats_in_DiscStore]?
   publicCategories: Category[];   // RENAME [concice_is_nice] pubCats
   newCategorySlug: string; // for temporarily highlighting a newly created category
   topics?: Topic[];

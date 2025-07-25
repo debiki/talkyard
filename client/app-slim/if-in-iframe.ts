@@ -177,6 +177,19 @@ function onMessage(event) {
       // and other comments iframes.
       ReactActions.logoutClientSideOnly({ skipSend: true });
       break;
+
+    case 'editNewForumPage':
+      const catId = eventData[0];
+      const pageType = eventData[1];
+      ReactActions.editNewForumPage(catId, pageType, fromFrame);
+      break;
+
+    // Sent from the editor to the comments iframe, when a new page has been created.
+    case 'navToNewPage':
+      const pageId = eventData[0];
+      ReactActions.navToNewPage(pageId);
+      break;
+
     case 'scrollToPostNr':  // rename to loadAndShowPost  ? + add  anyShowPostOpts?: ShowPostOpts
       var postNr = eventData;
       debiki.scriptLoad.done(function() {

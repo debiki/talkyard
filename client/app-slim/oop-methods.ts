@@ -1260,9 +1260,9 @@ export function store_findTheDefaultCategory(store: Store): Category | U {
 }
 
 
-export function store_findCatByRefOrId(store: Store, refOrId: RefOrId): Category | U {
+export function store_findCatByRefOrId(store: DiscStore, refOrId: RefOrId): Category | U {
   const curCats = store.currentCategories || [];
-  const allCatsHacky = store.allCategoriesHacky || [];
+  const allCatsHacky = store.allCategoriesHacky || []; // [incl_hacky_cats_in_DiscStore]?
   const cats: Category[] = [...curCats, ...allCatsHacky];
 
   if (_.isNumber(refOrId)) {

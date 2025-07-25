@@ -561,17 +561,17 @@ const ForumButtons = createComponent({
       if (this.isGone) return;
       const newTopicTypes = category.newTopicTypes || [];
       if (newTopicTypes.length === 0) {
-        debiki2.editor.editNewForumPage(category.id, PageRole.Discussion);
+        ReactActions.editNewForumPage(category.id, PageRole.Discussion);
       }
       else if (newTopicTypes.length === 1) {
-        debiki2.editor.editNewForumPage(category.id, newTopicTypes[0]);
+        ReactActions.editNewForumPage(category.id, newTopicTypes[0]);
       }
       else {
         // There are many topic types specified for this category, because previously there
         // was a choose-topic-type dialog. But I deleted that dialog; it made people confused.
         // Right now, just default to Discussion instead. Later, change newTopicTypes from
         // a collection to a defaultTopicType field; then this else {} can be deleted. [5YKW294]
-        debiki2.editor.editNewForumPage(category.id, PageRole.Discussion);
+        ReactActions.editNewForumPage(category.id, PageRole.Discussion);
       }
     }, true);
   },

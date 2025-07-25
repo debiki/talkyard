@@ -424,7 +424,7 @@ declare namespace debiki2 {
   function draftType_toPostType(draftType: DraftType): PostType | U;
   function postType_toDraftType(postType: PostType): DraftType | U;
   function store_findTheDefaultCategory(store: Store): Category | U;
-  function store_findCatByRefOrId(store: Store, ref: RefOrId): Category | U;
+  function store_findCatByRefOrId(store: DiscStore, ref: RefOrId): Category | U;
   function store_ancestorCatsCurLast(store: Store, categoryId: CatId): Cat[];
   function store_findCatsWhereIMayCreateTopics(store: Store): Category[];
   function store_getPostId(store: DiscStore, pageId: PageId, postNr: PostNr): PostId | U;

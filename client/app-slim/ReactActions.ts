@@ -245,6 +245,31 @@ export function undeleteCategory(categoryId: number, success: () => void, error:
 }
 
 
+/// Opens the editor to compose a new forum topic.
+///
+export function editNewForumPage(catId: RefOrId, pageType: PageType, inWhichWin?: MainWin) {
+  if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) {
+    sendToEditorIframe(['editNewForumPage', [catId, pageType]]);
+  }
+  else {
+    debiki2.editor.editNewForumPage(catId, pageType, inWhichWin);
+  }
+}
+
+
+/// Called by the editor, after a new page has been created (via editNewForumPage() above).
+///
+export function navToNewPage(pageId: PageId, sendToWhichFrame?: MainWin) {
+  if (eds.isInEmbeddedEditor) {
+    sendToCommentsIframe(['navToNewPage', [pageId]], sendToWhichFrame);
+  }
+  else {
+    // The server will redirect to the correct page slug.
+    page.Hacks.navigateTo('/-' + pageId);
+  }
+}
+
+
 export function pinPage(pinOrder: number, pinWhere: PinPageWhere, success: () => void) {
   Server.pinPage(pinWhere, pinOrder, () => {
     success();
@@ -663,7 +688,7 @@ export function doUrlFragmentAction(newHashFragment?: string) {
         // For now, instead handled in  maybeOpenMessageEditor() in users-page.more.ts [4JABRF0].
         break;
       case FragActionType.ComposeTopic:
-        editor.editNewForumPage(fragAction.category, fragAction.topicType);
+        ReactActions.editNewForumPage(fragAction.category, fragAction.topicType);
         // Don't re-open the editor, if going to another page, and then back.
         history.replaceState({}, '', '#');
         break;
