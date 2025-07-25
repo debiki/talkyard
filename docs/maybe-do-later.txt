@@ -946,9 +946,12 @@ Make  login-required work also for embeded comments.
 Make it possible to embedd a forum, or fourm cateory (no just blog comments).
 Later, disallow all the  [if_emb_forum]  endpoints, if is embedded, but *not* a forum
 (that is, for blog comments, or sth else unexpected).
+— Now works. But embedded chats [emb_chat] not yet supported: Needs the disc store,
+so correct page id and cats. And probably some other tweaks needed too.
 
 [emb_forum_nav_bug]
 <a> nav, instead of single-page-app nav —> gets logged out (and auto logged in).
+ — fixed, right.
 
 [iframe_jump_bug]
 When opening & closing a dialog in an iframe (e.g show-likes, about-user ...), the parent

@@ -191,8 +191,9 @@ function onMessage(event) {
       });
       break;
     case 'editorToggleReply':
-      // This message is sent from a comments iframe to the editor iframe.
-      // Will open the editor to write a reply to `postNr` in that comments iframe.
+      // This message is sent from a comments iframe to the editor iframe. Will open
+      // the editor to write a reply to `postNr` in that comments iframe. The editor frame
+      // gets the page id and current categories from `fromFrame`. [clones_store]
       var postNr = eventData[0];
       var inclInReply = eventData[1];
       var postType = eventData[2] ?? PostType.Normal;
@@ -208,7 +209,7 @@ function onMessage(event) {
     case 'editorEditPost':
       // Sent from a comments iframe to the editor iframe.
       var postNr = eventData;
-      ReactActions.editPostWithNr(postNr, fromFrame);
+      ReactActions.editPostWithNr(postNr, fromFrame); // [clones_store]
       break;
     case 'onEditorOpen':
       // Sent from the embedded editor to all comment iframes, so they can

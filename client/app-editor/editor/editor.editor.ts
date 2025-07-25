@@ -273,7 +273,9 @@ export const Editor = createFactory<any, EditorState>({
 
 
   /// This is part of making the embedded editor work with many comment iframes
-  /// at the same time. We clone the relevant discussion data, from the
+  /// at the same time. And with an embedded forum, which shows different pages
+  /// depending on where in the forum the user navigates.
+  /// We clone the relevant discussion data  [clones_store] from the
   /// relevant embedded comments iframe. — If we're not in embedded iframes,
   /// we just return the React store of the current window as is (which is then
   /// the top window).
@@ -1241,12 +1243,14 @@ export const Editor = createFactory<any, EditorState>({
     this.loadDraftAndGuidelines(draftLocator, WritingWhat.NewPage, role);
   },
 
+  // Later, when emb chat supported: Needs `inFrame: DiscWin`, right? [clones_store] [emb_chat]
   openToEditChatTitleAndPurpose: function() {   // RENAME to  openToEditChatPurpose only (not title)
     // We'll _hide_the_scroll_to_preview_btns, since there isn't any in-page preview,
     // when editing a chat purpose.
     this.editPost(BodyNr);
   },
 
+  // Later: Needs `inFrame: DiscWin`. [clones_store] [emb_chat]
   openToWriteChatMessage: function(text: string, draft: Draft | undefined, draftStatus,
         onDone?: EditsDoneHandler) {
     if (this.alertBadState())
