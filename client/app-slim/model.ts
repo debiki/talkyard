@@ -3631,6 +3631,8 @@ interface ServerVars {
   embgOrigin?: St
 
   // Wrap in an obj so they can be updated all at the same time?
+  // CLEAN_UP Move all this to the store instead?, E.g. use only store.currentPageId,
+  // not embeddedPageId (which looks like dupl data) ?
   // ---------------
   // (In an embedded editor, they're updated dynamically, depending on which
   // blog comments iframe is active.  [many_embcom_iframes])
@@ -3638,7 +3640,7 @@ interface ServerVars {
   embeddedPageAltId?: string;  // RENAME to embeddedDiscussionId
   lazyCreatePageInCatId?: CategoryId;
   // Sometimes lazy-inited when the page gets lazy-created, when the first reply is posted. [4HKW28]
-  embeddedPageId?: string;
+  embeddedPageId?: string;  // [annoying_4HKW28]
   // ---------------
 
   // When creating new site.

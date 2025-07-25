@@ -2132,6 +2132,7 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
     origPost.uniqueId = storePatch.newlyCreatedOrigPostId;
 
     // Update this, so subsequent server requests, will use the correct page id. [4HKW28]
+    // [annoying_4HKW28]
     eds.embeddedPageId = storePatch.newlyCreatedPageId;
     // Later: Add this new page to the watchbar? Currently not needed, because pages created
     // lazily only for embedded comments, and then there's no watchbar.
@@ -2298,6 +2299,9 @@ function showNewPage(ps: ShowNewPageParams) {
   const oldPage: Page = store.currentPage;
   store.currentPage = newPage;
   store.currentPageId = newPage.pageId;
+  if (eds.isInIframe) {
+    eds.embeddedPageId = newPage.pageId;  // [annoying_4HKW28] [4HKW28]
+  }
   if (newPage.pageId) {
     store.pagesById[newPage.pageId] = newPage;
   }

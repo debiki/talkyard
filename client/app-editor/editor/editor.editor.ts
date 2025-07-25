@@ -1039,7 +1039,7 @@ export const Editor = createFactory<any, EditorState>({
     if (eds.isInEmbeddedEditor && inFrame?.eds) {
       // [many_embcom_iframes]
       inFrameStore = discStore;
-      eds.embeddedPageId = inFrame.eds.embeddedPageId;
+      eds.embeddedPageId = inFrame.eds.embeddedPageId; // [annoying_4HKW28]
       eds.embeddingUrl = inFrame.eds.embeddingUrl;
       eds.embeddedPageAltId = inFrame.eds.embeddedPageAltId;
       eds.lazyCreatePageInCatId = inFrame.eds.lazyCreatePageInCatId;
