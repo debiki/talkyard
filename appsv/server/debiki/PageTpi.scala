@@ -180,7 +180,6 @@ class SiteTpi protected (
         isInLoginPopup: Bo = false,
         isAdminApp: Bo = false,
         isInEmbeddedEditor: Bo = false,
-        anyEmbeddedPageId: Opt[PageId] = None,
         embeddingScriptV: Opt[i32] = None,
         resetPasswordPageData: Option[(User, EmailId)] = None,
         ): xml.Unparsed = {
@@ -224,7 +223,6 @@ class SiteTpi protected (
           // These are changed dynamically in an editor iframe, [many_embcom_iframes].
           // to match the embedded comments iframe pat is replying / editing in.
           "embeddingUrl" -> JsStringOrNull(anyEmbeddingUrl),  //  @Html(embeddingUrlOrUndefined),
-          "embeddedPageId" -> JsStringOrNull(anyEmbeddedPageId),
           "embeddedPageAltId" -> JsStringOrNull(anyDiscussionId), // @Html(discussionIdOrUndefined),
           "lazyCreatePageInCatId" -> JsNumberOrNull(lazyCreatePageInCatId), //@Html(lazyCreatePageInCatId),
           // ----------------------
