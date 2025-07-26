@@ -182,7 +182,7 @@ if (_narrow) {
 try {
   var _searchParams = new URLSearchParams(location.search);
   var _embHow = _searchParams.get('embHow'); // [emb_forum]
-  var _embgUrl = _searchParams.get('embgUrl'); // [emb_forum]
+  var _embgUrl = _searchParams.get('embgUrl') || _searchParams.get('embeddingUrl'); // [emb_forum] [clean_up_embg_url]
   var _ssoHow = _searchParams.get('ssoHow');
   var _class = _searchParams.get('htmlClass');
   if (_class) {

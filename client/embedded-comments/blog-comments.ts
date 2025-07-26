@@ -520,7 +520,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
     }
   }
 
-  // Could rename param, and encode the value, see above [enc_aft].
+  // Could rename param, and encode the value, see above [enc_aft]. [clean_up_embg_url]
   const embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
 
   // NEXT:

@@ -240,9 +240,15 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   // Use this instead of  `EmbeddedTopicsController.showTopic(embeddingUrl, ...)`, so
   // will work for embedded forums too?
   def embeddingUrlParam: Opt[St] = {
-    val anyUrl = queryString.get("embgUrl").flatMap(_.headOption) map { encUrl =>
+    var anyUrl = queryString.get("embgUrl").flatMap(_.headOption) map { encUrl =>
       java.net.URLDecoder.decode(encUrl, "UTF-8")
     }
+
+    // Legacy. Not url encoded (so, skipping URLDecoder.decode()).
+    // DO_AFTER v0.2025.011: Remove this `orElse`.
+    if (anyUrl.isEmpty)
+      anyUrl = queryString.get("embeddingUrl").flatMap(_.headOption)
+
     anyUrl
   }
 
