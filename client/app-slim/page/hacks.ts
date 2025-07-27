@@ -52,8 +52,11 @@ export const ExtReactRootNavComponent = createReactClass({
     doNavigate = (url: St): V | true => {
       // this.props.location is made available by ReactRouter — we should be
       // wrapped in a Router(..., Routes( ... )) component.
-      const loc = this.props.location;
-      const localPath = url_asLocalAbsPath(url, loc);
+      // But ReactRouter doesn't include any of: { origin, protocol, host, hostname, port, href }
+      // — we need `origin`, so let's use `window.location` instead.
+      // const location = this.props.location;
+      const location = window.location;
+      const localPath = url_asLocalAbsPath(url, location);
       if (!localPath) {
         // External link.
         window.location.assign(url);
@@ -61,7 +64,7 @@ export const ExtReactRootNavComponent = createReactClass({
       }
 
       // Already at the desired url?
-      if (loc.pathname === localPath)
+      if (location.pathname === localPath)
         return;
 
       const linksToAdminArea = localPath.indexOf('/-/admin/') === 0; // dupl [5JKSW20]
@@ -94,7 +97,7 @@ export const ExtReactRootNavComponent = createReactClass({
 /// Changes a url to a server local url path, if the url is to the
 /// same origin.  If cannot do this, returns false.
 ///
-function url_asLocalAbsPath(url: St, loc: { origin: St, hostname: St }): St | false {
+function url_asLocalAbsPath(url: St, location: { origin: St, hostname: St }): St | false {
   // Is it a path, no origin or hostname?
   const slashSlashIx = url.indexOf('//');
   let isPathMaybeQuery = slashSlashIx === -1;
@@ -116,12 +119,12 @@ function url_asLocalAbsPath(url: St, loc: { origin: St, hostname: St }): St | fa
   }
 
   // Something like 'https://this.server.com/page/path'?  Keep '/page/path' only.
-  if (url.indexOf(loc.origin) === 0)
-    return url.substr(loc.origin.length)
+  if (url.indexOf(location.origin) === 0)
+    return url.substr(location.origin.length)
 
   // Something like '//this.server.com/page/path'?  Keep '/page/path' only.
-  if (url.indexOf(`//${loc.hostname}/`) === 0)
-    return url.substr(loc.hostname.length + 2);
+  if (url.indexOf(`//${location.hostname}/`) === 0)
+    return url.substr(location.hostname.length + 2);
 
   // External link.
   return false;
