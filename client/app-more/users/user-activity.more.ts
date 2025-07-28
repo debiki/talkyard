@@ -219,7 +219,7 @@ export const PostList = React.createFactory<PostListProps>(function(props) {
       const author = store.usersByIdBrief[post.authorId];
       return (
         r.li({ key: post.uniqueId, className: 's_UP_Act_Ps_P' },
-          Link({ to: linkToPostNr(post.pageId, post.nr),
+          LinkUnstyled({ to: linkToPostNr(post.pageId, post.nr),
               // UX SHOULD use  makeTitle() from forum.ts  instead, [same_title_everywhere]
               // so planned-doing-done/answerded/closed icons are shown.
               className: 's_UP_Act_Ps_P_Link ' + pageRole_iconClass(post.pageRole) },

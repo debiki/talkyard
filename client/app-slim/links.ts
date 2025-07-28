@@ -27,8 +27,14 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-// In embedded comments, need incl the Talkyard server url, otherwise links will [EMBCMTSORIG]
-// resolve to the embeddING server.
+// In embedded comments and embedded forums, need incl the Talkyard server url,
+// otherwise links will [EMBCMTSORIG] resolve to the embeddING server.
+//
+// But in *not* embedded forums, we do *not* want to include the Talkyard server url,
+// because if we did, and changing the forum address from e.g.  something.talkyard.net
+// to  something.com  (start using our own domain), all links would keep pointing
+// to the *old* domain.
+//
 export function origin(): string {
   // Currently there's always exactly one store, and it always has embeddedOriginOrEmpty
   // set. When in the embedded editor, it's undefined (or maybe ''), [60MRKDJ56]
@@ -43,17 +49,85 @@ export function origin(): string {
   // for different sites. (Also, then no need to cache, aren't any iframes.)
   //
   if (notDef(cachedEmbOrig) || isServerSide()) {
-    const mainStore: SessWinStore = win_getSessWinStore();
+    const mainWin = getMainWin();
+    const mainStore: SessWinStore = mainWin.theStore;
     cachedEmbOrig = mainStore.embeddedOriginOrEmpty;  // [ONESTORE]
+    // Doesn't work, not set in the session iframe. But not needed, can use eds.* in the
+    // comment iframes. But what about the editor?
+    //cachedIsInEmbForum = mainWin.eds.isInEmbForum;
+    //cachedEmbgUrl = mainWin.eds.embgUrl || mainWin.eds.embeddingUrl || '';
+    //cachedEmbPathParam = mainWin.eds.embPathParam;
   }
   return cachedEmbOrig;
 }
 
 let cachedEmbOrig: St | U;
+let cachedIsInEmbForum: Bo;
+let cachedEmbgUrl: St | U;
+let cachedEmbPathParam: St | U;
 
 
-export function linkToPageId(pageId: PageId): string {
-  return origin() + '/-' + pageId;
+/// Converts a Talkyard forum path to a link that works also if Talkyard forum is
+/// embedded in an iframe.  Uses some eds.* variables.  [deep_emb_links]
+///
+export function linkToPath(tyPath: St): St {
+  // @ifdef DEBUG
+  // The caller should add a hash later, if needed.
+  dieIf(tyPath.indexOf('#') !== -1, 'TyEEMBPATHHASH');
+  // @endif
+
+  origin(); // populate cache
+
+  if (!eds.isInEmbForum) { // cachedIsInEmbForum
+    // This'll be just `tyPath` if wer're in a not embedded forum.
+    // Or https://talkyard-server-addr + tyPath  for blog comments.
+    return cachedEmbOrig + tyPath;
+  }
+
+  // COULD_OPTIMIZE Do just once, also if many links.
+  const embgUrl = new URL(eds.embgUrl || eds.embeddingUrl); // cachedEmbgUrl
+
+  //const embUrlNoTyPath = embgUrlNoHash.replace(/&?ty=[^&;]*/g, '');
+  //const querySeparator = embUrlNoTyPath.indexOf('?') === -1 ? '?' : '&';
+  //let res = embUrlNoTyPath + querySeparator + 'ty=' + encodeURI(tyPath);
+  let res: St | U;
+
+  if (eds.embPathParam === '#/') {   // cachedEmbPathParam & below?
+    // This'll look like:  https://www.example.com/embedded-forum#/-123/talkyard-slug#any-hash
+    res = embgUrl.origin + embgUrl.pathname + embgUrl.search + '#' + tyPath;
+  }
+  else if (eds.embPathParam === '?/') {
+    // This'll look like:  https://www.example.com/embedded-forum?/-123/talkyard-slug#any-hash
+    // Is this ever useful? Probably '#' above is better.
+    res = embgUrl.origin + embgUrl.pathname + '?' + tyPath;
+  }
+  else {
+    // This'll look like:  https://www.ex.com/embedded-forum?talkyardPath=/-/talkyard-page-slug
+    // if `eds.embPathParam` is '?talkyardPath'.
+    // We should leave all query params intact, except for `eds.embPathParam` which we'll
+    // replace with the new path.
+    // @ifdef DEBUG
+    dieIf(!eds.embPathParam.match(/\?[a-zA-Z_-]+/), 'TyEEMBPATHPARM');
+    // @endif
+    // No need to encode '/+:', but '?&' — yes.
+    const tyPathEncoded = encodeURIComponent(tyPath)
+            .replace(/%2F/g, '/')
+            .replace(/%2B/g, '+')
+            .replace(/%3A/g, ':');
+    // // `embgUrl.searchParams` is read-only, so create a new.
+    // const params = new URLSearchParams(embgUrl.search);
+    // params.set(eds.embPathParam, tyPathEncoded);
+    embgUrl.searchParams.set(eds.embPathParam, tyPathEncoded);  // updates `embgUrl.search`
+    //res = location.pathname + eds.embPathParam + '=' + tyPathEncoded;
+    res = embgUrl.origin + embgUrl.pathname + embgUrl.searchParams.toString(); // params.toString();
+  }
+
+  return res;
+}
+
+
+export function linkToPageId(pageId: PageId): St {
+  return linkToPath('/-' + pageId);
 }
 
 
@@ -68,11 +142,13 @@ export function linkToPost(post: PostWithPageId): St {
 
 
 export function linkToType(type: TagType): St {
-  return origin() + UrlPaths.Tags + (type.urlSlug || type.id);
+  return linkToPath(UrlPaths.Tags + (type.urlSlug || type.id));
 }
 
 
 export function linkToAdminPage(): string {
+  // Don't use linkToPath() — admin pages need to be accessed
+  // directly [dont_embed_amind_pages].
   return origin() + '/-/admin/';
 }
 
@@ -114,10 +190,11 @@ export function linkToUserInAdminArea(user: Myself | Participant | UserId): stri
 
 export function linkToEmbeddedDiscussions(): string {
   // Later: link to the correct category, when emb comments topics have their own category.
-  return origin();
+  return linkToPath('');
 }
 
 export function linkToReviewPage(ps: { patId?: PatId } = {}): St {
+  // Don't use url_tyPathToEmbedded(), [dont_embed_amind_pages].
   let url = origin() + '/-/admin/review';
   if (ps.patId) url += `?patId=${ps.patId}`;
   return url;
@@ -136,13 +213,13 @@ export function linkToStaffUsersPage(): St {
 }
 
 export function linkToGroups(): string {
-  return origin() + '/-/groups/';
+  return linkToPath('/-/groups/');
 }
 
 
 // RENAME to linkToPatsProfile, and remove that fn
 export function linkToUserProfilePage(who: Who): St {
-  return origin() + pathTo(who);
+  return linkToPath(pathTo(who));
 }
 
 // RENAME to pathToProfile ?

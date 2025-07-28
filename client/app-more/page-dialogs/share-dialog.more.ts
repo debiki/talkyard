@@ -88,22 +88,38 @@ const ShareDialog = createComponent({
     if (state.isOpen) {
       const post: Post = state.post;
 
-      let url: string;
-      const embeddingUrl = eds.embeddingUrl;
-      if (embeddingUrl) {
+      let url: St | U;
+
+      if (eds.embeddingUrl && !eds.isInEmbForum) {
         // Use '#comment-NNN' hashes for embedded comments, since they are often for blog   [2PAWC0]
         // posts and might be confusing with urls like: http://blog/post/123#post-456
         // this is better: http://blog/post/123#comment-456.
         // Subtract 1 to get the comment nr — the firs reply is post 2, but comment 1.  [2PAWC0]
         // (The orig post has post nr 1.)
         const hash = post.nr >= FirstReplyNr ? '#comment-' + (post.nr - 1) : '';
-        url = embeddingUrl.split('#')[0] + hash;
+        url = eds.embeddingUrl.split('#')[0] + hash;
       }
       else {
         const origin = location.protocol + '//' + location.host;
+        // (Post nr not needed for the orig post — it's the default, at the top.)
         const hash = post.nr >= FirstReplyNr ? '#post-' + post.nr : '';
-        url = origin + '/-' + ReactStore.getPageId() + hash;
+        const pagePath = '/-' + ReactStore.getPageId();
+        if (eds.isInEmbForum) {
+          // This'll look at eds.talkyardPathParam. [deep_emb_links]
+          url = linkToPath(pagePath) + hash;
+          /*
+          const embUrlNoHash = embeddingUrl.split('#')[0];
+          const embUrlNoTyPath = embUrlNoHash.replace(/&?ty=[^&;]*   /g, '');
+          const querySeparator = embUrlNoTyPath.indexOf('?') === -1 ? '?' : '&';
+          const talkyardPath = '/-' + ReactStore.getPageId() + hash;
+          url = embUrlNoTyPath + querySeparator + 'ty=' + encodeURI(talkyardPath);
+          */
+        }
+        else {
+          url = origin + pagePath + hash;
+        }
       }
+
       const makeShareButton = (where: string) => {  // dupl code [2WUGVSF0]
         let image;
         if (where === Facebook) {

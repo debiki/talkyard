@@ -56,7 +56,8 @@ export const ExtReactRootNavComponent = createReactClass({
       // — we need `origin`, so let's use `window.location` instead.
       // const location = this.props.location;
       const location = window.location;
-      const localPath = url_asLocalAbsPath(url, location);
+      const localPath = url_asLocalAbsPath(
+              url, location, eds.embgUrl || eds.embeddingUrl, eds.embPathParam);
       if (!localPath) {
         // External link.
         window.location.assign(url);
@@ -97,7 +98,35 @@ export const ExtReactRootNavComponent = createReactClass({
 /// Changes a url to a server local url path, if the url is to the
 /// same origin.  If cannot do this, returns false.
 ///
-function url_asLocalAbsPath(url: St, location: { origin: St, hostname: St }): St | false {
+function url_asLocalAbsPath(rawUrl: St, location: { origin: St, hostname: St },
+          embgUrl?: St, embPathParam?: St)
+          : St | false {
+
+  // Are we in an embedded forum? If so, the actual new url is a parameter in `url`
+  // — lets's extract it.
+  const url = !embgUrl ? rawUrl : (function() {
+    if (embPathParam === '#/') {
+      // The Talkyard url has been appended to the embedding page's url, as a #hash
+      if (rawUrl.indexOf(embgUrl + '#/') === 0)
+        return rawUrl.slice(embgUrl.length + 1); // + 1 not 2, to keep '/'
+    }
+    else if (embPathParam === '?/') {
+      // Is this ever useful?
+      // UNTESTED
+      if (rawUrl.indexOf(embgUrl + '?/') === 0)
+        return rawUrl.slice(embgUrl.length + 1);
+    }
+    else {
+      // UNTESTED
+      const urlOb = new URL(rawUrl);
+      const params = urlOb.searchParams;
+      const actualUrl = params && params.get(embPathParam.slice(1));
+      if (actualUrl)
+        return actualUrl;
+    }
+    return rawUrl;
+  })();
+
   // Is it a path, no origin or hostname?
   const slashSlashIx = url.indexOf('//');
   let isPathMaybeQuery = slashSlashIx === -1;

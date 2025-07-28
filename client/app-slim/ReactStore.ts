@@ -2446,7 +2446,7 @@ function showNewPage(ps: ShowNewPageParams) {
   // COULD_OPTIMIZE AVOID_RERENDER But history.replace triggers a re-render immediately :-(
   // no way to avoid that? And instead merge with the emit(ChangeEvent) above?
   const pagePath = newPage.pagePath.value;
-  let correctedUrl;
+  let correctedUrl: St | U;
   if (pagePath && pagePath !== location.pathname) {
     if (newPage.pageRole === PageRole.Forum && urlPath_isToForum(location.pathname, pagePath)) {
       // Fine, is to somewhere inside the forum, not supposed to be an exact match.
@@ -2460,6 +2460,18 @@ function showNewPage(ps: ShowNewPageParams) {
       // @endif
       history.replace(correctedUrl);  // [4DKWWY0]  TyTE2EPGID2SLUG
     }
+
+    /*
+    // If we're in an embedded forum, always update the embedd*ing* pages url param
+    // that says what Talkyard thing we're looking at. So that copying & reusing the
+    // browser's url works.
+    // TODO: Is replace() above done already, so we'd copy the correct & current path?
+    if (eds.isInEmbForum) {
+      const pathQueryHash = location.pathname + location.search + location.hash;
+      window.parent.postMessage(
+            JSON.stringify(['pathChanged', pathQueryHash]),
+            eds.embeddingOrigin);
+    } */
   }
 
   // ----- Watchbar

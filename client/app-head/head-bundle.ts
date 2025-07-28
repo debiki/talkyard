@@ -183,6 +183,7 @@ try {
   var _searchParams = new URLSearchParams(location.search);
   var _embHow = _searchParams.get('embHow'); // [emb_forum]
   var _embgUrl = _searchParams.get('embgUrl') || _searchParams.get('embeddingUrl'); // [emb_forum] [clean_up_embg_url]
+  var _embPathParam = _searchParams.get('embPathParam'); // [emb_forum]
   var _ssoHow = _searchParams.get('ssoHow');
   var _class = _searchParams.get('htmlClass');
   if (_class) {
@@ -296,6 +297,7 @@ if (!eds.isInEmbeddedEditor) {
 // ignore server side, and 'embeddingUrl' too, except for looking up page?
 // Don't incl in static page html?
 eds.embgUrl = _embgUrl;
+eds.embPathParam = _embPathParam;
                                         //  "https: //  hostname"
 eds.embgOrigin = _embgUrl && _embgUrl.match(/^[^/]*\/\/[^/]+/)[0];  // [extr_origin]
 eds.embeddingOrigin = eds.embgOrigin;   // for now. Remove 'embeddingOrigin' later?
@@ -317,7 +319,7 @@ var typs: PageSession = {
       !eds.isInIframe,  // [iframe_cookies_always_broken]
 };
 
-// Make pushState() and replaceState() work in iframes — not sure why, but only
+// 1) Make pushState() and replaceState() work in iframes — not sure why, but only
 // *sometimes* the browser complains that: [hist_push_in_iframe])
 //
 //   Uncaught SecurityError: Failed to execute 'pushState' on 'History':
@@ -331,7 +333,12 @@ var typs: PageSession = {
 // But with the origin included, that doesn't happen.
 // For now, don't:  `eds.embgOrigin !== location.origin` — would affect blog comments too.
 //
-if (eds.isInEmbForum) {
+// 2) Tell Talkyard's code in the embedd*ing* window that now we're at a new url, so
+// we can update the url, e.g.
+//   from:  https://example.com/embedding/page?talkyardPath=/-/forum-page
+//     to:  https://example.com/embedding/page?talkyardPath=/-/other-forum-page
+//
+if (eds.isInEmbForum) { // SHOULD: && !isServerSide()
   const origPushState = window.history.pushState;
   const origReplaceState = window.history.replaceState;
 
@@ -339,13 +346,54 @@ if (eds.isInEmbForum) {
     let betterUrl = url;
     if (url[0] === '/') betterUrl = location.origin + url;
     origPushState.call(window.history, state, unused, betterUrl);
+    sendNewPathToEmbeddingWin(url);
   };
 
   window.history.replaceState = function(state, unused, url) {
     let betterUrl = url;
     if (url[0] === '/') betterUrl = location.origin + url;
     origReplaceState.call(window.history, state, unused, betterUrl);
+    sendNewPathToEmbeddingWin(url);
   };
+
+  // If navigating back, using the browser's Back buttons, tell the embedding parent win
+  // to update the Talkyard forum path.
+  window.addEventListener('popstate', (event) => {
+    console.log(`POPSTATE, location: ${document.location}, state: ${JSON.stringify(event.state)}`);
+    sendNewPathToEmbeddingWin(location.toString());
+  });
+}
+
+
+function sendNewPathToEmbeddingWin(url: St | URL) {
+  const urlStr: St = (typeof url === 'string') ? url : url.toString();
+  let pathQueryHash = urlStr.replace(/^https?:\/\/[^/]*/, '')
+  // We don't want the embedded forum params in the url, when sending the 'pathChanged' message
+  // to the embedding page. Let's remove them.
+  // (Would it be cleaner to do this in the embedding script? So they're added and removed
+  // in the same file? Oh well.)
+  const queryIx = pathQueryHash.indexOf('?');
+  if (queryIx !== -1) {
+    const hashIx = pathQueryHash.indexOf('#');
+    const queryStrBef = pathQueryHash.slice(queryIx, hashIx >= 0 ? hashIx : undefined);
+    const params = new URLSearchParams(queryStrBef);
+    params.delete('embHow');
+    params.delete('embgUrl');
+    params.delete('embeddingUrl');
+    params.delete('embPathParam');
+    params.delete('ssoHow');
+    params.delete('htmlClass');
+    params.delete('embeddingScriptV');
+    params.delete('category');
+    params.delete('logLevel');
+    const queryStrAft = '?' + params.toString();
+    if (queryStrBef !== queryStrAft) {
+      pathQueryHash = pathQueryHash.replace(queryStrBef, queryStrAft);
+    }
+  }
+  window.parent.postMessage(
+        JSON.stringify(['pathChanged', pathQueryHash]),
+        eds.embeddingOrigin);
 }
 
 

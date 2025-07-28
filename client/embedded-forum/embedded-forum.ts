@@ -42,6 +42,7 @@ interface WindowWithTalkyardProps {
   talkyardDebug: boolean | number | undefined; // deprecated 2020-06-16
   talkyardAuthnToken?: St | Ay;
   talkyardConsiderQueryParams?: St[];
+  talkyardPathParam?: St;
   edRemoveCommentsAndEditor: () => void;  // deprecated
   edReloadCommentsAndEditor: () => void;  //
   talkyardRemoveCommentsAndEditor: () => void;
@@ -81,7 +82,9 @@ const windowWithTalkyardProps: WindowWithTalkyardProps = <any> window;
 //   0,   1–9,           1x,    2x,   3x,   4x,     5x,    6x,    7x,       8x
 const winLogLvl = windowWithTalkyardProps.talkyardLogLevel;
 const winDbg = windowWithTalkyardProps.talkyardDebug; // deprecated
-const urlLogLvl = new URLSearchParams(location.hash.substring(1)).get('talkyardLogLevel');
+const hashParams = new URLSearchParams(location.hash.substring(1));
+const queryParams = new URLSearchParams(location.search);
+const urlLogLvl = hashParams.get('talkyardLogLevel');
 const talkyardLogLevel: Nr | St =
         urlLogLvl || (
         (typeof winLogLvl !== 'undefined') ? winLogLvl : (
@@ -147,6 +150,8 @@ const insecureSomethingErrMsg = insecureTyIframeProbl ? (
     "— If this is your site, what if you get a LetsEncrypt cert? [TyEINSCBLG]"
         ) : */  '');
 
+const talkyardPathParamOrBad: St | U = windowWithTalkyardProps.talkyardPathParam || '#/'; // talkyardPath';
+
 const considerQueryParams = windowWithTalkyardProps.talkyardConsiderQueryParams;
 
 const ssoHow = windowWithTalkyardProps.talkyardSsoHow;
@@ -188,6 +193,66 @@ const autnToken: StV = differentTokens ? null : authnTokenInVar || authnTokenInC
 if (insecureSomethingErrMsg) {
   logW(insecureSomethingErrMsg);
 }
+
+
+// ----- Talkyard url path
+
+// Examples:   /embedding/page#/talkyard/path#post-123
+//             /embedding/page#ty=/talkyard/path%23post-123#something-else
+//             /embedding/page?ty=/talkyard/path%%23post-123&other=param#hash
+// where "?ty" is configurable, in case there's some collission with
+// a web framework param.
+
+// Make sure to use '/latest', and not just '', otherwise there'll be a redirect
+// to '/latest' which fails with a security error, whole page breaks,
+// see: [iframe_forum_latest_redir] and [react_redir_broken_iframe].
+// (But for whatever reason, history.push() works fine, [hist_push_in_iframe].)
+//
+const [talkyardPathUnsafe, talkyardPathParam]: [St, St] =
+        findTalkyardPath(talkyardPathParamOrBad, location);
+
+function findTalkyardPath(tryParam: St, loc: Location): [St, St] {
+  let path = '/latest';
+  let param = tryParam;
+
+  if (tryParam === 'false') {
+    // Disabled. Fine.
+  }
+  else if (tryParam === '#/') {
+    //const anyMatch = loc.hash.match(/^#[^#]*[#&].*?$/);
+    // The whole hash. This is how many client side routres work.
+    // Take everything from # up to any second # — a 2nd # would be an actual hash frag.
+    const anyMatch = loc.hash.match(/^#[^#]*/);
+    if (anyMatch) {
+      path = anyMatch[0].slice(1); // drop '#'
+    }
+  }
+  else if (tryParam === '?/') {
+    // The whole query string. Doesn't need to be % encoded.
+    const anyPath = loc.search && loc.search.slice(1); // drop '?'
+    if (anyPath) {
+      path = anyPath;
+    }
+  }
+  else if (!tryParam.match(/^\?[a-zA-Z_-]+$/)) {
+    // Should be "?something", but is not.
+    logW(`Bad talkyardPathParam: "${tryParam}"`);
+    param = '?talkyardPath';  // the default
+  }
+  else {
+    // It is "?something". We'll look up "something" in the query params.
+    // (Param value should be % encoded — gets auto decoded by `URLSearchParams.get()`.)
+    const anyPath = queryParams.get(param.slice(1));
+    path = anyPath || path;
+  }
+  logD(`Talkyard path: ${path}`);
+  return [path, param];
+}
+
+// Ignore anything that doesn't start with '/', so no one can change the
+// *hostname* to something else, or 'javascript:' something.
+const talkyardPath = talkyardPathUnsafe[0] === '/' ? talkyardPathUnsafe : '/latest';
+
 
 
 // (UX COULD have the comments iframes postMessage() to this main win if new comments
@@ -477,7 +542,12 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   logD(`intCommentIframe(..., iframeNr = ${iframeNr}, manyCommentsIframes = ${
           manyCommentsIframes})`);
 
+
+  // ----- Query & hash params
+
   // Tests:  embcom.ignore-query-params.2br  TyTEEMCIGQPRMS
+
+  const embUrlParams = new URLSearchParams();
 
   // The server wants the embedding URL, to know if it should add 'localhost'
   // to the allowed frame-ancestors, for development. [embng_url]
@@ -525,6 +595,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
 
   // Could rename param, and encode the value, see above [enc_aft].
   const embeddingUrlParam = 'embgUrl=' + encodeURIComponent(embeddingUrl);
+  embUrlParams.set('embgUrl', embeddingUrl);
 
   // NEXT:
   // + data-page      = places comments on that page / auto-creates it
@@ -583,31 +654,52 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
     else throw Error(errorMessage);
   }
   const catRefParam = categoryRef ? `category=${categoryRef}&` : '';
+  if (categoryRef)
+    embUrlParams.set('`category', categoryRef);
 
   var edPageId = commentsElem.getAttribute('data-ed-page-id'); // old name [2EBG05]
   if (!edPageId) {
     edPageId = commentsElem.getAttribute('data-talkyard-page-id');
   }
   var edPageIdParam = edPageId ? 'edPageId=' + edPageId + '&' : '';
+  if (edPageId)
+    embUrlParams.set('edPageId', edPageId);
+
   var htmlClassParam = htmlClass ? '&htmlClass=' + htmlClass : '';
+  if (htmlClass)
+    embUrlParams.set('htmlClass', htmlClass);
 
   const logLevelParam = talkyardLogLevel ? `&logLevel=${talkyardLogLevel}` : '';
+  if (talkyardLogLevel)
+    embUrlParams.set('logLevel', '' + talkyardLogLevel);
 
   const ssoHowParam = ssoHow ? `&ssoHow=${ssoHow}` : '';
+  if (ssoHow)
+    embUrlParams.set('ssoHow', ssoHow);
+
+
+  // The Share dialog needs to know how to construct deep links, [deep_emb_links]
+  // if the forum is embedded.
+  const pathParamParam = talkyardPathParam ? `&embPathParam=` + talkyardPathParam : ''; // oops! need to % enc
+  if (talkyardPathParam)
+    embUrlParams.set('embPathParam', talkyardPathParam);
 
   const allUrlParams = ( // [emb_comts_url_params]
-          '?embHow=Forum&' +
+          'embHow=Forum&' + embUrlParams.toString() + scriptVersionQueryParam);
+          /*
           // edPageIdParam + discIdParam + 
           catRefParam + embeddingUrlParam +
           ssoHowParam +
+          pathParamParam +
           htmlClassParam + logLevelParam + scriptVersionQueryParam);
+          */
 
-  // Make sure to include '/latest', otherwise there'll be a redirect to '/latest'
-  // which fails with a security error, whole page breaks, see:
-  // [iframe_forum_latest_redir] and [react_redir_broken_iframe].
-  // (But for whatever reason, history.push() works fine, [hist_push_in_iframe].)
-  //
-  const forumIframeUrl = serverOrigin + '/latest' + allUrlParams;
+  const querySep = (talkyardPath.indexOf('?') === -1) ? '?' : '&';
+
+  const forumIframeUrl = serverOrigin + talkyardPath + querySep + allUrlParams;
+
+
+  // ----- Construct iframe
 
   /*
   var commentsIframeUrl = serverOrigin + '/-/embedded-comments?' + allUrlParams;
@@ -649,6 +741,9 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   iframeElms[iframeNr] = commentsIframe;
   logD(`Inserted commentsIframes[${iframeNr}]`);
 
+
+  // ----- HTTPS error?
+
   if (insecureSomethingErrMsg) {
     // If insecureTyIframeProbl, then for sure the comments won't load.
     // If however insecureBlogProbl, then *maybe* they'll load?
@@ -669,6 +764,9 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
     });
     Bliss.start(insecureContentErrorElem, commentsElem);
   }
+
+
+  // ----- Loading message
 
   var loadingCommentsElem = Bliss.create('p', {
     id: 'ed-loading-comments',
@@ -1172,6 +1270,40 @@ function onMessage(message) {
       }
       break;
 
+    case 'pathChanged':
+      if (talkyardPathParam === 'false') {
+        // Path updates disabled?
+        break;
+      }
+
+      const pathRaw = eventData;
+      // For now. Later, preserve other query params. What about any #hash?
+      let newPathQuery: St;
+      //const newPathQuery_ = location.pathname + '?talkyardPath=' + pathEncoded;
+
+      if (talkyardPathParam === '#/') {
+        // If pathRaw includes a hash already, that's ok.
+        newPathQuery = location.pathname + '#' + pathRaw;
+      }
+      else if (talkyardPathParam === '?/') {
+        // Is this useful?
+        newPathQuery = location.pathname + '?' + pathRaw;
+      }
+      else {
+        // No need to encode slashes, '+' or ':', but '?&' — yes.
+        const pathEncoded = encodeURIComponent(pathRaw)
+                .replace(/%2F/g, '/')
+                .replace(/%2B/g, '+')
+                .replace(/%3A/g, ':');
+        newPathQuery = location.pathname +
+                          (talkyardPathParam || '?talkyardPath') + '=' + pathEncoded;
+      }
+      // Don't use pushState(). Backwards navigation works already — navigates back, inside
+      // the <iframe>. Which then sends new `pathChanged` events, and we update the url path
+      // here again.
+      history.replaceState({}, '', newPathQuery);
+      break;
+
     // Maybe remove this one, and use only 'showEditsPreviewInPage' instead, renamed to
     // 'showEditorAndPreview'?
     case 'onEditorOpen':
@@ -1407,17 +1539,35 @@ function findOneTimeLoginSecret() {
 
 
 function findCommentToScrollTo() {
-  const commentNrHashMatch = location.hash.match(/^#comment-(\d+)([#&].*)?$/);  // [2PAWC0]
+  let nrStr: St | U;
+  let isCommentNr = false;
+
+  const commentNrHashMatch =
+          location.hash.match(/^#(.*[#&])?comment-(\d+)([#&].*)?$/);  // [2PAWC0]
   if (commentNrHashMatch) {
-    const commentNrStr = commentNrHashMatch[1];
-    const commentNr = parseInt(commentNrStr);
+    nrStr = commentNrHashMatch[2];
+    isCommentNr = true;
+  }
+  else {
+    const postNrHashMatch =
+            location.hash.match(/^#(.*[#&])?post-(\d+)([#&].*)?$/);
+    if (postNrHashMatch) {
+      nrStr = postNrHashMatch[2];
+    }
+  }
+
+  if (nrStr) {
+    let postNr = parseInt(nrStr);
+
+    // The comment nr is post nr - 1, and post nr = comment + 1.  [2PAWC0].
+    if (isCommentNr) postNr += 1;
+
     // If the comment nr is > 1e6, something is amiss. Probably the #comment-NNN
     // url hash, is instead for a Disqus comment — which also happen to use
     // that same hash frag, for refering to a comment via the url, and their
     // comment ids are really large numbers, like 1e9.
-    if (0 < commentNr && commentNr < 1e6) { // also see TooHighNumber, [05RKVJWG2]
-      // The comment nr is post nr - 1  [2PAWC0].
-      postNrToFocus = commentNr + 1;
+    if (1 <= postNr && postNr < 1e6) { // also see TooHighNumber, [05RKVJWG2]
+      postNrToFocus = postNr;
     }
   }
 }

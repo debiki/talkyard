@@ -470,6 +470,7 @@ declare namespace debiki2 {
   function perms_join(pA: PermsOnPage, pB: PermsOnPageNoIdOrPp | U): PermsOnPageNoIdOrPp;
 
   function origin(): string;
+  function linkToPath(pathQueryNoHash: St);
   function linkToPageId(pageId: PageId): string;
   function linkToPostNr(pageId: PageId, postNr: PostNr): string;
   function linkToPost(post: PostWithPageId): St;
