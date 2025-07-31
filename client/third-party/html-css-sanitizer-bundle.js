@@ -4979,7 +4979,9 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       // Later, when using an [ext_markup_processor] instead of Nashorn, we can use
       // URLSearchParams instead of nashorn_shallFollowUrl() (which uses java.net.URL).
       //
-      // nashorn_shallFollowUrl is only present server side.
+      // nashorn_shallFollowUrl is only present server side. Update 2025-07: Now it's
+      // not really needed, could be implemented in pure js, since now we use a url-shim
+      // js package.  use_url_shim]  But we'll remove Nashorn completely anyway.
       //
       if (relFollowTo && window.nashorn_shallFollowUrl) {
         //console.debug('relFollowTo loop');
