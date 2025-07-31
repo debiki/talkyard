@@ -4976,6 +4976,15 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       //console.debug('relFollowTo: ' + JSON.stringify(relFollowTo) +
       //        ', !!nashorn_shallFollowUrl: ' + !!window.nashorn_shallFollowUrl);
 
+      // Don't add nofollow to site local links, i.e. that don't start with 'http(s)://'
+      // and also don't start with '//', but instead starts with '/something'.
+      // BUG, harmless: Adds rel=nofollow to urls with ':' in e.g. the query string or hash.
+      // Edit the regex and allow ':' if it's after any of '?#' ?
+      if (attribs.href === '/' || /^\/[^/:][^:]*$/.test(attribs.href)) {
+        relFollow = 0; // means local
+        console.debug('relFollow —> 0');
+      }
+
       // Later, when using an [ext_markup_processor] instead of Nashorn, we can use
       // URLSearchParams instead of nashorn_shallFollowUrl() (which uses java.net.URL).
       //
@@ -4983,7 +4992,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       // not really needed, could be implemented in pure js, since now we use a url-shim
       // js package.  use_url_shim]  But we'll remove Nashorn completely anyway.
       //
-      if (relFollowTo && window.nashorn_shallFollowUrl) {
+      if (relFollow === -1 && relFollowTo && window.nashorn_shallFollowUrl) {
         //console.debug('relFollowTo loop');
         for (var i = 0; i < relFollowTo.length; ++i) {
           //console.debug('relFollow i = ' + i);
@@ -5004,13 +5013,6 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
         //   newAttribs.rel = 'follow';  // [2QWGRC8P]
         //   nofollow = false;
         // }
-      }
-
-      if (relFollow === -1 && (attribs.href === '/' || /^\/[^/:][^:]*$/.test(attribs.href))) {
-        // Don't add nofollow to site local links, i.e. that don't start with 'http(s)://'
-        // and also don't start with '///', but instead starts with '/something'.
-        relFollow = 0; // means local
-        console.debug('relFollow —> 0');
       }
 
       if (relFollow === -1) {
