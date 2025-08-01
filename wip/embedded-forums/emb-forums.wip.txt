@@ -1,0 +1,23 @@
+Fix links:
+   "Solved in post #2, click to viewReplyChange ..."
+       —>  http://e2e-test-www.localhost:8080/emb-page-one.html#post-2
+            (page id & slug lost)
+
+    All ReactRouter's NavLink basically don't work in an iframe:
+      (Nor does Link, but using TyLink instead, fine.)
+
+    "View categories"
+      —>  http://e2e-test-www.localhost:8080/categories?embHow=Forum&embgUrl=http%3A%2F%2Fe2e-test-www.localhost%3A8080%2Femb-page-one.html&logLevel=trace&embPathParam=%23%2F&embeddingScriptV=2
+
+      Doesn't work, iframe lost
+
+    "Active|Popular|New"
+      —>  http://e2e-test-www.localhost:8080/new?embHow=Forum&embgUrl=http%3A%2F%2Fe2e-test-www.localhost%3A8080%2Femb-page-one.html&logLevel=trace&embPathParam=%23%2F&embeddingScriptV=2
+
+      Doesn't work, iframe lost
+  
+SECURITY; COULD make [which endpoints are allowed in an embedded forum] configurable.
+F.ex. some communities might want direct messages to be allowed only if accessing
+the forum directly (not embedded), see:  GroupTalkController.sendMessage().
+But that's overdoing it, for now.
+
