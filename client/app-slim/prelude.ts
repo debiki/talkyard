@@ -741,6 +741,21 @@ export function deleteById(itemsWithId: any[], idToDelete) {
 }
 
 
+/// Finds out if `url` is to a Talkyard server `path`, e.g. to `/-/admin`.
+/// Works also if the url is a complete url, e.g. https://server/some/path.
+///
+export function url_isToTyPath(url: St | NU, path: St): Bo {
+  if (!url) return false;
+  return url.indexOf(path) === 0;
+  /*
+  if (url.indexOf(path) === 0) return true;
+  // This won't work w urls like '//server/path', that is, w/o scheme. That's ok.
+  const originPath = location.origin + path;
+  return url.indexOf(originPath) === 0;
+  */
+  }
+
+
 export function url_getHost(url: St): St {
   // @ifdef DEBUG
   dieIf(!url, 'TyE305RKSG');

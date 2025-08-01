@@ -564,7 +564,7 @@ const NotfPrefsTab = createFactory({
         location.hash.indexOf('configEveryone=true') === -1)
       return r.p({},
         r.span({ className: 's_ConfAllMemInst' },
-          "Go ", Link({ to: linkToMembersNotfPrefs(Groups.AllMembersId) }, "here"),
+          "Go ", TyLink({ to: linkToMembersNotfPrefs(Groups.AllMembersId) }, "here"),
           " instead,"),
         " and configure notifications for the All Members group.");
 

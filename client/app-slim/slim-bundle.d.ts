@@ -184,7 +184,9 @@ declare namespace debiki2 {
   function RedirPath(props: RedirPathProps);
   function RedirToNoSlash({ path: string });
   function RedirAppend({ path, append });
+  // Use TyLink instead
   var Link; // ReactRouterDOM.Link
+  // Use TyNavLink? But doesn't yet exist
   var NavLink; // ReactRouterDOM.NavLink
   function LiNavLink(props, ...contents); // A NavLink in a <li>
   function LiExtLink(props, ...contents); // An <a href=...> in a <li>
@@ -602,6 +604,7 @@ declare namespace debiki2 {
   function ExtVerbLink(url: St): RElm;
   var ExtLinkButton;
   var LinkUnstyled;
+  function TyLink(props: any, ...children);
   var LinkButton;
   var InputTypeSubmit; // could move to more-bundle.js, but is just 1 line
   var MenuItem;

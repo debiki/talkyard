@@ -51,7 +51,7 @@ export function origin(): string {
   if (notDef(cachedEmbOrig) || isServerSide()) {
     const mainWin = getMainWin();
     const mainStore: SessWinStore = mainWin.theStore;
-    cachedEmbOrig = mainStore.embeddedOriginOrEmpty;  // [ONESTORE]
+    cachedEmbOrig = ''; mainStore.embeddedOriginOrEmpty;  // [ONESTORE]
     // Doesn't work, not set in the session iframe. But not needed, can use eds.* in the
     // comment iframes. But what about the editor?
     //cachedIsInEmbForum = mainWin.eds.isInEmbForum;
@@ -70,17 +70,116 @@ let cachedEmbPathParam: St | U;
 /// Converts a Talkyard forum path to a link that works also if Talkyard forum is
 /// embedded in an iframe.  Uses some eds.* variables.  [deep_emb_links]
 ///
+/// We actually can't use ReactRouter's <Link> and <NavLink> — they generate hrefs
+/// that don't work at all, when Talkyard is embedded in an iframe. Look:
+///
+///  (But what about: node_modules/react-router-dom/modules/NavLink.js ?)
+///
+///  node_modules/react-router-dom/modules/Link.js :
+///
+///      /**
+///       * The public API for rendering a history-aware <a>.
+///       */
+///      const Link = forwardRef(
+///        (
+///          {
+///            component = LinkAnchor,
+///            replace,
+///            to,
+///            innerRef, // TODO: deprecate
+///            ...rest
+///          },
+///          forwardedRef
+///        ) => {
+///          return (
+///            <RouterContext.Consumer>
+///              {context => {
+///                invariant(context, "You should not use <Link> outside a <Router>");
+///
+///                const { history } = context;
+///
+///   ———>         const location = normalizeToLocation(
+///                  resolveToLocation(to, context.location),
+///                  context.location
+///                );
+///         ...
+///
+///  node_modules/react-router-dom/modules/utils/locationUtils.js :
+///
+///      export const normalizeToLocation = (to, currentLocation) => {
+///        return typeof to === "string"
+///  ——>     ? createLocation(to, null, null, currentLocation)
+///          : to;
+///      };
+///
+///  node_modules/history/umd/history.js :
+///
+///      function createLocation(path, state, key, currentLocation) {
+///        var location;   <—— the new location
+///        ...
+///        if (currentLocation) {
+///          // Resolve incomplete/relative pathname relative to current location.
+///          if (!location.pathname) {
+///            location.pathname = currentLocation.pathname;
+///          } else if (location.pathname.charAt(0) !== '/') {
+///  ———>      location.pathname = resolvePathname(location.pathname, currentLocation.pathname);
+///          }
+///        } else {
+///          // When there is no prior location and pathname is empty, set it to /
+///          if (!location.pathname) {
+///            location.pathname = '/';
+///          }
+///        }
+///
+///        return location;
+///      }
+///
+///      ...
+///
+///      function resolvePathname(to, from) {
+///        if (from === undefined) from = '';
+///
+///        var toParts = (to && to.split('/')) || [];
+///        var fromParts = (from && from.split('/')) || [];
+///
+///        var isToAbs = to && isAbsolute(to);
+///        var isFromAbs = from && isAbsolute(from);
+///        var mustEndAbs = isToAbs || isFromAbs;
+///
+///        if (to && isAbsolute(to)) {
+///          // to is absolute
+///          fromParts = toParts;
+///        } else if (toParts.length) {
+///          // to is relative, drop the filename
+///          fromParts.pop();
+///  ——>     fromParts = fromParts.concat(toParts);   <——— won't work, if embedded in <iframe>
+///        }                                            the <a href=...> won't make sense.
+///        ...
+///
+/// That is, if the current location is  https://talkyard.forum/aaa/bbb/ccc
+/// and we do:  <Link to="https://embedding.site/forum#/-talkyardPageId",
+/// then ReactRouter constructs this: (after having popped() 'ccc')
+///     https://talkyard.forum/aaa/bbb/ + https://embedding.site/forum#/-talkyardPageId
+///     https://talkyard.forum/aaa/bbb/https://embedding.site/forum#/-talkyardPageId
+/// which doesn't make sense at all (and tends to result in 404 Not Found).
+///
+/// ReactRouter doesn't expect links to be to a parent embedd*ing* website + a parameter
+/// telling the Talkyard embedded-forum script on the embedding page what Talkyard page
+/// we actually want.
+///
+/// So we need our own <Link> component instead?  See  widgets.ts
+///
 export function linkToPath(tyPath: St): St {
   // @ifdef DEBUG
   // The caller should add a hash later, if needed.
-  dieIf(tyPath.indexOf('#') !== -1, 'TyEEMBPATHHASH');
+  //dieIf(tyPath.indexOf('#') !== -1, 'TyEEMBPATHHASH');
   // @endif
 
   origin(); // populate cache
 
   if (!eds.isInEmbForum) { // cachedIsInEmbForum
     // This'll be just `tyPath` if wer're in a not embedded forum.
-    // Or https://talkyard-server-addr + tyPath  for blog comments.
+    // Or https://talkyard-server-addr + tyPath  for blog comments. Oops
     return cachedEmbOrig + tyPath;
   }
 
@@ -91,6 +190,15 @@ export function linkToPath(tyPath: St): St {
   //const querySeparator = embUrlNoTyPath.indexOf('?') === -1 ? '?' : '&';
   //let res = embUrlNoTyPath + querySeparator + 'ty=' + encodeURI(tyPath);
   let res: St | U;
+
+  // This needed to make #hash and ?query=param links w/o paths work? But
+  // it's better to incl a path always? Let's wait:
+  // if (tyPath[0] === '#') {
+  //   tyPath = location.pathname + location.search + tyPath;
+  // }
+  // else if (tyPath[0] === '?') {
+  //   tyPath = location.pathname + tyPath;
+  // }
 
   if (eds.embPathParam === '#/') {   // cachedEmbPathParam & below?
     // This'll look like:  https://www.example.com/embedded-forum#/-123/talkyard-slug#any-hash
@@ -127,7 +235,8 @@ export function linkToPath(tyPath: St): St {
 
 
 export function linkToPageId(pageId: PageId): St {
-  return linkToPath('/-' + pageId);
+  return '/-' + pageId;
+  // return linkToPath('/-' + pageId);
 }
 
 
@@ -142,7 +251,7 @@ export function linkToPost(post: PostWithPageId): St {
 
 
 export function linkToType(type: TagType): St {
-  return linkToPath(UrlPaths.Tags + (type.urlSlug || type.id));
+  return UrlPaths.Tags + (type.urlSlug || type.id);
 }
 
 
@@ -213,7 +322,7 @@ export function linkToStaffUsersPage(): St {
 }
 
 export function linkToGroups(): string {
-  return linkToPath('/-/groups/');
+  return '/-/groups/';
 }
 
 

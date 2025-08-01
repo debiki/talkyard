@@ -329,7 +329,7 @@ const OneTagPanel = React.createFactory<OneTagPanelProps>(function(props) {
                     `A lowercase-and-dashes name. Appears in the URL, and ` +
                     `you can use in search queries — search for `,
                     r.code({},
-                      Link({ to: tagSlugSearchUrl }, tagSlugSearchQ))),
+                      TyLink({ to: tagSlugSearchUrl }, tagSlugSearchQ))),
                 value: tagTypeEdited.urlSlug || '',
                 onChange: (event) => {
                   // While typing, _ending_with_dash '-' is fine.  Then, don't slugify.
@@ -431,7 +431,7 @@ const OneTagPanel = React.createFactory<OneTagPanelProps>(function(props) {
         ),
 
       r.p({ className: 'c_Tag_SchLn' },
-        Link({ to: tagSlugSearchUrl, }, "Search for tag"), " (list posts with this tag)"),
+        TyLink({ to: tagSlugSearchUrl, }, "Search for tag"), " (list posts with this tag)"),
 
       r.h2({}, "Recent posts with this tag:"),  // I18N
       !posts.length

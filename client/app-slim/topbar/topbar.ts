@@ -684,7 +684,11 @@ export const TopBar = createComponent({
             version: 1,
             content: rFr({},
               "Create ",
-              LinkUnstyled({ to: linkToGroups() }, "groups"), '?'),
+              LinkUnstyled({ to: linkToGroups(),
+                      // Create groups from inside an iframe, so open in new tab if is in iframe,
+                      // by making the link "external".
+                      ext: eds.isInEmbeddedCommentsIframe || eds.isInEmbForum },
+                  "groups"), '?'),
           }}),
           help.HelpMessageBox({ message: <HelpMessage> {
             id: '25fwk6',
@@ -880,7 +884,7 @@ export const SearchForm = createComponent({
           r.div({ className: 'c_SchD_X' },
             // UX: These should activate on Space, not just Enter? [sch_b_space]
             LinkUnstyled({ className: 'c_SchD_X_B', href: searchUrl, target: '_blank',
-                  tabIndex: '3' }, "Search in new tab"),  // I18N
+                  tabIndex: '3', ext: true, rel: 'noopener noreferrer' }, "Search in new tab"),  // I18N
             LinkUnstyled({ className: 'c_SchD_X_B', href: searchUrlAdvanced,
                   tabIndex: '4' }, t.AdvSearch))));
   }

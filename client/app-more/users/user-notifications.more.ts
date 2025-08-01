@@ -91,7 +91,7 @@ export const UserNotifications = createFactory({
     const notfPrefsShortcut = isGuest ? null :
         r.p({ className: 's_UP_Nfs_PfsL' },
           "Go to ",
-          Link({ to: './preferences/notifications' }, "Preferences → Notifications"),
+          TyLink({ to: './preferences/notifications' }, "Preferences → Notifications"),
           " to edit settings, e.g. to subscribe to categories.");
 
     const store: Store = this.props.store;
@@ -103,7 +103,7 @@ export const UserNotifications = createFactory({
 
     const notfsElems = this.state.notfs.map((notf: Notification) =>
         r.li({ key: notf.id },
-          Link({ to: linkToNotificationSource(notf) },
+          TyLink({ to: linkToNotificationSource(notf) },
             notification.Notification({ notification: notf, verbose: true }))));
 
     return (

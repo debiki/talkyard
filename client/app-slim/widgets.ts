@@ -31,6 +31,7 @@ export const Router: any = reactCreateFactory(
 export const Switch: any = reactCreateFactory(ReactRouterDOM.Switch);
 export const Route: any = reactCreateFactory(ReactRouterDOM.Route);
 export const Redirect: any = reactCreateFactory(ReactRouterDOM.Redirect);
+// Don't use! Use TyLink instead. (Except for in the admin area, then ok.)
 export const Link: any = reactCreateFactory(ReactRouterDOM.Link);
 export const NavLink: any = reactCreateFactory(ReactRouterDOM.NavLink);
 
@@ -123,7 +124,8 @@ export const OnlyAdminsSee =
 export const PrimaryButton: any = makeWidget(r.button, ' btn btn-primary');
 export const Button: any = makeWidget(r.button, ' btn btn-default');
 export const PrimaryLinkButton: any = makeWidget(r.a, ' btn btn-primary');
-export const LinkUnstyled: any = makeWidget(r.a, '');
+export const LinkUnstyled: any = makeWidget(r.a, ''); // renaming to TyLink
+export const TyLink = LinkUnstyled;
 export const LinkButton: any = makeWidget(r.a, ' btn btn-default');  // not blue [2GKR5L0]
 export const ExtLinkButton: any = makeWidget(r.a, ' btn btn-default', { ext: true });
 export const InputTypeSubmit: any = makeWidget(r.input, ' btn btn-primary', { type: 'submit' });
@@ -169,17 +171,19 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
     // Make link buttons navigate within the single-page-app, no page reloads. Even if they're
     // in a different React root. The admin app is it's own SPA [6TKQ20] so, when in the admin area,
     // links to user profiles and discussions, are external. And vice versa.
-    if (what === r.a && !newProps.onClick) {
+    if (what === r.a && (!newProps.onClick || eds.isInEmbForum && newProps.href)) {
       let isExternal = newProps.ext || eds.isInEmbeddedCommentsIframe;
       // @ifdef DEBUG
       dieIf(isServerSide() && (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum), 'TyE2KWT05');
       // @endif
 
       const href = newProps.href;
-      const linksToAdminArea = href && href.indexOf('/-/admin/') === 0; // dupl [5JKSW20]
+      const linksToAdminArea = url_isToTyPath(href, UrlPaths.AdminArea); // dupl [5JKSW20]
       isExternal = isExternal || eds.isInAdminArea !== linksToAdminArea;
 
-      if (!isExternal) {
+      // Single-page-app navigate:
+      //
+      if (!isExternal && !newProps.onClick) {
         const afterClick = newProps.afterClick;  // field deleted below
 
         newProps.onClick = function(event) {
@@ -192,6 +196,37 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
           if (afterClick) {
             afterClick();
           }
+        }
+      }
+
+      // Make links work also if in an embedded forum.  [deep_emb_links]
+      // Change from e.g.: /-123/ty-page-slug
+      // to: https://www.ex.co/embedded-forum#/-123/ty-page-slug  (if embPathParam = '#/')
+      // (But don't modify links passed to the onClick handler above — they'll work fine
+      // as is, e.g.  /-123/some-page  or  /-/users/some_username,  ReactRouter resolves
+      // those relative the iframe origin, apparently, not the embedding page's origin.)
+      //
+      if (eds.isInEmbForum && newProps.href) {
+        if (isExternal) {
+          // Don't open links inside the iframe.
+          newProps.target = '_blank';
+          newProps.rel = 'noopener'; // lets incl, although not needed? From Ty to Ty should be ok
+          if (linksToAdminArea) {
+            // Need the origin, since we're in an iframe, and '/-/admin/' without origin would
+            // be relative the embedding website.
+            newProps.href = location.origin + newProps.href;
+          }
+          else {
+            // This link should already include an origin.
+            // @ifdef DEBUG
+            dieIf(newProps.href.match(/^https?:\/\//),
+                    `Ext link w/o origin: '${newProps.href}' [TyE40264]`);
+            // @endif
+            void 0; // iik
+          }
+        }
+        else {
+          newProps.href = linkToPath(newProps.href);
         }
       }
     }
@@ -245,6 +280,7 @@ export function MenuItem(props: { id?: St, className?: St, active?: Bo,
     onClick, tabIndex: props.tabIndex || -1 };
   return (
     r.li({ role: 'presentation', className: className, key: props.key },
+      // Can't we use TyLink? So href works also if in emb forum.
       r.a.apply(null, [linkProps, ...children])));
 
 }
@@ -255,16 +291,16 @@ export function MenuItemLink(props, ...children) {
   // should have a unique "key" prop""" React.js warning.
 
   // If we're in the admin area, use <a href> because then the destinations are in another
-  // single-page-app. And if we're in the forum app, use Link, for instant
+  // single-page-app. And if we're in the forum app, use Link — no, TyLink — for instant
   // within-the-SPA navigation.  A bit dupl, see [5JKSW20]
-  const linksToAdminArea = props.to.indexOf('/-/admin/') === 0;
+  const linksToAdminArea = url_isToTyPath(props.to, UrlPaths.AdminArea); // dupl [5JKSW20]
   const isExternal = props.to.indexOf('//') >= 0;  // e.g. https://  or  //hostname/...
   const useSinglePageAppLink = !isExternal && eds.isInAdminArea === linksToAdminArea;
 
   // If useSinglePageAppLink, create a Link({ to: ... }),
   // otherwise, create a r.a({ href: ... }):
 
-  const linkFn = useSinglePageAppLink ? Link : r.a;
+  const linkFn = useSinglePageAppLink ? TyLink : r.a;
   const addrAttr = useSinglePageAppLink ? 'to' : 'href';
 
   const linkProps = { role: 'button', tabIndex: props.tabIndex || -1,

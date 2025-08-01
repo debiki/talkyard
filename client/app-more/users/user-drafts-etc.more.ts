@@ -192,7 +192,7 @@ function Draft(props: { draft: Draft, pageTitlesById: { [pageId: string]: string
   // Then, draft.pageId is the page where the draft was created — and pageId is where it's
   // located now, and to where we should go to resume writing.
   return (
-    Link({ to: linkToDraftSource(draft, pageId, postNr), className: 's_Dfs_Df' },
+    TyLink({ to: linkToDraftSource(draft, pageId, postNr), className: 's_Dfs_Df' },
       r.div({ className: 's_Dfs_Df_Wht' }, what ),
       r.div({ className: 's_Dfs_Df_Ttl' }, title),
       r.div({ className: 's_Dfs_Df_Txt' }, textTruncated)));
