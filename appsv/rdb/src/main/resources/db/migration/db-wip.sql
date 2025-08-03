@@ -5,6 +5,9 @@
 --   https://medium.com/developer-rants/bitwise-magic-in-postgresql-1a05284e4017
 
 
+---------
+-- Update: Doesn't matter. Will drop this column (private_status_c) instead, and private_pats_id_c too.
+---------
 -- Sleeping bug fix? Bookmarks don't use  private_status_c?   [bookm_0_priv_status]
 -- NEED TO SET  private_status_c  to NULL too, if type 51!
 update  posts3
@@ -19,6 +22,7 @@ alter table  posts3
 
     add constraint posts_c_privatecomt_neg_nr check (
         (private_status_c is null) or post_nr <= -1001); -- PageParts.MaxPrivateNr
+---------
 
 
 --=============================================================================
@@ -106,16 +110,28 @@ alter table upload_refs3 rename column post_id to from_post_id_c;
 
 alter table upload_refs3
     drop constraint dw2_uploadrefs__p,
-    add column from_draft_nr_c i32_lt2e9_gt1000_d,
     add column from_pat_id_c   i32_d,
+    add column from_draft_nr_c i32_lt2e9_gt1000_d,
+
     add constraint uploadrefs_c_from_draft_or_post_or_avatar check (
-        num_nonnulls(from_post_id_c, from_draft_nr_c, from_pat_id_c) = 1);
+        num_nonnulls(from_post_id_c, from_draft_nr_c, from_pat_id_c) = 1),
+
+    add constraint uploadrefs_frompat_draftnr_r_drafts
+        foreign key (site_id, from_pat_id_c, from_draft_nr_c)
+        references drafts3(site_id, by_user_id, draft_nr) deferrable,
+
+    add constraint uploadrefs_frompat_r_pats
+        foreign key (site_id, from_pat_id_c)
+        references users3(site_id, user_id) deferrable;
 
 create unique index uploadrefs_u_postid_ref on upload_refs3 (
     site_id, post_id, base_url, hash_path) where post_id is not null;
 
 create unique index uploadrefs_u_draftnr_ref on upload_refs3 (
-    site_id, draft_nr_c, base_url, hash_path) where draft_nr_c is not null;
+    site_id, from_pat_id_c, draft_nr_c, base_url, hash_path) where draft_nr_c is not null;
+
+create unique index uploadrefs_u_patid_ref on upload_refs3 (
+    site_id, from_pat_id_c, base_url, hash_path) where from_pat_id_c is not null;
 
 --=============================================================================
 --  Job queue

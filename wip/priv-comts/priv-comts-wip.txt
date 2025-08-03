@@ -20,8 +20,8 @@ Benefits:
 
 That's better than storing private trees as ordinary comments but with negative ids
 and inventing a new permission system, like I was thinking when I added
-   posts3.private_pats_id_c.
-
+   posts3.private_pats_id_c and private_status_c.
+Let's just drop those columns instead.
 
 This could be a nice way to (re)implement flags? A flag is then a separate
 page linking to the flagged post, [flags_as_posts]  and any discussion about
