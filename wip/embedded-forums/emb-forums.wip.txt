@@ -21,3 +21,24 @@ F.ex. some communities might want direct messages to be allowed only if accessin
 the forum directly (not embedded), see:  GroupTalkController.sendMessage().
 But that's overdoing it, for now.
 
+[cache_embg_url]
+Cache html per embedding url, and then do include embedding url & origin in the cached pages?
+See:  page_html_cache_t.param_embg_url_or_empty_c.
+Actually, no, don't cache the embedding url. Instead, we need to cache only the embUrlParam!,
+that is, page_html_cache_t.param_embd_url_param_c.
+
+Thereafter, can solve the  [TyLink_problems]?
+
+
+REMOVE; DO_AFTER // v0.2025.011  [rm_embeddingUrl_param]
+
+
+Emb forum iframe:
+    UX BUG: Doesn't downsize itself, if emb forum.
+
+
+If non-existing page, e.g.:  https://www.ex.co/forum#/non-existing-page, then don't open
+a login popup in the iframe, just results in:
+      Login dialog in emb iframe [TyE5KER2]
+
+
