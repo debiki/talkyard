@@ -529,6 +529,9 @@ And these unique indexes:
 [upgr_pg] [ty_v1]
 Upgrade PostgreSQL. Switch from Flyway to Diesel, and upgr via psql dump export & import?
 
+[use_timestamptz]
+See: ../wip/use-timestamptz/timestamptz.wip.txt
+
 [careless_rdb]  ty_crdb
 Use a 2nd PostgreSQL server for a persistent mem + disk "cache"?
 E.g. for session storage and user visit logs.
