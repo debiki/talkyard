@@ -101,39 +101,6 @@ drop index dw2_pages_createdby__i;
 
 
 --=============================================================================
---  Upload refs
---=============================================================================
-
--- Also from drafts and users (their avatars).
-
-alter table upload_refs3 rename column post_id to from_post_id_c;
-
-alter table upload_refs3
-    drop constraint dw2_uploadrefs__p,
-    add column from_pat_id_c   i32_d,
-    add column from_draft_nr_c i32_lt2e9_gt1000_d,
-
-    add constraint uploadrefs_c_from_draft_or_post_or_avatar check (
-        num_nonnulls(from_post_id_c, from_draft_nr_c, from_pat_id_c) = 1),
-
-    add constraint uploadrefs_frompat_draftnr_r_drafts
-        foreign key (site_id, from_pat_id_c, from_draft_nr_c)
-        references drafts3(site_id, by_user_id, draft_nr) deferrable,
-
-    add constraint uploadrefs_frompat_r_pats
-        foreign key (site_id, from_pat_id_c)
-        references users3(site_id, user_id) deferrable;
-
-create unique index uploadrefs_u_postid_ref on upload_refs3 (
-    site_id, post_id, base_url, hash_path) where post_id is not null;
-
-create unique index uploadrefs_u_draftnr_ref on upload_refs3 (
-    site_id, from_pat_id_c, draft_nr_c, base_url, hash_path) where draft_nr_c is not null;
-
-create unique index uploadrefs_u_patid_ref on upload_refs3 (
-    site_id, from_pat_id_c, base_url, hash_path) where from_pat_id_c is not null;
-
---=============================================================================
 --  Job queue
 --=============================================================================
 
