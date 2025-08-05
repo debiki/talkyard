@@ -1235,6 +1235,18 @@ save the rebuilt post.
 Also, when upgrading ElasticSearch, maybe reindex everything and improve the mapping:
 Change ids, e.g. site & category id, from type integer to type keword.  [es_kwd]
 
+[sitemaps] [search_index_prio]
+Can map  posts3.index_prio_c, i16,  to a sitemap priority value 0.0 – 1.0?
+So not only Talkyard but also Googlebot etc knows how important a page is to reindex.
+But search engines use sitemap priorities only to determine how often to reindex,
+not for search results ranking. Gemini says:
+  Less Important Content:
+  Pages like old news articles, FAQs, or utility pages can be assigned
+  low priority (e.g., 0.1-0.3).
+Talkyard though, might use the index_prio_c also to de-rank "less interesting"
+search results, e.g. preferring to show newly written docs about topic X,
+instead of an old and closed question about topic X.
+
 [x_plat_offl_builds]
 Offline builds on various Linux distros, not just Debian 10?
 

@@ -137,7 +137,7 @@ package object core {
   type PostRevNr = Int
 
   /**
-    * De-prioritizes this page (or sub thread) among the search results.
+    * De-prioritizes this page (or sub thread) among the search results. [search_index_prio]
     * Say, a question or idea about something, before there were any docs
     * — and later on, docs are written, and the original question is no longer
     * that interesting (because the docs are shorter and better).
