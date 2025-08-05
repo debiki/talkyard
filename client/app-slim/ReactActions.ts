@@ -176,7 +176,7 @@ export function logoutClientSideOnly(ps: { goTo?: St, skipSend?: Bo, msg?: St } 
   if ((eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) && !ps.skipSend) {
     // Tell the editor iframe that we've logged out.
     // And maybe we'll redirect the embedd*ing* window.  [sso_redir_par_win]
-    sendToOtherIframes(['logoutClientSideOnly', ps]);
+    sendToOtherIframes(['logoutClientSideOnly', ps]);  // [forget_sid12]
 
     // Probaby not needed, since reload() below, but anyway:
     patchTheStore({ setEditorOpen: false });

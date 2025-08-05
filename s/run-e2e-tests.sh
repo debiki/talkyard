@@ -723,7 +723,6 @@ function runAllE2eTests {
   $r s/wdio-7     --only embcom.reply-vote-report-bef-login.2br --cd -i $args
   $r s/wdio       --only embedded-comments-conf-notf-pref-first $args
 
-  # E2EBUG: Flappy
   $r s/wdio-7     --only embcom.sort-order-op-likes-btn-txt.2br.ec --cd -i $args
 
   $r s/wdio       --only embedded-comments-category-refs.2browsers $args

@@ -1116,21 +1116,18 @@ function onMessage(message) {
         // Resume any old session.
         //
         // The comments iframe will message us back if we can log in / are logged in,
-        // and then we'll tell the editor iframe about that,
-        // and we'll also remember the session again. (3548236)
+        // and then we'll tell the editor iframe about that.
         //
-        // However, if the login fails (e.g. account suspended or self-deleted),
-        // then we won't remember the session again — so that after page reload,
-        // any resume-session error message won't re-appear.
+        // If the login fails (e.g. account suspended or self-deleted), we'll get a
+        // 'logoutClientSideOnly' message (right?); then, we'll forget the session.
         //
         let sessionStr: St | NU;
         try {
           sessionStr = theStorage.getItem('talkyardSession');
           // Skip this hereafter?! [btr_sid] Do afterwards instead, if is now invalid.
           // Because otherwise we'd get logged out in other tabs — they listen to localStorage.
-          // The iframe can send back a 'failedToLogin' instead?  [forget_sid12]
-          theStorage.removeItem('talkyardSession');  // see above (3548236)
-          curSessItemInStorage = null;
+          // The iframe sends back a 'logoutClientSideOnly' if failing to log in,  [forget_sid12]
+          // and then we'll delete the session (instead of trying again on reload "forever").
         }
         catch (ex) {
           logW(`Error getting 'talkyardSession' from theStorage [TyEGETWKSID]`, ex);
@@ -1263,9 +1260,11 @@ function onMessage(message) {
           }
         }
         else {
-          // This re-inserts our session (3548236), if we just sent a 'resumeWeakSession'
-          // message to the iframe and then removed it from theStorage  — because
-          // the comments iframe sends back 'justLoggedIn', after having logged in.
+          // This re-inserts our session, if we just sent a 'resumeWeakSession' message
+          // to the iframe  — because the comments iframe sends back 'justLoggedIn',
+          // after having logged in.
+          // (If there's already a session in `theStorage`, we'll overwrite it — the new
+          // session, if it's any different, should be valid for longer.)
           curSessItemInStorage = JSON.stringify(item);
           theStorage.setItem('talkyardSession', curSessItemInStorage);
 
