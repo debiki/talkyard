@@ -257,6 +257,18 @@ export function editNewForumPage(catId: RefOrId, pageType: PageType, inWhichWin?
 }
 
 
+/// Opens the editor to compose a direct message.
+///
+export function openToWriteMessage(toPatId: PatId, inWhichWin?: MainWin) {
+  if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) {
+    sendToEditorIframe(['openToWriteMessage', [toPatId]]);
+  }
+  else {
+    editor.openToWriteMessage(toPatId, inWhichWin);
+  }
+}
+
+
 /// Called by the editor, after a new page has been created (via editNewForumPage() above).
 ///
 export function navToNewPage(pageId: PageId, sendToWhichFrame?: MainWin) {

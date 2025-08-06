@@ -23,9 +23,11 @@ import debiki._
 import debiki.EdHttp._
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.http._
+
 import javax.inject.Inject
 import play.api.mvc._
 import play.api.libs.json.{JsString, JsValue}
+import talkyard.server.authn.MinAuthnStrength
 
 
 /** Starts discussions for a group of people: chat channels, or personal messages.
@@ -37,7 +39,8 @@ class GroupTalkController @Inject()(cc: ControllerComponents, edContext: TyConte
   extends TyController(cc, edContext) {
 
 
-  def sendMessage: Action[JsValue] = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) {
+  def sendMessage: Action[JsValue] = PostJsonAction(RateLimits.PostReply,
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
     import request.dao
     val body = request.body

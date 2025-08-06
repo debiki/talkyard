@@ -184,6 +184,11 @@ function onMessage(event) {
       ReactActions.editNewForumPage(catId, pageType, fromFrame);
       break;
 
+    case 'openToWriteMessage':
+      const patId = eventData[0];
+      ReactActions.openToWriteMessage(patId, fromFrame);
+      break;
+
     // Sent from the editor to the comments iframe, when a new page has been created.
     case 'navToNewPage':
       const pageId = eventData[0];

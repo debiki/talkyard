@@ -270,10 +270,10 @@ declare namespace debiki2 {
     // from editor-bundle-not-yet-loaded.ts:
     function toggleWriteReplyToPostNr(postNr: PostNr, inclInReply: boolean, anyPostType?: number);
     function openToEditPostNr(postNr: PostNr, onDone?);
-    function editNewForumPage(category: RefOrId, role: PageRole);
+    function editNewForumPage(category: RefOrId | U, role: PageRole | U, inFrame?: DiscWin);
     function openToEditChatTitleAndPurpose();
     function openToWriteChatMessage(text: string, onDone);
-    function openToWriteMessage(userId: UserId);
+    function openToWriteMessage(userId: UserId, inFrame?: DiscWin);
   }
 
   namespace login {

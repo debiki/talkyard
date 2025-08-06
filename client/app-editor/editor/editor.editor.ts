@@ -1040,6 +1040,7 @@ export const Editor = createFactory<any, EditorState>({
       postType = PostType.Flat;
     }
 
+    // _Dupl_para!
     let inFrameStore: EditorsStore | U;
     if (eds.isInEmbeddedEditor && inFrame?.eds) {
       // [many_embcom_iframes]
@@ -1191,7 +1192,7 @@ export const Editor = createFactory<any, EditorState>({
 
     const discStore: EditorsStore = this.getOrCloneDiscStore(inFrame);
 
-    // Dupl para!
+    // _Dupl_para!
     let inFrameStore: EditorsStore | U;
     if (eds.isInEmbeddedEditor && inFrame?.eds) {
       // [many_embcom_iframes]
@@ -1298,31 +1299,43 @@ export const Editor = createFactory<any, EditorState>({
     // No guidelines for chat messages, because usually a smaller "inline" editor is used instead.
   },
 
-  openToWriteMessage: function(userId: UserId) {
+  openToWriteMessage: function(userId: UserId, inFrame?: DiscWin) {
     if (this.alertBadState())
       return;
     const state: EditorState = this.state;
-    const store: Store = state.store;
-    // This cannot happen in an embedded editor, currently.
-    // @ifdef DEBUG
-    dieIf(state.inFrame, 'TyE502MHEARI0-3');
-    // @endif
+    const discStore: EditorsStore = this.getOrCloneDiscStore(inFrame);
+
+    // _Dupl_para!
+    let inFrameStore: EditorsStore | U;
+    if (eds.isInEmbeddedEditor && inFrame?.eds) {
+      // [many_embcom_iframes]
+      inFrameStore = discStore;
+      eds.embeddedPageId = inFrame.eds.embeddedPageId; // [annoying_4HKW28]
+      eds.embeddingUrl = inFrame.eds.embeddingUrl;
+      eds.embeddedPageAltId = inFrame.eds.embeddedPageAltId;
+      eds.lazyCreatePageInCatId = inFrame.eds.lazyCreatePageInCatId;
+    }
+
     const newState: Partial<EditorState> = {
-      editorsCategories: store.currentCategories,
+      inFrame,
+      inFrameStore,
+      editorsCategories: discStore.currentCategories,
       // The current page doens't matter, when creating a new page. [DRAFTS_BUG] set to undefined
-      editorsPageId: store.currentPageId,
+      editorsPageId: discStore.currentPageId,
       messageToUserIds: [userId],
       text: '',
       newPageRole: PageRole.FormalMessage,
     };
-    
+
     this.showEditor(newState);
 
     const draftLocator: DraftLocator = {
       draftType: DraftType.DirectMessage,
       toUserId: userId,
     };
-    this.loadDraftAndGuidelines(draftLocator, WritingWhat.NewPage, PageRole.FormalMessage);
+
+    this.loadDraftAndGuidelines(
+            draftLocator, WritingWhat.NewPage, PageRole.FormalMessage, inFrameStore);
     this.showAndFadeOutBackdrop();
   },
 
@@ -2251,7 +2264,7 @@ export const Editor = createFactory<any, EditorState>({
           state.messageToUserIds, this.anyDraftNr(), (pageId: PageId) => {
         this.callOnDoneCallback(true);
         this.clearAndCloseFineIfGone();
-        page.Hacks.navigateTo('/-' + pageId);
+        ReactActions.navToNewPage(pageId, state.inFrame);
       });
     });
   },
@@ -2498,6 +2511,7 @@ export const Editor = createFactory<any, EditorState>({
       visible: false,
       replyToPostNrs: [],
       anyPostType: undefined,
+      discProps: undefined,
       editorsCategories: null,
       editorsPageId: null,
       editingPostNr: null,

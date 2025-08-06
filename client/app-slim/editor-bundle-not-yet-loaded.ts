@@ -76,9 +76,9 @@ export function openToWriteChatMessage(text: string, draft: Draft | undefined,
 }
 
 
-export function openToWriteMessage(userId: number) {
+export function openToWriteMessage(userId: PatId, inFrame?: DiscWin) {
   ensureEditorCreated(editor => {
-    editor.openToWriteMessage(userId);
+    editor.openToWriteMessage(userId, inFrame);
   });
 }
 
