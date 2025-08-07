@@ -1398,7 +1398,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def loadGroups: Action[Unit] = GetActionRateLimited(RateLimits.ReadsFromDb) { request =>
+  def loadGroups: Action[Unit] = GetActionRateLimited(
+          RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddingStorageSid12) { request =>
     val groups = request.dao.getGroupsAndStatsReqrMaySee(request.requesterOrUnknown)
     OkSafeJsonArr(JsArray(groups map JsGroupAndStats))
   }
@@ -1426,8 +1427,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def listGroupMembers(groupId: UserId): Action[Unit] =
-        GetActionRateLimited(RateLimits.ReadsFromDb) { request =>
+  def listGroupMembers(groupId: UserId): Action[Unit] = GetActionRateLimited(
+          RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddingStorageSid12) { request =>
     val maybeMembers = request.dao.listGroupMembersIfReqrMaySee(groupId, request.requesterOrUnknown)
     val respJson = maybeMembers match {
       case None =>
@@ -1639,7 +1640,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def loadMembersCatsTagsSiteNotfPrefs(memberId: Int): Action[Unit] = GetAction { request =>
+  def loadMembersCatsTagsSiteNotfPrefs(memberId: Int): Action[Unit] = GetActionRateLimited(
+          RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddingStorageSid12) { request =>
     loadMembersCatsTagsSiteNotfPrefsImpl(memberId, request)
   }
 
@@ -1698,6 +1700,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def saveMemberPrivacyPrefs: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
+        MinAuthnStrength.EmbeddingStorageSid12,
         // Look at Typescript interface PrivacyPrefs — it's around 500 chars, so 1000
         // should be ok for a while.
         maxBytes = 1000, ignoreAlias = true) { request =>
