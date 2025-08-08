@@ -48,6 +48,19 @@ comment on domain text_oneline_or_empty_15_d is
     'Like text_oneline_d, but at most 15 chars long.';
 
 
+create domain base62_inf_d text;
+alter domain  base62_inf_d add constraint base62_inf_d_c_chars
+    check (value ~ '^[a-zA-Z0-9]*$');
+
+-- Zulip's random file ids are 24 Base62 chars, that's around 140 bits entropy.
+-- Talkyard can use 24 too.  Currently Ty uses 1 + 2 + 30 = the 33 first chars
+-- of a base 32 hash, I think it's SHA 256.
+-- Ty's ids look like: 1/j/4f/uowvhvhrxwcya3qtah3egotcbga57h.jpg
+-- see:  appsv/model/src/main/scala/com/debiki/core/uploads.scala
+create domain base62_len24_d base62_inf_d;
+alter domain  base62_len24_d add constraint base62_len24_d_c_len24
+    check (length(value) = 24);
+
 --=============================================================================
 --  Embeddd forum cache params
 --=============================================================================
@@ -104,10 +117,18 @@ alter table upload_refs3
     -- There'll be unique indexes instead.
     drop constraint dw2_uploadrefs__p,
 
-    alter column post_id drop not null;
+    alter column post_id drop not null,
 
-    add column from_pat_id_c   i32_d,
-    add column from_draft_nr_c i32_lt2e9_gt1000_d,
+    add column from_pat_id_c     i32_d,
+    add column from_draft_nr_c   i32_lt2e9_gt1000_d,
+
+    -- Iff null, can access file by hash. (Legacy.)
+    add column access_rand_id_c  base62_len24_d,
+
+    -- For sharing a link temporarily only?
+    add column access_until_c    timestamp,
+
+    add column deleted_by_id_c   int,
 
     add constraint uploadrefs_c_from_draft_or_post_or_avatar check (
         num_nonnulls(post_id, from_draft_nr_c, from_pat_id_c) = 1), -- from_post_id_c
@@ -120,7 +141,13 @@ alter table upload_refs3
     -- fk ix: uploadrefs_u_patid_ref
     add constraint uploadrefs_frompat_r_pats
         foreign key (site_id, from_pat_id_c)
+        references users3(site_id, user_id) deferrable,
+
+    -- fk ix: uploadrefs_i_deletedby
+    add constraint uploadrefs_deletedby_r_pats
+        foreign key (site_id, deleted_by_id_c)
         references users3(site_id, user_id) deferrable;
+
 
 create unique index uploadrefs_u_postid_ref on upload_refs3 (
         site_id, post_id, base_url, hash_path)
@@ -134,7 +161,23 @@ create unique index uploadrefs_u_patid_ref on upload_refs3 (
         site_id, from_pat_id_c, base_url, hash_path)
     where from_pat_id_c is not null and from_draft_nr_c is null;
 
+create index uploadrefs_i_deletedby on upload_refs3 (
+        site_id, deleted_by_user_id)
+    where deleted_by_user_id is not null;
 
+-- Per site, to prevent collisions if importing Talkyard sites with weird random ids somehow.
+-- No, skip this. Might want to share the same file (same rand id) in different posts.
+-- Incl the site publ id in the download-file url instead? (Already done, for hash_path_c.)
+-- create unique index uploadrefs_u_accessrandid on upload_refs3 (site_id, access_rand_id_c)
+--     where access_rand_id_c is not null;
+
+
+-- Maybe not needed? If each file is per user instead, w random id, like in Zulip?
+-- Zulip doesn't de-dup files per user, ChatGPT says. If you upload the same file
+-- twice, it'd get 2 different random ids. So you can share with group A and B,
+-- and delete it for group A only, and ppl in B still have access, those in A do
+-- not since different file ids, virtually different files. Although Ty can automatically
+-- de-dup storage thanks to uploads3.
 create table uploads_state_t (
   site_id_c             int                 not null, -- pk
   base_url_c            text_oneline_30_d   not null, -- pk
