@@ -98,24 +98,41 @@ export const ExtReactRootNavComponent = createReactClass({
 /// Changes a url to a server local url path, if the url is to the
 /// same origin.  If cannot do this, returns false.
 ///
-function url_asLocalAbsPath(rawUrl: St, location: { origin: St, hostname: St },
+function url_asLocalAbsPath(rawUrl0: St, location: { origin: St, hostname: St, pathname: St },
           embgUrl?: St, embPathParam?: St)
           : St | false {
 
-  // Are we in an embedded forum? If so, the actual new url is a parameter in `url`
+  // Are we in an embedded forum? If so, the actual new url might be a parameter in `rawUrl`
   // — lets's extract it.
-  const url = !embgUrl ? rawUrl : (function() {
+
+  // Prefix the current path to any relative urls, for example, if at '/-/users/someone',
+  // then  './preferences/notifications'  —>  /-/users/someone/preferences/notifications.
+  // Edit: Currently never needed. Can just:
+  const rawUrl = rawUrl0;
+             // !rawUrl0.startsWith('./') ?
+             //     rawUrl0 : url_dropSlashSlug__unused(location.pathname) + rawUrl0.slice(1);
+
+  // But if it's a /relative/url, then, it's not to the embedd*ing* website but to a
+  // Talkyard page/endpoint already, no need to extract it (we have it already).
+  // Then, if we're in an embedded forum, TyLink and linkToPath() will convert it to
+  // a link + parameter to the embedding page.
+  const isRelative = url_isRelative(rawUrl);
+
+  const url = !embgUrl || isRelative ? rawUrl : (function() {
+    // [embg_ty_url]
     if (embPathParam === '#/') {
-      // The Talkyard url has been appended to the embedding page's url, as a #hash
+      // The Talkyard url might have been appended to the embedding page's url, as a #hash
       if (rawUrl.indexOf(embgUrl + '#/') === 0)
         return rawUrl.slice(embgUrl.length + 1); // + 1 not 2, to keep '/'
-    }
+    } /*
+    // Let's skip. [skip_question_url_param]
     else if (embPathParam === '?/') {
       // Is this ever useful?
       // UNTESTED
       if (rawUrl.indexOf(embgUrl + '?/') === 0)
         return rawUrl.slice(embgUrl.length + 1);
     }
+    // Let's wait, untested.  [skip_query_param_url_parm]
     else {
       // UNTESTED
       const urlOb = new URL(rawUrl);
@@ -123,7 +140,8 @@ function url_asLocalAbsPath(rawUrl: St, location: { origin: St, hostname: St },
       const actualUrl = params && params.get(embPathParam.slice(1));
       if (actualUrl)
         return actualUrl;
-    }
+    } */
+    //logD(`Weird raw url: ${rawUrl}  [TyERWURL]`);
     return rawUrl;
   })();
 
@@ -258,6 +276,7 @@ function makeMentionsInEmbeddedCommentsPointToTalkyardServer() {
   // and works also if the Talkyard server moves to a new address (won't need
   // to rerender all comments and pages).)
 
+  // SHOULD: Emb forums: Link to  https://ex.co/embedding-page#/-/users/...  ?  UNTESTED for emb forums??
   if (!eds.isInEmbeddedCommentsIframe && !eds.isInEmbForum)
     return;
 

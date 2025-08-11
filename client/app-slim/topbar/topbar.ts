@@ -232,12 +232,12 @@ export const TopBar = createComponent({
 
   onSignUpClick: function() {
     const props: TopbarProps = this.props;
-    login.openLoginDialogToSignUp(props.purpose || LoginReason.SignUp);
+    login.loginIfNeededReturnToAnchor(props.purpose || LoginReason.SignUp, '');
   },
 
   onLoginClick: function() {
     const props: TopbarProps = this.props;
-    login.openLoginDialog(props.purpose || LoginReason.LoginToLogin);
+    login.loginIfNeededReturnToAnchor(props.purpose || LoginReason.LoginToLogin, '');
   },
 
   showTools: function() {
@@ -685,8 +685,8 @@ export const TopBar = createComponent({
             content: rFr({},
               "Create ",
               LinkUnstyled({ to: linkToGroups(),
-                      // Create groups from inside an iframe, so open in new tab if is in iframe,
-                      // by making the link "external".
+                      // Can't create groups from inside an iframe, so open in new tab
+                      // if is in iframe, by making the link "external".
                       ext: eds.isInEmbeddedCommentsIframe || eds.isInEmbForum },
                   "groups"), '?'),
           }}),

@@ -3629,10 +3629,9 @@ interface ServerVars {
   isInEmbeddedCommentsIframe: boolean;
   isInEmbeddedEditor: boolean;
   isInEmbForum?: Bo  // currently same as embHow === 'Forum'
-  //isInEmbForumComts?: Bo // maybe ?
 
   embeddingScriptV?: Nr;
-  // Deprecated, use  embgOrigin  instead? Not incorrectly cache server side.
+  // Deprecated, use  embgOrigin  instead?
   embeddingOrigin?: string;
 
   embHow?: 'Forum' | St  // or sth else (invalid). A url param

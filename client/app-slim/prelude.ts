@@ -88,8 +88,7 @@ function reactCreateFactory(type): (props?: any, ...children) => RElm {
   return React.createElement.bind(null, type);
 }
 
-
-function isServerSide(): boolean {
+function isServerSide(): Bo {
   return !!window['ReactDOMServer'];
 }
 
@@ -314,13 +313,11 @@ export function win_isLoginPopup(): Bo {
  */
 export function getMainWin(): MainWin {  // QUICK RENAME to win_getSessWin() ?
   // Maybe there're no iframes and we're already in the main win?
-  // (window.opener might still be defined though — could be an embedded
-  // comments iframe, in another browser tab. So if we were to continue below,
-  // we could find the main win from the *wrong* browser tab with the wrong
-  // React store. )
-  // If editor in forum, so no other iframes:
-  //if ((!eds.isInIframe || eds.embHow === 'Forum') && !win_isLoginPopup()) {
-  // Separate editor iframe:
+  //
+  // `window.opener` might still be defined though — the opener could be an embedded
+  // comments iframe, in another browser tab. That'd be the main win from
+  // the *wrong* browser tab with the wrong React store. So instead of looking
+  // at `window.opener`:
   if (!eds.isInIframe && !win_isLoginPopup()) {
     return window as MainWin;
   }
@@ -741,19 +738,9 @@ export function deleteById(itemsWithId: any[], idToDelete) {
 }
 
 
-/// Finds out if `url` is to a Talkyard server `path`, e.g. to `/-/admin`.
-/// Works also if the url is a complete url, e.g. https://server/some/path.
-///
-export function url_isToTyPath(url: St | NU, path: St): Bo {
-  if (!url) return false;
-  return url.indexOf(path) === 0;
-  /*
-  if (url.indexOf(path) === 0) return true;
-  // This won't work w urls like '//server/path', that is, w/o scheme. That's ok.
-  const originPath = location.origin + path;
-  return url.indexOf(originPath) === 0;
-  */
-  }
+export function url_isRelative(url: St | URL): Bo {  // [dupl_rel_url_fn]
+  return url && url[0] === '/' && url[1] !== '/';
+}
 
 
 export function url_getHost(url: St): St {
@@ -764,6 +751,33 @@ export function url_getHost(url: St): St {
   const parts = url.split('/');
   return parts && parts.length >= 3 ? parts[2] : '';
 }
+
+
+// Maybe will need later? Tested manually.
+/*
+export function url_dropSlashSlug__unused(urlPath: St): St {
+  const lastSlashIx = urlPath.lastIndexOf('/');
+
+  // No slash?  (E.g. 'something-hmm-what' —> ''.)
+  if (lastSlashIx === -1)
+    return '';
+
+  // An origin without any trailing path slash? Don't drop the hostname:
+  // (E.g. leave 'https://example.com' unchanged.)
+  const slashSlashIx = urlPath.indexOf('//');
+  if (urlPath.startsWith('//') ||
+        urlPath.startsWith('http://') ||
+        urlPath.startsWith('https://')) {
+    if (slashSlashIx + 1 === lastSlashIx)
+      return urlPath;
+  }
+
+  // No slug, ends with a slash? Drop the slash only.
+  // (E.g. '/path/to/dir/' —> '/path/to/dir'.)
+  // Or a slash and slug? Drop both the slash and slug.
+  // (E.g. '/path/to/page-slug' —> '/path/to'.)
+  return urlPath.substring(0, lastSlashIx);
+} */
 
 
 /// Always returns an array — empty if `a` and `b` are nullish.

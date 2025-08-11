@@ -2460,18 +2460,6 @@ function showNewPage(ps: ShowNewPageParams) {
       // @endif
       history.replace(correctedUrl);  // [4DKWWY0]  TyTE2EPGID2SLUG
     }
-
-    /*
-    // If we're in an embedded forum, always update the embedd*ing* pages url param
-    // that says what Talkyard thing we're looking at. So that copying & reusing the
-    // browser's url works.
-    // TODO: Is replace() above done already, so we'd copy the correct & current path?
-    if (eds.isInEmbForum) {
-      const pathQueryHash = location.pathname + location.search + location.hash;
-      window.parent.postMessage(
-            JSON.stringify(['pathChanged', pathQueryHash]),
-            eds.embeddingOrigin);
-    } */
   }
 
   // ----- Watchbar

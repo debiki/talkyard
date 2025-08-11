@@ -224,7 +224,13 @@ class SiteTpi protected (
           "embeddingScriptV" -> JsNumberOrNull(embeddingScriptV),
           // These are changed dynamically in an editor iframe, [many_embcom_iframes].
           // to match the embedded comments iframe pat is replying / editing in.
-          "embeddingUrl" -> JsStringOrNull(anyEmbeddingUrl),  //  @Html(embeddingUrlOrUndefined),
+          // (The embedding url is not static, if the embedding website is a single-page-app
+          // — then, it'll show a new url path, and new contents, without reloading
+          // Talkyard's editor and session iframe! So we sometimes need to update the
+          // embedding url. See:
+          //   modules/gatsby-plugin-ed-comments/src/index.js
+          // although we just reload everything actually, rather than updating the embeddedUrl.)
+          "embeddingUrl" -> JsStringOrNull(anyEmbeddingUrl),  // [rm_embeddingUrl_param] use "embgUrl" below instead
           "embeddedPageAltId" -> JsStringOrNull(anyDiscussionId), // @Html(discussionIdOrUndefined),
           "lazyCreatePageInCatId" -> JsNumberOrNull(lazyCreatePageInCatId), //@Html(lazyCreatePageInCatId),
           // ----------------------
@@ -426,7 +432,6 @@ class SiteTpi protected (
   */
 class EditPageTpi(
   request: GetRequest,
-  //override val anyEmbeddingUrl: Option[String],
 ) extends SiteTpi(request) {
   override def anyCurrentPageRole: Opt[PageType] = Some(PageType.EmbeddedComments)
 }
@@ -443,7 +448,6 @@ class PageTpi(
   private val pageTitleUnsafe: Option[String],
   override val anyCustomMetaTags: FindHeadTagsResult,
   override val anyDiscussionId: Option[AltPageId],
-  //override val anyEmbeddingUrl: Option[String],
   override val lazyCreatePageInCatId: Option[CategoryId],
 ) extends
     SiteTpi(pageReq, json = None, pageTitleUnsafe = pageTitleUnsafe) {

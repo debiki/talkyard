@@ -136,9 +136,14 @@ declare namespace ed {
 }
 
 
-// prelude.ts:
+// head-bundle.ts:
 
 declare function isServerSide(): Bo;
+declare function url_isRelative(url: St | URL): Bo;
+
+
+// prelude.ts:
+
 declare function isSelfHosted(): Bo;
 declare function isAutoTestSite(): Bo;
 

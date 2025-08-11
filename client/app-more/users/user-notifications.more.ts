@@ -91,7 +91,7 @@ export const UserNotifications = createFactory({
     const notfPrefsShortcut = isGuest ? null :
         r.p({ className: 's_UP_Nfs_PfsL' },
           "Go to ",
-          TyLink({ to: './preferences/notifications' }, "Preferences → Notifications"),
+          TyLink({ to: linkToMembersNotfPrefs(user.username) }, "Preferences → Notifications"),
           " to edit settings, e.g. to subscribe to categories.");
 
     const store: Store = this.props.store;

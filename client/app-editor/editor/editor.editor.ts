@@ -292,13 +292,8 @@ export const Editor = createFactory<any, EditorState>({
       return debiki2.ReactStore.allData();
     }
 
-    // Embedded forums use just one <iframe> (unlike embedded blog comments, which
-    // have editor & session iframes too), so we can just return the store. [emb_forum]
-    // Update: Now they don't use just 1, instead, same as for emb comts. So comment out:
-    //if (eds.embHow === 'Forum')
-    //  return debiki2.ReactStore.allData();
-
     // @ifdef DEBUG
+    // Then we should have `return`ed above already.
     dieIf(!inFrame && !this.state.inFrame, 'TyE604RMJ46');
     // @endif
 
@@ -345,6 +340,7 @@ export const Editor = createFactory<any, EditorState>({
         currentPageId: discFrameStore.currentPageId,
         currentCategories: discFrameStore.currentCategories,
         curCatsById: {}, // updated below (actually not needed? feels better, oh well)
+        allCategoriesHacky: discFrameStore.allCategoriesHacky, // rm: [incl_hacky_cats_in_DiscStore] ?
         usersByIdBrief: discFrameStore.usersByIdBrief || {},
         pagesById: {},  // updated below
 
@@ -1183,13 +1179,6 @@ export const Editor = createFactory<any, EditorState>({
       return;
 
     const state: EditorState = this.state;
-    //const store: Store = state.store;
-
-    // This cannot happen in an embedded editor, currently.  NOW IT CAN, but maybe not if alraedy set?
-    // @ifdef DEBUG
-    dieIf(state.inFrame, 'TyE502MHEARI0-1');
-    // @endif
-
     const discStore: EditorsStore = this.getOrCloneDiscStore(inFrame);
 
     // _Dupl_para!
@@ -1253,12 +1242,11 @@ export const Editor = createFactory<any, EditorState>({
       searchResults: null,
     };
 
-    // Oops  [emb_ed_compose_page_err_here]  because settings undef in:  settings.enableChat
     this.showEditor(newState);
 
     const draftLocator: DraftLocator = {
       draftType: DraftType.Topic,
-      pageId: discStore.currentPageId,
+      pageId: editorsPageId,
       categoryId: categoryId,
     };
 
@@ -1743,10 +1731,6 @@ export const Editor = createFactory<any, EditorState>({
 
     const state: EditorState = this.state;
     const store: Store = state.store;
-    // This cannot happen in an embedded editor, currently. NOW IT CAN
-    // // @ifdef DEBUG
-    // dieIf(state.inFrame, 'TyE502MHEARI0-4');
-    // // @endif
 
     const settings: SettingsVisibleClientSide = store.settings;
     if (settings.enableSimilarTopics === false)

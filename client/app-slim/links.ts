@@ -20,12 +20,31 @@
 // Usage example: MenuItemLink({ to: linkToPatsProfile(user) }, "View your profile")
 
 
+// Don't: Could rename link...() fns that return a complete url, [complete_origin]
+// incl origin (e.g. https://www.ex.co/embedded-forum#/-123/talkyarg-page-slug)
+// to sth different than  link...() fns that return just a relative url
+// (e.g. /-123/page-slug), maybe:
+// - linkToPageId —> relUrlToPageId(pageId)
+// - linkToEmbeddedDiscussions —> fullUrlToEmbDiscList()  ?
+// If in an embedded forum, the fullUrl...() would construct links to embedded
+// pages, rather than external links to the Ty forum (so ppl stay on the embedd*ing*
+// website).  But if in emb comts, maybe the links should be to the Talkyard site,
+// could be confusing if navigating away in the comments iframe? [_blog_comts_lns_are_ext]
+// For example, linkToUserProfilePage() should maybe be _split_in_2?
+//
+// Or isn't it **better** to let all linkTo...() be relative, and in the few cases
+// when it's needed, prefix w  `origin() +`.  Let's do that. Later. CLEAN_UP
+
+
 /// <reference path="prelude.ts"/>
 /// <reference path="utils/utils.ts"/>
 
 //------------------------------------------------------------------------------
    namespace debiki2 {
 //------------------------------------------------------------------------------
+
+// Just so can find all usages of '' where it means the current origin.
+const CurOrigin = '';
 
 // In embedded comments and embedded forums, need incl the Talkyard server url,
 // otherwise links will [EMBCMTSORIG] resolve to the embeddING server.
@@ -51,9 +70,10 @@ export function origin(): string {
   if (notDef(cachedEmbOrig) || isServerSide()) {
     const mainWin = getMainWin();
     const mainStore: SessWinStore = mainWin.theStore;
-    cachedEmbOrig = ''; mainStore.embeddedOriginOrEmpty;  // [ONESTORE]
+    cachedEmbOrig = mainStore.embeddedOriginOrEmpty;  // [ONESTORE]
     // Doesn't work, not set in the session iframe. But not needed, can use eds.* in the
-    // comment iframes. But what about the editor?
+    // comment iframes, and eds.* copied from the comments frame, in the embedded editor frame.
+    // see [many_embcom_iframes].
     //cachedIsInEmbForum = mainWin.eds.isInEmbForum;
     //cachedEmbgUrl = mainWin.eds.embgUrl || mainWin.eds.embeddingUrl || '';
     //cachedEmbPathParam = mainWin.eds.embPathParam;
@@ -67,9 +87,6 @@ let cachedEmbgUrl: St | U;
 let cachedEmbPathParam: St | U;
 
 
-/// Converts a Talkyard forum path to a link that works also if Talkyard forum is
-/// embedded in an iframe.  Uses some eds.* variables.  [deep_emb_links]
-///
 /// We actually can't use ReactRouter's <Link> and <NavLink> — they generate hrefs
 /// that don't work at all, when Talkyard is embedded in an iframe. Look:
 ///
@@ -169,26 +186,42 @@ let cachedEmbPathParam: St | U;
 ///
 /// So we need our own <Link> component instead?  See  widgets.ts
 ///
+// REFACTOR, later: Move  TyLink  from widgets.ts   to here?
+
+
+
+/// Converts a Talkyard forum relative url, e.g. /-123/talkyard-page-slug,
+/// to a url that works also if Talkyard forum is embedded in an iframe,
+/// e.g.  https://www.ex.co/embedded-forum#/-123/talkyard-page-slug.
+/// Uses some eds.* variables.  [deep_emb_links]
+///
 export function linkToPath(tyPath: St): St {
   // @ifdef DEBUG
   // The caller should add a hash later, if needed.
   //dieIf(tyPath.indexOf('#') !== -1, 'TyEEMBPATHHASH');
   // @endif
 
-  origin(); // populate cache
-
-  if (!eds.isInEmbForum) { // cachedIsInEmbForum
-    // This'll be just `tyPath` if wer're in a not embedded forum.
-    // Or https://talkyard-server-addr + tyPath  for blog comments. Oops
-    return cachedEmbOrig + tyPath;
+  // Blog comments should probably link to the Talkyard site — we don't want to
+  // navigate to other pages inside the blog comments iframe. [_blog_comts_lns_are_ext]
+  if (eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor) {
+    return origin() + tyPath;
   }
+
+  // If not embedded, we'll return links as is, e.g. /-123/page-slug, and that'll
+  // be relative the Talkyard server origin.
+  if (!eds.isInEmbForum) {
+    return CurOrigin + tyPath;
+  }
+
+  // In an embedded forum.
+  // We'll construct a link to the embedd*ing* page with a parameter (typically
+  // the #hash-fragment) that tells the Talkyard script on the embedd*ing* page, that is,
+  // talkyard-forum.min.js, to show `tyPath` in the Talkyard forum iframe. [embg_ty_url]
 
   // COULD_OPTIMIZE Do just once, also if many links.
   const embgUrl = new URL(eds.embgUrl || eds.embeddingUrl); // cachedEmbgUrl
 
-  //const embUrlNoTyPath = embgUrlNoHash.replace(/&?ty=[^&;]*/g, '');
-  //const querySeparator = embUrlNoTyPath.indexOf('?') === -1 ? '?' : '&';
-  //let res = embUrlNoTyPath + querySeparator + 'ty=' + encodeURI(tyPath);
+  // The resulting link, e.g.  https://www.ex.co/emb-forum#/-123/talkyard-page-slug.
   let res: St | U;
 
   // This needed to make #hash and ?query=param links w/o paths work? But
@@ -200,43 +233,50 @@ export function linkToPath(tyPath: St): St {
   //   tyPath = location.pathname + tyPath;
   // }
 
-  if (eds.embPathParam === '#/') {   // cachedEmbPathParam & below?
-    // This'll look like:  https://www.example.com/embedded-forum#/-123/talkyard-slug#any-hash
+  if (eds.embPathParam === '#/') {
+    // This'll look like:  https://www.ex.co/embedded-forum#/-123/talkyard-slug#any-hash
     res = embgUrl.origin + embgUrl.pathname + embgUrl.search + '#' + tyPath;
   }
+  else {
+    // No deep link method configured. Link to the Talkyard forum instead (but not to
+    // the embedd*ing* website).
+    return origin() + tyPath;
+  }
+  /* Other embPathParam:s: Not impl.
   else if (eds.embPathParam === '?/') {
-    // This'll look like:  https://www.example.com/embedded-forum?/-123/talkyard-slug#any-hash
+    UNTE STED
+    // This'll look like:  https://www.ex.co/embedded-forum?/-123/talkyard-slug#any-hash
     // Is this ever useful? Probably '#' above is better.
     res = embgUrl.origin + embgUrl.pathname + '?' + tyPath;
   }
   else {
+    UNT ESTED
     // This'll look like:  https://www.ex.com/embedded-forum?talkyardPath=/-/talkyard-page-slug
     // if `eds.embPathParam` is '?talkyardPath'.
-    // We should leave all query params intact, except for `eds.embPathParam` which we'll
+    // We'll leave all query params intact, except for `eds.embPathParam` which we'll
     // replace with the new path.
     // @ifdef DEBUG
     dieIf(!eds.embPathParam.match(/\?[a-zA-Z_-]+/), 'TyEEMBPATHPARM');
     // @endif
     // No need to encode '/+:', but '?&' — yes.
-    const tyPathEncoded = encodeURIComponent(tyPath)
-            .replace(/%2F/g, '/')
-            .replace(/%2B/g, '+')
-            .replace(/%3A/g, ':');
+    // No longer needed! Using URLSearchParams.set() which encodes for us.
+    // const tyPathEncoded = encodeURIComponent(tyPath)
+    //         .replace(/%2F/g, '/')
+    //         .replace(/%2B/g, '+')
+    //         .replace(/%3A/g, ':');
     // // `embgUrl.searchParams` is read-only, so create a new.
     // const params = new URLSearchParams(embgUrl.search);
     // params.set(eds.embPathParam, tyPathEncoded);
-    embgUrl.searchParams.set(eds.embPathParam, tyPathEncoded);  // updates `embgUrl.search`
-    //res = location.pathname + eds.embPathParam + '=' + tyPathEncoded;
-    res = embgUrl.origin + embgUrl.pathname + embgUrl.searchParams.toString(); // params.toString();
-  }
+    embgUrl.searchParams.set(eds.embPathParam, tyPath);  // updates `embgUrl.search`
+    res = embgUrl.origin + embgUrl.pathname + embgUrl.searchParams.toString();
+  } */
 
   return res;
 }
 
 
 export function linkToPageId(pageId: PageId): St {
-  return '/-' + pageId;
-  // return linkToPath('/-' + pageId);
+  return CurOrigin + '/-' + pageId;
 }
 
 
@@ -251,14 +291,14 @@ export function linkToPost(post: PostWithPageId): St {
 
 
 export function linkToType(type: TagType): St {
-  return UrlPaths.Tags + (type.urlSlug || type.id);
+  return CurOrigin + UrlPaths.Tags + (type.urlSlug || type.id);
 }
 
 
 export function linkToAdminPage(): string {
   // Don't use linkToPath() — admin pages need to be accessed
   // directly [dont_embed_amind_pages].
-  return origin() + '/-/admin/';
+  return CurOrigin + '/-/admin/';
 }
 
 export function linkToAdminPageLoginSettings(): string {
@@ -283,7 +323,7 @@ export function linkToAdminPageEmbeddedSettings(): string {
 
 export function linkToAdminPageAdvancedSettings(differentHostname?: string): string {
   // This fn is called if we change the hostname, to jump to site settings at the new address.
-  const maybeNewOrigin = differentHostname ? '//' + differentHostname : origin();
+  const maybeNewOrigin = differentHostname ? '//' + differentHostname : CurOrigin;
   return maybeNewOrigin + '/-/admin/settings/site';
 }
 
@@ -299,36 +339,39 @@ export function linkToUserInAdminArea(user: Myself | Participant | UserId): stri
 
 export function linkToEmbeddedDiscussions(): string {
   // Later: link to the correct category, when emb comments topics have their own category.
+  // This is for opening the embedded comments page index in a new tab, so,
+  // we want the [complete_origin].
   return linkToPath('');
 }
 
 export function linkToReviewPage(ps: { patId?: PatId } = {}): St {
   // Don't use url_tyPathToEmbedded(), [dont_embed_amind_pages].
-  let url = origin() + '/-/admin/review';
+  let url = CurOrigin + '/-/admin/review';
   if (ps.patId) url += `?patId=${ps.patId}`;
   return url;
 }
 
 export function linkToStaffInvitePage(): string {
-  return origin() + '/-/admin/users/invited';
+  return CurOrigin + '/-/admin/users/invited';
 }
 
 export function linkToInspect(what: 'priv-prefs'): St {
-  return origin() + '/-/admin/inspect#' + what;
+  return CurOrigin + '/-/admin/inspect#' + what;
 }
 
 export function linkToStaffUsersPage(): St {
-  return origin() + '/-/admin/users/';
+  return CurOrigin + '/-/admin/users/';
 }
 
 export function linkToGroups(): string {
-  return '/-/groups/';
+  return CurOrigin + '/-/groups/';
 }
 
 
 // RENAME to linkToPatsProfile, and remove that fn
+// Maybe _split_in_2:  relUrlToPatProfile()  and  fullUrlToPatsProfile()?
 export function linkToUserProfilePage(who: Who): St {
-  return linkToPath(pathTo(who));
+  return pathTo(who);
 }
 
 // RENAME to pathToProfile ?
@@ -414,7 +457,7 @@ export function linkToDraftSource(draft: Draft, pageId?: PageId, postNr?: PostNr
   // The current page id and post nr, might be different from draft.pageId and draft.postNr,
   // if the post was moved to another page. So better use pageId, it's up-to-date the correct
   // page id directly from the server.
-  const maybeNewPageUrl = (): string => origin() + '/-' + (pageId || locator.pageId);
+  const maybeNewPageUrl = (): St => CurOrigin + '/-' + (pageId || locator.pageId);
 
   let theLink;
 
@@ -422,7 +465,7 @@ export function linkToDraftSource(draft: Draft, pageId?: PageId, postNr?: PostNr
     case DraftType.Topic:
       // Incl page url, so we'll go to the right place, also if the topic list is located at e.g.
       // /forum/  or  /sub-community/ instead of  /.
-      theLink = origin() + '/-' + locator.pageId + FragActionHashComposeTopic;
+      theLink = CurOrigin + '/-' + locator.pageId + FragActionHashComposeTopic;
       if (draft.topicType) theLink += FragParamTopicType + draft.topicType;
       if (locator.categoryId) theLink += FragParamCategoryId + locator.categoryId;  // [305RKTJ33]
       break;
@@ -459,7 +502,7 @@ export function linkToDraftSource(draft: Draft, pageId?: PageId, postNr?: PostNr
 
 export function linkToNotificationSource(notf: Notification): string {
   if (notf.pageId && notf.postNr) {
-    return origin() + '/-' + notf.pageId + FragParamPostNr + notf.postNr;
+    return CurOrigin + '/-' + notf.pageId + FragParamPostNr + notf.postNr;
   }
   else {
     die("Unknown notification type [EsE5GUKW2]")
@@ -468,26 +511,27 @@ export function linkToNotificationSource(notf: Notification): string {
 
 
 export function linkToCat(cat: Cat): St {
-  return origin() + '/latest/' + cat.slug;
+  return CurOrigin + '/latest/' + cat.slug;
 }
 
 
 export function linkToRedirToAboutCategoryPage(categoryId: CategoryId): string {
-  return origin() + '/-/redir-to-about?categoryId=' + categoryId;
+  return CurOrigin + '/-/redir-to-about?categoryId=' + categoryId;
 }
 
 
 export function linkToResetPassword(): string {
+  // Use the Talkyard server origin if any. Otherwise, a <a href... target=_blank> would open in
+  // new tab, possibly resolved against the embedd*ing* website origin, but we wan't Ty's
+  // origin, to reset a Ty password.
+  // [complete_origin]
   return origin() + '/-/reset-password/specify-email';
 }
 
 
 export function linkToTermsOfUse(): string {
+  // [complete_origin]
   return origin() + '/-/terms-of-use';
-}
-
-export function linkToAboutPage(): string {
-  return origin() + '/about';
 }
 
 
@@ -497,6 +541,7 @@ export function linkToUpload(origins: Origins, uploadsPath: string): string {
   // origin = the remote origin, otherwise the pic urls would resolve relative to
   // the *blog*'s address, but the blog doesn't host the pics (they'd be 404 Not Found).
   // Otherwise 3) no origin needed (empty string).
+  // [complete_origin]
   const origin = origins.anyUgcOrigin || origins.anyCdnOrigin || origins.embeddedOriginOrEmpty;
   const uploadsUrlBasePath = '/-/u/';
   return origin + uploadsUrlBasePath + origins.pubSiteId + '/' + uploadsPath;

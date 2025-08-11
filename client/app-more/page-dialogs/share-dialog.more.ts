@@ -107,13 +107,6 @@ const ShareDialog = createComponent({
         if (eds.isInEmbForum) {
           // This'll look at eds.talkyardPathParam. [deep_emb_links]
           url = linkToPath(pagePath) + hash;
-          /*
-          const embUrlNoHash = embeddingUrl.split('#')[0];
-          const embUrlNoTyPath = embUrlNoHash.replace(/&?ty=[^&;]*   /g, '');
-          const querySeparator = embUrlNoTyPath.indexOf('?') === -1 ? '?' : '&';
-          const talkyardPath = '/-' + ReactStore.getPageId() + hash;
-          url = embUrlNoTyPath + querySeparator + 'ty=' + encodeURI(talkyardPath);
-          */
         }
         else {
           url = origin + pagePath + hash;

@@ -74,7 +74,7 @@ export const StupidDialog = createComponent({
 
   open: function(stuff: StupidDialogStuff) {
     const winWidth = window.innerWidth;
-    const atX = eds.isInIframe ? winWidth / 2 : undefined;  // was: isInEmbeddedCommentsIframe
+    const atX = eds.isInIframe ? winWidth / 2 : undefined;
     this.setState({ isOpen: true, stuff, atX, winWidth }, () => {
       if (stuff.withCloseFn) {
         stuff.withCloseFn(this.close);
@@ -125,7 +125,9 @@ export const StupidDialog = createComponent({
       preventClose || (stuff.closeOnClickOutside === false) ? undefined : makeCloseFn(0);
 
     // CLEAN_UP, SMALLER_BUNDLE: use the same type of dialog for both non-iframe and iframe.
-    let result;
+    // UX: What about the embedded editor — it's sometimes a bit small, and the modal then
+    // not completely visible. But it's just the [be_kind_to_the_others] message, currently?
+    let result: RElm;
     if (!eds.isInEmbeddedCommentsIframe && !eds.isInEmbForum) {
       result = (
         Modal({

@@ -182,7 +182,7 @@ if (_narrow) {
 try {
   var _searchParams = new URLSearchParams(location.search);
   var _embHow = _searchParams.get('embHow'); // [emb_forum]
-  var _embgUrl = _searchParams.get('embgUrl') || _searchParams.get('embeddingUrl'); // [emb_forum] [clean_up_embg_url]
+  var _embgUrl = _searchParams.get('embgUrl') || _searchParams.get('embeddingUrl'); // [emb_forum] [rm_embeddingUrl_param]
   var _embPathParam = _searchParams.get('embPathParam'); // [emb_forum]
   var _ssoHow = _searchParams.get('ssoHow');
   var _class = _searchParams.get('htmlClass');
@@ -295,13 +295,14 @@ if (!eds.isInEmbeddedEditor) {
   */
 
 // ignore server side, and 'embeddingUrl' too, except for looking up page?
-// Don't incl in static page html?
+// Don't incl in static page html? Or do [cache_embg_url] — if caching html per embedding url,
+// see plannded:  page_html_cache_t.param_embg_url_or_empty_c.
 eds.embgUrl = _embgUrl;
 eds.embPathParam = _embPathParam;
                                         //  "https: //  hostname"
 eds.embgOrigin = _embgUrl && _embgUrl.match(/^[^/]*\/\/[^/]+/)[0];  // [extr_origin]
 eds.embeddingOrigin = eds.embgOrigin;   // for now. Remove 'embeddingOrigin' later?
-                                        // Need to review usage in the editor though.
+                      // Need to review usage in the editor though. [rm_embeddingUrl_param]
 
 eds.embHow = _embHow;
 eds.ssoHow = _ssoHow;
@@ -319,6 +320,17 @@ var typs: PageSession = {
       !eds.isInIframe,  // [iframe_cookies_always_broken]
 };
 
+
+// Move back to prelude.ts?  And move the  makeBetterFn() etc below to ...
+// slim-bundle.ts?
+function _isServerSide(): Bo {
+  return !!window['ReactDOMServer'];
+}
+
+function _url_isRelative(url: St | URL): Bo {  // [dupl_rel_url_fn]
+  return url && url[0] === '/' && url[1] !== '/';
+}
+
 // 1) Make pushState() and replaceState() work in iframes — not sure why, but only
 // *sometimes* the browser complains that: [hist_push_in_iframe])
 //
@@ -335,31 +347,37 @@ var typs: PageSession = {
 //
 // 2) Tell Talkyard's code in the embedd*ing* window that now we're at a new url, so
 // we can update the url, e.g.
-//   from:  https://example.com/embedding/page?talkyardPath=/-/forum-page
-//     to:  https://example.com/embedding/page?talkyardPath=/-/other-forum-page
+//   from:  https://example.com/embedding/page#/-/forum-page
+//     to:  https://example.com/embedding/page#/-/other-forum-page
 //
-if (eds.isInEmbForum) { // SHOULD: && !isServerSide()
-  const origPushState = window.history.pushState;
-  const origReplaceState = window.history.replaceState;
+if (eds.isInEmbForum && !_isServerSide()) {
+  type StateFn = (state: any, unused: St, url?: St | URL | N) => Vo;
+  const origPushState: StateFn = window.history.pushState;
+  const origReplaceState: StateFn = window.history.replaceState;
 
-  window.history.pushState = function(state, unused, url) {
-    let betterUrl = url;
-    if (url[0] === '/') betterUrl = location.origin + url;
-    origPushState.call(window.history, state, unused, betterUrl);
-    sendNewPathToEmbeddingWin(url);
+  function makeBetterFn(origFn: StateFn) {
+    return function(state: any, unused: St, url?: St | URL | N) {
+      let betterUrl = url;
+      if (_url_isRelative(url)) {
+        betterUrl = location.origin + url;
+      }
+      origFn.call(window.history, state, unused, betterUrl);
+      // Ignore '' and null. '' won't change the address bar anyway and we don't use any
+      // push/replaceState state.
+      if (url) {
+        sendNewPathToEmbeddingWin(url);
+      }
+    };
   };
 
-  window.history.replaceState = function(state, unused, url) {
-    let betterUrl = url;
-    if (url[0] === '/') betterUrl = location.origin + url;
-    origReplaceState.call(window.history, state, unused, betterUrl);
-    sendNewPathToEmbeddingWin(url);
-  };
+  window.history.pushState = makeBetterFn(origPushState);
+  window.history.replaceState = makeBetterFn(origReplaceState);
 
   // If navigating back, using the browser's Back buttons, tell the embedding parent win
   // to update the Talkyard forum path.
-  window.addEventListener('popstate', (event) => {
-    console.log(`POPSTATE, location: ${document.location}, state: ${JSON.stringify(event.state)}`);
+  window.addEventListener('popstate', (_event) => {
+    //console.log(`POPSTATE, location: ${document.location
+    //      }, state: ${JSON.stringify(event.state)}`);
     sendNewPathToEmbeddingWin(location.toString());
   });
 }
@@ -372,6 +390,7 @@ function sendNewPathToEmbeddingWin(url: St | URL) {
   // to the embedding page. Let's remove them.
   // (Would it be cleaner to do this in the embedding script? So they're added and removed
   // in the same file? Oh well.)
+  // [embg_ty_url]
   const queryIx = pathQueryHash.indexOf('?');
   if (queryIx !== -1) {
     const hashIx = pathQueryHash.indexOf('#');
@@ -386,7 +405,8 @@ function sendNewPathToEmbeddingWin(url: St | URL) {
     params.delete('embeddingScriptV');
     params.delete('category');
     params.delete('logLevel');
-    const queryStrAft = '?' + params.toString();
+    const queryParams = params.toString();
+    const queryStrAft = !queryParams ? '' : '?' + queryParams;
     if (queryStrBef !== queryStrAft) {
       pathQueryHash = pathQueryHash.replace(queryStrBef, queryStrAft);
     }

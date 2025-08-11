@@ -527,6 +527,7 @@ var serverJavascriptSrc = [
     'node_modules/create-react-class/create-react-class.min.js',
     'node_modules/react-router-dom/umd/react-router-dom.min.js',
     'client/third-party/tiny-querystring.umd.js',
+    // URL and URLSearchParams are missing in Nashorn, so we use url-shim.
     'node_modules/url-shim/dist/urlshim.min.js',
     'node_modules/markdown-it/dist/markdown-it.min.js',
     'client/third-party/lodash-custom.js',

@@ -75,7 +75,6 @@ export var PageRoleDropdown = createComponent({
     const pageRole = props.pageRole;
     const complicated = props.complicated;
     const store: Store = this.props.store;
-    // Ooops, missing in the emb editor!  But why. —> [emb_ed_compose_page_err_here]
     const settings: SettingsVisibleClientSide = store.settings;
     const me: Myself = store.me;
     const showAllOptions = state.showAllOptions;
@@ -118,7 +117,7 @@ export var PageRoleDropdown = createComponent({
 
     // Toggling between the two open chat types, AnyoneChat and StandardChat, is fine.
     const chatOptions = (props.pageExists && !page_isOpenChat(pageRole)) ||
-            user_isGuest(me) || settings.enableChat === false ? null :  // [emb_ed_compose_page_err_here]
+            user_isGuest(me) || settings.enableChat === false ? null :
         rFr({},
           ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_OpenChatO',
             activeEventKey: pageRole, eventKey: PageRole.OpenChat,

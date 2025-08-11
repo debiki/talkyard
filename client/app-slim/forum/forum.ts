@@ -241,7 +241,7 @@ export const ForumComponent = createReactClass(<any> {
     const slashSlug = newCatSlug ? '/' + newCatSlug : '';
     const props: ForumComponentProps = this.props;
     props.history.push({
-      pathname: forumPath + nextPath + slashSlug,  // dupl [.cat_ln]
+      pathname: forumPath + nextPath + slashSlug,  // dupl _cat_ln
       search: props.location.search,
     });
   },
@@ -613,16 +613,13 @@ const ForumButtons = createComponent({
             text: St, linkId: St, extraClass?: St) => {
       // Also see the editor's [Auto|show preview] button with depressed state. [double_btn]
       const explSelected = props.explSetSortOrder === order ? 'n_ExplSel ' : '';
-      return NavLink({  // _TyLink_problems
+      return NavLink({  // [TyLink_problems]
           // The onClick handler will remember that we set the sort order explicitly,
           // so it'll stay, when jumping between categories ...
           onClick: () => props.setSortOrder(order, rememberSortOrder, slashSlug),
           // ... whilst this <a> link let's us middle mouse click to open in new tab.
-          to: props.forumPath + order + slashSlug +  // dupl [.cat_ln]
-                props.location.search,
-          // Doesn't work w TyLink:
-          //to: { pathname: props.forumPath + order + slashSlug,  // dupl [.cat_ln]
-          //      search: props.location.search },
+          to: props.forumPath + order + slashSlug +  // dupl _cat_ln
+                (props.location.search || ''),
           id: linkId,
           className: 'btn esForum_catsNav_btn ' + explSelected + (extraClass || ''),
           activeClassName: 'active' }, text);
@@ -635,7 +632,6 @@ const ForumButtons = createComponent({
             makeCategoryLink(RoutePathCategories, false, '', t.fb.ViewCategories,
                 'e_ViewCatsB', 'esForum_navLink c_F_BB_CatsLn');
     const tagsListLink = omitTagsLink ? null :
-            // was: NavLink
             TyLink({ to: UrlPaths.Tags, className: 'btn esForum_navLink c_F_BB_TagsLn' },
               "Tags");  // I18N  t.fb.Tags
 
@@ -1378,7 +1374,7 @@ function CatNameDescr(props: { store: Store, forumPath: St, activeCategory: Cat,
     const categoryMenuItems = catsSameLevel.map((category: Cat) => {
       const sortOrderPath = category.doItVotesPopFirst ? RoutePathTop : RoutePathLatest;
       return MenuItem({ key: category.id, active: thisCat && thisCat.id === category.id,
-          href: props.forumPath + sortOrderPath + '/' + category.slug, // dupl [.cat_ln]
+          href: props.forumPath + sortOrderPath + '/' + category.slug, // dupl _cat_ln
           onClick: () => props.setCategory(category.slug, category) },
             r.span({ className: category_iconClass(category, store) }, category.name));
     });
@@ -1974,16 +1970,14 @@ const CategoryRow = createComponent({
 });
 
 
-function CatLink(props: { category: Category, forumPath: string, location,
+function CatLink(props: { category: Category, forumPath: string, location: { search: St },
       className: St, isDefaultText?: RElm }) {
   const forumPath = props.forumPath;
   const category = props.category;
   const sortOrderPath = category.doItVotesPopFirst ? RoutePathTop : RoutePathLatest;
-  return TyLink({
-      to: forumPath + sortOrderPath + '/' + category.slug + props.location.search,
-      /* to: {  // dupl [.cat_ln]   doesn't work w TyLink
-      pathname: forumPath + sortOrderPath + '/' + category.slug,
-      search: props.location.search }, */ className: props.className },
+  return TyLink({   // dupl _cat_ln
+      to: forumPath + sortOrderPath + '/' + category.slug + (props.location.search || ''),
+      className: props.className },
     category.name, props.isDefaultText);
 }
 

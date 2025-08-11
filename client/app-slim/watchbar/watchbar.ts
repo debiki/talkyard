@@ -204,6 +204,7 @@ const ChatChannels = createComponent({
         const category = store_getCurrOrDefaultCat(store);
         dieIf(!category, 'EsE4KPE02');
         // COULD let pat choose between joinless, and join-first, chat types? [JoinlessChat]
+        // Later: Use ReactActions.editNewForumPage()  [emb_chat]
         editor.editNewForumPage(category.id, PageRole.OpenChat);
       });
     });

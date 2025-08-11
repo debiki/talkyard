@@ -245,7 +245,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
     }
 
     // Legacy. Not url encoded (so, skipping URLDecoder.decode()).
-    // DO_AFTER v0.2025.011: Remove this `orElse`.
+    // Remove later:  [rm_embeddingUrl_param]
     if (anyUrl.isEmpty)
       anyUrl = queryString.get("embeddingUrl").flatMap(_.headOption)
 

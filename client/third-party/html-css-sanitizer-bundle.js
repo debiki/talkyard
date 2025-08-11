@@ -5006,13 +5006,14 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
 
         // CLEAN_UP
         // Remove this, and add  followLinksTo  to the demo forums instead.
-        // // SHOULD add a 'rel=follow links to domains: ...' config value instead of this: [relfollow]
-        // if (/^https:\/\/[^/.#?]+\.stackexchange\.com\/.*/.test(attribs.href) ||
-        //     /^https:\/\/stackoverflow\.com\/.*/.test(attribs.href)) {
-        //   // Allow StackExchange and StackOverflow rel=follow links, fine.
-        //   newAttribs.rel = 'follow';  // [2QWGRC8P]
-        //   nofollow = false;
-        // }
+        // *Done*, but also need to run a background job  [backgr_upd_rel_follow]
+        // that updates all old pages so they'll make use of the new settings and start
+        // following links. So let's keep this, for now:
+        if (/^https:\/\/[^/.#?]+\.stackexchange\.com\/.*/.test(attribs.href) ||
+            /^https:\/\/stackoverflow\.com\/.*/.test(attribs.href)) {
+          // Allow StackExchange and StackOverflow rel=follow links, fine.
+          relFollow = 1; // yes, follow (don't add nofollow)  // [2QWGRC8P]
+        }
       }
 
       if (relFollow === -1) {

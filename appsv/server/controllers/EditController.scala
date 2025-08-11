@@ -461,6 +461,7 @@ object EditController {
     o"""Cannot save empty posts. If you want to delete this post, please use
         the buttons below the post."""
 
+  // [be_kind_to_the_others]
   val ReplyGuidelines = i"""
     |<p>Be kind to the others.
     |<p>Criticism is welcome — and criticize ideas, not people.

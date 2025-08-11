@@ -116,8 +116,8 @@ function onMessage(event) {
           if (!mainWin.typs.xsrfTokenIfNoCookies) {
             mainWin.typs.xsrfTokenIfNoCookies = eventData.xsrfToken;
             typs.xsrfTokenIfNoCookies = eventData.xsrfToken;
-            // mainWin.typs.sessType = eventData.sessType;   ?
-            // typs.sessType = eventData.sessType;           ?
+            mainWin.typs.sessType = eventData.sessType;
+            typs.sessType = eventData.sessType;
           }
         }
 
@@ -305,15 +305,15 @@ function syncDocSizeWithIframeSize() {
     const footerMargin = 28; // see page.styl [footer_margin_top]
     const footerHeight = anyFooter && (anyFooter.clientHeight + footerMargin) || 0;
 
+    // There's no editor — it's in its own iframe. If there had been:
+    // -----
     // (There's an 1px border, so don't use `.clientHeight` — it ignores borders.
     // Hmm, but then the iframe starts growin 1px at a time, forever! So, don't.
     // But why not?)
-    const anyEditor = $first('#debiki-editor-controller');
+    // const anyEditor = $first('#debiki-editor-controller');
     // Or skip? [dont_incl_editor_in_ifram_height]
-    const editorHeight = 0; // anyEditor && anyEditor.clientHeight || 0;
-
-    // Skip, included in anyEditor already:
-    //const anyEditorBtns = $first('.submit-cancel-btns');
+    // const editorHeight = anyEditor && anyEditor.clientHeight || 0;
+    // -----
 
     // Make space for any dialogs, e.g. the notf prefs dialog — they can be taller than
     // the emb cmts iframe height, before there're any comments. [IFRRESIZE]
@@ -325,8 +325,9 @@ function syncDocSizeWithIframeSize() {
       // Was: anyDialog.clientHeight + 30, but that didn't incl whitespace above.
     }
 
+    // UX BUG: Doesn't downsize itself, if emb forum.
     const currentHeight = Math.max(
-            currentDiscussionHeight + footerHeight + editorHeight,
+            currentDiscussionHeight + footerHeight, // + editorHeight
             dialogHeightPlusPadding);
 
     if (lastWidth === currentWidth && lastHeight === currentHeight)

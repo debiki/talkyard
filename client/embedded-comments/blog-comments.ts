@@ -217,7 +217,7 @@ let sessionIframe: HIframeElm | U | Nl;
 
 let commentsElems: HTMLCollectionOf<Elm> | U | Nl;
 let loadingElms: HElm[] = [];
-let iframeElms: HIframeElm[] = [];
+let iframeElms: (HIframeElm | U)[] = [];
 let iframesInited: (Bo | U)[] = [];
 let pendingIframeMessages: Ay[][] = [];
 
@@ -436,14 +436,15 @@ function addCommentsIframe(ps: { appendInside: HElm | St, discussionId: St }): H
 
 function forgetRemovedCommentIframes() {
   for (let i = iframeElms.length - 1; i >= 0; --i) {
-    const iframe = iframeElms[i];
-    if (!iframe.isConnected)  {
+    const iframe: HIframeElm | U = iframeElms[i];
+    if (!iframe || !iframe.isConnected)  {
       loadingElms.splice(i, 1);
       iframeElms.splice(i, 1);
       iframesInited.splice(i, 1);
       pendingIframeMessages.splice(i, 1);
       numDiscussions = iframeElms.length - FirstCommentsIframeNr;
-      logD(`Forgot removed iframe ${iframe.name}, ${numDiscussions} discussions left.`);
+      logD(`Forgot removed iframe nr ${i} "${iframe ? iframe.name : ''}", ${
+              numDiscussions} discussions left.`);
     }
   }
 }
@@ -520,7 +521,8 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
     }
   }
 
-  // Could rename param, and encode the value, see above [enc_aft]. [clean_up_embg_url]
+  // Could rename param, and encode the value, see above [enc_aft].
+  // [rm_embeddingUrl_param]   [embg_url_for_real]
   const embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
 
   // NEXT:
@@ -698,6 +700,8 @@ function createEditorIframe() {
   logD("inserted editorWrapper");
 
   // [embng_url]
+  // BUG, SLEEPING: Why do I set embgUrl to the *origin* instead of the url? Here I set it
+  // to the url instead (origin + relative url): [embg_url_for_real]
   let editorIframeUrl =
         `${serverOrigin}/-/embedded-editor?embeddingUrl=${location.origin}` +
         scriptVersionQueryParam;

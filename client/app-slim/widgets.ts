@@ -178,7 +178,7 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
       // @endif
 
       const href = newProps.href;
-      const linksToAdminArea = url_isToTyPath(href, UrlPaths.AdminArea); // dupl [5JKSW20]
+      const linksToAdminArea = href && href.indexOf(UrlPaths.AdminArea) === 0; // dupl [5JKSW20]
       isExternal = isExternal || eds.isInAdminArea !== linksToAdminArea;
 
       // Single-page-app navigate:
@@ -202,31 +202,32 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
       // Make links work also if in an embedded forum.  [deep_emb_links]
       // Change from e.g.: /-123/ty-page-slug
       // to: https://www.ex.co/embedded-forum#/-123/ty-page-slug  (if embPathParam = '#/')
+      //
       // (But don't modify links passed to the onClick handler above — they'll work fine
       // as is, e.g.  /-123/some-page  or  /-/users/some_username,  ReactRouter resolves
-      // those relative the iframe origin, apparently, not the embedding page's origin.)
+      // those relative the iframe origin (which is the Talkyard server addr), apparently,
+      // not the embedding page's origin.)
       //
       if (eds.isInEmbForum && newProps.href) {
-        if (isExternal) {
-          // Don't open links inside the iframe.
-          newProps.target = '_blank';
-          newProps.rel = 'noopener'; // lets incl, although not needed? From Ty to Ty should be ok
-          if (linksToAdminArea) {
-            // Need the origin, since we're in an iframe, and '/-/admin/' without origin would
-            // be relative the embedding website.
-            newProps.href = location.origin + newProps.href;
-          }
-          else {
-            // This link should already include an origin.
-            // @ifdef DEBUG
-            dieIf(newProps.href.match(/^https?:\/\//),
-                    `Ext link w/o origin: '${newProps.href}' [TyE40264]`);
-            // @endif
-            void 0; // iik
-          }
+        if (!isExternal) {
+          newProps.href = linkToPath(newProps.href);
         }
         else {
-          newProps.href = linkToPath(newProps.href);
+          // Don't open links to other websites, or to the admin area, inside the iframe.
+          const hasOrigin = newProps.href.match(/^(https?:)?\/\/[^:/]+/);
+          newProps.target = '_blank';
+          newProps.rel = 'noopener';
+          if (hasOrigin) {
+            // To some external website? Use as-is.
+          }
+          else {
+            // To the admin area, or some other Talkyard site section we want to open
+            // in its own tab.
+            // Add the origin, since we're in an iframe, and '/-/admin/' without origin would
+            // be relative the embedding website.
+            const missingSlash = newProps.href[0] !== '/' ? '/' : ''; // don't mangle the hostname
+            newProps.href = location.origin + missingSlash + newProps.href;
+          }
         }
       }
     }
@@ -280,8 +281,9 @@ export function MenuItem(props: { id?: St, className?: St, active?: Bo,
     onClick, tabIndex: props.tabIndex || -1 };
   return (
     r.li({ role: 'presentation', className: className, key: props.key },
-      // Can't we use TyLink? So href works also if in emb forum.
-      r.a.apply(null, [linkProps, ...children])));
+      // UNTESTED: Does this make  function makeCatDropdown() { .. MenuItem({ href })}
+      // open correctly in a new tab, if middle clicked?
+      TyLink.apply(null, [linkProps, ...children])));
 
 }
 
@@ -293,15 +295,17 @@ export function MenuItemLink(props, ...children) {
   // If we're in the admin area, use <a href> because then the destinations are in another
   // single-page-app. And if we're in the forum app, use Link — no, TyLink — for instant
   // within-the-SPA navigation.  A bit dupl, see [5JKSW20]
-  const linksToAdminArea = url_isToTyPath(props.to, UrlPaths.AdminArea); // dupl [5JKSW20]
+  const linksToAdminArea = props.to.indexOf(UrlPaths.AdminArea) === 0; // dupl [5JKSW20]
   const isExternal = props.to.indexOf('//') >= 0;  // e.g. https://  or  //hostname/...
   const useSinglePageAppLink = !isExternal && eds.isInAdminArea === linksToAdminArea;
 
   // If useSinglePageAppLink, create a Link({ to: ... }),
   // otherwise, create a r.a({ href: ... }):
 
-  const linkFn = useSinglePageAppLink ? TyLink : r.a;
-  const addrAttr = useSinglePageAppLink ? 'to' : 'href';
+  // But if *not* TyLink, we'd want to prefix any embedded origin, so won't resolve relative
+  // the embedd*ing* website! Can maybe alw use TyLink? It does the right thing automatically now?
+  const linkFn = useSinglePageAppLink ? TyLink : TyLink; // r.a;   CLEAN_UP  UNTESTED if !useSinglePageAppLink
+  const addrAttr = useSinglePageAppLink ? 'to' : 'to';   // href';
 
   const linkProps = { role: 'button', tabIndex: props.tabIndex || -1,
     target: props.target, id: props.id };

@@ -276,7 +276,9 @@ export function navToNewPage(pageId: PageId, sendToWhichFrame?: MainWin) {
     sendToCommentsIframe(['navToNewPage', [pageId]], sendToWhichFrame);
   }
   else {
-    // The server will redirect to the correct page slug.
+    // Single-page-app navigate to the new page. We'll `history.replaceState()` with
+    // the page slug, once the page json has been loaded from the server (rather than
+    // showing only the page id in the url).
     page.Hacks.navigateTo('/-' + pageId);
   }
 }

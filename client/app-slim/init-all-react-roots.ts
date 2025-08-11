@@ -146,7 +146,7 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate'
         const forumDefaultPath = forumRootSlash + (store.settings.forumMainView || RoutePathLatest);
 
         // This redirects e.g. '/forum/' and '/forum' to '/forum/latest':
-        // (But doesn't work in an iframe? [iframe_forum_latest_redir])
+        // (Also in embedded forums, see: [iframe_forum_latest_redir])
         sectionsAndPages.push(RedirPath({ path: forumRootSlash, to: forumDefaultPath, exact: true }));
 
         const fc = forum.ForumComponent;
