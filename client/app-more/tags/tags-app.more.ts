@@ -421,7 +421,11 @@ const OneTagPanel = React.createFactory<OneTagPanelProps>(function(props) {
                   // UX [cancel_resets] WOULD search for Cancel in all of Ty and
                   // make sure cancel forgets any edits-in-progress?
                   setTagTypeEdited({ ...tagType });
-                } }, "Cancel")
+                } }, !savingText ? "Cancel" :
+                  // If we've saved the changes, "Cancel" doesn't make sense — change the
+                  // button title to Ok. Still good with a btn, so there's a way to
+                  // leave edit mode.
+                  "Ok")
               : Button({ onClick: () => setIsEditing(true) }, "Edit"),
             // Can't save if slug ends with '-'. [_ending_with_dash]
             !isEditing || !typeEdited || tagTypeEdited.slugDash ? null :
