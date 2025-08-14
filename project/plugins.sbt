@@ -51,7 +51,7 @@ addDependencyTreePlugin
 // ---------------------------------------------------------------
 // Version 0.13 adds some cross build capabilities, we don't need, let's wait.
 
-addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.12.0")
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.13.1")
 
 
 // [ty_v1] Remove this?  Maybe picks an ok  scala-xml  nowadays?
