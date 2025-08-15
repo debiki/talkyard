@@ -184,58 +184,30 @@ let cachedEmbPathParam: St | U;
 /// telling the Talkyard embedded-forum script on the embedding page what Talkyard page
 /// we actually want.
 ///
-/// So we need our own <Link> component instead?  See  widgets.ts
+/// So we need our own <Link> component instead?
 ///
-// REFACTOR, later: Move  TyLink  from widgets.ts   to here?
-// UX: Click on space? If 'btn'?  [sch_b_space]
-export const PrimaryLinkButton: any = makeWidget(r.a, ' btn btn-primary');
-export const LinkUnstyled: any = makeWidget(r.a, ''); // renaming to TyLink
-export const TyLink = LinkUnstyled;
-export const LinkButton: any = makeWidget(r.a, ' btn btn-default');  // not blue [2GKR5L0]
-export const ExtLinkButton: any = makeWidget(r.a, ' btn btn-default', { ext: true });
+export const TyLink: any = makeTyLink('');
+
+export const LinkUnstyled = TyLink;  // deprecated name, renaming to TyLink
+
+export const LinkButton: any        = makeTyLink(' btn btn-default');  // not blue [2GKR5L0]
+export const PrimaryLinkButton: any = makeTyLink(' btn btn-primary');
+export const ExtLinkButton: any     = makeTyLink(' btn btn-default', { ext: true });
 
 
-function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
+function makeTyLink(spaceWidgetClasses: St, extraProps?) {
   return function(origProps, ...children) {
     const newProps: any = _.assign({}, origProps || {}, extraProps);
-    const helpText = newProps.help;
-    if (helpText) {
-      // We'll show a help text <p> below the widget.
-      delete newProps.help;
-      newProps.key = newProps.key || 'widget';
-    }
     newProps.className = (origProps.className || '') + spaceWidgetClasses;
 
-    // Prevent automatic submission of Button when placed in a <form>.
-    // And, if primary button, add Bootstrap's primary button color class.
-    if (what === r.button || what === r.input && extraProps.type === 'submit') {
-      newProps.onClick = function(event) {
-        if (origProps.disabled) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-        if (origProps.onClick) {
-          event.preventDefault();
-          origProps.onClick(event);
-        }
-        // else: Don't prevent-default; instead, submit form.
-      };
-
-      if (origProps.primary) {
-        newProps.className = newProps.className + ' btn-primary';
-      }
-      // Don't do this inside the above `if`; that won't work if `.primary` is undef/false.
-      delete newProps.primary;
-    }
-
     // React Bootstrap's Link uses 'to', so better if UnstyledLink works with 'to' too, not only 'href'.
-    if (what === r.a && !newProps.href)
+    if (!newProps.href)
       newProps.href = newProps.to;
 
     // Make link buttons navigate within the single-page-app, no page reloads. Even if they're
     // in a different React root. The admin app is it's own SPA [6TKQ20] so, when in the admin area,
     // links to user profiles and discussions, are external. And vice versa.
-    if (what === r.a && (!newProps.onClick || eds.isInEmbForum && newProps.href)) {
+    if (!newProps.onClick || eds.isInEmbForum && newProps.href) {
       let isExternal = newProps.ext || eds.isInEmbeddedCommentsIframe;
       // @ifdef DEBUG
       dieIf(isServerSide() && (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum), 'TyE2KWT05');
@@ -298,14 +270,9 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
 
     delete newProps.afterClick;
     delete newProps.ext;
+    delete newProps.to;
 
-    const anyHelpDiv =
-        helpText && r.p({ className: 'help-block', key: newProps.key + '-help' }, helpText);
-
-    const widgetArgs = [newProps].concat(children);
-    const widget = what.apply(undefined, widgetArgs);
-
-    return anyHelpDiv ? [widget, anyHelpDiv] : widget;
+    return r.a(newProps, ...children);
   }
 }
 
