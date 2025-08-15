@@ -187,6 +187,127 @@ let cachedEmbPathParam: St | U;
 /// So we need our own <Link> component instead?  See  widgets.ts
 ///
 // REFACTOR, later: Move  TyLink  from widgets.ts   to here?
+// UX: Click on space? If 'btn'?  [sch_b_space]
+export const PrimaryLinkButton: any = makeWidget(r.a, ' btn btn-primary');
+export const LinkUnstyled: any = makeWidget(r.a, ''); // renaming to TyLink
+export const TyLink = LinkUnstyled;
+export const LinkButton: any = makeWidget(r.a, ' btn btn-default');  // not blue [2GKR5L0]
+export const ExtLinkButton: any = makeWidget(r.a, ' btn btn-default', { ext: true });
+
+
+function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
+  return function(origProps, ...children) {
+    const newProps: any = _.assign({}, origProps || {}, extraProps);
+    const helpText = newProps.help;
+    if (helpText) {
+      // We'll show a help text <p> below the widget.
+      delete newProps.help;
+      newProps.key = newProps.key || 'widget';
+    }
+    newProps.className = (origProps.className || '') + spaceWidgetClasses;
+
+    // Prevent automatic submission of Button when placed in a <form>.
+    // And, if primary button, add Bootstrap's primary button color class.
+    if (what === r.button || what === r.input && extraProps.type === 'submit') {
+      newProps.onClick = function(event) {
+        if (origProps.disabled) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        if (origProps.onClick) {
+          event.preventDefault();
+          origProps.onClick(event);
+        }
+        // else: Don't prevent-default; instead, submit form.
+      };
+
+      if (origProps.primary) {
+        newProps.className = newProps.className + ' btn-primary';
+      }
+      // Don't do this inside the above `if`; that won't work if `.primary` is undef/false.
+      delete newProps.primary;
+    }
+
+    // React Bootstrap's Link uses 'to', so better if UnstyledLink works with 'to' too, not only 'href'.
+    if (what === r.a && !newProps.href)
+      newProps.href = newProps.to;
+
+    // Make link buttons navigate within the single-page-app, no page reloads. Even if they're
+    // in a different React root. The admin app is it's own SPA [6TKQ20] so, when in the admin area,
+    // links to user profiles and discussions, are external. And vice versa.
+    if (what === r.a && (!newProps.onClick || eds.isInEmbForum && newProps.href)) {
+      let isExternal = newProps.ext || eds.isInEmbeddedCommentsIframe;
+      // @ifdef DEBUG
+      dieIf(isServerSide() && (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum), 'TyE2KWT05');
+      // @endif
+
+      const href = newProps.href;
+      const linksToAdminArea = href && href.indexOf(UrlPaths.AdminArea) === 0; // dupl [5JKSW20]
+      isExternal = isExternal || eds.isInAdminArea !== linksToAdminArea;
+
+      // Single-page-app navigate:
+      //
+      if (!isExternal && !newProps.onClick) {
+        const afterClick = newProps.afterClick;  // field deleted below
+
+        newProps.onClick = function(event) {
+          event.preventDefault(); // avoids full page reload
+          debiki2.page['Hacks'].navigateTo(href);
+          // Some ancestor components ignore events whose target is not their own divs & stuff.
+          // Not my code, cannot change that. I have in mind React-Bootstrap's Modal, which does this:
+          // `if (e.target !== e.currentTarget) return; this.props.onHide();` — so onHide() never
+          // gets called. But we can use afterClick: ...:
+          if (afterClick) {
+            afterClick();
+          }
+        }
+      }
+
+      // Make links work also if in an embedded forum.  [deep_emb_links]
+      // Change from e.g.: /-123/ty-page-slug
+      // to: https://www.ex.co/embedded-forum#/-123/ty-page-slug  (if embPathParam = '#/')
+      //
+      // (But don't modify links passed to the onClick handler above — they'll work fine
+      // as is, e.g.  /-123/some-page  or  /-/users/some_username,  ReactRouter resolves
+      // those relative the iframe origin (which is the Talkyard server addr), apparently,
+      // not the embedding page's origin.)
+      //
+      if (eds.isInEmbForum && newProps.href) {
+        if (!isExternal) {
+          newProps.href = linkToPath(newProps.href);
+        }
+        else {
+          // Don't open links to other websites, or to the admin area, inside the iframe.
+          const hasOrigin = newProps.href.match(/^(https?:)?\/\/[^:/]+/);
+          newProps.target = '_blank';
+          newProps.rel = 'noopener';
+          if (hasOrigin) {
+            // To some external website? Use as-is.
+          }
+          else {
+            // To the admin area, or some other Talkyard site section we want to open
+            // in its own tab.
+            // Add the origin, since we're in an iframe, and '/-/admin/' without origin would
+            // be relative the embedding website.
+            const missingSlash = newProps.href[0] !== '/' ? '/' : ''; // don't mangle the hostname
+            newProps.href = location.origin + missingSlash + newProps.href;
+          }
+        }
+      }
+    }
+
+    delete newProps.afterClick;
+    delete newProps.ext;
+
+    const anyHelpDiv =
+        helpText && r.p({ className: 'help-block', key: newProps.key + '-help' }, helpText);
+
+    const widgetArgs = [newProps].concat(children);
+    const widget = what.apply(undefined, widgetArgs);
+
+    return anyHelpDiv ? [widget, anyHelpDiv] : widget;
+  }
+}
 
 
 
