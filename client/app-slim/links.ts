@@ -76,7 +76,7 @@ export function origin(): string {
     // see [many_embcom_iframes].
     //cachedIsInEmbForum = mainWin.eds.isInEmbForum;
     //cachedEmbgUrl = mainWin.eds.embgUrl || mainWin.eds.embeddingUrl || '';
-    //cachedEmbPathParam = mainWin.eds.embPathParam;
+    //cachedEmbUrlParam = mainWin.eds.embUrlParam;
   }
   return cachedEmbOrig;
 }
@@ -84,7 +84,7 @@ export function origin(): string {
 let cachedEmbOrig: St | U;
 let cachedIsInEmbForum: Bo;
 let cachedEmbgUrl: St | U;
-let cachedEmbPathParam: St | U;
+let cachedEmbUrlParam: St | U;
 
 
 /// We actually can't use ReactRouter's <Link> and <NavLink> — they generate hrefs
@@ -237,7 +237,7 @@ function makeTyLink(spaceWidgetClasses: St, extraProps?) {
 
       // Make links work also if in an embedded forum.  [deep_emb_links]
       // Change from e.g.: /-123/ty-page-slug
-      // to: https://www.ex.co/embedded-forum#/-123/ty-page-slug  (if embPathParam = '#/')
+      // to: https://www.ex.co/embedded-forum#/-123/ty-page-slug  (if embUrlParam = '#/')
       //
       // (But don't modify links passed to the onClick handler above — they'll work fine
       // as is, e.g.  /-123/some-page  or  /-/users/some_username,  ReactRouter resolves
@@ -321,7 +321,7 @@ export function linkToPath(tyPath: St): St {
   //   tyPath = location.pathname + tyPath;
   // }
 
-  if (eds.embPathParam === '#/') {
+  if (eds.embUrlParam === '#/') {
     // This'll look like:  https://www.ex.co/embedded-forum#/-123/talkyard-slug#any-hash
     res = embgUrl.origin + embgUrl.pathname + embgUrl.search + '#' + tyPath;
   }
@@ -330,8 +330,8 @@ export function linkToPath(tyPath: St): St {
     // the embedd*ing* website).
     return origin() + tyPath;
   }
-  /* Other embPathParam:s: Not impl.
-  else if (eds.embPathParam === '?/') {
+  /* Other embUrlParam:s: Not impl.
+  else if (eds.embUrlParam === '?/') {
     UNTE STED
     // This'll look like:  https://www.ex.co/embedded-forum?/-123/talkyard-slug#any-hash
     // Is this ever useful? Probably '#' above is better.
@@ -340,11 +340,11 @@ export function linkToPath(tyPath: St): St {
   else {
     UNT ESTED
     // This'll look like:  https://www.ex.com/embedded-forum?talkyardPath=/-/talkyard-page-slug
-    // if `eds.embPathParam` is '?talkyardPath'.
-    // We'll leave all query params intact, except for `eds.embPathParam` which we'll
+    // if `eds.embUrlParam` is '?talkyardPath'.
+    // We'll leave all query params intact, except for `eds.embUrlParam` which we'll
     // replace with the new path.
     // @ifdef DEBUG
-    dieIf(!eds.embPathParam.match(/\?[a-zA-Z_-]+/), 'TyEEMBPATHPARM');
+    dieIf(!eds.embUrlParam.match(/\?[a-zA-Z_-]+/), 'TyEEMBPATHPARM');
     // @endif
     // No need to encode '/+:', but '?&' — yes.
     // No longer needed! Using URLSearchParams.set() which encodes for us.
@@ -354,8 +354,8 @@ export function linkToPath(tyPath: St): St {
     //         .replace(/%3A/g, ':');
     // // `embgUrl.searchParams` is read-only, so create a new.
     // const params = new URLSearchParams(embgUrl.search);
-    // params.set(eds.embPathParam, tyPathEncoded);
-    embgUrl.searchParams.set(eds.embPathParam, tyPath);  // updates `embgUrl.search`
+    // params.set(eds.embUrlParam, tyPathEncoded);
+    embgUrl.searchParams.set(eds.embUrlParam, tyPath);  // updates `embgUrl.search`
     res = embgUrl.origin + embgUrl.pathname + embgUrl.searchParams.toString();
   } */
 

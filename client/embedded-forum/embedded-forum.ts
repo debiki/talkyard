@@ -279,8 +279,9 @@ function findTalkyardRelUrl(urlParam: St, loc: Location): [St, St] {
 // inside the iframe, we'll get a 'pathChanged' message, then we'll update the embedding
 // page url (window.location).
 //
-const initialTalkyardRelUrl = url_isRelative(talkyardUrlUnsafe) ?
-        talkyardUrlUnsafe : '/latest';
+const initialTalkyardPathQuery = url_isRelative(talkyardUrlUnsafe)
+        ? talkyardUrlUnsafe  // fine, it's a  /relative/path?and-maybe=query-params
+        : '/latest';         // weird, ignore
 
 
 
@@ -625,7 +626,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   const iframeTitle: StN = commentsElem.getAttribute('data-iframe-title');
   const htmlClass: StN = commentsElem.getAttribute('data-iframe-html-class');
 
-  /* _Skip_for_emb_forums. Using  embPathParam  instead, e.g. '#/'
+  /* _Skip_for_emb_forums. Using  embUrlParam  instead, e.g. '#/'
      for  https://www.ex.co/forum#/-123/embedded-page-slug.
 
   // The discussion id might include a bit weird chars — it might have been imported
@@ -701,7 +702,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   // And we want <a href=...> that works with embedded forums, so Talkyard needs to know
   // how to construct links to Talkyard pages inside an embedded iframe.
   if (talkyardUrlParam)
-    embUrlParams.set('embPathParam', talkyardUrlParam);   // RENAME to  'embUrlParam'
+    embUrlParams.set('embUrlParam', talkyardUrlParam);
 
   // COULD join all these to a single param, e.g. 'embConf=...base-64-enc-json-of-all-params...'
   // so it's more clear which params control how Talkyard is getting embedded
@@ -712,7 +713,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   const allUrlParams = ( // [emb_comts_url_params]
           'embHow=Forum&' + embUrlParams.toString() + scriptVersionQueryParam);
 
-  const querySep = (initialTalkyardRelUrl.indexOf('?') === -1) ? '?' : '&';
+  const querySep = (initialTalkyardPathQuery.indexOf('?') === -1) ? '?' : '&';
 
   const forumIframeUrl = (
           // E.g.  https://forum.talkyard.net
@@ -720,7 +721,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
           // E.g.     /-123/talkyard-page-slug  (relative the Ty server origin)
           // Or e.g.  /-/search?q=kittens
           // but usually just  /latest  — to list recent forum topics.
-          + initialTalkyardRelUrl
+          + initialTalkyardPathQuery
           // '?'  or  '&'
           + querySep
           // 'embHow=Forum&embgUrl=https://www.your-website/forum&embUrlParam=...&logLevel=...'
