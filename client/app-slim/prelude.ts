@@ -88,7 +88,7 @@ function reactCreateFactory(type): (props?: any, ...children) => RElm {
   return React.createElement.bind(null, type);
 }
 
-function isServerSide(): Bo {
+function isServerSide(): Bo {  // [dupl_isServerSide]
   return !!window['ReactDOMServer'];
 }
 

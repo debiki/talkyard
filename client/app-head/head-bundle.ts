@@ -89,6 +89,11 @@ var _iphone = _ios && /iPhone|iPod/.test(navigator.userAgent);
 if (_ios) _doc.className += ' ios';  // RENAME to s_ios so can grep & find, & for naming consistency.
 if (_iphone) _doc.className += ' s_iphone';
 
+
+
+// ----- Parse json from the server
+
+
 // See https://stackoverflow.com/a/1912522/694469. The <div> isn't added to the document
 // so no <script> would be executed. — But yes it would indeed?
 // Test this in Dev Tools:
@@ -118,6 +123,15 @@ const staticJsonElm = document.getElementById('theStaticJson') as HTMLScriptElem
 var _store: Store = JSON.parse(_unencodeHtmlContent(pageJsonElm.text));
 var _volatileData = JSON.parse(_unencodeHtmlContent(volatileJsonElm.text)) || {};
 var eds: ServerVars = JSON.parse(_unencodeHtmlContent(staticJsonElm.text)) || {};
+
+
+
+// ----- Init "server variables"
+
+// "eds" means Effective Discussions server variables, or maybe "static" variables, but now
+// the software is called Talkyard instead. These values tend to not change, until page reload.
+// But the _store.* stuff changes "all the time".
+
 
 var _me = _volatileData.me || _store.me || {}; // also used when constructing routes [7UKWBA2]
 
@@ -321,9 +335,15 @@ var typs: PageSession = {
 };
 
 
-// Move back to prelude.ts?  And move the  makeBetterFn() etc below to ...
-// slim-bundle.ts?
-function _isServerSide(): Bo {
+
+// ----- Deep-link, if embedded
+
+
+// These helper fns are in slim-bundle.ts, but it hasn't yet been loaded, so,
+// duplicated here (with '_' prefix).
+// They're in embedded-forum.ts too — that bundle dones't use slim-bundle.ts at all.
+
+function _isServerSide(): Bo {  // [dupl_isServerSide]
   return !!window['ReactDOMServer'];
 }
 
@@ -331,8 +351,20 @@ function _url_isRelative(url: St | URL): Bo {  // [dupl_rel_url_fn]
   return url && url[0] === '/' && url[1] !== '/';
 }
 
+// If we're in an embedded forum: Keep the embedd*ing* url on the parent page
+// constantly up-to-date so it deep-links to the Talkyard page in the iframe.
+//
+// Maybe this could be moved from the head-bundle to the slim-bundle, but then we'd need
+// to think/worry about race conditions, where the user somehow manages to navigate
+// to another Talkyard page (inside the iframe) before the slim-bundle has been loaded,
+// resulting in the url in the browser address bar deep-linking to the wrong
+// Talkyard page. But when monkey-patching pushState() and replaceState() directly,
+// that can't happen.
+//
+// We'll do two things:
+//
 // 1) Make pushState() and replaceState() work in iframes — not sure why, but only
-// *sometimes* the browser complains that: [hist_push_in_iframe])
+//   *sometimes* the browser complains that: [hist_push_in_iframe])
 //
 //   Uncaught SecurityError: Failed to execute 'pushState' on 'History':
 //   A history state object with URL
@@ -343,12 +375,14 @@ function _url_isRelative(url: St | URL): Bo {  // [dupl_rel_url_fn]
 //       'http://e2e-test-emb-forum.localhost/latest?embHow=Forum&embgUrl=http%3A%2F%2Fe2e-test-www.localhost%3A8080%2Femb-page-one.html&logLevel=trace&embeddingScriptV=2'.
 //
 // But with the origin included, that doesn't happen.
-// For now, don't:  `eds.embgOrigin !== location.origin` — would affect blog comments too.
 //
 // 2) Tell Talkyard's code in the embedd*ing* window that now we're at a new url, so
-// we can update the url, e.g.
+//   we can update the url, e.g.
 //   from:  https://example.com/embedding/page#/-/forum-page
 //     to:  https://example.com/embedding/page#/-/other-forum-page
+//
+// Don't:  `if  eds.embgOrigin !== location.origin` — that'd affect blog comments too.
+// Instead, look at `eds.isInEmbForum`:
 //
 if (eds.isInEmbForum && !_isServerSide()) {
   type StateFn = (state: any, unused: St, url?: St | URL | N) => Vo;
