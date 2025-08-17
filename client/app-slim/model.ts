@@ -3599,6 +3599,8 @@ interface ServerVars {
 
   pubSiteIdOrigin: St;
   cdnOriginOrEmpty: string;
+  // Could: Incl server origin only if no CDN and *is* embedded? [emb_img_urls]
+  // Also, won't need to rerender, if moving server origin.
   cdnOrServerOrigin: string;
   assetUrlPrefix: string;
   debugOrigin: St;

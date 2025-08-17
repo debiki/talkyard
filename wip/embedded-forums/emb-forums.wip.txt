@@ -78,6 +78,9 @@ a login popup in the iframe, just results in:
       Login dialog in emb iframe [TyE5KER2]
 
 
+Do uploaded images work? Or are they resolved against the embedding page's url? [emb_img_urls]
+
+
 Frag action #composeDirectMessage not working in emb forum iframe, oh well:
     http://e2e-test-www.localhost:8080/emb-page-one.html#/-/users/michael/activity/posts#composeDirectMessage
 

@@ -390,7 +390,7 @@ export const TopBar = createComponent({
     const snoozeIcon = !!snoozeUntilTxt &&
         r.span({ className: 's_MMB_Snz' },
           r.img({ alt: "Snoozing", className: 's_SnzI',   // I18N
-              src: '/-/media/sysuicons/bell_snooze.svg' }),
+              src: eds.cdnOrServerOrigin + '/-/media/sysuicons/bell_snooze.svg' }),
           snoozeUntilTxt);
 
     const avatarNameDropdown = !me.isLoggedIn && !impersonatingStrangerInfo ? null :

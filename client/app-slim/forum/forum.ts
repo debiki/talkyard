@@ -1766,6 +1766,13 @@ function TopicUpvotes(topic: Topic, iconFirst: Bo): RElm {
 
 
 function topic_mediaThumbnailUrls(topic: Topic): string[] {
+  // If we're in an embedded forum:
+  // Minor UX BUG: Maybe some uploaded images won't show properly?  [emb_forum] [emb_img_urls]
+  // Some of these urls might be relative the Ty server, while others can be relative the
+  // embedd*ing* website?
+  // A way to find out, could be to look at if they start with `/-/u/...` because that's
+  // Ty's uploaded file url path prefix, and probably pretty unique.
+  //
   let bodyUrls = topic.firstImageUrls || [];
   let allUrls = bodyUrls.concat(topic.popularRepliesImageUrls || []);
   let noGifs = _.filter(allUrls, (url) => url.toLowerCase().indexOf('.gif') === -1);
