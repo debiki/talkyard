@@ -1361,11 +1361,11 @@ function CatNameDescr(props: { store: Store, forumPath: St, activeCategory: Cat,
 
   arr_sortAlphaInPlace(subCats, c => c.name);  // [sort_cats]
 
-  const baseCatDropdown = makeCatDropdown(store, '', baseCats, baseCat, false, !subCats.length);
-  const anySubCatDropdown = makeCatDropdown(store, baseCat.slug, subCats, anySubCat, true, true);
+  const baseCatDropdown = makeCatDropdown(store, null, baseCats, baseCat, false, !subCats.length);
+  const anySubCatDropdown = makeCatDropdown(store, baseCat, subCats, anySubCat, true, true);
 
 
-  function makeCatDropdown(store: Store, parentCatSlug: string,
+  function makeCatDropdown(store: Store, parentCat: Cat | N,
         catsSameLevel: Cat[], thisCat: Cat, isSubCat: boolean, isLastCat: boolean) {
 
     if (!catsSameLevel.length)
@@ -1378,9 +1378,13 @@ function CatNameDescr(props: { store: Store, forumPath: St, activeCategory: Cat,
           onClick: () => props.setCategory(category.slug, category) },
             r.span({ className: category_iconClass(category, store) }, category.name));
     });
+
+    const parentCatSlug = parentCat?.slug || '';
+    const parentCatSortOrderPath = parentCat?.doItVotesPopFirst ? RoutePathTop : RoutePathLatest;
     categoryMenuItems.unshift(
         MenuItem({ key: -1,
           active: thisCat && thisCat.isForumItself, // (this won't work for sub cats, barely matters)
+          href: props.forumPath + parentCatSortOrderPath + '/' + parentCatSlug,
           onClick: () => props.setCategory(parentCatSlug) }, t.fb.AllCats));
 
     const activeCategoryIcon = !thisCat ? null : category_iconClass(thisCat, store);

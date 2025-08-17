@@ -205,8 +205,6 @@ export function MenuItem(props: { id?: St, className?: St, active?: Bo,
     onClick, tabIndex: props.tabIndex || -1 };
   return (
     r.li({ role: 'presentation', className: className, key: props.key },
-      // UNTESTED: Does this make  function makeCatDropdown() { .. MenuItem({ href })}
-      // open correctly in a new tab, if middle clicked?
       TyLink.apply(null, [linkProps, ...children])));
 
 }
