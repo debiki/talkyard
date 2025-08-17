@@ -1257,6 +1257,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def toggleTips: Action[JsValue] = UserPostJsonAction(RateLimits.TrackReadingActivity,
+      MinAuthnStrength.EmbeddingStorageSid12,  // [if_emb_forum]
         maxBytes = 200, ignoreAlias = true) { request =>
     import request.{dao, body, theRequester => requester}
     val tipsId: Opt[St] = parseOptSt(body, "tipsId")
@@ -1288,6 +1289,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def markAllNotfsAsSeen(): Action[JsValue] = PostJsonAction(RateLimits.MarkNotfAsSeen,
+        MinAuthnStrength.EmbeddingStorageSid12,  // [if_emb_forum]
         maxBytes = 200, ignoreAlias = true) { request =>
     request.dao.markAllNotfsAsSeen(request.theUserId)
     loadNotificationsImpl(request.theUserId, upToWhen = None, request)
@@ -1295,6 +1297,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def markNotificationAsSeen(): Action[JsValue] = PostJsonAction(RateLimits.MarkNotfAsSeen,
+        MinAuthnStrength.EmbeddingStorageSid12,  // [if_emb_forum]
         maxBytes = 200, ignoreAlias = true) { request =>
     import request.{dao, theRequesterId}
     val notfId = (request.body \ "notfId").as[NotificationId]

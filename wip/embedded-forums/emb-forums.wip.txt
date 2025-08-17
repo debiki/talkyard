@@ -78,3 +78,7 @@ a login popup in the iframe, just results in:
       Login dialog in emb iframe [TyE5KER2]
 
 
+Frag action #composeDirectMessage not working in emb forum iframe, oh well:
+    http://e2e-test-www.localhost:8080/emb-page-one.html#/-/users/michael/activity/posts#composeDirectMessage
+
+
