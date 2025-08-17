@@ -225,6 +225,7 @@ const ChatChannels = createComponent({
     const title = store.me.isLoggedIn ? t.wb.JoinedChats : t.wb.ChatChannels;
     return (
       r.div({ className: 'esWB_Ts' },
+        eds.isInEmbForum ? null :  // not impl [emb_chat]
         r.button({ className: 'esWB_CreateB', id: 'e2eCreateChatB',
             onClick: this.createChatChannel, title: t.wb.CreateChat }, '+'),
         r.h3({}, title),

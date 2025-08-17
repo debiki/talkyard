@@ -261,7 +261,6 @@ export const PostActions = createComponent({
     // Later, will use the upcoming [alterPage] permission instead.
     const isCoreOrOwnPage = isStaffOrOwnPage ||
                                 user_isTrustMinNotThreat(me, TrustLevel.CoreMember);
-    const isEmbeddedOrigPost = isPageBody && store.isEmbedded;
 
     const isDeleted = post_isDeleted(post);
     const isCollapsed = post_isCollapsed(post);
@@ -452,7 +451,8 @@ export const PostActions = createComponent({
           title: t.pa.ReportThisPost });
     }
 
-    const adminLink = !me.isAdmin || !isEmbeddedOrigPost ? null : rFr({},
+    const adminLink = !me.isAdmin || !isPageBody || !eds.isInEmbeddedCommentsIframe ? null :
+      rFr({},
         LinkUnstyled({ className: 'dw-a dw-a-other-topics icon-link-ext',
             to: linkToEmbeddedDiscussions(), target: '_blank' }, t.pa.DiscIx),
         r.a({ className: 'dw-a dw-a-admin icon-link-ext',
