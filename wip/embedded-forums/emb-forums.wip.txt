@@ -1,3 +1,39 @@
+[maybe_need_only_embUrlParam]
+We need only  embUrlParam?  Can skip  embeddingUrl, embgUrl, and embHow?
+Anduse embedding page relative links, like:
+  #/-123/talkyard-page
+  #/latest/bugs
+  #/-/users/someone
+and they'll resolve relative the embedding page, and will just work, right?
+Likewise, these would also work, just that any other query params would disappear,
+but typically there would be no other query params:
+  ?ty=/-123/talkyard-page
+  ?ty=/latest/bugs
+  ?ty=/-/users/someone
+  ?ty=/-/search%3Fq=some-search-query   ('%3F' = ? but % encoded)
+
+  Old source code comment: (about [maybe_need_only_embPathParam])
+    // because that'll get resolved relative the <base> url which is the embedding page url
+    // already, same as:  embgUrl.origin + embgUrl.pathname + embgUrl.search
+    // right?
+    // And just '#' + tyPath is *better*, because will continue working also if
+    // the embedding page is moved to another url path, or even to another domain?
+    //
+    // Then, need only the  talkyard-embedded-url-param as cached-html-lookup?
+    // But posts need to be rendered twice:
+    //   - With user profile links like:  '/-/users/someone'  if not embedded
+    //   - With user profile links like:  '#/-/users/someone' if embedded
+    //     What if changing the embedded url param to eg  ?forumPath=...
+    //                                    '?forumPath=/-/users/someone'
+    //     — then, all @mention links would break until all posts rerendered?
+    //     And all UI links too but they're quick to regenerate,
+    //     need not render any CommonMark.
+    //
+    // So, maybe  posts3/posts_t +=
+    //   embd_approved_html_sanitized_c   ?   (or  approved_embd_html_sanitized_c)
+    //   embd_url_param_c                 ?
+
+
 Fix links:
    "Solved in post #2, click to viewReplyChange ..."
        —>  http://e2e-test-www.localhost:8080/emb-page-one.html#post-2

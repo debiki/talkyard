@@ -323,7 +323,9 @@ export function linkToPath(tyPath: St): St {
 
   if (eds.embUrlParam === '#/') {
     // This'll look like:  https://www.ex.co/embedded-forum#/-123/talkyard-slug#any-hash
-    res = embgUrl.origin + embgUrl.pathname + embgUrl.search + '#' + tyPath;
+    // res = embgUrl.origin + embgUrl.pathname + embgUrl.search + '#' + tyPath;
+    // This should work?:  [maybe_need_only_embUrlParam]
+    res = '#' + tyPath;
   }
   else {
     // No deep link method configured. Link to the Talkyard forum instead (but not to
