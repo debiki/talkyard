@@ -269,26 +269,67 @@ function makeMentionsInEmbeddedCommentsPointToTalkyardServer() {
   // If not an embedded comments page, relative user profile links in mentions, work fine
   // — need do nothing. However, in embedded comments pages, relative links would  [6JKD2A]
   // resolve to (non existing) pages on the embedding server.
-  // Make them point to the Talkyard server instead. Same for embedded forums.
+  // Make them point to the Talkyard server instead.
+  //
+  // For embedded forums: If there's any embUrlParam, then we can deep-link
+  // to the user profile inside the embedded iframe.  Otherwise, we'll link
+  // to the Talkyard server, just like for embedded comments  (otherwise the @mentioned user
+  // links would go to non-existing pages on the embedd*ing* website).
   //
   // (This could alternatively be done, by including the Takyard server origin, when
   // rendering the comments from Markdown to HTML. But this approach (below) is simpler,
   // and works also if the Talkyard server moves to a new address (won't need
-  // to rerender all comments and pages).)
-
-  // SHOULD: Emb forums: Link to  https://ex.co/embedding-page#/-/users/...  ?  UNTESTED for emb forums??
-  if (!eds.isInEmbeddedCommentsIframe && !eds.isInEmbForum)
+  // to rerender all comments and pages).
+  // However, for emb forum deep links to work, we do need to render twice: 1) with
+  // no deep links, just  /-/users/someone  but also 2) with the embUrlParam included,
+  // for example:  #/-/users/someone   if embUrlParam is  '#/'
+  // Currently we always do 1) server side,  and 2) client side in this hacks.ts fn,
+  // can implement 2) server side later  [cache_embg_url].)
+  //
+  const canDeepLinkToEmbForumIframe = eds.isInEmbForum && eds.embUrlParam;
+  if (!eds.isInEmbeddedCommentsIframe && !canDeepLinkToEmbForumIframe)
     return;
 
   const mentions = debiki2.$all('.dw-p-bd .esMention[href]:not([href^="http"])');
   for (let i = 0; i < mentions.length; ++i) {
     const mention = mentions[i];
     const href = mention.getAttribute('href');
-    if (href.indexOf(origin()) === 0) {
-      // Skip, already processed.
+
+    // Maybe in the distant future, this can happen — if user profile semi private
+    // somehow, so others can't see profile, so no link generated. But for now:
+    // @ifdef DEBUG
+    dieIf(!href, `Weird @mentions, no href [TyE4SJL06B]`);
+    // @endif
+    if (!href)
+      continue;
+
+    const hasAddedTyOrigin = href.indexOf(origin()) === 0;
+    const hasAddedEmbUrlParam = eds.embUrlParam && href.indexOf(eds.embUrlParam) === 0;
+
+    // Already processed?
+    if (hasAddedTyOrigin || hasAddedEmbUrlParam)
+      continue;
+
+    const hrefNoOrigin = href.replace(OriginRegex, '');
+    const isRelative = url_isRelative(hrefNoOrigin);
+
+    // @ifdef DEBUG
+    dieIf(!isRelative, `Weird @mentions href, no path '/': ${href} [TyE4SJL06C]`);
+    // @endif
+
+    if (!isRelative)
+      return;
+
+    if (eds.embPathParam === '#/') {
+      mention.setAttribute('href', '#' + hrefNoOrigin);  // (add just '#', don't dupl '/')
     }
+    /* Maybe later:
+    else if (eds.embUrlParam) {
+      // Example: The  embUrlParam is  '?ty'  and the href becomes:
+      //   https://www.ex.co/forum?ty=/-123/talkyard-page
+      mention.setAttribute('href', eds.embUrlParam + '=' + encodeURIComponent(hrefWithPath));
+    } */
     else {
-      const hrefNoOrigin = href.replace(OriginRegex, '');
       mention.setAttribute('href', origin() + hrefNoOrigin);
     }
   }
