@@ -213,31 +213,10 @@ export function MenuItem(props: { id?: St, className?: St, active?: Bo,
 
 
 export function MenuItemLink(props, ...children) {
-  // Don't do  r.a(props, children)  because that'd result in an """an array or iterator
-  // should have a unique "key" prop""" React.js warning.
-
-  // If we're in the admin area, use <a href> because then the destinations are in another
-  // single-page-app. And if we're in the forum app, use Link — no, TyLink — for instant
-  // within-the-SPA navigation.  A bit dupl, see [5JKSW20]
-  const linksToAdminArea = props.to.indexOf(UrlPaths.AdminArea) === 0; // dupl [5JKSW20]
-  const isExternal = props.to.indexOf('//') >= 0;  // e.g. https://  or  //hostname/...
-  const useSinglePageAppLink = !isExternal && eds.isInAdminArea === linksToAdminArea;
-
-  // If useSinglePageAppLink, create a Link({ to: ... }),
-  // otherwise, create a r.a({ href: ... }):
-
-  // But if *not* TyLink, we'd want to prefix any embedded origin, so won't resolve relative
-  // the embedd*ing* website! Can maybe alw use TyLink? It does the right thing automatically now?
-  const linkFn = useSinglePageAppLink ? TyLink : TyLink; // r.a;   CLEAN_UP  UNTESTED if !useSinglePageAppLink
-  const addrAttr = useSinglePageAppLink ? 'to' : 'to';   // href';
-
-  const linkProps = { role: 'button', tabIndex: props.tabIndex || -1,
-    target: props.target, id: props.id };
-  linkProps[addrAttr] = props.to;
-
   return (
     r.li({ role: 'presentation', className: props.className, key: props.key },
-      linkFn.apply(null, [linkProps].concat(children))));
+      TyLink({ role: 'button', tabIndex: props.tabIndex || -1,
+          to: props.to, target: props.target, id: props.id }, ...children)));
 }
 
 
