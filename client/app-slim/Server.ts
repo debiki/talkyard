@@ -2498,7 +2498,15 @@ export function savePageIdsUrls(data: PageIdsUrls, onDone: () => void) {
 // [load_page_and_parts]
 export function loadPageJson(path: string, success: (response) => void) {
   logM(`Loading page: ${path} [TyMLDPG]`);
-  get(path + '?json', response => {
+  // The server renders pages differently, if they're for blog comments, or for an
+  // embedded forum. Embedded forum links should be deep links into the forum
+  // but relative the embedd*ing* website, e.g.  https://www.ex.co/forum#/-123/talkyard-page.
+  // Also need to know how to generate links — that's  embUrlParam  namely '#/'
+  // in the example above.  [maybe_need_only_embUrlParam]
+  const embgUrl = !eds.embeddingUrl ? '' : '&embgUrl=' + encodeURIComponent(eds.embeddingUrl);
+  const embHow = !eds.embHow ? '' : '&embHow=' + encodeURIComponent(eds.embHow);
+  const embUrlParam = !eds.embUrlParam ? '' : '&embUrlParam=' + encodeURIComponent(eds.embUrlParam);
+  get(path + '?json' + embgUrl + embHow + embUrlParam, response => {
     logM(`Done loading ${path}, updating store...`);
     success(response);
     logM(`Done updating store.`);

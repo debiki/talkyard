@@ -1057,7 +1057,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       pageMeta = Some(pageMeta),
       ancCatsRootLast = pageCtx.ancCatsRootLast,
       altPageId = None,
-      embeddingUrl = None,
+      embeddingUrl = request.embeddingUrlParam,  // [emb_forum_is_emb]
       dao = request.dao,
       request = request.request)
 
