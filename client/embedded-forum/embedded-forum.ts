@@ -42,7 +42,7 @@ interface WindowWithTalkyardProps {
   talkyardDebug: boolean | number | undefined; // deprecated 2020-06-16
   talkyardAuthnToken?: St | Ay;
   talkyardConsiderQueryParams?: St[];
-  talkyardUrlParam?: St;
+  talkyardPathParam?: St;
   edRemoveCommentsAndEditor: () => void;  // deprecated
   edReloadCommentsAndEditor: () => void;  //
   talkyardRemoveCommentsAndEditor: () => void;
@@ -154,7 +154,7 @@ const insecureSomethingErrMsg = insecureTyIframeProbl ? (
     "— If this is your site, what if you get a LetsEncrypt cert? [TyEINSCBLG]"
         ) : */  '');
 
-const talkyardUrlParamOrBad: St | U = windowWithTalkyardProps.talkyardUrlParam || '#/';
+const talkyardPathParamOrBad: St | U = windowWithTalkyardProps.talkyardPathParam || '#/';
 
 const considerQueryParams = windowWithTalkyardProps.talkyardConsiderQueryParams;
 
@@ -213,8 +213,8 @@ if (insecureSomethingErrMsg) {
 // see: [iframe_forum_latest_redir] and [react_redir_broken_iframe].
 // (But for whatever reason, history.push() works fine, [hist_push_in_iframe].)
 //
-const [talkyardUrlUnsafe, talkyardUrlParam]: [St, St] =
-        findTalkyardRelUrl(talkyardUrlParamOrBad, location);
+const [talkyardPathQueryUnsafe, talkyardPathParam]: [St, St] =
+        findTalkyardRelUrl(talkyardPathParamOrBad, location);
 
 /// Finds the desired Talkyard forum page url relative the Talkyard origin. For example, if the
 /// embedd*ING* url is  https://www.ex.co/forum/page#/-123/talkyard-page-slug  (note the '#/')
@@ -258,7 +258,7 @@ function findTalkyardRelUrl(urlParam: St, loc: Location): [St, St] {
     // Should be "?something", but is not.  Let's treat this as 'false', disabled,
     // and leave `path` as is, set to '/latest' (above).
     param = null;
-    logW(`Bad talkyardUrlParam: "${urlParam}" [TyEURLPRM]`);
+    logW(`Bad talkyardPathParam: "${urlParam}" [TyEURLPRM]`);
   }
   /* Let's wait, untested.  [skip_query_param_url_parm]
   else {
@@ -279,9 +279,9 @@ function findTalkyardRelUrl(urlParam: St, loc: Location): [St, St] {
 // inside the iframe, we'll get a 'pathChanged' message, then we'll update the embedding
 // page url (window.location).
 //
-const initialTalkyardPathQuery = url_isRelative(talkyardUrlUnsafe)
-        ? talkyardUrlUnsafe  // fine, it's a  /relative/path?and-maybe=query-params
-        : '/latest';         // weird, ignore
+const initialTalkyardPathQuery = url_isRelative(talkyardPathQueryUnsafe)
+        ? talkyardPathQueryUnsafe  // fine, it's a  /relative/path?and-maybe=query-params
+        : '/latest';         // weird, ignore. Show forum homepage instead, latest topics
 
 
 
@@ -626,7 +626,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   const iframeTitle: StN = commentsElem.getAttribute('data-iframe-title');
   const htmlClass: StN = commentsElem.getAttribute('data-iframe-html-class');
 
-  /* _Skip_for_emb_forums. Using  embUrlParam  instead, e.g. '#/'
+  /* _Skip_for_emb_forums. Using  embPathParam  instead, e.g. '#/'
      for  https://www.ex.co/forum#/-123/embedded-page-slug.
 
   // The discussion id might include a bit weird chars — it might have been imported
@@ -701,8 +701,8 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   // if the forum is embedded.
   // And we want <a href=...> that works with embedded forums, so Talkyard needs to know
   // how to construct links to Talkyard pages inside an embedded iframe.
-  if (talkyardUrlParam)
-    embUrlParams.set('embUrlParam', talkyardUrlParam);
+  if (talkyardPathParam)
+    embUrlParams.set('embPathParam', talkyardPathParam);
 
   // COULD join all these to a single param, e.g. 'embConf=...base-64-enc-json-of-all-params...'
   // so it's more clear which params control how Talkyard is getting embedded
@@ -724,7 +724,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
           + initialTalkyardPathQuery
           // '?'  or  '&'
           + querySep
-          // 'embHow=Forum&embgUrl=https://www.your-website/forum&embUrlParam=...&logLevel=...'
+          // 'embHow=Forum&embgUrl=https://www.your-website/forum&embPathParam=...&logLevel=...'
           + allUrlParams);
 
 
@@ -1301,7 +1301,7 @@ function onMessage(message) {
       break;
 
     case 'pathChanged':
-      if (!talkyardUrlParam || talkyardUrlParam === 'false') {
+      if (!talkyardPathParam || talkyardPathParam === 'false') {
         // Invalid config, or url path updates disabled.
         break;
       }
@@ -1310,7 +1310,7 @@ function onMessage(message) {
       let newEmbeddingRelUrl: St;
 
       // [embg_ty_url]
-      if (talkyardUrlParam === '#/') {
+      if (talkyardPathParam === '#/') {
         // If talkyardRelUrl includes a hash already (e.g. '..some-page..#post-123'), that's ok.
         newEmbeddingRelUrl = location.pathname + location.search + '#' + talkyardRelUrl;
       }
@@ -1319,7 +1319,7 @@ function onMessage(message) {
         break;
       }
       /* [skip_question_url_param]
-      else if (talkyardUrlParam === '?/') {
+      else if (talkyardPathParam === '?/') {
         // Is this useful?
         newEmbeddingRelUrl = location.pathname + '?' + talkyardRelUrl;
       }
@@ -1330,7 +1330,7 @@ function onMessage(message) {
                 .replace(/%2F/g, '/')
                 .replace(/%2B/g, '+')
                 .replace(/%3A/g, ':');
-        newEmbeddingRelUrl = location.pathname + talkyardUrlParam + '=' + relUrlEncoded;
+        newEmbeddingRelUrl = location.pathname + talkyardPathParam + '=' + relUrlEncoded;
       } */
 
       // Don't use pushState(). Backwards navigation works already — navigates back, inside
@@ -1571,7 +1571,7 @@ function findCommentToScrollTo() {
   let nrStr: St | U;
   let isCommentNr = false;
 
-  // There might be two '#', if talkyardUrlParam is '#/', e.g.:
+  // There might be two '#', if talkyardPathParam is '#/', e.g.:
   // 'https://www.ex.co/embedding-forum#/-123/talkyard-page-slug#post-456'.
   // Then we're interested in the last hash: '#post-456' and we'll scroll to
   // post nr 456.

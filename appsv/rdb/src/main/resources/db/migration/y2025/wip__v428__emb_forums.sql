@@ -70,7 +70,7 @@ alter table page_html_cache_t
     -- rename column param_origin_or_empty_c to param_embd_origin_or_empty_c
     add column  param_emb_path_param_c          text_oneline_or_empty_60_d   default '',
     -- [cache_embg_url]
-    -- Not needed? [maybe_need_only_embUrlParam] To deep link, it's enough to just:
+    -- Not needed? [maybe_need_only_embPathParam] To deep link, it's enough to just:
     --    '#/-123/some-page'
     add column  param_embg_url_or_empty_c   http_url_or_empty_ste_250_d  default '',
     -- These:

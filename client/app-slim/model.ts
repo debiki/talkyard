@@ -3639,7 +3639,7 @@ interface ServerVars {
   embHow?: 'Forum' | St  // or sth else (invalid). A url param
   embgUrl?: St
   embgOrigin?: St
-  embUrlParam?: St
+  embPathParam?: St
 
   // Wrap in an obj so they can be updated all at the same time?
   // CLEAN_UP Move all this to the store instead?, E.g. use only store.currentPageId,

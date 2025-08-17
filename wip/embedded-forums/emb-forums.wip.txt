@@ -1,5 +1,5 @@
-[maybe_need_only_embUrlParam]
-We need only  embUrlParam?  Can skip  embeddingUrl, embgUrl, and embHow?
+[maybe_need_only_embPathParam]
+We need only  embPathParam?  Can skip  embeddingUrl, embgUrl, and embHow?
 Anduse embedding page relative links, like:
   #/-123/talkyard-page
   #/latest/bugs
@@ -60,7 +60,7 @@ But that's overdoing it, for now.
 [cache_embg_url]
 Cache html per embedding url, and then do include embedding url & origin in the cached pages?
 See:  page_html_cache_t.param_embg_url_or_empty_c.
-Actually, no, don't cache the embedding url. Instead, we need to cache only the embUrlParam!,
+Actually, no, don't cache the embedding url. Instead, we need to cache only the embPathParam!,
 that is, page_html_cache_t.param_embd_url_param_c.
 
 Thereafter, can solve the  [TyLink_problems]?

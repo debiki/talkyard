@@ -197,7 +197,7 @@ try {
   var _searchParams = new URLSearchParams(location.search);
   var _embHow = _searchParams.get('embHow'); // [emb_forum]
   var _embgUrl = _searchParams.get('embgUrl') || _searchParams.get('embeddingUrl'); // [emb_forum] [rm_embeddingUrl_param]
-  var _embUrlParam = _searchParams.get('embUrlParam'); // [emb_forum]
+  var _embPathParam = _searchParams.get('embPathParam'); // [emb_forum]
   var _ssoHow = _searchParams.get('ssoHow');
   var _class = _searchParams.get('htmlClass');
   if (_class) {
@@ -312,7 +312,7 @@ if (!eds.isInEmbeddedEditor) {
 // Don't incl in static page html? Or do [cache_embg_url] — if caching html per embedding url,
 // see plannded:  page_html_cache_t.param_embg_url_or_empty_c.
 eds.embgUrl = _embgUrl;
-eds.embUrlParam = _embUrlParam;
+eds.embPathParam = _embPathParam;
                                         //  "https: //  hostname"
 eds.embgOrigin = _embgUrl && _embgUrl.match(/^[^/]*\/\/[^/]+/)[0];  // [extr_origin]
 eds.embeddingOrigin = eds.embgOrigin;   // for now. Remove 'embeddingOrigin' later?
@@ -433,7 +433,7 @@ function sendNewPathToEmbeddingWin(url: St | URL) {
     params.delete('embHow');
     params.delete('embgUrl');
     params.delete('embeddingUrl');
-    params.delete('embUrlParam');
+    params.delete('embPathParam');
     params.delete('ssoHow');
     params.delete('htmlClass');
     params.delete('embeddingScriptV');

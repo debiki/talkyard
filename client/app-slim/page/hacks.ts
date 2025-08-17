@@ -57,7 +57,7 @@ export const ExtReactRootNavComponent = createReactClass({
       // const location = this.props.location;
       const location = window.location;
       const localPath = url_asLocalAbsPath(
-              url, location, eds.embgUrl || eds.embeddingUrl, eds.embUrlParam);
+              url, location, eds.embgUrl || eds.embeddingUrl, eds.embPathParam);
       if (!localPath) {
         // External link.
         window.location.assign(url);
@@ -99,7 +99,7 @@ export const ExtReactRootNavComponent = createReactClass({
 /// same origin.  If cannot do this, returns false.
 ///
 function url_asLocalAbsPath(rawUrl0: St, location: { origin: St, hostname: St, pathname: St },
-          embgUrl?: St, embUrlParam?: St)
+          embgUrl?: St, embPathParam?: St)
           : St | false {
 
   // Are we in an embedded forum? If so, the actual new url might be a parameter in `rawUrl`
@@ -120,13 +120,13 @@ function url_asLocalAbsPath(rawUrl0: St, location: { origin: St, hostname: St, p
 
   const url = !embgUrl || isRelative ? rawUrl : (function() {
     // [embg_ty_url]
-    if (embUrlParam === '#/') {
+    if (embPathParam === '#/') {
       // The Talkyard url might have been appended to the embedding page's url, as a #hash
       if (rawUrl.indexOf(embgUrl + '#/') === 0)
         return rawUrl.slice(embgUrl.length + 1); // + 1 not 2, to keep '/'
     } /*
     // Let's skip. [skip_question_url_param]
-    else if (embUrlParam === '?/') {
+    else if (embPathParam === '?/') {
       // Is this ever useful?
       // UNTESTED
       if (rawUrl.indexOf(embgUrl + '?/') === 0)
@@ -137,7 +137,7 @@ function url_asLocalAbsPath(rawUrl0: St, location: { origin: St, hostname: St, p
       // UNTESTED
       const urlOb = new URL(rawUrl);
       const params = urlOb.searchParams;
-      const actualUrl = params && params.get(embUrlParam.slice(1));
+      const actualUrl = params && params.get(embPathParam.slice(1));
       if (actualUrl)
         return actualUrl;
     } */
@@ -271,7 +271,7 @@ function makeMentionsInEmbeddedCommentsPointToTalkyardServer() {
   // resolve to (non existing) pages on the embedding server.
   // Make them point to the Talkyard server instead.
   //
-  // For embedded forums: If there's any embUrlParam, then we can deep-link
+  // For embedded forums: If there's any embPathParam, then we can deep-link
   // to the user profile inside the embedded iframe.  Otherwise, we'll link
   // to the Talkyard server, just like for embedded comments  (otherwise the @mentioned user
   // links would go to non-existing pages on the embedd*ing* website).
@@ -281,12 +281,12 @@ function makeMentionsInEmbeddedCommentsPointToTalkyardServer() {
   // and works also if the Talkyard server moves to a new address (won't need
   // to rerender all comments and pages).
   // However, for emb forum deep links to work, we do need to render twice: 1) with
-  // no deep links, just  /-/users/someone  but also 2) with the embUrlParam included,
-  // for example:  #/-/users/someone   if embUrlParam is  '#/'
+  // no deep links, just  /-/users/someone  but also 2) with the embPathParam included,
+  // for example:  #/-/users/someone   if embPathParam is  '#/'
   // Currently we always do 1) server side,  and 2) client side in this hacks.ts fn,
   // can implement 2) server side later  [cache_embg_url].)
   //
-  const canDeepLinkToEmbForumIframe = eds.isInEmbForum && eds.embUrlParam;
+  const canDeepLinkToEmbForumIframe = eds.isInEmbForum && eds.embPathParam;
   if (!eds.isInEmbeddedCommentsIframe && !canDeepLinkToEmbForumIframe)
     return;
 
@@ -304,7 +304,7 @@ function makeMentionsInEmbeddedCommentsPointToTalkyardServer() {
       continue;
 
     const hasAddedTyOrigin = href.indexOf(origin()) === 0;
-    const hasAddedEmbUrlParam = eds.embUrlParam && href.indexOf(eds.embUrlParam) === 0;
+    const hasAddedEmbUrlParam = eds.embPathParam && href.indexOf(eds.embPathParam) === 0;
 
     // Already processed?
     if (hasAddedTyOrigin || hasAddedEmbUrlParam)
@@ -324,10 +324,10 @@ function makeMentionsInEmbeddedCommentsPointToTalkyardServer() {
       mention.setAttribute('href', '#' + hrefNoOrigin);  // (add just '#', don't dupl '/')
     }
     /* Maybe later:
-    else if (eds.embUrlParam) {
-      // Example: The  embUrlParam is  '?ty'  and the href becomes:
+    else if (eds.embPathParam) {
+      // Example: The  embPathParam is  '?ty'  and the href becomes:
       //   https://www.ex.co/forum?ty=/-123/talkyard-page
-      mention.setAttribute('href', eds.embUrlParam + '=' + encodeURIComponent(hrefWithPath));
+      mention.setAttribute('href', eds.embPathParam + '=' + encodeURIComponent(hrefWithPath));
     } */
     else {
       mention.setAttribute('href', origin() + hrefNoOrigin);
