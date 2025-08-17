@@ -336,7 +336,7 @@ export function UserName(props: {
     namePartOne = "(Unknown author)";
   }
 
-  const linkFn = <any>(props.makeLink && !isUnknown ? r.a : r.span);
+  const linkFn = <any>(props.makeLink && !isUnknown ? TyLink : r.span);
   const newProps: any = {
     className: 'dw-p-by esP_By' + (isUnknown ? ' s_P_By-Unk' : ''),
   };

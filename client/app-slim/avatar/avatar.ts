@@ -215,8 +215,7 @@ export const Avatar = createFactory<AvatarProps, {}>({
     // Later: If including some is-admin/moderator symbol, then need to uncache pages
     // where this avatar is shown. [5KSIQ24]
 
-    const elemName = ignoreClicks ? 'span' : 'a';
-    const elemFn = <any> r[elemName];
+    const elemFn = ignoreClicks ? r.span : TyLink;
     const href = ignoreClicks ? null : linkToUserProfilePage(user);
     const onClick = ignoreClicks || props.clickOpensUserProfilePage ?
         null : this.onClick;
