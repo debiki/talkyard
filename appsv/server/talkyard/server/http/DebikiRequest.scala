@@ -239,6 +239,8 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   // Use this instead of  `EmbeddedTopicsController.showTopic(embeddingUrl, ...)`, so
   // will work for embedded forums too?
+  RENAME // to anyEmbeddingUrl? shouldn't be "...Param", why did I add "Param"?
+  // Or  "...QueryParam" would be ok name
   def embeddingUrlParam: Opt[St] = {
     var anyUrl = queryString.get("embgUrl").flatMap(_.headOption) map { encUrl =>
       java.net.URLDecoder.decode(encUrl, "UTF-8")
@@ -248,6 +250,28 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
     // Remove later:  [rm_embeddingUrl_param]
     if (anyUrl.isEmpty)
       anyUrl = queryString.get("embeddingUrl").flatMap(_.headOption)
+
+    // Embedding on allowed domain?
+    // Don't let hackers pretend the Talkyard page is embedded on some strange
+    // hacker controlled domain. Then they could trick Talkyard into specifying a document
+    // <base> that makes links resolve relative the https:// evil.com  (by doing
+    // sth like:  https://talkyard-forum/-123/page?embgUrl=https://evil.com).
+    // (The page would be shown on the real ty-forum domain, but links could
+    // take you to  evil.com/-567/some-other-page — unexpected domain change)
+    anyUrl.foreach { embgUrl =>
+      val embgUrl_asJava = new java.net.URI(embgUrl)
+      if (embgUrl_asJava.getHost == null) {
+        // That's werid. An embedd*ing* website must have an address.
+        COULD_LOG
+        return None
+      }
+      val okDomains = siteSettings.allowEmbeddingFromBetter
+      val isOkEmbeddingOrigin = okDomains.exists(!urlIsToDifferentOrigin(embgUrl_asJava, _))
+      if (!isOkEmbeddingOrigin) {
+        COULD_LOG // something, but should then rate limit too
+        return None
+      }
+    }
 
     anyUrl
   }
