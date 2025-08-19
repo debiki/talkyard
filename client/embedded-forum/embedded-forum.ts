@@ -201,18 +201,16 @@ if (insecureSomethingErrMsg) {
 
 // ----- Talkyard url path
 
-// Examples:   /embedding/page#/talkyard/path#post-123  <—— implemented, but none of the others
-//             /embedding/page?/talkyard/path#post-123
-//             /embedding/page?talkyardPath=/talkyard/path%23post-123&other=param#hash
-// where "talkyardPath" is configurable, in case there's some collission with
-// a web framework param.
-
-// ? still a problem ???
-// Make sure to use '/latest', and not just '', otherwise there'll be a redirect
-// to '/latest' which fails with a security error, whole page breaks,
-// see: [iframe_forum_latest_redir] and [react_redir_broken_iframe].
-// (But for whatever reason, history.push() works fine, [hist_push_in_iframe].)
+// Extract the desired Talkyard forum url path from the embedding page's url.
 //
+// Examples:  (note the '#/' and '?talkyardPath')
+//   https://www.ex.co/forum#/talkyard/path#post-123  <—— implemented, but none of the others
+//   https://www.ex.co/forum?/talkyard/path#post-123
+//   https://www.ex.co/forum?talkyardPath=/talkyard/path%23post-123&other=param#hash
+//
+// where "talkyardPath" is configurable, in case there's some collission with
+// a web framework param, or the humans want vanity short/nice-looking param names.
+
 const [talkyardPathQueryUnsafe, talkyardPathParam]: [St, St] =
         findTalkyardRelUrl(talkyardPathParamOrBad, location);
 
@@ -278,6 +276,12 @@ function findTalkyardRelUrl(urlParam: St, loc: Location): [St, St] {
 // This is the initial Talkyard url (relative the Ty site origin). If we navigate elsewhere
 // inside the iframe, we'll get a 'pathChanged' message, then we'll update the embedding
 // page url (window.location).
+//
+// (Previously, a redirect from '' to '/latest' failed with a security error,
+// breaking the whole page. But now, with  history.pushState and
+// window.history.replaceState in the forum iframe  both momkey-patched
+// to prefix all new paths with the Talkyard server origin, the problem is gone.
+// See: [iframe_forum_latest_redir] and [react_redir_broken_iframe].)
 //
 const initialTalkyardPathQuery = url_isRelative(talkyardPathQueryUnsafe)
         ? talkyardPathQueryUnsafe  // fine, it's a  /relative/path?and-maybe=query-params
