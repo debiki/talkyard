@@ -155,7 +155,8 @@ trait PostsDao {
 
     refreshPageInMemCache(pageId)
 
-    val storePatchJson = jsonMaker.makeStorePatchForPost(newPost, showHidden = true)
+    val patches = jsonMaker.makeStorePatchesForPost(
+          newPost, showHidden = true, toShowFor = Some(author.trueId2.trueId))
 
     // WebSocket-notify others about the new post, if it's public (meaning, if those
     // who can see the page, can see the post).
@@ -165,12 +166,12 @@ trait PostsDao {
     //
     if (!newPost.isPrivate) {
       // (If reply not approved, this'll send mod task notfs to staff [306DRTL3])
-      pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
+      pubSub.publish(StorePatchMessage(siteId, pageId, patches.patchForOthers, notifications),
             // This can be an anonym's id — fine. (Right?)
             byId = author.id)
     }
 
-    InsertPostResult(storePatchJson, newPost, anyReviewTask)
+    InsertPostResult(patches.patchForAuthor, newPost, anyReviewTask)
   }
 
 
@@ -891,12 +892,13 @@ trait PostsDao {
 
     refreshPageInMemCache(pageId)
 
-    val storePatchJson = jsonMaker.makeStorePatchForPost(post, showHidden = true)
+    val patches = jsonMaker.makeStorePatchesForPost(
+          post, showHidden = true, toShowFor = Some(byWho.trueId.trueId))
 
-    pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
-      byId = author.id)
+    pubSub.publish(StorePatchMessage(siteId, pageId, patches.patchForOthers, notifications),
+          byId = author.id)
 
-    InsertPostResult(storePatchJson, post, reviewTask = None)
+    InsertPostResult(patches.patchForAuthor, post, reviewTask = None)
   }
 
 

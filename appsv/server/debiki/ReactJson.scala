@@ -129,6 +129,20 @@ case class PageToJsonResult(
 
   anonsByRealId: Map[PatId, Seq[Anonym]])
 
+
+/** When posting a page or commment, or voting, we send back a React store
+  * patch to the author's browser. But we also publish a store patch via
+  * websocket to others who are online and can see the page.
+  *
+  * The patchForAuthor can include things only the author can see, e.g. that an
+  * anonymous author is in fact the author hanself. (But this is not included in
+  * the patchForOthers.)
+  */
+case class StorePatches(
+  patchForAuthor: JsObject,
+  patchForOthers: JsObject)
+
+
 case class FindHeadTagsResult(
   includesTitleTag: Boolean,
   includesDescription: Boolean,
@@ -1500,20 +1514,34 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
+  /** Legacy fn.
+    * Later, should probably send back both React store patches (that is, `.patchForAuthor`
+    * too, not only `.patchForOthers`).
+    */
   def makeStorePatchForPostIds(postIds: Set[PostId], showHidden: Bo,
         inclUnapproved: Bo, maySquash: Bo, dao: SiteDao): JsObject = {
+    _makeStorePatchesForPostIds(postIds = postIds, showHidden = showHidden,
+          inclUnapproved = inclUnapproved, maySquash = maySquash, dao,
+          toShowFor = None,
+          ).patchForOthers
+  }
+
+
+  private def _makeStorePatchesForPostIds(postIds: Set[PostId], showHidden: Bo,
+        inclUnapproved: Bo, maySquash: Bo, dao: SiteDao, toShowFor: Opt[PatId] = None,
+        ): StorePatches = {
     dieIf(Globals.isDevOrTest && dao != this.dao, "TyE602MWJL43") ; CLEAN_UP // remove dao param?
     dao.readTx { tx =>
       // This might render CommonMark, in a tx — slightly bad. [nashorn_in_tx]
       _makeStorePatchForPostIds(postIds, showHidden = showHidden,
-            inclUnapproved = inclUnapproved, maySquash = maySquash, tx)
+            inclUnapproved = inclUnapproved, maySquash = maySquash, tx, toShowFor = toShowFor)
     }
   }
 
   // [post_to_json]
   private def _makeStorePatchForPostIds(postIds: Set[PostId],
           showHidden: Bo, inclUnapproved: Bo, maySquash: Bo,
-          transaction: SiteTx): JsObject = {
+          transaction: SiteTx, toShowFor: Opt[PatId]): StorePatches = {
     val posts = transaction.loadPostsByUniqueId(postIds).values
     val tagsAndBadges = transaction.loadPostTagsAndAuthorBadges(postIds)
     val tagTypes = dao.getTagTypes(tagsAndBadges.tagTypeIds)
@@ -1525,14 +1553,16 @@ class JsonMaker(dao: SiteDao) {
     makeStorePatch3(pageIdVersions, posts,
           showHidden = showHidden, inclUnapproved = inclUnapproved,
           maySquash = maySquash, tagsAndBadges, tagTypes,
-          pats, appVersion = dao.globals.applicationVersion)(transaction)
+          pats, toShowFor = toShowFor,
+          appVersion = dao.globals.applicationVersion)(transaction)
   }
 
 
-  def makeStorePatchForPost(post: Post, showHidden: Bo): JsObject = {
-    makeStorePatchForPostIds(
+  def makeStorePatchesForPost(post: Post, showHidden: Bo, toShowFor: Opt[PatId] = None,
+        ): StorePatches = {
+    _makeStorePatchesForPostIds(
           postIds = Set(post.id), showHidden = showHidden, inclUnapproved = true,
-          maySquash = false, dao)
+          maySquash = false, dao, toShowFor = toShowFor)
   }
 
 
@@ -1551,8 +1581,8 @@ class JsonMaker(dao: SiteDao) {
   private def makeStorePatch3(pageIdVersions: Iterable[PageIdVersion], posts: Iterable[Post],
           showHidden: Bo, inclUnapproved: Bo, maySquash: Bo,
           tagsAndBadges: TagsAndBadges, tagTypes: Seq[TagType],
-          pats: Iterable[Pat], appVersion: St)(
-          tx: SiteTx): JsObject = {
+          pats: Iterable[Pat], toShowFor: Opt[PatId], appVersion: St)(
+          tx: SiteTx): StorePatches = {
     require(posts.isEmpty || pats.nonEmpty, "Posts but no authors [EsE4YK7W2]")
 
     val pageVersionsByPageIdJson =
@@ -1581,12 +1611,30 @@ class JsonMaker(dao: SiteDao) {
         pageId -> JsArray(postsJson.toSeq)
       }))
 
-    Json.obj(
+    val patchForOthers = Json.obj(
       "appVersion" -> appVersion,
       "pageVersionsByPageId" -> pageVersionsByPageIdJson,
       "usersBrief" -> pats.map(JsPat(_, tagsAndBadges)),
       "tagTypes" -> tagTypes.map(JsTagType),
       "postsByPageId" -> postsByPageIdJson)
+
+    // Incl any true ids of an anonym, if it's the author's own.
+    // Later, if there'll be [private_pats], incl any the `toShowFor` can see, but that
+    // the others cannot see.
+    val patchForAuthor =
+          if (toShowFor.isEmpty || !pats.exists(_.isAnon)) {
+            patchForOthers
+          }
+          else {
+            // Replace w a JsPat array, where each JsPat has the JsX.AnonForIdFieldName
+            // = "anonForId"  field included, if it's the `toShowFor` user's own anon.
+            val pats2 = pats.map(JsPat(_, tagsAndBadges, toShowForPatId = toShowFor)).to(Seq)
+            patchForOthers + ("usersBrief" -> JsArray(pats2))
+          }
+
+    StorePatches(
+          patchForOthers = patchForOthers,
+          patchForAuthor = patchForAuthor)
   }
 
 }

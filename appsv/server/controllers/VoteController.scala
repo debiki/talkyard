@@ -123,11 +123,16 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val updatedPost = dao.loadPost(pageId, postNr) getOrThrowForbidden(
           "TyE7M3MRSED5", "The post just got hard deleted?")
 
-    val storePatchJson = dao.jsonMaker.makeStorePatchForPost(
-          updatedPost, showHidden = true)
+    assert(requester.trueId2.trueId == requester.id)
 
+    val patches = dao.jsonMaker.makeStorePatchesForPost(
+          updatedPost, showHidden = true, toShowFor = Some(requester.trueId2.trueId))
+
+    CLEAN_UP // Let makeAnyNewPageJson() add "yourAnon", in patches.patchForAuthor
+    // — don't do here (below)?
+    COULD // publish vote: send `patches.patchForOthers` via websocket.
     var responseJson: JsObject =
-          storePatchJson ++
+          patches.patchForOthers ++
           EmbeddedCommentsPageCreator.makeAnyNewPageJson(newEmbPage)
 
     anyNewAnon foreach { anon =>
