@@ -81,16 +81,16 @@ object Dependencies {
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
 
     // See: https://commons.apache.org/proper/commons-codec/changes.html
-    val apacheCommonsCodec = "commons-codec" % "commons-codec" % "1.18.0"
+    val apacheCommonsCodec = "commons-codec" % "commons-codec" % "1.19.0"
 
     // See: https://commons.apache.org/proper/commons-validator/changes-report.html
-    val apacheCommonsValidator = "commons-validator" % "commons-validator" % "1.9.0"
+    val apacheCommonsValidator = "commons-validator" % "commons-validator" % "1.10.0"
 
     // See: https://commons.apache.org/proper/commons-email/changes-report.html
     val apacheCommonsEmail = "org.apache.commons" % "commons-email" % "1.6.0"
 
     // See: https://commons.apache.org/proper/commons-lang/changes-report.html
-    val apacheCommonsLang3 = "org.apache.commons" % "commons-lang3" % "3.17.0"
+    val apacheCommonsLang3 = "org.apache.commons" % "commons-lang3" % "3.18.0"
 
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
@@ -98,7 +98,7 @@ object Dependencies {
     // See: https://tika.apache.org
     // Need to upgrade soon, DO_BEFORE 2025-04-01,
     //    see: https://tika.apache.org/3.0.0-BETA/index.html
-    val apacheTika = "org.apache.tika" % "tika-core" % "2.9.4"
+    val apacheTika = "org.apache.tika" % "tika-core" % "3.2.2"
 
     // See: https://github.com/OWASP/owasp-java-encoder/releases
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.3.1"
