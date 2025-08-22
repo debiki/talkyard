@@ -113,8 +113,11 @@ const LoginDialog = createClassAndFactory({
 
   open: function(isSignUp: boolean, loginReason: LoginReason,
         anyReturnToUrl?: string, callback?: () => void, preventClose?: boolean) {
+    // If in an embedded forum, embedded comments section, or embedded editor: we shouldn't
+    // open the login dialog inside the iframe — it's too small and might not be completely
+    // visible on screen. Instead, we should open a popup win instead.
+    dieIf(isInSomeEmbCommentsIframe(), 'Login dialog in emb iframe [TyE5KER2]');
 
-    dieIf(isInSomeEmbCommentsIframe(), 'Login dialog in some emb cmnts iframe [EdE5KER2]');
     const state: LoginDialogState = this.state;
     const store: Store = state.store;
 
@@ -466,6 +469,11 @@ const LoginDialogContent = createClassAndFactory({
             isForGuest: isGuestSignUp,          //     ... both
           } as CreateUserDialogContentProps);
 
+    // ----- Swich dialog: Join / log in / guest?
+
+    // Tests:
+    // - login-guest-or-user-without-email.3br.f  TyTLGI_GST_OR_WO_EML.TyTSWITCH_LGI_D
+
     let switchToLoginOrGuestDlg: RElm | U;
     let switchToSignupOrGuestDlg: RElm | U;
 
@@ -533,7 +541,7 @@ const LoginDialogContent = createClassAndFactory({
     }
 
 
-    // ---- Lokcal authn or OIDC?
+    // ---- Local authn or OIDC?
 
     const ss = store.settings;
 
@@ -679,8 +687,9 @@ const LoginDialogContent = createClassAndFactory({
     }
 
     const isWhatClass = isSignUp ? 'e_IsSgU' : (isLogin ? 'e_IsLgI' : '');
+    const isForGuestClass = isGuestSignUp ? ' e_4Gst' : '';
     return (
-      r.div({ className: 'c_AuD ' + isWhatClass},
+      r.div({ className: 'c_AuD ' + isWhatClass + isForGuestClass },
         notHttpsErr,
         notFoundInstructions,
         content));

@@ -25,7 +25,7 @@ debiki.debug = window.location.search.indexOf('debug=true') >= 0;
 
 
 // Copy any xsrf token to any session iframe.
-if (eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor) {
+if (eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor || eds.isInEmbForum) {
   // This is safe and cannot fail, still, try-catch for now, new code.
   // DO_AFTER 2022-01-01 remove try-catch, keep just the contents.
   try {

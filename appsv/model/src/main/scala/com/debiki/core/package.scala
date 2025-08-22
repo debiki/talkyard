@@ -137,7 +137,7 @@ package object core {
   type PostRevNr = Int
 
   /**
-    * De-prioritizes this page (or sub thread) among the search results.
+    * De-prioritizes this page (or sub thread) among the search results. [search_index_prio]
     * Say, a question or idea about something, before there were any docs
     * — and later on, docs are written, and the original question is no longer
     * that interesting (because the docs are shorter and better).
@@ -1334,9 +1334,10 @@ package object core {
     * @param isEmbedded — in embedded discussions, links need to include the server origin, otherwise
     * they'll resolve relative the embedd*ing* page. However, non-embedded pages, then
     * nice with relative links? Saves a bit bandwidth.
-    * Also, in embedded discussions, no page title shown. But when viewing the comments at
+    * Also, in embedded blog comments, no page title shown. But when viewing the comments at
     * the embedded Talkyard site, then page title & body should be shown: a link to
     * the embedding page (= the blog post). [5UKWSP4]
+    * But in embedded forums, the page title should be shown!  [emb_forum_is_emb]
     * @param origin — 1) the server origin is included in the inline javascript tags  [INLTAGORIG]
     * so needs to be incl in the cache key — for the in-memory cached html pages,
     * but *not* for the page content html in the database (no inline tags there).

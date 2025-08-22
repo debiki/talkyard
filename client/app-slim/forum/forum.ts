@@ -241,7 +241,7 @@ export const ForumComponent = createReactClass(<any> {
     const slashSlug = newCatSlug ? '/' + newCatSlug : '';
     const props: ForumComponentProps = this.props;
     props.history.push({
-      pathname: forumPath + nextPath + slashSlug,  // dupl [.cat_ln]
+      pathname: forumPath + nextPath + slashSlug,  // dupl _cat_ln
       search: props.location.search,
     });
   },
@@ -561,17 +561,17 @@ const ForumButtons = createComponent({
       if (this.isGone) return;
       const newTopicTypes = category.newTopicTypes || [];
       if (newTopicTypes.length === 0) {
-        debiki2.editor.editNewForumPage(category.id, PageRole.Discussion);
+        ReactActions.editNewForumPage(category.id, PageRole.Discussion);
       }
       else if (newTopicTypes.length === 1) {
-        debiki2.editor.editNewForumPage(category.id, newTopicTypes[0]);
+        ReactActions.editNewForumPage(category.id, newTopicTypes[0]);
       }
       else {
         // There are many topic types specified for this category, because previously there
         // was a choose-topic-type dialog. But I deleted that dialog; it made people confused.
         // Right now, just default to Discussion instead. Later, change newTopicTypes from
         // a collection to a defaultTopicType field; then this else {} can be deleted. [5YKW294]
-        debiki2.editor.editNewForumPage(category.id, PageRole.Discussion);
+        ReactActions.editNewForumPage(category.id, PageRole.Discussion);
       }
     }, true);
   },
@@ -613,13 +613,13 @@ const ForumButtons = createComponent({
             text: St, linkId: St, extraClass?: St) => {
       // Also see the editor's [Auto|show preview] button with depressed state. [double_btn]
       const explSelected = props.explSetSortOrder === order ? 'n_ExplSel ' : '';
-      return NavLink({
+      return NavLink({  // [TyLink_problems]
           // The onClick handler will remember that we set the sort order explicitly,
           // so it'll stay, when jumping between categories ...
           onClick: () => props.setSortOrder(order, rememberSortOrder, slashSlug),
           // ... whilst this <a> link let's us middle mouse click to open in new tab.
-          to: { pathname: props.forumPath + order + slashSlug,  // dupl [.cat_ln]
-                search: props.location.search },
+          to: props.forumPath + order + slashSlug +  // dupl _cat_ln
+                (props.location.search || ''),
           id: linkId,
           className: 'btn esForum_catsNav_btn ' + explSelected + (extraClass || ''),
           activeClassName: 'active' }, text);
@@ -632,7 +632,7 @@ const ForumButtons = createComponent({
             makeCategoryLink(RoutePathCategories, false, '', t.fb.ViewCategories,
                 'e_ViewCatsB', 'esForum_navLink c_F_BB_CatsLn');
     const tagsListLink = omitTagsLink ? null :
-            NavLink({ to: UrlPaths.Tags, className: 'btn esForum_navLink c_F_BB_TagsLn' },
+            TyLink({ to: UrlPaths.Tags, className: 'btn esForum_navLink c_F_BB_TagsLn' },
               "Tags");  // I18N  t.fb.Tags
 
     // COULD remember which topics were listed previously and return to that view.
@@ -1361,11 +1361,11 @@ function CatNameDescr(props: { store: Store, forumPath: St, activeCategory: Cat,
 
   arr_sortAlphaInPlace(subCats, c => c.name);  // [sort_cats]
 
-  const baseCatDropdown = makeCatDropdown(store, '', baseCats, baseCat, false, !subCats.length);
-  const anySubCatDropdown = makeCatDropdown(store, baseCat.slug, subCats, anySubCat, true, true);
+  const baseCatDropdown = makeCatDropdown(store, null, baseCats, baseCat, false, !subCats.length);
+  const anySubCatDropdown = makeCatDropdown(store, baseCat, subCats, anySubCat, true, true);
 
 
-  function makeCatDropdown(store: Store, parentCatSlug: string,
+  function makeCatDropdown(store: Store, parentCat: Cat | N,
         catsSameLevel: Cat[], thisCat: Cat, isSubCat: boolean, isLastCat: boolean) {
 
     if (!catsSameLevel.length)
@@ -1374,13 +1374,17 @@ function CatNameDescr(props: { store: Store, forumPath: St, activeCategory: Cat,
     const categoryMenuItems = catsSameLevel.map((category: Cat) => {
       const sortOrderPath = category.doItVotesPopFirst ? RoutePathTop : RoutePathLatest;
       return MenuItem({ key: category.id, active: thisCat && thisCat.id === category.id,
-          href: props.forumPath + sortOrderPath + '/' + category.slug, // dupl [.cat_ln]
+          href: props.forumPath + sortOrderPath + '/' + category.slug, // dupl _cat_ln
           onClick: () => props.setCategory(category.slug, category) },
             r.span({ className: category_iconClass(category, store) }, category.name));
     });
+
+    const parentCatSlug = parentCat?.slug || '';
+    const parentCatSortOrderPath = parentCat?.doItVotesPopFirst ? RoutePathTop : RoutePathLatest;
     categoryMenuItems.unshift(
         MenuItem({ key: -1,
           active: thisCat && thisCat.isForumItself, // (this won't work for sub cats, barely matters)
+          href: props.forumPath + parentCatSortOrderPath + '/' + parentCatSlug,
           onClick: () => props.setCategory(parentCatSlug) }, t.fb.AllCats));
 
     const activeCategoryIcon = !thisCat ? null : category_iconClass(thisCat, store);
@@ -1593,7 +1597,7 @@ const TopicRow = createComponent({
       activityTitle += t.ft.EditedOn + whenMsToIsoDate(topic.bumpedAtMs);
     }
 
-    let anyPinOrHiddenIconClass = topic.pinWhere ? 'icon-pin' : undefined;
+    let anyPinOrHiddenIconClass = topic.pinWhere ? 'icon-pin' : '';
     if (topic.hiddenAtMs) {
       anyPinOrHiddenIconClass = 'icon-eye-off';
     }
@@ -1639,7 +1643,7 @@ const TopicRow = createComponent({
     let showCategories = settings_showCategories(settings, me);
     let categoryName;
     if (category && showCategories) {
-      categoryName = Link({ to: this.makeCategoryLink(category),
+      categoryName = TyLink({ to: this.makeCategoryLink(category),
           className: category_iconClass(category, store) + 'esF_Ts_T_CName' }, category.name);
     }
 
@@ -1673,21 +1677,12 @@ const TopicRow = createComponent({
       }
     }
 
-    // DO_AFTER 2021-12-01: CLEAN_UP: Nowadays always Link and r.div, can move into makeTitle;
-    // and contentLinkUrl no longer in use.
-    let titleLinkTag = Link;
-    let titleCellTag = r.div;
-    let contentLinkUrl: St | U;
     let manyLinesClass = '';  // remove, place on table insted?, see oneLineClass somewhere above.
     let onTitleCellClick = () => {
         props.history.push(topic.url);
       };
     if (showExcerptAsParagraph) {
       manyLinesClass = ' s_F_Ts_T_Con-Para';
-      // Make the whole title and paragraph block a link, not just the title.
-      //titleLinkTag = r.span;
-      //titleCellTag = Link;
-      //contentLinkUrl = topic.url;
     }
     else if (this.state.showMoreExcerpt) {
       manyLinesClass = ' s_F_Ts_T_Con-More';
@@ -1699,7 +1694,7 @@ const TopicRow = createComponent({
 
     const orderOffset: OrderOffset = props.orderOffset;
 
-    const activeAt = Link({ to: topic.url + FragActionHashScrollLatest },
+    const activeAt = TyLink({ to: topic.url + FragActionHashScrollLatest },
         prettyLetterTimeAgo(
           orderOffset.sortOrder === TopicSortOrder.CreatedAt
             ? topic.createdAtMs
@@ -1712,10 +1707,10 @@ const TopicRow = createComponent({
               r.td({ className: 'c_F_TsT_T_Dvo' },
                 TopicUpvotes(topic, true /*iconFirst*/)),
         r.td({ className: 'dw-tpc-title e2eTopicTitle' },
-          titleCellTag({ className: 's_F_Ts_T_Con' + manyLinesClass,
-              onClick: onTitleCellClick }, // , to: contentLinkUrl },
+          r.div({ className: 's_F_Ts_T_Con' + manyLinesClass,
+              onClick: onTitleCellClick },
             makeTitle(topic, 's_F_Ts_T_Con_Ttl ' + anyPinOrHiddenIconClass,
-                settings, me, titleLinkTag),
+                settings, me),
             mabyeTagsAfterTitle, 
             excerptMaybeTags),
           anyThumbnails),
@@ -1771,6 +1766,13 @@ function TopicUpvotes(topic: Topic, iconFirst: Bo): RElm {
 
 
 function topic_mediaThumbnailUrls(topic: Topic): string[] {
+  // If we're in an embedded forum:
+  // Minor UX BUG: Maybe some uploaded images won't show properly?  [emb_forum] [emb_img_urls]
+  // Some of these urls might be relative the Ty server, while others can be relative the
+  // embedd*ing* website?
+  // A way to find out, could be to look at if they start with `/-/u/...` because that's
+  // Ty's uploaded file url path prefix, and probably pretty unique.
+  //
   let bodyUrls = topic.firstImageUrls || [];
   let allUrls = bodyUrls.concat(topic.popularRepliesImageUrls || []);
   let noGifs = _.filter(allUrls, (url) => url.toLowerCase().indexOf('.gif') === -1);
@@ -1979,21 +1981,21 @@ const CategoryRow = createComponent({
 });
 
 
-function CatLink(props: { category: Category, forumPath: string, location,
-      className: string, isDefaultText? }) {
+function CatLink(props: { category: Category, forumPath: string, location: { search: St },
+      className: St, isDefaultText?: RElm }) {
   const forumPath = props.forumPath;
   const category = props.category;
   const sortOrderPath = category.doItVotesPopFirst ? RoutePathTop : RoutePathLatest;
-  return Link({ to: {  // dupl [.cat_ln]
-      pathname: forumPath + sortOrderPath + '/' + category.slug,
-      search: props.location.search }, className: props.className },
+  return TyLink({   // dupl _cat_ln
+      to: forumPath + sortOrderPath + '/' + category.slug + (props.location.search || ''),
+      className: props.className },
     category.name, props.isDefaultText);
 }
 
 
 // [same_title_everywhere]
 function makeTitle(topic: Topic, className: string, settings: SettingsVisibleClientSide,
-      me: Myself, reactTag?) {
+      me: Myself) {
   let title: any = topic.title;
   let iconClass = '';
   let tooltip;
@@ -2138,10 +2140,9 @@ function makeTitle(topic: Topic, className: string, settings: SettingsVisibleCli
   // COULD remove the HTML for the topic type icon, if topic pinned — because showing both
   // the pin icon, + topic type icon, looks ugly. But for now, just hide the topic type
   // icon in CSS instead: [6YK320W].
-  const toUrl = reactTag && reactTag !== Link ? undefined : topic.url;
   return (
-      (reactTag || Link)({
-          to: toUrl, title: tooltip, className: className + ' c_TpcTtl' },
+      TyLink({
+          to: topic.url, title: tooltip, className: className + ' c_TpcTtl' },
         title));
 }
 

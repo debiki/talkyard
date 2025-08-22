@@ -204,6 +204,7 @@ const ChatChannels = createComponent({
         const category = store_getCurrOrDefaultCat(store);
         dieIf(!category, 'EsE4KPE02');
         // COULD let pat choose between joinless, and join-first, chat types? [JoinlessChat]
+        // Later: Use ReactActions.editNewForumPage()  [emb_chat]
         editor.editNewForumPage(category.id, PageRole.OpenChat);
       });
     });
@@ -224,6 +225,7 @@ const ChatChannels = createComponent({
     const title = store.me.isLoggedIn ? t.wb.JoinedChats : t.wb.ChatChannels;
     return (
       r.div({ className: 'esWB_Ts' },
+        eds.isInEmbForum ? null :  // not impl [emb_chat]
         r.button({ className: 'esWB_CreateB', id: 'e2eCreateChatB',
             onClick: this.createChatChannel, title: t.wb.CreateChat }, '+'),
         r.h3({}, title),

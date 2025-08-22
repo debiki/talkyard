@@ -172,7 +172,7 @@ export const listUsernamesTrigger = {
 
 interface EditorState {
   inFrame?: DiscWin,
-  inFrameStore?: DiscStore & Origins;
+  inFrameStore?: EditorsStore
   store: Store;
   visible: boolean;
   replyToPostNrs: PostNr[];
@@ -273,12 +273,14 @@ export const Editor = createFactory<any, EditorState>({
 
 
   /// This is part of making the embedded editor work with many comment iframes
-  /// at the same time. We clone the relevant discussion data, from the
+  /// at the same time. And with an embedded forum, which shows different pages
+  /// depending on where in the forum the user navigates.
+  /// We clone the relevant discussion data  [clones_store] from the
   /// relevant embedded comments iframe. — If we're not in embedded iframes,
   /// we just return the React store of the current window as is (which is then
   /// the top window).
   ///
-  getOrCloneDiscStore(inFrame?: DiscWin): DiscStore & Origins {
+  getOrCloneDiscStore(inFrame?: DiscWin): EditorsStore {
     if (!eds.isInIframe) {
       // @ifdef DEBUG
       dieIf(inFrame, 'TyE507MWEG25');
@@ -290,19 +292,15 @@ export const Editor = createFactory<any, EditorState>({
       return debiki2.ReactStore.allData();
     }
 
-    // Embedded forums use just one <iframe> (unlike embedded blog comments, which
-    // have editor & session iframes too), so we can just return the store. [emb_forum]
-    if (eds.embHow === 'Forum')
-      return debiki2.ReactStore.allData();
-
     // @ifdef DEBUG
+    // Then we should have `return`ed above already.
     dieIf(!inFrame && !this.state.inFrame, 'TyE604RMJ46');
     // @endif
 
     // `inFrame` is sometimes available before this.state has been updated, so
     // try to use it first.
     const state: EditorState = this.state;
-    const discFrameStore: Partial<DiscStore & Origins> =
+    const discFrameStore: Partial<EditorsStore> =
         inFrame?.theStore || (    // [ONESTORE]  [many_embcom_iframes]
               state.inFrame ? state.inFrame.theStore : (
                   // This'd be weird, would mean the comments iframe was deleted
@@ -321,7 +319,7 @@ export const Editor = createFactory<any, EditorState>({
     // And 2) so that the data won't get changed at any time by code in the other iframe
     // — React.js wouldn't like that.
     //
-    let storeClone: DiscStore & Origins;
+    let storeClone: EditorsStore;
     try {
       // [break_out_clone_store_fn]?
       storeClone = _.cloneDeep({
@@ -334,11 +332,15 @@ export const Editor = createFactory<any, EditorState>({
         anyUgcOrigin: discFrameStore.anyUgcOrigin,
         pubSiteId: discFrameStore.pubSiteId,
 
+        // SettingsStore
+        settings: discFrameStore.settings,
+
         // DiscStore
         currentPage: discFrameStore.currentPage,
         currentPageId: discFrameStore.currentPageId,
         currentCategories: discFrameStore.currentCategories,
         curCatsById: {}, // updated below (actually not needed? feels better, oh well)
+        allCategoriesHacky: discFrameStore.allCategoriesHacky, // rm: [incl_hacky_cats_in_DiscStore] ?
         usersByIdBrief: discFrameStore.usersByIdBrief || {},
         pagesById: {},  // updated below
 
@@ -966,7 +968,7 @@ export const Editor = createFactory<any, EditorState>({
     // with only the editor).
     // We'll then clone the parts we need of that other store, and remember
     // in this.state.inFrameStore.
-    const discStore: DiscStore & Origins = this.getOrCloneDiscStore(inFrame);
+    const discStore: EditorsStore = this.getOrCloneDiscStore(inFrame);
 
     if (inclInReply && postNrs.length) {
       // This means we've started replying to a post, and then clicked Reply
@@ -1034,11 +1036,12 @@ export const Editor = createFactory<any, EditorState>({
       postType = PostType.Flat;
     }
 
-    let inFrameStore: (DiscStore & Origins) | U;
+    // _Dupl_para!
+    let inFrameStore: EditorsStore | U;
     if (eds.isInEmbeddedEditor && inFrame?.eds) {
       // [many_embcom_iframes]
       inFrameStore = discStore;
-      eds.embeddedPageId = inFrame.eds.embeddedPageId;
+      eds.embeddedPageId = inFrame.eds.embeddedPageId; // [annoying_4HKW28]
       eds.embeddingUrl = inFrame.eds.embeddingUrl;
       eds.embeddedPageAltId = inFrame.eds.embeddedPageAltId;
       eds.lazyCreatePageInCatId = inFrame.eds.lazyCreatePageInCatId;
@@ -1107,7 +1110,7 @@ export const Editor = createFactory<any, EditorState>({
       eds.embeddingUrl = inFrame.eds.embeddingUrl;
       eds.embeddedPageAltId = inFrame.eds.embeddedPageAltId;
       delete eds.lazyCreatePageInCatId; // page already exists
-      const inFrameStore: DiscStore & Origins = this.getOrCloneDiscStore(inFrame);
+      const inFrameStore: EditorsStore = this.getOrCloneDiscStore(inFrame);
       const newState: Partial<EditorState> = { inFrame, inFrameStore };
       this.setState(newState);
     }
@@ -1120,7 +1123,7 @@ export const Editor = createFactory<any, EditorState>({
       const draft: Draft | U = response.draft;
 
       // In case the draft was created when one wasn't logged in, then, now, set a user id.
-      const discStore: DiscStore & Origins = this.getDiscStore();
+      const discStore: EditorsStore = this.getDiscStore();
       if (draft && discStore.me) {
         draft.byUserId = discStore.me.id;
       }
@@ -1171,16 +1174,23 @@ export const Editor = createFactory<any, EditorState>({
     });
   },
 
-  editNewForumPage: function(catRefOrId: RefOrId | U, role: PageRole | U) {
+  editNewForumPage: function(catRefOrId: RefOrId | U, role: PageRole | U, inFrame?: DiscWin) {
     if (this.alertBadState())
       return;
 
     const state: EditorState = this.state;
-    const store: Store = state.store;
-    // This cannot happen in an embedded editor, currently.
-    // @ifdef DEBUG
-    dieIf(state.inFrame, 'TyE502MHEARI0-1');
-    // @endif
+    const discStore: EditorsStore = this.getOrCloneDiscStore(inFrame);
+
+    // _Dupl_para!
+    let inFrameStore: EditorsStore | U;
+    if (eds.isInEmbeddedEditor && inFrame?.eds) {
+      // [many_embcom_iframes]
+      inFrameStore = discStore;
+      eds.embeddedPageId = inFrame.eds.embeddedPageId; // [annoying_4HKW28]
+      eds.embeddingUrl = inFrame.eds.embeddingUrl;
+      eds.embeddedPageAltId = inFrame.eds.embeddedPageAltId;
+      eds.lazyCreatePageInCatId = inFrame.eds.lazyCreatePageInCatId;
+    }
 
     let category: Category | U;
     let categoryId: CategoryId | U;
@@ -1197,7 +1207,7 @@ export const Editor = createFactory<any, EditorState>({
     }
     else {
       // Find the category id and/or default topic type.
-      category = store_findCatByRefOrId(store, catRefOrId);
+      category = store_findCatByRefOrId(discStore, catRefOrId);
       dieIf(!category, `No such category: ${catRefOrId} [TyE8PE2B]`);
       categoryId = category.id;
       newPageRole = role || category.defaultTopicType;  // [05AKTD5J]
@@ -1211,17 +1221,20 @@ export const Editor = createFactory<any, EditorState>({
       pageRole: newPageRole,
     };
 
-    // Props for the future page, with settings inherited from the ancestor categories.
+    // Props for the future page, with settings inherited from ancestor categories.
     // (Can't use `store.curDiscProps` — it's for the forum homepage, not the new page.)
     const discProps: DiscPropsDerived = page_deriveLayout(
-            futurePage, store, LayoutFor.PageNoTweaks);
+            futurePage, discStore, LayoutFor.PageNoTweaks);
+    const editorsPageId = discStore.currentPageId || eds.embeddedPageId;
 
     const newState: Partial<EditorState> = {
+      inFrame,
+      inFrameStore,
       discProps,
       anyPostType: null,
-      editorsCategories: store.currentCategories,
+      editorsCategories: discStore.currentCategories,
       // The current page doens't matter, when creating a new page. [DRAFTS_BUG] set to undefined
-      editorsPageId: store.currentPageId,
+      editorsPageId,
       newForumTopicCategoryId: categoryId,
       newPageRole,
       text: text,
@@ -1233,19 +1246,21 @@ export const Editor = createFactory<any, EditorState>({
 
     const draftLocator: DraftLocator = {
       draftType: DraftType.Topic,
-      pageId: store.currentPageId,
+      pageId: editorsPageId,
       categoryId: categoryId,
     };
 
-    this.loadDraftAndGuidelines(draftLocator, WritingWhat.NewPage, role);
+    this.loadDraftAndGuidelines(draftLocator, WritingWhat.NewPage, role, inFrameStore);
   },
 
+  // Later, when emb chat supported: Needs `inFrame: DiscWin`, right? [clones_store] [emb_chat]
   openToEditChatTitleAndPurpose: function() {   // RENAME to  openToEditChatPurpose only (not title)
     // We'll _hide_the_scroll_to_preview_btns, since there isn't any in-page preview,
     // when editing a chat purpose.
     this.editPost(BodyNr);
   },
 
+  // Later: Needs `inFrame: DiscWin`. [clones_store] [emb_chat]
   openToWriteChatMessage: function(text: string, draft: Draft | undefined, draftStatus,
         onDone?: EditsDoneHandler) {
     if (this.alertBadState())
@@ -1272,31 +1287,43 @@ export const Editor = createFactory<any, EditorState>({
     // No guidelines for chat messages, because usually a smaller "inline" editor is used instead.
   },
 
-  openToWriteMessage: function(userId: UserId) {
+  openToWriteMessage: function(userId: UserId, inFrame?: DiscWin) {
     if (this.alertBadState())
       return;
     const state: EditorState = this.state;
-    const store: Store = state.store;
-    // This cannot happen in an embedded editor, currently.
-    // @ifdef DEBUG
-    dieIf(state.inFrame, 'TyE502MHEARI0-3');
-    // @endif
+    const discStore: EditorsStore = this.getOrCloneDiscStore(inFrame);
+
+    // _Dupl_para!
+    let inFrameStore: EditorsStore | U;
+    if (eds.isInEmbeddedEditor && inFrame?.eds) {
+      // [many_embcom_iframes]
+      inFrameStore = discStore;
+      eds.embeddedPageId = inFrame.eds.embeddedPageId; // [annoying_4HKW28]
+      eds.embeddingUrl = inFrame.eds.embeddingUrl;
+      eds.embeddedPageAltId = inFrame.eds.embeddedPageAltId;
+      eds.lazyCreatePageInCatId = inFrame.eds.lazyCreatePageInCatId;
+    }
+
     const newState: Partial<EditorState> = {
-      editorsCategories: store.currentCategories,
+      inFrame,
+      inFrameStore,
+      editorsCategories: discStore.currentCategories,
       // The current page doens't matter, when creating a new page. [DRAFTS_BUG] set to undefined
-      editorsPageId: store.currentPageId,
+      editorsPageId: discStore.currentPageId,
       messageToUserIds: [userId],
       text: '',
       newPageRole: PageRole.FormalMessage,
     };
-    
+
     this.showEditor(newState);
 
     const draftLocator: DraftLocator = {
       draftType: DraftType.DirectMessage,
       toUserId: userId,
     };
-    this.loadDraftAndGuidelines(draftLocator, WritingWhat.NewPage, PageRole.FormalMessage);
+
+    this.loadDraftAndGuidelines(
+            draftLocator, WritingWhat.NewPage, PageRole.FormalMessage, inFrameStore);
     this.showAndFadeOutBackdrop();
   },
 
@@ -1504,7 +1531,10 @@ export const Editor = createFactory<any, EditorState>({
       logD("Done loading draft and guidelines.");
       const state: EditorState = this.state;
       if (this.isGone || !state.visible) return;
-      if (state.inFrameStore !== inFrameStore) return;
+      if (state.inFrameStore !== inFrameStore) {
+        logD("Old store response.");
+        return;
+      }
       let guidelines = undefined;
       if (guidelinesSafeHtml) {
         const guidelinesHash = hashStringToNumber(guidelinesSafeHtml);
@@ -1701,10 +1731,6 @@ export const Editor = createFactory<any, EditorState>({
 
     const state: EditorState = this.state;
     const store: Store = state.store;
-    // This cannot happen in an embedded editor, currently.
-    // @ifdef DEBUG
-    dieIf(state.inFrame, 'TyE502MHEARI0-4');
-    // @endif
 
     const settings: SettingsVisibleClientSide = store.settings;
     if (settings.enableSimilarTopics === false)
@@ -2200,7 +2226,7 @@ export const Editor = createFactory<any, EditorState>({
       Server.createPage(data, (newPageId: string) => {
         this.callOnDoneCallback(true);
         this.clearAndCloseFineIfGone();
-        page.Hacks.navigateTo('/-' + newPageId);
+        ReactActions.navToNewPage(newPageId, state.inFrame);
       });
     });
   },
@@ -2222,7 +2248,7 @@ export const Editor = createFactory<any, EditorState>({
           state.messageToUserIds, this.anyDraftNr(), (pageId: PageId) => {
         this.callOnDoneCallback(true);
         this.clearAndCloseFineIfGone();
-        page.Hacks.navigateTo('/-' + pageId);
+        ReactActions.navToNewPage(pageId, state.inFrame);
       });
     });
   },
@@ -2469,6 +2495,7 @@ export const Editor = createFactory<any, EditorState>({
       visible: false,
       replyToPostNrs: [],
       anyPostType: undefined,
+      discProps: undefined,
       editorsCategories: null,
       editorsPageId: null,
       editingPostNr: null,

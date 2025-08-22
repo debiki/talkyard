@@ -36,7 +36,7 @@ export function startIframeMessages() {
       JSON.stringify(['iframeInited', {}]),
       eds.embeddingOrigin);
 
-  if (eds.isInEmbeddedCommentsIframe)
+  if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum)
     syncDocSizeWithIframeSize();
 }
 
@@ -81,6 +81,7 @@ function onMessage(event) {
   switch (eventName) {
     case 'loginWithAuthnToken':
       // This gets sent to the first comments iframe only. [1st_com_frame]
+      dieIf(!eds.isInEmbeddedCommentsIframe && !eds.isInEmbForum, 'TyE305RK2');
       const authnToken = eventData;
       // REFACTOR to Authn.loginWithToken, calls Server and loadMyself()? [ts_authn_modl]
       Server.loginWithAuthnToken(authnToken, SessionType.AutoTokenSiteCustomSso,
@@ -92,7 +93,7 @@ function onMessage(event) {
       break;
     case 'loginWithOneTimeSecret':
       // This gets sent to the first comments iframe only. [1st_com_frame]
-      dieIf(!eds.isInEmbeddedCommentsIframe, 'TyE50KH4');
+      dieIf(!eds.isInEmbeddedCommentsIframe && !eds.isInEmbForum, 'TyE50KH4');
       const oneTimeLoginSecret = eventData;
       // REFACTOR to Authn.loginWithOneTimeSecret? [ts_authn_modl]
       Server.loginWithOneTimeSecret(oneTimeLoginSecret, function() {
@@ -103,7 +104,7 @@ function onMessage(event) {
       break;
     case 'resumeWeakSession':
       // This gets sent to the first comments iframe only. [1st_com_frame]
-      dieIf(!eds.isInEmbeddedCommentsIframe, 'TyE305RK3');
+      dieIf(!eds.isInEmbeddedCommentsIframe && !eds.isInEmbForum, 'TyE305RK3');
       const pubSiteId = eventData.pubSiteId;
       if (eds.pubSiteId === pubSiteId) {
         // REFACTOR break out fn Authn.loginWithOldSession()?  [ts_authn_modl]
@@ -112,7 +113,12 @@ function onMessage(event) {
         typs.weakSessionId = eventData.weakSessionId;
         if (eventData.xsrfToken) {
           // If xsrfTokenIfNoCookies already set, use it, should be newer.
-          typs.xsrfTokenIfNoCookies ||= eventData.xsrfToken;
+          if (!mainWin.typs.xsrfTokenIfNoCookies) {
+            mainWin.typs.xsrfTokenIfNoCookies = eventData.xsrfToken;
+            typs.xsrfTokenIfNoCookies = eventData.xsrfToken;
+            mainWin.typs.sessType = eventData.sessType;
+            typs.sessType = eventData.sessType;
+          }
         }
 
         // This sends 'justLoggedIn' to other iframes, so they'll get updated too.
@@ -171,6 +177,24 @@ function onMessage(event) {
       // and other comments iframes.
       ReactActions.logoutClientSideOnly({ skipSend: true });
       break;
+
+    case 'editNewForumPage':
+      const catId = eventData[0];
+      const pageType = eventData[1];
+      ReactActions.editNewForumPage(catId, pageType, fromFrame);
+      break;
+
+    case 'openToWriteMessage':
+      const patId = eventData[0];
+      ReactActions.openToWriteMessage(patId, fromFrame);
+      break;
+
+    // Sent from the editor to the comments iframe, when a new page has been created.
+    case 'navToNewPage':
+      const pageId = eventData[0];
+      ReactActions.navToNewPage(pageId);
+      break;
+
     case 'scrollToPostNr':  // rename to loadAndShowPost  ? + add  anyShowPostOpts?: ShowPostOpts
       var postNr = eventData;
       debiki.scriptLoad.done(function() {
@@ -185,8 +209,9 @@ function onMessage(event) {
       });
       break;
     case 'editorToggleReply':
-      // This message is sent from a comments iframe to the editor iframe.
-      // Will open the editor to write a reply to `postNr` in that comments iframe.
+      // This message is sent from a comments iframe to the editor iframe. Will open
+      // the editor to write a reply to `postNr` in that comments iframe. The editor frame
+      // gets the page id and current categories from `fromFrame`. [clones_store]
       var postNr = eventData[0];
       var inclInReply = eventData[1];
       var postType = eventData[2] ?? PostType.Normal;
@@ -202,7 +227,7 @@ function onMessage(event) {
     case 'editorEditPost':
       // Sent from a comments iframe to the editor iframe.
       var postNr = eventData;
-      ReactActions.editPostWithNr(postNr, fromFrame);
+      ReactActions.editPostWithNr(postNr, fromFrame); // [clones_store]
       break;
     case 'onEditorOpen':
       // Sent from the embedded editor to all comment iframes, so they can
@@ -271,12 +296,27 @@ function syncDocSizeWithIframeSize() {
     // outside the iframe.  2) Don't use document.body.clientHeight — it might be
     // too small, before iframe resized. 3) body.offsetHeight can be incorrect
     // if nested elems have margin-top.  But this works fine:  [iframe_height]
-    var discussion = $byId('dwPosts');
-    var currentWidth = discussion.clientWidth;
-    var currentDiscussionHeight = discussion.clientHeight;
+    const discussion = $byId('dwPosts');
+    const currentWidth = discussion.clientWidth;
+    const currentDiscussionHeight = discussion.clientHeight;
 
-    // Make space for any notf prefs dialog — it can be taller than the emb cmts
-    // iframe height, before there're any comments. [IFRRESIZE]
+    // In embedded forums, there's a footer too, and sometimes an editor.
+    const anyFooter = $first('footer');
+    const footerMargin = 28; // see page.styl [footer_margin_top]
+    const footerHeight = anyFooter && (anyFooter.clientHeight + footerMargin) || 0;
+
+    // There's no editor — it's in its own iframe. If there had been:
+    // -----
+    // (There's an 1px border, so don't use `.clientHeight` — it ignores borders.
+    // Hmm, but then the iframe starts growin 1px at a time, forever! So, don't.
+    // But why not?)
+    // const anyEditor = $first('#debiki-editor-controller');
+    // Or skip? [dont_incl_editor_in_ifram_height]
+    // const editorHeight = anyEditor && anyEditor.clientHeight || 0;
+    // -----
+
+    // Make space for any dialogs, e.g. the notf prefs dialog — they can be taller than
+    // the emb cmts iframe height, before there're any comments. [IFRRESIZE]
     const anyDialog = $first('.esDropModal_content');
     let dialogHeightPlusPadding = 0;
     if (anyDialog) {
@@ -285,7 +325,10 @@ function syncDocSizeWithIframeSize() {
       // Was: anyDialog.clientHeight + 30, but that didn't incl whitespace above.
     }
 
-    const currentHeight = Math.max(currentDiscussionHeight, dialogHeightPlusPadding);
+    // UX BUG: Doesn't downsize itself, if emb forum.
+    const currentHeight = Math.max(
+            currentDiscussionHeight + footerHeight, // + editorHeight
+            dialogHeightPlusPadding);
 
     if (lastWidth === currentWidth && lastHeight === currentHeight)
       return;

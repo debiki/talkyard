@@ -70,6 +70,16 @@ Now:
     (but of course others, not even mods or admins, can see this). [list_by_alias]
   - Bind anonForPatId to ... Unknown user id? for now, in json dumps. [export_privid]
 
+Minor bugs / annoying: [BUG]
+  - As admin,
+        Enter anon mode,
+        Post as anon,
+        Becomes pending approval.
+        Needs to leave anon mode, to approve (one's own comment).
+        When approving:   TyE06RKDHN24
+  - I post as Temp Anon, gets pending approval. I can't edit, until approved?
+    But I can edit my own not-anon comments, although they're not yet approved.
+    And new topics, though, by me as Temp Anon, I can edit although not yet approved.
 
 Later, quick:
   - RENAME // to ...ByTrueId?

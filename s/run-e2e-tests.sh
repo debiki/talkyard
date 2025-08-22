@@ -312,6 +312,8 @@ function runAllE2eTests {
   $r s/wdio --only navigation-as-stranger $args
   # Also:  embedded-comments-navigation-as-guest  further below.
 
+  $r s/wdio-7 --only login-guest-or-user-without-email.3br.f --cd -i $args
+
   $r s/wdio-7 --only d.sessions-logout-elsewhere.4br --cd -i $args
   $r s/wdio-7 --only d.sessions-staff-logout-others.4br --cd -i $args
 
@@ -320,6 +322,7 @@ function runAllE2eTests {
 
   $r s/wdio-7 --only editor-toolbar-preview.1br --cd -i $args
   $r s/wdio --only sanitize-posts.2browsers $args
+  $r s/wdio-7 --only rel-follow-own-domains.2br.f --cd -i $args
 
   $r s/wdio-7 --only votes-and-best-first.d.2br --cd -i $args
   $r s/wdio-7 --only comment-sort-order.d.2br --cd -i $args
@@ -558,6 +561,8 @@ function runAllE2eTests {
   # Moderation   (4862065)
   # ------------
 
+  $r s/wdio-7 --only modn-review-specific-user.3br.f --cd -i $args
+
   $r s/wdio-7 --only modn-ban-spammer.2br.f.e2e.ts --cd -i $args
 
   $r s/wdio-7 --only may-see-email-adrs.2br.d --cd -i $args
@@ -718,7 +723,6 @@ function runAllE2eTests {
   $r s/wdio-7     --only embcom.reply-vote-report-bef-login.2br --cd -i $args
   $r s/wdio       --only embedded-comments-conf-notf-pref-first $args
 
-  # E2EBUG: Flappy
   $r s/wdio-7     --only embcom.sort-order-op-likes-btn-txt.2br.ec --cd -i $args
 
   $r s/wdio       --only embedded-comments-category-refs.2browsers $args

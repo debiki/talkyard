@@ -437,7 +437,9 @@ const AboutMember = createComponent({
           r.div({ className: 'form-group' },
             r.label({}, t.EmailAddress),
             r.div({},
-              r.samp({ className: 'e_PrimEmAdr' }, user.email),
+              user.email
+                  ? r.samp({ className: 'e_PrimEmAdr' }, user.email)
+                  : r.span({ className: 'e_0EmAdr' }, "No email address. "), // I18N
               NavLink({ to: this.props.emailsLoginsPath,
                   className: 'btn s_UP_Prefs_ChangeEmailB' },
                 isSelfOrAdmin ? t.ChangeDots : t.MoreDots)),
@@ -562,7 +564,7 @@ const NotfPrefsTab = createFactory({
         location.hash.indexOf('configEveryone=true') === -1)
       return r.p({},
         r.span({ className: 's_ConfAllMemInst' },
-          "Go ", Link({ to: linkToMembersNotfPrefs(Groups.AllMembersId) }, "here"),
+          "Go ", TyLink({ to: linkToMembersNotfPrefs(Groups.AllMembersId) }, "here"),
           " instead,"),
         " and configure notifications for the All Members group.");
 
@@ -1262,7 +1264,11 @@ const AccountTab = createFactory<any, any>({
     const emailAddrs: UserAccountEmailAddr[] = this.state.emailAddresses;
     const loginMethods: UserAccountLoginMethod[] = this.state.loginMethods;
 
-    const emailAddressesList =
+    const emailAddressesList = (
+      !emailAddrs.length
+          // Tests:
+          //   - TyTLGI_GST_OR_WO_EML.TyTLGI_USR_0EM
+          ? r.div({ className: 's_UP_EmLg_0Em' }, "No email address") :
       r.ul({ className: 's_UP_EmLg_EmL' },
         emailAddrs.map((addr: UserAccountEmailAddr) => {
           let status = '';
@@ -1308,7 +1314,7 @@ const AccountTab = createFactory<any, any>({
               isPrimary || !isVerified ? null :
                 Button({ onClick: () => this.setPrimary(addr.emailAddress),
                     className: 'e_MakeEmPrimaryB' }, t.upp.MakePrimary)));
-        }));
+        })));
 
     // Don't show the Add button again after one email added. Then it's harder to see
     // the "check your inbox" message.
@@ -1318,6 +1324,9 @@ const AccountTab = createFactory<any, any>({
           : (this.state.showAddEmailInput || this.state.isAddingEmail
               ? null
               : Button({ onClick: () => this.setState({ showAddEmailInput: true }),
+                    // UX SHOULD: If the user didn't have any email addr before,
+                    // ask if han wants to start getting notified via email, once the
+                    // address has been verified.  [users_w_0_email]
                     className: 'e_AddEmail' },
                   t.upp.AddEmail)));
 

@@ -1,0 +1,26 @@
+Mitigating cognitive biases
+===========================
+
+Probably we'll add features that mitigate cognitive biases to Talkyard.
+
+Add a  perms_on_pages3.can_see_orig_c,
+just because it makes sense, in some cases, f.ex. a teacher posts to hans class,
+and all students can see the teacher's post (the OP, original post), and reply,
+but the students can't see each other's replies.
+Then, the teacher(s) can talk individually with each student, on the same page
+— nice for the teacher to not have to manage say 30 different discussion pages
+about the same thing.
+
+But that's probably not how to implement hiding-everyone's-replies to mitigate cogn biases.
+
+Instead, that should be some other status toggle?
+
+Because sometimes you'd want both at the same time: a teacher posing to the class,
+and the *teacher* doesn't want to see anyone's replies, until ... later, to mitigate
+biases (in the teacher).
+
+Then, can't use can_see_orig_c as part of the anti-cogn-bias "workflow".
+
+Instead, new settings needed? On posts3? pages3?  If possible, start w posts3,
+more compat w a future where cats, pages, posts all are node?  [its_a_node]
+

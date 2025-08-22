@@ -678,6 +678,7 @@ object Nashorn {
     |}
     |
     |
+    |// No longer needed. Can [use_url_shim] instead.
     |var URL = Java.type('java.net.URL');
     |
     |// Used by our custom code in googleCajaSanitizeHtml().
@@ -689,6 +690,7 @@ object Nashorn {
     |//
     |function nashorn_shallFollowUrl(url, followTo) {
     |  try {
+    |    // Could [use_url_shim] instead.
     |    var javaUrl = new URL(url);
     |    //console.debug("nashorn_shallFollowUrl url: " + url);
     |    //console.debug("nashorn_shallFollowUrl Protocol: " + javaUrl.getProtocol());

@@ -1686,7 +1686,7 @@ export function loadMyself(onOkMaybe: (resp: FetchMeResponse) => Vo) {
   // Therefore, BUG: If many comments iframes, will *look* as if changing notf
   // level, has no effect. But in fact it works.
   let pageIds = getPageId();
-  if (eds.isInEmbeddedCommentsIframe) {
+  if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) {
     try {
       const mainWin = getMainWin();
       if (mainWin.tydyn) {
@@ -2498,7 +2498,16 @@ export function savePageIdsUrls(data: PageIdsUrls, onDone: () => void) {
 // [load_page_and_parts]
 export function loadPageJson(path: string, success: (response) => void) {
   logM(`Loading page: ${path} [TyMLDPG]`);
-  get(path + '?json', response => {
+  // The server renders pages differently, if they're for blog comments, or for an
+  // embedded forum. Embedded forum links should be deep links into the forum
+  // but relative the embedd*ing* website, e.g.  https://www.ex.co/forum#/-123/talkyard-page.
+  // Also need to know how to generate links — that's  embPathParam  namely '#/'
+  // in the example above.  [maybe_need_only_embPathParam]
+  const embgUrl = !eds.embeddingUrl ? '' : '&embgUrl=' + encodeURIComponent(eds.embeddingUrl);
+  const embHow = !eds.embHow ? '' : '&embHow=' + encodeURIComponent(eds.embHow);
+  const embPathParam = !eds.embPathParam ? '' :
+          '&embPathParam=' + encodeURIComponent(eds.embPathParam);
+  get(path + '?json' + embgUrl + embHow + embPathParam, response => {
     logM(`Done loading ${path}, updating store...`);
     success(response);
     logM(`Done updating store.`);

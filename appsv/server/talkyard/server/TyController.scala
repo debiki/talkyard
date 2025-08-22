@@ -144,10 +144,12 @@ class TyController(cc: ControllerComponents, val context: TyContext)
     PlainApiAction(cc.parsers.json(maxLength = maxBytes),
       rateLimits, authnUsersOnly = true, avoidCookies = avoidCookies).async(f)
 
-  def UserPostJsonAction(rateLimits: RateLimits, maxBytes: i32, ignoreAlias: Bo = false)(
+  def UserPostJsonAction(rateLimits: RateLimits,
+        minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
+        maxBytes: i32, ignoreAlias: Bo = false)(
         f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiAction(cc.parsers.json(maxLength = maxBytes),
-      rateLimits, authnUsersOnly = true, ignoreAlias = ignoreAlias)(f)
+      rateLimits, minAuthnStrength, authnUsersOnly = true, ignoreAlias = ignoreAlias)(f)
 
   def PostTextAction(rateLimits: RateLimits,
         minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,

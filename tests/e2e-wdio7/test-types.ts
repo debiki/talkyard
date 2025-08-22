@@ -31,14 +31,16 @@ export const enum IsWhere {
   Forum = 1,
   LoginPopup = 2,
 
-  EmbFirst = 3,
-  EmbeddingPage = 3,
+
+  EmbFirst = 4,
   EmbCommentsIframe = 4,  // hmm could add an enum value for EmbSessionIframe
   EmbEditorIframe = 5,
-  EmbLast = 5,
+
+  EmbeddingPage = 7,
+  EmbLast = 7,
 
   // E.g. a blog post index page, with <a href=...> to blog posts with emb comments.
-  EmbeddedPagesListPage = 6,
+  EmbeddedPagesListPage = 8,
 
   // If switching to e.g. a link preview embedded iframe.
   UnknownIframe = 9,

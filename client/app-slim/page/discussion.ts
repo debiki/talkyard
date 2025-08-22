@@ -405,7 +405,7 @@ export const Title = createComponent({
 
     // Make forum titles link back to the forum default view.
     if (page.pageRole === PageRole.Forum) {
-      titleText = Link({ to: page.pagePath.value }, titleText);
+      titleText = TyLink({ to: page.pagePath.value }, titleText);
     }
 
     let anyShowForumInroBtn;
@@ -695,8 +695,8 @@ const RootPostAndComments = createComponent({
     if (page_isSolved(page)) {
       // onClick:... handled in ../utils/show-and-highlight.js currently (scrolls to solution).
       const solvedIcon = page_getSolvedIcon(page);
-      solvedBy = r.a({ className: 'dw-solved-by ' + solvedIcon,
-          href: '#post-' + page.pageAnswerPostNr,
+      solvedBy = TyLink({ className: 'dw-solved-by ' + solvedIcon,
+          href: `/-${page.pageId}#post-` + page.pageAnswerPostNr,
           onMouseEnter: () => ReactActions.highlightPost(page.pageAnswerPostNr, true),
           onMouseLeave: () => ReactActions.highlightPost(page.pageAnswerPostNr, false),
           onClick: utils.makeShowPostFn(BodyNr, page.pageAnswerPostNr) },
@@ -730,7 +730,7 @@ const RootPostAndComments = createComponent({
                     // a padlock or a private message symbol, instead of a link icon
                     // — Otherwise ppl can get nervous, when they think "everyone"
                     // can see such access restricted links.  [staff_can_see]
-                    Link({ to: topic.url, className: 's_InLns_Ln icon-link' },
+                    TyLink({ to: topic.url, className: 's_InLns_Ln icon-link' },
                       topic.title))
               )));
     }

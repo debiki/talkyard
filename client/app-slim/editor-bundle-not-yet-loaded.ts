@@ -54,9 +54,9 @@ export function openToEditPostNr(postNr: PostNr, onDone?: EditsDoneHandler,
 }
 
 
-export function editNewForumPage(category: RefOrId, role: PageRole) {
+export function editNewForumPage(category: RefOrId, role: PageRole, inFrame?: MainWin) {
   ensureEditorCreated(editor => {
-    editor.editNewForumPage(category, role);
+    editor.editNewForumPage(category, role, inFrame);
   });
 }
 
@@ -76,9 +76,9 @@ export function openToWriteChatMessage(text: string, draft: Draft | undefined,
 }
 
 
-export function openToWriteMessage(userId: number) {
+export function openToWriteMessage(userId: PatId, inFrame?: DiscWin) {
   ensureEditorCreated(editor => {
-    editor.openToWriteMessage(userId);
+    editor.openToWriteMessage(userId, inFrame);
   });
 }
 

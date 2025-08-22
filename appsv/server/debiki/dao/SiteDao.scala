@@ -593,15 +593,17 @@ class SiteDao(
     readWriteTransaction(_.updateNotificationSkipEmail(notifications))
 
   def markAllNotfsAsSeen(userId: UserId): Unit = {
-    val user = loadTheUserInclDetailsById(userId)
+    TESTS_MISSING // TyTNOTF_GUEST_SEEN Guest marks all as seen
+    val pat: Pat = getTheParticipant(userId)
     readWriteTransaction(_.markNotfsAsSeen(userId, None,
-      skipEmails = user.emailNotfPrefs != EmailNotfPrefs.ReceiveAlways))
+      skipEmails = pat.emailNotfPrefs != EmailNotfPrefs.ReceiveAlways))
   }
 
   def markNotificationAsSeen(userId: UserId, notfId: NotificationId): Unit = {
-    val user = loadTheUserInclDetailsById(userId)
+    TESTS_MISSING // TyTNOTF_GUEST_SEEN Guest marks one as seen
+    val pat: Pat = getTheParticipant(userId)
     readWriteTransaction(_.markNotfsAsSeen(userId, Some(notfId),
-      skipEmails = user.emailNotfPrefs != EmailNotfPrefs.ReceiveAlways))
+          skipEmails = pat.emailNotfPrefs != EmailNotfPrefs.ReceiveAlways))
   }
 
   def snoozeNotifications(reqrId: UserId, untilWhen: Option[When]): Unit = {

@@ -11,3 +11,8 @@ UGC domain, see:
 
 
 Upd demo sites: rel-follow to SX
+
+
+Background job that rerenders posts, if rel-follow settings changed. [backgr_upd_rel_follow]
+See: appsv/server/talkyard/server/jobs/Janitor.scala  and  job_queue_t.
+

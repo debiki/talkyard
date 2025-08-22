@@ -406,9 +406,17 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
 
   def urlIsToDifferentOrigin(url: String, thisServerOrigin: String): Boolean = {
     val urlUri = new java.net.URI(url)
+    urlIsToDifferentOrigin(urlUri, thisServerOrigin)
+  }
 
-    require(thisServerOrigin.contains("//"),
-      s"Not an origin: '$thisServerOrigin' [TyE02WKL62GJ]")
+
+  def urlIsToDifferentOrigin(urlUri: java.net.URI, thisServerOrigin: St,
+           silent: Bo = false): Bo = {
+    val canBeOrigin = thisServerOrigin.contains("//")
+    if (!canBeOrigin) {
+      if (silent) return true
+      else die("TyE02WKL62GJ", s"Not an origin: '$thisServerOrigin'")
+    }
 
     // Only an URL path? Then it's the same server.
     if (urlUri.getHost == null) {

@@ -232,12 +232,12 @@ export const TopBar = createComponent({
 
   onSignUpClick: function() {
     const props: TopbarProps = this.props;
-    login.openLoginDialogToSignUp(props.purpose || LoginReason.SignUp);
+    login.loginIfNeededReturnToAnchor(props.purpose || LoginReason.SignUp, '');
   },
 
   onLoginClick: function() {
     const props: TopbarProps = this.props;
-    login.openLoginDialog(props.purpose || LoginReason.LoginToLogin);
+    login.loginIfNeededReturnToAnchor(props.purpose || LoginReason.LoginToLogin, '');
   },
 
   showTools: function() {
@@ -390,7 +390,7 @@ export const TopBar = createComponent({
     const snoozeIcon = !!snoozeUntilTxt &&
         r.span({ className: 's_MMB_Snz' },
           r.img({ alt: "Snoozing", className: 's_SnzI',   // I18N
-              src: '/-/media/sysuicons/bell_snooze.svg' }),
+              src: eds.cdnOrServerOrigin + '/-/media/sysuicons/bell_snooze.svg' }),
           snoozeUntilTxt);
 
     const avatarNameDropdown = !me.isLoggedIn && !impersonatingStrangerInfo ? null :
@@ -684,7 +684,11 @@ export const TopBar = createComponent({
             version: 1,
             content: rFr({},
               "Create ",
-              LinkUnstyled({ to: linkToGroups() }, "groups"), '?'),
+              LinkUnstyled({ to: linkToGroups(),
+                      // Can't create groups from inside an iframe, so open in new tab
+                      // if is in iframe, by making the link "external".
+                      ext: eds.isInEmbeddedCommentsIframe || eds.isInEmbForum },
+                  "groups"), '?'),
           }}),
           help.HelpMessageBox({ message: <HelpMessage> {
             id: '25fwk6',
@@ -880,7 +884,7 @@ export const SearchForm = createComponent({
           r.div({ className: 'c_SchD_X' },
             // UX: These should activate on Space, not just Enter? [sch_b_space]
             LinkUnstyled({ className: 'c_SchD_X_B', href: searchUrl, target: '_blank',
-                  tabIndex: '3' }, "Search in new tab"),  // I18N
+                  tabIndex: '3', ext: true, rel: 'noopener noreferrer' }, "Search in new tab"),  // I18N
             LinkUnstyled({ className: 'c_SchD_X_B', href: searchUrlAdvanced,
                   tabIndex: '4' }, t.AdvSearch))));
   }

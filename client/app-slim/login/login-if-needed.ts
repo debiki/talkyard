@@ -141,6 +141,7 @@ function loginIfNeededImpl(loginReason: LoginReason, toHash: St, toPath: St,
     // Don't open a dialog inside the iframe; open a popup instead.
     // Need to open the popup here immediately, because if not done immediately after
     // mouse click, the popup gets blocked (in Chrome at least).
+    // [complete_origin]
     //
     // (This'll call `LoginController.showLoginPopup()` in the app server, to show:
     // ../../../appsv/server/views/authn/authnPage.scala.html  in a popup.

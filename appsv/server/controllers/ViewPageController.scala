@@ -302,7 +302,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
       pageMeta = Some(pageMeta),
       ancCatsRootLast = pageCtx.ancCatsRootLast,
       altPageId = None,
-      embeddingUrl = None,
+      embeddingUrl = request.embeddingUrlParam,  // [emb_forum_is_emb]
       dao = dao,
       request = request.request)
 
@@ -493,7 +493,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
       pageMeta = Some(pageMeta),
       ancCatsRootLast = pageCtx.ancCatsRootLast,
       altPageId = None,
-      embeddingUrl = None,
+      embeddingUrl = request.embeddingUrlParam,  // [emb_forum_is_emb]
       dao = dao,
       request = request.request)
 

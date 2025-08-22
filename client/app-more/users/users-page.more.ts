@@ -204,7 +204,7 @@ const UserPageComponent = createReactClass(<any> {
       return;
 
     this.hasAutoOpenedEditorFor[userId] = true;
-    editor.openToWriteMessage(userId);
+    ReactActions.openToWriteMessage(userId);
   },
 
   render: function() {
@@ -431,7 +431,7 @@ const PatTopPanel = createComponent({
 
   sendMessage: function() {
     const props: PatTopPanelProps = this.props;
-    editor.openToWriteMessage(props.user.id);
+    ReactActions.openToWriteMessage(props.user.id);
   },
 
   render: function() {

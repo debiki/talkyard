@@ -2525,7 +2525,24 @@ trait UserDao {
       require(userId == deleter.id || deleter.isAdmin, "TyE7UKBW1")
 
       val anonUsername = "anon" + nextRandomLong().toString.take(10)
-      val anonEmail = anonUsername + "@example.com"
+      var anonEmail = anonUsername + "@example.com"
+
+      // If we've sent emails to the user, delete hans email address from the emails.
+      var numForgotten = tx.forgetEmailSentToAddress(userId, replaceWithAddr = anonEmail)
+      numForgotten += tx.forgetInviteEmailSentToAddress(userId, replaceWithAddr = anonEmail)
+
+      tx.deleteAllUsersEmailAddresses(userId)
+
+      // Insert a random anon email adr, in place of all other real addresses the user had.
+      if (numForgotten >= 1) {
+        tx.insertUserEmailAddress(UserEmailAddress(
+              userId, anonEmail, addedAt = tx.now, verifiedAt = None))
+      }
+      else {
+        // The user we're deleting didn't have any email adr, or it was never used.
+        // Don't create any anon email adr.
+        anonEmail = ""  // [silly_empty_email]
+      }
 
       // Use this fn so uploads ref counts get decremented.
       setUserAvatarImpl(userId: UserId, tinyAvatar = None, smallAvatar = None, mediumAvatar = None,
@@ -2573,20 +2590,11 @@ trait UserDao {
         browserIdData = byWho.browserIdData,
         targetPatTrueId = Some(memberBefore.trueId2))
 
-      // Right now, members must have email addresses. Later, don't require this, and
-      // skip inserting any dummy email here. [no-email]
-      tx.deleteAllUsersEmailAddresses(userId)
-      tx.insertUserEmailAddress(UserEmailAddress(userId, anonEmail, addedAt = tx.now, verifiedAt = None))
-
       SECURITY; COULD // if the user needs to be blocked (e.g. a spammer), remember ... a hash?
       // of hens identity ids, in a block list, to prevent hen from signing up again.
       // Otherwise, right now, someone who signed up with Facebook and got blocked, can just
       // delete hens account and signup again with the same Facebook account.
       tx.deleteAllUsersIdentities(userId)
-
-      // If we've sent emails to the user, delete hens email address from the emails.
-      tx.forgetEmailSentToAddress(userId, replaceWithAddr = anonEmail)
-      tx.forgetInviteEmailSentToAddress(userId, replaceWithAddr = anonEmail)
 
       // Audit log entries get scrubbed automatically after a while; don't delete them from here
       // (that'd be too soon — they're used to prevent e.g. app layer DoS attacks).

@@ -136,9 +136,14 @@ declare namespace ed {
 }
 
 
-// prelude.ts:
+// head-bundle.ts:
 
 declare function isServerSide(): Bo;
+declare function url_isRelative(url: St | URL): Bo;
+
+
+// prelude.ts:
+
 declare function isSelfHosted(): Bo;
 declare function isAutoTestSite(): Bo;
 
@@ -184,7 +189,9 @@ declare namespace debiki2 {
   function RedirPath(props: RedirPathProps);
   function RedirToNoSlash({ path: string });
   function RedirAppend({ path, append });
+  // Use TyLink instead
   var Link; // ReactRouterDOM.Link
+  // Use TyNavLink? But doesn't yet exist
   var NavLink; // ReactRouterDOM.NavLink
   function LiNavLink(props, ...contents); // A NavLink in a <li>
   function LiExtLink(props, ...contents); // An <a href=...> in a <li>
@@ -268,10 +275,10 @@ declare namespace debiki2 {
     // from editor-bundle-not-yet-loaded.ts:
     function toggleWriteReplyToPostNr(postNr: PostNr, inclInReply: boolean, anyPostType?: number);
     function openToEditPostNr(postNr: PostNr, onDone?);
-    function editNewForumPage(category: RefOrId, role: PageRole);
+    function editNewForumPage(category: RefOrId | U, role: PageRole | U, inFrame?: DiscWin);
     function openToEditChatTitleAndPurpose();
     function openToWriteChatMessage(text: string, onDone);
-    function openToWriteMessage(userId: UserId);
+    function openToWriteMessage(userId: UserId, inFrame?: DiscWin);
   }
 
   namespace login {
@@ -424,7 +431,7 @@ declare namespace debiki2 {
   function draftType_toPostType(draftType: DraftType): PostType | U;
   function postType_toDraftType(postType: PostType): DraftType | U;
   function store_findTheDefaultCategory(store: Store): Category | U;
-  function store_findCatByRefOrId(store: Store, ref: RefOrId): Category | U;
+  function store_findCatByRefOrId(store: DiscStore, ref: RefOrId): Category | U;
   function store_ancestorCatsCurLast(store: Store, categoryId: CatId): Cat[];
   function store_findCatsWhereIMayCreateTopics(store: Store): Category[];
   function store_getPostId(store: DiscStore, pageId: PageId, postNr: PostNr): PostId | U;
@@ -470,6 +477,7 @@ declare namespace debiki2 {
   function perms_join(pA: PermsOnPage, pB: PermsOnPageNoIdOrPp | U): PermsOnPageNoIdOrPp;
 
   function origin(): string;
+  function linkToPath(pathQueryNoHash: St);
   function linkToPageId(pageId: PageId): string;
   function linkToPostNr(pageId: PageId, postNr: PostNr): string;
   function linkToPost(post: PostWithPageId): St;
@@ -601,6 +609,7 @@ declare namespace debiki2 {
   function ExtVerbLink(url: St): RElm;
   var ExtLinkButton;
   var LinkUnstyled;
+  function TyLink(props: any, ...children);
   var LinkButton;
   var InputTypeSubmit; // could move to more-bundle.js, but is just 1 line
   var MenuItem;

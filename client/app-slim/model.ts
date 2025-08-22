@@ -1253,6 +1253,11 @@ interface SessWinStore {
 }
 
 
+interface SettingsStore {
+  settings: SettingsVisibleClientSide
+}
+
+
 /// Can be 1) the main ('top') browser win (incl topbar, editor, sidebars etc), or
 /// 2) a copy of the store in an embedded comments iframe.  [many_embcom_iframes]
 ///
@@ -1263,6 +1268,7 @@ interface DiscStore extends SessWinStore {
   currentPageId?: PageId;
   currentCategories: Cat[];   // RENAME [concice_is_nice] curCats — or remove, use curCatsById.values instead?
   curCatsById: { [catId: CatId]: Cat };
+  allCategoriesHacky?: Category[]; // ?? [incl_hacky_cats_in_DiscStore]?
   usersByIdBrief: { [userId: number]: Pat };  // = PatsById
   pagesById: { [pageId: string]: Page };
 
@@ -1278,6 +1284,9 @@ interface DiscStore extends SessWinStore {
   curDiscProps?: DiscPropsDerived
   indicatedPersona?: PersonaMode      // ? move to SessWinStore ?
 }
+
+
+type EditorsStore = DiscStore & Origins & SettingsStore
 
 
 interface Store extends Origins, DiscStore, PartialEditorStoreState {
@@ -1309,7 +1318,7 @@ interface Store extends Origins, DiscStore, PartialEditorStoreState {
 
   // For all site sections, loaded lazily, and updated in a hacky way, for now, so have a look,
   // and refactor (?), before using it for anything more.
-  allCategoriesHacky?: Category[];
+  allCategoriesHacky?: Category[]; // [incl_hacky_cats_in_DiscStore]?
   publicCategories: Category[];   // RENAME [concice_is_nice] pubCats
   newCategorySlug: string; // for temporarily highlighting a newly created category
   topics?: Topic[];
@@ -3590,6 +3599,8 @@ interface ServerVars {
 
   pubSiteIdOrigin: St;
   cdnOriginOrEmpty: string;
+  // Could: Incl server origin only if no CDN and *is* embedded? [emb_img_urls]
+  // Also, won't need to rerender, if moving server origin.
   cdnOrServerOrigin: string;
   assetUrlPrefix: string;
   debugOrigin: St;
@@ -3619,13 +3630,20 @@ interface ServerVars {
   // For embedded comments.
   isInEmbeddedCommentsIframe: boolean;
   isInEmbeddedEditor: boolean;
+  isInEmbForum?: Bo  // currently same as embHow === 'Forum'
 
   embeddingScriptV?: Nr;
+  // Deprecated, use  embgOrigin  instead?
   embeddingOrigin?: string;
 
   embHow?: 'Forum' | St  // or sth else (invalid). A url param
+  embgUrl?: St
+  embgOrigin?: St
+  embPathParam?: St
 
   // Wrap in an obj so they can be updated all at the same time?
+  // CLEAN_UP Move all this to the store instead?, E.g. use only store.currentPageId,
+  // not embeddedPageId (which looks like dupl data) ?
   // ---------------
   // (In an embedded editor, they're updated dynamically, depending on which
   // blog comments iframe is active.  [many_embcom_iframes])
@@ -3633,7 +3651,7 @@ interface ServerVars {
   embeddedPageAltId?: string;  // RENAME to embeddedDiscussionId
   lazyCreatePageInCatId?: CategoryId;
   // Sometimes lazy-inited when the page gets lazy-created, when the first reply is posted. [4HKW28]
-  embeddedPageId?: string;
+  embeddedPageId?: string;  // [annoying_4HKW28]
   // ---------------
 
   // When creating new site.

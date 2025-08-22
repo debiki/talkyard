@@ -155,14 +155,20 @@ trait PagesSiteDaoMixin extends SiteTransaction {
               param_origin_or_empty_c,
               param_cdn_origin_or_empty_c,
               param_ugc_origin_or_empty_c,
+              -- param_emb_path_param_c,
+              -- param_embg_url_or_empty_c,
               cached_site_version_c,
               cached_page_version_c,
               cached_app_version_c,
+              -- cached_priv_settings_json_c,
               cached_store_json_hash_c,
               updated_at_c,
               cached_store_json_c,
               cached_html_c)
-          values (?, ?, ?, ?, ?, 2, ?, ?, ?, ?, ?, ?, ?, ?, now_utc(), ?::jsonb, ?)
+          values (
+                ?, ?, ?, ?, ?, 2, ?, ?, ?, ?,   -- _, _, for param_emb_path_param_c, embg_url
+                ?, ?, ?, -- _, for cached_priv_settings_json_c
+                ?, now_utc(), ?::jsonb, ?)
           on conflict (
               site_id_c,
               page_id_c,
@@ -174,6 +180,8 @@ trait PagesSiteDaoMixin extends SiteTransaction {
               param_origin_or_empty_c,
               param_cdn_origin_or_empty_c,
               param_ugc_origin_or_empty_c)
+              -- param_emb_path_param_c,
+              -- param_embg_url_or_empty_c)
           do update set
               cached_site_version_c = excluded.cached_site_version_c,
               cached_page_version_c = excluded.cached_page_version_c,
@@ -182,6 +190,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
               updated_at_c = now_utc(),
               cached_store_json_c = excluded.cached_store_json_c,
               cached_html_c = excluded.cached_html_c
+              -- cached_priv_settings_json_c = excluded.cached_priv_settings_json_c
           """
 
     val params = version.renderParams

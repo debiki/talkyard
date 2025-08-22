@@ -83,7 +83,8 @@ export const MyMenuContent = createFactory({
 
     const SnoozeBtn = () =>
       LinkUnstyled({ onClick: () => pagedialogs.openSnoozeDialog(me), className: 's_MM_SnzB' },
-          r.img({ className: 's_SnzI', src: '/-/media/sysuicons/bell_snooze.svg' }),
+          r.img({ className: 's_SnzI',
+              src: eds.cdnOrServerOrigin + '/-/media/sysuicons/bell_snooze.svg' }),
           pp_snoozeLeftMs(me) ? "Stop snoozing" : "Snooze");  // I18N
 
     const notfsDivider = me.notifications.length ? MenuItemDivider() : null;

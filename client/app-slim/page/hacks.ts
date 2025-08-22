@@ -52,8 +52,12 @@ export const ExtReactRootNavComponent = createReactClass({
     doNavigate = (url: St): V | true => {
       // this.props.location is made available by ReactRouter — we should be
       // wrapped in a Router(..., Routes( ... )) component.
-      const loc = this.props.location;
-      const localPath = url_asLocalAbsPath(url, loc);
+      // But ReactRouter doesn't include any of: { origin, protocol, host, hostname, port, href }
+      // — we need `origin`, so let's use `window.location` instead.
+      // const location = this.props.location;
+      const location = window.location;
+      const localPath = url_asLocalAbsPath(
+              url, location, eds.embgUrl || eds.embeddingUrl, eds.embPathParam);
       if (!localPath) {
         // External link.
         window.location.assign(url);
@@ -61,7 +65,7 @@ export const ExtReactRootNavComponent = createReactClass({
       }
 
       // Already at the desired url?
-      if (loc.pathname === localPath)
+      if (location.pathname === localPath)
         return;
 
       const linksToAdminArea = localPath.indexOf('/-/admin/') === 0; // dupl [5JKSW20]
@@ -94,7 +98,53 @@ export const ExtReactRootNavComponent = createReactClass({
 /// Changes a url to a server local url path, if the url is to the
 /// same origin.  If cannot do this, returns false.
 ///
-function url_asLocalAbsPath(url: St, loc: { origin: St, hostname: St }): St | false {
+function url_asLocalAbsPath(rawUrl0: St, location: { origin: St, hostname: St, pathname: St },
+          embgUrl?: St, embPathParam?: St)
+          : St | false {
+
+  // Are we in an embedded forum? If so, the actual new url might be a parameter in `rawUrl`
+  // — lets's extract it.
+
+  // Prefix the current path to any relative urls, for example, if at '/-/users/someone',
+  // then  './preferences/notifications'  —>  /-/users/someone/preferences/notifications.
+  // Edit: Currently never needed. Can just:
+  const rawUrl = rawUrl0;
+             // !rawUrl0.startsWith('./') ?
+             //     rawUrl0 : url_dropSlashSlug__unused(location.pathname) + rawUrl0.slice(1);
+
+  // But if it's a /relative/url, then, it's not to the embedd*ing* website but to a
+  // Talkyard page/endpoint already, no need to extract it (we have it already).
+  // Then, if we're in an embedded forum, TyLink and linkToPath() will convert it to
+  // a link + parameter to the embedding page.
+  const isRelative = url_isRelative(rawUrl);
+
+  const url = !embgUrl || isRelative ? rawUrl : (function() {
+    // [embg_ty_url]
+    if (embPathParam === '#/') {
+      // The Talkyard url might have been appended to the embedding page's url, as a #hash
+      if (rawUrl.indexOf(embgUrl + '#/') === 0)
+        return rawUrl.slice(embgUrl.length + 1); // + 1 not 2, to keep '/'
+    } /*
+    // Let's skip. [skip_question_url_param]
+    else if (embPathParam === '?/') {
+      // Is this ever useful?
+      // UNTESTED
+      if (rawUrl.indexOf(embgUrl + '?/') === 0)
+        return rawUrl.slice(embgUrl.length + 1);
+    }
+    // Let's wait, untested.  [skip_query_param_url_parm]
+    else {
+      // UNTESTED
+      const urlOb = new URL(rawUrl);
+      const params = urlOb.searchParams;
+      const actualUrl = params && params.get(embPathParam.slice(1));
+      if (actualUrl)
+        return actualUrl;
+    } */
+    //logD(`Weird raw url: ${rawUrl}  [TyERWURL]`);
+    return rawUrl;
+  })();
+
   // Is it a path, no origin or hostname?
   const slashSlashIx = url.indexOf('//');
   let isPathMaybeQuery = slashSlashIx === -1;
@@ -116,12 +166,12 @@ function url_asLocalAbsPath(url: St, loc: { origin: St, hostname: St }): St | fa
   }
 
   // Something like 'https://this.server.com/page/path'?  Keep '/page/path' only.
-  if (url.indexOf(loc.origin) === 0)
-    return url.substr(loc.origin.length)
+  if (url.indexOf(location.origin) === 0)
+    return url.substr(location.origin.length)
 
   // Something like '//this.server.com/page/path'?  Keep '/page/path' only.
-  if (url.indexOf(`//${loc.hostname}/`) === 0)
-    return url.substr(loc.hostname.length + 2);
+  if (url.indexOf(`//${location.hostname}/`) === 0)
+    return url.substr(location.hostname.length + 2);
 
   // External link.
   return false;
@@ -221,23 +271,65 @@ function makeMentionsInEmbeddedCommentsPointToTalkyardServer() {
   // resolve to (non existing) pages on the embedding server.
   // Make them point to the Talkyard server instead.
   //
+  // For embedded forums: If there's any embPathParam, then we can deep-link
+  // to the user profile inside the embedded iframe.  Otherwise, we'll link
+  // to the Talkyard server, just like for embedded comments  (otherwise the @mentioned user
+  // links would go to non-existing pages on the embedd*ing* website).
+  //
   // (This could alternatively be done, by including the Takyard server origin, when
   // rendering the comments from Markdown to HTML. But this approach (below) is simpler,
   // and works also if the Talkyard server moves to a new address (won't need
-  // to rerender all comments and pages).)
-
-  if (!eds.isInEmbeddedCommentsIframe)
+  // to rerender all comments and pages).
+  // However, for emb forum deep links to work, we do need to render twice: 1) with
+  // no deep links, just  /-/users/someone  but also 2) with the embPathParam included,
+  // for example:  #/-/users/someone   if embPathParam is  '#/'
+  // Currently we always do 1) server side,  and 2) client side in this hacks.ts fn,
+  // can implement 2) server side later  [cache_embg_url].)
+  //
+  const canDeepLinkToEmbForumIframe = eds.isInEmbForum && eds.embPathParam;
+  if (!eds.isInEmbeddedCommentsIframe && !canDeepLinkToEmbForumIframe)
     return;
 
   const mentions = debiki2.$all('.dw-p-bd .esMention[href]:not([href^="http"])');
   for (let i = 0; i < mentions.length; ++i) {
     const mention = mentions[i];
     const href = mention.getAttribute('href');
-    if (href.indexOf(origin()) === 0) {
-      // Skip, already processed.
+
+    // Maybe in the distant future, this can happen — if user profile semi private
+    // somehow, so others can't see profile, so no link generated. But for now:
+    // @ifdef DEBUG
+    dieIf(!href, `Weird @mentions, no href [TyE4SJL06B]`);
+    // @endif
+    if (!href)
+      continue;
+
+    const hasAddedTyOrigin = href.indexOf(origin()) === 0;
+    const hasAddedEmbUrlParam = eds.embPathParam && href.indexOf(eds.embPathParam) === 0;
+
+    // Already processed?
+    if (hasAddedTyOrigin || hasAddedEmbUrlParam)
+      continue;
+
+    const hrefNoOrigin = href.replace(OriginRegex, '');
+    const isRelative = url_isRelative(hrefNoOrigin);
+
+    // @ifdef DEBUG
+    dieIf(!isRelative, `Weird @mentions href, no path '/': ${href} [TyE4SJL06C]`);
+    // @endif
+
+    if (!isRelative)
+      return;
+
+    if (eds.embPathParam === '#/') {
+      mention.setAttribute('href', '#' + hrefNoOrigin);  // (add just '#', don't dupl '/')
     }
+    /* Maybe later:
+    else if (eds.embPathParam) {
+      // Example: The  embPathParam is  '?ty'  and the href becomes:
+      //   https://www.ex.co/forum?ty=/-123/talkyard-page
+      mention.setAttribute('href', eds.embPathParam + '=' + encodeURIComponent(hrefWithPath));
+    } */
     else {
-      const hrefNoOrigin = href.replace(OriginRegex, '');
       mention.setAttribute('href', origin() + hrefNoOrigin);
     }
   }

@@ -483,7 +483,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def insertInvite(invite: Invite): Unit
   def updateInvite(invite: Invite): Boolean
-  def forgetInviteEmailSentToAddress(userId: UserId, replaceWithAddr: String): Unit
+  def forgetInviteEmailSentToAddress(userId: UserId, replaceWithAddr: St): i32
   def loadInviteBySecretKey(secretKey: String): Option[Invite]
   // COULD RENAME these: append SortByRecentFirst
   def loadInvitesSentTo(emailAddress: String): immutable.Seq[Invite]
@@ -817,7 +817,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
         emailType: EmailType): Map[UserId, Seq[Email]]
   def loadEmailsToPatAboutThread(toPatId: PatId, pageId: PageId,
         parentPostNr: Opt[PostNr], limit: i32): ImmSeq[EmailOut]
-  def forgetEmailSentToAddress(userId: UserId, replaceWithAddr: String): Unit
+  def forgetEmailSentToAddress(userId: UserId, replaceWithAddr: St): i32
 
   def nextReviewTaskId(): ReviewTaskId
   def upsertReviewTask(reviewTask: ReviewTask): Unit

@@ -197,6 +197,7 @@ node_modules/.bin/ts-node:
 #  public/res/2d-bundle.min.js.gz // [SLIMTYPE]
 prod_asset_bundle_files:=\
   images/web/assets/talkyard-comments.min.js.gz \
+  images/web/assets/talkyard-forum.min.js.gz \
   images/web/assets/talkyard-service-worker.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/editor-bundle.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/more-bundle.min.js.gz \
@@ -253,6 +254,7 @@ $(prod_asset_bundle_files): $@
 debug_asset_bundles_files: \
   images/app/assets/server-bundle.js \
   images/web/assets/talkyard-comments.js.gz \
+  images/web/assets/talkyard-forum.js.gz \
   images/web/assets/talkyard-service-worker.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/head-bundle.js.gz \
@@ -299,7 +301,7 @@ images/app/assets/server-bundle.js: \
 	$(d_c_nodejs_gulp) compileServerTypescriptConcatJavascript
 
 
-# Sync w gulpfile.js [embcmts_js_files]
+# Sync w gulpfile.js [embcmts_js_files]  [dupl_emb_comts_forum]
 images/web/assets/talkyard-comments.js.gz: \
        $(shell find client/embedded-comments/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
        client/types-and-const-enums.ts \
@@ -314,6 +316,17 @@ images/web/assets/talkyard-comments.js.gz: \
 	## But these work fine: (it's the same! Just 'echo .. ;' and  'echo .. &&')
 	# echo pointless ;  s/d-gulp compileBlogCommentsTypescript-concatScripts
 	# echo pointless && s/d-gulp compileBlogCommentsTypescript-concatScripts
+
+
+# Sync w gulpfile.js [emb_forum_js_files]  [dupl_emb_comts_forum]
+images/web/assets/talkyard-forum.js.gz: \
+       $(shell find client/embedded-forum/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
+       client/types-and-const-enums.ts \
+       client/third-party/bliss.shy.js \
+       client/third-party/smoothscroll-tiny.js \
+       client/app-slim/utils/calcScrollRectIntoViewCoords.js
+	@echo "\nRegenerating: $@ ..."
+	$(d_c_nodejs_gulp) compileEmbeddedForumTypescript-concatScripts
 
 
 # Sync w gulpfile.js. [sw_js_files]

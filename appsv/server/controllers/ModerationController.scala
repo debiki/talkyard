@@ -173,7 +173,9 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: TyCont
 
 
   def acceptAllUnreviewed: Action[JsValue] = AdminPostJsonAction(maxBytes = 100) { req =>
-    TESTS_MISSING // TyTMODACPTUNREV  — So disabled by default (feature flag).
+    // Disabled by default — not well tested enough, just this:
+    // Tests:  (not enough)
+    //   - modn-review-specific-user.3br.f  TyTMOD_REVW_USR.TyTMODACPTUNREV
     import req.dao
     val site = dao.theSite()
     val flagName = "ffApproveUnreviewed"
@@ -181,8 +183,7 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: TyCont
     throwForbiddenIf(isProd && !flagOn,
           "TyE0ACPTUNREV", s"You need to enable the $flagName feature flag.")
     val body: JsObject = asJsObject(req.body, "request body")
-    val filter = parseModTaskFilter(body, "filter")
-    throwBadReqIf(!filter.onlyPending, "TyE07MMTL2", "Can only accept pending tasks")
+    val filter = parseModTaskFilter(body, "filter").copy(onlyPending = true)
     dao.acceptAllUnreviewed(filter, req.theReqrTargetSelf.denyUnlessAdmin())
     loadReviewTasksdReplyJson(req, filter)
   }

@@ -787,9 +787,11 @@ function makeCommentsContent(comments: Post[], currentPostNr: PostNr, store: Sto
     if (post.nr === currentPostNr) {
       postProps.className = 'dw-current-post';
     }
+    const href: St | U = linkToPostNr(store.currentPageId, post.nr);
     return (
         r.div({ key: post.nr },
-            page.Post(postProps)));
+          TyLink({ to: href },  // or make a block,  rm  r.div() above?
+            page.Post(postProps))));
   });
 }
 

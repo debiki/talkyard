@@ -62,7 +62,7 @@ debiki.internal.commentsServerOrigin =
       isEmbeddedCommentsScript = srcAttr.search(/\/-\/talkyard-comments.(min\.)?js/) !== -1; // new name
     }
     if (isEmbeddedCommentsScript) {
-      origin = srcAttr.match(/^[^/]*\/\/[^/]+/)[0];
+      origin = srcAttr.match(/^[^/]*\/\/[^/]+/)[0];  // [extr_origin]
     }
   }
   if (!origin && console.error) {

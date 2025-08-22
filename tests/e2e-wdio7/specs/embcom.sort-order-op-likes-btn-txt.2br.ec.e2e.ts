@@ -240,11 +240,9 @@ describe("embcom.sort-order-op-likes-btn-txt.2br.ec  TyTEMBSORTLIKETXT", () => {
 
 
   it("Maria adds a comment", async () => {
-    // Wait until Maria's data added, otherwise if clicking Reply before that,
-    // the login dialog pops up and the test breaks.
-    // E2EBUG  flappy & Breaks anyway, just like before.
-    await mariasBrowser.switchToEmbeddedCommentsIrame();
-    await mariasBrowser.waitForMyDataAdded();
+    // Wait until Maria's data added, so we're logged in when clicking Reply.
+    await mariasBrowser.switchToEmbeddedCommentsIrame(); // (already done, but nice if debugging)
+    await mariasBrowser.metabar.waitUntilLoggedIn();
     await mariasBrowser.complex.replyToEmbeddingBlogPost("Hi I am here");
   });
 

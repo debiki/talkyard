@@ -79,8 +79,9 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
 
-  def listTagTypes(forWhat: Opt[i32], tagNamePrefix: Opt[St]): Action[U] =
-          GetActionRateLimited(RateLimits.ReadsFromCache) { req =>
+  def listTagTypes(forWhat: Opt[i32], tagNamePrefix: Opt[St]): Action[U] = GetActionRateLimited(
+          RateLimits.ReadsFromCache,
+          MinAuthnStrength.EmbeddingStorageSid12) { req =>
     import req.{theReqer}
     // Later, when there are access restricted tags, need to authz filter here. [priv_tags]
     val tagTypes = req.dao.getTagTypesSeq(forWhat, tagNamePrefix)
@@ -91,7 +92,9 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def loadTagsAndStats: Action[Unit] = GetActionRateLimited(RateLimits.ReadsFromDb) {
+  def loadTagsAndStats: Action[Unit] = GetActionRateLimited(
+          RateLimits.ReadsFromDb,
+          MinAuthnStrength.EmbeddingStorageSid12) {
           request =>
     // Later, filter may-see-tags.  [priv_tags]
     import request.{dao, reqer}
@@ -117,7 +120,9 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   REFACTOR; MOVE // to SearchController?
   /** For the search page, so can list and choose which cats & tags to search in & for.
     */
-  def loadCatsAndTags: Action[U] = GetActionRateLimited(RateLimits.ReadsFromDb) { req =>
+  def loadCatsAndTags: Action[U] = GetActionRateLimited(
+          RateLimits.ReadsFromDb,
+          MinAuthnStrength.EmbeddingStorageSid12) { req =>
     // Later, filter may-see-tags.  [priv_tags]
     val catsJsArr = ForumController.loadCatsJsArrayMaySee(req)
     val tagTypes = req.dao.getTagTypesSeq(forWhat = None, tagNamePrefix = None)

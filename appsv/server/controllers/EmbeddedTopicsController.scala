@@ -62,6 +62,10 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
 
     import request.dao
 
+    // (Will remove later, [rm_embeddingUrl_param].)
+    devDieIf(request.embeddingUrlParam.get != embeddingUrl, "TyEEMBURLS",
+        s"request.embeddingUrlParam: ${request.embeddingUrlParam}, embeddingUrl: $embeddingUrl")
+
     // Later, the params can optionally be signed with PASTEO,  [blog_comments_sso]
     // for those who are worried that end users edit the html and type their own
     // category or discussion ids. (There's always access control though.)
@@ -104,7 +108,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
               comtOrder = discProps.comtOrder,
               comtOffset = None,
               widthLayout = if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium,
-              isEmbedded = true,
+              isEmbedded = true,   // but also [emb_forum_is_emb], not only emb comments
               origin = request.origin,
               anyCdnOrigin = globals.anyCdnOrigin,
               anyUgcOrigin = globals.anyUgcOriginFor(request.site),
@@ -119,7 +123,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
         val tpi = new PageTpi(pageRequest, jsonStuff.reactStoreJsonString, jsonStuff.version,
               "Lazy page [TyMLAZYPAGE]", WrongCachedPageVersion,
               jsonStuff.pageTitleUnsafe, jsonStuff.customHeadTags,
-              anyDiscussionId = discussionId, anyEmbeddingUrl = Some(embeddingUrl),
+              anyDiscussionId = discussionId,
               lazyCreatePageInCatId = Some(lazyCreateInCatId))
         val htmlString = views.html.templates.page(tpi).body
         val renderedPage = RenderedPage(htmlString, "NoJson-1WB4Z6",
@@ -208,10 +212,12 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
   }
 
 
-  def showEmbeddedEditor(embeddingUrl: St, embeddingScriptV: Opt[i32]): Action[U] =
+  // Remove embeddingUrl  [rm_embeddingUrl_param]  — but wait until client side scripts
+  // have been updated (browser cache expire & refetch).
+  def showEmbeddedEditor(embeddingUrl: Opt[St], embgUrl: Opt[St], embeddingScriptV: Opt[i32]): Action[U] =
         AsyncGetActionMaybeSkipCookies(avoidCookies = true) { request =>
 
-    val tpi = new EditPageTpi(request, anyEmbeddingUrl = Some(embeddingUrl))
+    val tpi = new EditPageTpi(request)
     val htmlStr = views.html.embeddedEditor(tpi, embeddingScriptV = embeddingScriptV).body
 
     // (The callee needs to know the embedding origin, so the callee can know if
@@ -219,7 +225,8 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
     // so techies can test on localhost.)
     UX; SHOULD // not auto allow localhost. Add it explicitly instead.
     ViewPageController.addVolatileJsonAndPreventClickjacking2(htmlStr,
-        unapprovedPostAuthorIds = Set.empty, request, embeddingUrl = Some(embeddingUrl))
+        unapprovedPostAuthorIds = Set.empty, request,
+              embeddingUrl = embgUrl.orElse(embeddingUrl))
   }
 }
 

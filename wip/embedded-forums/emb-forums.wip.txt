@@ -1,0 +1,89 @@
+[maybe_need_only_embPathParam]
+We need only  embPathParam?  Can skip  embeddingUrl, embgUrl, and embHow?
+Anduse embedding page relative links, like:
+  #/-123/talkyard-page
+  #/latest/bugs
+  #/-/users/someone
+and they'll resolve relative the embedding page, and will just work, right?
+Likewise, these would also work, just that any other query params would disappear,
+but typically there would be no other query params:
+  ?ty=/-123/talkyard-page
+  ?ty=/latest/bugs
+  ?ty=/-/users/someone
+  ?ty=/-/search%3Fq=some-search-query   ('%3F' = ? but % encoded)
+
+  Old source code comment: (about [maybe_need_only_embPathParam])
+    // because that'll get resolved relative the <base> url which is the embedding page url
+    // already, same as:  embgUrl.origin + embgUrl.pathname + embgUrl.search
+    // right?
+    // And just '#' + tyPath is *better*, because will continue working also if
+    // the embedding page is moved to another url path, or even to another domain?
+    //
+    // Then, need only the  talkyard-embedded-url-param as cached-html-lookup?
+    // But posts need to be rendered twice:
+    //   - With user profile links like:  '/-/users/someone'  if not embedded
+    //   - With user profile links like:  '#/-/users/someone' if embedded
+    //     What if changing the embedded url param to eg  ?forumPath=...
+    //                                    '?forumPath=/-/users/someone'
+    //     — then, all @mention links would break until all posts rerendered?
+    //     And all UI links too but they're quick to regenerate,
+    //     need not render any CommonMark.
+    //
+    // So, maybe  posts3/posts_t +=
+    //   embd_approved_html_sanitized_c   ?   (or  approved_embd_html_sanitized_c)
+    //   embd_url_param_c                 ?
+
+
+Fix links:
+   "Solved in post #2, click to viewReplyChange ..."
+       —>  http://e2e-test-www.localhost:8080/emb-page-one.html#post-2
+            (page id & slug lost)
+
+    All ReactRouter's NavLink basically don't work in an iframe:
+      (Nor does Link, but using TyLink instead, fine.)
+
+    "View categories"
+      —>  http://e2e-test-www.localhost:8080/categories?embHow=Forum&embgUrl=http%3A%2F%2Fe2e-test-www.localhost%3A8080%2Femb-page-one.html&logLevel=trace&embPathParam=%23%2F&embeddingScriptV=2
+
+      Doesn't work, iframe lost
+
+    "Active|Popular|New"
+      —>  http://e2e-test-www.localhost:8080/new?embHow=Forum&embgUrl=http%3A%2F%2Fe2e-test-www.localhost%3A8080%2Femb-page-one.html&logLevel=trace&embPathParam=%23%2F&embeddingScriptV=2
+
+      Doesn't work, iframe lost
+  
+SECURITY; COULD make [which endpoints are allowed in an embedded forum] configurable.
+F.ex. some communities might want direct messages to be allowed only if accessing
+the forum directly (not embedded), see:  GroupTalkController.sendMessage().
+But that's overdoing it, for now.
+
+[cache_embg_url]
+Cache html per embedding url, and then do include embedding url & origin in the cached pages?
+See:  page_html_cache_t.param_embg_url_or_empty_c.
+Actually, no, don't cache the embedding url. Instead, we need to cache only the embPathParam!,
+that is, page_html_cache_t.param_emb_path_param_c.
+Make sure to set isEmbedded = true properly, later when we have
+param_emb_path_param_c/embPathParam. See:  [emb_forum_is_emb]
+
+Thereafter, can solve the  [TyLink_problems]?
+
+
+REMOVE; DO_AFTER // v0.2025.011  [rm_embeddingUrl_param]
+
+
+Emb forum iframe:
+    UX BUG: Doesn't downsize itself, if emb forum.
+
+
+If non-existing page, e.g.:  https://www.ex.co/forum#/non-existing-page, then don't open
+a login popup in the iframe, just results in:
+      Login dialog in emb iframe [TyE5KER2]
+
+
+Do uploaded images work? Or are they resolved against the embedding page's url? [emb_img_urls]
+
+
+Frag action #composeDirectMessage not working in emb forum iframe, oh well:
+    http://e2e-test-www.localhost:8080/emb-page-one.html#/-/users/michael/activity/posts#composeDirectMessage
+
+

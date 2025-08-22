@@ -31,6 +31,7 @@ export const Router: any = reactCreateFactory(
 export const Switch: any = reactCreateFactory(ReactRouterDOM.Switch);
 export const Route: any = reactCreateFactory(ReactRouterDOM.Route);
 export const Redirect: any = reactCreateFactory(ReactRouterDOM.Redirect);
+// Don't use! Use TyLink instead. (Except for in the admin area, then ok.)
 export const Link: any = reactCreateFactory(ReactRouterDOM.Link);
 export const NavLink: any = reactCreateFactory(ReactRouterDOM.NavLink);
 
@@ -50,6 +51,16 @@ export function ExtVerbLink(url: St): RElm {
 
 /**
  * Redirects the URL path only — preserves query string and hash fragment.
+ *
+ * Doesn't seem to work from inside an <iframe>: ReactRouter's Redirect somehow
+ * redirects to the embedd*ing* websites origin [react_redir_broken_iframe]
+ * + the embedded Talkyard forum path, resulting in a security error.
+ * And wouldn't work anyway, since wrong domain. But why does this happen?
+ * ReactRouter gives just a /local/path to History.pushState(state, unused, newPath),
+ * don't know what makes the *origin* then change. —
+ * Here's the source: (as of 2025-05)
+ *    <ty-repo>/node_modules/react-router/cjs/react-router.js
+ * But history.push(localPath) works just fine. [hist_push_in_iframe]
  */
 export function RedirPath(props: RedirPathProps) {
   // @ifdef DEBUG
@@ -112,10 +123,6 @@ export const OnlyAdminsSee =
 // UX: Click on space? If 'btn'?  [sch_b_space]
 export const PrimaryButton: any = makeWidget(r.button, ' btn btn-primary');
 export const Button: any = makeWidget(r.button, ' btn btn-default');
-export const PrimaryLinkButton: any = makeWidget(r.a, ' btn btn-primary');
-export const LinkUnstyled: any = makeWidget(r.a, '');
-export const LinkButton: any = makeWidget(r.a, ' btn btn-default');  // not blue [2GKR5L0]
-export const ExtLinkButton: any = makeWidget(r.a, ' btn btn-default', { ext: true });
 export const InputTypeSubmit: any = makeWidget(r.input, ' btn btn-primary', { type: 'submit' });
 
 
@@ -151,43 +158,6 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
       // Don't do this inside the above `if`; that won't work if `.primary` is undef/false.
       delete newProps.primary;
     }
-
-    // React Bootstrap's Link uses 'to', so better if UnstyledLink works with 'to' too, not only 'href'.
-    if (what === r.a && !newProps.href)
-      newProps.href = newProps.to;
-
-    // Make link buttons navigate within the single-page-app, no page reloads. Even if they're
-    // in a different React root. The admin app is it's own SPA [6TKQ20] so, when in the admin area,
-    // links to user profiles and discussions, are external. And vice versa.
-    if (what === r.a && !newProps.onClick) {
-      let isExternal = newProps.ext || eds.isInEmbeddedCommentsIframe;
-      // @ifdef DEBUG
-      dieIf(isServerSide() && eds.isInEmbeddedCommentsIframe, 'TyE2KWT05');
-      // @endif
-
-      const href = newProps.href;
-      const linksToAdminArea = href && href.indexOf('/-/admin/') === 0; // dupl [5JKSW20]
-      isExternal = isExternal || eds.isInAdminArea !== linksToAdminArea;
-
-      if (!isExternal) {
-        const afterClick = newProps.afterClick;  // field deleted below
-
-        newProps.onClick = function(event) {
-          event.preventDefault(); // avoids full page reload
-          debiki2.page['Hacks'].navigateTo(href);
-          // Some ancestor components ignore events whose target is not their own divs & stuff.
-          // Not my code, cannot change that. I have in mind React-Bootstrap's Modal, which does this:
-          // `if (e.target !== e.currentTarget) return; this.props.onHide();` — so onHide() never
-          // gets called. But we can use afterClick: ...:
-          if (afterClick) {
-            afterClick();
-          }
-        }
-      }
-    }
-
-    delete newProps.afterClick;
-    delete newProps.ext;
 
     const anyHelpDiv =
         helpText && r.p({ className: 'help-block', key: newProps.key + '-help' }, helpText);
@@ -235,35 +205,16 @@ export function MenuItem(props: { id?: St, className?: St, active?: Bo,
     onClick, tabIndex: props.tabIndex || -1 };
   return (
     r.li({ role: 'presentation', className: className, key: props.key },
-      r.a.apply(null, [linkProps, ...children])));
+      TyLink.apply(null, [linkProps, ...children])));
 
 }
 
 
 export function MenuItemLink(props, ...children) {
-  // Don't do  r.a(props, children)  because that'd result in an """an array or iterator
-  // should have a unique "key" prop""" React.js warning.
-
-  // If we're in the admin area, use <a href> because then the destinations are in another
-  // single-page-app. And if we're in the forum app, use Link, for instant
-  // within-the-SPA navigation.  A bit dupl, see [5JKSW20]
-  const linksToAdminArea = props.to.indexOf('/-/admin/') === 0;
-  const isExternal = props.to.indexOf('//') >= 0;  // e.g. https://  or  //hostname/...
-  const useSinglePageAppLink = !isExternal && eds.isInAdminArea === linksToAdminArea;
-
-  // If useSinglePageAppLink, create a Link({ to: ... }),
-  // otherwise, create a r.a({ href: ... }):
-
-  const linkFn = useSinglePageAppLink ? Link : r.a;
-  const addrAttr = useSinglePageAppLink ? 'to' : 'href';
-
-  const linkProps = { role: 'button', tabIndex: props.tabIndex || -1,
-    target: props.target, id: props.id };
-  linkProps[addrAttr] = props.to;
-
   return (
     r.li({ role: 'presentation', className: props.className, key: props.key },
-      linkFn.apply(null, [linkProps].concat(children))));
+      TyLink({ role: 'button', tabIndex: props.tabIndex || -1,
+          to: props.to, target: props.target, id: props.id }, ...children)));
 }
 
 
@@ -362,7 +313,7 @@ export function UserName(props: {
     namePartOne = "(Unknown author)";
   }
 
-  const linkFn = <any>(props.makeLink && !isUnknown ? r.a : r.span);
+  const linkFn = <any>(props.makeLink && !isUnknown ? TyLink : r.span);
   const newProps: any = {
     className: 'dw-p-by esP_By' + (isUnknown ? ' s_P_By-Unk' : ''),
   };

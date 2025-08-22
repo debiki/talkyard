@@ -89,6 +89,11 @@ var _iphone = _ios && /iPhone|iPod/.test(navigator.userAgent);
 if (_ios) _doc.className += ' ios';  // RENAME to s_ios so can grep & find, & for naming consistency.
 if (_iphone) _doc.className += ' s_iphone';
 
+
+
+// ----- Parse json from the server
+
+
 // See https://stackoverflow.com/a/1912522/694469. The <div> isn't added to the document
 // so no <script> would be executed. — But yes it would indeed?
 // Test this in Dev Tools:
@@ -118,6 +123,15 @@ const staticJsonElm = document.getElementById('theStaticJson') as HTMLScriptElem
 var _store: Store = JSON.parse(_unencodeHtmlContent(pageJsonElm.text));
 var _volatileData = JSON.parse(_unencodeHtmlContent(volatileJsonElm.text)) || {};
 var eds: ServerVars = JSON.parse(_unencodeHtmlContent(staticJsonElm.text)) || {};
+
+
+
+// ----- Init "server variables"
+
+// "eds" means Effective Discussions server variables, or maybe "static" variables, but now
+// the software is called Talkyard instead. These values tend to not change, until page reload.
+// But the _store.* stuff changes "all the time".
+
 
 var _me = _volatileData.me || _store.me || {}; // also used when constructing routes [7UKWBA2]
 
@@ -182,6 +196,8 @@ if (_narrow) {
 try {
   var _searchParams = new URLSearchParams(location.search);
   var _embHow = _searchParams.get('embHow'); // [emb_forum]
+  var _embgUrl = _searchParams.get('embgUrl') || _searchParams.get('embeddingUrl'); // [emb_forum] [rm_embeddingUrl_param]
+  var _embPathParam = _searchParams.get('embPathParam'); // [emb_forum]
   var _ssoHow = _searchParams.get('ssoHow');
   var _class = _searchParams.get('htmlClass');
   if (_class) {
@@ -266,6 +282,10 @@ eds.isIos = _ios;
   */
 eds.isInIframe = _isInIframe;
 eds.isInEmbeddedCommentsIframe = _isInEmbCmtsIframe && !eds.isInEmbeddedEditor;
+eds.isInEmbForum = _isInIframe && _embHow === 'Forum';
+if (eds.isInEmbForum) {
+  _doc.className += ' n_InEmbForum';
+}
   /*
   isInAdminArea: @{ if (isAdminApp) "true" else "false" },
   isRtl: @{ if (tpi.isRtlLanguage) "true" else "false" },
@@ -288,6 +308,16 @@ if (!eds.isInEmbeddedEditor) {
   loadGlobalStaffScript: @{ tpi.globals.loadGlobalStaffScript.toString },
   */
 
+// ignore server side, and 'embeddingUrl' too, except for looking up page?
+// Don't incl in static page html? Or do [cache_embg_url] — if caching html per embedding url,
+// see plannded:  page_html_cache_t.param_embg_url_or_empty_c.
+eds.embgUrl = _embgUrl;
+eds.embPathParam = _embPathParam;
+                                        //  "https: //  hostname"
+eds.embgOrigin = _embgUrl && _embgUrl.match(/^[^/]*\/\/[^/]+/)[0];  // [extr_origin]
+eds.embeddingOrigin = eds.embgOrigin;   // for now. Remove 'embeddingOrigin' later?
+                      // Need to review usage in the editor though. [rm_embeddingUrl_param]
+
 eds.embHow = _embHow;
 eds.ssoHow = _ssoHow;
 
@@ -303,6 +333,123 @@ var typs: PageSession = {
   canUseCookies: navigator.cookieEnabled &&
       !eds.isInIframe,  // [iframe_cookies_always_broken]
 };
+
+
+
+// ----- Deep-link, if embedded
+
+
+// These helper fns are in slim-bundle.ts, but it hasn't yet been loaded, so,
+// duplicated here (with '_' prefix).
+// They're in embedded-forum.ts too — that bundle dones't use slim-bundle.ts at all.
+
+function _isServerSide(): Bo {  // [dupl_isServerSide]
+  return !!window['ReactDOMServer'];
+}
+
+function _url_isRelative(url: St | URL): Bo {  // [dupl_rel_url_fn]
+  return url && url[0] === '/' && url[1] !== '/';
+}
+
+// If we're in an embedded forum: Keep the embedd*ing* url on the parent page
+// constantly up-to-date so it deep-links to the Talkyard page in the iframe.
+//
+// Maybe this could be moved from the head-bundle to the slim-bundle, but then we'd need
+// to think/worry about race conditions, where the user somehow manages to navigate
+// to another Talkyard page (inside the iframe) before the slim-bundle has been loaded,
+// resulting in the url in the browser address bar deep-linking to the wrong
+// Talkyard page. But when monkey-patching pushState() and replaceState() directly,
+// that can't happen.
+//
+// We'll do two things:
+//
+// 1) Make pushState() and replaceState() work in iframes — not sure why, but only
+//   *sometimes* the browser complains that: [hist_push_in_iframe])
+//
+//   Uncaught SecurityError: Failed to execute 'pushState' on 'History':
+//   A history state object with URL
+//       'http://e2e-test-www.localhost:8080/-/users/maria'
+//   cannot be created in a document with origin
+//       'http://e2e-test-emb-forum.localhost'
+//   and URL
+//       'http://e2e-test-emb-forum.localhost/latest?embHow=Forum&embgUrl=http%3A%2F%2Fe2e-test-www.localhost%3A8080%2Femb-page-one.html&logLevel=trace&embeddingScriptV=2'.
+//
+// But with the origin included, that doesn't happen.
+//
+// 2) Tell Talkyard's code in the embedd*ing* window that now we're at a new url, so
+//   we can update the url, e.g.
+//   from:  https://example.com/embedding/page#/-/forum-page
+//     to:  https://example.com/embedding/page#/-/other-forum-page
+//
+// Don't:  `if  eds.embgOrigin !== location.origin` — that'd affect blog comments too.
+// Instead, look at `eds.isInEmbForum`:
+//
+if (eds.isInEmbForum && !_isServerSide()) {
+  type StateFn = (state: any, unused: St, url?: St | URL | N) => Vo;
+  const origPushState: StateFn = window.history.pushState;
+  const origReplaceState: StateFn = window.history.replaceState;
+
+  function makeBetterFn(origFn: StateFn) {
+    return function(state: any, unused: St, url?: St | URL | N) {
+      let betterUrl = url;
+      if (_url_isRelative(url)) {
+        betterUrl = location.origin + url;
+      }
+      origFn.call(window.history, state, unused, betterUrl);
+      // Ignore '' and null. '' won't change the address bar anyway and we don't use any
+      // push/replaceState state.
+      if (url) {
+        sendNewPathToEmbeddingWin(url);
+      }
+    };
+  };
+
+  window.history.pushState = makeBetterFn(origPushState);
+  window.history.replaceState = makeBetterFn(origReplaceState);
+
+  // If navigating back, using the browser's Back buttons, tell the embedding parent win
+  // to update the Talkyard forum path.
+  window.addEventListener('popstate', (_event) => {
+    //console.log(`POPSTATE, location: ${document.location
+    //      }, state: ${JSON.stringify(event.state)}`);
+    sendNewPathToEmbeddingWin(location.toString());
+  });
+}
+
+
+function sendNewPathToEmbeddingWin(url: St | URL) {
+  const urlStr: St = (typeof url === 'string') ? url : url.toString();
+  let pathQueryHash = urlStr.replace(/^https?:\/\/[^/]*/, '')
+  // We don't want the embedded forum params in the url, when sending the 'pathChanged' message
+  // to the embedding page. Let's remove them.
+  // (Would it be cleaner to do this in the embedding script? So they're added and removed
+  // in the same file? Oh well.)
+  // [embg_ty_url]
+  const queryIx = pathQueryHash.indexOf('?');
+  if (queryIx !== -1) {
+    const hashIx = pathQueryHash.indexOf('#');
+    const queryStrBef = pathQueryHash.slice(queryIx, hashIx >= 0 ? hashIx : undefined);
+    const params = new URLSearchParams(queryStrBef);
+    params.delete('embHow');
+    params.delete('embgUrl');
+    params.delete('embeddingUrl');
+    params.delete('embPathParam');
+    params.delete('ssoHow');
+    params.delete('htmlClass');
+    params.delete('embeddingScriptV');
+    params.delete('category');
+    params.delete('logLevel');
+    const queryParams = params.toString();
+    const queryStrAft = !queryParams ? '' : '?' + queryParams;
+    if (queryStrBef !== queryStrAft) {
+      pathQueryHash = pathQueryHash.replace(queryStrBef, queryStrAft);
+    }
+  }
+  window.parent.postMessage(
+        JSON.stringify(['pathChanged', pathQueryHash]),
+        eds.embeddingOrigin);
+}
+
 
 // API, for custom scripts, e.g. MathJax. Type declaration in model.ts [5ABJH72].
 var talkyard = {};

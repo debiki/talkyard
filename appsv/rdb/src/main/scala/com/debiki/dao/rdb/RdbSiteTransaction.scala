@@ -1215,7 +1215,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def forgetEmailSentToAddress(userId: UserId, replaceWithAddr: String): Unit = {
+  /** Returns num addresses replaced. */
+  def forgetEmailSentToAddress(userId: UserId, replaceWithAddr: String): i32 = {
     TESTS_MISSING
     val statement = """
       update emails_out3 set sent_to = ?

@@ -329,7 +329,7 @@ const OneTagPanel = React.createFactory<OneTagPanelProps>(function(props) {
                     `A lowercase-and-dashes name. Appears in the URL, and ` +
                     `you can use in search queries — search for `,
                     r.code({},
-                      Link({ to: tagSlugSearchUrl }, tagSlugSearchQ))),
+                      TyLink({ to: tagSlugSearchUrl }, tagSlugSearchQ))),
                 value: tagTypeEdited.urlSlug || '',
                 onChange: (event) => {
                   // While typing, _ending_with_dash '-' is fine.  Then, don't slugify.
@@ -421,7 +421,11 @@ const OneTagPanel = React.createFactory<OneTagPanelProps>(function(props) {
                   // UX [cancel_resets] WOULD search for Cancel in all of Ty and
                   // make sure cancel forgets any edits-in-progress?
                   setTagTypeEdited({ ...tagType });
-                } }, "Cancel")
+                } }, !savingText ? "Cancel" :
+                  // If we've saved the changes, "Cancel" doesn't make sense — change the
+                  // button title to Ok. Still good with a btn, so there's a way to
+                  // leave edit mode.
+                  "Ok")
               : Button({ onClick: () => setIsEditing(true) }, "Edit"),
             // Can't save if slug ends with '-'. [_ending_with_dash]
             !isEditing || !typeEdited || tagTypeEdited.slugDash ? null :
@@ -431,7 +435,7 @@ const OneTagPanel = React.createFactory<OneTagPanelProps>(function(props) {
         ),
 
       r.p({ className: 'c_Tag_SchLn' },
-        Link({ to: tagSlugSearchUrl, }, "Search for tag"), " (list posts with this tag)"),
+        TyLink({ to: tagSlugSearchUrl, }, "Search for tag"), " (list posts with this tag)"),
 
       r.h2({}, "Recent posts with this tag:"),  // I18N
       !posts.length

@@ -387,8 +387,9 @@ Migrate to ScribeJava, [migr_to_scribejava]
 [per_site_email_domain]
 Optionally configure email settings in the admin area, per site.
 
-[no-email]:
+[users_w_0_email]
 Let people create accounts without specifying any email address. Like at Reddit.
+Just fixed — works now, right? (2025-07) One minor UX thing left, see: [users_w_0_email]
 
 [many_emails] [email_privacy]
 Let someone create many accounts with the same email address.
@@ -527,6 +528,9 @@ And these unique indexes:
 
 [upgr_pg] [ty_v1]
 Upgrade PostgreSQL. Switch from Flyway to Diesel, and upgr via psql dump export & import?
+
+[use_timestamptz]
+See: ../wip/use-timestamptz/timestamptz.wip.txt
 
 [careless_rdb]  ty_crdb
 Use a 2nd PostgreSQL server for a persistent mem + disk "cache"?
@@ -942,9 +946,12 @@ Make  login-required work also for embeded comments.
 Make it possible to embedd a forum, or fourm cateory (no just blog comments).
 Later, disallow all the  [if_emb_forum]  endpoints, if is embedded, but *not* a forum
 (that is, for blog comments, or sth else unexpected).
+— Now works. But embedded chats [emb_chat] not yet supported: Needs the disc store,
+so correct page id and cats. And probably some other tweaks needed too.
 
 [emb_forum_nav_bug]
 <a> nav, instead of single-page-app nav —> gets logged out (and auto logged in).
+ — fixed, right.
 
 [iframe_jump_bug]
 When opening & closing a dialog in an iframe (e.g show-likes, about-user ...), the parent
@@ -1000,6 +1007,14 @@ Individual prefs:
   Get someone's-waiting-for-approval notfs, if that person has been waiting
      for > X hours  *and* no other staff mem has reviewed yet.
   Or optionally if new member joins.
+
+[WSRECONN][VIAWS]
+Sometimes WebSocket connections break, and apparently the client doesn't always reconnect.
+Maybe switch to Netty? Then, might get rid of annoying [play_fmw_websocket_err_msgs]
+>  BTW: Also I am pretty sure this exception would not occur if you
+>  would switch to the netty backend
+> ( .enablePlugins(PlayScala, PlayNettyServer).disablePlugins(PlayAkkaHttpServer))
+https://github.com/playframework/playframework/issues/11928#issuecomment-1685398894
 
 [external-server-js]
 What? Same as [ext_markup_processor] ?
@@ -1227,6 +1242,18 @@ Then, a read-write-tx: If the post wasn't changed since the r/o tx, then
 save the rebuilt post.
 Also, when upgrading ElasticSearch, maybe reindex everything and improve the mapping:
 Change ids, e.g. site & category id, from type integer to type keword.  [es_kwd]
+
+[sitemaps] [search_index_prio]
+Can map  posts3.index_prio_c, i16,  to a sitemap priority value 0.0 – 1.0?
+So not only Talkyard but also Googlebot etc knows how important a page is to reindex.
+But search engines use sitemap priorities only to determine how often to reindex,
+not for search results ranking. Gemini says:
+  Less Important Content:
+  Pages like old news articles, FAQs, or utility pages can be assigned
+  low priority (e.g., 0.1-0.3).
+Talkyard though, might use the index_prio_c also to de-rank "less interesting"
+search results, e.g. preferring to show newly written docs about topic X,
+instead of an old and closed question about topic X.
 
 [x_plat_offl_builds]
 Offline builds on various Linux distros, not just Debian 10?

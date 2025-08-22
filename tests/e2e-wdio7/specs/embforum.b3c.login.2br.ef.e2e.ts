@@ -15,7 +15,10 @@ import { IsWhere } from '../test-types';
 const mariasCommentOne = 'mariasCommentOne';
 const mariasCommentTwo = 'mariasCommentTwo';
 
-const embeddingOrigin = 'http://e2e-test-emb-forum.localhost:8080';
+// Is a different domain than `localHostname`, otherwise cookies would work, which
+// would be unrealistic.
+const embeddingOrigin = 'http://e2e-test-www.localhost:8080';
+
 const embPageOneSlug = 'emb-page-one.html';
 const embPageTwoSlug = 'emb-page-two.html';
 
@@ -68,7 +71,7 @@ describe("embedded-forum-no-cookies-login  TyT5029FKRDE", () => {
     michael = forum.members.michael;
     michael_brB = brB;
 
-    // http://e2e-test-emb-forum.localhost:8080/
+    // http://e2e-test-www.localhost:8080/
   });
 
   it("create two embedding pages", async () => {
@@ -80,7 +83,7 @@ describe("embedded-forum-no-cookies-login  TyT5029FKRDE", () => {
   });
 
 
-  function makeHtml(pageName: string, extraHeight: number, bgColor: string): string {
+  function makeHtml(pageName: string, bgColor: string): string {
     return `
 <html>
 <head>
@@ -89,22 +92,21 @@ describe("embedded-forum-no-cookies-login  TyT5029FKRDE", () => {
 iframe {
   width: calc(100% - 40px);
   margin-left: 10px;
-  height: 1200px;
+  height: 300px;
 }
 </style>
 </head>
 <body style="background: ${bgColor}; color: #ccc; font-family: monospace">
-<p>Embedded forum E2E test page ${pageName}. Ok to delete. [205KDGJURM2]
+<p>Embedded forum E2E test page ${pageName}. Ok to delete. [205KDGJURM1]</p>
 <hr>
 
-<!--
-<script>talkyardServerUrl='${settings.scheme}://${localHostname}.localhost';</script>
-<script async defer src="${siteIdAddress.origin}/-/talkyard-embedded-forum.js"></script>
--->
-<div class="talkyard-forum" style="margin-top: 45px;">
-<iframe src="${settings.scheme}://${localHostname}.localhost?embHow=Forum">
-  Oops iframe didn't want to load
-</iframe>
+<script>
+talkyardServerUrl='${settings.scheme}://${localHostname}.localhost';
+</script>
+
+<script async defer src="${siteIdAddress.origin}/-/talkyard-forum.js"></script>
+
+<div class="talkyard-forum" style="margin-top: 45px;"></div>
 
 <hr>
 <p>/End of page.</p>
@@ -112,8 +114,14 @@ iframe {
 </html>`;
   }
 
-  it("Maria opens a tall embedding page, does *not* scroll to comment-1", async () => {
+  it("Maria opens the embedded forum page", async () => {
     await maria_brB.go2(embeddingOrigin + '/' + embPageOneSlug);
+  });
+
+  it("Owen too,  not to admin settings", async () => {
+    await owen_brA.go2(embeddingOrigin + '/' + embPageOneSlug);
+    //await owen_brA.adminArea.settings.embedded.goHere(localHostname);
+    //await this.loginDialog.loginWithPassword(owen);
   });
 
 });

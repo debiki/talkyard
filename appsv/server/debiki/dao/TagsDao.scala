@@ -483,7 +483,8 @@ trait TagsDao {
 
     refreshPageInMemCache(post.pageId)
 
-    val storePatch = jsonMaker.makeStorePatchForPost(post, showHidden = true)
+    val storePatch = jsonMaker.makeStorePatchesForPost(post, showHidden = true, toShowFor = None)
+            .patchForOthers
     // [tag_notfs]
     pubSub.publish(
       StorePatchMessage(siteId, pageId, storePatch, notifications), byId = postAuthor.id)

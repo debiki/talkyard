@@ -4976,12 +4976,23 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       //console.debug('relFollowTo: ' + JSON.stringify(relFollowTo) +
       //        ', !!nashorn_shallFollowUrl: ' + !!window.nashorn_shallFollowUrl);
 
+      // Don't add nofollow to site local links, i.e. that don't start with 'http(s)://'
+      // and also don't start with '//', but instead starts with '/something'.
+      // BUG, harmless: Adds rel=nofollow to urls with ':' in e.g. the query string or hash.
+      // Edit the regex and allow ':' if it's after any of '?#' ?
+      if (attribs.href === '/' || /^\/[^/:][^:]*$/.test(attribs.href)) {
+        relFollow = 0; // means local
+        console.debug('relFollow —> 0');
+      }
+
       // Later, when using an [ext_markup_processor] instead of Nashorn, we can use
       // URLSearchParams instead of nashorn_shallFollowUrl() (which uses java.net.URL).
       //
-      // nashorn_shallFollowUrl is only present server side.
+      // nashorn_shallFollowUrl is only present server side. Update 2025-07: Now it's
+      // not really needed, could be implemented in pure js, since now we use a url-shim
+      // js package.  use_url_shim]  But we'll remove Nashorn completely anyway.
       //
-      if (relFollowTo && window.nashorn_shallFollowUrl) {
+      if (relFollow === -1 && relFollowTo && window.nashorn_shallFollowUrl) {
         //console.debug('relFollowTo loop');
         for (var i = 0; i < relFollowTo.length; ++i) {
           //console.debug('relFollow i = ' + i);
@@ -4995,26 +5006,20 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
 
         // CLEAN_UP
         // Remove this, and add  followLinksTo  to the demo forums instead.
-        // // SHOULD add a 'rel=follow links to domains: ...' config value instead of this: [relfollow]
-        // if (/^https:\/\/[^/.#?]+\.stackexchange\.com\/.*/.test(attribs.href) ||
-        //     /^https:\/\/stackoverflow\.com\/.*/.test(attribs.href)) {
-        //   // Allow StackExchange and StackOverflow rel=follow links, fine.
-        //   newAttribs.rel = 'follow';  // [2QWGRC8P]
-        //   nofollow = false;
-        // }
-      }
-
-      if (relFollow === -1 && (attribs.href === '/' || /^\/[^/:][^:]*$/.test(attribs.href))) {
-        // Don't add nofollow to site local links, i.e. that don't start with 'http(s)://'
-        // and also don't start with '///', but instead starts with '/something'.
-        relFollow = 0; // means local
-        console.debug('relFollow —> 0');
+        // *Done*, but also need to run a background job  [backgr_upd_rel_follow]
+        // that updates all old pages so they'll make use of the new settings and start
+        // following links. So let's keep this, for now:
+        if (/^https:\/\/[^/.#?]+\.stackexchange\.com\/.*/.test(attribs.href) ||
+            /^https:\/\/stackoverflow\.com\/.*/.test(attribs.href)) {
+          // Allow StackExchange and StackOverflow rel=follow links, fine.
+          relFollow = 1; // yes, follow (don't add nofollow)  // [2QWGRC8P]
+        }
       }
 
       if (relFollow === -1) {
         // rel=nofollow added here: [rel_nofollow] too.
         console.debug('newAttribs.rel = nofollow');
-        newAttribs.rel = 'nofollow';  // TyTRELNOFLW01
+        newAttribs.rel = 'nofollow';  // Tests: TyTRELNOFLW01
       }
 
       // Stop [reverse_tabnabbing],  TyTREVTABNAB01

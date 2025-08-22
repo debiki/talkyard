@@ -898,6 +898,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffFo
       readingProgress.lastViewedPostNr >= FirstReplyNr) {
     if (eds.isInEmbeddedCommentsIframe) {
       // Don't scroll — usually people come back to look at the blog post, not the comments.
+      // But what about eds.isInEmbForum, scroll or not?
     }
     else if (ReactActions.findUrlFragmentAction()) {
       // Then other code [7WKBQ28] scrolls to the anchored post instead.
@@ -2131,6 +2132,7 @@ function patchTheStore(respWithStorePatch: any) {  // REFACTOR just call directl
     origPost.uniqueId = storePatch.newlyCreatedOrigPostId;
 
     // Update this, so subsequent server requests, will use the correct page id. [4HKW28]
+    // [annoying_4HKW28]
     eds.embeddedPageId = storePatch.newlyCreatedPageId;
     // Later: Add this new page to the watchbar? Currently not needed, because pages created
     // lazily only for embedded comments, and then there's no watchbar.
@@ -2297,6 +2299,9 @@ function showNewPage(ps: ShowNewPageParams) {
   const oldPage: Page = store.currentPage;
   store.currentPage = newPage;
   store.currentPageId = newPage.pageId;
+  if (eds.isInIframe) {  // why false:  store.isEmbedded — oh, [emb_forum_is_emb]
+    eds.embeddedPageId = newPage.pageId;  // [annoying_4HKW28] [4HKW28]
+  }
   if (newPage.pageId) {
     store.pagesById[newPage.pageId] = newPage;
   }
@@ -2441,7 +2446,7 @@ function showNewPage(ps: ShowNewPageParams) {
   // COULD_OPTIMIZE AVOID_RERENDER But history.replace triggers a re-render immediately :-(
   // no way to avoid that? And instead merge with the emit(ChangeEvent) above?
   const pagePath = newPage.pagePath.value;
-  let correctedUrl;
+  let correctedUrl: St | U;
   if (pagePath && pagePath !== location.pathname) {
     if (newPage.pageRole === PageRole.Forum && urlPath_isToForum(location.pathname, pagePath)) {
       // Fine, is to somewhere inside the forum, not supposed to be an exact match.

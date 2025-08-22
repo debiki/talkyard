@@ -67,7 +67,7 @@ export function CatsOrHomeLink(ps: { page: PageTypeAncestors,
             return (
                 r.li({ key, className: 's_Tb_Pg_Cs_C' + deletedClass },
                   // RENAME esTopbar_ancestors_link to just s_AncCs_Ln?
-                  Link({ className: catIcon + 'esTopbar_ancestors_link btn',
+                  TyLink({ className: catIcon + 'esTopbar_ancestors_link btn',
                       // `ancestor.path` is from here, server side: [anc_cat_path].
                       to: isRoot ? rootPathView : ancestor.path },
                   isRoot ? t.Home : ancestor.title)));
@@ -84,7 +84,7 @@ export function CatsOrHomeLink(ps: { page: PageTypeAncestors,
     catsOrHomeLink =
         r.ol({ className: 'esTopbar_ancestors s_Tb_Pg_Cs' },
           r.li({ key: 'h' },
-            Link({ className: 'esTopbar_ancestors_link btn', to: rootPathView }, t.Home)));
+            TyLink({ className: 'esTopbar_ancestors_link btn', to: rootPathView }, t.Home)));
   }
 
   return catsOrHomeLink;

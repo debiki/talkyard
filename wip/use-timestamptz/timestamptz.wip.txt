@@ -1,0 +1,41 @@
+[use_timestamptz] Turns out it's better to use `timestamptz`. Doesn't really
+matter since Talkyard uses UTC everywhere anyway, but it'd be more clear what
+the purpose of the time columns is, with `...tz` (that is, everything
+explicitly in UTC).
+
+I said:
+    Ooops, I've used `timestamp` everywhere. But the server time should be UTC everywhere,
+    so maybe I can
+        alter table ttt alter column ccc type timestamptz using ccc ?
+
+
+ChatGPT said:
+    Yes, exactly — this works and is safe if your current timestamps are all in UTC:
+
+        ALTER TABLE ttt ALTER COLUMN ccc TYPE timestamptz USING ccc;
+
+    That just tells Postgres: "Please reinterpret these naive timestamp values as UTC."
+
+    It doesn’t change the stored values, just changes how Postgres interprets them going forward.
+
+    To be extra sure, you can first check if any values look suspicious:
+
+        SELECT ccc FROM ttt ORDER BY ccc DESC LIMIT 5;
+
+    Then after the alter:
+
+        SET TIME ZONE 'UTC';
+        SELECT ccc AT TIME ZONE 'UTC' FROM ttt;
+        If they match, you're good.
+
+And it also said:
+
+    Recommendation:
+    - Use timestamptz
+    - In your app/server/DB setup, do SET TIME ZONE 'UTC' on connection
+
+Gemini says, about timestamptz:
+
+    ... This ensures that the stored value represents a specific, unambiguous point in time,
+    regardless of the time zone from which it was inserted or retrieved ...
+

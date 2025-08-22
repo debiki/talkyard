@@ -173,10 +173,10 @@ export function logoutClientSideOnly(ps: { goTo?: St, skipSend?: Bo, msg?: St } 
     actionType: actionTypes.Logout
   });
 
-  if (eds.isInEmbeddedCommentsIframe && !ps.skipSend) {
+  if ((eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) && !ps.skipSend) {
     // Tell the editor iframe that we've logged out.
     // And maybe we'll redirect the embedd*ing* window.  [sso_redir_par_win]
-    sendToOtherIframes(['logoutClientSideOnly', ps]);
+    sendToOtherIframes(['logoutClientSideOnly', ps]);  // [forget_sid12]
 
     // Probaby not needed, since reload() below, but anyway:
     patchTheStore({ setEditorOpen: false });
@@ -242,6 +242,45 @@ export function undeleteCategory(categoryId: number, success: () => void, error:
     patchTheStore(storePatch);
     success();
   }, error);
+}
+
+
+/// Opens the editor to compose a new forum topic.
+///
+export function editNewForumPage(catId: RefOrId, pageType: PageType, inWhichWin?: MainWin) {
+  if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) {
+    sendToEditorIframe(['editNewForumPage', [catId, pageType]]);
+  }
+  else {
+    debiki2.editor.editNewForumPage(catId, pageType, inWhichWin);
+  }
+}
+
+
+/// Opens the editor to compose a direct message.
+///
+export function openToWriteMessage(toPatId: PatId, inWhichWin?: MainWin) {
+  if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) {
+    sendToEditorIframe(['openToWriteMessage', [toPatId]]);
+  }
+  else {
+    editor.openToWriteMessage(toPatId, inWhichWin);
+  }
+}
+
+
+/// Called by the editor, after a new page has been created (via editNewForumPage() above).
+///
+export function navToNewPage(pageId: PageId, sendToWhichFrame?: MainWin) {
+  if (eds.isInEmbeddedEditor) {
+    sendToCommentsIframe(['navToNewPage', [pageId]], sendToWhichFrame);
+  }
+  else {
+    // Single-page-app navigate to the new page. We'll `history.replaceState()` with
+    // the page slug, once the page json has been loaded from the server (rather than
+    // showing only the page id in the url).
+    page.Hacks.navigateTo('/-' + pageId);
+  }
 }
 
 
@@ -352,7 +391,7 @@ export function showForumIntro(visible: boolean) {
 
 export function editPostWithNr(postNr: PostNr, inWhichWin?: MainWin) {
   login.loginIfNeededReturnToPost(LoginReason.LoginToEdit, postNr, () => {
-    if (eds.isInEmbeddedCommentsIframe) {
+    if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) {
       // [many_embcom_iframes]
       sendToEditorIframe(['editorEditPost', postNr]);
     }
@@ -573,7 +612,7 @@ export function scrollAndShowPost(postOrNr: Post | PostNr, anyShowPostOpts?: Sho
 
   // ----- Dupl code [0396AKTSSJ46]
   let editorHeight = 0;
-  if (eds.isInEmbeddedCommentsIframe) {
+  if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) {
     try {
       editorHeight = window.parent.frames['edEditor'].innerHeight || 0;
     }
@@ -663,7 +702,7 @@ export function doUrlFragmentAction(newHashFragment?: string) {
         // For now, instead handled in  maybeOpenMessageEditor() in users-page.more.ts [4JABRF0].
         break;
       case FragActionType.ComposeTopic:
-        editor.editNewForumPage(fragAction.category, fragAction.topicType);
+        ReactActions.editNewForumPage(fragAction.category, fragAction.topicType);
         // Don't re-open the editor, if going to another page, and then back.
         history.replaceState({}, '', '#');
         break;
@@ -1028,7 +1067,7 @@ let lastFlashPostNr: PostNr | undefined;
 export function showEditsPreviewInPage(ps: ShowEditsPreviewParams, inFrame?: DiscWin) {
   const doneScrolling = _showEditsPreviewInPage(ps, inFrame);
   if (doneScrolling !== false) {
-    ps?.onDone();
+    ps.onDone?.();
   }
 }
 
@@ -1089,7 +1128,7 @@ function _showEditsPreviewInPage(ps: ShowEditsPreviewParams, inFrame?: DiscWin):
   // main iframe; it doesn't know which page we're looking at. Or 2) we're in
   // a chat — then, currently no page id included. Or 3) if we're in the api
   // section, then there's no page.
-  dieIf(!ps.editorsPageId && !eds.isInEmbeddedCommentsIframe &&
+  dieIf(!ps.editorsPageId && !eds.isInEmbeddedCommentsIframe && !eds.isInEmbForum &&
       !isChat && location.pathname.indexOf(ApiUrlPathPrefix) === -1, 'TyE630KPR5');
   // @endif
 
@@ -1172,7 +1211,7 @@ export function scrollToPreview(ps: {
   // If we're in an embedded comments iframe, then, there's another iframe for the
   // editor. Then scroll a bit more, so that other iframe won't occlude the preview.
   let editorHeight = ps.editorIframeHeightPx || 0;
-  if (eds.isInEmbeddedCommentsIframe) {
+  if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) {
     // This is better? Works also when starting scrolling from inside the comments
     // iframe — then, the editor iframe hasn't sent any message that included
     // its height, so `= ps.editorIframeHeightPx` (just above) won't work . But this
@@ -1251,12 +1290,12 @@ export function hideEditorAndPreview(ps?: HideEditorAndPreviewParams, inFrame?) 
   // @ifdef DEBUG
   dieIf(!page, 'TyE407AKSHPW24');
   dieIf(ps.replyToNr && isChat, 'TyE62SKHSW604');
-  dieIf(!ps.editorsPageId && !eds.isInEmbeddedCommentsIframe &&
+  dieIf(!ps.editorsPageId && !eds.isInEmbeddedCommentsIframe && !eds.isInEmbForum &&
       !isChat && location.pathname.indexOf(ApiUrlPathPrefix) === -1, 'TyE6QSADTH04');
   // @endif
 
   let patch: StorePatch = {};
-  let highlightPostNrAfter: PostNr;
+  let highlightPostNrAfter: PostNr | U;
 
   if (isOtherPage) {
     // The preview is gone already, since we've navigated away.
@@ -1292,7 +1331,7 @@ export function hideEditorAndPreview(ps?: HideEditorAndPreviewParams, inFrame?) 
   patchTheStore(patch);
 
   // And then, later:
-  if (!isOtherPage) {
+  if (!isOtherPage && highlightPostNrAfter) {
     setTimeout(() => {
       flashPostNrIfThere(highlightPostNrAfter);
     }, 200);
@@ -1415,7 +1454,7 @@ function deleteDraftImpl(draftPost: Post | U, draftDeletor: DraftDeletor,
 
 export function composeReplyTo(parentNr: PostNr, replyPostType: PostType) {
   const inclInReply = true; // legacy — was for multireplies: toggle incl-in-reply or not
-  if (eds.isInEmbeddedCommentsIframe) {
+  if (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum) {
     sendToEditorIframe(['editorToggleReply', [parentNr, inclInReply, replyPostType]]);
   }
   else {

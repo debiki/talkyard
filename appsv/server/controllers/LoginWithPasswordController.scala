@@ -149,12 +149,16 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     // A bit dupl code. [2FKD05]
     import request.{body, dao}
 
-    val fullName = (body \ "fullName").asOptStringNoneIfBlank
-    val emailAddress = (body \ "email").as[String].trim
-    val username = (body \ "username").as[String].trim
-    val password = (body \ "password").asOpt[String] getOrElse
+    val fullName: Opt[St] = (body \ "fullName").asOptStringNoneIfBlank
+    val anyEmailAddress: Opt[St] = (body \ "email").asOptStringNoneIfBlank
+    val username: St = (body \ "username").as[String].trim
+    val password: St = (body \ "password").asOpt[String] getOrElse
       throwBadReq("DwE85FX1", "Password missing")
     val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
+
+    // Oddly enough, long ago I thought "" was better than None.  [silly_empty_email]
+    // [Scala_3] Opaque type, check looks like an email ("...@...") and disallow Some("").
+    val emailAddress = anyEmailAddress.getOrElse("")
 
     val maybeCannotUseCookies =
       request.headers.get(EdSecurity.AvoidCookiesHeaderName) is EdSecurity.Avoid
@@ -190,7 +194,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 
     if (!requireVerifiedEmail && emailAddress.isEmpty) {
       // Fine. If needn't verify email, then people can specify non-existing addresses,
-      // so then we might as well accept no-email-at-all.
+      // so then we might as well accept no-email-at-all. [users_w_0_email]
     }
     else if (emailAddress.isEmpty) {
       throwUnprocessableEntity("EdE1GUR0", "Email address missing")
@@ -211,7 +215,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
       reqrId = request.requesterOrUnknown.id,
       requestStuff = request.spamRelatedStuff.copy(
         userName = Some((username + " " + fullName.getOrElse("")).trim),
-        userEmail = Some(emailAddress),
+        userEmail = anyEmailAddress,
         userTrustLevel = Some(TrustLevel.NewMember)))
 
     globals.spamChecker.detectRegistrationSpam(spamCheckTask) map {
@@ -231,10 +235,12 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
         else None
 
       val userData =  // [5LKKWA10]
-        NewPasswordUserData.create(name = fullName, email = emailAddress, username = username,
-            password = Some(password), createdAt = now,
-            isAdmin = becomeOwner, isOwner = becomeOwner,
-            emailVerifiedAt = emailVerifiedAt) match {
+        NewPasswordUserData.create(
+              name = fullName, email = emailAddress, username = username,
+              password = Some(password), createdAt = now,
+              isAdmin = becomeOwner, isOwner = becomeOwner,
+              emailVerifiedAt = emailVerifiedAt,
+              requireVerifiedEmail = requireVerifiedEmail) match {
           case Good(data) => data
           case Bad(errorMessage) =>
             throwUnprocessableEntity("DwE805T4", s"$errorMessage, please try again.")
@@ -267,7 +273,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
           // Send account reminder email. But don't otherwise indicate that the account exists,
           // so no email addresses are leaked.
           LoginWithPasswordController.sendYouAlreadyHaveAnAccountWithThatAddressEmail(
-            dao, emailAddress, siteHostname = request.host, siteId = request.siteId)
+                dao, emailAddress, siteHostname = request.host, siteId = request.siteId)
           (None, Nil)
       }
 
