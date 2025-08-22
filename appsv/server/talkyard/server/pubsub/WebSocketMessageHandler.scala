@@ -229,8 +229,25 @@ class WebSocketMessageHandler(
         result match {
           case Success(_) =>
             logger.debug(s"WS closed: $who [TyMWSEND]$nothingToDo")
+
           case Failure(throwable) =>
-            logger.warn(s"WS failed: $who [TyMWSFAIL]$nothingToDo, error: ${
+            // Seems to happen whenever a client silently disconnect, with `throwable` being:
+            //   > HTTP idle-timeout encountered, no bytes passed in the last 75 seconds.
+            //   > This is configurable by akka.http.[server|client].idle-timeout.
+            // But which exception class is that? Would be better to catch only that
+            // exception, and maybe `logger.warn` for others?
+            // Play Framework / Akka logs this too:  [play_fmw_websocket_err_msgs]
+            //   > WebSocket communication problem: HTTP idle-timeout encountered,
+            //   > no bytes passed in the last 75 seconds. This is configurable by
+            //   > akka.http.[server|client].idle-timeout.
+            // Very uninteresting, bit annoying. Play Fmw GitHub issue:
+            // https://github.com/playframework/playframework/issues/11928
+            // They say it wouldn't happen with the Netty backend. But would we then
+            // have to reimplement WebSocket completely? Since uses Akka / Pekko stuff.
+            //
+            // If the client is still online, it should try to reconnect, see: [WSRECONN].
+            //
+            logger.debug(s"WS failed: $who [TyMWSFAIL]$nothingToDo, error: ${
                 throwable.getMessage}")
         }
   }

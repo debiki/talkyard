@@ -1008,6 +1008,14 @@ Individual prefs:
      for > X hours  *and* no other staff mem has reviewed yet.
   Or optionally if new member joins.
 
+[WSRECONN][VIAWS]
+Sometimes WebSocket connections break, and apparently the client doesn't always reconnect.
+Maybe switch to Netty? Then, might get rid of annoying [play_fmw_websocket_err_msgs]
+>  BTW: Also I am pretty sure this exception would not occur if you
+>  would switch to the netty backend
+> ( .enablePlugins(PlayScala, PlayNettyServer).disablePlugins(PlayAkkaHttpServer))
+https://github.com/playframework/playframework/issues/11928#issuecomment-1685398894
+
 [external-server-js]
 What? Same as [ext_markup_processor] ?
 
