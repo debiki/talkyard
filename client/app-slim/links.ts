@@ -34,6 +34,9 @@
 //
 // Or isn't it **better** to let all linkTo...() be relative, and in the few cases
 // when it's needed, prefix w  `origin() +`.  Let's do that. Later. CLEAN_UP
+//
+// Then maybe rename all these link* fns to  pathTo...() instead? Since
+// will be url paths.  "link" is a bit unspecific compared to "path".
 
 
 /// <reference path="prelude.ts"/>
@@ -199,45 +202,63 @@ function makeTyLink(spaceWidgetClasses: St, extraProps?) {
   return function(origProps, ...children) {
     const newProps: any = _.assign({}, origProps || {}, extraProps);
     newProps.className = (origProps.className || '') + spaceWidgetClasses;
+    const isEmbedded = eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor || eds.isInEmbForum;
+    let openInNewTab = false;
 
     // React Bootstrap's Link uses 'to', so better if UnstyledLink works with 'to' too, not only 'href'.
     if (!newProps.href)
       newProps.href = newProps.to;
 
+    // Single-page-app navigation
+    //
     // Make link buttons navigate within the single-page-app, no page reloads. Even if they're
     // in a different React root. The admin app is it's own SPA [6TKQ20] so, when in the admin area,
     // links to user profiles and discussions, are external. And vice versa.
     if (!newProps.onClick || eds.isInEmbForum && newProps.href) {
-      let isExternal = newProps.ext || eds.isInEmbeddedCommentsIframe;
+      let isExternal = newProps.ext || eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor;
       // @ifdef DEBUG
-      dieIf(isServerSide() && (eds.isInEmbeddedCommentsIframe || eds.isInEmbForum), 'TyE2KWT05');
+      // Later: This'll happen, when rendering embedded pages server side, and using
+      // page_html_cache_t.param_emb_path_param_c  to know how to generate deep links.
+      // Then remove this assertion.
+      dieIf(isServerSide() && isEmbedded, 'TyE2KWT05');
       // @endif
 
       const href = newProps.href;
       const linksToAdminArea = href && href.indexOf(UrlPaths.AdminArea) === 0; // dupl [5JKSW20]
       isExternal = isExternal || eds.isInAdminArea !== linksToAdminArea;
 
-      // Single-page-app navigate:
-      //
       if (!isExternal && !newProps.onClick) {
         const afterClick = newProps.afterClick;  // field deleted below
 
+        // Single-page-app navigate:
         newProps.onClick = function(event) {
           event.preventDefault(); // avoids full page reload
           debiki2.page['Hacks'].navigateTo(href);
           // Some ancestor components ignore events whose target is not their own divs & stuff.
           // Not my code, cannot change that. I have in mind React-Bootstrap's Modal, which does this:
           // `if (e.target !== e.currentTarget) return; this.props.onHide();` — so onHide() never
-          // gets called. But we can use afterClick: ...:
+          // gets called. But we can use afterClick:
           if (afterClick) {
             afterClick();
           }
         }
       }
 
-      // Make links work also if in an embedded forum.  [deep_emb_links]
-      // Change from e.g.: /-123/ty-page-slug
-      // to: https://www.ex.co/embedded-forum#/-123/ty-page-slug  (if embPathParam = '#/')
+      // Make links in blog comment iframes open in new browser tabs.
+      //
+      // It'd be confusing if the comments section suddenly started showing something else,
+      // e.g. a user profile page?  This is, b.t.w., how Disqus works (that is, opening
+      // user profile links in new tabs, not in the embedded comments iframe).
+      //
+      if (newProps.href && (eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor)) {
+        openInNewTab = true;
+        newProps.href = linkToPath(newProps.href);
+      }
+
+      // Make links work in embedded forums.  [deep_emb_links]
+      //
+      // Change from e.g.:  /-123/ty-page-slug
+      // to:  https://www.ex.co/embedded-forum#/-123/ty-page-slug  (if talkyardPathParam = '#/')
       //
       // (But don't modify links passed to the onClick handler above — they'll work fine
       // as is, e.g.  /-123/some-page  or  /-/users/some_username,  ReactRouter resolves
@@ -246,13 +267,13 @@ function makeTyLink(spaceWidgetClasses: St, extraProps?) {
       //
       if (eds.isInEmbForum && newProps.href) {
         if (!isExternal) {
+          // Prefix w e.g. 'http://embedding.site/forum#' depending on `talkyardPathParam`.
           newProps.href = linkToPath(newProps.href);
         }
         else {
           // Don't open links to other websites, or to the admin area, inside the iframe.
+          openInNewTab = true;
           const hasOrigin = newProps.href.match(/^(https?:)?\/\/[^:/]+/);
-          newProps.target = '_blank';
-          newProps.rel = 'noopener';
           if (hasOrigin) {
             // To some external website? Use as-is.
           }
@@ -265,6 +286,11 @@ function makeTyLink(spaceWidgetClasses: St, extraProps?) {
             newProps.href = location.origin + missingSlash + newProps.href;
           }
         }
+      }
+
+      if (openInNewTab) {
+        newProps.target = '_blank';
+        newProps.rel = 'noopener';
       }
     }
 
@@ -282,6 +308,10 @@ function makeTyLink(spaceWidgetClasses: St, extraProps?) {
 /// to a url that works also if Talkyard forum is embedded in an iframe,
 /// e.g.  https://www.ex.co/embedded-forum#/-123/talkyard-page-slug.
 /// Uses some eds.* variables.  [deep_emb_links]
+///
+/// Gah what a funny name!  RENAME to urlToTyPath?  Returns either a complete url (incl origin),
+/// if needed (e.g. if in an emb comments iframe), or just a relative url, if the browser
+/// is already at the Talkyard site (and not in an iframe).
 ///
 export function linkToPath(tyPath: St): St {
   // @ifdef DEBUG
@@ -306,8 +336,10 @@ export function linkToPath(tyPath: St): St {
   // the #hash-fragment) that tells the Talkyard script on the embedd*ing* page, that is,
   // talkyard-forum.min.js, to show `tyPath` in the Talkyard forum iframe. [embg_ty_url]
 
-  // COULD_OPTIMIZE Do just once, also if many links.
-  const embgUrl = new URL(eds.embgUrl || eds.embeddingUrl); // cachedEmbgUrl
+  // CLEAN_UP Turns out  embgUrl wasn't needed — '#/....' or '?talkyardPath=...' is enough.
+
+  // CO ULD_OPTI MIZE Do just once, also if many links.
+  //const embgUrl = new URL(eds.embgUrl || eds.embeddingUrl); // cachedEmbgUrl
 
   // The resulting link, e.g.  https://www.ex.co/emb-forum#/-123/talkyard-page-slug.
   let res: St | U;
@@ -464,7 +496,7 @@ export function linkToUserProfilePage(who: Who): St {
   return pathTo(who);
 }
 
-// RENAME to pathToProfile ?
+// RENAME to linkToPatsProfile  or just pathToPat?
 export function pathTo(who: Who): St {
     // @ifdef DEBUG
     dieIf(!who, 'TyE7UKWQT2');
