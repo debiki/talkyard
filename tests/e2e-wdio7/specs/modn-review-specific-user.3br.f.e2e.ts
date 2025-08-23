@@ -219,7 +219,7 @@ describe(`modn-review-specific-user.3br.f  TyTMOD_REVW_USR`, () => {
     const pathQuery = await owen_brA.urlPathQueryHash(); // no hash frag,
     assert.includes(pathQuery, '?patId=');  // followed by Michael's id
     // Add showComplicated:
-    owen_brA.go2(pathQuery + '&showComplicated=true');
+    await owen_brA.go2(pathQuery + '&showComplicated=true');
   });
 
 
