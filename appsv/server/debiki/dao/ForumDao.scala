@@ -51,7 +51,7 @@ trait ForumDao {
   self: SiteDao =>
 
 
-  def createForum(title: St, folder: String, isForEmbCmts: Bo, byWho: Who,
+  def createForum(title: St, folder: String, isForEmbCmts: Bo = false, byWho: Who,
           anyTx: Opt[(SiteTx, StaleStuff)] = None): Opt[CreateForumResult] = {
     createForum2(CreateForumOptions(
       isForEmbeddedComments = isForEmbCmts,

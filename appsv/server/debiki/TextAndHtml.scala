@@ -534,10 +534,10 @@ class TextAndHtmlMaker(
     * This is useful in test suites, because they'll run a lot faster when they won't
     * have to wait for the commonmark renderer to be created.
     */
-  def test(text: String): TextAndHtml = {
+  def test(text: St, mentions: Set[St] = Set.empty): TextAndHtml = {
     dieIf(Globals.isProd, "EsE7GPM2")
     new TextAndHtmlImpl(
-          text, safeHtml = text, usernameMentions = Set.empty, uploadRefs = Set.empty,
+          text, safeHtml = text, usernameMentions = mentions, uploadRefs = Set.empty,
           internalLinks = Set.empty, externalLinks = Nil,
           extLinkDomains = Set.empty, extLinkIpAddresses = Nil,
           embeddedOriginOrEmpty = "", relFollowTo = Nil,
@@ -548,7 +548,8 @@ class TextAndHtmlMaker(
   def testTitle(text: String): TitleSourceAndHtml =
     TitleSourceAndHtml.alreadySanitized(text, safeHtml = text)
 
-  def testBody(text: String): TextAndHtml = test(text)
+  def testBody(text: String, mentions: Set[St] = Set.empty): TextAndHtml =
+    test(text, mentions = mentions)
 
 }
 
