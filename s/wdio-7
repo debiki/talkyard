@@ -1,5 +1,18 @@
 #!/bin/bash
 
+# These tests need Nodejs 22 (or later). See: [e2e_nodejs_old_v14]
+#
+node_ver=$(node --version)
+if [[ "$node_ver" == v22.* ]]; then
+  : # Correct version — run the tests.
+elif [[ "$node_ver" == v14.* ]]; then
+  echo "Skipping this test — it needs Nodejs v22, but now we're using $node_ver."
+  exit 0
+else
+  echo "Totally unexpected Nodejs version. Is: $node_ver, should be v22 (or v14)."
+  exit 1
+fi
+
 cd tests/e2e-wdio7/
 
 
