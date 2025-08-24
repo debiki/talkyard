@@ -971,7 +971,21 @@ const LoginAndSignupSettings = createFactory({
         }),
 
         enableTySsoOrOnlyCustIdps || !allowSignup ? null : Setting2(props, {
-          type: 'checkbox', label: "Allow anonymous \"login\"",  // [settings_templates]
+          // The website, https://blog-comments.talkyard.io,  refers to this as
+          // "Guest comments",  but here it's "anonymous login" — should use the same?
+          // Someone got confused and asked how to enable "guest comments".
+          // "Guest comments" is better? ChatGPT says:
+          //    > ...
+          //    > "Anonymous" usually means no name at all, completely identity-free
+          //    > “Guest login” [..] sounds like credentials are needed.
+          //    > “Guest comments” → much clearer — says exactly what it is.
+          //    > ...
+          // Let's use "Guest posts" (can create pages too, not only commnets, if is a forum).
+          // Skip any "Allow" or "Enable" prefix — would just make it harder to scroll,
+          // scan & find?
+          //
+          type: 'checkbox', label: "Guest posts",  // [settings_templates]
+                           // was: "Allow anonymous \"login\""
           id: 'e2eAllowGuestsCB',
           className: 'e_A_Ss_S-AllowGuestsCB',
           help: "Lets people post comments and create topics, without creating real accounts " +
