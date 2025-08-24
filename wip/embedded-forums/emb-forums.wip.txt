@@ -71,7 +71,10 @@ Thereafter, can solve the  [TyLink_problems]?
 REMOVE; DO_AFTER // v0.2025.011  [rm_embeddingUrl_param]
 
 
-Emb forum iframe:
+Emb forum  if-in-iframe.ts:
+    UX BUG Ooops, if display: none, then `!!anyFooter === true`, but still should
+    not add  footerMargin!
+
     UX BUG: Doesn't downsize itself, if emb forum.
 
 

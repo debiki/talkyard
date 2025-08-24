@@ -295,15 +295,25 @@ function syncDocSizeWithIframeSize() {
     // 1) Don't use window.innerHeight — that'd be the size of the parent window,
     // outside the iframe.  2) Don't use document.body.clientHeight — it might be
     // too small, before iframe resized. 3) body.offsetHeight can be incorrect
-    // if nested elems have margin-top.  But this works fine:  [iframe_height]
-    const discussion = $byId('dwPosts');
+    // if nested elems have margin-top. 4) Don't use #dwPosts — it doesn't
+    // include the footer and some paddings and margins.
+    // But this works fine:  [iframe_height]
+    const discussion = $byId('esPageScrollable');
+    if (!discussion) {
+      // Not yet loaded. // Let's give it a bit space so any "Loading ..." text inside is visible?
+      return; // return 300;
+    }
     const currentWidth = discussion.clientWidth;
     const currentDiscussionHeight = discussion.clientHeight;
 
+    /*
     // In embedded forums, there's a footer too, and sometimes an editor.
     const anyFooter = $first('footer');
     const footerMargin = 28; // see page.styl [footer_margin_top]
-    const footerHeight = anyFooter && (anyFooter.clientHeight + footerMargin) || 0;
+    // `.offsetParent` is null if the footer or any ancestor is display: none.
+    const footerHeight = anyFooter && anyFooter.offsetParent && (
+                            anyFooter.clientHeight + footerMargin) || 0;
+    */
 
     // There's no editor — it's in its own iframe. If there had been:
     // -----
@@ -327,7 +337,7 @@ function syncDocSizeWithIframeSize() {
 
     // UX BUG: Doesn't downsize itself, if emb forum.
     const currentHeight = Math.max(
-            currentDiscussionHeight + footerHeight, // + editorHeight
+            currentDiscussionHeight, // + footerHeight, // + editorHeight
             dialogHeightPlusPadding);
 
     if (lastWidth === currentWidth && lastHeight === currentHeight)

@@ -456,24 +456,29 @@ a.s_InLns_Ln
 // 'flex' apparently doesn't work on iOS, so disable it on iOS. [5YKJ24]
 // But does work on Safari
 
+// Also, skip if in an embedded forum — then, the footer is in an iframe which won't be
+// at the bottom of the screen anyway.
+
 // Make the footer stick to the bottom.
 // See: http://philipwalton.github.io/solved-by-flexbox/demos/sticky-footer/
-html:not(.ios) #esPageScrollable // not iOS: see [5YKJ24] above
-  display: flex;
-  flex-direction: column;
-  height: 100%; // supposedly avoid some IE 10-11 min-height bug
+html:not(.n_InEmbForum)
+  &:not(.ios)
+    #esPageScrollable // not iOS: see [5YKJ24] above
+      display: flex;
+      flex-direction: column;
+      height: 100%; // supposedly avoid some IE 10-11 min-height bug
 
-#dwPosts
-  flex: 1 0 auto;
+  #dwPosts
+    flex: 1 0 auto;
 
-// This works around a Safari bug that lets flex elems shrink smaller than min-height/width,
-// see: https://github.com/philipwalton/flexbugs#1-minimum-content-sizing-of-flex-items-not-honored
-.esPageHeader,
-#topbar,
-footer
-  flex: none;
-.footer
-  margin-top: 0;
+  // This works around a Safari bug that lets flex elems shrink smaller than min-height/width,
+  // see: https://github.com/philipwalton/flexbugs#1-minimum-content-sizing-of-flex-items-not-honored
+  .esPageHeader,
+  #topbar,
+  footer
+    flex: none;
+  .footer
+    margin-top: 0;
 
 // For the default <footer><p><a>Terms of use<a>Privacy policy:  [5UK62W]
 footer

@@ -975,10 +975,11 @@ function calcSizes(commentsIframe: HIframeElm): St {
   var iframeVisibleHeight = height - Math.max(0, rect.top);
                                   // iframeVisibleTopInParentWin
 
-  return ('["iframeOffsetWinSize",' +
+  const sizesMsg = ('["iframeOffsetWinSize",' +
       '{ "top":' + (-rect.top) +  // why did I negate? [why_neg_ifr_top]
       ', "height":' + height +    // rename 'height'? but to what? Maybe 'iframeVisibleBottom'?
       ', "iframeVisibleHeight": ' + iframeVisibleHeight + '}]');
+  return sizesMsg;
 }
 
 

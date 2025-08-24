@@ -106,7 +106,7 @@ talkyardServerUrl='${settings.scheme}://${localHostname}.localhost';
 
 <script async defer src="${siteIdAddress.origin}/-/talkyard-forum.js"></script>
 
-<div class="talkyard-forum" style="margin-top: 45px;"></div>
+<div class="talkyard-forum"></div>
 
 <hr>
 <p>/End of page.</p>
