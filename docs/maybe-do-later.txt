@@ -134,6 +134,11 @@ Merge  posts3, pages3, categories3 and some settings3 columns into:  nodes_t
 But most such settings should instead be in:  pat_node_multi_rels_t  (!).
 See: ./everything-is-a-node.txt
 
+[url_cat_before_order]
+Change URL path comonents from:   /latest/category-name
+                            to:   /category-name/latest
+so that /category/* starts making sense, e.g. for [embedded_jails].
+
 [subcats] [sub_cats]
 DONE: Implement sub categories.
 But missing: Search in sub cats, if searching in base cat.

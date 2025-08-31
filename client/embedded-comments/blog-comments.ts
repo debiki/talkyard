@@ -608,6 +608,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   const commentsIframe = Bliss.create('iframe', {
     id: 'ed-embedded-comments',
     name: 'edComments-' + iframeNr,
+    // Isn't ty_EmbComments a better name? ty_EmbComments, EmbForum, EmbEditor, EmbSesison?
     className: 'p_CmtsIfr ty_CmtsIfr',   // DEPRECATE old name p_CmtsIfr
     // A title attr, for better accessibility. See: https://www.w3.org/TR/WCAG20-TECHS/H64.html
     title: iframeTitle || "Comments",
