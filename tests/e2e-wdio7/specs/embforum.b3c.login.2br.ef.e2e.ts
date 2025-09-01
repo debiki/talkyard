@@ -19,8 +19,9 @@ const mariasCommentTwo = 'mariasCommentTwo';
 // would be unrealistic.
 const embeddingOrigin = 'http://e2e-test-www.localhost:8080';
 
-const embPageOneSlug = 'emb-page-one.html';
-const embPageTwoSlug = 'emb-page-two.html';
+const embForum = 'emb-forum.html';
+const embCat = 'emb-cat-a.html';
+const embPage = 'emb-page.html';
 
 let brA: TyE2eTestBrowser;
 let brB: TyE2eTestBrowser;
@@ -76,14 +77,14 @@ describe("embedded-forum-no-cookies-login  TyT5029FKRDE", () => {
 
   it("create two embedding pages", async () => {
     const dir = 'target';
-    //fs.writeFileSync(`${dir}/${pageShortSlug}`, makeHtml('short', 0, '#005'));
-    fs.writeFileSync(`${dir}/${embPageOneSlug}`, makeHtml('one', 2000, '#405'));
-    fs.writeFileSync(`${dir}/${embPageTwoSlug}`, makeHtml('two', 2000, '#045'));
-    //fs.writeFileSync(`${dir}/${pageTallerSlug}`, makeHtml('taller', 5000, '#040'));
+    fs.writeFileSync(`${dir}/${embForum}`, makeHtml('emb-forum', '#405', null));
+    fs.writeFileSync(`${dir}/${embCat}`, makeHtml('emb-cat', '#045', '/top/category-a'));
+    fs.writeFileSync(`${dir}/${embPage}`, makeHtml('emb-page', '#045', '/by-michael-category-a'));
   });
 
 
-  function makeHtml(pageName: string, bgColor: string): string {
+  function makeHtml(pageName: St, bgColor: St, talkyardPath: St | N): St {
+    const pathLine = !talkyardPath ? '' : `talkyardPath = '${talkyardPath}';n`
     return `
 <html>
 <head>
@@ -102,6 +103,7 @@ iframe {
 
 <script>
 talkyardServerUrl='${settings.scheme}://${localHostname}.localhost';
+${pathLine}
 </script>
 
 <script async defer src="${siteIdAddress.origin}/-/talkyard-forum.js"></script>
@@ -115,13 +117,18 @@ talkyardServerUrl='${settings.scheme}://${localHostname}.localhost';
   }
 
   it("Maria opens the embedded forum page", async () => {
-    await maria_brB.go2(embeddingOrigin + '/' + embPageOneSlug);
+    await maria_brB.go2(embeddingOrigin + '/' + embForum);
   });
 
   it("Owen too,  not to admin settings", async () => {
-    await owen_brA.go2(embeddingOrigin + '/' + embPageOneSlug);
+    await owen_brA.go2(embeddingOrigin + '/' + embCat);
     //await owen_brA.adminArea.settings.embedded.goHere(localHostname);
     //await this.loginDialog.loginWithPassword(owen);
+  });
+
+  it("Owen goes to embedded page", async () => {
+    await owen_brA.d();
+    await owen_brA.go2(embeddingOrigin + '/' + embPage);
   });
 
 });
