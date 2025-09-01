@@ -1,25 +1,22 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
-import fs = require('fs');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import make = require('../utils/make');
-import logAndDie = require('../utils/log-and-die');
-import c = require('../test-constants');
+import assert from '../utils/ty-assert';
+import * as fs from 'fs';
+import server from '../utils/server';
+import * as utils from '../utils/utils';
+import * as make from '../utils/make';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import settings from '../utils/settings';
+import { logMessage } from '../utils/log-and-die';
 
-let browser: TyE2eTestBrowser;
-declare let browserA: any;
-declare let browserB: any;
+let brA: TyE2eTestBrowser;
+let brB: TyE2eTestBrowser;
 
-let everyonesBrowsers;
 let owen;
-let owensBrowser: TyE2eTestBrowser;
+let owen_brA: TyE2eTestBrowser;
 let maria;
-let mariasBrowser: TyE2eTestBrowser;
+let maria_brB: TyE2eTestBrowser;
 
 let data;
 let siteId: any;
@@ -32,14 +29,14 @@ const owensCommentText = 'owensCommentText';
 // This test embedded comments site creation, with the default settings.
 // Then, people who post comments are not required to verify their email.
 
-describe("embedded comments, new site, admin tour  TyT6KRKV20", () => {
+describe(`embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20`, () => {
 
-  it("initialize people", () => {
-    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
+  it("initialize people", async () => {
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
-    owensBrowser = new TyE2eTestBrowser(browserA);
-
-    mariasBrowser = new TyE2eTestBrowser(browserB);
+    owen_brA = brA;
+    maria_brB = brB;
 
     owen = make.memberOwenOwner();
     maria = make.memberMaria();
@@ -64,83 +61,83 @@ describe("embedded comments, new site, admin tour  TyT6KRKV20", () => {
       fullName: 'E2E Test ' + testId,
       email: settings.testEmailAddressPrefix + testId + '@example.com',
       username: 'owen_owner',
-      password: 'publ-ow020',
+      password: 'pub-owe020',
     }
   }
 
-  it('Owen creates an embedded comments site as a Password user  @login @password:', () => {
+  it('Owen creates an embedded comments site as a Password user  @login @password:', async () => {
     // Dupl code [502SKHFSKN53]
     data = createPasswordTestData();
-    owensBrowser.go(utils.makeCreateEmbeddedSiteWithFakeIpUrl());
-    owensBrowser.disableRateLimits();
+    await owen_brA.go2(utils.makeCreateEmbeddedSiteWithFakeIpUrl());
+    owen_brA.disableRateLimits();
   });
 
-  it(`... He fills in fields`, () => {
-    owensBrowser.createSite.fillInFieldsAndSubmit(data);
+  it(`... He fills in fields`, async () => {
+    await owen_brA.createSite.fillInFieldsAndSubmit(data);
     // New site; disable rate limits here too.
-    owensBrowser.disableRateLimits();
+    await owen_brA.disableRateLimits();
 
-    owensBrowser.tour.runToursAlthoughE2eTest();
+    await owen_brA.tour.runToursAlthoughE2eTest();
   });
 
-  it(`... Sings up as owner, at the new site`, () => {
-    owensBrowser.createSite.clickOwnerSignupButton();
-    owensBrowser.loginDialog.createPasswordAccount({ ...data, shallBecomeOwner: true });
+  it(`... Sings up as owner, at the new site`, async () => {
+    await owen_brA.createSite.clickOwnerSignupButton();
+    await owen_brA.loginDialog.createPasswordAccount({ ...data, shallBecomeOwner: true });
   });
 
-  it(`... Clicks an email verification link`, () => {
-    siteId = owensBrowser.getSiteId();
-    const email = server.getLastEmailSenTo(siteId, data.email, wdioBrowserA);
+  it(`... Clicks an email verification link`, async () => {
+    siteId = await owen_brA.getSiteId();
+    const email = await server.getLastEmailSenTo(siteId, data.email);
     const link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
-    owensBrowser.go(link);
-    owensBrowser.waitAndClick('#e2eContinue');
+    await owen_brA.go2(link);
+    await owen_brA.waitAndClick('#e2eContinue');
   });
 
 
-  it("An intro guide appears", () => {
-    owensBrowser.waitForVisible('.e_SthElseB');
-    owensBrowser.tour.assertTourStarts(true);
+  it("An intro guide appears", async () => {
+    await owen_brA.waitForVisible('.e_SthElseB');
+    await owen_brA.tour.assertTourStarts(true);
     console.log('Step 1');
-    owensBrowser.tour.clickNextForStepNr(1);
+    await owen_brA.tour.clickNextForStepNr(1);
     console.log('Step 2');
-    owensBrowser.waitAndClick('#e2eAA_Ss_LoginL', { mayScroll: false });
+    await owen_brA.waitAndClick('#e2eAA_Ss_LoginL', { mayScroll: false });
     console.log('Step 3');
     // wait for a tour scroll animation to complete, which otherwise makes the next
     // tour scroll fail.
-    owensBrowser.tour.clickNextForStepNr(3);
+    await owen_brA.tour.clickNextForStepNr(3);
     console.log('Step 4');
-    owensBrowser.waitAndClick('.e_RvwB', { mayScroll: false });
+    await owen_brA.waitAndClick('.e_RvwB', { mayScroll: false });
     console.log('Step 5');
-    owensBrowser.tour.clickNextForStepNr(5);
+    await owen_brA.tour.clickNextForStepNr(5);
     console.log('Step 6');
-    owensBrowser.waitAndClick('.e_StngsB', { mayScroll: false });
+    await owen_brA.waitAndClick('.e_StngsB', { mayScroll: false });
     console.log('Step 7');
-    owensBrowser.tour.clickNextForStepNr(7);
+    await owen_brA.tour.clickNextForStepNr(7);
   });
 
 
-  it("Owen is back on the embedded comments page", () => {
-    assert.equal(owensBrowser.urlPath(), '/-/admin/settings/embedded-comments');
+  it("Owen is back on the embedded comments page", async () => {
+    assert.eq(await owen_brA.urlPath(), '/-/admin/settings/embedded-comments');
   });
 
 
-  it("The tour is done, won't restart", () => {
-    owensBrowser.refresh(); // this reloads new tourTipsSeen
-    owensBrowser.waitForVisible('.e_SthElseB');
-    owensBrowser.tour.assertTourStarts(false);
+  it("The tour is done, won't restart", async () => {
+    await owen_brA.refresh2(); // this reloads new tourTipsSeen
+    await owen_brA.waitForVisible('.e_SthElseB');
+    await owen_brA.tour.assertTourStarts(false);
   });
 
 
-  it("Clicks Blog = Something Else, to show the instructions", () => {
-    owensBrowser.waitAndClick('.e_SthElseB');
+  it("Clicks Blog = Something Else, to show the instructions", async () => {
+    await owen_brA.waitAndClick('.e_SthElseB');
   });
 
 
-  it("He creates an embedding page", () => {
+  it("He creates an embedding page", async () => {
     // Dupl code [046KWESJJLI3].
-    owensBrowser.waitForVisible('#e_EmbCmtsHtml');
-    const htmlToPaste = owensBrowser.getText('#e_EmbCmtsHtml');
+    await owen_brA.waitForVisible('#e_EmbCmtsHtml');
+    const htmlToPaste = await owen_brA.getText('#e_EmbCmtsHtml');
     //console.log('htmlToPaste: ' + htmlToPaste);
     const dirPath = 'target'; //  doesn't work:   target/e2e-emb' — why not.
     if (!fs.existsSync(dirPath)) {  // —>  "FAIL: Error \n unknown error line"
@@ -160,97 +157,98 @@ ${htmlToPaste}
   });
 
 
-  it("Maria opens the embedding page, not logged in", () => {
-    mariasBrowser.go(data.embeddingUrl);
-    mariasBrowser.switchToEmbeddedCommentsIrame();
+  it("Maria opens the embedding page, not logged in", async () => {
+    await maria_brB.go2(data.embeddingUrl);
+    await maria_brB.switchToEmbeddedCommentsIrame();
   });
 
-  it("... and clicks Reply", () => {
-    mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
+  it("... and clicks Reply", async () => {
+    await maria_brB.topic.clickReplyToEmbeddingBlogPost();
   });
 
-  it("... writes a comment (not yet logged in)", () => {
-    mariasBrowser.switchToEmbeddedEditorIrame();
-    mariasBrowser.editor.editText(mariasCommentText);
+  it("... writes a comment (not yet logged in)", async () => {
+    await maria_brB.switchToEmbeddedEditorIrame();
+    await maria_brB.editor.editText(mariasCommentText);
   });
 
-  it("... posts it", () => {
-    mariasBrowser.editor.save();
+  it("... posts it", async () => {
+    await maria_brB.editor.save();
   });
 
-  it("... password-signs-up in a popup", () => {
+  it("... password-signs-up in a popup", async () => {
     console.log("switching to login popup window...");
-    mariasBrowser.swithToOtherTabOrWindow();
-    mariasBrowser.disableRateLimits();
+    await maria_brB.swithToOtherTabOrWindow();
+    await maria_brB.disableRateLimits();
     console.log("signs up...");
-    mariasBrowser.loginDialog.createPasswordAccount(maria, false, 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG');
-    mariasBrowser.switchBackToFirstTabOrWindow();
+    await maria_brB.loginDialog.createPasswordAccount(maria, false, 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG');
+    await maria_brB.switchBackToFirstTabOrWindow();
   });
 
-  it("... the comment it appears", () => {
-    mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostAssertTextMatches(2, mariasCommentText); // the first reply nr, = comment 1
+  it("... the comment it appears", async () => {
+    await maria_brB.switchToEmbeddedCommentsIrame();
+    await maria_brB.topic.waitForPostAssertTextMatches(2, mariasCommentText); // the first reply nr, = comment 1
   });
 
-  it("Owen sees it too", () => {
-    owensBrowser.go(data.embeddingUrl);
-    owensBrowser.switchToEmbeddedCommentsIrame();
-    owensBrowser.topic.waitForPostAssertTextMatches(2, mariasCommentText);
+  it("Owen sees it too", async () => {
+    await owen_brA.go2(data.embeddingUrl);
+    await owen_brA.switchToEmbeddedCommentsIrame();
+    await owen_brA.topic.waitForPostAssertTextMatches(2, mariasCommentText);
   });
 
-  it("Owen needs to log in? The browsers keep changing how they work", () => {
-    owensBrowser.complex.loginIfNeededViaMetabar(owen);
+  it(`Owen needs to log in? Browsers tend to block <iframe> cookies`, async () => {
+    await owen_brA.complex.loginIfNeededViaMetabar(owen);
   });
 
-  it("Owen replies to Maria (he's already logged in)", () => {
-    owensBrowser.topic.clickReplyToPostNr(2);
-    owensBrowser.switchToEmbeddedEditorIrame();
-    owensBrowser.editor.editText(owensCommentText);
-    owensBrowser.editor.save();
+  it("Owen replies to Maria (he's already logged in)", async () => {
+    await owen_brA.topic.clickReplyToPostNr(2);
+    await owen_brA.switchToEmbeddedEditorIrame();
+    await owen_brA.editor.editText(owensCommentText);
+    await owen_brA.editor.save();
   });
 
-  it("... his comment appears", () => {
-    owensBrowser.switchToEmbeddedCommentsIrame();
-    owensBrowser.topic.waitForPostAssertTextMatches(3, owensCommentText);
+  it("... his comment appears", async () => {
+    await owen_brA.switchToEmbeddedCommentsIrame();
+    await owen_brA.topic.waitForPostAssertTextMatches(3, owensCommentText);
   });
 
-  it("Maria sees Owen's comment and her own too", () => {
-    mariasBrowser.refresh();
-    mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostAssertTextMatches(2, mariasCommentText);
-    mariasBrowser.topic.waitForPostAssertTextMatches(3, owensCommentText);
+  it("Maria sees Owen's comment and her own too", async () => {
+    await maria_brB.refresh2();
+    await maria_brB.switchToEmbeddedCommentsIrame();
+    await maria_brB.topic.waitForPostAssertTextMatches(2, mariasCommentText);
+    await maria_brB.topic.waitForPostAssertTextMatches(3, owensCommentText);
   });
 
-  it("When embedding via the wrong domain, the comments refuse to load", () => {
-    logAndDie.logMessage(`First, comments are visible ...`);
-    assert(isCommentsVisible(owensBrowser));
-    assert(isReplyButtonVisible(owensBrowser));
+  it("When embedding via the wrong domain, the comments refuse to load", async () => {
+    logMessage(`First, comments are visible ...`);
+    assert.that(await isCommentsVisible(owen_brA));
+    assert.that(await isReplyButtonVisible(owen_brA));
 
-    owensBrowser.go('http://wrong-embedding-domain.localhost:8080');
+    await owen_brA.go2('http://wrong-embedding-domain.localhost:8080');
 
-    logAndDie.logMessage(`But not at the wrong domain...`);
-    const source = owensBrowser.getSource();
-    assert(source.indexOf('27KT5QAX29') >= 0);
+    logMessage(`But not at the wrong domain...`);
+    const source = await owen_brA.getSource();
+    assert.that(source.indexOf('27KT5QAX29') >= 0);
 
     // There is an iframe but it's empty, because the Content-Security-Policy frame-ancestors
     // policy forbids embedding from this domain.
     // But with WebdriverIO v6, this: browser.switchToFrame(iframe);
     // now blocks, for iframes that couldn't be loaded?
     // So skip this for now:
-    return;  // [E2EBUG]  TyT3059J267P
-    owensBrowser.switchToEmbeddedCommentsIrame({ waitForContent: false });
+    return;  /* [E2EBUG]  TyTSEC_FRAMEANC
+    await owen_brA.switchToEmbeddedCommentsIrame({ waitForContent: false });
     // Give any stuff that appears although it shouldn't, some time to load.
-    owensBrowser.pause(500);
-    assert(!isCommentsVisible(owensBrowser));
-    assert(!isReplyButtonVisible(owensBrowser));
+    await owen_brA.pause(500);
+    assert(!await isCommentsVisible(owen_brA));
+    assert(!await isReplyButtonVisible(owen_brA));
+    */
   });
 
-  function isCommentsVisible(browser) {
-    return browser.isVisible('.dw-p');
+  async function isCommentsVisible(browser: TyE2eTestBrowser): Pr<Bo> {
+    return await browser.isVisible('.dw-p');
   }
 
-  function isReplyButtonVisible(browser) {
-    return browser.isVisible('.dw-a-reply');
+  async function isReplyButtonVisible(browser: TyE2eTestBrowser): Pr<Bo> {
+    return await browser.isVisible('.dw-a-reply');
   }
 
 });

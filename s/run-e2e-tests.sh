@@ -695,9 +695,9 @@ function runAllE2eTests {
   # Also see navigation-as-* above.
   $r s/wdio       --only embedded-comments-navigation-as-guest $args
 
-  $r s/wdio       --only embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers $args
+  $r s/wdio-7     --only embcom.create-site-admin-intro-tour-no-verif-email.2br.ec --cd -i $args
   $r s/wdio-7     --only embcom.create-site-req-verif-email-exit-tours.2br --cd -i $args
-  $r s/wdio       --only embedded-comments-create-site-forum-intro-tour $args
+  $r s/wdio-7     --only embcom.create-site-forum-intro-tour.2br.ec --cd -i  $args
   $r s/wdio       --only embedded-comments-create-site-import-disqus.2br $args
   $r s/wdio-7     --only embcom.drafts-previews-not-logged-in.2br --cd -i $args
   $r s/wdio-7     --only embcom.scroll-and-load-more.2br.ec --cd -i $args

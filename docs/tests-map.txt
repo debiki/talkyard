@@ -609,6 +609,11 @@ security:
   admins can't use sysbot secrets for the wrong things:
             - site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB
 
+  embedded:
+    can't load iframe from wrong domain:
+            - TESTS_MISSING
+                embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20.TyTSEC_FRAMEANC
+
 deleted users:  [.del_susp_usr]
             - SEC_TEST_MISSING
 suspended users:
@@ -1223,8 +1228,8 @@ embedded comments:
           - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
   image links work although <base> tag: (EMBORG)
   won't load at wrong domain / origin / hostname:
-          - TESTS_MISSING TyT3059J267P, problem in wdio 6
-                embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers.test.ts
+            - TESTS_MISSING, problem in wdio 6
+                embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20.TyTSEC_FRAMEANC
   different discussion id:
           - embedded-comments-discussion-id.test.ts   TyT603KRDL46
   place in custom categories:
@@ -1378,11 +1383,11 @@ intro tours:
   admin area, community, admin tour:
           - create-site-password-run-admin-intro-tours.test.ts  TyT7BAWFPK9
   admin area, blog comments, admin tour:
-          - embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers.test.ts  TyT6KRKV20
+            - embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20
   forum section, community, admin tour:
           - create-site-password-run-admin-intro-tours.test.ts  TyT7BAWFPK9
-  forum section, blog comments, admin tour:
-          - embedded-comments-forum-intro-tour.test.ts  TyT6AKBR2044
+  forum section, blog comments, admin tour: (that is, a tour for the admin about the forum section?)
+          - embcom.create-site-forum-intro-tour.2br.ec  TyT6AKBR2044
   exit tour:
     directly:
             - embcom.create-site-req-verif-email-exit-tours.2br TyTE2ECREMBCOM1.TyTTOUREXIT
