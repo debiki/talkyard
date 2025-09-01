@@ -611,8 +611,7 @@ security:
 
   embedded:
     can't load iframe from wrong domain:
-            - TESTS_MISSING
-                embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20.TyTSEC_FRAMEANC
+            - embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20.TyTSEC_FRAMEANC
 
 deleted users:  [.del_susp_usr]
             - SEC_TEST_MISSING
@@ -1228,8 +1227,7 @@ embedded comments:
           - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
   image links work although <base> tag: (EMBORG)
   won't load at wrong domain / origin / hostname:
-            - TESTS_MISSING, problem in wdio 6
-                embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20.TyTSEC_FRAMEANC
+            - embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20.TyTSEC_FRAMEANC
   different discussion id:
           - embedded-comments-discussion-id.test.ts   TyT603KRDL46
   place in custom categories:

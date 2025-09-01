@@ -8,7 +8,7 @@ import * as utils from '../utils/utils';
 import * as make from '../utils/make';
 import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import settings from '../utils/settings';
-import { logMessage } from '../utils/log-and-die';
+import { logMessage, logUnusual, j2s } from '../utils/log-and-die';
 
 let brA: TyE2eTestBrowser;
 let brB: TyE2eTestBrowser;
@@ -20,6 +20,7 @@ let maria_brB: TyE2eTestBrowser;
 
 let data;
 let siteId: any;
+let embeddingHostPort: St;
 
 const mariasCommentText = 'mariasCommentText';
 const owensCommentText = 'owensCommentText';
@@ -47,7 +48,7 @@ describe(`embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20`
     // Dupl code [502KGAWH0]
     // Need to generate new local hostname, since we're going to create a new site.
     const testId = utils.generateTestId();
-    const embeddingHostPort = `e2e-test--ec-${testId}.localhost:8080`;
+    embeddingHostPort = `e2e-test--ec-${testId}.localhost:8080`;
     const localHostname     = `e2e-test--ec-${testId}`;
     //const localHostname = settings.localHostname ||
     //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
@@ -218,7 +219,7 @@ ${htmlToPaste}
     await maria_brB.topic.waitForPostAssertTextMatches(3, owensCommentText);
   });
 
-  it("When embedding via the wrong domain, the comments refuse to load", async () => {
+  it("When embedding via the wrong domain, comments won't load  TyTSEC_FRAMEANC", async () => {
     logMessage(`First, comments are visible ...`);
     assert.that(await isCommentsVisible(owen_brA));
     assert.that(await isReplyButtonVisible(owen_brA));
@@ -234,13 +235,38 @@ ${htmlToPaste}
     // But with WebdriverIO v6, this: browser.switchToFrame(iframe);
     // now blocks, for iframes that couldn't be loaded?
     // So skip this for now:
-    return;  /* [E2EBUG]  TyTSEC_FRAMEANC
-    await owen_brA.switchToEmbeddedCommentsIrame({ waitForContent: false });
-    // Give any stuff that appears although it shouldn't, some time to load.
-    await owen_brA.pause(500);
-    assert(!await isCommentsVisible(owen_brA));
-    assert(!await isReplyButtonVisible(owen_brA));
-    */
+    //
+    // Update, 2025: Now, in Chrome Dev Tools, there's this error message:
+    //    Refused to frame 'http://site-w8rs0yh8d2.localhost/' because
+    //    an ancestor violates the following Content Security Policy directive:
+    //    "frame-ancestors http://e2e-test--ec-6697957.localhost:8080
+    //                    https://e2e-test--ec-6697957.localhost:8080".
+
+    const ancErrMsg = 'ancestor violates the following Content Security Policy directive';
+    const fullMsg = ancErrMsg +
+            `: "frame-ancestors http://${embeddingHostPort} ` +
+                                `https://${embeddingHostPort}"`;
+    const msgs = await owen_brA.getLogs_worksInChrome('browser');
+    logMessage(`\nBrowser log messages: ${msgs.map(m => j2s(m))}\n`);
+    let numMatches = 0;
+    for (let m of msgs) {
+      // Break out test or err msg?
+      if (m.message.indexOf(ancErrMsg) >= 0) {
+        if (m.message.indexOf(fullMsg) >= 0) {
+          numMatches += 1;
+        }
+        else {
+          assert.fail(`Ancestor policy, but the wrong one?\n` +
+                `     Got this log message: ${m.message}\n` +
+                `                 Expected: ${fullMsg}\n`);
+        }
+      }
+    }
+
+    if (numMatches !== 1) {
+      logUnusual(`Browser log messages: ` + msgs.map(m => j2s(m)));
+      assert.fail(`No ancestor-violates browser error log message?  (Or? See above)`)
+    }
   });
 
   async function isCommentsVisible(browser: TyE2eTestBrowser): Pr<Bo> {
