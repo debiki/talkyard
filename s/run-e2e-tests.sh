@@ -679,8 +679,9 @@ function runAllE2eTests {
   # Embedded forum
   # ------------
 
-  #$r s/wdio --b3c  --only embforum.b3c.login.1br  $args
-  #$r s/wdio --b3c  --only embforum.b3c.sso-login.1br $args
+  #$r s/wdio-7 --b3c  --only embforum.b3c.login.1br  $args   RENAME to  manual
+  $r s/wdio-7 --b3c  --only embforum.create-site.guest-login.2br.ef --cd -i $args
+  #$r s/wdio-7 --b3c  --only embforum.b3c.sso-login.1br $args
 
 
   # Embedded comments
