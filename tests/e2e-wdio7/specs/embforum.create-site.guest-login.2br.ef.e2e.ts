@@ -9,9 +9,8 @@ import * as make from '../utils/make';
 import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import settings from '../utils/settings';
 import { logMessage, logUnusual, j2s } from '../utils/log-and-die';
-
-let brA: TyE2eTestBrowser;
-let brB: TyE2eTestBrowser;
+import { IsWhere } from '../test-types';
+import c from '../test-constants';
 
 let owen;
 let owen_brA: TyE2eTestBrowser;
@@ -20,10 +19,15 @@ let maria_brB: TyE2eTestBrowser;
 
 let data;
 let siteId: any;
+let forumLocalHostname: St;
+let forumOrigin: St;
 let embeddingHostPort: St;
+let embeddingOrigin: St;
+let embeddingUrl: St;
+const forumPath = '/forum.html';
 
-const mariasCommentText = 'mariasCommentText';
-const owensCommentText = 'owensCommentText';
+const mariasTopicTitle = 'mariasTopicTitle';
+const mariasTopicText = 'mariasTopicText';
 
 
 // dupl code! [5GKWXT20]
@@ -33,8 +37,8 @@ const owensCommentText = 'owensCommentText';
 describe(`embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20`, () => {
 
   it("initialize people", async () => {
-    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
-    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
+    const brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    const brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
     owen_brA = brA;
     maria_brB = brB;
@@ -48,28 +52,29 @@ describe(`embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20`
     // Dupl code [502KGAWH0]
     // Need to generate new local hostname, since we're going to create a new site.
     const testId = utils.generateTestId();
-    embeddingHostPort = `e2e-test--ec-${testId}.localhost:8080`;
-    const localHostname     = `e2e-test--ec-${testId}`;
-    //const localHostname = settings.localHostname ||
-    //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
+    embeddingHostPort = `www-${testId}.localhost:8080`;
+    embeddingOrigin = settings.scheme + '://' + embeddingHostPort;
+    embeddingUrl = embeddingOrigin + forumPath;
+    forumLocalHostname = `e2e-test--ef-${testId}`;
+    forumOrigin = utils.makeSiteOrigin(forumLocalHostname);
 
     return {
       testId: testId,
-      embeddingUrl: `http://${embeddingHostPort}/`,
-      origin: `${settings.scheme}://comments-for-${localHostname}.localhost`,
-      //originRegexEscaped: utils.makeSiteOriginRegexEscaped(localHostname),
+      // 'embeddingUrl' is for blog comments.
+      localHostname: forumLocalHostname,
+      origin: forumOrigin,
       orgName: "E2E Org Name",
-      fullName: 'E2E Test ' + testId,
+      fullName: 'Owen ' + testId,
       email: settings.testEmailAddressPrefix + testId + '@example.com',
       username: 'owen_owner',
       password: 'pub-owe020',
     }
   }
 
-  it('Owen creates an embedded comments site as a Password user  @login @password:', async () => {
+  it('Owen creates a forum to embed', async () => {
     // Dupl code [502SKHFSKN53]
     data = createPasswordTestData();
-    await owen_brA.go2(utils.makeCreateEmbeddedSiteWithFakeIpUrl());
+    await owen_brA.go2(utils.makeCreateSiteWithFakeIpUrl());
     owen_brA.disableRateLimits();
   });
 
@@ -78,7 +83,8 @@ describe(`embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20`
     // New site; disable rate limits here too.
     await owen_brA.disableRateLimits();
 
-    await owen_brA.tour.runToursAlthoughE2eTest();
+    // If running some future embedded forum admin tours:
+    // await owen_brA.tour.runToursAlthoughE2eTest();
   });
 
   it(`... Sings up as owner, at the new site`, async () => {
@@ -93,132 +99,147 @@ describe(`embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20`
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
     await owen_brA.go2(link);
     await owen_brA.waitAndClick('#e2eContinue');
+    await owen_brA.createSomething.createForum("Emb Forum Test");
   });
 
 
-  it("An intro guide appears", async () => {
-    await owen_brA.waitForVisible('.e_SthElseB');
-    await owen_brA.tour.assertTourStarts(true);
-    console.log('Step 1');
-    await owen_brA.tour.clickNextForStepNr(1);
-    console.log('Step 2');
-    await owen_brA.waitAndClick('#e2eAA_Ss_LoginL', { mayScroll: false });
-    console.log('Step 3');
-    // wait for a tour scroll animation to complete, which otherwise makes the next
-    // tour scroll fail.
-    await owen_brA.tour.clickNextForStepNr(3);
-    console.log('Step 4');
-    await owen_brA.waitAndClick('.e_RvwB', { mayScroll: false });
-    console.log('Step 5');
-    await owen_brA.tour.clickNextForStepNr(5);
-    console.log('Step 6');
-    await owen_brA.waitAndClick('.e_StngsB', { mayScroll: false });
-    console.log('Step 7');
-    await owen_brA.tour.clickNextForStepNr(7);
+  it("Owen goes to the embedded comments / forum page", async () => {
+    await owen_brA.go2('/-/admin/settings/embedded-comments');
   });
 
 
-  it("Owen is back on the embedded comments page", async () => {
-    assert.eq(await owen_brA.urlPath(), '/-/admin/settings/embedded-comments');
-  });
-
-
-  it("The tour is done, won't restart", async () => {
-    await owen_brA.refresh2(); // this reloads new tourTipsSeen
-    await owen_brA.waitForVisible('.e_SthElseB');
-    await owen_brA.tour.assertTourStarts(false);
-  });
-
-
-  it("Clicks Blog = Something Else, to show the instructions", async () => {
-    await owen_brA.waitAndClick('.e_SthElseB');
-  });
-
-
-  it("He creates an embedding page", async () => {
-    // Dupl code [046KWESJJLI3].
-    await owen_brA.waitForVisible('#e_EmbCmtsHtml');
-    const htmlToPaste = await owen_brA.getText('#e_EmbCmtsHtml');
-    //console.log('htmlToPaste: ' + htmlToPaste);
-    const dirPath = 'target'; //  doesn't work:   target/e2e-emb' — why not.
-    if (!fs.existsSync(dirPath)) {  // —>  "FAIL: Error \n unknown error line"
-      fs.mkdirSync(dirPath, '0777');
+  it(`There's an embedding page`, () => {
+    const dir = 'target';
+    fs.writeFileSync(dir + forumPath, makeHtml('ll-undef', '#205'));
+    function makeHtml(pageName: St, bgColor: St, talkyardLogLevel?: St | Nr): St {
+      return utils.makeEmbeddedCommentsHtml({
+              embedAsForum: true,
+              pageName, localHostname: forumLocalHostname, bgColor, talkyardLogLevel,
+              appendExtraHtml: `
+                  <script>
+                  // TyTSCRIPTCLBK
+                  onTalkyardScriptLoaded = function() { scriptLoaded = true; }
+                  // TyTCOMTSCLBK
+                  onTalkyardCommentsLoaded = function() { commentsLoaded = true; }
+                  </script>`
+              });
     }
-    fs.writeFileSync(`${dirPath}/index.html`, `
-<html>
-<head>
-<title>Embedded comments E2E test</title>
-</head>
-<body style="background: black; color: #ccc; font-family: monospace">
-<p>This is an embedded comments E2E test page. Ok to delete. 27KT5QAX29. The comments:</p>
-${htmlToPaste}
-<p>/End of page.</p>
-</body>
-</html>`);
   });
 
 
   it("Maria opens the embedding page, not logged in", async () => {
-    await maria_brB.go2(data.embeddingUrl);
+    await maria_brB.go2(embeddingUrl, { isExternalPage: true });
+  });
+  it(`... there's a CSP error, because Owen hasn't configured Allow Embedding From`, async () => {
+    assert.contentSecurityPolicyViolation(maria_brB,
+            `frame-ancestors 'none'`);
+  });
+
+  it("Owen configures Allow Embedding From, but the wrong domain", async () => {
+    await owen_brA.adminArea.settings.embedded.setAllowEmbeddingFrom(
+            'https://typo-domain.example.com');
+    await owen_brA.adminArea.settings.clickSaveAll();
+  });
+  it(`... Maria reloads`, async () => {
+    await maria_brB.refresh2({ isWhere: IsWhere.External });
+  });
+  it(`... sees another CSP error about the new domain — it's not  typo-domain`, async () => {
+    assert.contentSecurityPolicyViolation(maria_brB,
+            `frame-ancestors https://typo-domain.example.com`);
+  });
+
+  it(`Owen concentrates deeply. He types the correct Allow Embedding From origin`, async () => {
+    await owen_brA.adminArea.settings.embedded.setAllowEmbeddingFrom(embeddingOrigin);
+    await owen_brA.adminArea.settings.clickSaveAll();
+  });
+
+  it(`... Maria reloads`, async () => {
+    await maria_brB.refresh2();  // skip this time: { isWhere: IsWhere.External }
+  });
+  it(`... the embedded forum appears`, async () => {
     await maria_brB.switchToEmbeddedCommentsIrame();
   });
 
-  it("... and clicks Reply", async () => {
-    await maria_brB.topic.clickReplyToEmbeddingBlogPost();
+  it(`Maria signs up`, async () => {
+    await maria_brB.complex.signUpAsMemberViaTopbar(maria, { inPopup: true });
+  });
+  it(`... verifies her email`, async () => {
+    const url = await server.waitAndGetLastVerifyEmailAddressLinkEmailedTo(
+            siteId, maria.emailAddress);
+    await maria_brB.go2(url);
+  });
+  it(`... gets logged in`, async () => {
+    await maria_brB.hasVerifiedSignupEmailPage.clickContinue();
   });
 
-  it("... writes a comment (not yet logged in)", async () => {
-    await maria_brB.switchToEmbeddedEditorIrame();
-    await maria_brB.editor.editText(mariasCommentText);
-  });
-
-  it("... posts it", async () => {
-    await maria_brB.editor.save();
-  });
-
-  it("... password-signs-up in a popup", async () => {
-    console.log("switching to login popup window...");
-    await maria_brB.swithToOtherTabOrWindow();
-    await maria_brB.disableRateLimits();
-    console.log("signs up...");
-    await maria_brB.loginDialog.createPasswordAccount(maria, false, 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG');
-    await maria_brB.switchBackToFirstTabOrWindow();
-  });
-
-  it("... the comment it appears", async () => {
+  it(`Maria posts a new topic`, async () => {
     await maria_brB.switchToEmbeddedCommentsIrame();
-    await maria_brB.topic.waitForPostAssertTextMatches(2, mariasCommentText); // the first reply nr, = comment 1
+    await maria_brB.complex.createAndSaveTopic({ title: mariasTopicTitle, body: mariasTopicText });
   });
 
-  it("Owen sees it too", async () => {
-    await owen_brA.go2(data.embeddingUrl);
+  //let mariasTopicTyUrl: St;
+  //let mariasTopicTyPath: St;
+  let mariasTopicEmbgUrl: St;
+
+  it(`Links to embedded page and embedding page are different`, async () => {
+    //mariasTopicTyUrl = await maria_brB.getUrl();
+    //mariasTopicTyPath = await maria_brB.urlPathQueryHash();
+    await maria_brB.switchToTheParentFrame();
+    mariasTopicEmbgUrl = await maria_brB.getUrl();
+    //assert.notEq(mariasTopicTyPath, mariasTopicEmbgUrl)
+  });
+  /*
+  it(`... the Talkyard path has no '#' and a /-<id>/<slug> path`, async () => {
+    assert.eq(mariasTopicTyPath.indexOf('#'), -1);
+    assert.matches(mariasTopicTyUrl, /\.localhost\/-11\/mariastopictitle$/);
+    assert.eq(mariasTopicTyPath, `/-11/mariastopictitle`);
+  }); */
+  it(`... the embedd*ing* path ends with the Ty path, after the #`, async () => {
+    assert.matches(mariasTopicEmbgUrl, /\.localhost:8080\/forum.html#\/-11\/mariastopictitle$/)
+    //assert.includes(mariasTopicEmbgUrl, mariasTopicTyPath);
+  });
+
+  it(`Owen goes to Maria's page`, async () => {
+    await owen_brA.go2(mariasTopicEmbgUrl);
+  });
+  it(`... logs in`, async () => {
     await owen_brA.switchToEmbeddedCommentsIrame();
-    await owen_brA.topic.waitForPostAssertTextMatches(2, mariasCommentText);
+    await owen_brA.complex.loginWithPasswordViaTopbar(owen, { inPopup: true });
   });
 
-  it(`Owen needs to log in? Browsers tend to block <iframe> cookies`, async () => {
-    await owen_brA.complex.loginIfNeededViaMetabar(owen);
-  });
-
-  it("Owen replies to Maria (he's already logged in)", async () => {
-    await owen_brA.topic.clickReplyToPostNr(2);
-    await owen_brA.switchToEmbeddedEditorIrame();
-    await owen_brA.editor.editText(owensCommentText);
-    await owen_brA.editor.save();
-  });
-
-  it("... his comment appears", async () => {
+  it(`Owen replies to Maria's topic`, async () => {
     await owen_brA.switchToEmbeddedCommentsIrame();
-    await owen_brA.topic.waitForPostAssertTextMatches(3, owensCommentText);
+    await owen_brA.complex.replyToOrigPost('Owens_reply');
   });
 
-  it("Maria sees Owen's comment and her own too", async () => {
+  it(`Maria reloads the page`, async () => {
     await maria_brB.refresh2();
+  });
+  it(`... she's still logged in`, async () => {
     await maria_brB.switchToEmbeddedCommentsIrame();
-    await maria_brB.topic.waitForPostAssertTextMatches(2, mariasCommentText);
-    await maria_brB.topic.waitForPostAssertTextMatches(3, owensCommentText);
+    await maria_brB.topbar.waitForMyMenuVisible();
+  });
+  it(`... as Maria`, async () => {
+    assert.eq(await maria_brB.topbar.getMyUsername(), maria.username);
   });
 
+  it(`Maria sees Owen's reply`, async () => {
+    await maria_brB.topic.waitForPostAssertTextMatches(c.FirstReplyNr, 'Owens_reply');
+  });
+  it(`Maria replies to Owen`, async () => {
+    await maria_brB.complex.replyToPostNr(c.FirstReplyNr, 'Marias_reply_2_Owen', { isEmbedded: true });
+  });
+
+  it(`Owen reloads ...`, async () => {
+    await owen_brA.refresh2();
+  });
+  it(`... sees Maria's reply`, async () => {
+    await owen_brA.switchToEmbeddedCommentsIrame();
+    await owen_brA.topic.waitForPostAssertTextMatches(c.SecondReplyNr, 'Marias_reply_2_Owen');
+  });
+
+
+  /*
   it("When embedding via the wrong domain, comments won't load  TyTSEC_FRAMEANC", async () => {
     logMessage(`First, comments are visible ...`);
     assert.that(await isCommentsVisible(owen_brA));
@@ -230,43 +251,8 @@ ${htmlToPaste}
     const source = await owen_brA.getSource();
     assert.that(source.indexOf('27KT5QAX29') >= 0);
 
-    // There is an iframe but it's empty, because the Content-Security-Policy frame-ancestors
-    // policy forbids embedding from this domain.
-    // But with WebdriverIO v6, this: browser.switchToFrame(iframe);
-    // now blocks, for iframes that couldn't be loaded?
-    // So skip this for now:
-    //
-    // Update, 2025: Now, in Chrome Dev Tools, there's this error message:
-    //    Refused to frame 'http://site-w8rs0yh8d2.localhost/' because
-    //    an ancestor violates the following Content Security Policy directive:
-    //    "frame-ancestors http://e2e-test--ec-6697957.localhost:8080
-    //                    https://e2e-test--ec-6697957.localhost:8080".
-
-    const ancErrMsg = 'ancestor violates the following Content Security Policy directive';
-    const fullMsg = ancErrMsg +
-            `: "frame-ancestors http://${embeddingHostPort} ` +
-                                `https://${embeddingHostPort}"`;
-    const msgs = await owen_brA.getLogs_worksInChrome('browser');
-    logMessage(`\nBrowser log messages: ${msgs.map(m => j2s(m))}\n`);
-    let numMatches = 0;
-    for (let m of msgs) {
-      // Break out test or err msg?
-      if (m.message.indexOf(ancErrMsg) >= 0) {
-        if (m.message.indexOf(fullMsg) >= 0) {
-          numMatches += 1;
-        }
-        else {
-          assert.fail(`Ancestor policy, but the wrong one?\n` +
-                `     Got this log message: ${m.message}\n` +
-                `                 Expected: ${fullMsg}\n`);
-        }
-      }
-    }
-
-    if (numMatches !== 1) {
-      logUnusual(`Browser log messages: ` + msgs.map(m => j2s(m)));
-      assert.fail(`No ancestor-violates browser error log message?  (Or? See above)`)
-    }
+    assert.contentSecurityPolicyViolation(owen_brA,
+          `frame-ancestors http://${embeddingHostPort} https://${embeddingHostPort}`);
   });
 
   async function isCommentsVisible(browser: TyE2eTestBrowser): Pr<Bo> {
@@ -276,6 +262,7 @@ ${htmlToPaste}
   async function isReplyButtonVisible(browser: TyE2eTestBrowser): Pr<Bo> {
     return await browser.isVisible('.dw-a-reply');
   }
+  */
 
 });
 

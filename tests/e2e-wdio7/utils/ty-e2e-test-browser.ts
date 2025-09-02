@@ -1266,7 +1266,11 @@ export class TyE2eTestBrowser {
     }
 
 
-    async isInIframe(): Pr<Bo> {
+    async isInIframe2(): Pr<Bo> {
+      return !!await this._isInIframe();
+    }
+
+    async _isInIframe(): Pr<Bo> {
       switch (this.#isWhere) {
         case IsWhere.EmbCommentsIframe:
         case IsWhere.EmbEditorIframe:
@@ -1277,6 +1281,11 @@ export class TyE2eTestBrowser {
           // Use  refresh2() and go2() to avoid — then, #isWhere gets
           // updated properly.
       }
+    }
+
+    async isInIframe(): Pr<Bo> {
+      if (await this._isInIframe())
+        return true;
 
       // E2EBUG: Race. If clicking logout, then, the page reloads,
       // and eds.isInIframe is undefiend — it can seem as if we're not in an iframe,
@@ -10645,9 +10654,9 @@ export class TyE2eTestBrowser {
       },
 
       loginWithPasswordViaTopbar: async (username: St | Member | { username, password },
-            optsOrPassword?: St | { resultInError?: Bo }) => {
+            optsOrPassword?: St | { resultInError?: Bo, inPopup?: Bo }) => {
         let password = optsOrPassword;
-        let opts;
+        let opts: { resultInError?: Bo, inPopup?: Bo } = {};
         console.log(`TyE2eApi: loginWithPasswordViaTopbar`);
         if (password && _.isObject(password)) {
           opts = <any> password;
@@ -10660,18 +10669,39 @@ export class TyE2eTestBrowser {
         await this.topbar.clickLogin();
         const credentials = _.isObject(username) ?  // already { username, password } object
             username : { username: username, password: password };
-        await this.loginDialog.loginWithPassword(credentials, opts || {});
+        if (!opts.inPopup) {
+          await this.loginDialog.loginWithPassword(credentials, opts || {});
+        }
+        else {
+          // Maybe need to: [2_lgi_clk]  ?
+          await this.loginDialog.loginWithPasswordInPopup(credentials);
+        }
       },
 
       signUpAsMemberViaTopbar: async (
-            member: Member | { emailAddress: string, username: string, password: string }) => {
+            member: Member | { emailAddress: string, username: string, password: string },
+            opts: { inPopup?: Bo, willNeedToVerifyEmail?: Bo }
+                    = { willNeedToVerifyEmail: false }) => {
         await this.topbar.clickSignUp();
+
+        if (opts.inPopup)
+          await this.swithToOtherTabOrWindow();
+
         await this.loginDialog.createPasswordAccount({
           username: member.username,
           emailAddress: member.emailAddress,
           password: member.password,
-          willNeedToVerifyEmail: false,
+          willNeedToVerifyEmail: opts.willNeedToVerifyEmail,
         });
+
+        if (opts.inPopup) {
+          if (opts.willNeedToVerifyEmail !== false) {
+            await this.closeWindowSwitchToOther();
+          }
+          else {
+            await this.switchBackToFirstTabOrWindow();
+          }
+        }
       },
 
       signUpAsGuestViaTopbar: async (nameOrObj: string | { fullName, emailAddress }, email?: string) => {
@@ -10832,6 +10862,13 @@ export class TyE2eTestBrowser {
             matchAfter?: Bo, titleMatchAfter?: St | false,
             bodyMatchAfter?: St | false, resultInError?: Bo }) => {
         await this.forumButtons.clickCreateTopic();
+
+        // Don't, if not in emb iframes  [0_if_0_iframes]
+        if (await this.isInIframe2()) {
+          await this.rememberCurrentUrl();  // see _new_url_new_topic below
+          await this.switchToEmbeddedEditorIrame();  // will switch _back_here_001
+        }
+
         await this.editor.editTitle(data.title);
         await this.editor.editText(data.body);
         if (data.type) {
@@ -10844,10 +10881,19 @@ export class TyE2eTestBrowser {
             willBePendingApproval?: Bo,
             matchAfter?: Bo, titleMatchAfter?: St | false,
             bodyMatchAfter?: St | false, resultInError?: Bo }) => {
-        await this.rememberCurrentUrl();
+        if (!await this.isInIframe2())
+          await this.rememberCurrentUrl();  // see _new_url_new_topic below
+
         await this.editor.save();
+
+        // Don't, if not in emb iframes  [0_if_0_iframes]
+        if (await this.isInIframe2()) {
+          logMessage("editor iframe: Done.");
+          await this.switchToEmbeddedCommentsIrame();  // switching _back_here_001
+        }
+
         if (!data.resultInError) {
-          await this.waitForNewUrl();
+          await this.waitForNewUrl();  // see _new_url_new_topic x2 above
           if (data.willBePendingApproval) {
             await this.waitForVisible('.dw-p-ttl .esPendingApproval');
             await this.waitForVisible('.dw-ar-t .esPendingApproval');
@@ -10928,6 +10974,12 @@ export class TyE2eTestBrowser {
       replyToOrigPost: async (text: string, whichButton?: 'DiscussionSection', ps: {
               closeGuidelines?: Bo } = {}) => {
         await this.topic.clickReplyToOrigPost(whichButton);
+
+        // Don't, if not in emb iframes  [0_if_0_iframes]
+        if (await this.isInIframe2()) {
+          await this.switchToEmbeddedEditorIrame();
+        }
+
         if (ps.closeGuidelines) {
           // Or break out fn?
           // Is this a race? The dialog might take a short wile to appear? Maybe
@@ -10945,6 +10997,11 @@ export class TyE2eTestBrowser {
         }
         await this.editor.editText(text);
         await this.editor.save();
+
+        // Don't, if not in emb iframes  [0_if_0_iframes]
+        if (await this.isInIframe2()) {
+          await this.switchToEmbeddedCommentsIrame();
+        }
       },
 
       startReplyingToEmbBlogPost: async (text: St) => {
@@ -10954,7 +11011,10 @@ export class TyE2eTestBrowser {
       startReplyingToPostNr: async (postNr: PostNr, text?: St) => {
         if (postNr === c.BodyNr) await this.topic.clickReplyToEmbeddingBlogPost();
         else await this.topic.clickReplyToPostNr(postNr);
+
+        // BUG don't do this, if not in emb iframes  [0_if_0_iframes]
         await this.switchToEmbeddedEditorIrame();
+
         if (!_.isUndefined(text)) {
           await this.editor.editText(text, { timeoutMs: 3000 });
         }
