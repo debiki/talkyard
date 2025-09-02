@@ -230,43 +230,8 @@ ${htmlToPaste}
     const source = await owen_brA.getSource();
     assert.that(source.indexOf('27KT5QAX29') >= 0);
 
-    // There is an iframe but it's empty, because the Content-Security-Policy frame-ancestors
-    // policy forbids embedding from this domain.
-    // But with WebdriverIO v6, this: browser.switchToFrame(iframe);
-    // now blocks, for iframes that couldn't be loaded?
-    // So skip this for now:
-    //
-    // Update, 2025: Now, in Chrome Dev Tools, there's this error message:
-    //    Refused to frame 'http://site-w8rs0yh8d2.localhost/' because
-    //    an ancestor violates the following Content Security Policy directive:
-    //    "frame-ancestors http://e2e-test--ec-6697957.localhost:8080
-    //                    https://e2e-test--ec-6697957.localhost:8080".
-
-    const ancErrMsg = 'ancestor violates the following Content Security Policy directive';
-    const fullMsg = ancErrMsg +
-            `: "frame-ancestors http://${embeddingHostPort} ` +
-                                `https://${embeddingHostPort}"`;
-    const msgs = await owen_brA.getLogs_worksInChrome('browser');
-    logMessage(`\nBrowser log messages: ${msgs.map(m => j2s(m))}\n`);
-    let numMatches = 0;
-    for (let m of msgs) {
-      // Break out test or err msg?
-      if (m.message.indexOf(ancErrMsg) >= 0) {
-        if (m.message.indexOf(fullMsg) >= 0) {
-          numMatches += 1;
-        }
-        else {
-          assert.fail(`Ancestor policy, but the wrong one?\n` +
-                `     Got this log message: ${m.message}\n` +
-                `                 Expected: ${fullMsg}\n`);
-        }
-      }
-    }
-
-    if (numMatches !== 1) {
-      logUnusual(`Browser log messages: ` + msgs.map(m => j2s(m)));
-      assert.fail(`No ancestor-violates browser error log message?  (Or? See above)`)
-    }
+    assert.contentSecurityPolicyViolation(owen_brA,
+          `frame-ancestors http://${embeddingHostPort} https://${embeddingHostPort}`);
   });
 
   async function isCommentsVisible(browser: TyE2eTestBrowser): Pr<Bo> {
