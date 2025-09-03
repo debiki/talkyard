@@ -964,7 +964,10 @@ export function store_pageWith(store: DiscStore, post: Post): Page {
 }
 
 
-export function store_mainSiteSection(store: Store): SiteSection {
+/// Returns `undefined` if the site has just been created, there's not yet any
+/// categories or anything.
+///
+export function store_mainSiteSection(store: Store): SiteSection | U {
   // Currently there's always just one sub site, namely the forum. [subcomms]
   // Edit: Actually, there're some old sites, with many sub sites — they
   // got created, before the sub site feature got disabled. In such a case,
