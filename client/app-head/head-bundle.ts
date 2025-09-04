@@ -417,7 +417,7 @@ if (eds.isInEmbForum && !_isServerSide()) {
 }
 
 
-function sendNewPathToEmbeddingWin(url: St | URL) {
+function removeEmbeddingParams(url: St | URL): St {
   const urlStr: St = (typeof url === 'string') ? url : url.toString();
   let pathQueryHash = urlStr.replace(/^https?:\/\/[^/]*/, '')
   // We don't want the embedded forum params in the url, when sending the 'pathChanged' message
@@ -445,6 +445,12 @@ function sendNewPathToEmbeddingWin(url: St | URL) {
       pathQueryHash = pathQueryHash.replace(queryStrBef, queryStrAft);
     }
   }
+  return pathQueryHash;
+}
+
+
+function sendNewPathToEmbeddingWin(url: St | URL) {
+  const pathQueryHash = removeEmbeddingParams(url);
   window.parent.postMessage(
         JSON.stringify(['pathChanged', pathQueryHash]),
         eds.embeddingOrigin);

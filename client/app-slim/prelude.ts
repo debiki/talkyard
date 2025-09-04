@@ -738,6 +738,11 @@ export function deleteById(itemsWithId: any[], idToDelete) {
 }
 
 
+export function removeEmbeddingParams(url: St | URL): St {
+  return window['removeEmbeddingParams'](url);
+}
+
+
 export function url_isRelative(url: St | URL): Bo {  // [dupl_rel_url_fn]
   return url && url[0] === '/' && url[1] !== '/';
 }

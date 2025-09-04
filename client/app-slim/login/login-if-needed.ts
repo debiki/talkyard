@@ -69,7 +69,7 @@ export function loginIfNeededReturnToPost(
           : (
           // We use 'comment-' for embedded comments; they start on nr 1 = post 2. [2PAWC0]
           // (Hopefully the embedding website has no elems with ids like 'comment-NNN'.)
-          eds.isInIframe
+          eds.isInIframe && !eds.isInEmbForum  // or: eds.isInEmbeddedCommentsIframe?
               ? FragParamCommentNr + (postNr - 1)
               : FragParamPostNr + postNr));
 
@@ -113,24 +113,67 @@ function loginIfNeededImpl(loginReason: LoginReason, toHash: St, toPath: St,
   }
 
   const makeReturnToUrl = (): St => {
+    /*
     // This can't happen, currently. And, currently, `toPath` is a Talkyard URL path,
     // not a path for any embedding website.
+    // Oops, happens if clicking Create Topic when not logged in, in emb iframe?
     dieIf(toPath && eds.embeddingUrl, 'TyEREDIREMBNGPATH');
+    */
 
-    let url = toPath ? location.origin + toPath : eds.embeddingUrl || location.toString();
+    const embgUrl = eds.embgUrl || eds.embeddingUrl;
+    let url: St;
 
-    // (This can be a Talkyard hash, e.g. #post-123. But can also be  #comment-123 and
-    // that's for the embedd*ing* website and Talkyard's script there, which looks at
-    // the hash and scrolls to that comment in Ty's blog comments iframe.)
-    if (toHash) {
-      url = url.replace(/#.*/, '') + toHash;
+    if (toPath) {
+      dieIf(eds.isDev && toHash, 'TyE6026MS');
+      if (eds.isInEmbForum) {
+        const toPath2 = removeEmbeddingParams(toPath);
+        // Need the full url incl the embedding parent page, not only the '#/-123/ty-path'.
+        // [maybe_need_only_embPathParam]
+        url = embgUrl + linkToPath(toPath2);
+      }
+      else {
+        // If in embedded comments, we'd always return to a *comment* we're replying to
+        // or upvoting. Then, `toPath` is null, and `toHash` is set.
+        dieIf(eds.isDev && eds.isInEmbeddedCommentsIframe, 'TyE6026M6');
+        url = location.origin + toPath;
+      }
     }
+    else if (eds.isInEmbForum) {
+      const tyPathQuery = location.pathname + location.search;
+      const tyPathQuery2 = removeEmbeddingParams(tyPathQuery);
+      // [maybe_need_only_embPathParam]
+      url = embgUrl + linkToPath(tyPathQuery2) + (toHash || '');
+    }
+    else {
+      if (embgUrl) {
+        // This must be an embedded comments page.
+        dieIf(eds.isDev && !(eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor),
+            'TyE6026M7');
+        url = embgUrl;
+      }
+      else {
+        dieIf(eds.isDev && eds.isInIframe, 'TyE6026M8');
+        url = embgUrl || location.toString();
+      }
+
+      // (This can be a Talkyard hash, e.g. #post-123. But can also be  #comment-123 and
+      // that's for the embedd*ing* website and Talkyard's script there, which looks at
+      // the hash and scrolls to that comment in Ty's blog comments iframe.)
+      if (toHash) {
+        url = url.replace(/#.*/, '') + toHash;
+      }
+    }
+
     return url;
   }
 
   const returnToUrl_new = makeReturnToUrl();
-  const returnToUrl_legacy = redirFromEmailOnly ?
-            makeReturnToPageHashForVerifEmail(toHash) : returnToUrl_new;
+
+  // encodeURI would be better! Later. For now, using __dwHash__, legacy.
+  const returnToUrl_legacy = !redirFromEmailOnly ? returnToUrl_new : (
+            eds.isInEmbForum
+                ? ('_RedirFromVerifEmailOnly_' + returnToUrl_new.replace(/#/, '__dwHash__'))
+                : makeReturnToPageHashForVerifEmail(toHash));
 
   if (useLoginPopup) {
     // TESTS_MISSING: Compose comment before logging in? Then, we'd be  TyTEMBCOMPBEFLGI
@@ -318,6 +361,7 @@ export function makeSsoUrl(store: Store, returnToUrl_new: St, returnToUrlMagicRe
 
 
 function makeReturnToPageHashForVerifEmail(hash: St): St {
+  dieIf(eds.isDev && eds.isInEmbForum, 'TyE602SKNC4');
   // The magic '__Redir...' string tells the server to use the return-to-URL only if it
   // needs to send an email address verification email (it'd include the return
   // to URL on a welcome page show via a link in the email).
@@ -341,7 +385,10 @@ export function continueAfterLogin(anyReturnToUrl?: St) {
     // We're 1) in an admin section login page (not a login popup)
     // or 2) on an ordinary page in a login-required site (not a login popup),
     // or 3) an embedded comments page login popup window.
-    if (anyReturnToUrl && anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1) {
+    if (anyReturnToUrl && anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1
+          // We never want to redirect the login popup after login? Either
+          // close it, or if there is none, continue in the same win?
+          && !win_isLoginPopup()) {
       // [emb_forum] This won't work in a login-required embedded forum? Then should
       // use `page.Hacks.navigateTo()` instead. But would that load all admin scripts,
       // for example, if we're in fact in the admin area? Let's wait. (No one has asked
