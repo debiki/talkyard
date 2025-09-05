@@ -191,7 +191,8 @@ object TySession {
   // However, parts 1, 2 are for embedded comments, and for optionally saving in
   // the localStorage of embedding pages (e.g. blog posts) which is more risky.
   // If indeed parts 1 and 2 get compromised, we can still rely on part 3 alone
-  // — it's 144 bits entropy > 64.
+  // for doing more important things, like user account management and logging out
+  // one's other sessions — it's 144 bits entropy > 64.
   //
   val SidLengthCharsPart1: i32 = 16
   val SidLengthCharsPart2: i32 = 24
