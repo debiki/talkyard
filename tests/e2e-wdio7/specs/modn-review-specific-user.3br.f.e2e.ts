@@ -5,6 +5,7 @@ import assert from '../utils/ty-assert';
 import server from '../utils/server';
 import { buildSite } from '../utils/site-builder';
 import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import settings from '../utils/settings';
 import c from '../test-constants';
 
 let brA: TyE2eTestBrowser;
@@ -239,6 +240,10 @@ describe(`modn-review-specific-user.3br.f  TyTMOD_REVW_USR`, () => {
 
 
   // ----- Bulk approve all
+
+  // But this needs a feature flag, ffApproveUnreviewed, not set in prod.
+  if (settings.prod)
+    return;
 
   it(`Owen bulk accepts all Michael's pending tasks  TyTMODACPTUNREV`, async () => {
     await owen_brA.adminArea.review.bulkAcceptAll();
