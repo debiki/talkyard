@@ -42,6 +42,7 @@ interface WindowWithTalkyardProps {
   talkyardDebug: boolean | number | undefined; // deprecated 2020-06-16
   talkyardAuthnToken?: St | Ay;
   talkyardConsiderQueryParams?: St[];
+  talkyardPath?: St;
   talkyardPathParam?: St;
   edRemoveCommentsAndEditor: () => void;  // deprecated
   edReloadCommentsAndEditor: () => void;  //
@@ -106,7 +107,7 @@ function makeTalkyardLogFn(forLevel: Nr, consoleLogFn: (...data: Ay[]) => Vo) {
     // Add a prefix to the 1st arg, the actuall message.
     // (Subsequent args could be an exception to log, who knows.)
     let arg0 = args[0];
-    arg0 = "Talkyard comments: " + arg0;
+    arg0 = "Talkyard forum: " + arg0;
     args.splice(0, 1, arg0);
     // And log the message.
     consoleLogFn.apply(console, args);
@@ -155,6 +156,13 @@ const insecureSomethingErrMsg = insecureTyIframeProbl ? (
         ) : */  '');
 
 const talkyardPathParamOrBad: St | U = windowWithTalkyardProps.talkyardPathParam || '#/';
+const talkyardPathFromVarUnsafe: St | U = windowWithTalkyardProps.talkyardPath;
+
+// Maybe later, for restricting forum paths to e.g. a category, or a specific page,
+// or something. [embedded_jails]
+//const talkyardJail = 'catid:...'  or 'pageid:...' or  'path:/something/' ?
+// But when urls look like  /latest/bugs  then, ...  /*/bugs?
+// Or change order:  /bugs/latest, /ideas/top?  instead of: /top/ideas  [url_cat_before_order]
 
 const considerQueryParams = windowWithTalkyardProps.talkyardConsiderQueryParams;
 
@@ -201,17 +209,19 @@ if (insecureSomethingErrMsg) {
 
 // ----- Talkyard url path
 
-// Extract the desired Talkyard forum url path from the embedding page's url.
+// Extract the desired Talkyard forum url path and any query string
+// from the embedding page's url.
 //
 // Examples:  (note the '#/' and '?talkyardPath')
-//   https://www.ex.co/forum#/talkyard/path#post-123  <—— implemented, but none of the others
+//   https://www.ex.co/forum#/talkyard/path#post-123  <—— implemented
+//   https://www.ex.co/forum#/talkyard/path?query=params <—— and this, but none of the others
 //   https://www.ex.co/forum?/talkyard/path#post-123
 //   https://www.ex.co/forum?talkyardPath=/talkyard/path%23post-123&other=param#hash
 //
 // where "talkyardPath" is configurable, in case there's some collission with
 // a web framework param, or the humans want vanity short/nice-looking param names.
 
-const [talkyardPathQueryUnsafe, talkyardPathParam]: [St, St] =
+const [talkyardPathFromParamUnsafe, talkyardPathParam]: [St | N, St] =
         findTalkyardRelUrl(talkyardPathParamOrBad, location);
 
 /// Finds the desired Talkyard forum page url relative the Talkyard origin. For example, if the
@@ -226,9 +236,9 @@ const [talkyardPathQueryUnsafe, talkyardPathParam]: [St, St] =
 /// In fact, the Talkyard relative url in the #hash-frag is the only method I've implemented &
 /// tested everywhere.
 ///
-function findTalkyardRelUrl(urlParam: St, loc: Location): [St, St] {
+function findTalkyardRelUrl(urlParam: St, loc: Location): [St | N, St] {
   // [embg_ty_url]
-  let path = '/latest';
+  let path = null;
   let param = urlParam;
 
   if (urlParam === 'false') {
@@ -265,9 +275,15 @@ function findTalkyardRelUrl(urlParam: St, loc: Location): [St, St] {
     const anyPath = queryParams.get(param.slice(1));
     path = anyPath || path;
   } */
-  logD(`Talkyard path: ${path}`);
+  logD(`Path: ${path}, param: ${param}`);
   return [path, param];
 }
+
+// If any path to show has been specified in the path param, e.g. #/-123/some-page,
+// that has priority over any path in the `talkyardPath` variable. Otherwise I get confused
+// if I copy a URL with #/a-ty-hash-path but it's just ignored, instead the `talkyardPath`
+// is shown.
+const talkyardPathQueryUnsafe = talkyardPathFromParamUnsafe || talkyardPathFromVarUnsafe;
 
 // Must be a *relative* url — relative the Talkyard site origin.
 // Ignore anything that doesn't start with '/', so no one can change the
@@ -285,8 +301,12 @@ function findTalkyardRelUrl(urlParam: St, loc: Location): [St, St] {
 //
 const initialTalkyardPathQuery = url_isRelative(talkyardPathQueryUnsafe)
         ? talkyardPathQueryUnsafe  // fine, it's a  /relative/path?and-maybe=query-params
-        : '/latest';         // weird, ignore. Show forum homepage instead, latest topics
+        : '/latest';   // path not specified, or invalid. Show forum topics list instead
 
+if (talkyardPathFromVarUnsafe)
+  logD(`Path var: ${talkyardPathFromVarUnsafe}`);
+
+logD(`Will show path: ${initialTalkyardPathQuery}`);
 
 
 // (UX COULD have the comments iframes postMessage() to this main win if new comments
@@ -395,6 +415,7 @@ const theStorage: Storage = someStorage || {
 
 
 let curSessItemInStorage: St | Nl = null;
+let loggedOut = 0;
 
 function onLocalStorageChanged() {
   // Maybe we logged out in another browser tab?
@@ -748,7 +769,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   const commentsIframe = Bliss.create('iframe', {
     id: 'ed-embedded-comments',
     name: 'edComments-' + iframeNr,
-    className: 'p_CmtsIfr ty_CmtsIfr',   // DEPRECATE old name p_CmtsIfr
+    className: 'ty_EmbForum',
     // A title attr, for better accessibility. See: https://www.w3.org/TR/WCAG20-TECHS/H64.html
     title: iframeTitle || "Comments",
     src: forumIframeUrl,
@@ -975,10 +996,11 @@ function calcSizes(commentsIframe: HIframeElm): St {
   var iframeVisibleHeight = height - Math.max(0, rect.top);
                                   // iframeVisibleTopInParentWin
 
-  return ('["iframeOffsetWinSize",' +
+  const sizesMsg = ('["iframeOffsetWinSize",' +
       '{ "top":' + (-rect.top) +  // why did I negate? [why_neg_ifr_top]
       ', "height":' + height +    // rename 'height'? but to what? Maybe 'iframeVisibleBottom'?
       ', "iframeVisibleHeight": ' + iframeVisibleHeight + '}]');
+  return sizesMsg;
 }
 
 
@@ -1061,11 +1083,19 @@ function onMessage(message) {
 
       if (isFromEditorIframe) {
         logM(`Editor iframe inited`);
-        loadFirstCommentsIframe();  // [ed_ifr_1st]
+        if (!loggedOut) { // [0_init_twice]
+          loadFirstCommentsIframe();  // [ed_ifr_1st]
+        }
         return;
       }
 
       logM(`Comments iframe nr ${iframeNr} inited`);
+
+      // If we've loaded all remaining comments frames already, and got an 'iframeInited'
+      // message just because pat logged out and the iframe reloaded itself, then
+      // don't try to initialize any more iframes — that's been done already. [0_init_twice]
+      if (loggedOut)
+        return;
 
       if (iframeNr === FirstCommentsIframeNr) {
         // Noop — only one embedded forum iframe supported, right. Or why not?
@@ -1284,6 +1314,7 @@ function onMessage(message) {
 
     case 'logoutClientSideOnly':
       logM(eventData.why || `Logged out`);
+      loggedOut += 1;
       try {
         theStorage.removeItem('talkyardSession');
         curSessItemInStorage = null;

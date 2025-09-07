@@ -152,11 +152,11 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: TyContex
 
        */
 
-            // Later, but for now only in dev & test:  (also see: [306SKTGR43])
-            throwForbiddenIf(!globals.isProd && !isOk,
-              "TyEEXTREDIR1", o"""Bad thenGoTo url: '$url' — it's to a different server
-                not in the Allow-Embedding-From list ( /-/admin/settings/embedded-comments ).
-                This could be a phishing attempt.""")
+            // Could be a phishing attempt? Also see: [306SKTGR43]
+            throwForbiddenIf(!isOk,
+                "TyEEXTREDIR1", o"""Bad thenGoTo url: '$url' — it's to a different server
+                not in the Allow-Embedding-From list ( /-/admin/settings/embedded-comments ).""")
+
             // But for now, backw compat, but not programmer friendly: Remove this after
             // some week, after having searched for BAD_REDIR_URL in the logs:
             if (!isOk) {

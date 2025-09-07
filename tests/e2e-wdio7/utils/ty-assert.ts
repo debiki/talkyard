@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import * as assert from 'assert';
-import { j2s, dieIf, die } from './log-and-die';
+import { j2s, dieIf, die, logMessage, logUnusual } from './log-and-die';
+import type { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 
 // (Also see: https://www.npmjs.com/package/power-assert )
 
@@ -201,7 +202,47 @@ const tyAssert = {
     const numActual = (text.match(regex) || []).length;
     tyAssert.eq(numActual, numExpected,
           `Wrong num matches of:  ${regex}  in:  ${inlineOrDashPara(text)}`);
-  }
+  },
+
+  /// Verifies that there's a CSP violation.
+  ///
+  contentSecurityPolicyViolation: async (brX: TyE2eTestBrowser, okayAncestors: St): Pr<Vo> => {
+    // There is an iframe but it's empty, because the Content-Security-Policy frame-ancestors
+    // policy forbids embedding from this domain.
+    // But with WebdriverIO v6, this: browser.switchToFrame(iframe);
+    // now blocks, for iframes that couldn't be loaded?
+    // So skip this for now:
+    //
+    // Update, 2025: Now, in Chrome Dev Tools, there's this error message:
+    //    Refused to frame 'http://site-w8rs0yh8d2.localhost/' because
+    //    an ancestor violates the following Content Security Policy directive:
+    //    "frame-ancestors http://e2e-test--ec-6697957.localhost:8080
+    //                    https://e2e-test--ec-6697957.localhost:8080".
+
+    const ancErrMsg = 'ancestor violates the following Content Security Policy directive';
+    const fullMsg = ancErrMsg + `: "${okayAncestors}"`;
+    const msgs = await brX.getLogs_worksInChrome('browser');
+    logMessage(`\nBrowser log messages: ${msgs.map(m => j2s(m))}\n`);
+    let numMatches = 0;
+    for (let m of msgs) {
+      // Break out test or err msg?
+      if (m.message.indexOf(ancErrMsg) >= 0) {
+        if (m.message.indexOf(fullMsg) >= 0) {
+          numMatches += 1;
+        }
+        else {
+          assert.fail(`Ancestor policy, but the wrong one?\n` +
+                `     Got this log message: ${m.message}\n` +
+                `                 Expected: ${fullMsg}\n`);
+        }
+      }
+    }
+
+    if (numMatches !== 1) {
+      logUnusual(`Browser log messages: ` + msgs.map(m => j2s(m)));
+      assert.fail(`No ancestor-violates browser error log message?  (Or? See above)`)
+    }
+  },
 };
 
 

@@ -105,8 +105,10 @@ const ShareDialog = createComponent({
         const hash = post.nr >= FirstReplyNr ? '#post-' + post.nr : '';
         const pagePath = '/-' + ReactStore.getPageId();
         if (eds.isInEmbForum) {
-          // This'll look at eds.talkyardPathParam. [deep_emb_links]
-          url = linkToPath(pagePath) + hash;
+          const embgUrl = eds.embgUrl || eds.embeddingUrl; // [maybe_need_only_embPathParam]
+          // This'll look at eds.talkyardPathParam, [deep_emb_links] and construct
+          // sth like:  'https://www.ex.co/forum#/-123/talkyard-page' (note the '#').
+          url = embgUrl + linkToPath(pagePath) + hash;
         }
         else {
           url = origin + pagePath + hash;

@@ -49,7 +49,10 @@ export function CatsOrHomeLink(ps: { page: PageTypeAncestors,
           settings_showCategories(store.settings, me);
 
   // Dupl lines. [what_rootPathView]
-  const siteSection: SiteSection = store_mainSiteSection(store);
+  const siteSection: SiteSection | U = store_mainSiteSection(store);
+  if (!siteSection)
+    return null;
+
   const rootPathView: St = siteSection.path + (store.settings.forumMainView || RoutePathLatest);
 
   let catsOrHomeLink: RElm | Nl = null;

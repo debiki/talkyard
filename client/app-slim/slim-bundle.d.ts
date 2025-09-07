@@ -140,6 +140,7 @@ declare namespace ed {
 
 declare function isServerSide(): Bo;
 declare function url_isRelative(url: St | URL): Bo;
+declare function removeEmbeddingParams(url: St | URL): St;
 
 
 // prelude.ts:

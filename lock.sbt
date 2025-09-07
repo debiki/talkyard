@@ -162,7 +162,7 @@ Compile / dependencyOverrides ++= {
       "org.elasticsearch.plugin" % "transport-netty4-client" % "6.8.23",
       "org.flywaydb" % "flyway-core" % "5.2.4",
       "org.hdrhistogram" % "HdrHistogram" % "2.1.9",
-      "org.jsoup" % "jsoup" % "1.21.1",
+      "org.jsoup" % "jsoup" % "1.21.2",
       "org.jspecify" % "jspecify" % "1.0.0",
       "org.lz4" % "lz4-java" % "1.8.0",
       "org.osgi" % "org.osgi.namespace.extender" % "1.0.1",
@@ -192,4 +192,4 @@ Compile / dependencyOverrides ++= {
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH bb20f5bc70139bfa9f1b065e4521ab0d56686d39
+// LIBRARY_DEPENDENCIES_HASH aebd8e3bb25bb7600f6a929bbef9bd7d9f680882
