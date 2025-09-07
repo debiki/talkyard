@@ -415,6 +415,7 @@ const theStorage: Storage = someStorage || {
 
 
 let curSessItemInStorage: St | Nl = null;
+let loggedOut = 0;
 
 function onLocalStorageChanged() {
   // Maybe we logged out in another browser tab?
@@ -1082,11 +1083,19 @@ function onMessage(message) {
 
       if (isFromEditorIframe) {
         logM(`Editor iframe inited`);
-        loadFirstCommentsIframe();  // [ed_ifr_1st]
+        if (!loggedOut) { // [0_init_twice]
+          loadFirstCommentsIframe();  // [ed_ifr_1st]
+        }
         return;
       }
 
       logM(`Comments iframe nr ${iframeNr} inited`);
+
+      // If we've loaded all remaining comments frames already, and got an 'iframeInited'
+      // message just because pat logged out and the iframe reloaded itself, then
+      // don't try to initialize any more iframes — that's been done already. [0_init_twice]
+      if (loggedOut)
+        return;
 
       if (iframeNr === FirstCommentsIframeNr) {
         // Noop — only one embedded forum iframe supported, right. Or why not?
@@ -1305,6 +1314,7 @@ function onMessage(message) {
 
     case 'logoutClientSideOnly':
       logM(eventData.why || `Logged out`);
+      loggedOut += 1;
       try {
         theStorage.removeItem('talkyardSession');
         curSessItemInStorage = null;
