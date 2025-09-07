@@ -287,8 +287,8 @@ function onMessage(event) {
  * to avoid scrollbars.
  */
 function syncDocSizeWithIframeSize() {
-  var lastWidth = 0;
-  var lastHeight = 0;
+  let lastWidth = 0;
+  let lastHeight = 0;
   setInterval(pollAndSyncSize, 250);
 
   function pollAndSyncSize() {
@@ -299,21 +299,12 @@ function syncDocSizeWithIframeSize() {
     // include the footer and some paddings and margins.
     // But this works fine:  [iframe_height]
     const discussion = $byId('esPageScrollable');
-    if (!discussion) {
-      // Not yet loaded. // Let's give it a bit space so any "Loading ..." text inside is visible?
-      return; // return 300;
-    }
+    // Not yet loaded?
+    if (!discussion)
+      return;
+
     const currentWidth = discussion.clientWidth;
     const currentDiscussionHeight = discussion.clientHeight;
-
-    /*
-    // In embedded forums, there's a footer too, and sometimes an editor.
-    const anyFooter = $first('footer');
-    const footerMargin = 28; // see page.styl [footer_margin_top]
-    // `.offsetParent` is null if the footer or any ancestor is display: none.
-    const footerHeight = anyFooter && anyFooter.offsetParent && (
-                            anyFooter.clientHeight + footerMargin) || 0;
-    */
 
     // There's no editor — it's in its own iframe. If there had been:
     // -----
@@ -335,9 +326,8 @@ function syncDocSizeWithIframeSize() {
       // Was: anyDialog.clientHeight + 30, but that didn't incl whitespace above.
     }
 
-    // UX BUG: Doesn't downsize itself, if emb forum.
     const currentHeight = Math.max(
-            currentDiscussionHeight, // + footerHeight, // + editorHeight
+            currentDiscussionHeight, // + editorHeight
             dialogHeightPlusPadding);
 
     if (lastWidth === currentWidth && lastHeight === currentHeight)
@@ -346,7 +336,7 @@ function syncDocSizeWithIframeSize() {
     lastWidth = currentWidth;
     lastHeight = currentHeight;
 
-    var message = JSON.stringify([
+    const message = JSON.stringify([
       'setIframeSize', {
         width: currentWidth,
         height: currentHeight

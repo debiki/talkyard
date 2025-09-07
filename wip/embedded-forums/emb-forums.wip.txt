@@ -1,3 +1,5 @@
+See a few _Bugs at the end.
+
 [maybe_need_only_embPathParam]
 We need only  embPathParam?  Can skip  embeddingUrl, embgUrl, and embHow?
 Anduse embedding page relative links, like:
@@ -71,22 +73,57 @@ Thereafter, can solve the  [TyLink_problems]?
 REMOVE; DO_AFTER // v0.2025.011  [rm_embeddingUrl_param]
 
 
-Emb forum  if-in-iframe.ts:
-    UX BUG Ooops, if display: none, then `!!anyFooter === true`, but still should
-    not add  footerMargin!
+_Bugs:
 
-    UX BUG: Doesn't downsize itself, if emb forum.
+  - isInIframe forgotten on navigation + logout:
+    - Log in
+    - Navigate to another page (in an emb forum).
+        This "forgets" the ?embHow=Forum&embgUrl=... etc query params.
+    - Log out.
+        This reloads the emb page, now *without* ?emmHow=Forum&embgUrl=... etc
+    - Click Reply.
+        Now there's an error:  TyE6026M8  (because  eds.isInIframe  but !embgUrl)
+
+  - Gmail login problem:
+    - Go to:  http://e2e-test-www.localhost:8080/emb-page.html#/latest/specific-category
+    - Click  Create Topic
+    - Login with Gmail.
+        - Now, if you don't have an account, then after this dialog has been submitted:
+              .esCreateUserDlg.modal-dialog
+
+              Create User
+              Email: (will be kept private)
+              ___
+              Your email has been verified by google.
+              Username:
+              @_____
+              Your @username, unique and short
+              Full name: (optional)
+              ___
+              Create Account #e2eSubmit
+          Ty loads the emb forum inside the login popup! This:
+              http://e2e-test-www.localhost:8080/emb-forum.html#/latest/specific-category
+        - Now, if you already have an account,
+          Ty tries to load in the popup:
+              http://e2e-test-www.localhost:8080/emb-forum.html__dwHash__/latest/specific-category
+              (but 404 Not Found)
+
+          because the last OAuth + Ty login flow step:
+              http://e2e-test-emb-forum.localhost/-/authn/finish-at-orig-site?secretNonce=of1prruhtdz89nhayonf0i86e
+          returns:
+              303 See Other
+              location http://e2e-test-www.localhost:8080/emb-forum.html__dwHash__/latest/specific-category
 
 
-If non-existing page, e.g.:  https://www.ex.co/forum#/non-existing-page, then don't open
-a login popup in the iframe, just results in:
-      Login dialog in emb iframe [TyE5KER2]
+  - If non-existing page, e.g.:  https://www.ex.co/forum#/non-existing-page, then don't open
+    a login popup in the iframe, just results in:
+          Login dialog in emb iframe [TyE5KER2]
 
 
-Do uploaded images work? Or are they resolved against the embedding page's url? [emb_img_urls]
+  - Do uploaded images work? Or are they resolved against the embedding page's url? [emb_img_urls]
 
 
-Frag action #composeDirectMessage not working in emb forum iframe, oh well:
+  - Frag action #composeDirectMessage not working in emb forum iframe, oh well:
     http://e2e-test-www.localhost:8080/emb-page-one.html#/-/users/michael/activity/posts#composeDirectMessage
 
 
