@@ -70,7 +70,7 @@ describe(`embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20`
     // Dupl code [502SKHFSKN53]
     data = createPasswordTestData();
     await owen_brA.go2(utils.makeCreateEmbeddedSiteWithFakeIpUrl());
-    owen_brA.disableRateLimits();
+    await owen_brA.disableRateLimits();
   });
 
   it(`... He fills in fields`, async () => {
