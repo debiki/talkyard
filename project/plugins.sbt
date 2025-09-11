@@ -18,7 +18,7 @@ resolvers ++= Seq(
   Resolver.sbtPluginRepo("releases")) // =  https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/
 
 // Use the Play sbt plugin for Play projects.
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.9.8")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.9.9")
 
 // A refactoring and linting tool for Scala
 // Docs: https://scalacenter.github.io/scalafix/
