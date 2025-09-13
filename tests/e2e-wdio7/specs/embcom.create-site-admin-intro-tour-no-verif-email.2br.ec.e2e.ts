@@ -230,7 +230,7 @@ ${htmlToPaste}
     const source = await owen_brA.getSource();
     assert.that(source.indexOf('27KT5QAX29') >= 0);
 
-    assert.contentSecurityPolicyViolation(owen_brA,
+    await assert.contentSecurityPolicyViolation(owen_brA,
           `frame-ancestors http://${embeddingHostPort} https://${embeddingHostPort}`);
   });
 

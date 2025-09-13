@@ -152,7 +152,7 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: TyContex
 
        */
 
-            // Could be a phishing attempt? Also see: [306SKTGR43]
+            // Could be a phishing attempt? Also see: [306SKTGR43]  TESTS_MISSING
             throwForbiddenIf(!isOk,
                 "TyEEXTREDIR1", o"""Bad thenGoTo url: '$url' — it's to a different server
                 not in the Allow-Embedding-From list ( /-/admin/settings/embedded-comments ).""")

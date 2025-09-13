@@ -107,15 +107,17 @@ login,
 authn:
   single sign-on: (3093533)
   guest:  # copy-edit unsubscribe.2browsers.test.ts + use signUpLogInAs_Real_Guest
-          - embedded-comments-guest-login-email-notf-unsbscribe.test.ts  TyT5WBK0267
-          - login-guest-or-user-without-email.3br.f  TyTLGI_GST_OR_WO_EML
+            - embedded-comments-guest-login-email-notf-unsbscribe.test.ts  TyT5WBK0267
+            - embforum.create-site.guest-login.2br.ef  TyTEF_CRSITE_GSTLGI
+            - login-guest-or-user-without-email.3br.f  TyTLGI_GST_OR_WO_EML
   switch between login / join / guest dialog:
-          - login-guest-or-user-without-email.3br.f  TyTLGI_GST_OR_WO_EML.TyTSWITCH_LGI_D
+            - login-guest-or-user-without-email.3br.f  TyTLGI_GST_OR_WO_EML.TyTSWITCH_LGI_D
   cookieless:
-          - embedded-comments-no-cookies-guest.test.ts        TyT295KBF6301
-          - embedded-comments-no-cookies-verif-email.test.ts  TyT795KB69285
-          - embedded-comments-no-cookies-verif-gmail.test.ts  TyT795KB61368
-          - embedded-comments-no-cookies-unverif-gmail.test.ts  TyT6224BKA253
+            - embedded-comments-no-cookies-guest.test.ts        TyT295KBF6301
+            - embedded-comments-no-cookies-verif-email.test.ts  TyT795KB69285
+            - embedded-comments-no-cookies-verif-gmail.test.ts  TyT795KB61368
+            - embedded-comments-no-cookies-unverif-gmail.test.ts  TyT6224BKA253
+            - embforum.create-site.guest-login.2br.ef  TyTEF_CRSITE_GSTLGI
   password:
           - password-login-reset.2br.f  TyT5KAES20W
     via email verif email:
@@ -169,6 +171,10 @@ authn:
             - settings-toggle-login-required.3br.d  TyT4GKBW20
   login-required site, with openauth:
             - login-required-oauth-signup-login.test.ts  TyT406MRTJW2
+  login-required embedded forum:
+    password,
+    openauth:
+            - TESTS_MISSING: Embedded forum with login-required-to-read.  TyTEF_LOGIREQ2
   login directly to admin area
     with oidc,
     with server default oauth2:
@@ -177,6 +183,9 @@ authn:
             - sso-test  TyT4ABKRW0268.TyTECONTAFTAUN
             - TESTS_MISSING  would be good with more tests: Reply, Like, Flag,
                 but first, on click, needs to log in.
+  return to url after login:
+            - TESTS_MISSING, tested manually 2025-09  [306SKTGR43]
+
 
   [.lazy_authn],
   lazy authn,
@@ -563,6 +572,7 @@ privacy:  [_priv] [.noise_and_privacy]
   see if I'm online:
 
 security:
+  login, authn:  See ^login, ^authn.
   access denied,
   not found page, 404:
             - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J TyT406AK24
@@ -1184,7 +1194,10 @@ chat:
 
 embedded comments:
   create site:
+            - embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20.TyTSEC_FRAMEANC
+            - embcom.create-site-forum-intro-tour.2br.ec  TyT6AKBR2044
             - embcom.create-site-req-verif-email-exit-tours.2br TyTE2ECREMBCOM1
+            - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
             - no verif email
   no about page created:  [5WAKR02]
   post comment:
@@ -1251,6 +1264,14 @@ embedded comments:
   on-load callbacks:
             - embcom.log-levels-on-loaded.1br.ec  TyTECLOGSCLBKS
   sso: see [_embcom_sso]
+
+
+embedded forums:
+            - embforum.create-site.guest-login.2br.ef  TyTEF_CRSITE_GSTLGI
+            - embforum.b3c.login.2br.ef  TyTEF_BASIC
+  login required:
+            - TESTS_MISSING: Embedded forum with login-required-to-read.  TyTEF_LOGIREQ2
+
 
 upload links,
 uploads -  (7KFC2)
@@ -1342,6 +1363,7 @@ site settings:
             - login-required-oauth-signup-login.test.ts  TyT406MRTJW2
             - login-required-join-global-chat.2br.test.ts  TyTE2E603MAT53
             - admin-user-approve-reject.2browsers.test.ts  TyT5KHEWQ2
+            - TESTS_MISSING: Embedded forum with login-required-to-read.  TyTEF_LOGIREQ2
     invites only:
     approve members:
             - settings-approve-members.2browsers.test.ts  [TyT2HUWX8]
@@ -1352,6 +1374,7 @@ site settings:
     allow signup:
     allow local signup:
     guest login allowed:
+            - embforum.create-site.guest-login.2br.ef  TyTEF_CRSITE_GSTLGI
     disable gmail -
       button gone:
       cannot disable if admin uses gmail henself:
@@ -1479,6 +1502,7 @@ review after:
     deleted posts ignored,
     remaining get approved:
           - admin-review-cascade-approval.2browsers.test.ts  TyT0SKDE24
+  approve all:  See TyTMOD_REVW_USR.TyTMODACPTUNREV
   mod new page:
             - modn-approve-before.2browsers.test.ts  TyTE2E52RKDHI.TyTAPRTHRPG01
             - modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ
@@ -1554,6 +1578,7 @@ review after:
 
   accept unreviewed:
             - modn-review-specific-user.3br.f  TyTMOD_REVW_USR.TyTMODACPTUNREV
+                But TESTS_MISSING in prod builds
 
 report post,
 flag post,

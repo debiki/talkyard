@@ -42,7 +42,7 @@ describe(`embcom.create-site-forum-intro-tour.2br.ec  TyT6AKBR2044`, () => {
     // TESTS_MISSING create a site from scratch. Break out & reuse code from 
     // embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers.test.ts ?
 
-    idAddress = server.importSiteData(site);
+    idAddress = await server.importSiteData(site);
     siteId = idAddress.id;
   });
 

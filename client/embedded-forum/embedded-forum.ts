@@ -275,7 +275,7 @@ function findTalkyardRelUrl(urlParam: St, loc: Location): [St | N, St] {
     const anyPath = queryParams.get(param.slice(1));
     path = anyPath || path;
   } */
-  logD(`Path: ${path}, param: ${param}`);
+  logD(`Path: ${path}, param: ${param}`);  // _log_emb_path
   return [path, param];
 }
 
@@ -303,6 +303,7 @@ const initialTalkyardPathQuery = url_isRelative(talkyardPathQueryUnsafe)
         ? talkyardPathQueryUnsafe  // fine, it's a  /relative/path?and-maybe=query-params
         : '/latest';   // path not specified, or invalid. Show forum topics list instead
 
+// (We've logged any path-from-param already, _log_emb_path.)
 if (talkyardPathFromVarUnsafe)
   logD(`Path var: ${talkyardPathFromVarUnsafe}`);
 
@@ -1092,8 +1093,9 @@ function onMessage(message) {
       logM(`Comments iframe nr ${iframeNr} inited`);
 
       // If we've loaded all remaining comments frames already, and got an 'iframeInited'
-      // message just because pat logged out and the iframe reloaded itself, then
-      // don't try to initialize any more iframes — that's been done already. [0_init_twice]
+      // message just because pat logged out and the iframe reloaded itself. Then
+      // don't try to initialize any more iframes — that's been done already  [0_init_twice]
+      // (what'd happen, is that another identical comments iframes appears).
       if (loggedOut)
         return;
 

@@ -1,7 +1,5 @@
 /// <reference path="../test-types.ts"/>
 
-// CR_MISSING  & v.010
-
 import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
 import * as fs from 'fs';
@@ -10,7 +8,6 @@ import * as utils from '../utils/utils';
 import * as make from '../utils/make';
 import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import settings from '../utils/settings';
-import { logMessage, logUnusual, j2s } from '../utils/log-and-die';
 import { IsWhere } from '../test-types';
 import c from '../test-constants';
 
@@ -36,7 +33,7 @@ const mariasTopicText = 'mariasTopicText';
 // This test embedded comments site creation, with the default settings.
 // Then, people who post comments are not required to verify their email.
 
-describe(`embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20`, () => {
+describe(`embforum.create-site.guest-login.2br.ef  TyTEF_CRSITE_GSTLGI`, () => {
 
   it("initialize people", async () => {
     const brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
@@ -132,8 +129,9 @@ describe(`embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20`
   it("Maria opens the embedding page, not logged in", async () => {
     await maria_brB.go2(embeddingUrl, { isExternalPage: true });
   });
-  it(`... there's a CSP error, because Owen hasn't configured Allow Embedding From`, async () => {
-    assert.contentSecurityPolicyViolation(maria_brB,
+  it(`... there's a _CSP error — Owen hasn't configured  Allow Embedding From  TyTSEC_FRAMEANC`,
+          async () => {
+    await assert.contentSecurityPolicyViolation(maria_brB,
             `frame-ancestors 'none'`);
   });
 
@@ -145,8 +143,9 @@ describe(`embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20`
   it(`... Maria reloads`, async () => {
     await maria_brB.refresh2({ isWhere: IsWhere.External });
   });
-  it(`... sees another CSP error about the new domain — it's not  typo-domain`, async () => {
-    assert.contentSecurityPolicyViolation(maria_brB,
+  it(`... sees another _CSP error about the new domain — it's not  typo-domain  TyTSEC_FRAMEANC`,
+          async () => {
+    await assert.contentSecurityPolicyViolation(maria_brB,
             `frame-ancestors https://typo-domain.example.com`);
   });
 
@@ -158,7 +157,7 @@ describe(`embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20`
   it(`... Maria reloads`, async () => {
     await maria_brB.refresh2();  // skip this time: { isWhere: IsWhere.External }
   });
-  it(`... the embedded forum appears`, async () => {
+  it(`... the embedded forum appears, CSP error gone`, async () => {
     await maria_brB.switchToEmbeddedCommentsIrame();
   });
 
@@ -173,6 +172,10 @@ describe(`embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20`
   it(`... gets logged in`, async () => {
     await maria_brB.hasVerifiedSignupEmailPage.clickContinue();
   });
+  it(`... gets redirected to the page that embeds the forum`, async () => {
+    await maria_brB.updateIsWhere();
+    assert.eq(maria_brB.isWhere(), IsWhere.EmbeddingPage);
+  });
 
   it(`Maria posts a new topic`, async () => {
     await maria_brB.switchToEmbeddedCommentsIrame();
@@ -183,7 +186,8 @@ describe(`embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20`
   //let mariasTopicTyPath: St;
   let mariasTopicEmbgUrl: St;
 
-  it(`Links to embedded page and embedding page are different`, async () => {
+  //it(`Links to embedded page and embedding page are different`, async () => {
+  it(`Copy URL to new embedded page ...`, async () => {
     //mariasTopicTyUrl = await maria_brB.getUrl();
     //mariasTopicTyPath = await maria_brB.urlPathQueryHash();
     await maria_brB.switchToTheParentFrame();
@@ -201,7 +205,7 @@ describe(`embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20`
     //assert.includes(mariasTopicEmbgUrl, mariasTopicTyPath);
   });
 
-  it(`Owen goes to Maria's page`, async () => {
+  it(`Owen goes to Maria's page, the embedd*ing* url`, async () => {
     await owen_brA.go2(mariasTopicEmbgUrl);
   });
   it(`... logs in`, async () => {
@@ -241,7 +245,7 @@ describe(`embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20`
   });
 
 
-  /*
+  /*  _CSP tested above, maybe need not do again here.
   it("When embedding via the wrong domain, comments won't load  TyTSEC_FRAMEANC", async () => {
     logMessage(`First, comments are visible ...`);
     assert.that(await isCommentsVisible(owen_brA));
@@ -253,7 +257,7 @@ describe(`embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20`
     const source = await owen_brA.getSource();
     assert.that(source.indexOf('27KT5QAX29') >= 0);
 
-    assert.contentSecurityPolicyViolation(owen_brA,
+    await assert.contentSecurityPolicyViolation(owen_brA,
           `frame-ancestors http://${embeddingHostPort} https://${embeddingHostPort}`);
   });
 

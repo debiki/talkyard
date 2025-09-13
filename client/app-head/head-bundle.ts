@@ -419,7 +419,7 @@ if (eds.isInEmbForum && !_isServerSide()) {
 
 function removeEmbeddingParams(url: St | URL): St {
   const urlStr: St = (typeof url === 'string') ? url : url.toString();
-  let pathQueryHash = urlStr.replace(/^https?:\/\/[^/]*/, '')
+  let pathQueryHash = urlStr.replace(/^https?:\/\/[^/]*/, '');
   // We don't want the embedded forum params in the url, when sending the 'pathChanged' message
   // to the embedding page. Let's remove them.
   // (Would it be cleaner to do this in the embedding script? So they're added and removed
