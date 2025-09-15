@@ -27,7 +27,7 @@ Compile / dependencyOverrides ++= {
       "commons-logging" % "commons-logging" % "1.3.5",
       "commons-validator" % "commons-validator" % "1.10.0",
       "org.apache.commons" % "commons-email" % "1.6.0",
-      "org.apache.tika" % "tika-core" % "3.2.2",
+      "org.apache.tika" % "tika-core" % "3.2.3",
       "org.checkerframework" % "checker-qual" % "3.49.3",
       "org.flywaydb" % "flyway-core" % "5.2.4",
       "org.jspecify" % "jspecify" % "1.0.0",
