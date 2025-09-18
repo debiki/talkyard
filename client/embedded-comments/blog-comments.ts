@@ -436,6 +436,14 @@ function addCommentsIframe(ps: { appendInside: HElm | St, discussionId: St }): H
 
 function forgetRemovedCommentIframes() {
   for (let i = iframeElms.length - 1; i >= 0; --i) {
+    _forgetOneRemovedCommentIframe(i);
+  }
+}
+
+
+
+function _forgetOneRemovedCommentIframe(frameNr: Nr) {
+    const i = frameNr;
     const iframe: HIframeElm | U = iframeElms[i];
     if (!iframe || !iframe.isConnected)  {
       loadingElms.splice(i, 1);
@@ -446,7 +454,6 @@ function forgetRemovedCommentIframes() {
       logD(`Forgot removed iframe nr ${i} "${iframe ? iframe.name : ''}", ${
               numDiscussions} discussions left.`);
     }
-  }
 }
 
 
@@ -1329,23 +1336,28 @@ function sendToOneIframe(iframe, message: any | null, retryNr: Nr = 0) {
   // to block the iframe from loading, and then you can reproduce this error.
   //
   if (!iframeInited) {
+    // Maybe the iframe is gone, was removed before it got inited?
+    // If so, remove it from our iframes list — then, indexOf() above, won't
+    // find it so we'd return and skip the message.  But don't remove it too soon
+    // — can take long for it to get initialized (that is, for Talkyard to load inside the
+    // iframe and send us an 'iframeInited' message). [emb_forum_iframe_rmd]
+    if (retryNr >= 5) {
+      logD(`iframe ${iframeNr}: Not inited after 5 * 700 ms, removing.`);
+      _forgetOneRemovedCommentIframe(iframeNr);
+      return;
+    }
+
+    logD(`iframe ${iframeNr}: Not inited, will send messages later.`);
     setTimeout(function() {
-      // Maybe the iframe is gone, was removed before it got inited?
-      // If so, remove it from our iframes list — then, indexOf() above, won't
-      // find it so we'd return and skip the message.
-      if ((retryNr % 5) === 1) {
-        forgetRemovedCommentIframes();
-      }
       sendToOneIframe(iframe, null, retryNr + 1);
-    }, 500);
+    }, 700);
     return;
   }
 
   // Iframe inited, but contents gone? That'd mean it got removed by javascript.
   if (!iframe.contentWindow) {
-    // If many iframes gone, we'd call forgetRemovedCommentIframes()
-    // unnecessarily many times, that's ok.
-    setTimeout(forgetRemovedCommentIframes, 1);
+    logD(`iframe ${iframeNr}: No contentWindow, removing.`);
+    setTimeout(() => _forgetOneRemovedCommentIframe(iframeNr), 1);
     return;
   }
 

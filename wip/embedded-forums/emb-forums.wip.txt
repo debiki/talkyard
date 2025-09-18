@@ -87,7 +87,7 @@ _Bugs:
         Now there's an error:  TyE6026M8  (because  eds.isInIframe  but !embgUrl)
 
   - iframe accidentally removed, if latency too high? [emb_forum_iframe_rmd]
-    Temp fixed for now, by changing timeout to 3500?
+    Fixed for now, by changing timeout to 3500?
 
   - Gmail login problem:   [emb_forum_gmail_login]
     - Go to:  http://e2e-test-www.localhost:8080/emb-page.html#/latest/specific-category
