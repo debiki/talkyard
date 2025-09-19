@@ -22,6 +22,7 @@ import scala.collection.Seq
 import com.debiki.core._
 import controllers.OkApiJson
 import debiki.RateLimits
+import debiki.MaxLimits
 import talkyard.server.http._
 import debiki.EdHttp._
 import debiki.JsonUtils._
@@ -50,7 +51,8 @@ class QueryDoController @Inject()(cc: ControllerComponents, tyContext: TyContext
 
   def apiV0_do(): Action[JsValue] = ApiSecretPostJsonAction(  // [PUB_API]
           // For now, may do just a few things. [do_api_limits]
-          WhatApiSecret.SiteSecret, RateLimits.UpsertFew, maxBytes = 2000,
+          // However, pages might be pretty large, so allow a big payload.
+          WhatApiSecret.SiteSecret, RateLimits.UpsertFew, maxBytes = MaxLimits.MaxDoApiBytes,
           ) { req: JsonPostRequest =>
     queryDoImpl(req, doOnly = true)
   }
@@ -58,7 +60,7 @@ class QueryDoController @Inject()(cc: ControllerComponents, tyContext: TyContext
 
   def apiV0_queryDo(): Action[JsValue] = ApiSecretPostJsonAction(  // [PUB_API]
           // Just a few things only. [do_api_limits]
-          WhatApiSecret.SiteSecret, RateLimits.UpsertFew, maxBytes = 2000) {
+          WhatApiSecret.SiteSecret, RateLimits.UpsertFew, maxBytes = MaxLimits.MaxDoApiBytes) {
           req: JsonPostRequest =>
     queryDoImpl(req)
   }

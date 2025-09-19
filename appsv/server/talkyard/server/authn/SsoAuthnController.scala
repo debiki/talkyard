@@ -23,6 +23,7 @@ import com.debiki.core.Prelude._
 import controllers.OkApiJson
 import debiki.EdHttp._
 import debiki.RateLimits
+import debiki.MaxLimits
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.http._
 import javax.inject.Inject
@@ -188,7 +189,8 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: TyContex
 
 
   def apiV0_upsertUserAndLogin: Action[JsValue] =
-        PostJsonAction(RateLimits.Login, isLogin = true, maxBytes = 1000) {
+        PostJsonAction(RateLimits.Login, isLogin = true,
+        maxBytes = MaxLimits.MaxUpsertUserBytes) {
           req: JsonPostRequest =>
 
     import req.{siteId, siteSettings}
@@ -253,7 +255,8 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: TyContex
 
 
   def apiv0_upsertUserGenLoginSecret: Action[JsValue] =
-        PostJsonAction(RateLimits.NoRateLimits, maxBytes = 1000) { request: JsonPostRequest =>
+        PostJsonAction(RateLimits.NoRateLimits, maxBytes = MaxLimits.MaxUpsertUserBytes) {
+          request: JsonPostRequest =>
 
     import request.dao
 
@@ -313,7 +316,8 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: TyContex
 
 
   def apiV0_upsertUser: Action[JsValue] =
-        PostJsonAction(RateLimits.Login, maxBytes = 5000) { request: JsonPostRequest =>
+        PostJsonAction(RateLimits.Login, maxBytes = MaxLimits.MaxUpsertUserBytes) {
+            request: JsonPostRequest =>
 
     import debiki.JsonUtils.asJsObject
 
