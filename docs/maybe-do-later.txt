@@ -29,6 +29,20 @@ Popularity calcs sometimes ignore the very latest comment / chat msg?
 
 [timeline_comts] Maybe. Rename "progress posts" to "timeline comments"?
 
+[timeline_comts_private]
+Optionally, let only admins see timeline comments / auto-comments.
+Temp quick CSS-only fixes:
+
+    /* Hide "Topics" button, opens the left sidebar. */
+    .esOpenWatchbarBtn,
+    /* Hide the Progress-Note button. */
+    .s_OpReB-Prg { display: none; }
+    /* Hide progress comments. */
+    .s_w-MP { display: none; }
+    /* Hide, but not for admins and mods. */
+    html:not(.dw-is-staff) .s_PgSct { display: none; }
+    html:not(.dw-is-staff) .s_w-MP { display: none; }
+
 [purp_dep_text]
 Help texts that are different, depending on the purpose of the forum. E.g. calls people
 "employees" and "customers",  or if it's for education: "teachers", "students".
@@ -133,6 +147,10 @@ Merge  posts3, pages3, categories3 and some settings3 columns into:  nodes_t
 (which will actually be posts3 but renamed, and with some new columns).
 But most such settings should instead be in:  pat_node_multi_rels_t  (!).
 See: ./everything-is-a-node.txt
+
+[cat_sort_order]
+Make it possible to sort cats in the dropdowns & cats page by:
+    cat name,  activity,  not just the position field.
 
 [url_cat_before_order]  [ty_v1]?
 Change URL path comonents from:   /latest/category-name
