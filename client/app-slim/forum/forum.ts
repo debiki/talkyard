@@ -1409,6 +1409,10 @@ function CatNameDescr(props: { store: Store, forumPath: St, activeCategory: Cat,
   return (
     r.div({ className: 's_F_Ts_Cat' },
       r.div({ className: 's_F_Ts_Cat_SelectCatBs' },
+        // There was a bug: The root cat id somehow got changed to that of a base cat
+        // in the forum, making the All Cats dropdown disappeared (since no child cats
+        // then were found — the base cat had no sub cats).
+        // But now that can't happen any more (?), see: [wrong_root_cat_id].
         baseCatDropdown,
         anySubCatDropdown),
       r.p({ className: 's_F_Ts_Cat_Abt' }, activeCategory.description),

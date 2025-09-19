@@ -46,12 +46,14 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
 
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
 
+  private val logger = talkyard.server.TyLogger("PageTitleSettingsController")
+
   def editTitleSaveSettings: Action[JsValue] = PostJsonAction(
           RateLimits.EditPost,
           MinAuthnStrength.EmbeddingStorageSid12, // [if_emb_forum]
           maxBytes = 2000, canUseAlias = true) {
         request: JsonPostRequest =>
-    import request.{body, dao, theRequester => trueEditor} // [alias_4_principal]
+    import request.{body, dao, siteId, theRequester => trueEditor} // [alias_4_principal]
 
     val pageJo = asJsObject(request.body, "the request body")
     CLEAN_UP // use JsonUtils below, not '\'.
@@ -159,20 +161,42 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     throwForbiddenIf(oldMeta.pageType == PageType.AboutCategory,  //  [4AKBE02]
       "TyEEDCATDSCTTL", "Don't edit the category description topic title — edit the topic text instead")
 
+    // Maybe can be ok to change from Forum to Blog or Wiki, some time in the future. [_0_change_type]
     throwForbiddenIf(pageTypeAfter != oldMeta.pageType && !oldMeta.pageType.mayChangeRole,
       "DwE5KGU02", s"Cannot change page role ${oldMeta.pageType} to something else")
 
+    // [_0_change_doing_status]
     throwForbiddenIf(anyNewDoingStatus.isDefined && !pageTypeAfter.hasDoingStatus,
       "TyE0PGDNGSTS", s"Pages of type $pageTypeAfter shouldn't have a doing-status")
-
-    throwForbiddenIf(anyLayout.isDefined && pageTypeAfter != PageType.Forum,
-      "EdE5FKL0P", "Can only specify topic list layout for forum pages")
 
     // (Could incl `anyLayout` too)
     val forumViewChanged: Bo = anyForumSearchBox.isDefined ||
           anyForumMainView.isDefined || anyForumCatsTopics.isDefined
-    throwForbiddenIf(forumViewChanged && pageTypeAfter != PageType.Forum,
-          "TyE0FORMPGE", "Can only edit these properties for forum pages")
+
+    // [_forum_checks]
+    if (pageTypeAfter == PageType.Forum) {
+      // A forum page and its root category belong together. Later, maybe there'll be
+      // merged into one single node. [its_a_node]
+      val isWrongRootCat = anyNewCategoryId.isDefined && anyNewCategoryId != oldMeta.categoryId
+      if (isWrongRootCat) {
+        // Once the forum root page somehow got changed to the id of a base category
+        // in that same forum. That's not supposed to happen — let's log and reject.
+        // [wrong_root_cat_id]
+        logger.warn(o"""s$siteId: Cannot change forum page root category id, forum page bef:
+              $oldMeta, req body: $body  [TyECHFORUMCAT1]""")
+        throwForbidden("TyECHFORUMCAT2", "Cannot change forum page root category id")
+      }
+
+      // Also, cannot change from PageType.Forum, see [_0_change_type] above,
+      // and cannot set any Doing status, see [_0_change_doing_status].
+    }
+    else {
+      throwForbiddenIf(anyLayout.isDefined,
+            "EdE5FKL0P", "Can only specify topic list layout for forum pages")
+
+      throwForbiddenIf(forumViewChanged,
+            "TyE0FORMPGE", "Can only edit these properties for forum pages")
+    }
 
     // Would be confusing if anyone could change the comment order.
     // If anonyms could do things only mods may do, others could guess
@@ -208,6 +232,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
           "TyE0EDFORUMPRPS", s"$prefix edit forum properties")
     }
 
+    // (Could move this up to the other _forum_checks.)
     if (anyNewRole.is(PageType.Forum) || (anyNewRole.isEmpty && oldMeta.pageType == PageType.Forum)) {
       throwForbiddenIf(anyShowId.is(true), "TyE22PKGEW0", "Forum pages should not show the page id.")
       throwForbiddenIf(anySlug.isDefined, "TyE2PKDPU0", "Forum pages should have no page slug")
