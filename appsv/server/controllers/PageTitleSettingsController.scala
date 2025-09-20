@@ -113,7 +113,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
         "EdEZ5FK20", "Cannot change topic list layout and page type at the same time")
     }
 
-    val oldMeta = request.dao.getPageMeta(pageId) getOrElse throwNotFound(
+    val oldMeta = request.dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound(
       "DwE4KEF20", "The page was deleted just now")
 
     // Core members may change the page type (e.g. from Discussion to Idea), and
