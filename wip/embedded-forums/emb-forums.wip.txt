@@ -75,6 +75,8 @@ REMOVE; DO_AFTER // v0.2025.011  [rm_embeddingUrl_param]
 
 _Bugs:
 
+  - Does Load More... not yet work in <iframe>s?
+
   - isInIframe forgotten on navigation + logout:
     - Log in
     - Navigate to another page (in an emb forum).
