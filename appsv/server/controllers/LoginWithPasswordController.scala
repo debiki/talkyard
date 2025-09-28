@@ -344,7 +344,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     val isOk = LoginWithSecretController.isAllowedRedirectUrl(
       returnToUrl, request.origin, request.siteSettings.allowEmbeddingFromBetter, globals.secure)
 
-    // Could this be a phishing attempt? Also see [306SKTGR43]
+    // Could this be a phishing attempt? Also see [306SKTGR43]  TESTS_MISSING
     throwForbiddenIf(!isOk,
           "TyEEXTREDIR2", o"""Bad returnToUrl url: '$returnToUrl' — it's to a different server
           not in the Allow-Embedding-From list ( /-/admin/settings/embedded-comments ).

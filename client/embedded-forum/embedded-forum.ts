@@ -275,7 +275,7 @@ function findTalkyardRelUrl(urlParam: St, loc: Location): [St | N, St] {
     const anyPath = queryParams.get(param.slice(1));
     path = anyPath || path;
   } */
-  logD(`Path: ${path}, param: ${param}`);
+  logD(`Path: ${path}, param: ${param}`);  // _log_emb_path
   return [path, param];
 }
 
@@ -303,6 +303,7 @@ const initialTalkyardPathQuery = url_isRelative(talkyardPathQueryUnsafe)
         ? talkyardPathQueryUnsafe  // fine, it's a  /relative/path?and-maybe=query-params
         : '/latest';   // path not specified, or invalid. Show forum topics list instead
 
+// (We've logged any path-from-param already, _log_emb_path.)
 if (talkyardPathFromVarUnsafe)
   logD(`Path var: ${talkyardPathFromVarUnsafe}`);
 
@@ -555,6 +556,14 @@ function addCommentsIframe(ps: { appendInside: HElm | St, discussionId: St }): H
 
 function forgetRemovedCommentIframes() {
   for (let i = iframeElms.length - 1; i >= 0; --i) {
+    _forgetOneRemovedCommentIframe(i);
+  }
+}
+
+
+
+function _forgetOneRemovedCommentIframe(frameNr: Nr) {
+    const i = frameNr;
     const iframe: HIframeElm | U = iframeElms[i];
     if (!iframe || !iframe.isConnected)  {
       loadingElms.splice(i, 1);
@@ -565,7 +574,6 @@ function forgetRemovedCommentIframes() {
       logD(`Forgot removed iframe nr ${i} "${iframe ? iframe.name : ''}", ${
               numDiscussions} discussions left.`);
     }
-  }
 }
 
 
@@ -1092,8 +1100,9 @@ function onMessage(message) {
       logM(`Comments iframe nr ${iframeNr} inited`);
 
       // If we've loaded all remaining comments frames already, and got an 'iframeInited'
-      // message just because pat logged out and the iframe reloaded itself, then
-      // don't try to initialize any more iframes — that's been done already. [0_init_twice]
+      // message just because pat logged out and the iframe reloaded itself. Then
+      // don't try to initialize any more iframes — that's been done already  [0_init_twice]
+      // (what'd happen, is that another identical comments iframes appears).
       if (loggedOut)
         return;
 
@@ -1545,23 +1554,28 @@ function sendToOneIframe(iframe, message: any | null, retryNr: Nr = 0) {
   // to block the iframe from loading, and then you can reproduce this error.
   //
   if (!iframeInited) {
+    // Maybe the iframe is gone, was removed before it got inited?
+    // If so, remove it from our iframes list — then, indexOf() above, won't
+    // find it so we'd return and skip the message.  But don't remove it too soon
+    // — can take long for it to get initialized (that is, for Talkyard to load inside the
+    // iframe and send us an 'iframeInited' message). [emb_forum_iframe_rmd]
+    if (retryNr >= 5) {
+      logD(`iframe ${iframeNr}: Not inited after 5 * 700 ms, removing.`);
+      _forgetOneRemovedCommentIframe(iframeNr);
+      return;
+    }
+
+    logD(`iframe ${iframeNr}: Not inited, will send messages later.`);
     setTimeout(function() {
-      // Maybe the iframe is gone, was removed before it got inited?
-      // If so, remove it from our iframes list — then, indexOf() above, won't
-      // find it so we'd return and skip the message.
-      if ((retryNr % 5) === 1) {
-        forgetRemovedCommentIframes();
-      }
       sendToOneIframe(iframe, null, retryNr + 1);
-    }, 500);
+    }, 700);
     return;
   }
 
   // Iframe inited, but contents gone? That'd mean it got removed by javascript.
   if (!iframe.contentWindow) {
-    // If many iframes gone, we'd call forgetRemovedCommentIframes()
-    // unnecessarily many times, that's ok.
-    setTimeout(forgetRemovedCommentIframes, 1);
+    logD(`iframe ${iframeNr}: No contentWindow, removing.`);
+    setTimeout(() => _forgetOneRemovedCommentIframe(iframeNr), 1);
     return;
   }
 

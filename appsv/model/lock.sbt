@@ -27,7 +27,7 @@ Compile / dependencyOverrides ++= {
       "commons-logging" % "commons-logging" % "1.3.5",
       "commons-validator" % "commons-validator" % "1.10.0",
       "org.apache.commons" % "commons-email" % "1.6.0",
-      "org.apache.tika" % "tika-core" % "3.2.2",
+      "org.apache.tika" % "tika-core" % "3.2.3",
       "org.jspecify" % "jspecify" % "1.0.0",
       "org.owasp.encoder" % "encoder" % "1.3.1",
       "org.playframework" % "play-functional_2.13" % "3.0.5",
@@ -37,4 +37,4 @@ Compile / dependencyOverrides ++= {
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH fac042d18cf44977875f2893b44074314e7b0965
+// LIBRARY_DEPENDENCIES_HASH 0216dbe58d5dc15e4b46ad1533332654452261c9

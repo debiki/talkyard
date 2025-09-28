@@ -4,20 +4,14 @@ import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
 import * as fs from 'fs';
 import server from '../utils/server';
-import * as utils from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
 import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import settings from '../utils/settings';
-import { die } from '../utils/log-and-die';
-import c from '../test-constants';
-import { IsWhere } from '../test-types';
-
-const mariasCommentOne = 'mariasCommentOne';
-const mariasCommentTwo = 'mariasCommentTwo';
 
 // Is a different domain than `localHostname`, otherwise cookies would work, which
 // would be unrealistic.
 const embeddingOrigin = 'http://e2e-test-www.localhost:8080';
+const localHostname = 'e2e-test-emb-forum'; //  —>  http://e2e-test-emb-forum.localhost
 
 const embForum = 'emb-forum.html';
 const embCat = 'emb-cat-a.html';
@@ -29,35 +23,27 @@ let owen: Member;
 let owen_brA: TyE2eTestBrowser;
 let maria: Member;
 let maria_brB: TyE2eTestBrowser;
-let michael: Member;
-let michael_brB: TyE2eTestBrowser;
 
-const localHostname = 'e2e-test-emb-forum';
-
-let siteIdAddress: IdAddress;
-let siteId;
-
+let site: IdAddress;
 let forum: TwoPagesTestForum;
-
 let discussionPageUrl: string;
 
 
-describe("embedded-forum-no-cookies-login  TyT5029FKRDE", () => {
+describe(`embforum.b3c.login.2br.ef  TyTEF_BASIC`, () => {
 
   it("import a site", async () => {
     const builder = buildSite();
-    forum = builder.addTwoPagesForum({  // or: builder.addLargeForum
-      title: "Some E2E Test",
-      members: undefined, // default = everyone
+    forum = builder.addTwoPagesForum({
+      title: "Emb Forum Basic E2E",
+      members: ['michael', 'maria', 'memah', 'modya']
     });
     assert.eq(builder.getSite(), forum.siteData);
-    const site: SiteData2 = forum.siteData;
-    site.meta.localHostname = localHostname;
-    site.settings.allowEmbeddingFrom = embeddingOrigin;
-    siteIdAddress = await server.importSiteData(forum.siteData);
-    siteId = siteIdAddress.id;
-    server.skipRateLimits(siteId);
-    discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;
+    const siteData: SiteData2 = forum.siteData;
+    siteData.meta.localHostname = localHostname;
+    siteData.settings.allowEmbeddingFrom = embeddingOrigin;
+    site = await server.importSiteData(forum.siteData);
+    server.skipRateLimits(site.id);
+    discussionPageUrl = site.origin + '/' + forum.topics.byMichaelCategoryA.slug;
   });
 
   it("initialize people", async () => {
@@ -69,10 +55,6 @@ describe("embedded-forum-no-cookies-login  TyT5029FKRDE", () => {
 
     maria = forum.members.maria;
     maria_brB = brB;
-    michael = forum.members.michael;
-    michael_brB = brB;
-
-    // http://e2e-test-www.localhost:8080/
   });
 
   it("create two embedding pages", async () => {
@@ -106,7 +88,7 @@ talkyardServerUrl='${settings.scheme}://${localHostname}.localhost';
 ${pathLine}
 </script>
 
-<script async defer src="${siteIdAddress.origin}/-/talkyard-forum.js"></script>
+<script async defer src="${site.origin}/-/talkyard-forum.js"></script>
 
 <div class="talkyard-forum"></div>
 
@@ -116,19 +98,71 @@ ${pathLine}
 </html>`;
   }
 
-  it("Maria opens the embedded forum page", async () => {
-    await maria_brB.go2(embeddingOrigin + '/' + embForum);
+  it(`Maria opens a page that embeds Category A`, async () => {
+    maria_brB.go2(embeddingOrigin + '/' + embCat);  // 0await
+    maria_brB.disableRateLimits();  // 0await
   });
 
-  it("Owen too,  not to admin settings", async () => {
-    await owen_brA.go2(embeddingOrigin + '/' + embCat);
-    //await owen_brA.adminArea.settings.embedded.goHere(localHostname);
-    //await this.loginDialog.loginWithPassword(owen);
+  it(`Owen goes to a page that embeds the forum (the all topics list)`, async () => {
+    owen_brA.go2(embeddingOrigin + '/' + embForum);  // 0await
+    owen_brA.disableRateLimits();  // 0await
   });
 
-  it("Owen goes to embedded page", async () => {
-    await owen_brA.d();
-    await owen_brA.go2(embeddingOrigin + '/' + embPage);
+
+  it(`Maria sees Category A`, async () => {
+    await maria_brB.switchToEmbeddedCommentsIrame();
+    await maria_brB.forumTopicList.waitForCategoryName(forum.categories.catA.name);
+  });
+  it(`Owen instead sees All Cats`, async () => {
+    await owen_brA.switchToEmbeddedCommentsIrame();
+    await owen_brA.forumTopicList.waitForCategoryName(`All categories`);
+  });
+
+
+  it(`Maria logs in`, async () => {
+    await maria_brB.switchToEmbeddedCommentsIrame();
+    await maria_brB.complex.loginWithPasswordViaTopbar(maria, { inPopup: true });
+  });
+  it(`... sees her username in My Menu`, async () => {
+    await maria_brB.switchToEmbeddedCommentsIrame();
+    await maria_brB.topbar.assertMyUsernameMatches(maria.username);
+  });
+
+
+  it(`Owen logs in`, async () => {
+    await owen_brA.switchToEmbeddedCommentsIrame();
+    await owen_brA.complex.loginWithPasswordViaTopbar(owen, { inPopup: true });
+  });
+  it(`... sees his username`, async () => {
+    await owen_brA.switchToEmbeddedCommentsIrame();
+    await owen_brA.topbar.assertMyUsernameMatches(owen.username);
+  });
+
+
+  it("Owen goes to a page that embeds an embedded page", async () => {
+    owen_brA.go2(embeddingOrigin + '/' + embPage);  // 0await
+  });
+  it("... the correct embedded page is shown", async () => {
+    await owen_brA.switchToEmbeddedCommentsIrame();
+    await owen_brA.assertPageTitleMatches("By Michael in CategoryA title");
+  });
+  it(`... he's automatically logged in — session remembered in localStorage`, async () => {
+    await owen_brA.switchToEmbeddedCommentsIrame();
+    await owen_brA.topbar.assertMyUsernameMatches(owen.username);
+  });
+
+
+  it(`Owen goes to the Admin Area`, async () => {
+    owen_brA.adminArea.users.goHere(site.origin, { wait: false });  // 0await
+  });
+  // Cookies created in the loging popup will work, so Owen is already logged in.
+  it(`... he's logged in — session cookies got set in the login popup`, async () => {
+    await owen_brA.topbar.assertMyUsernameMatches(owen.username);
+  });
+  it(`Owen sees the users list`, async () => {
+    await owen_brA.adminArea.users.switchToEnabled();
+    await owen_brA.adminArea.users.assertUsenamesAreAndOrder([
+            'michael', 'maria', 'memah', 'mod_modya', 'owen_owner']);
   });
 
 });

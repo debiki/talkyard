@@ -9686,12 +9686,14 @@ export class TyE2eTestBrowser {
         enabledUsersTabSelector: '.e_EnabledUsB',
         waitingUsersTabSelector: '.e_WaitingUsB',
 
-        goHere: async (origin?: St, opts: { loginAs? } = {}) => {
+        goHere: async (origin?: St, opts: { loginAs?, wait?: false } = {}) => {
           await this.go2((origin || '') + '/-/admin/users');
           if (opts.loginAs) {
             await this.loginDialog.loginWithPassword(opts.loginAs);
           }
-          await this.adminArea.users.waitForLoaded();
+          if (opts.wait !== false) {
+            await this.adminArea.users.waitForLoaded();
+          }
         },
 
 
@@ -10696,9 +10698,12 @@ export class TyE2eTestBrowser {
 
         if (opts.inPopup) {
           if (opts.willNeedToVerifyEmail !== false) {
+            // There's a "Need to verify password ... You can close this window"
+            // info message, I think.
             await this.closeWindowSwitchToOther();
           }
           else {
+            // The popup closes itself — no need for any info message.
             await this.switchBackToFirstTabOrWindow();
           }
         }
@@ -10863,10 +10868,9 @@ export class TyE2eTestBrowser {
             bodyMatchAfter?: St | false, resultInError?: Bo }) => {
         await this.forumButtons.clickCreateTopic();
 
-        // Don't, if not in emb iframes  [0_if_0_iframes]
-        if (await this.isInIframe2()) {
-          await this.rememberCurrentUrl();  // see _new_url_new_topic below
-          await this.switchToEmbeddedEditorIrame();  // will switch _back_here_001
+        if (await this.isInIframe2()) {               // [0_if_0_iframes]
+          await this.rememberCurrentUrl();            // see _new_url_new_topic below
+          await this.switchToEmbeddedEditorIrame();   // will switch _back_here_001
         }
 
         await this.editor.editTitle(data.title);
@@ -10886,10 +10890,9 @@ export class TyE2eTestBrowser {
 
         await this.editor.save();
 
-        // Don't, if not in emb iframes  [0_if_0_iframes]
-        if (await this.isInIframe2()) {
+        if (await this.isInIframe2()) {                 // [0_if_0_iframes]
           logMessage("editor iframe: Done.");
-          await this.switchToEmbeddedCommentsIrame();  // switching _back_here_001
+          await this.switchToEmbeddedCommentsIrame();   // switching _back_here_001
         }
 
         if (!data.resultInError) {
@@ -10975,8 +10978,7 @@ export class TyE2eTestBrowser {
               closeGuidelines?: Bo } = {}) => {
         await this.topic.clickReplyToOrigPost(whichButton);
 
-        // Don't, if not in emb iframes  [0_if_0_iframes]
-        if (await this.isInIframe2()) {
+        if (await this.isInIframe2()) {  // [0_if_0_iframes]
           await this.switchToEmbeddedEditorIrame();
         }
 
@@ -10998,8 +11000,7 @@ export class TyE2eTestBrowser {
         await this.editor.editText(text);
         await this.editor.save();
 
-        // Don't, if not in emb iframes  [0_if_0_iframes]
-        if (await this.isInIframe2()) {
+        if (await this.isInIframe2()) {  // [0_if_0_iframes]
           await this.switchToEmbeddedCommentsIrame();
         }
       },

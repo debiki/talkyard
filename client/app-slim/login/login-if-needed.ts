@@ -113,17 +113,11 @@ function loginIfNeededImpl(loginReason: LoginReason, toHash: St, toPath: St,
   }
 
   const makeReturnToUrl = (): St => {
-    /*
-    // This can't happen, currently. And, currently, `toPath` is a Talkyard URL path,
-    // not a path for any embedding website.
-    // Oops, happens if clicking Create Topic when not logged in, in emb iframe?
-    dieIf(toPath && eds.embeddingUrl, 'TyEREDIREMBNGPATH');
-    */
-
     const embgUrl = eds.embgUrl || eds.embeddingUrl;
     let url: St;
 
     if (toPath) {
+      // Either toPath or toHash, not both.
       dieIf(eds.isDev && toHash, 'TyE6026MS');
       if (eds.isInEmbForum) {
         const toPath2 = removeEmbeddingParams(toPath);
@@ -153,13 +147,14 @@ function loginIfNeededImpl(loginReason: LoginReason, toHash: St, toPath: St,
       }
       else {
         dieIf(eds.isDev && eds.isInIframe, 'TyE6026M8');
-        url = embgUrl || location.toString();
+        url = location.toString();
       }
 
       // (This can be a Talkyard hash, e.g. #post-123. But can also be  #comment-123 and
       // that's for the embedd*ing* website and Talkyard's script there, which looks at
       // the hash and scrolls to that comment in Ty's blog comments iframe.)
       if (toHash) {
+        dieIf(eds.isDev && toHash[0] !== '#', 'TyE6026M9');
         url = url.replace(/#.*/, '') + toHash;
       }
     }
@@ -173,7 +168,7 @@ function loginIfNeededImpl(loginReason: LoginReason, toHash: St, toPath: St,
   const returnToUrl_legacy = !redirFromEmailOnly ? returnToUrl_new : (
             eds.isInEmbForum
                 ? ('_RedirFromVerifEmailOnly_' + returnToUrl_new.replace(/#/, '__dwHash__'))
-                : makeReturnToPageHashForVerifEmail(toHash));
+                : makeReturnToPageHashForVerifEmail(toHash));  // legacy
 
   if (useLoginPopup) {
     // TESTS_MISSING: Compose comment before logging in? Then, we'd be  TyTEMBCOMPBEFLGI
@@ -385,14 +380,15 @@ export function continueAfterLogin(anyReturnToUrl?: St) {
     // We're 1) in an admin section login page (not a login popup)
     // or 2) on an ordinary page in a login-required site (not a login popup),
     // or 3) an embedded comments page login popup window.
-    if (anyReturnToUrl && anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1
-          // We never want to redirect the login popup after login? Either
-          // close it, or if there is none, continue in the same win?
-          && !win_isLoginPopup()) {
-      // [emb_forum] This won't work in a login-required embedded forum? Then should
-      // use `page.Hacks.navigateTo()` instead. But would that load all admin scripts,
-      // for example, if we're in fact in the admin area? Let's wait. (No one has asked
-      // for login-required *embedded* forums yet.)
+    if (anyReturnToUrl && anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1) {
+      // We never want to redirect the login popup after login? Either
+      // close it, or if there is none, continue in the same win?
+      // Related?: [emb_forum_gmail_login]
+      // TESTS_MISSING: Embedded forum with login-required-to-read.  TyTEF_LOGIREQ2
+      dieIf(eds.isDev && win_isLoginPopup(), 'TyE0FKH3R');
+      // [emb_forum] This won't happen because '_RedirFromVerifEmailOnly_' always added.
+      // Later: What about login-required embedded forums? Then maybe should redirect
+      // the window.opener? Which would be the forum in the iframe? Let's wait.
       window.location.assign(anyReturnToUrl);
     }
     else {
@@ -428,7 +424,7 @@ export function continueAfterLogin(anyReturnToUrl?: St) {
       // We're in a login popup window. Close it; continue in the window.opener.
       if (!window.opener) {
         // The user closed the main window, which opened this popup?
-        // (If instead the user colsed the popup window, but kept this main
+        // (If instead the user closed the popup window, but kept this main
         // window open, see:  [authn_win_gone].)
         pagedialogs.getServerErrorDialog().openForBrowserError(
           "You closed the main browser window, which we were going to " +

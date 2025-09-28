@@ -64,6 +64,11 @@ object MaxLimits {
   // get too vide, [pack_avatars_closer]).
   val MaxAssigneesPerPost: i32 = 5
 
+  // Was 1000 at two places, 5000 at one.
+  val MaxUpsertUserBytes = 5000
+
+  // Later, could make configurable.
+  val MaxDoApiBytes = 100 * 1000
 }
 
 

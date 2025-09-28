@@ -204,7 +204,9 @@ const tyAssert = {
           `Wrong num matches of:  ${regex}  in:  ${inlineOrDashPara(text)}`);
   },
 
-  /// Verifies that there's a CSP violation.
+  /// Verifies that there's been a Content-Security-Policy (CSP) frame-ancestors violation.
+  ///
+  /// Maybe move to  TyE2eTestBrowser  so the [forgotten_e2e_await] will work?
   ///
   contentSecurityPolicyViolation: async (brX: TyE2eTestBrowser, okayAncestors: St): Pr<Vo> => {
     // There is an iframe but it's empty, because the Content-Security-Policy frame-ancestors
@@ -225,7 +227,6 @@ const tyAssert = {
     logMessage(`\nBrowser log messages: ${msgs.map(m => j2s(m))}\n`);
     let numMatches = 0;
     for (let m of msgs) {
-      // Break out test or err msg?
       if (m.message.indexOf(ancErrMsg) >= 0) {
         if (m.message.indexOf(fullMsg) >= 0) {
           numMatches += 1;
