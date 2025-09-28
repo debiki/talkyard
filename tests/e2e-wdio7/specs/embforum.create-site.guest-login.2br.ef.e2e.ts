@@ -174,7 +174,7 @@ describe(`embforum.create-site.guest-login.2br.ef  TyTEF_CRSITE_GSTLGI`, () => {
   });
   it(`... gets redirected to the page that embeds the forum`, async () => {
     await maria_brB.updateIsWhere();
-    assert.eq(maria_brB.isWhere(), IsWhere.EmbeddingPage);
+    assert.eq(maria_brB.isWhere(), IsWhere.EmbeddingPage);  // 0await
   });
 
   it(`Maria posts a new topic`, async () => {

@@ -17,7 +17,7 @@ if [ `id -u` -eq 0 ]; then
 fi
 
 # '0await' means it's intentionally been left out.  [forgotten_e2e_await]
-await_maybe_missing=$(egrep -n -r '[a-z]_br[A-Z][a-zA-Z0-9_]*\..*\(' tests/e2e-wdio7/specs/ | grep -v '\bawait ' | grep -v '\b0await ' | grep -v '\bnew ' | grep -v '_sync\b')
+await_maybe_missing=$(egrep -n -r '[a-z]_br[A-Z][a-zA-Z0-9_]*\..*\(' tests/e2e-wdio7/specs/ | grep -v '\bawait ' | grep -v '\b0await' | grep -v '\bnew ' | grep -v '_sync\b')
 if [ ! -z "$await_maybe_missing" ]; then
   echo
   echo "Maybe E2E bugs — could await be missing? Check these lines:"
