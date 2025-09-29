@@ -145,6 +145,7 @@ describe(`embforum.create-site.guest-login.2br.ef  TyTEF_CRSITE_GSTLGI`, () => {
   });
   it(`... sees another _CSP error about the new domain — it's not  typo-domain  TyTSEC_FRAMEANC`,
           async () => {
+    await maria_brB.pause(1000); // [E2EBUG] need to wait until message appears
     await assert.contentSecurityPolicyViolation(maria_brB,
             `frame-ancestors https://typo-domain.example.com`);
   });
