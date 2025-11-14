@@ -741,9 +741,12 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
     loadUsersAsSeq(userIds.toList)
 
 
-  def loadUsersAsSeq(userIds: immutable.Seq[UserId]): List[Participant] = {
+  def loadUsersAsSeq(userIds: immutable.Seq[UserId]): ImmSeq[Pat] = {
     val usersBySiteAndId = asSystem.loadUsers(Map(siteId -> userIds))
-    usersBySiteAndId.values.toList
+    // Keep order, so any previous order-by of other queries is respected, and e2e tests won't break.
+    userIds flatMap { userId =>
+      usersBySiteAndId.get((siteId, userId))
+    }
   }
 
 

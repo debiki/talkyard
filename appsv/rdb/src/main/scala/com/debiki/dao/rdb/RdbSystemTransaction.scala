@@ -204,6 +204,7 @@ class RdbSystemTransaction(
   }
 
 
+  RENAME // to loadPats or loadPatsBySiteIds
   def loadUsers(userIdsByTenant: Map[SiteId, immutable.Seq[UserId]]): Map[(SiteId, UserId), Participant] = {
     var idCount = 0
 
