@@ -134,6 +134,9 @@ package object search {
     * based on search hits.  E.g. double checking with the main db if a post
     * is really still accessible (mabye it got deleted, or authors &
     * assignees changed, and there's an entry in job_queue_t to reindex it).
+    *
+    * Later: Also incl more detailed info about what was hit, e.g. if a tag or
+    * a tag value matched the search query. [show_hit_tags]
     */
   case class SearchHit(
     siteId: SiteId,

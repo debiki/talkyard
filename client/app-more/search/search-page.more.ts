@@ -426,6 +426,12 @@ function SearchResultHit(props: { hit: any, urlPath: string, key?: string | numb
       // Maybe it's pretty clear that the text just below the title is the original
       // post? Let's skip "_in_the_page_text" — let's show only "In a comment:"
       // (for comments).
+      //
+      // UX: Later, also highlight any *tags* that matched the query, [show_hit_tags]
+      // both to make it clear why the search result was included, and also so can write
+      // better e2e tests — now instead there's an annoying `countTitleLinks` extra param
+      // to  TyE2eTestBrowser.searchResultsPage.assertResultLinksAre().
+      //
       hit.postNr === TitleNr || hit.postNr === BodyNr ? null :
         r.span({ className: 'esSERP_Hit_In' },
               "In ", LinkUnstyled({ to: `${props.urlPath}#post-${hit.postNr}`,   // I18N

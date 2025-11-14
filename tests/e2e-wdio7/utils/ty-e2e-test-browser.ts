@@ -8061,18 +8061,25 @@ export class TyE2eTestBrowser {
         await this.waitAndGetElemWithText('.c_SR_Ttl', title, { timeoutMs: 1 });
       },
 
-      getHitLinks: async (): Pr<(St | U)[]> => {
-        return await this.waitAndGetListLinks(
-              '.esSERP_Hit_In a, .c_SR_Ttl-HitTtl a, .c_SR_Ttl-HitOp a');
+      /// countTitleLinks: needed because if only *tags* are hit, all `textHitSels` will be
+      /// absent. Then we need another selector to find the relevant search hits on the
+      /// search results page.
+      /// Would be good with a '..._Tag-Hit', later, maybe '..._Tag_Val-Hit',  [show_hit_tags]
+      /// to clarify that a tag, and which tag, matched the search query.
+      ///
+      getHitLinks: async (ps: { countTitleLinks?: Bo } = {}): Pr<(St | U)[]> => {
+        const textHitSels = '.esSERP_Hit_In a, .c_SR_Ttl-HitTtl a, .c_SR_Ttl-HitOp a';
+        const hitSels = ps.countTitleLinks ? textHitSels + ', .c_SR_Ttl a' : textHitSels;
+        return await this.waitAndGetListLinks(hitSels);
       },
 
-      assertResultLinksAre: async (expected: St[], ps: { anyOrder: Bo } = {}) => {
+      assertResultLinksAre: async (expected: St[], ps: { anyOrder?: Bo,
+              countTitleLinks?: Bo} = {}) => {
         const exp = ps.anyOrder ? [...expected].sort() : expected;
-        const actualLinks: (St | U)[] = await this.searchResultsPage.getHitLinks();
+        const actualLinks: (St | U)[] = await this.searchResultsPage.getHitLinks(ps);
         const act = ps.anyOrder ? [...actualLinks].sort() : actualLinks;
-        const showHits = () => (!ps.anyOrder ? '' :
-                `\n   Any order,`) +
-                `\n   All hit links: ${j2s(act)
+        const showHits = () => `\n  ps: ${j2s(ps)
+                }\n   All hit links: ${j2s(act)
                 }\n   All expected:  ${j2s(exp)}\n`;
 
         for (let i = 0; i < exp.length; ++i) {

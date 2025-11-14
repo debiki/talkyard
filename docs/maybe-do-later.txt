@@ -1328,6 +1328,9 @@ Surprising search behavior:
   - Only exact tag matches too [how_ix_page_tags]  (not comments on a tagged page).
   - "is:aa,bb,cc" is incorrectly interpreted as  "is:aa is:bb is:cc".
 
+[show_hit_tags]
+Highlight tags that matched the search query. (Currently highlights only *text*.) Cats too?
+
 [rebuild_reindex_posts]
 A background job that regenerates html (CommonMark –> html) and
 renindexes all posts (or all posts in a category / tag / by certain participants).
