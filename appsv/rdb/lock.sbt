@@ -31,7 +31,7 @@ Compile / dependencyOverrides ++= {
       "org.checkerframework" % "checker-qual" % "3.49.3",
       "org.flywaydb" % "flyway-core" % "5.2.4",
       "org.jspecify" % "jspecify" % "1.0.0",
-      "org.owasp.encoder" % "encoder" % "1.3.1",
+      "org.owasp.encoder" % "encoder" % "1.4.0",
       "org.playframework" % "play-functional_2.13" % "3.0.5",
       "org.playframework" % "play-json_2.13" % "3.0.5",
       "org.postgresql" % "postgresql" % "42.7.7",

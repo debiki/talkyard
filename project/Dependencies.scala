@@ -101,7 +101,7 @@ object Dependencies {
     val apacheTika = "org.apache.tika" % "tika-core" % "3.2.3"
 
     // See: https://github.com/OWASP/owasp-java-encoder/releases
-    val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.3.1"
+    val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.4.0"
 
     // See: https://github.com/jhy/jsoup/releases
     val jsoup = "org.jsoup" % "jsoup" % "1.21.2"
