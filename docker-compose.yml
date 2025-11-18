@@ -297,17 +297,14 @@ services:
   # The same as the 'test' container, except that 'nodejs' won't start the rest of
   # the stack, instead it just transpiles Typescript and Stylus.
   nodejs:
-    # RENAME dir from gulp to nodejs
-    build: images/gulp/
-    # RENAME img from -gulp to -nodejs
-    image: ${DOCKER_REPOSITORY}/talkyard-gulp
+    build: images/nodejs/
+    image: ${DOCKER_REPOSITORY}/talkyard-nodejs
     tty: true  # colored logs
     volumes:
       - ./:/opt/talkyard/server/   # [NODEHOME]
     #command: ['yarn install && gulp watch']
     # But 'exit 0' won't work — not an executable file,
     command: ['echo']
-
 
   # Ghost e2e test container — move it to  docker-compose.it.yml  later.
   #
