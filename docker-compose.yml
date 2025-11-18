@@ -309,16 +309,6 @@ services:
     command: ['echo']
 
 
-  # Would like to remove, but is incl in talkyard-prod-one's Compose file already,
-  # and would cause errors, if removed here, and people then upgrade? (because new version
-  # couldn't be downloaded). Remove in Ty v1  [ty_v1].
-  certgen:
-    build: images/certgen/
-    image: ${DOCKER_REPOSITORY}/talkyard-certgen
-    # Only want to build (but not run) this container, in dev/test mode.
-    command: 'echo'
-
-
   # Ghost e2e test container — move it to  docker-compose.it.yml  later.
   #
   # Ghost integration test. Docs, over at Ghost:
