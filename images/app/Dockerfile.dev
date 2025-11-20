@@ -49,9 +49,8 @@ RUN \
   telnet
   #busybox-extras
 
-# [ty_v1] Upgr sbt?
 # ADD extracts tar archives; this .tgz gets unpacked at /opt/sbt/{bin/,conf/}.
-ADD  sbt/sbt-1.4.5.tgz  /opt/
+ADD  sbt/sbt-1.11.7.tgz  /opt/
 
 # Install 'gosu' so we can use it instead of 'su'.
 # For unknown reasons, '  exec su ...' no longer works, but 'exec gosu ...' works fine.
