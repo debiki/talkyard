@@ -54,28 +54,3 @@ addDependencyTreePlugin
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.12.0")
 
 
-// [ty_v1] Remove this?  Maybe picks an ok  scala-xml  nowadays?
-// Pointless problems
-// ---------------------------------------------------------------
-
-// This still a problem with Play 2.9 & Scala 2.13?:
-// Picks scala-xml 2.1 over 1.1 — otherwise there the below version conflict error
-// (when just loading the project) with Scala 2.12.18 or 2.12.19 because they use
-// scala-xml 2.x but Play and SBT use 1.x.
-//
-// 2.1 and 1.x are binary compatible, sort of, so this is ok, see e.g.
-// https://github.com/sbt/sbt/issues/6997  and  https://github.com/scala/bug/issues/12632
-// search for "libraryDependencySchemes".
-//
-// The version conflict error:
-//
-//    java.lang.RuntimeException: found version conflict(s) in library dependencies;
-//         some are suspected to be binary incompatible:
-//  	* org.scala-lang.modules:scala-xml_2.12:2.1.0 (early-semver) is selected over {1.2.0, 1.1.1}
-//  	    +- org.scala-lang:scala-compiler:2.12.18              (depends on 2.1.0)
-//  	    +- com.typesafe.sbt:sbt-native-packager:1.5.2 (scalaVersion=2.12, sbtVersion=1.0) (depends on 1.1.1)
-//  	    +- com.typesafe.play:twirl-api_2.12:1.5.1             (depends on 1.2.0)
-//
-ThisBuild / libraryDependencySchemes +=
-    "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
-
