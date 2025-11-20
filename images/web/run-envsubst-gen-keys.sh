@@ -1,24 +1,23 @@
 #!/bin/bash
 
-# Replace variable placeholders, like in 'limit_rate_after ${ED_NGX_LIMIT_RATE_AFTER}',
+# Replace variable placeholders, like in 'limit_rate_after ${TY_NGX_LIMIT_RATE_AFTER}',
 # with OS environment variable values.
 # Don't forget to add default values in the Dockerfile. [0KW2UY3]
-# RENAME from ED_* to TY_*  [ty_v1]
 
 vars='
   \${TY_NGX_ACCESS_LOG_PATH}
   \${TY_NGX_ACCESS_LOG_CONFIG}
   \${TY_NGX_ERROR_LOG_PATH}
   \${TY_NGX_ERROR_LOG_LEVEL}
-  \${ED_NGX_LIMIT_CONN_PER_IP}
-  \${ED_NGX_LIMIT_CONN_PER_SERVER}
-  \${ED_NGX_LIMIT_REQ_PER_IP}
-  \${ED_NGX_LIMIT_REQ_PER_IP_BURST}
-  \${ED_NGX_LIMIT_REQ_PER_SERVER}
-  \${ED_NGX_LIMIT_REQ_PER_SERVER_BURST}
+  \${TY_NGX_LIMIT_CONN_PER_IP}
+  \${TY_NGX_LIMIT_CONN_PER_SERVER}
+  \${TY_NGX_LIMIT_REQ_PER_IP}
+  \${TY_NGX_LIMIT_REQ_PER_IP_BURST}
+  \${TY_NGX_LIMIT_REQ_PER_SERVER}
+  \${TY_NGX_LIMIT_REQ_PER_SERVER_BURST}
   \${TY_NGX_LIMIT_REQ_BODY_SIZE}
-  \${ED_NGX_LIMIT_RATE}
-  \${ED_NGX_LIMIT_RATE_AFTER}
+  \${TY_NGX_LIMIT_RATE}
+  \${TY_NGX_LIMIT_RATE_AFTER}
   \${TY_MAX_AGE_YEAR}
   \${TY_MAX_AGE_MONTH}
   \${TY_MAX_AGE_WEEK}

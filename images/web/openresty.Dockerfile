@@ -438,24 +438,23 @@ COPY run-envsubst-gen-keys.sh /etc/nginx/run-envsubst-gen-keys.sh
 RUN  chmod ugo+x              /etc/nginx/run-envsubst-gen-keys.sh
 
 # Sync w vars in  run-envsubst-gen-keys.sh  and  docker-compose-no-limits.yml  [0KW2UY3].
-# CLEAN_UP change prefix to TY_  [ty_v1]
 #
-# ED_NGX_LIMIT_CONN_PER_IP=60 is a lot? But maybe some people connect from
+# TY_NGX_LIMIT_CONN_PER_IP=60 is a lot? But maybe some people connect from
 # an office building, same IP addr?
 #
 # Set the default allowed request body size to something fairly large — 25m (megabytes)
 # — so self hosted people can upload Mac Retina screenshots (they're maybe 10 MB) and
 # small videos, without having to ask for help at Talkyard.io.
 ENV \
-    ED_NGX_LIMIT_CONN_PER_IP=60 \
-    ED_NGX_LIMIT_CONN_PER_SERVER=10000 \
-    ED_NGX_LIMIT_REQ_PER_IP=30 \
-    ED_NGX_LIMIT_REQ_PER_IP_BURST=200 \
-    ED_NGX_LIMIT_REQ_PER_SERVER=200 \
-    ED_NGX_LIMIT_REQ_PER_SERVER_BURST=2000 \
+    TY_NGX_LIMIT_CONN_PER_IP=60 \
+    TY_NGX_LIMIT_CONN_PER_SERVER=10000 \
+    TY_NGX_LIMIT_REQ_PER_IP=30 \
+    TY_NGX_LIMIT_REQ_PER_IP_BURST=200 \
+    TY_NGX_LIMIT_REQ_PER_SERVER=200 \
+    TY_NGX_LIMIT_REQ_PER_SERVER_BURST=2000 \
     TY_NGX_LIMIT_REQ_BODY_SIZE=25m \
-    ED_NGX_LIMIT_RATE=50k \
-    ED_NGX_LIMIT_RATE_AFTER=5m \
+    TY_NGX_LIMIT_RATE=50k \
+    TY_NGX_LIMIT_RATE_AFTER=5m \
     # Wait with setting this to a year (31536000), until things more tested.
 		# ('s-maxage = ...' and 'public' are for shared proxies and CDNs)
     TY_MAX_AGE_YEAR="max-age=2592000, s-maxage=2592000, public" \
