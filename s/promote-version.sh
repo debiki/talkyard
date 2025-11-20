@@ -150,11 +150,6 @@ cd relchans/$promote_to_branch
   echo
   set -x
   git push origin $promote_to_branch
-  # 'master' is for backw compat. Don't incl in v1. [ty_v1]
-  if [ "$promote_to_branch" = 'tyse-v0-regular' ]; then
-    git branch -f master
-    git push origin master
-  fi
 popd
 
 # Future tag name:
