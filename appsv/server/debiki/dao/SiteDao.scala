@@ -66,12 +66,13 @@ class SiteDaoFactory (
   private val redisClient: RedisClient,
   private val cache: DaoMemCache,
   private val usersOnlineCache: UsersOnlineCache,
-  private val elasticSearchAsyncClient: es8.ElasticsearchAsyncClient,
+  // Used to be an es8.ElasticsearchAsyncClient. [ES8_async]
+  private val elasticSearchClient: es8.ElasticsearchClient,
   private val config: Config) {
 
   def newSiteDao(siteId: SiteId): SiteDao = {
     new SiteDao(siteId, context, _dbDaoFactory, redisClient, cache, usersOnlineCache,
-      elasticSearchAsyncClient, config)
+      elasticSearchClient, config)
   }
 
 }
@@ -139,7 +140,8 @@ class SiteDao(
   private val redisClient: RedisClient,
   private val cache: DaoMemCache,
   val usersOnlineCache: UsersOnlineCache,
-  private val elasticSearchAsyncClient: es8.ElasticsearchAsyncClient,
+  // Used to be an es8.ElasticsearchAsyncClient. [ES8_async]
+  private val elasticSearchClient: es8.ElasticsearchClient,
   val config: Config)
   extends AnyRef
   with TyLogging
@@ -180,7 +182,7 @@ class SiteDao(
 
   lazy val redisCache = new RedisCache(siteId, redisClient, context.globals.now _)
 
-  protected lazy val searchEngine = new SearchEngine(siteId, elasticSearchAsyncClient,
+  protected lazy val searchEngine = new SearchEngine(siteId, elasticSearchClient,
         ffIxMapping2 = theSite().isFeatureEnabled("ffIxMapping2", globals.config.featureFlags))
 
   def readOnly: ReadOnlySiteDao = this.asInstanceOf[ReadOnlySiteDao]
@@ -188,7 +190,7 @@ class SiteDao(
   def copyWithNewSiteId(siteId: SiteId): SiteDao =
     new SiteDao(
           siteId = siteId, context, dbDaoFactory, redisClient, cache,
-          usersOnlineCache, elasticSearchAsyncClient, config)
+          usersOnlineCache, elasticSearchClient, config)
 
   def globals: debiki.Globals = context.globals
   def jsonMaker = new JsonMaker(this)

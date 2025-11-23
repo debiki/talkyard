@@ -111,7 +111,8 @@ package object search {
     * Created using ElasticSearch version 8.17 or later.
     * Always English, for now.  [es_wrong_lang]
     *
-    * Format: "posts_" + "es" + ES version + "_v1_" + language code  (skip country code)
+    * Format: "posts_" + "es9" + ES version 9 + "_v1_" Talkyard epoch
+    *          + language code (skip country code)
     *
     * Include language, because: """A single predominant language per document requires
     * a relatively simple setup. Documents from different languages can be stored
@@ -119,7 +120,7 @@ package object search {
     * See: https://www.elastic.co/guide/en/elasticsearch/guide/current/one-lang-docs.html
     * More: https://www.elastic.co/guide/en/elasticsearch/guide/current/language-intro.html
     */
-  val IndexName = "posts_es8_v1_en"
+  val IndexName = "posts_es9_v1_en"
 
   // ?? Later, there might be more indexes, e.g. one for deleted posts (which can be
   // good to be able to search, but isn't usually done, no need for high performance). ??

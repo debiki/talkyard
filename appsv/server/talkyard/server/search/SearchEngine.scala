@@ -46,7 +46,8 @@ import java.util.concurrent.{CompletableFuture => j_CompletableFuture}
 
 class SearchEngine(
   private val siteId: SiteId,
-  private val elasticSearchAsyncClient: es8.ElasticsearchAsyncClient,
+  //private val elasticSearchAsyncClient: es8.ElasticsearchAsyncClient,
+  private val elasticSearchClient: es8.ElasticsearchClient,
   private val ffIxMapping2: Bo) extends TyLogging {
 
   /**
@@ -517,7 +518,8 @@ class SearchEngine(
 
     // ----- Put it all together
 
-    var searchReqBuilder = new es8.async_search.SubmitRequest.Builder()
+    //r searchReqBuilder = new es8.async_search.SubmitRequest.Builder() // [ES8_async]
+    var searchReqBuilder = new es8.core.SearchRequest.Builder()
           .index(IndexName)
           .routing(siteId.toString)
           .query(boolBuilder.build()._toQuery())
@@ -537,7 +539,7 @@ class SearchEngine(
       searchReqBuilder = searchReqBuilder.from(ofs)
     }
 
-    val searchReq = searchReqBuilder.build()
+    val searchReq: es8.core.SearchRequest = searchReqBuilder.build()
 
     /*
     val requestBuilder: SearchRequestBuilder = elasticSearchClient.prepareSearch(IndexName)
@@ -566,6 +568,18 @@ class SearchEngine(
 
     val promise = Promise[immutable.Seq[SearchHit]]()
 
+    // Bit hacky — had to port from the ES 8 async API to the sync API.
+    try {
+      // Synchronous execution - this call blocks until a response is received
+      val response: es8.core.SearchResponse[es8_JsonData] =
+            elasticSearchClient.search(searchReq, classOf[es8_JsonData])
+      _handleResponse(response, null, searchQuery.fullTextQuery, searchReq, promise)
+    } catch {
+      case ex: Exception =>
+        _handleResponse(null, ex, searchQuery.fullTextQuery, searchReq, promise)
+    }
+
+    /*---- [ES8_async] ----------------------------
     val asyncResp: j_CompletableFuture[es8.async_search.SubmitResponse[es8_JsonData]] =
           // es8.async_search.SubmitResponse[es8_JsonData]  — if sync client and asyncSearch()
           elasticSearchAsyncClient.asyncSearch()
@@ -574,18 +588,26 @@ class SearchEngine(
     asyncResp.whenComplete((asyncResponseOrNull, exOrNull) =>
           this._handleResponse(asyncResponseOrNull, exOrNull, searchQuery.fullTextQuery,
                 searchReq, promise))
+    ---------------------------------------------*/
 
     promise.future
   }
 
-
   private def _handleResponse(
+           responseOrNull: es8.core.SearchResponse[es8_JsonData],
+           exOrNull: Throwable,
+           rawQuery: St,
+           searchReq: es8.core.SearchRequest,
+           promise: Promise[immutable.Seq[SearchHit]]): U = {
+
+    /*---- [ES8_async] ----------------------------
             asyncResponseOrNull: es8.async_search.SubmitResponse[es8_JsonData],
             exOrNull: Throwable,
             rawQuery: St,
             searchReq: es8.async_search.SubmitRequest,
             promise: Promise[immutable.Seq[SearchHit]]): U = {
     // (Not the actor's thread. This is some thread controlled by ElasticSearch. [async_search])
+    ---------------------------------------------*/
 
     if (exOrNull != null) {
       // Will this be json?
@@ -594,6 +616,7 @@ class SearchEngine(
       return
     }
 
+    /*---- [ES8_async] ----------------------------
     // Shouldn't happen. Either an exception, or a response — we're in `whenComplete()`.
     if (asyncResponseOrNull == null) {
       logger.error(o"""Got nothing from ElasticSearch: No exception, no response,
@@ -616,6 +639,9 @@ class SearchEngine(
     }
 
     val searchResp: es8.async_search.AsyncSearch[es8_JsonData] = asyncResp.response()
+    ---------------------------------------------*/
+
+    val searchResp = responseOrNull
     val hitsMetadata: es8.core.search.HitsMetadata[es8_JsonData] = searchResp.hits()
     val hitsList: ju.List[es8.core.search.Hit[es8_JsonData]] = hitsMetadata.hits()
 

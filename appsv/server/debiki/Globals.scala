@@ -1430,7 +1430,10 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
     val siteDaoFactory = new SiteDaoFactory(
           edContext, dbDaoFactory, redisClient, cache, usersOnlineCache,
-          elasticSearchAsyncClient, config)
+          // Can't use the elasticSearchAsyncClient  [ES8_async]
+          // there's some — ES 8 client <——> ES 9 server incompatibility.
+          elasticSearchClient,
+          config)
 
     val mailerActorRef: ActorRef = MailerActor.startNewActor(
           actorSystem, siteDaoFactory, conf, now _, isProd)
