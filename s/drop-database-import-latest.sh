@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "This script not yet migrated to Talkyard v1. It won't work. Doing nothing. Bye."
+exit 1
+
 docker ps >> /dev/null
 if [ $? -eq 1 ] ; then
   echo "If the Docker daemon *is* running — then you can try with 'sudo'?"

@@ -330,7 +330,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
     }
 
     if (jsonConf.inclOldCategoryIdField) {
-      res += "categoryId" -> JsNumber(category.id)  // REMOVE  [ty_v1]
+      res += "categoryId" -> JsNumber(category.id)  // REMOVE  [ty_v2]
     }
 
     res
@@ -387,7 +387,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
     }
 
     if (jsonConf.inclOldPpIdField) {
-      json += "ppId" -> JsNumber(pat.id)  // REMOVE  [ty_v1]
+      json += "ppId" -> JsNumber(pat.id)  // REMOVE  [ty_v2]
     }
 
     json

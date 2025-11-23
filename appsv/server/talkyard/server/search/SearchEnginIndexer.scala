@@ -133,7 +133,7 @@ class IndexingActor(
       if (!doneCreatingIndexes) {
         val newIndexes: Seq[IndexSettingsAndMappings] =
               indexCreator.createIndexesIfNeeded(client)
-        BUG; COULD // fix in [ty_v1]? What if, when starting the *very first* time,
+        BUG; COULD // fix in [ty_v2]? [search_hmm] What if, when starting the *very first* time,
         // the server crashes here?  Then, after restart, newIndexes would be empty,
         // and we wouldn't index everything.
         // Can be fixed by deleting the (empty) indexes, or, better, and as mentioned in

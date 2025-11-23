@@ -41,7 +41,8 @@ images/web/openresty-pkgs/usr-local-openresty-site/lualib/resty/acme/autossl.lua
 Empty the db: (or `FLUSHALL` to empty all dbs — but Ty uses just one)
 
 Don't do in Prod — the LetsEncrypt certs are kept in Redis.
-[ty_v1] A 2nd Redis instance for certs?
+Later: A 2nd Redis instance for certs? Or use Redis *only* for things we *want* to
+keep in-memory, and a [careless_rdb] for other cache stuff?
 (Better than using different dbs in the same Redis process)
 
 ```

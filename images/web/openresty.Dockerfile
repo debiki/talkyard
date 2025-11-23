@@ -127,7 +127,7 @@ ARG CONFIG="\
   # Or maybe works now with OpenResty?
   --with-http_v2_module \
   \
-  # Let's wait? DO_AFTER 2024-07-01:  or in [ty_v1]
+  # Let's wait? DO_AFTER 2024-07-01:  or in [ty_v2]
   # --with-http_v3_module \
   \
   # --with-ipv6 \

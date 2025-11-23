@@ -158,7 +158,7 @@ const authnTokenCookieMatches: St[] | Nl = (
         document.cookie.match(
             // (There're no spaces in PASETO tokens.)
             /(^|;)\s*__Host-TalkyardAuthnToken\s*=\s*([^\s;]+)/) ||
-        // Backw compat. Remove later? [ty_v1]
+        // Backw compat. Remove later? [ty_v2]
         document.cookie.match(
                    /(^|;)\s*TalkyardAuthnToken\s*=\s*([^\s;]+)/));
 const authnTokenInCookie: StV = authnTokenCookieMatches ? authnTokenCookieMatches[2] : null;
@@ -615,7 +615,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
   const commentsIframe = Bliss.create('iframe', {
     id: 'ed-embedded-comments',
     name: 'edComments-' + iframeNr,
-    // Isn't ty_EmbComments a better name? ty_EmbComments, EmbForum, EmbEditor, EmbSesison? [ty_v1]
+    // Isn't ty_EmbComments a better name? ty_EmbComments, EmbForum, EmbEditor, EmbSesison? [ty_v2]
     className: 'p_CmtsIfr ty_CmtsIfr',   // DEPRECATE old name p_CmtsIfr
     // A title attr, for better accessibility. See: https://www.w3.org/TR/WCAG20-TECHS/H64.html
     title: iframeTitle || "Comments",

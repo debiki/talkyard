@@ -52,14 +52,13 @@ how to use docker-compose already.
 
        sudo sysctl --system
 
-1. You need Git, Make, cURL, `jq` for viewing logs, `gpg2` for checking signatures,
+1. You need Git, cURL, `jq` for viewing logs, `gpg2` for checking signatures,
     and a file change notifier:  (hmm maybe use `gpg` instead, it's the same as gpg2
     at least in Debian 11?)
 
-    [ty_v1] Skip Make? getting it via a Nix flake instead. The other tools too? Not Git though.
 
     ```
-    sudo apt install git make curl jq gpg gnupg2 inotify-tools
+    sudo apt install git curl jq gpg gnupg2 inotify-tools
     ```
 
 1.  Install the Nix package manager, see: see https://nixos.org/download.html.
