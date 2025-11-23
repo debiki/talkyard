@@ -368,8 +368,7 @@ class PlainApiActions(
                 XsrfOk(s"_${username}_"), None, block)
       }
 
-      DO_AFTER // 2021-08-01 enable this always. Test in dev-test first, for now.  [ty_v1]
-      throwForbiddenIf(Globals.isDevOrTest && !dao.getWholeSiteSettings().enableApi,
+      throwForbiddenIf(!dao.getWholeSiteSettings().enableApi,
             "TyEAPI0ENB_", "API not enabled")
 
       val apiSecret = dao.getApiSecret(secretKey) getOrElse {
