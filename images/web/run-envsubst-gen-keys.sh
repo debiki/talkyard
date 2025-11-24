@@ -5,9 +5,7 @@
 # Don't forget to add default values in the Dockerfile. [0KW2UY3]
 
 vars='
-  \${TY_NGX_ACCESS_LOG_PATH}
   \${TY_NGX_ACCESS_LOG_CONFIG}
-  \${TY_NGX_ERROR_LOG_PATH}
   \${TY_NGX_ERROR_LOG_LEVEL}
   \${TY_NGX_LIMIT_CONN_PER_IP}
   \${TY_NGX_LIMIT_CONN_PER_SERVER}
@@ -31,27 +29,8 @@ vars='
 # everything here.
 
 
-if [ -n "$TY_LOG_TO_STDOUT_STDERR" ]; then
-  # (Related: https://stackoverflow.com/questions/22541333/have-nginx-access-log-and-error-log-log-to-stdout-and-stderr-of-master-process )
-  TY_NGX_ACCESS_LOG_PATH=/dev/stdout
-  ## stderr won't work — nothing gets logged at all, why not?
-  ## However Postgres logs everything to stderr (if logging_collector=off)
-  ## and those messages do appear!
-  # TY_NGX_ERROR_LOG_PATH=/dev/stderr
-  ## Oh well, lets just use stdout instead:
-  TY_NGX_ERROR_LOG_PATH=/dev/stdout
-else
-  # It'd be pointless to change this — it's inside the container. Instead,
-  # one could mount different files or directory on the host OS.
-  TY_NGX_ACCESS_LOG_PATH=/var/log/nginx/access.log
-  TY_NGX_ERROR_LOG_PATH=/var/log/nginx/error.log
-fi
-
-
 # [ty_alogfmt]
-TY_NGX_ACCESS_LOG_PATH=${TY_NGX_ACCESS_LOG_PATH}  \
 TY_NGX_ACCESS_LOG_CONFIG="${TY_NGX_ACCESS_LOG_CONFIG:-tyalogfmt}"  \
-TY_NGX_ERROR_LOG_PATH=${TY_NGX_ERROR_LOG_PATH}  \
 TY_NGX_ERROR_LOG_LEVEL="${TY_NGX_ERROR_LOG_LEVEL:-info}"  \
   \
   envsubst "$vars" < /etc/nginx/nginx.conf.template           > /etc/nginx/nginx.conf

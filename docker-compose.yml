@@ -59,8 +59,6 @@ services:
       - cache
     logging: *default_logging
     environment:
-      # When debugging, it's nice to see everything if typing `docker-compose logs`.
-      TY_LOG_TO_STDOUT_STDERR: '1'
       TY_NGX_ERROR_LOG_LEVEL: 'debug'
       #TY_NGX_ACCESS_LOG_CONFIG: 'tyalogfmt'
       #TY_NGX_LIMIT_REQ_BODY_SIZE: "5m"
