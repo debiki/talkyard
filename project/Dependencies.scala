@@ -45,10 +45,11 @@ object Dependencies {
     // supports listener-notify.
     // https://stackoverflow.com/questions/21632243/
     //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
-    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.7.7"
+    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.7.8"
 
     // HikariCP — "A solid high-performance JDBC connection pool at last"
-    val hikariCp = "com.zaxxer" % "HikariCP" % "6.3.0"
+    // See: https://github.com/brettwooldridge/HikariCP
+    val hikariCp = "com.zaxxer" % "HikariCP" % "6.3.3"
 
     // ElasticSearch 8 Java client. (Don't use the REST client, it's deprecated.)
     // Can't use the ES 9 Java client — it needs Java 17, but we're on Java 11. [java_11_to_17]
@@ -120,14 +121,14 @@ object Dependencies {
 
     // Fluentd better understands json logs.
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.18"
+    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.21"
 
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
-    val logbackCore = "ch.qos.logback" % "logback-core" % "1.5.18"
+    val logbackCore = "ch.qos.logback" % "logback-core" % "1.5.21"
 
     // See: https://github.com/logfellow/logstash-logback-encoder/releases
     // and: https://mvnrepository.com/artifact/net.logstash.logback/logstash-logback-encoder
-    // Don't upgr to v9 — has minimum Java version 17.
+    // Can't use 9.0 — requires Java >= 17.  [java_11_to_17]
     val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "8.1"
     //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
 
