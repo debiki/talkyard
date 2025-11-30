@@ -35,6 +35,7 @@ import scala.collection.mutable
 import talkyard.server.TyLogger
 import java.io.IOException
 import Prelude._
+import org.scalactic.{Good, Or, Bad}
 
 
 
@@ -43,20 +44,27 @@ class IndexCreator {
   private val languagesLogged = mutable.HashSet[String]()
   private val logger = TyLogger("IndexCreator");
 
+  @volatile
+  private var _numConnFails = 0
+
   /** Returns all indexes that were created. Everything in the languages used in these
     * indexes should be (re)indexed.
     */
-  def createIndexesIfNeeded(client: es8.ElasticsearchClient): Seq[IndexSettingsAndMappings] = {
+  def createIndexesIfNeeded(client: es8.ElasticsearchClient)
+        : Seq[IndexSettingsAndMappings] Or ErrMsg = Good {
     Indexes filter { indexSettings =>
-      createIndexIfNeeded(indexSettings, client)
+      _createIndexIfNeeded(indexSettings, client) getOrIfBad { msg =>
+        // Since there's currently [only_1_ix], this works:
+        return Bad(msg)
+      }
     }
   }
 
 
   /** Returns true iff the index was created. (False if it already exists.)
     */
-  def createIndexIfNeeded(indexSettings: IndexSettingsAndMappings,
-        client: es8.ElasticsearchClient): Bo = {
+  private def _createIndexIfNeeded(indexSettings: IndexSettingsAndMappings,
+        client: es8.ElasticsearchClient): Bo Or ErrMsg = {
 
     // Index already created?   (Synchronous, fine. Runs very infrequently.)
     // See: https://www.elastic.co/docs/api/doc/elasticsearch/v8/operation/operation-indices-exists
@@ -65,18 +73,50 @@ class IndexCreator {
           try client.indices().exists(existsReq)
           catch {
             case ex: IOException =>
-              logger.error("IO error checking if search index exists [TyESIX_CHKEXST1]", ex)
-              SHOULD // retry later? [retry_create_ixs]
-              return false
+              // Let's log the cause so we can construct more precise error messages, but let's
+              // log the original exception, `ex`, not the cause, because the orignal exception
+              // will show both the exception ElasticSearch threw to us, and its cause.
+              ex.getCause match {
+                case _: java.net.UnknownHostException =>
+                  // This happen if the ES container is stopped (or not created?).
+                  val msg = o"""Can't find the 'search' container: UnknownHostException,
+                              when checking if search index '$IndexName' exists"""
+                  logger.warn(o"""$msg [TyESIX_CHKEXST0]""", ex)
+                  return Bad(msg)
+
+                case _: java.net.ConnectException =>
+                  // This happen ES is offline, e.g. hasn't started yet.
+                  val msg = o"""Connection to 'search' container refused, when checking" +
+                              if search index '$IndexName' exists"""
+                  _numConnFails += 1
+                  if (_numConnFails < 10) {
+                    logger.info(s"ElasticSearch not yet started? $msg. Probably fine")
+                  }
+                  else {
+                    logger.warn(o"""ElasticSearch should have started by now?
+                                 $msg [TyESIX_CHKEXST0]""", ex)
+                  }
+                  return Bad(msg)
+
+                // (`ex.getCause` is Java code, may be null)
+                case _ =>
+                  val msg = s"IO error checking if search index '$IndexName' exists"
+                  logger.error(s"$msg [TyESIX_CHKEXST1]", ex)
+                  return Bad(msg)
+              }
             case ex: es8_ElasticsearchException =>
               val prettyReason = ex.response().error().reason()
-              logger.error(o"""ElasticsearchException checking if search index
-                    exists: $prettyReason [TyESIX_CHKEXST2]""", ex)
-              // Should retry later. [retry_create_ixs]
-              return false
+              val msg = o"""ElasticsearchException checking if search index '$IndexName'
+                            exists: $prettyReason"""
+              logger.error(s"$msg [TyESIX_CHKEXST2]", ex)
+              return Bad(msg)
           }
+
+    // Any failure hereafter is suspicious.
+    _numConnFails = 999
+
     if (existsResp.value())
-      return false
+      return Good(false)
 
     this._doCreateIndex(indexSettings, client)
   }
@@ -85,7 +125,7 @@ class IndexCreator {
   /** Returns true iff the index was created.
     */
   private def _doCreateIndex(indexSettings: IndexSettingsAndMappings,
-        client: es8.ElasticsearchClient): Bo = {
+        client: es8.ElasticsearchClient): Bo Or ErrMsg = {
 
     val ixName = IndexName
 
@@ -247,27 +287,29 @@ class IndexCreator {
             to all nodes in the cluster [EsW6YKF24].""")
       }
       else {
-        logger.warn(s"Timeout when creating index '$ixName', what happened? [TyESIX_CREA0]")
+        val msg = s"Timeout when creating index '$ixName', what happened?"
+        logger.warn(s"$msg [TyESIX_CREA0]")
         // Better: Return false, retry later? But if then already exists,
         // *do* start reindexing everythign — because means it got cretated,
         // is empty.  [retry_create_ixs]
+        // But do NOT return Bad(err) here, and without remembering that: The index *maybe*
+        // got created — and that when we know for sure, we need to index everything
+        // that should be in that index.
       }
       true
     }
     catch {
       case ex: es8_ElasticsearchException =>
         val prettyReason = ex.response().error().reason()
-        if (!languagesLogged.contains(indexSettings.language)) {
-          logger.error(o"""ElasticsearchException creating search index '$ixName':
-                  $prettyReason  [TyESIX_CREA1]""", ex)
-        }
-        // Better: Return list of failed indexes, and try again later?
-        // Might happen that ES is offline, f.ex.?  [retry_create_ixs]
-        false
+        //if (!languagesLogged.contains(indexSettings.language)) {
+          val msg = o"ElasticsearchException creating search index '$ixName': $prettyReason"
+          logger.error(s"$msg [TyESIX_CREA1]", ex)
+        //}
+        return Bad(msg)
       case NonFatal(error) =>
-        logger.error(s"Error creating search index '$ixName' [TyESIX_CREA2]", error)
-        // Should [retry_create_ixs].
-        false
+        val msg = s"Error creating search index '$ixName'"
+        logger.error(s"$msg [TyESIX_CREA2]", error)
+        return Bad(msg)
     }
 
     // This no longer needed. Index recreated, with updated mapping, as part of
@@ -303,7 +345,7 @@ class IndexCreator {
     } */
 
     languagesLogged.add(indexSettings.language)
-    wasCreated
+    Good(wasCreated)
   }
 
 

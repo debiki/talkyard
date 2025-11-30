@@ -1455,6 +1455,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
           // [dont_index_too_fast_if_testing] [indexer_batch_size_is_20]
           else 20)
     def indexerDelaySecs: Int = getIntOrDefault("talkyard.search.indexer.initialDelaySeconds", 30)
+    // [search_ix_interval]
     def indexerIntervalSeconds: Int = getIntOrDefault("talkyard.search.indexer.intervalSeconds", 1)
 
     BUG // Don't start the indexer, before Nashorn has been warmed up — that can cause

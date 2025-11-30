@@ -123,6 +123,13 @@ class IndexingActor(
   @volatile
   var doneCreatingIndexes: Bo = false
 
+  // The interval is currently 1 sec [search_ix_interval], so maybe 60 = 1 minute
+  // is ok. Bit hacky!
+  val expBackoffMaxStart = 60f
+  val expBackoffMinStart = 5f
+  @volatile var expBackoffCount = 0f
+  @volatile var expBackoffStart = expBackoffMinStart
+
   def tryReceiveUnlessJobsPaused(message: Any): U = message match {
     case IndexStuff =>
       // BUG race condition. Could instead: 1) find out in which languages indexes are missing.
@@ -131,8 +138,25 @@ class IndexingActor(
       // to the index queue ?? Whatever, this `if` works too, avoids create-index noops:
       // (Except for once per startup if already exists.)
       if (!doneCreatingIndexes) {
+
+        // Don't fill disk w error log messages, if the search engine isn't working.
+        if (expBackoffCount > 0) {
+          expBackoffCount -= 1
+          return
+        }
+
+        logger.debug(s"Trying to create search engine indices if needed... [TyMSIX_TRYCREA]")
         val newIndexes: Seq[IndexSettingsAndMappings] =
-              indexCreator.createIndexesIfNeeded(client)
+              indexCreator.createIndexesIfNeeded(client) getOrIfBad { err =>
+                expBackoffCount = expBackoffStart
+                expBackoffStart = Math.min(expBackoffMaxStart, expBackoffStart * 1.5f)
+                logger.info(s"Can't use the search engine. Will retry after ${
+                            expBackoffCount} intervals. [TyMSIX_RETRYCREA]")
+                return
+              }
+
+        expBackoffStart = expBackoffMinStart
+
         BUG; COULD // fix in [ty_v2]? [search_hmm] What if, when starting the *very first* time,
         // the server crashes here?  Then, after restart, newIndexes would be empty,
         // and we wouldn't index everything.
@@ -143,13 +167,13 @@ class IndexingActor(
         // then, how do we know that everything has been indexed already? Maybe
         // ask ES for document counts, if >= 1, then, not starting for the 1st time?
         // (Or, if exporting & importing?)
+
         if (newIndexes.nonEmpty) {
           enqueueEverythingInLanguages(newIndexes.map(_.language).toSet)
         }
 
         // Too old indexes prevent newer major versions of ElasticSearch from starting.
         //indexCreator.deleteAnyOldIndex(OldIndexName, client)
-
         doneCreatingIndexes = true
       }
       deleteAlreadyIndexedPostsFromQueue()
