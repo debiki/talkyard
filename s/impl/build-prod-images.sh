@@ -83,7 +83,8 @@ done
 # ----------------------
 
 # Dupl kill-down prod test code. [KLLPRDTST]  [prod_test_docker_conf]
-test_containers='docker compose -p edt -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml -f docker-compose-no-limits.yml'
+# Project "tyb1" = Talkyard build, epoch 1.
+test_containers='docker compose -p tyb1 -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml -f docker-compose-no-limits.yml'
 
 if [ -z "$skip_restart" ]; then
   sudo $test_containers kill web app search cache rdb
@@ -180,8 +181,6 @@ if [ -z "$skip_e2e_tests" ]; then
       $test_containers"
 
   if [ -z "$skip_restart"  -o  -z "`containers_running_test`" ]; then
-    echo UNTESTED_DOWN_VOLS
-
     sudo $latest_test_containers down --volumes
 
     # No longer any data/ dir!
@@ -189,8 +188,6 @@ if [ -z "$skip_e2e_tests" ]; then
 
     # Auto creates volumes:
     sudo $latest_test_containers up -d
-
-    echo END UNTESTED_DOWN_VOLS
   fi
 
   if [ -n "`jobs`" ]; then
@@ -208,8 +205,15 @@ if [ -z "$skip_e2e_tests" ]; then
   echo "Running Webdrier.io E2E tests ..."
   echo
 
+  # Let us capture the exit code (instead of aborting on error exit code).
+  set +e
+
   s/run-e2e-tests.sh --prod $all_orig_options
+
+  # Capture e2e tests exit code.
   echo $? | tee $exit_code_file
+
+  set -e
 
   e2e_tests_exit_code=$(cat $exit_code_file)
 
@@ -217,7 +221,14 @@ if [ -z "$skip_e2e_tests" ]; then
     echo
     echo "E2E tests failed. Aborting build."
     echo
-    echo "(You can test run the failed test now — Talkyard server still running.)"
+    echo "You can rerun the failed test — see above. The Talkyard server is still running."
+    echo
+    # These might be pretty long lines, so add blank lines in between.
+    echo "To stop the server:"
+    echo "   $latest_test_containers down"
+    echo
+    echo "To start it again:"
+    echo "    $latest_test_containers up -d"
     echo
     die_if_in_script
   fi
