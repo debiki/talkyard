@@ -478,73 +478,74 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
 
   object socialLogin {
-    //import com.mohiva.play.silhouette.impl.providers.{OAuth1Settings, OAuth2Settings}
-    // "silhouette.google.authorizationURL"  —>  "talkyard.authn.google.authorizationURL"
+    // (The conf vals "talkyard.authn.*" were previously "silhouette.*" but we didn't use
+    // any of Silhouette's features, so switched to ScribeJava instead.)
+
     import talkyard.server.authn.OAuth2Settings
 
     val googleOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getGoogle(confValName: String) = getConfValOrThrowDisabled(confValName, "Google")
       OAuth2Settings(
-        authorizationURL = getStringNoneIfBlank("silhouette.google.authorizationURL"),
-        accessTokenURL = getGoogle("silhouette.google.accessTokenURL"),
+        authorizationURL = getStringNoneIfBlank("talkyard.authn.google.authorizationURL"),
+        accessTokenURL = getGoogle("talkyard.authn.google.accessTokenURL"),
         redirectURL = makeRedirectUrl("google"),
-        clientID = getGoogle("silhouette.google.clientID"),
-        clientSecret = getGoogle("silhouette.google.clientSecret"),
-        scope = getStringNoneIfBlank("silhouette.google.scope"))
+        clientID = getGoogle("talkyard.authn.google.clientID"),
+        clientSecret = getGoogle("talkyard.authn.google.clientSecret"),
+        scope = getStringNoneIfBlank("talkyard.authn.google.scope"))
     }
 
     val facebookOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getFacebook(confValName: String) = getConfValOrThrowDisabled(confValName, "Facebook")
       OAuth2Settings(
-        authorizationURL = getStringNoneIfBlank("silhouette.facebook.authorizationURL"),
-        accessTokenURL = getFacebook("silhouette.facebook.accessTokenURL"),
+        authorizationURL = getStringNoneIfBlank("talkyard.authn.facebook.authorizationURL"),
+        accessTokenURL = getFacebook("talkyard.authn.facebook.accessTokenURL"),
         redirectURL = makeRedirectUrl("facebook"),
-        clientID = getFacebook("silhouette.facebook.clientID"),
-        clientSecret = getFacebook("silhouette.facebook.clientSecret"),
-        scope = getStringNoneIfBlank("silhouette.facebook.scope"))
+        clientID = getFacebook("talkyard.authn.facebook.clientID"),
+        clientSecret = getFacebook("talkyard.authn.facebook.clientSecret"),
+        scope = getStringNoneIfBlank("talkyard.authn.facebook.scope"))
     }
 
     /*
     val twitterOAuthSettings: OAuth1Settings Or ErrorMessage = goodOrError {
       def getTwitter(confValName: String) = getConfValOrThrowDisabled(confValName, "Twitter")
       OAuth1Settings(
-        requestTokenURL = getTwitter("silhouette.twitter.requestTokenURL"),
-        accessTokenURL = getTwitter("silhouette.twitter.accessTokenURL"),
-        authorizationURL = getTwitter("silhouette.twitter.authorizationURL"),
+        requestTokenURL = getTwitter("talkyard.authn.twitter.requestTokenURL"),
+        accessTokenURL = getTwitter("talkyard.authn.twitter.accessTokenURL"),
+        authorizationURL = getTwitter("talkyard.authn.twitter.authorizationURL"),
         callbackURL = makeRedirectUrl("twitter").get,
-        consumerKey = getTwitter("silhouette.twitter.consumerKey"),
-        consumerSecret = getTwitter("silhouette.twitter.consumerSecret"))
+        consumerKey = getTwitter("talkyard.authn.twitter.consumerKey"),
+        consumerSecret = getTwitter("talkyard.authn.twitter.consumerSecret"))
     } */
 
     val githubOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getGitHub(confValName: String) = getConfValOrThrowDisabled(confValName, "GitHub")
       OAuth2Settings(
-        authorizationURL = getStringNoneIfBlank("silhouette.github.authorizationURL"),
-        accessTokenURL = getGitHub("silhouette.github.accessTokenURL"),
+        authorizationURL = getStringNoneIfBlank("talkyard.authn.github.authorizationURL"),
+        accessTokenURL = getGitHub("talkyard.authn.github.accessTokenURL"),
         redirectURL = makeRedirectUrl("github"),
-        apiURL = getStringNoneIfBlank("silhouette.github.apiURL"),
-        clientID = getGitHub("silhouette.github.clientID"),
-        clientSecret = getGitHub("silhouette.github.clientSecret"),
-        scope = getStringNoneIfBlank("silhouette.github.scope"))
+        apiURL = getStringNoneIfBlank("talkyard.authn.github.apiURL"),
+        clientID = getGitHub("talkyard.authn.github.clientID"),
+        clientSecret = getGitHub("talkyard.authn.github.clientSecret"),
+        scope = getStringNoneIfBlank("talkyard.authn.github.scope"))
     }
 
     // rm
     val gitlabOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getGitLab(confValName: String) = getConfValOrThrowDisabled(confValName, "GitLab")
       OAuth2Settings(
-        authorizationURL = getStringNoneIfBlank("silhouette.gitlab.authorizationURL"),
-        accessTokenURL = getGitLab("silhouette.gitlab.accessTokenURL"),
+        authorizationURL = getStringNoneIfBlank("talkyard.authn.gitlab.authorizationURL"),
+        accessTokenURL = getGitLab("talkyard.authn.gitlab.accessTokenURL"),
         redirectURL = makeRedirectUrl("gitlab"),
-        clientID = getGitLab("silhouette.gitlab.clientID"),
-        clientSecret = getGitLab("silhouette.gitlab.clientSecret"),
-        scope = getStringNoneIfBlank("silhouette.gitlab.scope"))
+        clientID = getGitLab("talkyard.authn.gitlab.clientID"),
+        clientSecret = getGitLab("talkyard.authn.gitlab.clientSecret"),
+        scope = getStringNoneIfBlank("talkyard.authn.gitlab.scope"))
     }
 
     val linkedInOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getLinkedin(confValName: String) = getConfValOrThrowDisabled(confValName, "LinkedIn")
       OAuth2Settings(
-        authorizationURL = getStringNoneIfBlank("silhouette.linkedin.authorizationURL"),
-        accessTokenURL = getLinkedin("silhouette.linkedin.accessTokenURL"),
+        authorizationURL = getStringNoneIfBlank("talkyard.authn.linkedin.authorizationURL"),
+        accessTokenURL = getLinkedin("talkyard.authn.linkedin.accessTokenURL"),
         redirectURL = makeRedirectUrl("linkedin"),
         // These fields no longer available in LinkedIn's API v2, unless one somehow
         // partners with LinkedIn;
@@ -552,33 +553,33 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         // Also profilePicture results in an error.
         // Instead:
         apiURL = Some("https://api.linkedin.com/v2/me?fields=id,firstName,lastName&oauth2_access_token=%s"),
-        clientID = getLinkedin("silhouette.linkedin.clientID"),
-        clientSecret = getLinkedin("silhouette.linkedin.clientSecret"),
-        scope = getStringNoneIfBlank("silhouette.linkedin.scope"))
+        clientID = getLinkedin("talkyard.authn.linkedin.clientID"),
+        clientSecret = getLinkedin("talkyard.authn.linkedin.clientSecret"),
+        scope = getStringNoneIfBlank("talkyard.authn.linkedin.scope"))
     }
 
     // rm
     val vkOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getVk(confValName: String) = getConfValOrThrowDisabled(confValName, "VK")
       OAuth2Settings(
-        authorizationURL = getStringNoneIfBlank("silhouette.vk.authorizationURL"),
-        accessTokenURL = getVk("silhouette.vk.accessTokenURL"),
+        authorizationURL = getStringNoneIfBlank("talkyard.authn.vk.authorizationURL"),
+        accessTokenURL = getVk("talkyard.authn.vk.accessTokenURL"),
         redirectURL = makeRedirectUrl("vk"),
-        clientID = getVk("silhouette.vk.clientID"),
-        clientSecret = getVk("silhouette.vk.clientSecret"),
-        scope = getStringNoneIfBlank("silhouette.vk.scope"))
+        clientID = getVk("talkyard.authn.vk.clientID"),
+        clientSecret = getVk("talkyard.authn.vk.clientSecret"),
+        scope = getStringNoneIfBlank("talkyard.authn.vk.scope"))
     }
 
     // rm
     val instagramOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getInstagram(confValName: String) = getConfValOrThrowDisabled(confValName, "Instagram")
       OAuth2Settings(
-        authorizationURL = getStringNoneIfBlank("silhouette.instagram.authorizationURL"),
-        accessTokenURL = getInstagram("silhouette.instagram.accessTokenURL"),
+        authorizationURL = getStringNoneIfBlank("talkyard.authn.instagram.authorizationURL"),
+        accessTokenURL = getInstagram("talkyard.authn.instagram.accessTokenURL"),
         redirectURL = makeRedirectUrl("instagram"),
-        clientID = getInstagram("silhouette.instagram.clientID"),
-        clientSecret = getInstagram("silhouette.instagram.clientSecret"),
-        scope = getStringNoneIfBlank("silhouette.instagram.scope"))
+        clientID = getInstagram("talkyard.authn.instagram.clientID"),
+        clientSecret = getInstagram("talkyard.authn.instagram.clientSecret"),
+        scope = getStringNoneIfBlank("talkyard.authn.instagram.scope"))
     }
 
 
