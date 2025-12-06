@@ -10,6 +10,13 @@ volumes:
   talkyard-v1-es-data:
   talkyard-v1-es-logs:
 
+# See: https://docs.docker.com/compose/how-tos/use-secrets/
+secrets:
+  postgres_password:
+    file: ./tests/secrets/test_postgres_password.txt
+  backup_password:
+    file: ./tests/secrets/test_backup_password.txt
+
 networks:
   # This netw name get prefixed with COMPOSE_PROJECT_NAME  = 'tyd1_' by Docker, from .env.
   internal_net:
@@ -119,6 +126,11 @@ services:
       - ./vendors/jars/cache/:/home/owner/.cache/
       - ./vendors/jars/ivy2/:/home/owner/.ivy2/
       - ./vendors/jars/sbt/:/home/owner/.sbt/
+    secrets:
+      - source: postgres_password
+        # Don't know what id user 'owner' (created in images/app/entrypoint.dev.sh)
+        # will have, so make world-readable. (Dev mode only.)
+        mode: 0444
     networks:
       internal_net:
         ipv4_address: ${INTERNAL_NET_APP_IP}
@@ -251,6 +263,8 @@ services:
   rdb:
     build: images/rdb/
     image: ${DOCKER_REG_ORG}/talkyard-rdb
+    secrets:
+      - postgres_password
     volumes:
       # PostgreSQL 18 creates a sub dir, e.g. /var/lib/postgresql/18/something
       # PostgreSQL 19 creates a .../19/... dir, etc, to allow upgrading between major
@@ -267,7 +281,9 @@ services:
         ipv4_address: ${INTERNAL_NET_RDB_IP}
     logging: *default_logging
     environment:
-      POSTGRES_PASSWORD: 'public'
+      # The password instead gets read from ./tests/secrets/test_postgres_password.txt .
+      #POSTGRES_PASSWORD: 'public'
+      POSTGRES_PASSWORD_FILE: '/run/secrets/postgres_password'
       PEER_HOST: 'rdb2'
       PEER_PORT: '5432'
       PEER_PASSWORD: 'public2'

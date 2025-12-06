@@ -23,7 +23,7 @@ COPY --from=rust_img /usr/local/cargo/bin/sqlx     /usr/local/bin/sqlx
 # Delete user 'ubuntu'.
 RUN touch /var/mail/ubuntu && chown ubuntu /var/mail/ubuntu && userdel -r ubuntu
 
-# Create our own user: 'appuser'.
+# Create our own user: 'appuser', its id will be 1000. [appuser_id_1000]
 RUN groupadd -r appgroup && useradd -r -s /bin/false -g appgroup appuser
 # Not needed:  chown -R appuser:appgroup /the/binary
 

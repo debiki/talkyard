@@ -16,17 +16,21 @@ object Migrator {
 
   /** Finds all pending migration scripts in images/app/migrations/ and applies them.
     */
-  def migrateDatabase(databaseUrl: St, isTest: Bo): Opt[ErrMsgCode] = {
+  def migrateDatabase(databaseUrlAndWoPwd: (St, St), isTest: Bo): Opt[ErrMsgCode] = {
     import sys.process._
     var output: St = ""
     val outputHandler = ProcessLogger((allOutput: St) => {
       output = allOutput
     })
 
+   val (databaseUrl, urlNoPwd) = databaseUrlAndWoPwd
+
     // The url looks like:  "postgres://db_user:passwd@rdb/database_name"
     val migrCmdWithPwd = s"""/usr/local/bin/sqlx migrate run --database-url "$databaseUrl" """
     val dbAdr = databaseUrl.takeRightWhile(_ != '@') // removes the pwd
-    System.out.println(s"Migrating database $dbAdr:")
+    System.out.println(
+          if (isTest) s"Migrating test database $databaseUrl:"  // test, ok show pwd
+          else s"Migrating database $urlNoPwd:")                // password redacted
     val exitCode = migrCmdWithPwd.!(outputHandler)
     if (exitCode == 0) {
       System.out.println(s"Done migrating database $dbAdr, output:\n\n$output\n")

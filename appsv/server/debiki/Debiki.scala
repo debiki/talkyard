@@ -49,10 +49,16 @@ object Debiki {
       if (isTest) "postgres" // can drop and recreate
       else configStr("talkyard.postgresql.user")
 
-    def password =
-      if (isTest) "public"
-      else sys.env.get("TALKYARD_POSTGRESQL_PASSWORD").orElse(sys.env.get("ED_POSTGRESQL_PASSWORD"))
-          .getOrElse(configStr("talkyard.postgresql.password"))
+    def password = {
+        // Let's use Docker secets, that's better. (See 'secrets:' in docker-compose.yml.)
+        val path = "/run/secrets/postgres_password"
+        talkyard.server.util.readFile(path).map(_.trim).getOrElse {
+            logger.info(s"Postgres password file $path missing [TyM0PGPWDFILE]")
+            // Legacy:
+            sys.env.get("TALKYARD_POSTGRESQL_PASSWORD").orElse(sys.env.get("ED_POSTGRESQL_PASSWORD"))
+                .getOrElse(configStr("talkyard.postgresql.password"))
+        }
+      }
 
     def database =
       if (isTest) "talkyard_test"
@@ -70,12 +76,15 @@ object Debiki {
   }
 
 
-  def getPostgresDatabaseUrl(conf: p.Configuration, isTest: Bo): St = {
+  /** Returns (url-with-pwd, url-w/o-pwd) */
+  def getPostgresDatabaseUrl(conf: p.Configuration, isTest: Bo): (St, St) = {
     val cc = _getConnectionConfig(conf, isTest = isTest)
     // Format: https://github.com/launchbadge/sqlx/blob/main/sqlx-cli/README.md#usage
     // e.g. "postgres://postgres:t0ps3cret1111111111111" +
     //          "111111111111111111111111111@localhost/my_database"
-    s"postgres://${cc.user}:${cc.password}@${cc.server}:${cc.port}/${cc.database}"
+    val url = s"postgres://${cc.user}:${cc.password}@${cc.server}:${cc.port}/${cc.database}"
+    val urlNoPwd = s"postgres://${cc.user}:<redacted>@${cc.server}:${cc.port}/${cc.database}"
+    (url, urlNoPwd)
   }
 
 

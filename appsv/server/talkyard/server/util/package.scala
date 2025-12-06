@@ -48,5 +48,21 @@ package object util {
       </div>
   }
 
+  def readFile(path: St): Opt[St] = Some {
+    var source: scala.io.Source = null
+    try {
+      source = scala.io.Source.fromFile(  // [Scala_213] Using(...) { ... }
+                  path)(scala.io.Codec.UTF8)
+      source.mkString
+    }
+    catch {
+      case ex: Exception =>
+        return None
+    }
+    finally {
+      if (source ne null) source.close()
+    }
+  }
+
 }
 
