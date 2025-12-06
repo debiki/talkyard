@@ -305,6 +305,31 @@ services:
       - SETUID
       - SYS_NICE
 
+  backup:
+    build: images/backup/
+    image: ${DOCKER_REG_ORG}/talkyard-backup
+    restart: never
+    secrets:
+      # Will appear at /run/secrets/postgres_password. [backup_pg_client_secret]
+      - postgres_password
+      - backup_password
+    volumes:
+      # So can backup uploaded files.
+      - talkyard-v1-pub-files:/var/talkyard-v1/pub-files:ro
+      - talkyard-v1-priv-files:/var/talkyard-v1/priv-files:ro
+      - talkyard-v1-redis-data:/var/talkyard-v1/redis-data:ro
+      # Now there's some stuff to backup, so we can test backups also in dev builds.
+      - ./modules/ed-prod-one-test:/opt/talkyard-v1:ro
+      # Where to save backups, in dev builds.
+      - ./target/var-opt-backups-talkyard-v1:/var/opt/backups/talkyard/v1
+    logging: *default_logging
+    depends_on:
+      - rdb
+    networks:
+      internal_net:
+    cap_drop:
+      - ALL
+
   # An extra database, so you can experiment with Postgres replication and failover.
   # You don't need to start it.
   #rdb2:
