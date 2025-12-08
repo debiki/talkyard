@@ -6,6 +6,17 @@
 # is empty on container startup; any pre-existing database is left untouched.
 # See: https://github.com/docker-library/docs/tree/master/postgres#how-to-extend-this-image
 
+# Fallback to env var.
+pg_pwd="$POSTGRES_PASSWORD"
+pg_pwd_file=/run/secrets/postgres_password   # [same_pg_pw]
+
+if [ -s $pg_pwd_file ]; then
+  echo "Picking Postgres password from Docker secrets file: $pg_pwd_file"
+  pg_pwd="$(cat $pg_pwd_file)"
+fi
+
+# So ':pg_pwd' works in psql commands.
+export pg_pwd
 
 set -e
 
@@ -14,9 +25,9 @@ set -e
 # ------------------------
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
-create user repl replication login connection limit 1 encrypted password '$POSTGRES_PASSWORD';
+create user repl replication login connection limit 1 encrypted password '$pg_pwd';
 
-create user talkyard password '$POSTGRES_PASSWORD';
+create user talkyard password '$pg_pwd';
 create database talkyard;
 grant all privileges on database talkyard to talkyard;
 -- Grant 'create' to user 'talkyard' so it can run database migrations. (Otherwise,
@@ -32,7 +43,7 @@ EOF
 if [ -n "$CREATE_TEST_USER" ]; then
   # For running Talkyard's integration tests.
   psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
-  create user talkyard_test password 'public';
+  create user talkyard_test password 'public';  -- [test_db_pwd]
   create database talkyard_test;
   grant all privileges on database talkyard_test to talkyard_test;
   \c talkyard_test
@@ -42,7 +53,7 @@ EOF
   # For testing OIDC login via Keycloak — seems importing a Keycloak realm
   # won't work with the h2 database; needs sth like Postgres. [ty_kc_db]
   psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
-  create user keycloak_test password 'public';
+  create user keycloak_test password 'public';  -- [test_db_pwd]
   create database keycloak_test owner keycloak_test;
   grant all privileges on database keycloak_test to keycloak_test;
   \c keycloak_test

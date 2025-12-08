@@ -1,61 +1,83 @@
 #!/bin/bash
 
+# Backup approach: Dump the database, rsync-&-gzp all uploaded files, copy-&-gzip all
+# config files and scripts. And gpg encrypt each file, if a password specified.
+#
+# Maybe can use sth like Restic, Rustic or BorgBackup in the future. Could add some
+# flag to also backup using R[eu]stic, that is, double backups (both tar-gz and R[eu]stic)
+# until everything is well tested.
+
+# Tests, semi manual:
+#   - modules/ed-prod-one-test/scripts/tests/test-generate-backups.sh
+#   - modules/ed-prod-one-test/scripts/tests/test-delete-backups.sh
+
+# Create backups with access perms 640, that is, root has write access,
+# and the root group can read, no one else.
+#
+# (666 and 777 are the default new file and directory permissions, and zeroing the
+# bits 027 leaves 640 and 750, that is, read-write for root, and read-only files & dirs
+# for root group members.)
+#
+# We don't use 227 (removing write access for root) because maybe that'd cause
+# problems if rsyncing big files.
+#
+umask 027  # [_backup_file_perms]
+
 function log_message {
   echo "`date --iso-8601=seconds --utc` backup-script: $1"
 }
 
-if [ $# -ne 1 ]; then
-  echo "Usage: $0 dump-tag"
-  echo "E.g.: $0 weekly"
-  echo "or: $0 daily"
-  echo "or: $0 v0.12.34-123def"
+if [ $# -ne 3 ]; then
+  echo 'Usage: $0 backupLabel hostname date'
+  echo 'where the date should be: `date '+%FT%H%MZ' --utc`.'
+
+  echo 'E.g.: $0 someLabel "$(hostname)" "$(date '+%FT%H%MZ' --utc)"'
   exit 1
 fi
 
+# Alternatively, pass params like so:
+# docker compose run ...
+#     -e HOST_HOSTNAME="$(hostname)" -e HOST_DATE="$(`date '+%FT%H%MZ' --utc`)"
+
 # This'll be like:  '2025-03-17T2359Z'
-when="`date '+%FT%H%MZ' --utc`"
-hostname="$(hostname)"
-docker='/usr/bin/docker'
-docker_compose="$docker compose"
-psql="psql talkyard talkyard"
+when="$3"      # "${HOST_DATE:-$(date '+%FT%H%MZ' --utc)}"
+hostname="$2"  # "${HOST_HOSTNAME:-unknownhost}"
+
+# COULD use Bash arrays instead:
+# psql_cmd=(psql -h rdb -d talkyard -U talkyard)
+# "${psql_cmd[@]}" -c ...
+# and SQL variable substitution syntax:
+#   "... values (now_utc(), :PG_HOSTNAME, 'rdb', :PG_BACKUP_FILE, :PG_RAND_VAL);"
+# Currently does not matter.
+#
+psql="psql -h rdb talkyard talkyard"  # connects to database Ty as user Ty
 
 encrypted=''
 dot_gpg=''
-if [ -f $pwd_file ]; then
+backup_pwd_file='/run/secrets/backup_password'
+
+# '-s' means file exists and is not empty.
+if [ -s $backup_pwd_file ]; then
   encrypted=', encrypted,'
   dot_gpg='.gpg'
 fi
 
 log_message "Backing up '$hostname', when: '$when', tag: '$1' ..."
 
-# See the comment mentioning gzip and "soft lockup" below.
-so_nice="nice -n19"
-with_cpulimit="cpulimit --limit 50"
+gpg_encrypt="gpg --batch --symmetric --cipher-algo AES256 --passphrase-file $backup_pwd_file"
 
-pwd_file="./encrypt-backups-passphrase"
-gpg_encrypt="gpg --batch --symmetric --cipher-algo AES256 --passphrase-file $pwd_file"
-
-# Better avoid /opt/backups/? — it's reserved by the FSH (Filesystem Hierarchy Standard)
-# for legacy weirdness things.
+# (Avoid /var/backups/ — the OS uses it for backing up OS related files.)
 backup_archives_dir=/var/opt/backups/talkyard/v1/archives
 
 talkyard_dir=/opt/talkyard-v1
-uploads_dir=$talkyard_dir/data/uploads
+ty_data_dir=/var/talkyard-v1
+uploads_dir=$ty_data_dir/pub-files/uploads
 
-function chek_is_in_ty_dir {
-  if [ "$(pwd)" != "$talkyard_dir" ]; then
-    echo
-    echo "You should run this script from:  $talkyard_dir/"
-    echo
-    echo "(Might work from elsewhere, if you edit \`talkyard_dir\`. But not tested.)"
-    echo
-    exit 1
-  fi
-}
 
-chek_is_in_ty_dir
-
-mkdir -p $backup_archives_dir
+# Make the archives dir writable to root, and readable only by people in the root group.
+# (--mode has precedence over umask.)
+#
+mkdir -p --mode=750 $backup_archives_dir
 
 random_value=$( cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 20 )
 log_message "Generated random test-that-backups-work value: '$random_value'"
@@ -81,21 +103,27 @@ fi
 # Backup Postgres
 # -------------------
 
-postgres_backup_file_name="`hostname`-$when-$1-postgres.sql"
+postgres_backup_file_name="$hostname-$when-$1-postgres.sql"
 postgres_backup_path="$backup_archives_dir/$postgres_backup_file_name.gz$dot_gpg"
 
 log_message "Backing up Postgres$encrypted to: $postgres_backup_path ..."
 
+pgpass_file="/tmp/.pgpass"
+export PGPASSFILE="$pgpass_file"  # default is ~/.pgpass
+
 # Insert a backup test timestamp, and the random value, so we can check, on an
 # off-site backup server, that the contents of the backup is recent and okay.
-$docker_compose exec rdb $psql -c \
-    "insert into backup_test_log3 (logged_at, logged_by, backup_of_what, file_name, random_value) values (now_utc(), '$hostname', 'rdb', '$postgres_backup_file_name', '$random_value');"
+$psql -c \
+    "insert into backup_test_log3 (logged_at, logged_by, backup_of_what, file_name, random_value)
+     values (now_utc(), '$hostname', 'rdb', '$postgres_backup_file_name', '$random_value');"
 
 # Update 2025: Yes let's do, let's try with  cpulimit --limit 50
 # and add  apt install cpulimits  as an installation step.
+# Update 2025-12: Don't use nice and cpulimit! [no_nice_docker_scripts]
+# Instead, add `cpu_shares` etc in docker-compose.yml.
 # ---------------
 # Don't pipe to gzip — that can spike the CPU to 100%, making the kernel panic.
-# It then logs:
+# It then logs: [100_kernel_panic]
 #
 #    watchdog: BUG: soft lockup - CPU#0 stuck for 22s!
 #    Kernel panic - not syncing: softlockup: hung tasks
@@ -113,60 +141,60 @@ $docker_compose exec rdb $psql -c \
 # (the GCE VM) stays okay low — compared to 100% + panic crash.
 # ---------------
 #
-# Specify -T so Docker won't create a tty, because that results in a Docker Compose
-# stack trace and error exit code.
-#
 # Specify --clean to include commands to drop databases, roles, tablespaces
 # before recreating them.
 #
-# (cron's path apparently doesn't include /sur/local/bin/)
+# (cron's path apparently doesn't include /sur/local/bin/  hmm I mean /usr/...)
 #
 if [ -n "$encrypted" ]; then
-  $docker_compose exec -T rdb pg_dumpall --username=postgres --clean --if-exists  \
-      | $with_cpulimit -- $so_nice  gzip  \
-      | $with_cpulimit -- $so_nice  $gpg_encrypt --output $postgres_backup_path
+  pg_dumpall --host rdb --username=postgres --clean --if-exists  \
+      | gzip  \
+      | $gpg_encrypt --output $postgres_backup_path
 else
-  $docker_compose exec -T rdb pg_dumpall --username=postgres --clean --if-exists  \
-      | $with_cpulimit -- $so_nice  gzip  \
+  pg_dumpall --host rdb --username=postgres --clean --if-exists  \
+      | gzip  \
       > $postgres_backup_path
 fi
 
 log_message "Done backing up Postgres."
 
-# If you need to backup really manually:
-# docker compose exec -T rdb pg_dumpall --username=postgres --clean --if-exists \
-#   | nice -n19 gzip \
-#   > "/var/opt/backups/talkyard/v1/archives/$(hostname)-$(date '+%FT%H%MZ' --utc)-cmdline-postgres.sql.gz"
+# If you need to backup really manually:  (untested after edits!)
+# pg_dumpall --host rdb --username=postgres --clean --if-exists \
+#   | gzip \
+#   > "/var/opt/backups/talkyard/v1/archives/$hostname-$(date '+%FT%H%MZ' --utc)-cmdline-postgres.sql.gz"
 
 
 
 # Backup config
 # -------------------
 
-config_backup_file_name="`hostname`-$when-$1-config.tar.gz$dot_gpg"
+config_backup_file_name="$hostname-$when-$1-config.tar.gz$dot_gpg"
 config_backup_path="$backup_archives_dir/$config_backup_file_name"
 
 log_message "Backing up config$encrypted to: $config_backup_path ..."
 
-# We should be in /opt/talkyard-v1/, otherwise docker-compose won't work anyway (used
-# when backing up the database).  Let's double check:
-chek_is_in_ty_dir
+#onf_files=".env docker-compose.* talkyard-maint.log conf data/certbot data/sites-enabled-auto-gen"
+# Just backup everything we find in /opt/talkyard-v1  ?
+conf_files="*"
 
-conf_files=".env docker-compose.* talkyard-maint.log conf data/certbot data/sites-enabled-auto-gen"
+cd $talkyard_dir
 
 if [ -n "$encrypted" ]; then
   # This pipes to stdout:  `tar -f -`   that is, setting the file to '-'.
-  $so_nice tar -czf - $conf_files  \
-      | $with_cpulimit -- $so_nice  $gpg_encrypt --output $config_backup_path
+  tar -czf - $conf_files  \
+      | $gpg_encrypt --output $config_backup_path
 else
-  $so_nice tar -czf $config_backup_path $conf_files
+  # This writes directly to the backup file.
+  tar -czf $config_backup_path $conf_files
 fi
 
 # Hmm, better backup config first? So this'll be incl in the .sql dump?
-$docker_compose exec rdb $psql -c \
-    "insert into backup_test_log3 (logged_at, logged_by, backup_of_what, file_name, random_value) values (now_utc(), '$hostname', 'config', '$config_backup_file_name', '$random_value');"
+$psql -c \
+    "insert into backup_test_log3 (logged_at, logged_by, backup_of_what, file_name, random_value)
+     values (now_utc(), '$hostname', 'appconf', '$config_backup_file_name', '$random_value');"
 
 log_message "Done backing up config."
+
 
 
 # Backup Redis
@@ -177,18 +205,20 @@ log_message "Done backing up config."
 # atomically using rename(2) only when the new snapshot is complete."""
 # See http://redis.io/topics/persistence
 
-chek_is_in_ty_dir
+# This file is owned by user 'redis' id 999. We've added CAP_DAC_READ_SEARCH
+# in docker-compose.yml so that 'root' can access this file.
+redis_dump_file="$ty_data_dir/redis-data/dump.rdb"
 
-redis_backup_path="$backup_archives_dir/`hostname`-$when-$1-redis.rdb.gz$dot_gpg"
+redis_backup_path="$backup_archives_dir/$hostname-$when-$1-redis.rdb.gz$dot_gpg"
 
-if [ -f data/cache/dump.rdb ]; then
+if [ -f $redis_dump_file ]; then
   log_message "Backing up Redis$encrypted to: $redis_backup_path ..."
   if [ -n "$encrypted" ]; then
     # -c writes to stdout.
-    docker compose exec cache $so_nice gzip -c ./dump.rdb \
-        | $with_cpulimit -- $so_nice  $gpg_encrypt --output $redis_backup_path
+    gzip -c $redis_dump_file \
+        |  $gpg_encrypt --output $redis_backup_path
   else
-    docker compose exec cache $so_nice gzip -c ./dump.rdb  >  $redis_backup_path
+    gzip -c $redis_dump_file  >  $redis_backup_path
   fi
   log_message "Done backing up Redis."
 else
@@ -206,13 +236,11 @@ fi
 # Backup uploads
 # -------------------
 
-chek_is_in_ty_dir
-
 last_yyyy_mm="$(date -d "last month" +"%Y-%m")"
 cur_yyyy_mm="$(date +"%Y-%m")"
 
-last_upl_bkp_d="$(hostname)-uploads-up-to-incl-$last_yyyy_mm.d"
-uploads_backup_d="$(hostname)-uploads-up-to-incl-$cur_yyyy_mm.d"
+last_upl_bkp_d="$hostname-uploads-up-to-incl-$last_yyyy_mm.d"
+uploads_backup_d="$hostname-uploads-up-to-incl-$cur_yyyy_mm.d"
 
 log_message "Backing up uploads$encrypted to: $backup_archives_dir/$uploads_backup_d ..."
 
@@ -220,11 +248,14 @@ log_message "Backing up uploads$encrypted to: $backup_archives_dir/$uploads_back
 # Do this as files with the timestamp in the file name — because then they can be checked for
 # by just listing (but not extracting) the contents of the archive.
 # This creates a file like:  2017-04-21T0425--server-hostname--NxWsTsQvVnp2y0YvN8sb
-# OOOPS, pointless now with Docker volumes instead.
-backup_test_dir="$uploads_dir/backup-test"
-mkdir -p $backup_test_dir
-find $backup_test_dir -type f -mtime +31 -delete
-touch $backup_test_dir/$when--$hostname--$random_value
+#
+# Maybe skip. Now in Ty v1, this dir is mounted read-only.
+#
+# backup_test_dir="$uploads_dir/backup-test"
+# mkdir -p $backup_test_dir
+# find $backup_test_dir -type f -mtime +31 -delete
+# touch $backup_test_dir/$when--$hostname--$random_value
+
 
 # Don't archive all uploads every day — then we might soon run out of disk
 # (if there're many uploads — they can be huge). Instead, _each_month,
@@ -248,14 +279,7 @@ fi
 mkdir -p $backup_archives_dir/$uploads_backup_d/
 
 if [ -n "$encrypted" ]; then
-
-  # Let's use a Busybox container (that's Linux with some basic stuff only) to find
-  # and `cat` uploaded files. Let's start the container just once and use `exec`.
-  short_random_value=$( echo "$random_value" | head -c 7 )
-  busyname="talkyard-busybox-$short_random_value"
-  docker run --rm -v talkyard-v1-pub-files:/pub-files:ro -d --name $busyname busybox tail -f /dev/null
-
-  all_uploads="$(docker exec $busyname  sh -c 'cd /pub-files/uploads && find . -type f' | sort)"
+  all_uploads="$(cd $uploads_dir && find . -type f | sort)"
 
   # If new month: Copy existing uploads from the last month's uploads backup directory, so
   # we won't have to encrypt everything again — could take long if many GB uploaded files.
@@ -285,7 +309,7 @@ if [ -n "$encrypted" ]; then
   # -3 = suppress column 3 (lines that appear in both files)
   #
   # (Can alternatively do this, better for performance, but harder to debug:
-  # comm -23 <(docker run ... find ...) <(cd ... find ...) | while ...)
+  # comm -23 <(find ...) <(cd ... find ...) | while ...)
   #
   new_uploads=$(comm -23 <(echo "$all_uploads") <(echo "$backed_up_uploads" | sed 's/\.gpg$//' ))
 
@@ -302,11 +326,7 @@ if [ -n "$encrypted" ]; then
       # (This: ${sth#prefix} removes 'prefix' from $sth.)
       bkp_path="$backup_archives_dir/$uploads_backup_d/${file_path#./}.gpg"
       mkdir -p "$(dirname "$bkp_path")"
-
-      # docker exec -i $(docker ps -q -f "ancestor=busybox") sh -c "cat $file_path" | gpg --symmetric --cipher-algo AES256 -o /path/to/encrypted/$(basename $file_path).gpg
-
-      docker exec $busyname sh -c "cat \"/pub-files/uploads/$file_path\"" \
-          | $with_cpulimit -- $so_nice  $gpg_encrypt --output "$bkp_path"
+      $gpg_encrypt --output "$bkp_path" $uploads_dir/$file_path
     done
   fi
 
@@ -326,12 +346,14 @@ if [ -n "$encrypted" ]; then
   #   fi
   # done
 else
-  $so_nice  /usr/bin/rsync -a  $uploads_dir/  $backup_archives_dir/$uploads_backup_d/
-fi
-
-if [ -n "$busyname" ]; then
-  echo "Stopping container $busyname ..."
-  docker stop $busyname  # auto removed (`--rm`)
+  # The --no-* won't preserve file owner and group, instead, the backed-up copies will
+  # be owned by root. (To preserve owner, we'd need CAP_CHOWN, says Gemini, but we don't
+  # want to preserve owner.)  [_backup_file_perms]
+  # We also chmod the files so only root and the root group can access the files,
+  # and only root can write to the rsynced directories.
+  /usr/bin/rsync -a --no-owner --no-group --chmod=F640,D750 \
+      $uploads_dir/  \
+      $backup_archives_dir/$uploads_backup_d/
 fi
 
 # Bump the mtime, so scripts/delete-old-backups.sh won't delete it too soon.
@@ -342,8 +364,9 @@ touch $backup_archives_dir/$uploads_backup_d
 log_message "Done backing up uploads."
 
 # Keep track of what we've backed up:
-$docker_compose exec rdb $psql -c \
-    "insert into backup_test_log3 (logged_at, logged_by, backup_of_what, file_name, random_value) values (now_utc(), '$hostname', 'pub-uploads', '$uploads_backup_d', '$random_value');"
+$psql -c \
+    "insert into backup_test_log3 (logged_at, logged_by, backup_of_what, file_name, random_value)
+     values (now_utc(), '$hostname', 'pub-uploads', '$uploads_backup_d', '$random_value');"
 
 
 
@@ -356,9 +379,8 @@ $docker_compose exec rdb $psql -c \
 # server to restore the backups, hen will find the instructions on how to
 # actually do that.
 
-chek_is_in_ty_dir
-
-cp docs/how-restore-backup.md $backup_archives_dir/HOW-RESTORE-BACKUPS.md
+# Store in image instead? Can then update instructions, & release w new img.
+cp $talkyard_dir/docs/how-restore-backup.md $backup_archives_dir/HOW-RESTORE-BACKUPS.md
 
 # Touch the docs file so it'll be the first thing one sees, with 'ls -halt'.
 touch $backup_archives_dir/HOW-RESTORE-BACKUPS.md
@@ -367,7 +389,6 @@ touch $backup_archives_dir/HOW-RESTORE-BACKUPS.md
 
 log_message "Done backing up."
 echo
-
 
 
 # You can test run this script via crontab. In Bash, type:

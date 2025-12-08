@@ -61,7 +61,7 @@ export POSTGRES_PASSWORD=public
 export DOCKER_REG_ORG=debiki
 
 # Dupl line [prod_test_docker_conf], also see ./impl/build-prod-images.sh.
-test_containers='docker compose -p edt -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml -f docker-compose-no-limits.yml'
+test_containers='docker compose -p tyb1 -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml -f docker-compose-no-limits.yml'
 
 echo "Starting:"
 echo "$test_containers up -d"

@@ -172,7 +172,7 @@ if [ -z "$skip_e2e_tests" ]; then
   set -e
 
   # Run the 'latest' tag — it's for the images we just built above.
-  # '-p edt' = EffectiveDiscussions Test project.
+  # '-p tyb1' = project Talkyard build, epoch 1.
   # Use the -no-limits.yml file, because we'll run performance tests.
   latest_test_containers=" \
       VERSION_TAG=latest \

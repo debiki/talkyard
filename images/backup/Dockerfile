@@ -7,9 +7,16 @@ LABEL org.opencontainers.image.title="Talkyard Backup" \
 
 RUN apt-get update && \
     apt-get install -y \
+      # For 'gpg', to encrypt backups.
+      gnupg2 \
+      # Avoids kernel panics when gzipping backups.
+      cpulimit \
+      # For backing up uploaded files.
+      rsync \
+      # For installing psql.
       curl ca-certificates  \
       # Nice to have:
-      vim tree less wget net-tools bash \
+      vim xxd tree less wget net-tools bash \
       # For 'ps':
       procps \
       # Telnet, nice for troubleshooting connection problems.
@@ -17,7 +24,8 @@ RUN apt-get update && \
       && \
     rm -rf /var/lib/apt/lists/*
 
-# Install the Pg 18 client, as per https://www.postgresql.org/download/linux/debian/
+
+# Install psql, the Pg 18 client, as per https://www.postgresql.org/download/linux/debian/
 
 # We've downloaded the signing key, apt.postgresql.org.asc, already, so we can _double_check.
 COPY postgresql-ACCC4CF8.asc  /ty/ACCC4CF8.asc
@@ -43,9 +51,12 @@ RUN \
 WORKDIR /ty/
 
 # Place last, since we edit these files sometimes.
-COPY entrypoint.sh   /ty/
-COPY backup-test.sh  /ty/backup.sh
+COPY  entrypoint.sh  \
+      backup.sh  \
+      delete-old-backups.sh  \
+      /ty/
 
 ENTRYPOINT ["/ty/entrypoint.sh"]
-CMD ["./backup.sh"]
+
+CMD echo 'Run `backup.sh backupLabel` or `delete-old-backups.sh`.'
 

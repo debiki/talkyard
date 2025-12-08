@@ -89,6 +89,8 @@ services:
     cap_drop:
       - ALL
     cap_add:
+      # Docs: https://man7.org/linux/man-pages/man7/capabilities.7.html
+      #
       # Without CHOWN:
       # nginx: [emerg] chown("/opt/nginx/proxy-cache", 100) failed (1: Operation not permitted)
       - CHOWN
@@ -308,11 +310,18 @@ services:
   backup:
     build: images/backup/
     image: ${DOCKER_REG_ORG}/talkyard-backup
-    restart: never
+    restart: no
+    # If under heavy load, run backup scripts in the background with 25% priority.
+    # (The default share is 1024. 256 means that the backup container gets just 25%
+    # as much CPU as the other containers.)
+    cpu_shares: 256
+    # Don't let the backup container use more than 60% CPU (even if the system is idle).
+    cpu_quota:   60000
+    cpu_period: 100000
     secrets:
       # Will appear at /run/secrets/postgres_password. [backup_pg_client_secret]
       - postgres_password
-      - backup_password
+      #- backup_password
     volumes:
       # So can backup uploaded files.
       - talkyard-v1-pub-files:/var/talkyard-v1/pub-files:ro
@@ -322,6 +331,8 @@ services:
       - ./modules/ed-prod-one-test:/opt/talkyard-v1:ro
       # Where to save backups, in dev builds.
       - ./target/var-opt-backups-talkyard-v1:/var/opt/backups/talkyard/v1
+      # So can edit the backup script and changes take effect without rebuild.
+      #- ./images/backup/backup.sh:/ty/backup.sh
     logging: *default_logging
     depends_on:
       - rdb
@@ -329,6 +340,10 @@ services:
       internal_net:
     cap_drop:
       - ALL
+    cap_add:
+      # So 'root' can access Redis' dump.rdb file, which is owned by user 'redis' 999.
+      - CAP_DAC_READ_SEARCH
+
 
   # An extra database, so you can experiment with Postgres replication and failover.
   # You don't need to start it.

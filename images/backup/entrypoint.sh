@@ -20,8 +20,13 @@ secret_file="/run/secrets/postgres_password"   # [backup_pg_client_secret]
 #
 pgpass_file="/tmp/.pgpass"
 
-# Use '*' as database, so we can connect to all, when running pg_dumpall.
-echo "rdb:5432:*:postgres:$(cat "$secret_file")" > "$pgpass_file"
+# Use '*' as database and user, so we can connect to all, when running pg_dumpall.
+# We use the same Postgres password for all users [same_pg_pw], except for
+# any test dataase, which uses 'public'. [test_db_pwd]
+echo "
+rdb:5432:*:talkyard_test:public
+rdb:5432:*:*:$(cat "$secret_file")
+" > "$pgpass_file"
 chmod 0600 "$pgpass_file"
 
 echo "Created Postgres password file: $pgpass_file."
