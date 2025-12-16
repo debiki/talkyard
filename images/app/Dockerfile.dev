@@ -97,7 +97,7 @@ RUN  chmod ugo+x   /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 # Overriden in docker-compose.yml
-ENV PLAY_HEAP_MEMORY_MB 2048
+ENV PLAY_HEAP_MEMORY_MB=2048
 
 # Skip HEALTHCHECK — in dev builds, starting and recompiling can take minutes.
 # And don't want healthchecks to accidentally trigger recompilations!?

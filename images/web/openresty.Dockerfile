@@ -506,7 +506,8 @@ HEALTHCHECK \
     CMD curl --fail --silent http://localhost:80/-/ping-nginx || exit 1
 
 
-CMD /etc/nginx/run-envsubst-gen-keys.sh && nginx
+# TODO  rename script to  ...-exec-nginx.sh
+CMD ["/etc/nginx/run-envsubst-gen-keys.sh"]
 
 
 # Tell Docker to send SIGQUIT instead of default SIGTERM, when stopping this container

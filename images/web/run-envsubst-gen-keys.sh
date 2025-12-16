@@ -74,3 +74,5 @@ if [ ! -f $fallback_cert_path_pem ]; then
       -keyout $fallback_cert_path_key \
       -out $fallback_cert_path_pem
 fi
+
+exec nginx

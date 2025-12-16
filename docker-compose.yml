@@ -310,6 +310,7 @@ services:
   backup:
     build: images/backup/
     image: ${DOCKER_REG_ORG}/talkyard-backup
+    profiles: [backup] # prevents auto-start on 'up'
     restart: no
     # If under heavy load, run backup scripts in the background with 25% priority.
     # (The default share is 1024. 256 means that the backup container gets just 25%

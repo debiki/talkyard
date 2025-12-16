@@ -87,7 +87,7 @@ done
 test_containers='docker compose -p tyb1 -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml -f docker-compose-no-limits.yml'
 
 if [ -z "$skip_restart" ]; then
-  sudo $test_containers kill web app search cache rdb
+  sudo $test_containers kill web app search cache rdb backup
   sudo $test_containers down
 
   s/d kill web app
@@ -146,6 +146,7 @@ if [ -z "$skip_build" ]; then
   s/d build cache
   s/d build rdb
   s/d build search
+  s/d build backup
 
   # Build the app server prod image.
   # First run tests though. All this needs lots of memory.
