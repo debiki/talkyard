@@ -13,7 +13,8 @@ services:
       E2E_TEST_PASSWORD: 'public'
       FORBIDDEN_PASSWORD: 'public'
       PLAY_SECRET_KEY: 'public-03xP4K463krs4397j923fuyRKB5sek4928674luh49rka5692kj9089'
-      POSTGRES_PASSWORD: 'public'
+      # Using POSTGRES_PASSWORD_FILE instead of:
+      # POSTGRES_PASSWORD: 'public'
       TY_SYSMAINT_API_SECRET: 'test_sysmaint_api_secret'
       TY_EMAIL_WEBHOOKS_API_SECRET: 'publicEmailWebhooksApiTestSecret'
       TY_FEATURE_FLAGS: 'ffMayPatchSite'
@@ -27,10 +28,10 @@ services:
     environment:
       ES_JAVA_OPTS: '-Xms260m -Xmx260m'
 
-  rdb:
+  #rdb:
     #mem_limit: 140M
-    environment:
-      POSTGRES_PASSWORD: 'public'
+    #environment:
+    #  POSTGRES_PASSWORD: 'public'
 
   # A fake external server, for e2e tests, when the Ty server sends its own HTTP
   # requests to external things.

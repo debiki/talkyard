@@ -57,7 +57,7 @@ echo "Ok, starting version $version_tag"
 # ----------------------
 
 export VERSION_TAG=$version_tag
-export POSTGRES_PASSWORD=public
+#export POSTGRES_PASSWORD=public  — using POSTGRES_PASSWORD_FILE instead
 export DOCKER_REG_ORG=debiki
 
 # Dupl line [prod_test_docker_conf], also see ./impl/build-prod-images.sh.
