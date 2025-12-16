@@ -21,4 +21,11 @@ RUN \
 
 COPY ./docker-entrypoint-initdb.d/ /docker-entrypoint-initdb.d/
 
+HEALTHCHECK \
+    --start-period=60s \
+    --start-interval=1s \
+    --interval=20s \
+    --timeout=5s \
+    --retries=5 \
+    CMD pg_isready -U postgres
 

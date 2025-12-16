@@ -23,6 +23,9 @@ LABEL org.opencontainers.image.title="Talkyard Search" \
       io.talkyard.edition="se" \
       io.talkyard.epoch="1"
 
+# The healthchecks use curl. The others are nice-to-have.
+RUN microdnf install curl net-tools tree && microdnf clean all
+
 # Or maybe add configurable files in a conf/search/ directory in the prod repo?
 # Then, in dev builds, mount the conf from  modules/ed-prod-one-test/conf/search/.
 # Let's wait! No one has ever asked about fine tuning ElasticSearch, and anyway most
@@ -33,7 +36,12 @@ COPY --chown=elasticsearch:elasticsearch \
       elasticsearch.yml  \
   /usr/share/elasticsearch/config/
 
-# For troubleshooting. Oops, maybe rpm not apt?
-# RUN apt-get install -y net-tools tree
 
+HEALTHCHECK \
+    --start-period=120s \
+    --start-interval=5s \
+    --interval=30s \
+    --timeout=5s \
+    --retries=10 \
+    CMD curl --fail --silent http://localhost:9200/_cluster/health?local=true || exit 1
 

@@ -99,7 +99,8 @@ ENTRYPOINT ["/docker-entrypoint.sh"]
 # Overriden in docker-compose.yml
 ENV PLAY_HEAP_MEMORY_MB 2048
 
-
+# Skip HEALTHCHECK — in dev builds, starting and recompiling can take minutes.
+# And don't want healthchecks to accidentally trigger recompilations!?
 
 # ------------------------------------------------------------
 # SBT options, as of 2020-12-20:  (d/c exec app bash ; cd /opt/sbt/bin ; ./sbt -h)

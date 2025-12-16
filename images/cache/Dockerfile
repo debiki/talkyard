@@ -8,3 +8,11 @@ LABEL org.opencontainers.image.title="Talkyard Cache" \
       io.talkyard.edition="se" \
       io.talkyard.epoch="1"
 
+HEALTHCHECK \
+    --start-period=60s \
+    --start-interval=1s \
+    --interval=20s \
+    --timeout=5s \
+    --retries=5 \
+    CMD redis-cli ping || exit 1
+

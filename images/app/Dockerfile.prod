@@ -45,8 +45,10 @@ RUN groupadd -r appgroup && useradd -r -s /bin/false -g appgroup appuser
 RUN \
   apt-get update && \
   apt-get install -y \
+    # For healthchecks.
+    curl \
     # Nice to have:
-    curl tree less wget net-tools bash \
+    tree less wget net-tools bash \
     # For 'ps':
     procps \
     # For PASETO v2.local tokens, needs XChaCha20Poly1305:
@@ -101,6 +103,16 @@ RUN \
     echo 'JAVA_HOME=/opt/java/openjdk\n'          >>         /etc/environment
 
 USER appuser
+
+HEALTHCHECK \
+    --start-period=180s \
+    --start-interval=3s \
+    --interval=60s \
+    # Maybe JVM garbage collections can take long, if on a shared CPU VM.
+    --timeout=30s \
+    --retries=5 \
+    CMD curl --fail --silent http://localhost:9000/-/ping-session-action || exit 1
+
 
 # # this —> "Bad root server path: /opt/talkyard/app/-jvm-debug 9999", no idea why...
 # CMD ["/opt/talkyard/app/bin/talkyard-server", \
