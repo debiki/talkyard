@@ -117,12 +117,9 @@ $psql -c \
     "insert into backup_test_log3 (logged_at, logged_by, backup_of_what, file_name, random_value)
      values (now_utc(), '$hostname', 'rdb', '$postgres_backup_file_name', '$random_value');"
 
-# Update 2025: Yes let's do, let's try with  cpulimit --limit 50
-# and add  apt install cpulimits  as an installation step.
-# Update 2025-12: Don't use nice and cpulimit! [no_nice_docker_scripts]
-# Instead, add `cpu_shares` etc in docker-compose.yml.
 # ---------------
-# Don't pipe to gzip — that can spike the CPU to 100%, making the kernel panic.
+# There's `cpu_*` limits in docker-compose.yml, because:
+# Piping to gzip can spike the CPU to 100%, making the kernel panic.
 # It then logs: [100_kernel_panic]
 #
 #    watchdog: BUG: soft lockup - CPU#0 stuck for 22s!
@@ -145,6 +142,13 @@ $psql -c \
 # before recreating them.
 #
 # (cron's path apparently doesn't include /sur/local/bin/  hmm I mean /usr/...)
+#
+# Pipe to gzip — don't save any .sql file in a separate step, because that uses more disk,
+# and leave self-hosters confused if they've run out of disk and there's uncompressed .sql
+# files seemingly causing the problem.  (But the problem is rather that the disk is
+# dangerously small. Therefore, running gzip in a separate step failed — gzip, when run on its
+# own (not in a pipe) needs space for both the .sql and .sql.gz — but when piping, needs space
+# only for .sql.gz).)
 #
 if [ -n "$encrypted" ]; then
   pg_dumpall --host rdb --username=postgres --clean --if-exists  \
@@ -289,7 +293,9 @@ if [ -n "$encrypted" ]; then
       old_bkp_path="$backup_archives_dir/$last_upl_bkp_d/${file_path#./}.gpg"
       new_bkp_path="$backup_archives_dir/$uploads_backup_d/${file_path#./}.gpg"
       if [ -f "$old_bkp_path" ]; then
-        cp -a "$old_bkp_path" "$new_bkp_path"
+        # Specify `-l` to hard link the file, instead of physically copying it. [hard_bkp_links]
+        # Read here to check if works: [check_hard_lns]
+        cp -al "$old_bkp_path" "$new_bkp_path"
         echo "Reusing old backup: $old_bkp_path -> $new_bkp_path"
       fi
     done
@@ -346,12 +352,26 @@ if [ -n "$encrypted" ]; then
   #   fi
   # done
 else
+  # rsync can make hard-link copies — if there's already backups from last month, so
+  # there's something to hard link to.
+  #
+  # To check that this works [check_hard_lns], run `stat filepath` on a file in the most
+  # recent backup, and in the last-but-one backup (for example). Look at the `Inode` nr —
+  # should be the same for both files. Look at `Links` — should be the same, and >= 2.
+  #
+  if [[ -d "$backup_archives_dir/$last_upl_bkp_d/" ]]; then
+    link_dest_arg="--link-dest=$backup_archives_dir/$last_upl_bkp_d/"  # [hard_bkp_links]
+  else
+    link_dest_arg=''
+  fi
+
   # The --no-* won't preserve file owner and group, instead, the backed-up copies will
   # be owned by root. (To preserve owner, we'd need CAP_CHOWN, says Gemini, but we don't
   # want to preserve owner.)  [_backup_file_perms]
   # We also chmod the files so only root and the root group can access the files,
   # and only root can write to the rsynced directories.
   /usr/bin/rsync -a --no-owner --no-group --chmod=F640,D750 \
+      $link_dest_arg  \
       $uploads_dir/  \
       $backup_archives_dir/$uploads_backup_d/
 fi

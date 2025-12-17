@@ -316,7 +316,8 @@ services:
     # (The default share is 1024. 256 means that the backup container gets just 25%
     # as much CPU as the other containers.)
     cpu_shares: 256
-    # Don't let the backup container use more than 60% CPU (even if the system is idle).
+    # Don't let the backup container use more than 60% CPU (even if the system is idle),
+    # otherwise on a small VM the kernel might panic [100_kernel_panic].
     cpu_quota:   60000
     cpu_period: 100000
     secrets:

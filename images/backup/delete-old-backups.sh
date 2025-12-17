@@ -17,14 +17,23 @@ deleted_backups_log=./deleted-backups.tmp.log
 # -------------------
 
 function deleteSome {
-  # Need 'eval' otherwise `find` thinks the single quotes "'" are parts of a file name.
-  # (This: `-regextype posix-extended` must be before `-regex`.)
-  find_files="eval find $archives_dir -type f -regextype posix-extended -regex '.+/.+-$@(\.gpg)?'"
+  what_files="$1"
+
+  run_find() {
+    # (This: `-regextype posix-extended` must be before `-regex`.)
+    find $archives_dir -type f -regextype posix-extended \
+            -regex ".+/.+-$what_files(\.gpg)?"  "$@"
+  }
 
   min_recent_bkps=8
   recent_days=10
-  recent_bkps=$($find_files -not -mtime +$recent_days)
-  num_recent_bkps=$(echo "$recent_bkps" | wc --lines)
+  recent_bkps=$(run_find -not -mtime +$recent_days)
+
+  num_recent_bkps=0
+  # Since _echo_prints_newline also if empty, first check if is empty.
+  if [ -n "$recent_bkps" ]; then
+    num_recent_bkps=$(echo "$recent_bkps" | wc --lines)
+  fi
 
   # If new backups don't work (i.e. there are too few recent backups) or we haven't yet
   # been backing up for a while, then, delete nothing.
@@ -40,19 +49,19 @@ function deleteSome {
     echo
   else
     # Delete all older than a year.
-    $find_files -mtime +366  \
+    run_find -mtime +366  \
         -print -delete >> $deleted_backups_log
 
     # Keep monthly backups, if older than 3 months.
-    $find_files -mtime +92  \
+    run_find -mtime +92  \
         -not -regex '.*[0-9]{4}-[0-9]{2}-01T.*' -print -delete >> $deleted_backups_log
 
     # Keep 1/10 days backups, if older than 1 month. (From the 1st, 11th and 21th days each month, but not 31st.)
-    $find_files -mtime +32  \
+    run_find -mtime +32  \
         -not -regex '.*[0-9]{4}-[0-9]{2}-[012]1T.*' -print -delete >> $deleted_backups_log
 
-    # Keep 1/3 days backups, if older than two weeks.
-    $find_files -mtime +14  \
+    # Keep 1/3 days backups, if older than _two_weeks.
+    run_find -mtime +14  \
         -not -regex '.*[0-9]{4}-[0-9]{2}-[012][148]T.*' -print -delete >> $deleted_backups_log
 
     # For the last weeks, keep all backups. (Noop.)
@@ -68,9 +77,9 @@ deleteSome "random-value\.txt"  # (not gzipped)
 # Delete old Redis backups
 # -------------------
 
-# Redis is a cache. No point in keeping backups for long.
+# Redis is a cache. No point in keeping backups for long, say, more than _two_weeks.
 
-find $archives_dir -type f -mtime +4 -daystart -regextype posix-extended \
+find $archives_dir -type f -mtime +14 -daystart -regextype posix-extended \
       -regex '.*/.*-redis\.rdb\.gz(\.gpg)?' -print -delete >> $deleted_backups_log
 
 
@@ -83,14 +92,21 @@ find $archives_dir -type f -mtime +4 -daystart -regextype posix-extended \
 # during that month.
 #
 # Let's keep such archive dirs for 4 months = 4 archives (30.5 * 4 = 122 < 123).
+# (These don't take much space — this month's backed up files are hard links to
+# last month's backup. [hard_bkp_links])
 #
 # But if there're only 1 or 2 archives, then, don't delete anything — because
 # that could mean something is amiss: new backups no longer appear.
 
-find_upl_bkps="find $archives_dir -name '*-uploads-up-to-incl-*.d' -type d"
+find_upl_bkps () {
+  find $archives_dir -name '*-uploads-up-to-incl-*.d' -type d  "$@"
+}
 
-recent_bkps=$(eval $find_upl_bkps -not -mtime +123)
-num_recent_bkps=$(echo "$recent_bkps" | wc --lines)
+recent_bkps="$(find_upl_bkps -not -mtime +123)"
+num_recent_bkps=0  # _echo_prints_newline
+if [ -n "$recent_bkps" ]; then
+  num_recent_bkps=$(echo "$recent_bkps" | wc --lines)
+fi
 
 if [ "$num_recent_bkps" -le "2" ]; then
   log_message "There're only $num_recent_bkps recent uploads backups."
@@ -100,8 +116,8 @@ if [ "$num_recent_bkps" -le "2" ]; then
   echo "$recent_bkps"
   echo
 else
-  eval $find_upl_bkps -mtime +123  \
-      -print -exec rm -r '{}' +  \
+  find_upl_bkps -mtime +123  \
+      -print -prune -exec rm -rf '{}' +  \
       >> $deleted_backups_log
 fi
 
