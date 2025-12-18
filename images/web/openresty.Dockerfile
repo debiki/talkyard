@@ -434,8 +434,8 @@ COPY nginx.conf           /etc/nginx/nginx.conf.template
 # ===================================
 
 
-COPY run-envsubst-gen-keys.sh /etc/nginx/run-envsubst-gen-keys.sh
-RUN  chmod ugo+x              /etc/nginx/run-envsubst-gen-keys.sh
+COPY run-envsubst-gen-keys-exec-nginx.sh  /etc/nginx/
+RUN  chmod ugo+x                          /etc/nginx/run-envsubst-gen-keys-exec-nginx.sh
 
 # Sync w vars in  run-envsubst-gen-keys.sh  and  docker-compose-no-limits.yml  [0KW2UY3].
 #
@@ -506,8 +506,7 @@ HEALTHCHECK \
     CMD curl --fail --silent http://localhost:80/-/ping-nginx || exit 1
 
 
-# TODO  rename script to  ...-exec-nginx.sh
-CMD ["/etc/nginx/run-envsubst-gen-keys.sh"]
+CMD ["/etc/nginx/run-envsubst-gen-keys-exec-nginx.sh"]
 
 
 # Tell Docker to send SIGQUIT instead of default SIGTERM, when stopping this container
