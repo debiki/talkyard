@@ -113,6 +113,12 @@ HEALTHCHECK \
     --retries=5 \
     CMD curl --fail --silent http://localhost:9000/-/ping-session-action || exit 1
 
+COPY entrypoint.prod.sh \
+     chown-postgres_password.sh \
+     /ty/
+
+ENTRYPOINT ["/ty/entrypoint.prod.sh"]
+
 
 # This —> "Invalid initial heap size: -Xms${PLAY_HEAP_MEMORY_MB}m" although env var set!
 # CMD ["/opt/talkyard/app/bin/talkyard-server", \

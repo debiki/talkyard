@@ -13,7 +13,8 @@ repo=`sed -nr 's/DOCKER_REG_ORG=([a-zA-Z0-9\._-]*).*/\1/p' .env`
 
 sudo rm -fr target/docker-app-prod
 mkdir -p target/docker-app-prod
-cp -a images/app/{Dockerfile.prod,assets,migrations} target/docker-app-prod/
+cp -a images/app/{Dockerfile.prod,entrypoint.prod.sh,chown-postgres_password.sh,assets,migrations} \
+      target/docker-app-prod/
 cp version.txt target/docker-app-prod/
 cd target/docker-app-prod
 cp ../universal/talkyard-server-$version.zip ./

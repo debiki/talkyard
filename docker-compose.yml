@@ -128,9 +128,7 @@ services:
       - ./vendors/jars/sbt/:/home/owner/.sbt/
     secrets:
       - source: postgres_password
-        # Don't know what id user 'owner' (created in images/app/entrypoint.dev.sh)
-        # will have, so make world-readable. (Dev mode only.)
-        mode: 0444
+        target: /tmp/postgres_password  # [postgres_pw_path]
     networks:
       internal_net:
         ipv4_address: ${INTERNAL_NET_APP_IP}

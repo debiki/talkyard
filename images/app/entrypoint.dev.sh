@@ -43,6 +43,10 @@ else
       owner   # [5RZ4HA9]
 fi
 
+# The Postgres password at /tmp/postgres_password should already be readable — in
+# dev builds, there's just a public test password in
+# ../../tests/secrets/test_postgres_password.txt. [appuser_id_1000]
+
 # Below this dir, sbt and Ivy will cache their files. [SBTHOME]
 # mkdir -p /home/owner/ — Already created by `adduser` above.
 

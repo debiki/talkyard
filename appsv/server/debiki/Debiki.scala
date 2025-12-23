@@ -50,8 +50,9 @@ object Debiki {
       else configStr("talkyard.postgresql.user")
 
     def password = {
-        // Let's use Docker secets, that's better. (See 'secrets:' in docker-compose.yml.)
-        val path = "/run/secrets/postgres_password"
+        // Let's use Docker secets, that's better. (See 'secrets:' and
+        // 'post_start:' in docker-compose.yml.)
+        val path = "/tmp/postgres_password"   // [postgres_pw_path]
         talkyard.server.util.readFile(path).map(_.trim).getOrElse {
             logger.info(s"Postgres password file $path missing [TyM0PGPWDFILE]")
             // Legacy:
