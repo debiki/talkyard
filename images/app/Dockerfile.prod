@@ -59,12 +59,12 @@ RUN \
 # Play's HTTP and HTTPS listen ports, Java debugger port, JMX port 3333.
 EXPOSE 9000 9443 9999 3333
 
-# Docker volumes talkyard-v1-pub-files and -priv-files get mounted here.
+# Docker volumes pub-files and priv-files get mounted here.
 # (We create sub dirs as needed from Scala code. [pub_files_volume])
-RUN mkdir -p /opt/talkyard/pub-files/ && \
-    mkdir -p /opt/talkyard/priv-files/ && \
-    chown appuser:appgroup /opt/talkyard/pub-files/ && \
-    chown appuser:appgroup /opt/talkyard/priv-files/
+RUN mkdir -p /var/talkyard/v1/pub-files/ && \
+    mkdir -p /var/talkyard/v1/priv-files/ && \
+    chown appuser:appgroup /var/talkyard/v1/pub-files/ && \
+    chown appuser:appgroup /var/talkyard/v1/priv-files/
 
 # Frequently modified JARs have been moved to app-lib-talkyard/ and we here copy them in a
 # separate step, so only that step will have to be pushed/pulled to/from Docker Hub.

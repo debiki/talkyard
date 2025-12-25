@@ -70,7 +70,7 @@ gpg_encrypt="gpg --batch --symmetric --cipher-algo AES256 --passphrase-file $bac
 backup_archives_dir=/var/opt/backups/talkyard/v1/archives
 
 talkyard_dir=/opt/talkyard-v1
-ty_data_dir=/var/talkyard-v1
+ty_data_dir=/var/talkyard/v1
 uploads_dir=$ty_data_dir/pub-files/uploads
 
 

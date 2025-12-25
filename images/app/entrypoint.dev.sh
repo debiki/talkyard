@@ -66,8 +66,9 @@ if [ $file_owner_id -ne 0 ] ; then
   chown -R owner:owner /home/owner/.cache
   # Let the app user, 'owner', save uploads and sitemaps. [pub_files_volume]
   # (In the Dockerfile.dev, we don't know the id of 'owner', but now, here, we do.)
-  chown -R owner:owner /opt/talkyard/pub-files/
-  chown -R owner:owner /opt/talkyard/priv-files/
+  echo "Making 'owner:owner' owner of /var/talkyard/v1/{pub-files,priv-files} ..."
+  chown -R owner:owner /var/talkyard/v1/pub-files/
+  chown -R owner:owner /var/talkyard/v1/priv-files/
 
   # Here, 'exec gosu owner $*' will:
   # 1) run $* as user owner, which has the same user id as the file owner on the Docker host

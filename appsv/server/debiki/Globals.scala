@@ -76,8 +76,8 @@ object Globals extends TyLogging {
   val UgcBaseDomainConfValName = "talkyard.ugc.baseDomain"
   // Was: "talkyard.uploads.localhostDir" in Ty v0, but now renamed.
   val LocalhostUploadsDirConfValName = "talkyard.uploads.pubDir"
-  val DefaultPubUploadsDir = "/opt/talkyard/pub-files/uploads/"
-  val SitemapFilesDir_later = "/opt/talkyard/pub-files/sitemaps/"  // later [sitemaps]
+  val DefaultPubUploadsDir = "/var/talkyard/v1/pub-files/uploads/"
+  val SitemapFilesDir_later = "/var/talkyard/v1/pub-files/sitemaps/"  // later [sitemaps]
 
   val AppSecretConfValName = "play.http.secret.key"
   val AppSecretDefVal = "change_this"
@@ -268,6 +268,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     // [Scala_213] Using(...) { ... }
     var source: scala.io.Source = null
     try {
+      // (This is in the Docker image, not host OS.)
       source = scala.io.Source.fromFile("/opt/talkyard/app/version.txt")(scala.io.Codec.UTF8)
       source.mkString.trim
     }
@@ -741,7 +742,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     val pathSlash = if (value.exists(_.endsWith("/"))) value else value.map(_ + "/")
     pathSlash match {
       case None =>
-        // Make sure the uploads/ sub dir exists — we've mounted  /opt/talkyard/pub-files/
+        // Make sure the uploads/ sub dir exists — we've mounted  /var/talkyard/v1/pub-files/
         // but it might be empty, no uploads/ sub dir.   [pub_files_volume]
         try {
           jf.Files.createDirectories(jf.Paths.get(DefaultPubUploadsDir))
@@ -788,7 +789,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     dieIf(colonPortParam.nonEmpty && colonPortParam != colonPort,
       "EdE47SK2", o"""Bad port: $portParam. You're accessing the server via non-standard
         port $portParam, but then you need to add config value `talkyard.port=$portParam`,
-        in file /opt/talkyard/conf/app/play.conf,
+        in file /opt/talkyard-v1/conf/app/play-framework.conf,
         otherwise I won't know for sure which port to include in URLs I generate.
         Also restart the app server for the new config to take effect:
         sudo docker compose restart web app""")

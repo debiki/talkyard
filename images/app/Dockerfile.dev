@@ -63,16 +63,16 @@ ADD  sbt/sbt-1.11.7.tgz  /opt/
 # Play's HTTP and HTTPS listen ports, Java debugger port, JMX port 3333.
 EXPOSE 9000 9443 9999 3333
 
-# Docker volumes talkyard-v1-pub-files and -priv-files get mounted here.
+# Docker volumes pub-files and priv-files get mounted here.
 # (We create sub dirs as needed from Scala code. [pub_files_volume])
-RUN mkdir -p /opt/talkyard/pub-files/ && \
-    mkdir -p /opt/talkyard/priv-files/
+RUN mkdir -p /var/talkyard/v1/pub-files/ && \
+    mkdir -p /var/talkyard/v1/priv-files/
     # We'll chown to the correct user in entrypoint.dev.sh — but right
     # now, here, we don't yet know the id of that user.
     ## In dev builds, we don't know the id of the user we'll start Talkyrad as, so let
     ## anyone write to these dirs. (In prod builds, we chown to appuser, instead.)
-    ##chmod -R ugo+rw /opt/talkyard/pub-files/ && \
-    ##chmod -R ugo+rw /opt/talkyard/priv-files/
+    ##chmod -R ugo+rw /var/talkyard/v1/pub-files/ && \
+    ##chmod -R ugo+rw /var/talkyard/v1/priv-files/
 
 # Add a self signed dummy cert for the dummy SMTP server (the 'fakemail' Docker container),
 # so one can test connecting to it with TLS and see if the TLS conf vals work. [26UKWD2]
