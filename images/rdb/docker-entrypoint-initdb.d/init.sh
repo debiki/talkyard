@@ -6,13 +6,17 @@
 # is empty on container startup; any pre-existing database is left untouched.
 # See: https://github.com/docker-library/docs/tree/master/postgres#how-to-extend-this-image
 
+echo "Running /docker-entrypoint-initdb.d/init.sh as user:  $(id)"
+
 # Fallback to env var.
 pg_pwd="$POSTGRES_PASSWORD"
-pg_pwd_file=/run/secrets/postgres_password   # [same_pg_pw]
+pg_pwd_file=/tmp/postgres_password   # [same_pg_pw]
 
 if [ -s $pg_pwd_file ]; then
   echo "Picking Postgres password from Docker secrets file: $pg_pwd_file"
   pg_pwd="$(cat $pg_pwd_file)"
+else
+  echo "Postgres password secrets file: $pg_pwd_file missing, trying POSTGRES_PASSWORD env var"
 fi
 
 # So ':pg_pwd' works in psql commands.

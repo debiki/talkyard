@@ -187,8 +187,15 @@ if [ -z "$skip_e2e_tests" ]; then
     # No longer any data/ dir!
     #sudo rm -fr modules/ed-prod-one-test/data
 
+    echo
+    echo '------------------------------------------------------------------'
+    echo "Starting e2e test servers:"
+    echo "    $latest_test_containers up -d"   # _dupl_start_line
+    echo '------------------------------------------------------------------'
+    echo
+
     # Auto creates volumes:
-    sudo $latest_test_containers up -d
+    sudo $latest_test_containers up -d  # _dupl_start_line
   fi
 
   if [ -n "`jobs`" ]; then

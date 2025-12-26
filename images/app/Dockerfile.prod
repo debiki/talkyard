@@ -44,7 +44,8 @@ RUN groupadd --gid 1000 appgroup && useradd --uid 1000 -s /bin/false -g appgroup
 
 RUN \
   apt-get update && \
-  apt-get install -y \
+  apt-get install -y --no-install-recommends \
+    gosu \
     # For healthchecks.
     curl \
     # Nice to have:
@@ -54,7 +55,8 @@ RUN \
     # For PASETO v2.local tokens, needs XChaCha20Poly1305:
     libsodium-dev \
     # Telnet, nice for troubleshooting SMTP problems for example.
-    telnet
+    telnet \
+  && rm -rf /var/lib/apt/lists/*
 
 # Play's HTTP and HTTPS listen ports, Java debugger port, JMX port 3333.
 EXPOSE 9000 9443 9999 3333
@@ -101,8 +103,6 @@ RUN \
     # use another user to start Ty.
     sed --in-place 's#^PATH="#PATH="/opt/java/openjdk/bin:#' /etc/environment && \
     echo 'JAVA_HOME=/opt/java/openjdk\n'          >>         /etc/environment
-
-USER appuser
 
 HEALTHCHECK \
     --start-period=180s \

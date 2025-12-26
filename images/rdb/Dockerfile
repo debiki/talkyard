@@ -20,6 +20,7 @@ RUN \
   && rm -rf /var/lib/apt/lists/*
 
 COPY ./docker-entrypoint-initdb.d/ /docker-entrypoint-initdb.d/
+COPY ./entrypoint.sh ./chown-postgres_password.sh  /ty/
 
 HEALTHCHECK \
     --start-period=60s \
@@ -28,4 +29,12 @@ HEALTHCHECK \
     --timeout=5s \
     --retries=5 \
     CMD pg_isready -U postgres
+
+# This makes the secret password file readable by 'postgres', then runs the default
+# entrypoint.
+ENTRYPOINT ["/ty/entrypoint.sh"]
+
+# Need to redefine, apparently gets unset if specifying an entrypoint (without,
+# docker compose up rdb just exits w status 0).
+CMD ["postgres"]
 
