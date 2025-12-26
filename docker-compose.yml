@@ -139,6 +139,7 @@ services:
       - '3333:3333' # JMX
     depends_on:
       # Start also if unhealthy. Then, can show admin friendly troubleshooting tips.
+      - rendr
       - cache
       - rdb
       - search
@@ -173,10 +174,25 @@ services:
       # JAEGER_AUTH_TOKEN: ""
     cap_drop:
       - ALL
-    cap_add: # [enough_caps]?
-      - CHOWN # only for development
+    cap_add:
+      - CHOWN
       - SETGID
       - SETUID
+
+  rendr:
+    build: images/rendr/
+    image: ${DOCKER_REG_ORG}/talkyard-rendr
+    read_only: true  # will this work? If so, add to prod too
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_RENDR_IP}
+    ports:
+     # For debugging and troubleshooting, dev builds.
+     - '8084:8084' # Deno listens on this port.
+     - '9084:9084' # Deno debugger port
+    logging: *default_logging
+    cap_drop:
+      - ALL
 
   cache:
     build: images/cache/
@@ -201,7 +217,7 @@ services:
       retries: 5
     cap_drop:
       - ALL
-    cap_add:  # [enough_caps]?
+    cap_add:
       # The redis entryoint does:
       #    find . \! -user redis -exec chown redis '{}' +
       # so we need CHOWN. [redis_cap_chown]
@@ -211,7 +227,6 @@ services:
       - CHOWN
       - SETGID
       - SETUID
-      - KILL # ?
 
   search:
     build: images/search/
@@ -248,15 +263,11 @@ services:
       nofile:
         soft: 65536
         hard: 65536
-    #mem_limit: 2g
-
-    #cap_drop:
-    #  - ALL
-    #cap_add:  # [enough_caps]?
-    #  - SETGID
-    #  - SETUID
-
-
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
 
   rdb:
     build: images/rdb/
@@ -365,6 +376,7 @@ services:
   adminer:
     image: adminer
     restart: no
+    profiles: [tools]
     logging: *default_logging
     ports:
       # Pg's default port, 5432, backwars.
@@ -480,7 +492,7 @@ services:
       - '2368:2368'
     # networks — don't use the internal net; Ghost is usually hosted elsewhere.
     restart: 'no'
-    profiles: [e2etest]
+    profiles: [e2etests]
 
 
 # vim: et ts=2 sw=2
