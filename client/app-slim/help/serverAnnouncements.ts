@@ -181,6 +181,8 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
   const maybeCertBug =
       isSelfHosted() && me.isAdmin && me.siteCreatedAtMs &&
       autoLuaCertFromMs < me.siteCreatedAtMs;
+  /* Don't think this is a probleme any more? I've upgraded lua-resty-acme a few times,
+  // the bug is gone?
   const certBugAnn: RElm | Nl = !maybeCertBug || isE2eTest ? null :
       help.HelpMessageBox({ message: {
           // SAn = Server Announcement, RnCt = Renew HTTPS Certificate tips nr 1.
@@ -194,6 +196,7 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
               " (this is because of a Talkyard bug)."),
             ThisShownToAdminsOnly()),
       } });
+      */
 
   return (
     r.div({ className: 'c_SrvAnns' },
@@ -202,7 +205,7 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
       anyMaintMsg(),
       rFr({}, adminNotices),
       // sampleNotice,
-      certBugAnn,
+      // certBugAnn,
       newTyVersionAnn,
       prevTyVersionAnn,
     ));
