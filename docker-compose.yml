@@ -84,6 +84,9 @@ services:
     # https://stackoverflow.com/a/63219871
     # and:
     # https://github.com/moby/moby/blob/1c39b1c44c973f18f39bd684c6aba57bb96510fe/oci/caps/utils.go#L120
+    security_opt:
+      # Check if works by using `docker inspect web`.
+      - no-new-privileges=true
     cap_drop:
       - ALL
     cap_add:
@@ -172,6 +175,8 @@ services:
       # JAEGER_USER: ""
       # JAEGER_PASSWORD: ""
       # JAEGER_AUTH_TOKEN: ""
+    security_opt:
+      - no-new-privileges=true
     cap_drop:
       - ALL
     cap_add:
@@ -191,6 +196,8 @@ services:
      - '8084:8084' # Deno listens on this port.
      - '9084:9084' # Deno debugger port
     logging: *default_logging
+    security_opt:
+      - no-new-privileges=true
     cap_drop:
       - ALL
 
@@ -215,6 +222,8 @@ services:
       interval: 20s
       timeout: 5s
       retries: 5
+    security_opt:
+      - no-new-privileges=true
     cap_drop:
       - ALL
     cap_add:
@@ -263,6 +272,8 @@ services:
       nofile:
         soft: 65536
         hard: 65536
+    security_opt:
+      - no-new-privileges=true
     cap_drop:
       - ALL
     cap_add:
@@ -304,6 +315,8 @@ services:
       interval: 20s
       timeout: 5s
       retries: 5
+    security_opt:
+      - no-new-privileges=true
     cap_drop:
       - ALL
     cap_add:  # [enough_caps]? See: https://github.com/docker-library/postgres/issues/649
@@ -347,6 +360,8 @@ services:
       - rdb
     networks:
       internal_net:
+    security_opt:
+      - no-new-privileges=true
     cap_drop:
       - ALL
     cap_add:
@@ -370,6 +385,8 @@ services:
   #    PEER_HOST: 'rdb'
   #    PEER_PORT: '5432'
   #    PEER_PASSWORD: 'public'
+  #  security_opt:
+  #    - no-new-privileges=true
   # + cap_drop etc from service 'rdb' above.
 
   # Not included in production (the docker file in talkyard-prod-one).
