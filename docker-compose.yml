@@ -34,6 +34,15 @@ x-logging: &default_logging
 services:
   web:
     build: images/web
+    # SECURITY [ty_v2]: Later, in prod, use an unprivileged image?
+    # See: https://github.com/nginx/docker-nginx-unprivileged
+    # Also: read_only: true,  then Gemini thinks we also need sth like:
+    # tmpfs:
+    #   - /var/cache/nginx:size=100M
+    #   - /var/run:size=1M
+    #   - /var/lib/nginx/tmp:size=100M
+    #   - /tmp ...
+    #   - /run ...
     image: ${DOCKER_REG_ORG}/talkyard-web
     # so can specify core dump path [NGXCORED]
     #privileged: true

@@ -107,11 +107,15 @@ RUN \
 HEALTHCHECK \
     --start-period=180s \
     --start-interval=3s \
-    --interval=60s \
+    --interval=45s \
     # Maybe JVM garbage collections can take long, if on a shared CPU VM.
     --timeout=30s \
     --retries=5 \
-    CMD curl --fail --silent http://localhost:9000/-/ping-session-action || exit 1
+    CMD curl --fail --silent http://localhost:9000/-/ping-exception-action || exit 1
+    # Would be better if we could ping:
+    #    http://localhost:9000/-/ping-session-action
+    # but then: 404 Not Found, because we didn't specify the hostname of a forum. Oh well.
+
 
 COPY entrypoint.prod.sh \
      chown-postgres_password.sh \
