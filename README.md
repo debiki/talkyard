@@ -188,7 +188,8 @@ Find the interesting stuff directly, also in big discussions with many people.
 <img src="https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2018-08-19-question-ex.jpeg" alt="Question-Answers">
 <kbd> -->
 
-![Question-Answers](./modules/talkyard-docs/static/img/readme/2017--estimate-unfamiliar-task.jpg)
+![Good comments rise to the top](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg)
+<!-- ./images/web/ty-media/for-docs/2017--estimate-unfamiliar-task.jpg  -->
 
 <!-- svg width="100%" height="600" xmlns="www.w3.org">
   <rect x="0" y="0" width="100%" height="100%" fill="#222" stroke="none" stroke-width="2"/>
@@ -208,7 +209,9 @@ Find the interesting stuff directly, also in big discussions with many people.
 
 See if others disagree with something, so you can avoid following the wrong advice.
 
-![Avoid mistakes](https://tyw-49f8.kxcdn.com/-/u/e7ef490a72/2/m/nu/zecljq7vwtuyxqfabsjwqzg6bfmyvr.jpg)
+![Avoid mistakes](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/penguins-can-fly.jpg)
+<!--
+![Avoid mistakes](https://tyw-49f8.kxcdn.com/-/u/e7ef490a72/2/m/nu/zecljq7vwtuyxqfabsjwqzg6bfmyvr.jpg) -->
 <br>
 
 
@@ -239,18 +242,21 @@ here: https://forum.talkyard.io/-/search?q=tags:priority:desc%3E2+is:open
 
 ### Upvote ideas
 
-![Upvote ideas](./modules/talkyard-docs/static/img/readme/upvote-ideas--aqua-planet-mind-writing-b0a--blue-marks--dimmed.png "Upvote ideas")
+![Upvote ideas](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/upvote-ideas--aqua-planet-mind-writing-b0a--blue-marks--dimmed.png "Upvote ideas")
 
-![Upvote ideas](./modules/talkyard-docs/static/img/readme/2026-01--upvote-ideas-settings.png "Upvote ideas")
+![Upvote ideas](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--upvote-ideas-settings.png "Upvote ideas")
 
 
 ### Anonymous comments
 
 So e.g. students can post embarassing questions. Or for anonymous feedback, etc.
 
-![Anonymous comments](./modules/talkyard-docs/static/img/2026-01--anon-disc.png)
-![Settings](./modules/talkyard-docs/static/img/2026-01--anon-never-always-menu.png)
-![Purpose](./modules/talkyard-docs/static/img/2026-01--anon-purpose-menu.png)
+<!--
+![Anonymous comments](./modules/talkyard-docs/static/img/2026-01--anon-disc.png) -->
+
+![Anonymous comments](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-disc.png)
+![Settings](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-never-always-menu.png)
+![Purpose](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-purpose-menu.png)
 
 
 ### Topic list:
@@ -259,7 +265,10 @@ So e.g. students can post embarassing questions. Or for anonymous feedback, etc.
 ![topic-list-borders](https://user-images.githubusercontent.com/7477359/44306130-a3930080-a388-11e8-9cbc-e569f5ddb7a1.jpg)
  the old demo forum looks better? so use instead.  -->
 
+![Topics list](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2019-08-10-idea-topics-list-ex.jpg "Topics list")
+<!--
 ![ideas-topics](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-idea-topics-list-ex.jpg "Topics list")
+-->
 <!--
 ![ideas-topics](/images/web/ty-media/for-docs/2019-08-10-idea-topics-list-ex.jpg?raw=true "Topics list")
 
@@ -271,7 +280,7 @@ So e.g. students can post embarassing questions. Or for anonymous feedback, etc.
 
 Notifications via email, as of now.
 
-![chat-topic](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2017-09-12-chat-ex.jpeg "A chat channel")
+![chat-topic](https://raw.githubusercontent.com/debiki/ty-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2017-09-12-chat-ex.jpeg "A chat channel")
 
 <!--
 ![chat-topic](/images/web/ty-media/for-docs/2017-09-12-chat-ex.jpeg?raw=true "A chat channel")
@@ -313,17 +322,9 @@ from top to bottom to see if anything new has appeared.)
 
 ![Recent replies](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-recent-replies-ex-anon-arw.jpg "Recent replies")
 
-1
 
 <video width="500" data-height="260"
-src="https://tyw-49f8.kxcdn.com/-/u/3/c/7h/67irg6v2iadhqt5aan7h7xhx5kj2a6.mp4"></video>
-
-2
-
-<video width="500" data-height="260"
-src="./modules/talkyard-docs/static/img/readme/jump-and-save-time.mp4"></video>
-
-
+  src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/jump-and-save-time.mp4"></video>
 
 
 ### Blog comments:
