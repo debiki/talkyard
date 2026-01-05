@@ -17,10 +17,10 @@ Talkyard
 
 Forum software, with chat, and anonymous comments.
 
-- Thoughtful discussions. &thinsp; Insightful comments rise to the top (upvotes).
-- Gather feedback. &thinsp; Sort by votes.
-- Question-Answers. &thinsp; Discuss and select an answer.
-- Collaborate &thinsp;in chat channels.
+- Thoughtful discussions. &thinsp; Insightful comments rise to the top.
+- Upvote ideas. &thinsp; Sort by votes.
+- Question-Answers. &thinsp; Discuss, select an answer.
+- Chat channels. &thinsp; Pretty basic features.
 - Blog comments. &thinsp; Listen to your readers.
 
 <!-- Community discussion platform, or Structured discussion platform? A/B test?
@@ -52,10 +52,10 @@ that you want to find in a nice-to-read format, months and years later.
 Or use Talkyard for customer support, or for schools and students helping each other.
 -->
 
-How does Talkyard compare with other software? — &thinsp;
-<a href="https://business.talkyard.io/compare/">find out here</a>.<!--
+How does it compare with other software? &thinsp;
+<a href="https://business.talkyard.io/compare/">Find out here</a>.<!--
 StackOverflow for Teams, Discourse, Slack, Facebook Groups, Disqus? -->  
-**Self-Hosting**: Go to [talkyard-prod-one](https://github.com/debiki/talkyard-prod-one). <!-- Or use our hosting service: https://www.talkyard.io. -->  
+**Self-Hosting**: See [talkyard-prod-one](https://github.com/debiki/talkyard-prod-one). <!-- Or use our hosting service: https://www.talkyard.io. -->  
 **Demo:** https://insightful.demo.talkyard.io  
 **Documentation**: https://docs.talkyard.io <!-- 
 Features: Copy a https://www.talkyard.io/compare/(something) page and show only Ty? -->  
@@ -180,9 +180,12 @@ Technology
 Features
 -----------
 
+<br/>
+
 ### Good comments rise to the top
 
-Find the interesting stuff directly, also in big discussions with many people.
+Find the interesting stuff, also in big discussions.
+<br/><br/>
 
 <!-- <kbd>
 <img src="https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2018-08-19-question-ex.jpeg" alt="Question-Answers">
@@ -204,15 +207,6 @@ Find the interesting stuff directly, also in big discussions with many people.
 <!--
 ![how-work-from-home-vpn-broken-borders](https://user-images.githubusercontent.com/7477359/44306101-0041eb80-a388-11e8-92e8-b8d417c47139.jpg)
 -->
-
-### Avoid mistakes
-
-See if others disagree with something, so you can avoid following the wrong advice.
-
-![Avoid mistakes](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/penguins-can-fly.jpg)
-<!--
-![Avoid mistakes](https://tyw-49f8.kxcdn.com/-/u/e7ef490a72/2/m/nu/zecljq7vwtuyxqfabsjwqzg6bfmyvr.jpg) -->
-<br>
 
 
 <!--
@@ -312,6 +306,15 @@ Hacker News / Reddit style discussion:
 <br>
 -->
 
+### Avoid mistakes
+
+See if others disagree with something. <!-- so you can avoid following the wrong advice. -->
+
+![Avoid mistakes](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/penguins-can-fly.jpg)
+<!--
+![Avoid mistakes](https://tyw-49f8.kxcdn.com/-/u/e7ef490a72/2/m/nu/zecljq7vwtuyxqfabsjwqzg6bfmyvr.jpg) -->
+<br>
+
 ### Big discussions
 
 **Find new replies.** You return to a discussion the next day. Any new replies? —
@@ -322,6 +325,12 @@ from top to bottom to see if anything new has appeared.)
 
 ![Recent replies](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-recent-replies-ex-anon-arw.jpg "Recent replies")
 
+
+### Any_video_1 ???
+
+https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/jump-and-save-time.mp4
+
+Any_video_2 ???
 
 <video width="500" data-height="260"
   src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/jump-and-save-time.mp4"></video>
@@ -359,7 +368,7 @@ Anonymous posts has been implemented, but not code reviewed and merged.
 <br>
 
 
-
+<!--
 Image tests 2!
 -----------------------------
 
@@ -406,6 +415,7 @@ Image tests!
 <kbd>
 <img src="./images/web/ty-media/for-docs/2019-08-10-idea-topics-list-ex.jpg">
 </kbd>
+-->
 
 
 Old Code
