@@ -359,6 +359,23 @@ Anonymous posts has been implemented, but not code reviewed and merged.
 
 
 
+Image tests 2!
+-----------------------------
+
+![Post anonymously](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg)
+
+<kbd>
+![Post anonymously](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg)
+</kbd>
+
+<img scr="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg">
+
+<kbd>
+<img scr="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg">
+</kbd>
+
+
+
 Image tests!
 -----------------------------
 
