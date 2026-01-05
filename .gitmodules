@@ -2,6 +2,9 @@
 # 'path = ../something' paths, because such paths break, if one clones the main
 # Talkyard repo only (but doesn't clone all Talkyard submodules locally too).
 #
+[submodule "modules/talkyard-docs"]
+	path = modules/talkyard-docs
+	url = https://github.com/debiki/talkyard-docs
 [submodule "images/web/ty-media"]
 	path = images/web/ty-media
 	url = https://github.com/debiki/ty-media.git
