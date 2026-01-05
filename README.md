@@ -223,8 +223,6 @@ from top to bottom to see if anything new has appeared.)
 <!--
 ![Recent replies](/images/web/ty-media/for-docs/2019-08-10--recent-replies-ex-anon-arw.jpg?raw=true "Recent replies") -->
 
-<br>
-
 
 ### Tags with values
 
@@ -232,6 +230,8 @@ Create your own tags with **values**, list and sort by value.
 
 For example, a _priority_ tag: `tags:priority:desc>2 is:open`,
 here: https://forum.talkyard.io/-/search?q=tags:priority:desc%3E2+is:open
+<br>
+<br>
 
 
 ### Upvote ideas
@@ -239,7 +239,8 @@ here: https://forum.talkyard.io/-/search?q=tags:priority:desc%3E2+is:open
 ![Upvote ideas](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/upvote-ideas--aqua-planet-mind-writing-b0a--blue-marks--dimmed.png "Upvote ideas")
 
 ![Upvote ideas](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--upvote-ideas-settings.png "Upvote ideas")
-
+<br>
+<br>
 
 ### Anonymous comments
 
@@ -249,17 +250,20 @@ So e.g. students can post embarassing questions. Or for anonymous feedback, etc.
 ![Anonymous comments](./modules/talkyard-docs/static/img/2026-01--anon-disc.png) -->
 
 ![Anonymous comments](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-disc.png)
+<br>
 ![Settings](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-never-always-menu.png)
+<br>
 ![Purpose](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-purpose-menu.png)
 
 
+<!--
 ### Topic list:
 
-<!--
 ![topic-list-borders](https://user-images.githubusercontent.com/7477359/44306130-a3930080-a388-11e8-9cbc-e569f5ddb7a1.jpg)
  the old demo forum looks better? so use instead.  -->
 
-![Topics list](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2019-08-10-idea-topics-list-ex.jpg "Topics list")
+<!--
+![Topics list](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2019-08-10-idea-topics-list-ex.jpg "Topics list") -->
 <!--
 ![ideas-topics](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-idea-topics-list-ex.jpg "Topics list")
 -->
