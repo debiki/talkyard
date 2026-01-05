@@ -188,9 +188,31 @@ Find the interesting stuff, also in big discussions.
 
 <!-- <kbd>
 <img src="https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2018-08-19-question-ex.jpeg" alt="Question-Answers">
-<kbd> -->
+<kbd>
+
+1
 
 ![Good comments rise to the top](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg)
+
+2
+
+<kbd>
+<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg"  style="background:#222; padding:12px 30px 12px 70px; border:5px solid black;">
+</kbd>
+
+3
+
+<div style="background:#222; padding: 10px;">
+<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg" />
+</div>
+
+4 -->
+
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg" />
+</td></tr></table>
+
+
 <!-- ./images/web/ty-media/for-docs/2017--estimate-unfamiliar-task.jpg  -->
 
 <!-- svg width="100%" height="600" xmlns="www.w3.org">
@@ -235,10 +257,19 @@ here: https://forum.talkyard.io/-/search?q=tags:priority:desc%3E2+is:open
 
 ### Upvote ideas
 
-![Upvote ideas](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/upvote-ideas--aqua-planet-mind-writing-b0a--blue-marks--dimmed.png "Upvote ideas")
-<br/><br/>
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/upvote-ideas--aqua-planet-mind-writing-b0a--blue-marks--dimmed.png" />
+</td></tr></table>
 
-![Upvote ideas](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--upvote-ideas-settings.png "Upvote ideas")
+<!--
+![Upvote ideas](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/upvote-ideas--aqua-planet-mind-writing-b0a--blue-marks--dimmed.png "Upvote ideas")  -->
+<br/>
+
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--upvote-ideas-settings.png" />
+</td></tr></table>
+<!--
+![Upvote ideas](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--upvote-ideas-settings.png "Upvote ideas") -->
 <br/>
 <br/>
 
@@ -249,14 +280,29 @@ So e.g. students can post embarassing questions. Or for anonymous feedback, etc.
 <!--
 ![Anonymous comments](./modules/talkyard-docs/static/img/2026-01--anon-disc.png) -->
 
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-disc.png" />
+</td></tr></table>
+<br/>
+<!--
 ![Anonymous comments](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-disc.png)
-<br/><br/>
+-->
 
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-never-always-menu.png" />
+</td></tr></table>
+<br/>
+<!--
 ![Settings](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-never-always-menu.png)
-<br/><br/>
+-->
 
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-purpose-menu.png" />
+</td></tr></table>
+
+<!--
 ![Purpose](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-purpose-menu.png)
-
+-->
 
 <!--
 ### Topic list:
@@ -280,9 +326,13 @@ So e.g. students can post embarassing questions. Or for anonymous feedback, etc.
 
 Notifications via email, as of now.
 
-![chat-topic](https://raw.githubusercontent.com/debiki/ty-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2017-09-12-chat-ex.jpeg "A chat channel")
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/ty-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2017-09-12-chat-ex.jpeg" alt="A chat channel"/>
+</td></tr></table>
 
 <!--
+![chat-topic](https://raw.githubusercontent.com/debiki/ty-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2017-09-12-chat-ex.jpeg "A chat channel")
+
 ![chat-topic](/images/web/ty-media/for-docs/2017-09-12-chat-ex.jpeg?raw=true "A chat channel")
 -->
 
@@ -316,8 +366,12 @@ Hacker News / Reddit style discussion:
 
 There's a _Disagree_ button. <!-- See if others disagree with something. so you can avoid following the wrong advice. -->
 
-![Avoid mistakes](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/penguins-can-fly.jpg)
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/penguins-can-fly.jpg"/>
+</td></tr></table>
+ 
 <!--
+![Avoid mistakes](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/penguins-can-fly.jpg)
 ![Avoid mistakes](https://tyw-49f8.kxcdn.com/-/u/e7ef490a72/2/m/nu/zecljq7vwtuyxqfabsjwqzg6bfmyvr.jpg) -->
 <br>
 
@@ -330,7 +384,13 @@ when you return to a discussion a day later.
 (But at GitHub, Reddit, HackerNews, you need to skim the whole discussion
 from top to bottom to see if anything new has appeared.) -->
 
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-recent-replies-ex-anon-arw.jpg" />
+</td></tr></table>
+
+<!--
 ![Recent replies](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-recent-replies-ex-anon-arw.jpg "Recent replies")
+-->
 
 **Jump to the parent comment** and back:
 
@@ -338,7 +398,7 @@ from top to bottom to see if anything new has appeared.) -->
 https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/jump-and-save-time.mp4
 <video width="500" data-height="260"
   src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/jump-and-save-time.mp4"></video>
-But uploading via GitHub's user interface works.  -->
+But uploading via GitHub's user interface works:  (url must be in its own paragraph)  -->
 
 https://github.com/user-attachments/assets/fc1b34d7-75e3-4baf-95e1-8de364cdfdf2
 
@@ -352,8 +412,12 @@ the Embedded Comments sub tab. Read more here: https://blog-comments.talkyard.io
 There's a Disqus importer — talk with us [in the forum](https://www.talkyard.io/forum/) if you want to migrate from Disqus to Talkyard.
 -->
 
-![blog comments](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-02-21-blog-comments-ex-anon.jpg "Blog comments")
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-02-21-blog-comments-ex-anon.jpg" />
+</td></tr></table>
+
 <!--
+![blog comments](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-02-21-blog-comments-ex-anon.jpg "Blog comments")
 ![blog comments](/images/web/ty-media/for-docs/2019-02-21-blog-comments-ex-anon.jpg?raw=true "Blog comments")
 -->
 <br>
@@ -373,7 +437,6 @@ Anonymous posts has been implemented, but not code reviewed and merged.
 ![Post anonymously](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-editor-post-anonymously-ex-arw.jpg "Post anonymously")
 -->
 
-<br>
 
 
 <!--
