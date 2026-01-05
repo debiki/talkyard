@@ -17,11 +17,11 @@ Talkyard
 
 Forum software, with chat, and anonymous comments.
 
-- Thoughtful discussions. &thinsp; Insightful comments rise to the top.
-- Upvote ideas. &thinsp; Sort by votes.
-- Question-Answers. &thinsp; Discuss, select an answer.
-- Chat channels. &thinsp; Pretty basic features.
-- Blog comments. &thinsp; Listen to your readers.
+- Thoughtful discussions. &thinsp;Insightful comments rise to the top.
+- Upvote ideas. &thinsp;Sort by votes.
+- Question-Answers. &thinsp;Discuss, select an answer.
+- Chat channels. &thinsp;Pretty basic features.
+- Blog comments. &thinsp;Listen to your readers.
 
 <!-- Community discussion platform, or Structured discussion platform? A/B test?
 Or "Structured discussions, for your community — Talkyard brings together ..." ?
@@ -55,11 +55,11 @@ Or use Talkyard for customer support, or for schools and students helping each o
 How does it compare with other software? &thinsp;
 <a href="https://business.talkyard.io/compare/">Find out here</a>.<!--
 StackOverflow for Teams, Discourse, Slack, Facebook Groups, Disqus? -->  
-**Self-Hosting**: See [talkyard-prod-one](https://github.com/debiki/talkyard-prod-one). <!-- Or use our hosting service: https://www.talkyard.io. -->  
-**Demo:** https://insightful.demo.talkyard.io  
-**Documentation**: https://docs.talkyard.io <!-- 
+**Self-Hosting:**&thinsp; See [talkyard-prod-one](https://github.com/debiki/talkyard-prod-one/tree/ty-prod-one-v1). <!-- Or use our hosting service: https://www.talkyard.io. -->  
+**Demo:**&thinsp; https://insightful.demo.talkyard.io  
+**Documentation:**&thinsp; https://docs.talkyard.io <!-- 
 Features: Copy a https://www.talkyard.io/compare/(something) page and show only Ty? -->  
-**Development:** That's this repo! See: [./docs/some-page.adoc]
+**Development:**&thinsp; That's this repo! See: [./docs/some-page.adoc]
 <!--
 - How to start a development build of Talkyard: [docs/starting-talkyard.md](docs/starting-talkyard.md).
 - How to edit the source code and see the changes: [docs/developing-talkyard.md](docs/developing-talkyard.md)
@@ -180,7 +180,6 @@ Technology
 Features
 -----------
 
-<br/>
 
 ### Good comments rise to the top
 
@@ -230,17 +229,18 @@ Create your own tags with **values**, list and sort by value.
 
 For example, a _priority_ tag: `tags:priority:desc>2 is:open`,
 here: https://forum.talkyard.io/-/search?q=tags:priority:desc%3E2+is:open
-<br>
-<br>
+<br/>
+<br/>
 
 
 ### Upvote ideas
 
 ![Upvote ideas](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/upvote-ideas--aqua-planet-mind-writing-b0a--blue-marks--dimmed.png "Upvote ideas")
+<br/><br/>
 
 ![Upvote ideas](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--upvote-ideas-settings.png "Upvote ideas")
-<br>
-<br>
+<br/>
+<br/>
 
 ### Anonymous comments
 
@@ -250,9 +250,11 @@ So e.g. students can post embarassing questions. Or for anonymous feedback, etc.
 ![Anonymous comments](./modules/talkyard-docs/static/img/2026-01--anon-disc.png) -->
 
 ![Anonymous comments](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-disc.png)
-<br>
+<br/><br/>
+
 ![Settings](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-never-always-menu.png)
-<br>
+<br/><br/>
+
 ![Purpose](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-purpose-menu.png)
 
 
@@ -274,7 +276,7 @@ So e.g. students can post embarassing questions. Or for anonymous feedback, etc.
 
 <br>
 
-### Chat:
+### Chat
 
 Notifications via email, as of now.
 
@@ -312,7 +314,7 @@ Hacker News / Reddit style discussion:
 
 ### Avoid mistakes
 
-See if others disagree with something. <!-- so you can avoid following the wrong advice. -->
+There's a _Disagree_ button. <!-- See if others disagree with something. so you can avoid following the wrong advice. -->
 
 ![Avoid mistakes](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/penguins-can-fly.jpg)
 <!--
@@ -321,24 +323,26 @@ See if others disagree with something. <!-- so you can avoid following the wrong
 
 ### Big discussions
 
-**Find new replies.** You return to a discussion the next day. Any new replies? —
-Open the sidebar, click **Recent**, to find them.
+**Find the latest replies** by clicking click **Recent** in the sidebar,
+when you return to a discussion a day later.
 
+<!--
 (But at GitHub, Reddit, HackerNews, you need to skim the whole discussion
-from top to bottom to see if anything new has appeared.)
+from top to bottom to see if anything new has appeared.) -->
 
 ![Recent replies](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-recent-replies-ex-anon-arw.jpg "Recent replies")
 
+**Jump to the parent comment** and back:
 
-### Any_video_1 ???
-
+<!-- Doesn't work:
 https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/jump-and-save-time.mp4
-
-Any_video_2 ???
-
 <video width="500" data-height="260"
   src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/jump-and-save-time.mp4"></video>
+But uploading via GitHub's user interface works.  -->
 
+https://github.com/user-attachments/assets/fc1b34d7-75e3-4baf-95e1-8de364cdfdf2
+
+<br/>
 
 ### Blog comments:
 
@@ -373,8 +377,13 @@ Anonymous posts has been implemented, but not code reviewed and merged.
 
 
 <!--
-Image tests 2!
+Image tests 3
 -----------------------------
+ 
+https://github.com/user-attachments/assets/fc1b34d7-75e3-4baf-95e1-8de364cdfdf2
+
+![share-knowledge--vw73ji3trlxjz6gpgv3n3fmakjlezd](https://github.com/user-attachments/assets/464814fb-f082-4ae1-b244-87f25bac6cf0)
+
 
 ![Post anonymously](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg)
 
