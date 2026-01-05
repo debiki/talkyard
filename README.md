@@ -15,10 +15,19 @@ to do, to change society, or grow your startup.
 Talkyard
 =============================
 
+Forum software, with chat, and anonymous comments.
+
+- Thoughtful discussions. &thinsp;Insightful comments rise to the top.
+- Upvote ideas. &thinsp;Sort by votes.
+- Question-Answers. &thinsp;Discuss, select an answer.
+- Chat channels. &thinsp;Pretty basic features.
+- Blog comments. &thinsp;Listen to your readers.
+
 <!-- Community discussion platform, or Structured discussion platform? A/B test?
-Or "Structured discussions, for your community — Talkyard brings together ..." ? -->
+Or "Structured discussions, for your community — Talkyard brings together ..." ?
 A structured discussions platform — brings together the main features from
 StackOverflow, Slack, Discourse, Reddit/HackerNews, and Disqus blog comments.
+ -->
 
 <!--
 Create a place to talk,
@@ -26,7 +35,6 @@ where your audience find answers to their questions, and discuss ideas.<br>
 Place it at `talkyard.Your-Website.org`.
 
  - **Solve problems** step by step, in traditional flat forum topics.
--->
 
  - **Save time.** People find help "instantly", in Question & Answers topics.
  - **Crowdsource feedback and ideas.** Discuss, upvote, choose the right things to do.
@@ -42,20 +50,28 @@ combined with Talkyard for the more important discussions
 that you want to find in a nice-to-read format, months and years later.
 
 Or use Talkyard for customer support, or for schools and students helping each other.
+-->
 
-How does Talkyard compare with
-StackOverflow for Teams, Discourse, Slack, Facebook Groups, Disqus?
-— <a href="https://business.talkyard.io/compare/">Find out here</a> (<small>oops, link now fixed. Was browken</small>)
+How does it compare with other software? &thinsp;
+<a href="https://business.talkyard.io/compare/">Find out here</a>.<!--
+StackOverflow for Teams, Discourse, Slack, Facebook Groups, Disqus? -->  
+**Self-Hosting:**&thinsp; See [talkyard-prod-one](https://github.com/debiki/talkyard-prod-one/tree/ty-prod-one-v1) <!-- Or use our hosting service: https://www.talkyard.io. -->  
+**Demo:**&thinsp; https://insightful.demo.talkyard.io  
+**Discussion forum:**&thinsp; https://forum.talkyard.io  
+**Documentation:**&thinsp; https://docs.talkyard.io (incomplete)<!--
+Features: Copy a https://www.talkyard.io/compare/(something) page and show only Ty? -->  
+**Development:**&thinsp; That's this repo! See: [docs/developing-talkyard.md](./docs/developing-talkyard.md)
 
+<!-- Immich has these links:  https://github.com/immich-app/immich
+        Documentation
+        About
+        Installation
+        Roadmap
+        Demo    (although there's a Demo paragraph just below!)
+        Features   (although there's a Features list just below)
+        Translations
+        Contributing -->
 
-Using Talkyard
------------------------------
-
-This repo is for **development** of Talkyard. To actually *use* Talkyard:
-
-- Install on your server, see: [talkyard-prod-one](https://github.com/debiki/talkyard-prod-one)
-
-- Use our hosting service: https://www.talkyard.io
 
 <!--
 For your students / volunteers / colleagues / customers / donors /
@@ -104,141 +120,92 @@ scc tests/
 -->
 
 
-<!-- Some Features -----------
-- Avoid mistakes: See if people disagree.
-- Anonymous questions: So people dare to ask embarassing questions, or post crazy creative ideas.
-- 
-- 
--->
-
-
-Developing Talkyard
------------------------------
-
-Read about how to start a development build of Talkyard:
-[docs/starting-talkyard.md](docs/starting-talkyard.md).
-
-And how to edit the source code and see the changes:
-[docs/developing-talkyard.md](docs/developing-talkyard.md)
-
-You'll find **Docker image** build files in: <code>./images/<i>image-name</i>/</code>
-
-You can build your own images:
-[docs/building-images.md](docs/building-images.md)
-
-
-
-Getting help
------------------------------
-
-[**Support forum here**](https://www.talkyard.io/forum/latest/support) (& live "demo"), at Talkyard<i></i>.io — and report bugs there too.
-
-Also see these troubleshooting [tips.md](./docs/tips.md).
-
-
-
-Contributing
------------------------------
-
-See: [CONTRIBUTING.adoc](./CONTRIBUTING.adoc). There's a CLA (Contributor License Agreement) to sign.
-
-
-
-Technology
------------------------------
-
-- Client: React.js, TypeScript, Webdriver.io.
-- Server: Scala and Play Framework. OpenResty, some Lua. React.js in Java's Nashorn Javascript engine.
-- Databases: PostgreSQL, Redis, ElasticSearch.
-
-
-<hr>
-
-Screenshots
+Features
 -----------
 
-### Question-Answers:
 
-The good answers surface to the top.
+### Good comments rise to the top
 
-![Question and Answers](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2018-08-19-question-ex.jpeg "Question-Answers")
+Find the interesting stuff, also in big discussions.
+<br/><br/>
+
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg" />
+</td></tr></table>
+
+<!-- SVG doesn't seem to work at GitHub:
+<svg width="100%" height="600" xmlns="www.w3.org">
+  <rect x="0" y="0" width="100%" height="100%" fill="#222" stroke="none" stroke-width="2"/>
+  <image y="3%" href="... something ..." width="100%" height="94%" />
+</svg> -->
+
+
 <!--
+![Question and Answers](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2018-08-19-question-ex.jpeg "Question-Answers")
 ![Question and Answers](/images/web/ty-media/for-docs/2018-08-19-question-ex.jpeg?raw=true "Question-Answers") -->
 
 <!--
 ![how-work-from-home-vpn-broken-borders](https://user-images.githubusercontent.com/7477359/44306101-0041eb80-a388-11e8-92e8-b8d417c47139.jpg)
 -->
 
-### Avoid mistakes
 
-See if others disagree with something, so you can avoid following the wrong advice.
+### Tags with values
 
+Create your own tags with **values**, list and sort by value.
+
+For example, a _priority_ tag: `tags:priority:desc>2 is:open`,
+here: https://forum.talkyard.io/-/search?q=tags:priority:desc%3E2+is:open
+<br/>
+<br/>
+
+
+### Upvote ideas
+
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/upvote-ideas--aqua-planet-mind-writing-b0a--blue-marks--dimmed.png" />
+</td></tr></table>
+<br/>
+
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--upvote-ideas-settings.png" />
+</td></tr></table>
+<br/>
+
+
+### Anonymous comments
+
+So e.g. students can post embarassing questions. Or for anonymous feedback, etc.
+
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-disc.png" />
+</td></tr></table>
+<br/>
+
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-never-always-menu.png" />
+</td></tr></table>
+<br/>
+
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-purpose-menu.png" />
+</td></tr></table>
 <br>
 
-![Avoid mistakes](https://tyw-49f8.kxcdn.com/-/u/e7ef490a72/2/m/nu/zecljq7vwtuyxqfabsjwqzg6bfmyvr.jpg)
 
+### Chat
+
+Notifications via email, as of now.
+
+<table><tr><td>
+<!-- /images/web/ty-media/for-docs/2017-09-12-chat-ex.jpeg -->
+<img src="https://raw.githubusercontent.com/debiki/ty-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2017-09-12-chat-ex.jpeg" alt="A chat channel"/>
+</td></tr></table>
 <br>
-
-
-### Recent replies — find them:
-
-You leave for lunch, or go home over the night — and return to a Question-Answers topic the next day. Did someone post more replies, when you were away? You want to find and read?
-
-You can directly find the most recent answers and replies: Open the sidebar, click the Recent tab, and find the most recent replies, click to scroll.
-
-(But at StackOverflow, Reddit, HackerNews etc, it's hard to find them (since the discussions are threaded). You need to carefully scan the whole discussion from top to bottom.)
-
-<br>
-<br>
-
-![Recent replies](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-recent-replies-ex-anon-arw.jpg "Recent replies")
-
-<!--
-![Recent replies](/images/web/ty-media/for-docs/2019-08-10--recent-replies-ex-anon-arw.jpg?raw=true "Recent replies") -->
-
-<br>
-
-### Topic list:
-
-<!--
-![topic-list-borders](https://user-images.githubusercontent.com/7477359/44306130-a3930080-a388-11e8-9cbc-e569f5ddb7a1.jpg)
- the old demo forum looks better? so use instead.  -->
-
-![ideas-topics](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-idea-topics-list-ex.jpg "Topics list")
-<!--
-![ideas-topics](/images/web/ty-media/for-docs/2019-08-10-idea-topics-list-ex.jpg?raw=true "Topics list")
-
-![ed-demo-forum-index](https://cloud.githubusercontent.com/assets/7477359/19650764/bb3a1450-9a0a-11e6-884d-d23c93476db3.jpg) -->
-
-<br>
-
-### Chat:
-
-Notifications via email, as of now. Some time later, there'll be a PWA mobile app with push notifications.
-
-<br>
-
-<!--
-Currently, Talkyard is a mobile friendly web app.
-Within half a year or a year (today is August 2018),
-the plan is that there'll be a white labelled mobile app.
-Meaning, people will be able to install your community, on their mobile phones,
-as a separate app with your custom icon.
-Push notifications for Android
-(however, initially not for iPhone — iPhone currently cannot do PWA mobile app push notifications).
--->
-
-![chat-topic](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2017-09-12-chat-ex.jpeg "A chat channel")
-
-<!--
-![chat-topic](/images/web/ty-media/for-docs/2017-09-12-chat-ex.jpeg?raw=true "A chat channel")
--->
 
 <!--
 ![ed-e2e-chat-owen-maria](https://cloud.githubusercontent.com/assets/7477359/19674424/608c49aa-9a88-11e6-8ccd-c2e7ceebd0c2.jpg)
 -->
 
-<br>
 <!--
 ![Q&A about how to wake up on time](https://user-images.githubusercontent.com/7477359/39368115-0549fad0-4a39-11e8-9bba-703d595d2b96.jpg)
 -->
@@ -252,28 +219,94 @@ Hacker News / Reddit style discussion:
 
 ![ed-admin-intro-guide](https://cloud.githubusercontent.com/assets/7477359/19679591/99a12098-9aa2-11e6-8b65-705c2548cbea.jpg)
 <br>
-
-### Users online:
-
-![ed-online-users](https://cloud.githubusercontent.com/assets/7477359/19680424/f0353f86-9aa5-11e6-84d9-94d46f228b93.jpg)
-
-<br>
 -->
 
-### Blog comments:
+### Users online
 
-Like Disqus — but lightweight, no ads, no tracking. Configure in the Admin Area, the Settings tab, the Embedded Comments sub tab. — Read more about blog comments, and an optional hosting service, here: https://www.talkyard.io/blog-comments
+![ed-online-users](https://cloud.githubusercontent.com/assets/7477359/19680424/f0353f86-9aa5-11e6-84d9-94d46f228b93.jpg)
+<br>
 
-There's a Disqus importer — talk with us [in the forum](https://www.talkyard.io/forum/) if you want to migrate from Disqus to Talkyard.
+
+### Avoid mistakes
+
+There's a _Disagree_ button. <!-- See if others disagree with something. so you can avoid following the wrong advice. -->
+
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/penguins-can-fly.jpg"/>
+</td></tr></table>
+ 
+<!--
+![Avoid mistakes](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/penguins-can-fly.jpg)
+![Avoid mistakes](https://tyw-49f8.kxcdn.com/-/u/e7ef490a72/2/m/nu/zecljq7vwtuyxqfabsjwqzg6bfmyvr.jpg) -->
+<br>
+
+### Big discussions
+
+**Find new replies** by clicking **Recent** in the sidebar,
+when you return to a discussion a day later.
+
+<!--
+(But at GitHub, Reddit, HackerNews, you need to skim the whole discussion
+from top to bottom to see if anything new has appeared.) -->
+
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-recent-replies-ex-anon-arw.jpg" />
+</td></tr></table>
+
+<!--
+![Recent replies](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-recent-replies-ex-anon-arw.jpg "Recent replies")
+-->
+
+**Jump to the parent comment** and back:
+
+<!-- Doesn't work:
+https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/jump-and-save-time.mp4
+<video width="500" data-height="260"
+  src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/jump-and-save-time.mp4"></video>
+But uploading via GitHub's user interface works:  (url must be in its own paragraph)  -->
+
+https://github.com/user-attachments/assets/fc1b34d7-75e3-4baf-95e1-8de364cdfdf2
+
+<br/>
+
+
+### Topic list
+
+<!--
+![topic-list-borders](https://user-images.githubusercontent.com/7477359/44306130-a3930080-a388-11e8-9cbc-e569f5ddb7a1.jpg)
+ the old demo forum looks better? so use instead.  -->
+
+![Topics list](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2019-08-10-idea-topics-list-ex.jpg "Topics list")
+
+<!--
+![ideas-topics](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-idea-topics-list-ex.jpg "Topics list")
+-->
+<!--
+![ideas-topics](/images/web/ty-media/for-docs/2019-08-10-idea-topics-list-ex.jpg?raw=true "Topics list")
+
+![ed-demo-forum-index](https://cloud.githubusercontent.com/assets/7477359/19650764/bb3a1450-9a0a-11e6-884d-d23c93476db3.jpg) -->
 
 <br>
 
-![blog comments](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-02-21-blog-comments-ex-anon.jpg "Blog comments")
+
+### Blog comments
+
+Like Disqus — but no ads, no tracking. Configure in the Admin Area | Settings | Embedded Comments. Read more here: https://blog-comments.talkyard.io
 <!--
+There's a Disqus importer — talk with us [in the forum](https://www.talkyard.io/forum/) if you want to migrate from Disqus to Talkyard.
+-->
+
+<table><tr><td>
+<img src="https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-02-21-blog-comments-ex-anon.jpg" />
+</td></tr></table>
+
+<!--
+![blog comments](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-02-21-blog-comments-ex-anon.jpg "Blog comments")
 ![blog comments](/images/web/ty-media/for-docs/2019-02-21-blog-comments-ex-anon.jpg?raw=true "Blog comments")
 -->
 <br>
 
+<!-- Now implemented, see Anonymous Comments above.
 ### Embarrassing questions, creative ideas:
 
 Let your students ask anonymous questions. Maybe they feel ashamed for not knowing?
@@ -285,12 +318,8 @@ Here you can read more: https://www.talkyard.io/-239/is-there-anonymous-messages
 
 Anonymous posts has been implemented, but not code reviewed and merged.
 
-<br>
-
 ![Post anonymously](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-editor-post-anonymously-ex-arw.jpg "Post anonymously")
-
-<hr>
-<br>
+-->
 
 
 
@@ -306,7 +335,7 @@ That repo, squashed, is in this repo.
 License
 -----------------------------
 
-Copyright (c) 2010-2025 Kaj Magnus Lindberg and contributors.
+Copyright (c) 2010-2026 Kaj Magnus Lindberg and contributors.
 
 Talkyard is licensed under AGPLv3 or later, see LICENSE.txt.
 
@@ -328,4 +357,3 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 above-mentioned licence texts for more details.
 
 
-vim: list et ts=2 sw=2 tw=0 fo=r

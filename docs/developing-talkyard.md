@@ -1,6 +1,31 @@
 Talkyard development
 =============================
 
+Tech
+-----------------------------
+
+- Client: React, TypeScript.
+- Server: Scala and Play Framework. OpenResty, some Lua.
+- Databases: PostgreSQL, Redis, ElasticSearch.
+- E2e tests: Webdriver.io.
+
+Getting started
+-----------------------------
+
+See [starting-talkyard](./starting-talkyard.md)
+for tools you need (Debian Linux, Docker, Nix)
+and for how to start a development server.
+
+
+Docker images
+-----------------------------
+
+Docker image build files are here: <code>./images/<i>image-name</i>/</code>
+
+About how to build your own images: [building-images.md](./building-images.md)
+
+Contributing — see [../CONTRIBUTING.adoc](../CONTRIBUTING.adoc).
+
 
 Editing source code
 -----------------------------
@@ -22,7 +47,7 @@ the browser — otherwise the Typescript code might not yet have been transpiled
 
 ### Scala
 
-To edit Scala code (in `app/*`), you can use IntelliJ IDEA, the free community edition:
+To edit Scala code (in `appsv/*`), you can use IntelliJ IDEA, the free community edition:
 https://www.jetbrains.com/idea/download/#section=linux
 
 There's a container, named *app*, which runs the Play Framework application server,
@@ -78,20 +103,25 @@ See the [end-to-end tests readme](./e2e-tests-readme.md).
 And, you also need to [make *.localhost addresses work](./wildcard-dot-localhost.md),
 because the e2e tests creates test sites at `*.localhost` sub domains.
 
+We don't have any separate functional or acceptance tests — instead,
+those are written as e2e tests.
 
+<!-- Skip. These are insetad in tests/e2e/ and tests/e2e-wdio7/, together with
+     other e2e tests. Or in tests/app/.
 #### Security tests
-
 The security tests are written in TypeScript and use Tape = test-anything-protocol for Node.js.
 See the [security tests readme](./security-tests-readme.md).
+-->
 
 
-#### Unit tests
+#### Unit & integration tests
 
-Stop everything: `sudo docker-compose down` and then: `s/cli` then type `test` + hit Enter.
+Type `s/tyd ca` to start the Scala console (sbt), then type `test` + Enter.
 
 
 #### Performance tests
 
+<!-- Skip this — will use Rust and Goose instead of Scala and Gatling?
 Install Scala SBT, see http://www.scala-sbt.org/download.html. On Linux:
 
 ```
@@ -100,6 +130,7 @@ sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2EE0EA64E40A89
 sudo apt-get update
 sudo apt-get install sbt
 ```
+-->
 
 Append to `/etc/security/limits.conf` ... hmm but now with Docker-Compose, which container?
 
@@ -137,14 +168,13 @@ This project looks like so:
      | :
      |
      +-appsv/          <-- Application server
-     | +-model/        <-- Domain model (Scala case classes) and utility functions
+     | +-model/        <-- Domain model (Scala case classes)
      | +-rdb/          <-- A Data Access Object (DAO) implementation for PostgreSQL
      | +-server/       <-- The actual app server — a Play Framework 2 application
      |
      +-tests/
      | +-app/          <-- Unit tests and functional tests, for the app server
      | +-e2e/          <-- End-to-end tests
-     | +-security/     <-- Security tests
      |
      +-modules/
      | +-ed-prod-one-test/  <-- A production installation, for automatic tests
