@@ -304,22 +304,6 @@ So e.g. students can post embarassing questions. Or for anonymous feedback, etc.
 ![Purpose](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-purpose-menu.png)
 -->
 
-<!--
-### Topic list:
-
-![topic-list-borders](https://user-images.githubusercontent.com/7477359/44306130-a3930080-a388-11e8-9cbc-e569f5ddb7a1.jpg)
- the old demo forum looks better? so use instead.  -->
-
-<!--
-![Topics list](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2019-08-10-idea-topics-list-ex.jpg "Topics list") -->
-<!--
-![ideas-topics](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-idea-topics-list-ex.jpg "Topics list")
--->
-<!--
-![ideas-topics](/images/web/ty-media/for-docs/2019-08-10-idea-topics-list-ex.jpg?raw=true "Topics list")
-
-![ed-demo-forum-index](https://cloud.githubusercontent.com/assets/7477359/19650764/bb3a1450-9a0a-11e6-884d-d23c93476db3.jpg) -->
-
 <br>
 
 ### Chat
@@ -377,7 +361,7 @@ There's a _Disagree_ button. <!-- See if others disagree with something. so you 
 
 ### Big discussions
 
-**Find the latest replies** by clicking click **Recent** in the sidebar,
+**Find new replies** by clicking **Recent** in the sidebar,
 when you return to a discussion a day later.
 
 <!--
@@ -403,6 +387,26 @@ But uploading via GitHub's user interface works:  (url must be in its own paragr
 https://github.com/user-attachments/assets/fc1b34d7-75e3-4baf-95e1-8de364cdfdf2
 
 <br/>
+
+
+### Topic list:
+
+<!--
+![topic-list-borders](https://user-images.githubusercontent.com/7477359/44306130-a3930080-a388-11e8-9cbc-e569f5ddb7a1.jpg)
+ the old demo forum looks better? so use instead.  -->
+
+![Topics list](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2019-08-10-idea-topics-list-ex.jpg "Topics list")
+
+<!--
+![ideas-topics](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-idea-topics-list-ex.jpg "Topics list")
+-->
+<!--
+![ideas-topics](/images/web/ty-media/for-docs/2019-08-10-idea-topics-list-ex.jpg?raw=true "Topics list")
+
+![ed-demo-forum-index](https://cloud.githubusercontent.com/assets/7477359/19650764/bb3a1450-9a0a-11e6-884d-d23c93476db3.jpg) -->
+
+<br>
+
 
 ### Blog comments:
 
