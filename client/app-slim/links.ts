@@ -25,7 +25,10 @@
 // to sth different than  link...() fns that return just a relative url
 // (e.g. /-123/page-slug), maybe:
 // - linkToPageId —> relUrlToPageId(pageId)
-// - linkToEmbeddedDiscussions —> fullUrlToEmbDiscList()  ?
+// - linkToEmbeddedSomething —> fullUrlToEmbeddedSomething()  ?
+//      — but the full url, how do you know if it's to the embedding site + hash frag,
+//      or directly to the embedded origin?  The `origin() + pathTo...()` approach
+//      mentioned below is better probably.
 // If in an embedded forum, the fullUrl...() would construct links to embedded
 // pages, rather than external links to the Ty forum (so ppl stay on the embedd*ing*
 // website).  But if in emb comts, maybe the links should be to the Talkyard site,
@@ -459,11 +462,11 @@ export function linkToUserInAdminArea(user: Myself | Participant | UserId): stri
   return linkToStaffUsersPage() + 'id/' + userId;
 }
 
-export function linkToEmbeddedDiscussions(): string {
-  // Later: link to the correct category, when emb comments topics have their own category.
-  // This is for opening the embedded comments page index in a new tab, so,
-  // we want the [complete_origin].
-  return linkToPath('');
+export function pathToEmbDiscs(): St {
+  // Later: link to the correct category, if embedded comments topics have their own
+  // category. For now, just link to the index page (''), that works for 99% of all
+  // sites — creating custom categories is very rare, for embedded comments sites.
+  return '';
 }
 
 export function linkToReviewPage(ps: { patId?: PatId } = {}): St {
