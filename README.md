@@ -55,18 +55,11 @@ Or use Talkyard for customer support, or for schools and students helping each o
 How does it compare with other software? &thinsp;
 <a href="https://business.talkyard.io/compare/">Find out here</a>.<!--
 StackOverflow for Teams, Discourse, Slack, Facebook Groups, Disqus? -->  
-**Self-Hosting:**&thinsp; See [talkyard-prod-one](https://github.com/debiki/talkyard-prod-one/tree/ty-prod-one-v1). <!-- Or use our hosting service: https://www.talkyard.io. -->  
+**Self-Hosting:**&thinsp; See [talkyard-prod-one](https://github.com/debiki/talkyard-prod-one/tree/ty-prod-one-v1) <!-- Or use our hosting service: https://www.talkyard.io. -->  
 **Demo:**&thinsp; https://insightful.demo.talkyard.io  
 **Documentation:**&thinsp; https://docs.talkyard.io <!-- 
 Features: Copy a https://www.talkyard.io/compare/(something) page and show only Ty? -->  
-**Development:**&thinsp; That's this repo! See: [./docs/some-page.adoc]
-<!--
-- How to start a development build of Talkyard: [docs/starting-talkyard.md](docs/starting-talkyard.md).
-- How to edit the source code and see the changes: [docs/developing-talkyard.md](docs/developing-talkyard.md)
-- **Docker image** build files: <code>./images/<i>image-name</i>/</code>
-- Build your own images: [docs/building-images.md](docs/building-images.md)
--  Contributing — see ./CONTRIBUTING.adoc.
--->
+**Development:**&thinsp; That's this repo! See: [docs/developing-talkyard.md](./docs/developing-talkyard.md)
 
 <!-- Immich has these links:  https://github.com/immich-app/immich
         Documentation
@@ -271,7 +264,6 @@ here: https://forum.talkyard.io/-/search?q=tags:priority:desc%3E2+is:open
 <!--
 ![Upvote ideas](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--upvote-ideas-settings.png "Upvote ideas") -->
 <br/>
-<br/>
 
 ### Anonymous comments
 
@@ -389,7 +381,7 @@ https://github.com/user-attachments/assets/fc1b34d7-75e3-4baf-95e1-8de364cdfdf2
 <br/>
 
 
-### Topic list:
+### Topic list
 
 <!--
 ![topic-list-borders](https://user-images.githubusercontent.com/7477359/44306130-a3930080-a388-11e8-9cbc-e569f5ddb7a1.jpg)
@@ -408,7 +400,7 @@ https://github.com/user-attachments/assets/fc1b34d7-75e3-4baf-95e1-8de364cdfdf2
 <br>
 
 
-### Blog comments:
+### Blog comments
 
 Like Disqus — but no ads, no tracking. Configure in the Admin Area, the Settings tab,
 the Embedded Comments sub tab. Read more here: https://blog-comments.talkyard.io

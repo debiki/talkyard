@@ -12,10 +12,9 @@ make tag-and-push-latest-images tag=...  # pushes images to your repo
 
 You can type `make` to see help about the Makefile targets.
 
-All this has been tested in Ubuntu and Mint Linux only, with Bash. If you're
+This has been tested in Debian Linux. If you're
 on Windows, probably you'll need [Cygwin](https://www.cygwin.com)
-or [MinGW](http://www.mingw.org)
-— but, now year 2022: maybe Linux Subsystem for Windows instead?
+or [MinGW](http://www.mingw.org), or maybe Linux Subsystem for Windows?
 
 <!--
 To use the images in your own Docker-Compose installation,

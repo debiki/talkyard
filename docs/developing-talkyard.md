@@ -1,6 +1,23 @@
 Talkyard development
 =============================
 
+Getting started
+-----------------------------
+
+See [starting-talkyard](./starting-talkyard.md)
+for tools you need (Debian Linux, Docker, Nix)
+and for how to start a development server.
+
+
+Docker images
+-----------------------------
+
+Docker image build files are here: <code>./images/<i>image-name</i>/</code>
+
+About how to build your own images: [docs/building-images.md](docs/building-images.md)
+
+Contributing — see ../CONTRIBUTING.adoc.
+
 
 Editing source code
 -----------------------------
