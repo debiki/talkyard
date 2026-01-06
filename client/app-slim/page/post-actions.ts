@@ -461,10 +461,15 @@ export const PostActions = createComponent({
 
     const adminLink = !me.isAdmin || !isPageBody || !eds.isInEmbeddedCommentsIframe ? null :
       rFr({},
-        LinkUnstyled({ className: 'dw-a dw-a-other-topics icon-link-ext',
-            to: linkToEmbeddedDiscussions(), target: '_blank' }, t.pa.DiscIx),
+        // Don't use TyLink — it'd construct an  https://embedding-site/... link
+        // to the embedded discussion. But we want to open the Talkyard site in a new tab,
+        // *not* embedded, so we prefix w `origin()`. [complete_origin]
+        // TESTS_MISSING
+        r.a({ className: 'dw-a dw-a-other-topics icon-link-ext',
+            href: origin() + pathToEmbDiscs(),
+            target: '_blank' }, t.pa.DiscIx),
         r.a({ className: 'dw-a dw-a-admin icon-link-ext',
-            href: linkToReviewPage(), target: '_blank' }, t.pa.Admin));
+            href: origin() + linkToReviewPage(), target: '_blank' }, t.pa.Admin));
 
     // BUG? approveOrDeleteBtns won't appear for embedded comments?
     // Instead of this test, should be a post.approvedStatus field. [ApprovedStatus]
