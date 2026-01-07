@@ -14,9 +14,9 @@ Docker images
 
 Docker image build files are here: <code>./images/<i>image-name</i>/</code>
 
-About how to build your own images: [docs/building-images.md](docs/building-images.md)
+About how to build your own images: [building-images.md](./building-images.md)
 
-Contributing — see ../CONTRIBUTING.adoc.
+Contributing — see [../CONTRIBUTING.adoc](../CONTRIBUTING.adoc).
 
 
 Editing source code

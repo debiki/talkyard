@@ -57,6 +57,7 @@ How does it compare with other software? &thinsp;
 StackOverflow for Teams, Discourse, Slack, Facebook Groups, Disqus? -->  
 **Self-Hosting:**&thinsp; See [talkyard-prod-one](https://github.com/debiki/talkyard-prod-one/tree/ty-prod-one-v1) <!-- Or use our hosting service: https://www.talkyard.io. -->  
 **Demo:**&thinsp; https://insightful.demo.talkyard.io  
+**Discussion forum:**&thinsp; https://forum.talkyard.io  
 **Documentation:**&thinsp; https://docs.talkyard.io <!-- 
 Features: Copy a https://www.talkyard.io/compare/(something) page and show only Ty? -->  
 **Development:**&thinsp; That's this repo! See: [docs/developing-talkyard.md](./docs/developing-talkyard.md)
@@ -119,57 +120,6 @@ scc tests/
 -->
 
 
-<!-- Some Features -----------
-- Avoid mistakes: See if people disagree.
-- Anonymous questions: So people dare to ask embarassing questions, or post crazy creative ideas.
-- 
-- 
--->
-
-
-<!--
-Developing Talkyard
------------------------------
-
-Read about how to start a development build of Talkyard:
-[docs/starting-talkyard.md](docs/starting-talkyard.md).
-
-And how to edit the source code and see the changes:
-[docs/developing-talkyard.md](docs/developing-talkyard.md)
-
-You'll find **Docker image** build files in: <code>./images/<i>image-name</i>/</code>
-
-You can build your own images:
-[docs/building-images.md](docs/building-images.md)
-
-
-
-Getting help
------------------------------
-
-[**Support forum here**](https://www.talkyard.io/forum/latest/support) (& live "demo"), at Talkyard<i></i>.io — and report bugs there too.
-
-Also see these troubleshooting [tips.md](./docs/tips.md).
-
-
-
-Contributing
------------------------------
-
-See: [CONTRIBUTING.adoc](./CONTRIBUTING.adoc). There's a CLA (Contributor License Agreement) to sign.
--->
-
-
-<!--
-Technology
------------------------------
-
-- Client: React.js, TypeScript, Webdriver.io.
-- Server: Scala and Play Framework. OpenResty, some Lua. React.js in Java's Nashorn Javascript engine.
-- Databases: PostgreSQL, Redis, ElasticSearch.
--->
-
-
 Features
 -----------
 
@@ -179,38 +129,14 @@ Features
 Find the interesting stuff, also in big discussions.
 <br/><br/>
 
-<!-- <kbd>
-<img src="https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2018-08-19-question-ex.jpeg" alt="Question-Answers">
-<kbd>
-
-1
-
-![Good comments rise to the top](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg)
-
-2
-
-<kbd>
-<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg"  style="background:#222; padding:12px 30px 12px 70px; border:5px solid black;">
-</kbd>
-
-3
-
-<div style="background:#222; padding: 10px;">
-<img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg" />
-</div>
-
-4 -->
-
 <table><tr><td>
 <img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg" />
 </td></tr></table>
 
-
-<!-- ./images/web/ty-media/for-docs/2017--estimate-unfamiliar-task.jpg  -->
-
-<!-- svg width="100%" height="600" xmlns="www.w3.org">
+<!-- SVG doesn't seem to work at GitHub:
+<svg width="100%" height="600" xmlns="www.w3.org">
   <rect x="0" y="0" width="100%" height="100%" fill="#222" stroke="none" stroke-width="2"/>
-  <image y="3%" href="https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2018-08-19-question-ex.jpeg" width="100%" height="94%" />
+  <image y="3%" href="... something ..." width="100%" height="94%" />
 </svg> -->
 
 
@@ -221,21 +147,6 @@ Find the interesting stuff, also in big discussions.
 <!--
 ![how-work-from-home-vpn-broken-borders](https://user-images.githubusercontent.com/7477359/44306101-0041eb80-a388-11e8-92e8-b8d417c47139.jpg)
 -->
-
-
-<!--
-### Recent replies — find them:
-
-You return to a discussion the next day. Any new replies? —
-Open the sidebar, click **Recent**, to find them.
-
-(But at GitHub, Reddit, HackerNews, you need to skim the whole discussion
-from top to bottom to see if anything new has appeared.)
-
-![Recent replies](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-recent-replies-ex-anon-arw.jpg "Recent replies")
--->
-<!--
-![Recent replies](/images/web/ty-media/for-docs/2019-08-10--recent-replies-ex-anon-arw.jpg?raw=true "Recent replies") -->
 
 
 ### Tags with values
@@ -253,70 +164,48 @@ here: https://forum.talkyard.io/-/search?q=tags:priority:desc%3E2+is:open
 <table><tr><td>
 <img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/upvote-ideas--aqua-planet-mind-writing-b0a--blue-marks--dimmed.png" />
 </td></tr></table>
-
-<!--
-![Upvote ideas](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/upvote-ideas--aqua-planet-mind-writing-b0a--blue-marks--dimmed.png "Upvote ideas")  -->
 <br/>
 
 <table><tr><td>
 <img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--upvote-ideas-settings.png" />
 </td></tr></table>
-<!--
-![Upvote ideas](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--upvote-ideas-settings.png "Upvote ideas") -->
 <br/>
+
 
 ### Anonymous comments
 
 So e.g. students can post embarassing questions. Or for anonymous feedback, etc.
 
-<!--
-![Anonymous comments](./modules/talkyard-docs/static/img/2026-01--anon-disc.png) -->
-
 <table><tr><td>
 <img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-disc.png" />
 </td></tr></table>
 <br/>
-<!--
-![Anonymous comments](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-disc.png)
--->
 
 <table><tr><td>
 <img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-never-always-menu.png" />
 </td></tr></table>
 <br/>
-<!--
-![Settings](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-never-always-menu.png)
--->
 
 <table><tr><td>
 <img src="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-purpose-menu.png" />
 </td></tr></table>
-
-<!--
-![Purpose](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2026-01--anon-purpose-menu.png)
--->
-
 <br>
+
 
 ### Chat
 
 Notifications via email, as of now.
 
 <table><tr><td>
+<!-- /images/web/ty-media/for-docs/2017-09-12-chat-ex.jpeg -->
 <img src="https://raw.githubusercontent.com/debiki/ty-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2017-09-12-chat-ex.jpeg" alt="A chat channel"/>
 </td></tr></table>
-
-<!--
-![chat-topic](https://raw.githubusercontent.com/debiki/ty-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2017-09-12-chat-ex.jpeg "A chat channel")
-
-![chat-topic](/images/web/ty-media/for-docs/2017-09-12-chat-ex.jpeg?raw=true "A chat channel")
--->
+<br>
 
 <!--
 ![ed-e2e-chat-owen-maria](https://cloud.githubusercontent.com/assets/7477359/19674424/608c49aa-9a88-11e6-8ccd-c2e7ceebd0c2.jpg)
 -->
 
-<br>
 <!--
 ![Q&A about how to wake up on time](https://user-images.githubusercontent.com/7477359/39368115-0549fad0-4a39-11e8-9bba-703d595d2b96.jpg)
 -->
@@ -330,13 +219,13 @@ Hacker News / Reddit style discussion:
 
 ![ed-admin-intro-guide](https://cloud.githubusercontent.com/assets/7477359/19679591/99a12098-9aa2-11e6-8b65-705c2548cbea.jpg)
 <br>
+-->
 
 ### Users online:
 
 ![ed-online-users](https://cloud.githubusercontent.com/assets/7477359/19680424/f0353f86-9aa5-11e6-84d9-94d46f228b93.jpg)
-
 <br>
--->
+
 
 ### Avoid mistakes
 
@@ -402,8 +291,7 @@ https://github.com/user-attachments/assets/fc1b34d7-75e3-4baf-95e1-8de364cdfdf2
 
 ### Blog comments
 
-Like Disqus — but no ads, no tracking. Configure in the Admin Area, the Settings tab,
-the Embedded Comments sub tab. Read more here: https://blog-comments.talkyard.io
+Like Disqus — but no ads, no tracking. Configure in the Admin Area | Settings | Embedded Comments. Read more here: https://blog-comments.talkyard.io
 <!--
 There's a Disqus importer — talk with us [in the forum](https://www.talkyard.io/forum/) if you want to migrate from Disqus to Talkyard.
 -->
@@ -433,61 +321,6 @@ Anonymous posts has been implemented, but not code reviewed and merged.
 ![Post anonymously](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-editor-post-anonymously-ex-arw.jpg "Post anonymously")
 -->
 
-
-
-<!--
-Image tests 3
------------------------------
- 
-https://github.com/user-attachments/assets/fc1b34d7-75e3-4baf-95e1-8de364cdfdf2
-
-![share-knowledge--vw73ji3trlxjz6gpgv3n3fmakjlezd](https://github.com/user-attachments/assets/464814fb-f082-4ae1-b244-87f25bac6cf0)
-
-
-![Post anonymously](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg)
-
-<kbd>
-![Post anonymously](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg)
-</kbd>
-
-<img scr="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg">
-
-<kbd>
-<img scr="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/p/m/9/for-docs/2017--estimate-unfamiliar-task.jpg">
-</kbd>
-
-
-
-Image tests!
------------------------------
-
-![Post anonymously](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/master/for-docs/2019-08-10-editor-post-anonymously-ex-arw.jpg)
-
-<kbd>
-![Post anonymously](https://raw.githubusercontent.com/debiki/ty-media/refs/heads/master/for-docs/2019-08-10-editor-post-anonymously-ex-arw.jpg)
-</kbd>
-
-
-<img scr="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/master/for-docs/2019-08-10-editor-post-anonymously-ex-arw.jpg">
-
-<kbd>
-<img scr="https://raw.githubusercontent.com/debiki/ty-media/refs/heads/master/for-docs/2019-08-10-editor-post-anonymously-ex-arw.jpg">
-</kbd>
-
----
-
-![Post anonymously](./images/web/ty-media/for-docs/2019-08-10-idea-topics-list-ex.jpg)
-
-<kbd>
-![Post anonymously](./images/web/ty-media/for-docs/2019-08-10-idea-topics-list-ex.jpg)
-</kbd>
-
-<img src="./images/web/ty-media/for-docs/2019-08-10-idea-topics-list-ex.jpg">
-
-<kbd>
-<img src="./images/web/ty-media/for-docs/2019-08-10-idea-topics-list-ex.jpg">
-</kbd>
--->
 
 
 Old Code
