@@ -2603,9 +2603,9 @@ export function markCurrentPageAsSeen() {
   }
 }
 
-
-export function listWebhooks(onOk: (webhooks: Webhook[]) => Vo) {
-  get('/-/list-webhooks', resp => onOk(resp.webhooks));
+       
+export function listWebhooks(onOk: (resp: ListWebhooksResp) => Vo) {
+  get('/-/list-webhooks', resp => onOk(resp));
 }
 
 

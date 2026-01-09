@@ -2631,6 +2631,19 @@ interface Webhook {
 }
 
 
+interface ListWebhooksResp {
+  webhooks: Webhook[]
+  lastEvtInf: LastEvtInf
+}
+
+interface LastEvtInf {
+  nowMs: WhenMs
+  // So can estimate each webhook's backlog size.
+  lastEventId: Nr
+  lastEventAtMs: WhenMs
+}
+
+
 // Sync w Scala:  def JsWebhookReqOut(webhook: Webhook).
 //
 interface WebhookReqOut {

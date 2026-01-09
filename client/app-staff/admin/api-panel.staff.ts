@@ -158,11 +158,13 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
   const isGone = React.useRef<Bo>(false);
   const [webhooksBef, setWebhooksBef] = React.useState<Webhook[] | N>(null);
   const [webhooksCur, setWebhooksCur] = React.useState<Webhook[] | N>(null);
+  const [lastEvtInf, setLastEvtInf] = React.useState<LastEvtInf | N>(null);
   const [badHeaders, setBadHeaders] = React.useState<Bo>(false);
   const [message, setMessage] = React.useState<St | N>(null);
 
   React.useEffect(() => {
-    Server.listWebhooks((whks: Webhook[]) => {
+    Server.listWebhooks((whksResp: ListWebhooksResp) => {
+      const whks: Webhook[] = whksResp.webhooks;
       // If there's not yet any webhook, let's make a new one, which the admins
       // can edit and save. It'll get to know about everything that happens
       // (runs as sysbot).
@@ -170,6 +172,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
             id: 1, ownerId: Groups.AdminsId, runAsId: Users.SysbotId, sendToUrl: '' }];
       setWebhooksBef(whks2);
       setWebhooksCur(whks2);
+      setLastEvtInf(whksResp.lastEvtInf);
     });
     return () => isGone.current = true;
   }, []);
@@ -223,6 +226,28 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
                 r.span({}, `Error: Bad headers JSON, should be like:  `),
                 r.code({}, `{ "Header-Name": "Header value", ... }`))
           });  */
+  const commaBroken = !theCurHook.lastFailedHow ? '' : ", broken";
+
+  const pauseResumeBtns = theCurHook.enabled
+      ? r.div({},
+            r.span({},
+              "Active" + commaBroken),
+            Button({ onClick: () => {
+              updWebhook({ enabled: false });
+            }}, "Pause"))
+      : r.div({},
+            r.span({}, "Paused" + commaBroken),
+            Button({ onClick: () => {
+              updWebhook({ enabled: true });
+            }}, "Resume"),
+            );
+
+  const lastEventElm = r.div({}, JSON.stringify(lastEvtInf));
+
+  const backlogInfBtn = 
+            Button({ onClick: () => {
+              updWebhook({ enabled: true });
+            }}, "Skip to now");
 
   const enabledElm =
       Input({ type: 'checkbox', label: "Enabled",
@@ -270,6 +295,38 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
             });
           }, }, "Retry once"));
 
+  const skipToNowBtn = unsavedChanges ? null : rFr({},
+      Button({
+          onClick: () => {
+            util.openDefaultStupidDialog({
+              body: r.div({},
+                r.p({}, "Skip all events up to now?"),
+                r.p({},
+                    "This is useful if webhookshave been broken or disabled " +
+                    "for very long, and you don'twant to send webhooks " +
+                    "for past events, instead, only from now and onwards.")),
+              primaryButtonTitle: "Yes, delete",
+              // primaryIsDanger: true,
+              secondaryButonTitle: "No, cancel",
+              onPrimaryClick: () => {
+                util.openDefaultStupidDialog({
+                  body: "Really?",
+                    primaryButtonTitle: "Yes, skip to now",
+                    secondaryButonTitle: "No, cancel",
+                    onPrimaryClick: () => {
+                      setMessage("UNIMPL: Skip to now.");
+                      //Server.skipWebhooksToNow({ onOk: () => {
+                      //  setMessage("Done: Skipped to now.");
+                      //}});
+                    },
+                 });
+               },
+            });
+            Server.retryWebhook(theCurHook.id, () => {
+              setMessage("Will retry in a few seconds.");
+            });
+          }, }, "Skip to now ..."));
+
   const showLogBtn =
       Button({
           onClick: () => {
@@ -286,12 +343,16 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
       r.div({ className: 'form-horizontal' },
         urlElm,
         //customHeadersElm,
+        pauseResumeBtns,
         enabledElm,
+        lastEventElm,
+        backlogInfBtn,
         retrySecs,
         r.div({ className: 'col-xs-offset-2 col-xs-10' },
           saveBtn,
           showLogBtn,
           retryOnceBtn,
+          skipToNowBtn,
           r.div({ className: 'c_A_Api_Wh_Msg' }, message)),
         webhookDetailsElm,
         ));
