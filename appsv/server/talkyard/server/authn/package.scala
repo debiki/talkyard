@@ -69,6 +69,10 @@ package object authn {   REFACTOR; MOVE // most of this to an object UserInfoPar
     ///
     case object EmbeddingStorageSid12 extends MinAuthnStrength(20, fullSidRequired = false)
 
+    // Endpoints that need only parts 1 and 2 if embedded, but accept the whole sid
+    // if not embedded.
+    case object EmbgStorageSid12OrNormal extends MinAuthnStrength(25, fullSidRequired = false)
+
     /// The embedded sid can be refreshed by popping up a window directly
     /// against the Talkyard server — then, the session id part 3, in a cookie, would
     /// be accessible to the javascript in the popup, which could send it to the iframes.
