@@ -20,6 +20,7 @@ package talkyard.server.events
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.SiteDao
+import debiki.EdHttp.throwNotFound
 import talkyard.{server => tys}
 import talkyard.server.authz.AuthzCtxOnForum
 
@@ -65,6 +66,36 @@ trait WebhooksSiteDaoMixin {
   val WebhookRequestTimeoutSecs = 20
 
 
+  def alterWebhookConf(webhookId: WebhookId, mutation: Webhook.WebhookMutation): Webhook = {
+    dieIf(webhookId != 1, "TyE603MRAEPJ7") // for now [only_1_webhook]
+    writeTx { (tx, _) =>
+      val webhookBef: Webhook = tx.loadWebhook(webhookId) getOrElse {
+        throwNotFound("TyE4LJKR29", s"No webhook with id ${webhookId}")
+      }
+
+      var webhookToSave = webhookBef.copy(
+            enabled =
+                mutation.setPaused.getOrElse(webhookBef.enabled))
+
+      // But [remove_isEnabling] below?
+      if (mutation.skipToNow) {
+        tx.loadEventsFromAuditLog(1, newestFirst = true).headOption foreach { event =>
+          val doneUpToId = math.max(event.id, webhookBef.sentUpToEventId getOrElse -1)
+          val doneUpToWhen = When.latestOf(event.doneAtWhen, webhookBef.sentUpToWhen)
+          webhookToSave = webhookToSave.copyAsWorking(
+                sentUpToWhen = doneUpToWhen,
+                sentUpToEventId = Some(doneUpToId),
+                numPendingMaybe = None,
+                doneForNow = None)
+        }
+      }
+
+      tx.upsertWebhook(webhookToSave)
+      webhookToSave
+    }
+  }
+
+
   def upsertWebhookConf(webhook: Webhook): Webhook = {
     dieIf(webhook.id != 1, "TyE603MRAEPJ6") // for now [only_1_webhook]
 
@@ -93,7 +124,7 @@ trait WebhooksSiteDaoMixin {
       // If enabling, don't send past event — only future events.
       UX // Actually, maybe should ask the admin what hen wants? See below...
       val isEnabling = !webhookBef.enabled && webhook.enabled
-      if (isEnabling) {
+      if (isEnabling) {  // [remove_isEnabling]
         tx.loadEventsFromAuditLog(1, newestFirst = true).headOption foreach { event =>
 
           // ... This sometimes makes sense:

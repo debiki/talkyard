@@ -75,7 +75,14 @@ class WebhooksController @Inject()(cc: ControllerComponents, tyContext: TyContex
 
   def alterWebhook: Action[JsValue] = AdminPostJsonAction2(RateLimits.AdminWritesToDb,
         maxBytes = 500) { req: JsonPostRequest =>
-    Ok
+    import req.{dao, body}
+    import debiki.JsonUtils.{parseInt32, parseOptBo, parseBoDef}
+    val webhookId = parseInt32(body, "webhookId")
+    val mutation = Webhook.WebhookMutation(
+          setPaused = parseOptBo(body, "setPaused"),
+          skipToNow = parseBoDef(body, "skipToNow", false))
+    dao.alterWebhookConf(webhookId, mutation)
+    this.listWebhooksImpl(req)
   }
 
 

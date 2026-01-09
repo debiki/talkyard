@@ -242,7 +242,15 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
             }}, "Resume"),
             );
 
-  const lastEventElm = r.div({}, JSON.stringify(lastEvtInf));
+  const allDone = theCurHook && lastEvtInf && (
+            theCurHook.sentUpToWhen >= lastEvtInf?.lastEventAtMs);
+  const allDoneTxt = !allDone ? '' : " — all done";
+  const lastEventElm = r.div({},
+      !theCurHook ? null :
+          r.p({}, "Done up to: ", whenMsToIsoDate(theCurHook.sentUpToWhen), allDoneTxt),
+      !lastEvtInf ? null :
+          r.p({}, "Last event at", whenMsToIsoDate(lastEvtInf.lastEventAtMs)),
+      r.pre({}, JSON.stringify(lastEvtInf)));
 
   const backlogInfBtn = 
             Button({ onClick: () => {
