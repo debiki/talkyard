@@ -1175,6 +1175,10 @@ More maybe-widgets:
 
 [webhooks_todo]
 If endpoint seems broken, send emails to admins, after a while. [notf_adm_broken_webhook]
+
+[post_event_approved]
+Optionally incl/excl unapproved posts from webhook events?
+
 [bot_api]  [plugin]  [review_plugin]
 Nice API for writing bots, e.g. chat bots or a Usability Testing Exchange external
 server / bot.
