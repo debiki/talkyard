@@ -221,7 +221,7 @@ Hacker News / Reddit style discussion:
 <br>
 -->
 
-### Users online:
+### Users online
 
 ![ed-online-users](https://cloud.githubusercontent.com/assets/7477359/19680424/f0353f86-9aa5-11e6-84d9-94d46f228b93.jpg)
 <br>

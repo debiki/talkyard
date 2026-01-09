@@ -1,6 +1,13 @@
 Talkyard development
 =============================
 
+Tech
+-----------------------------
+
+- Client: React.js, TypeScript, Webdriver.io.
+- Server: Scala and Play Framework. OpenResty, some Lua.
+- Databases: PostgreSQL, Redis, ElasticSearch.
+
 Getting started
 -----------------------------
 
