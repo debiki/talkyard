@@ -270,6 +270,7 @@ trait WebhooksSiteDaoMixin {
       // ----- Find events to send
 
       // Maybe break out to own fn?  Dao.loadEvents()?  [load_events_fn]
+      // This loads events for unapproved posts too. [post_event_approved]
       val logEntries = tx.loadEventsFromAuditLog(newerOrAt = Some(webhook.sentUpToWhen),
             newerThanEventId = webhook.sentUpToEventId,
             limit = webhook.sendMaxEventsPerReq.getOrElse(1),  // [whks_1_event]

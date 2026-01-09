@@ -364,7 +364,10 @@ interface PostListed extends PostFoundOrListed {
   pageTitle: string;
   urlPath: string;
   author: UserFound,
-  approvedHtmlSanitized?: string;
+  // Present if post approved.
+  approvedHtmlSanitized?: St
+  // Present if not yet approved.
+  unapprovedSource?: St
 }
 
 // Page id not needed, since is in a page {} obj.
@@ -566,6 +569,10 @@ interface PostUpdatedEvent extends Event_ {
   }
 }
 
+// Would be good to have? And  PatApprovedEvent too?
+// interface PostApprovedEvent extends Event_   // [post_event_approved]
+
+
 interface PatCreatedEvent extends Event_ {
   eventType: 'PatCreated';
   eventData: {
@@ -579,6 +586,10 @@ interface PatUpdatedEvent extends Event_ {
     pat: TyPat;
   }
 }
+
+// Would be good to have this too?
+// interface PatApprovedEvent extends Event_   // [post_event_approved]
+
 
 
 interface EventPageData {

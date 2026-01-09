@@ -180,6 +180,8 @@ object AuditLogEntryType {
 
 
 /**
+  *  Would be good to also have:
+  *  - isApproved, and a PostApproved event typu. [post_event_approved]
   *
   * @param siteId
   * @param id

@@ -77,6 +77,7 @@ case class PageEvent(
 sealed abstract class PostEventType(IntVal: i32) extends EventType(IntVal)
 
 object PostEventType {
+  // Would be good with a PostApproved event, and an is_approved_c column? [post_event_approved]
   case object PostCreated extends PostEventType(4001)  // 4001 — see [event_id_nrs]
   case object PostUpdated extends PostEventType(4002)
 }

@@ -101,15 +101,19 @@ object PostsListFoundJson {
 
     val anyAuthor = ppsById.get(post.createdById)
 
-    // Currently always approved. [4946RKTT2]
-    val approvedHtmlSanitized = post.approvedHtmlSanitized.getOrDie(
-          "TyE603RKDL4", s"Post not approved: ${post.id}")
-
     var json = Json.obj(  // Typescript: PostListed
       "id" -> JsNumber(post.id),
       "nr" -> JsNumber(post.nr),
-      "parentNr" -> JsNumberOrNull(post.parentNr),
-      "approvedHtmlSanitized" -> JsString(approvedHtmlSanitized))
+      "parentNr" -> JsNumberOrNull(post.parentNr))
+
+    // Currently always approved if listing posts [4946RKTT2],
+    // but not necessarily when sending webhook events. [post_event_approved]
+    post.approvedHtmlSanitized match {
+      case Some(html) =>
+        json += "approvedHtmlSanitized" -> JsString(html)
+      case None =>
+        json += "unapprovedSource" -> JsStringOrNull(post.unapprovedSource)
+    }
 
     if (authzCtx.maySeeExtIds) {
       post.extImpId.foreach(json += "extId" -> JsString(_))
