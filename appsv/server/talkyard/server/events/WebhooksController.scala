@@ -44,11 +44,18 @@ class WebhooksController @Inject()(cc: ControllerComponents, tyContext: TyContex
 
   private def listWebhooksImpl(req: DebikiRequest[_]): Result = {
     import req.dao
-    val webhooks = dao.readTx { tx =>
-      tx.loadAllWebhooks()
+    val (webhooks, anyLastEvent, nowMs) = dao.readTx { tx =>
+      val webhooks = tx.loadAllWebhooks()
+      val anyLastEvent = tx.loadEventsFromAuditLog(limit = 1, newestFirst = true).headOption
+      (webhooks, anyLastEvent, tx.now)
     }
-    OkSafeJson(Json.obj(
-        "webhooks" -> JsArray(webhooks map JsWebhook)))
+    import talkyard.server.JsX._
+    OkSafeJson(Json.obj(  // ts: ListWebhooksResp
+        "webhooks" -> JsArray(webhooks map JsWebhook),
+        "lastEvtInf" -> Json.obj(  // ts: LastEvtInf
+          "nowMs" -> JsWhenMs(nowMs),
+          "lastEventId" -> JsNum64OrNull(anyLastEvent.map(_.id)),
+          "lastEventAtMs" -> JsWhenMsOrNull(anyLastEvent.map(e => When.fromDate(e.doneAt))))))
   }
 
 
@@ -63,6 +70,19 @@ class WebhooksController @Inject()(cc: ControllerComponents, tyContext: TyContex
     val webhooksAfter = webhooks map dao.upsertWebhookConf
     OkSafeJson(Json.obj(
         "webhooks" -> JsArray(webhooksAfter map JsWebhook)))
+  }
+
+
+  def alterWebhook: Action[JsValue] = AdminPostJsonAction2(RateLimits.AdminWritesToDb,
+        maxBytes = 500) { req: JsonPostRequest =>
+    import req.{dao, body}
+    import debiki.JsonUtils.{parseInt32, parseOptBo, parseBoDef}
+    val webhookId = parseInt32(body, "webhookId")
+    val mutation = Webhook.WebhookMutation(
+          setPaused = parseOptBo(body, "setPaused"),
+          skipToNow = parseBoDef(body, "skipToNow", false))
+    dao.alterWebhookConf(webhookId, mutation)
+    this.listWebhooksImpl(req)
   }
 
 
@@ -93,8 +113,40 @@ class WebhooksController @Inject()(cc: ControllerComponents, tyContext: TyContex
       val webhookAft = webhook.copy(retryExtraTimes = Some(1))(IfBadAbortReq)
       tx.upsertWebhook(webhookAft)
     }
-    Ok
+    //Ok
+    listWebhooksImpl(req)
   }
+
+
+  /*
+  def skipWebhooksToNow: Action[JsValue] = AdminPostJsonAction2(RateLimits.AdminWritesToDb,
+        maxBytes = 80) { req: JsonPostRequest =>
+    val webhookId: WebhookId = parseInt32(req.body, "webhookId")
+    // Move to WebhooksSiteDaoMixin?
+    req.dao.writeTx { (tx, _) =>
+      val webhook = tx.loadWebhook(webhookId) getOrElse {
+        debiki.EdHttp.throwNotFound("TyE0WBHK028055", s"No webhook with id $webhookId")
+      }
+
+      val lastLogEntry: AuditLogEntry =
+            tx.loadEventsFromAuditLog(limit = 1, newestFirst = true) getOrElse ??? // return
+
+      val webhookAft = webhook.copy(
+            retryExtraTimes = None,
+            retriedNumTimes = None,
+            retriedNumSecs = None,
+            // But don't clear lastErrMsgOrResp.
+            brokenReason = None,
+            sentUpToWhen = When.fromDate(lastLogEntry.doneAt),
+            sentUpToEventId = Some(lastLogEntry.id),
+            numPendingMaybe = None,
+            //doneForNow = Some(true),
+            )(IfBadAbortReq)
+
+      tx.upsertWebhook(webhookAft)
+    }
+    Ok
+  } */
 
 
   def listWebhookReqsOut(webhookId: WebhookId): Action[U] = AdminGetAction { req: GetRequest =>

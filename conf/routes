@@ -383,6 +383,7 @@ GET   /-/ams0/list-coworkers     controllers.SuperAdminController.listCoworkersA
 
 GET   /-/list-webhooks          talkyard.server.events.WebhooksController.listWebhooks
 POST  /-/upsert-webhooks        talkyard.server.events.WebhooksController.upsertWebhooks
+POST  /-/alter-webhook          talkyard.server.events.WebhooksController.alterWebhook
 POST  /-/delete-webhooks        talkyard.server.events.WebhooksController.deleteWebhooks
 POST  /-/retry-webhook          talkyard.server.events.WebhooksController.retryWebhook
 GET   /-/list-webhook-reqs-out  talkyard.server.events.WebhooksController.listWebhookReqsOut(webhookId: Int)

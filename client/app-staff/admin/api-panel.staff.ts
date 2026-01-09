@@ -158,26 +158,34 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
   const isGone = React.useRef<Bo>(false);
   const [webhooksBef, setWebhooksBef] = React.useState<Webhook[] | N>(null);
   const [webhooksCur, setWebhooksCur] = React.useState<Webhook[] | N>(null);
+  const [lastEvtInf, setLastEvtInf] = React.useState<LastEvtInf | N>(null);
   const [badHeaders, setBadHeaders] = React.useState<Bo>(false);
-  const [message, setMessage] = React.useState<St | N>(null);
+  const [savedMsg, setSavedMsg] = React.useState<St | N>(null);
 
   React.useEffect(() => {
-    Server.listWebhooks((whks: Webhook[]) => {
-      // If there's not yet any webhook, let's make a new one, which the admins
+    Server.listWebhooks((whksResp: ListWebhooksResp) => {
+      const whks: Webhook[] = whksResp.webhooks;
+      // If there's not yet any webhook, let's make a new one [_lazy_create], which the admins
       // can edit and save. It'll get to know about everything that happens
       // (runs as sysbot).
       const whks2: Webhook[] = whks.length ? whks : [{
             id: 1, ownerId: Groups.AdminsId, runAsId: Users.SysbotId, sendToUrl: '' }];
       setWebhooksBef(whks2);
       setWebhooksCur(whks2);
+      setLastEvtInf(whksResp.lastEvtInf);
     });
     return () => isGone.current = true;
   }, []);
 
-  if (webhooksCur === null)
+  if (!webhooksCur)
     return r.p({}, "Loading webhooks ...");
 
-  const theCurHook = webhooksCur[0];
+  if (!lastEvtInf)
+    return r.p({}, "!lastEvtInf");
+
+
+  // Lazy inited above if missing. [_lazy_create]
+  const theCurHook: Webhook = webhooksCur[0];
 
   const unsavedChanges =  !_.isEqual(webhooksBef, webhooksCur);
 
@@ -185,10 +193,25 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
     const curHook = webhooksCur[0];
     const updatedHook = {...curHook, ...changes };
     setWebhooksCur([updatedHook]);   // currently there can be just one webhook
-    setMessage(null);
+    setSavedMsg(null);
   }
 
-  const urlElm =
+  function reloadWebhook() {
+    // This'll reload it.
+    alterWebhook({});
+  }
+
+  function alterWebhook(mutation: { setPaused?: Bo, skipToNow?: Bo }) {
+    const curHook = webhooksCur[0];
+    Server.alterWebhook(curHook.id, mutation, (resp: ListWebhooksResp) => {
+      setWebhooksBef(resp.webhooks);
+      setWebhooksCur(resp.webhooks);
+      setLastEvtInf(resp.lastEvtInf);
+      setSavedMsg(null);
+    });
+  }
+
+  const urlElm = rFr({},
       Input({ label: "URL",
           labelClassName: 'col-xs-2',
           wrapperClassName: 'col-xs-10',
@@ -197,7 +220,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
           onChange: (event) => {
               updWebhook({ sendToUrl: event.target.value });
             }
-          });
+          }));
 
   /* Let's wait, next-next release.
   const customHeadersElm =
@@ -223,17 +246,107 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
                 r.span({}, `Error: Bad headers JSON, should be like:  `),
                 r.code({}, `{ "Header-Name": "Header value", ... }`))
           });  */
+  const activePausedTxt = theCurHook.enabled ? "Active" : (
+            theCurHook.sentUpToEventId ? "Paused" : "New, not started");
+  const activePausedCss = theCurHook.enabled ? "-Run" : "-Pau";
+  const brokenCss = theCurHook.brokenReason ? "-Brkn" : '';
+  const brokenTxt = !theCurHook.brokenReason ? '' : (
+                            theCurHook.enabled ? ", but broken, stopped" : ", broken");
 
-  const enabledElm =
-      Input({ type: 'checkbox', label: "Enabled",
-          wrapperClassName: 'col-xs-offset-2 col-xs-10',
-          className: 'c_A_Api_Wh_Ena',
-          checked: theCurHook.enabled,
-          onChange: () => {
-            updWebhook({ enabled: !theCurHook.enabled });
-          }});
 
-  const retrySecs = null; /* later:
+  const runningPausedInfBtns = r.div({
+          className: 'c_Wh_Act' + activePausedCss + brokenCss },
+            r.span({ className: 'c_FormTxt' }, activePausedTxt + brokenTxt),
+            ' ',
+            unsavedChanges ? null : theCurHook.enabled
+                ? Button({ className: 'e_Wh_Pause', onClick: () => {
+                    alterWebhook({ setPaused: true });
+                  }}, "Pause")
+                : rFr({},
+                    // When starting the first time, we always skip old events, start fresh
+                    // [start_webhook_at_now], so then we don't need any _skip_to_now btn.
+                    Button({ className: 'e_Wh_Start', onClick: () => {
+                          alterWebhook({ setPaused: false });
+                        }},
+                        theCurHook.sentUpToEventId ? "Resume from last sent event" : "Start"),
+                    !theCurHook.sentUpToEventId ? null :  // _skip_to_now
+                        Button({ className: 'e_Wh_StartFresh', onClick: () => {
+                            util.openDefaultStupidDialog({
+                              body: "Skip all pending events, start sending future events only?",
+                              primaryButtonTitle: r.span({ className: 'e_YesFresh' },
+                                  "Yes: Skip, and start"),
+                              secondaryButonTitle: "No, cancel",
+                              onPrimaryClick: () => {
+                                alterWebhook({ setPaused: false, skipToNow: true });
+                              },
+                             });
+                          }},
+                          "Start fresh (ignore past events) …")));
+
+  // @ifdef DEBUG
+  // If broken, it must have failed. That's also enforced by db constraints:
+  // webhooks_c_failed_brokenreason  and  webhooks_c_failed_since_how.
+  dieIf(theCurHook.brokenReason && !theCurHook.lastFailedHow, 'TyE7FKSJ3LS8');
+  // @endif
+
+  const retryOnceMsg =
+        !theCurHook.retryExtraTimes ? null :
+            r.div({ className: 'e_WillExtraRetry c_FormTxt' },
+              " Will retry in a few seconds. Wait and reload page");
+
+  const retryOnceBtn = !theCurHook.lastFailedHow || unsavedChanges || retryOnceMsg ? null :
+      Button({ className: 'c_A_Api_Wh_RetryB',
+          onClick: () => {
+            Server.retryWebhook(theCurHook.id, (resp: ListWebhooksResp) => {
+              setWebhooksBef(resp.webhooks);
+              setWebhooksCur(resp.webhooks);
+              setLastEvtInf(resp.lastEvtInf);
+            });
+          }, }, "Retry once");
+
+  const brokenInf = !theCurHook.lastFailedHow ? null :
+      r.div({ className: 'c_FormTxt c_Wh_Brokn c_Wh_Brokn-' + (
+                      theCurHook.brokenReason ? 'Stopped' : 'Failing') },
+        theCurHook.brokenReason
+            ? r.b({}, "Broken, stopped")
+            : r.span({}, r.b({}, "Broken?"), ` Failed ${theCurHook.retriedNumTimes} times.`),
+      );
+
+  const runningBrokenInf = !theCurHook.sendToUrl ? null :
+      r.div({ className: 'form-group' },
+      r.label({ className: 'col-xs-2 control-label' }, "Status"),
+      r.div({ className: 'col-xs-10' },
+        runningPausedInfBtns,
+        brokenInf,
+        retryOnceMsg,
+        retryOnceBtn,
+        !theCurHook.lastErrMsgOrResp ? null :
+              r.div({},
+                  r.b({}, "Last error:"),
+                  r.pre({}, theCurHook.lastErrMsgOrResp))
+      ));
+
+
+  const allDone = theCurHook && lastEvtInf && (
+            !lastEvtInf.lastEventAtMs || theCurHook.sentUpToWhen >= lastEvtInf.lastEventAtMs);
+
+  const lastEventElm = r.div({ className: 'c_FormTxt' },
+      !lastEvtInf?.lastEventAtMs
+          ? r.p({}, "No events, nothing has happened.")
+          : r.p({}, "Last event at: ", whenMsToIsoDate(lastEvtInf.lastEventAtMs),
+                ', event id ' + lastEvtInf.lastEventId +  // _bit_dupl_event_code
+                ', ' + debiki.prettyDuration(lastEvtInf.lastEventAtMs, lastEvtInf.nowMs)),
+      !theCurHook.sentUpToWhen
+          ? r.p({}, "No events sent.")
+          : r.p({},
+              "Sent up to: ", whenMsToIsoDate(theCurHook.sentUpToWhen), ' ',
+              r.span({ className: allDone ? 'e_Wh_AllDone' : 'e_Wh_Lagging' },
+                  allDone
+                    ? "— all caught up"
+                    : ', event id ' + theCurHook.sentUpToEventId +  // _bit_dupl_event_code
+                      ', ' + debiki.prettyDuration(theCurHook.sentUpToWhen, lastEvtInf.nowMs))));
+
+  /* const retrySecs = null;  // Later:
       Input({ type: 'number', label: "Retry max seconds",
           labelClassName: 'col-xs-2',
           wrapperClassName: 'col-xs-10',
@@ -246,29 +359,61 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
   // For now: (makes troubleshooting simpler)
   const webhookDetailsElm =
       r.pre({ className: 'col-xs-offset-2 col-xs-10' },
-        JSON.stringify(webhooksCur, undefined, 2));
+        JSON.stringify(webhooksCur, undefined, 2),
+        JSON.stringify(lastEvtInf));
 
-  const saveBtn =
+  // Break out a save button for "isolated" things like webhooks?  [single_setting_save_btn]
+  const saveBtn = !unsavedChanges && !savedMsg ? null :
+      r.div({ className: 'form-group' },
+      r.div({ className: 'col-xs-offset-2 col-xs-10' },
       Button({
-          className: 'e_Wh_SavB',
+          className: 'c_Wh_SavB',
           disabled: !unsavedChanges || badHeaders,
           onClick: () => {
-            Server.upsertWebhooks(webhooksCur, (webhooks) => {
+            Server.upsertWebhooks(webhooksCur, (webhooks: Webhook[]) => {
               if (isGone.current) return;
               setWebhooksBef(webhooks);
               setWebhooksCur(webhooks);
-              setMessage("Saved.");
+              setSavedMsg("Saved.");
             });
-          }, }, "Save");
+          }, }, "Save"),
+        !savedMsg ? null :
+            r.span({ className: 'e_Wh_Savd' }, savedMsg)));
 
-  const retryOnceBtn = !theCurHook.lastFailedHow || unsavedChanges ? null : rFr({},
-      r.span({ className: 'c_A_Api_Wh_BrknQ' }, "Is it broken? "),
+  const reloadBtn = !theCurHook.sendToUrl || unsavedChanges ? null :
+          Button({ onClick: () => {
+            reloadWebhook();
+          }}, "Refresh");
+
+
+  const skipToNowBtn = allDone || !theCurHook.sendToUrl || unsavedChanges ||
+            !theCurHook.sentUpToEventId ? null :  // if new, don't need any _skip_to_now
       Button({
+          className: 'e_Skip2Now',
           onClick: () => {
-            Server.retryWebhook(theCurHook.id, () => {
-              setMessage("Will retry in a few seconds.");
+            util.openDefaultStupidDialog({
+              body: r.div({},
+                r.p({}, "Skip all events up to now?"),
+                r.p({},
+                    "This is useful if webhookshave been broken or disabled " +
+                    "for very long, and you don'twant to send webhooks " +
+                    "for past events, instead, only from now and onwards.")),
+              primaryButtonTitle: r.span({ className: 'e_YesSkip' }, "Yes, skip to now"),
+              // primaryIsDanger: true,
+              secondaryButonTitle: "No, cancel",
+              onPrimaryClick: () => {
+                util.openDefaultStupidDialog({
+                  body: "Really?",
+                    primaryButtonTitle: r.span({ className: 'e_Really' }, "Yes, really"),
+                    secondaryButonTitle: "No, cancel",
+                    onPrimaryClick: () => {
+                      //setRetryMsg("Skipping to now ...");
+                      alterWebhook({ skipToNow: true });
+                    },
+                 });
+               },
             });
-          }, }, "Retry once"));
+          }, }, "Skip to now ...");
 
   const showLogBtn =
       Button({
@@ -278,21 +423,33 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
             });
           }, }, "View log");
 
+  const progressInf =
+      r.div({ className: 'form-group' },
+      r.label({ className: 'col-xs-2 control-label' }, "Progress"),
+      r.div({ className: 'col-xs-10' },
+        lastEventElm,
+        r.div({},
+            showLogBtn,
+            reloadBtn,
+            skipToNowBtn),
+      ));
+
   return r.div({ className: 'c_A_Api_Wh' },
       r.h3({}, "Webhooks"),
       r.p({}, "You can configure one webhook endpoint only, currently. " +
             "It'll get notified about new and edited pages and comments, " +
             "and new users (but currently not about updated user)."),
       r.div({ className: 'form-horizontal' },
+        // Config:
         urlElm,
-        //customHeadersElm,
-        enabledElm,
-        retrySecs,
-        r.div({ className: 'col-xs-offset-2 col-xs-10' },
-          saveBtn,
-          showLogBtn,
-          retryOnceBtn,
-          r.div({ className: 'c_A_Api_Wh_Msg' }, message)),
+        // retrySecs,
+        // customHeadersElm,
+        // ... more settings, later ...
+        saveBtn,
+        // Status:
+        runningBrokenInf,
+        progressInf,
+        // Debug:
         webhookDetailsElm,
         ));
 });

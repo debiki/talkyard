@@ -9899,12 +9899,53 @@ export class TyE2eTestBrowser {
             await this.waitAndSetValue('.c_A_Api_Wh_Url input', url);
           },
 
-          setEnabled: async (enabled: Bo) => {
-            await this.setCheckbox('.c_A_Api_Wh_Ena input', enabled);
+          startWebhook: async () => {
+            await this.waitAndClick('.e_Wh_Start');
+            await this.waitForDisplayed('.c_Wh_Act-Run');
           },
 
-          clickSave: async () => {
-            await this.waitAndClick('.e_Wh_SavB');
+          startFresh: async () => {
+            await this.waitAndClick('.e_Wh_StartFresh');
+            await this.waitAndClick('.e_YesFresh');
+            await this.waitUntilModalGone();
+            await this.waitForDisplayed('.c_Wh_Act-Run');
+          },
+
+          pauseWebhook: async () => {
+            await this.waitAndClick('.e_Wh_Pause');
+            await this.waitForDisplayed('.c_Wh_Act-Pau');
+          },
+
+          clickSave: async () => {  // RENAME to saveWebhook
+            await this.adminArea.apiTab.webhooks.saveWebhook();
+          },
+          saveWebhook: async () => {
+            await this.waitAndClick('.c_Wh_SavB');
+            await this.waitForDisplayed('.e_Wh_Savd');
+          },
+
+          isPaused: async (): Pr<Bo> => {
+            return await this.isDisplayed('.c_Wh_Act-Pau');
+          },
+
+          isRunning: async (): Pr<Bo> => {
+            return await this.isDisplayed('.c_Wh_Act-Run');
+          },
+
+          allCaughtUp: async (): Pr<Bo> => {
+            return await this.isDisplayed('.e_Wh_AllDone');
+          },
+
+          lagsAfter: async (): Pr<Bo> => {
+            return await this.isDisplayed('.e_Wh_Lagging');
+          },
+
+          skipToNow: async () => {
+            await this.waitAndClick('.e_Skip2Now');
+            await this.waitAndClick('.e_YesSkip');
+            await this.waitAndClick('.e_Really');
+            await this.waitUntilModalGone();
+            await this.waitForGone('.e_Skip2Now');
           },
         },
 

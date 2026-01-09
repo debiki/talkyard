@@ -2603,9 +2603,9 @@ export function markCurrentPageAsSeen() {
   }
 }
 
-
-export function listWebhooks(onOk: (webhooks: Webhook[]) => Vo) {
-  get('/-/list-webhooks', resp => onOk(resp.webhooks));
+       
+export function listWebhooks(onOk: (resp: ListWebhooksResp) => Vo) {
+  get('/-/list-webhooks', resp => onOk(resp));
 }
 
 
@@ -2616,6 +2616,12 @@ export function upsertWebhooks(webhooks: Webhook[], onOk: (webhooks: Webhook[]) 
 
 export function deleteWebhooks(webhooks: Webhook[], onOk: () => Vo) {
   postJsonSuccess('/-/delete-webhooks', onOk, { webhooks });
+}
+
+
+export function alterWebhook(webhookId: WebhookId, mutation,
+        onOk: (resp: ListWebhooksResp) => V) {
+  postJsonSuccess('/-/alter-webhook', onOk, { webhookId, ...mutation });
 }
 
 
