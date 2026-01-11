@@ -268,10 +268,11 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
                   }}, "Resume"));
 
   const retryOnceBtn = !theCurHook.lastFailedHow || unsavedChanges ? null : rFr({},
-      // r.span({ className: 'c_A_Api_Wh_BrknQ' }, "Is it broken? "),
       Button({ className: 'c_A_Api_Wh_RetryB',
           onClick: () => {
-            Server.retryWebhook(theCurHook.id, () => {
+            Server.retryWebhook(theCurHook.id, (resp) => {
+              setWebhooksCur(resp.webhooks);
+              setLastEvtInf(resp.lastEvtInf);
               setRetryMsg("Will retry in a few seconds.");
             });
           }, }, "Retry once"));
@@ -294,7 +295,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
         !theCurHook.lastErrMsgOrResp ? null :
               r.div({},
                   r.b({}, "Last error:"),
-                  r.pre(theCurHook.lastErrMsgOrResp))
+                  r.pre({}, theCurHook.lastErrMsgOrResp))
       ));
 
 

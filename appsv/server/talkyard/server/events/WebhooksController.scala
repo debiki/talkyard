@@ -113,7 +113,8 @@ class WebhooksController @Inject()(cc: ControllerComponents, tyContext: TyContex
       val webhookAft = webhook.copy(retryExtraTimes = Some(1))(IfBadAbortReq)
       tx.upsertWebhook(webhookAft)
     }
-    Ok
+    //Ok
+    listWebhooksImpl(req)
   }
 
 
