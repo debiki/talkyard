@@ -2619,6 +2619,12 @@ export function deleteWebhooks(webhooks: Webhook[], onOk: () => Vo) {
 }
 
 
+export function alterWebhook(webhookId: WebhookId, mutation,
+        onOk: (resp: ListWebhooksResp) => V) {
+  postJsonSuccess('/-/alter-webhook', onOk, { webhookId, ...mutation });
+}
+
+
 export function retryWebhook(webhookId: WebhookId, onOk: () => Vo) {
   postJsonSuccess('/-/retry-webhook', onOk, { webhookId });
 }

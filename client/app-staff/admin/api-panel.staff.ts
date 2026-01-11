@@ -177,8 +177,12 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
     return () => isGone.current = true;
   }, []);
 
-  if (webhooksCur === null)
+  if (!webhooksCur)
     return r.p({}, "Loading webhooks ...");
+
+  if (!lastEvtInf)
+    return r.p({}, "!lastEvtInf");
+
 
   const theCurHook = webhooksCur[0];
 
@@ -189,6 +193,21 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
     const updatedHook = {...curHook, ...changes };
     setWebhooksCur([updatedHook]);   // currently there can be just one webhook
     setMessage(null);
+  }
+
+  function reloadWebhook() {
+    // This'll reload it.
+    alterWebhook({});
+  }
+
+  function alterWebhook(mutation: { setPaused?: Bo, skipToNow?: Bo }) {
+    const curHook = webhooksCur[0];
+    Server.alterWebhook(curHook.id, mutation, (resp: ListWebhooksResp) => {
+      setWebhooksBef(resp.webhooks);
+      setWebhooksCur(resp.webhooks);
+      setLastEvtInf(resp.lastEvtInf);
+      setMessage(null);
+    });
   }
 
   const urlElm =
@@ -226,37 +245,61 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
                 r.span({}, `Error: Bad headers JSON, should be like:  `),
                 r.code({}, `{ "Header-Name": "Header value", ... }`))
           });  */
-  const commaBroken = !theCurHook.lastFailedHow ? '' : ", broken";
+  const activePausedTxt = theCurHook.enabled ? "Active" : "Paused";
+  const activePausedCss = theCurHook.enabled ? "-Run" : "-Pau";
+  const broeknCss = theCurHook.brokenReason ? "-Brk" : '';
+  const brokenTxt = !theCurHook.brokenReason ? '' : (
+                            theCurHook.enabled ? ", but broken" : ", broken");
 
-  const pauseResumeBtns = theCurHook.enabled
-      ? r.div({},
-            r.span({},
-              "Active" + commaBroken),
-            Button({ onClick: () => {
-              updWebhook({ enabled: false });
-            }}, "Pause"))
-      : r.div({},
-            r.span({}, "Paused" + commaBroken),
-            Button({ onClick: () => {
-              updWebhook({ enabled: true });
-            }}, "Resume"),
-            );
+  const runningPausedInfBtns = r.div({
+          className: 'col-xs-offset-2 col-xs-10 c_A_Api_Wh_Act' + activePausedCss + broeknCss },
+            r.label({}, "Status"),
+            r.span({}, activePausedTxt + brokenTxt),
+            unsavedChanges ? null : theCurHook.enabled
+                ? Button({ onClick: () => {
+                    alterWebhook({ setPaused: true });
+                  }}, "Pause")
+                : Button({ onClick: () => {
+                    alterWebhook({ setPaused: false });
+                  }}, "Resume"));
 
+  const retryOnceBtn = !theCurHook.lastFailedHow || unsavedChanges ? null : rFr({},
+      r.span({ className: 'c_A_Api_Wh_BrknQ' }, "Is it broken? "),
+      Button({
+          onClick: () => {
+            Server.retryWebhook(theCurHook.id, () => {
+              setMessage("Will retry in a few seconds.");
+            });
+          }, }, "Retry once"));
+
+
+          // retryOnceBtn,
   const allDone = theCurHook && lastEvtInf && (
-            theCurHook.sentUpToWhen >= lastEvtInf?.lastEventAtMs);
-  const allDoneTxt = !allDone ? '' : " — all done";
-  const lastEventElm = r.div({},
-      !theCurHook ? null :
-          r.p({}, "Done up to: ", whenMsToIsoDate(theCurHook.sentUpToWhen), allDoneTxt),
-      !lastEvtInf ? null :
-          r.p({}, "Last event at", whenMsToIsoDate(lastEvtInf.lastEventAtMs)),
-      r.pre({}, JSON.stringify(lastEvtInf)));
+            theCurHook.sentUpToWhen >= lastEvtInf.lastEventAtMs);
+  const allDoneTxt = allDone ? "— all caught up"
+                             : ', ' + debiki.prettyDuration(theCurHook.sentUpToWhen, lastEvtInf.nowMs);
 
-  const backlogInfBtn = 
+  const skipToNowBtn = allDone || !theCurHook || unsavedChanges ? null :
             Button({ onClick: () => {
-              updWebhook({ enabled: true });
+              alterWebhook({ skipToNow: true });
             }}, "Skip to now");
 
+  const reloadBtn = r.div({},
+          Button({ onClick: () => {
+            reloadWebhook();
+          }}, "Refresh"));
+
+  const lastEventElm = r.div({ className: 'col-xs-offset-2 col-xs-10' },
+      !lastEvtInf ? r.div({}, "No events, yet.") :
+          r.div({}, "Last event at: ", whenMsToIsoDate(lastEvtInf.lastEventAtMs),
+              ', ' + debiki.prettyDuration(lastEvtInf.lastEventAtMs, lastEvtInf.nowMs)),
+      !theCurHook ? null :
+          rFr({},
+              r.div({}, "Sent up to: ", whenMsToIsoDate(theCurHook.sentUpToWhen), ' ', allDoneTxt),
+              reloadBtn, skipToNowBtn),
+      r.pre({}, JSON.stringify(lastEvtInf)));
+
+  /*
   const enabledElm =
       Input({ type: 'checkbox', label: "Enabled",
           wrapperClassName: 'col-xs-offset-2 col-xs-10',
@@ -264,7 +307,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
           checked: theCurHook.enabled,
           onChange: () => {
             updWebhook({ enabled: !theCurHook.enabled });
-          }});
+          }}); */
 
   const retrySecs = null; /* later:
       Input({ type: 'number', label: "Retry max seconds",
@@ -294,16 +337,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
             });
           }, }, "Save");
 
-  const retryOnceBtn = !theCurHook.lastFailedHow || unsavedChanges ? null : rFr({},
-      r.span({ className: 'c_A_Api_Wh_BrknQ' }, "Is it broken? "),
-      Button({
-          onClick: () => {
-            Server.retryWebhook(theCurHook.id, () => {
-              setMessage("Will retry in a few seconds.");
-            });
-          }, }, "Retry once"));
-
-  const skipToNowBtn = unsavedChanges ? null : rFr({},
+  const skipToNowBtn2 = unsavedChanges ? null : rFr({},
       Button({
           onClick: () => {
             util.openDefaultStupidDialog({
@@ -350,17 +384,14 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
             "and new users (but currently not about updated user)."),
       r.div({ className: 'form-horizontal' },
         urlElm,
+        saveBtn,
         //customHeadersElm,
-        pauseResumeBtns,
-        enabledElm,
+        runningPausedInfBtns,
+        //enabledElm,
         lastEventElm,
-        backlogInfBtn,
         retrySecs,
         r.div({ className: 'col-xs-offset-2 col-xs-10' },
-          saveBtn,
           showLogBtn,
-          retryOnceBtn,
-          skipToNowBtn,
           r.div({ className: 'c_A_Api_Wh_Msg' }, message)),
         webhookDetailsElm,
         ));

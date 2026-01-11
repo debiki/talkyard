@@ -73,9 +73,10 @@ trait WebhooksSiteDaoMixin {
         throwNotFound("TyE4LJKR29", s"No webhook with id ${webhookId}")
       }
 
-      var webhookToSave = webhookBef.copy(
-            enabled =
-                mutation.setPaused.getOrElse(webhookBef.enabled))
+      var webhookToSave = webhookBef
+      mutation.setPaused foreach { paused =>
+        webhookToSave = webhookToSave.copy(enabled = !paused)(IfBadAbortReq)
+      }
 
       // But [remove_isEnabling] below?
       if (mutation.skipToNow) {
