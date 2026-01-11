@@ -160,7 +160,8 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
   const [webhooksCur, setWebhooksCur] = React.useState<Webhook[] | N>(null);
   const [lastEvtInf, setLastEvtInf] = React.useState<LastEvtInf | N>(null);
   const [badHeaders, setBadHeaders] = React.useState<Bo>(false);
-  const [message, setMessage] = React.useState<St | N>(null);
+  const [savedMsg, setSavedMsg] = React.useState<St | N>(null);
+  const [retryMsg, setRetryMsg] = React.useState<St | N>(null);
 
   React.useEffect(() => {
     Server.listWebhooks((whksResp: ListWebhooksResp) => {
@@ -192,7 +193,8 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
     const curHook = webhooksCur[0];
     const updatedHook = {...curHook, ...changes };
     setWebhooksCur([updatedHook]);   // currently there can be just one webhook
-    setMessage(null);
+    setRetryMsg(null);
+    setSavedMsg(null);
   }
 
   function reloadWebhook() {
@@ -206,11 +208,12 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
       setWebhooksBef(resp.webhooks);
       setWebhooksCur(resp.webhooks);
       setLastEvtInf(resp.lastEvtInf);
-      setMessage(null);
+      setRetryMsg(null);
+      setSavedMsg(null);
     });
   }
 
-  const urlElm =
+  const urlElm = rFr({},
       Input({ label: "URL",
           labelClassName: 'col-xs-2',
           wrapperClassName: 'col-xs-10',
@@ -219,7 +222,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
           onChange: (event) => {
               updWebhook({ sendToUrl: event.target.value });
             }
-          });
+          }));
 
   /* Let's wait, next-next release.
   const customHeadersElm =
@@ -249,12 +252,13 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
   const activePausedCss = theCurHook.enabled ? "-Run" : "-Pau";
   const broeknCss = theCurHook.brokenReason ? "-Brk" : '';
   const brokenTxt = !theCurHook.brokenReason ? '' : (
-                            theCurHook.enabled ? ", but broken" : ", broken");
+                            theCurHook.enabled ? ", but broken, stopped" : ", broken");
+
 
   const runningPausedInfBtns = r.div({
-          className: 'col-xs-offset-2 col-xs-10 c_A_Api_Wh_Act' + activePausedCss + broeknCss },
-            r.label({}, "Status"),
+          className: 'c_A_Api_Wh_Act' + activePausedCss + broeknCss },
             r.span({}, activePausedTxt + brokenTxt),
+            ' ',
             unsavedChanges ? null : theCurHook.enabled
                 ? Button({ onClick: () => {
                     alterWebhook({ setPaused: true });
@@ -264,18 +268,38 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
                   }}, "Resume"));
 
   const retryOnceBtn = !theCurHook.lastFailedHow || unsavedChanges ? null : rFr({},
-      r.span({ className: 'c_A_Api_Wh_BrknQ' }, "Is it broken? "),
-      Button({
+      // r.span({ className: 'c_A_Api_Wh_BrknQ' }, "Is it broken? "),
+      Button({ className: 'c_A_Api_Wh_RetryB',
           onClick: () => {
             Server.retryWebhook(theCurHook.id, () => {
-              setMessage("Will retry in a few seconds.");
+              setRetryMsg("Will retry in a few seconds.");
             });
           }, }, "Retry once"));
 
+  const brokenInf = !theCurHook.brokenReason && !theCurHook.lastFailedHow ? null :
+      r.div({ className: 'c_A_Api_Wh_BroknInf' },
+        theCurHook.brokenReason
+            ? r.div({}, "Broken, stopped")
+            : r.div({}, `Broken? Failed ${theCurHook.retriedNumTimes} times`),
+      );
 
-          // retryOnceBtn,
+  const runningBrokenInf =
+      r.div({ className: 'form-group' },
+      r.label({ className: 'col-xs-2 control-label' }, "Status"),
+      r.div({ className: 'col-xs-10' },
+        runningPausedInfBtns,
+        brokenInf,
+        retryOnceBtn,
+        retryMsg,
+        !theCurHook.lastErrMsgOrResp ? null :
+              r.div({},
+                  r.b({}, "Last error:"),
+                  r.pre(theCurHook.lastErrMsgOrResp))
+      ));
+
+
   const allDone = theCurHook && lastEvtInf && (
-            theCurHook.sentUpToWhen >= lastEvtInf.lastEventAtMs);
+            !lastEvtInf.lastEventAtMs || theCurHook.sentUpToWhen >= lastEvtInf.lastEventAtMs);
   const allDoneTxt = allDone ? "— all caught up"
                              : ', ' + debiki.prettyDuration(theCurHook.sentUpToWhen, lastEvtInf.nowMs);
 
@@ -289,15 +313,16 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
             reloadWebhook();
           }}, "Refresh"));
 
-  const lastEventElm = r.div({ className: 'col-xs-offset-2 col-xs-10' },
-      !lastEvtInf ? r.div({}, "No events, yet.") :
-          r.div({}, "Last event at: ", whenMsToIsoDate(lastEvtInf.lastEventAtMs),
+
+  const lastEventElm = rFr({}, // .div({ className: 'col-xs-offset-2 col-xs-10' },
+      !lastEvtInf || !lastEvtInf.lastEventAtMs
+        ? r.div({}, "No events, nothing has happened.")
+        : r.div({}, "Last event at: ", whenMsToIsoDate(lastEvtInf.lastEventAtMs),
               ', ' + debiki.prettyDuration(lastEvtInf.lastEventAtMs, lastEvtInf.nowMs)),
-      !theCurHook ? null :
+      !theCurHook || !lastEvtInf.lastEventAtMs ? null :
           rFr({},
               r.div({}, "Sent up to: ", whenMsToIsoDate(theCurHook.sentUpToWhen), ' ', allDoneTxt),
-              reloadBtn, skipToNowBtn),
-      r.pre({}, JSON.stringify(lastEvtInf)));
+              reloadBtn, skipToNowBtn));
 
   /*
   const enabledElm =
@@ -322,9 +347,12 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
   // For now: (makes troubleshooting simpler)
   const webhookDetailsElm =
       r.pre({ className: 'col-xs-offset-2 col-xs-10' },
-        JSON.stringify(webhooksCur, undefined, 2));
+        JSON.stringify(webhooksCur, undefined, 2),
+        JSON.stringify(lastEvtInf));
 
   const saveBtn =
+      r.div({ className: 'form-group' },
+      r.div({ className: 'col-xs-offset-2 col-xs-10' },
       Button({
           className: 'e_Wh_SavB',
           disabled: !unsavedChanges || badHeaders,
@@ -333,9 +361,10 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
               if (isGone.current) return;
               setWebhooksBef(webhooks);
               setWebhooksCur(webhooks);
-              setMessage("Saved.");
+              setSavedMsg("Saved.");
             });
-          }, }, "Save");
+          }, }, "Save"),
+        savedMsg));
 
   const skipToNowBtn2 = unsavedChanges ? null : rFr({},
       Button({
@@ -356,7 +385,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
                     primaryButtonTitle: "Yes, skip to now",
                     secondaryButonTitle: "No, cancel",
                     onPrimaryClick: () => {
-                      setMessage("UNIMPL: Skip to now.");
+                      setRetryMsg("UNIMPL: Skip to now.");
                       //Server.skipWebhooksToNow({ onOk: () => {
                       //  setMessage("Done: Skipped to now.");
                       //}});
@@ -365,7 +394,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
                },
             });
             Server.retryWebhook(theCurHook.id, () => {
-              setMessage("Will retry in a few seconds.");
+              setRetryMsg("Will retry in a few seconds.");
             });
           }, }, "Skip to now ..."));
 
@@ -377,6 +406,14 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
             });
           }, }, "View log");
 
+  const progressInf =
+      r.div({ className: 'form-group' },
+      r.label({ className: 'col-xs-2 control-label' }, "Progress"),
+      r.div({ className: 'col-xs-10' },
+        lastEventElm,
+        showLogBtn,
+      ));
+
   return r.div({ className: 'c_A_Api_Wh' },
       r.h3({}, "Webhooks"),
       r.p({}, "You can configure one webhook endpoint only, currently. " +
@@ -384,15 +421,21 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
             "and new users (but currently not about updated user)."),
       r.div({ className: 'form-horizontal' },
         urlElm,
+        // ... more settings, later ...
         saveBtn,
+        runningBrokenInf,
+        progressInf,
         //customHeadersElm,
-        runningPausedInfBtns,
+        //runningPausedInfBtns,
         //enabledElm,
-        lastEventElm,
+        //brokenInf,
+        //lastEventElm,
+        /*
         retrySecs,
         r.div({ className: 'col-xs-offset-2 col-xs-10' },
           showLogBtn,
-          r.div({ className: 'c_A_Api_Wh_Msg' }, message)),
+          r.div({ className: 'c_A_Api_Wh_Msg' }, retryMsg)),
+          */
         webhookDetailsElm,
         ));
 });
