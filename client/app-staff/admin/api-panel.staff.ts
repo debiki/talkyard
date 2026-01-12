@@ -250,20 +250,20 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
           });  */
   const activePausedTxt = theCurHook.enabled ? "Active" : "Paused";
   const activePausedCss = theCurHook.enabled ? "-Run" : "-Pau";
-  const broeknCss = theCurHook.brokenReason ? "-Brk" : '';
+  const brokenCss = theCurHook.brokenReason ? "-Brkn" : '';
   const brokenTxt = !theCurHook.brokenReason ? '' : (
                             theCurHook.enabled ? ", but broken, stopped" : ", broken");
 
 
   const runningPausedInfBtns = r.div({
-          className: 'c_A_Api_Wh_Act' + activePausedCss + broeknCss },
-            r.span({}, activePausedTxt + brokenTxt),
+          className: 'c_A_Api_Wh_Act' + activePausedCss + brokenCss },
+            r.span({ className: 'c_FormTxt' }, activePausedTxt + brokenTxt),
             ' ',
             unsavedChanges ? null : theCurHook.enabled
-                ? Button({ onClick: () => {
+                ? Button({ className: 'e_Wh_Pause', onClick: () => {
                     alterWebhook({ setPaused: true });
                   }}, "Pause")
-                : Button({ onClick: () => {
+                : Button({ className: 'e_Wh_Start', onClick: () => {
                     alterWebhook({ setPaused: false });
                   }}, "Resume"));
 
@@ -301,29 +301,29 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
 
   const allDone = theCurHook && lastEvtInf && (
             !lastEvtInf.lastEventAtMs || theCurHook.sentUpToWhen >= lastEvtInf.lastEventAtMs);
-  const allDoneTxt = allDone ? "— all caught up"
+  const allDoneTxt = allDone ? r.span({ className: 'e_Wh_AllDone' }, "— all caught up")
                              : ', ' + debiki.prettyDuration(theCurHook.sentUpToWhen, lastEvtInf.nowMs);
 
-  const skipToNowBtn = allDone || !theCurHook || unsavedChanges ? null :
+  const skipToNowBtn0 = allDone || !theCurHook || unsavedChanges ? null :
             Button({ onClick: () => {
               alterWebhook({ skipToNow: true });
             }}, "Skip to now");
 
-  const reloadBtn = r.div({},
+  const reloadBtn = unsavedChanges ? null :
           Button({ onClick: () => {
             reloadWebhook();
-          }}, "Refresh"));
+          }}, "Refresh");
 
 
-  const lastEventElm = rFr({}, // .div({ className: 'col-xs-offset-2 col-xs-10' },
+  const lastEventElm = rFr({},
       !lastEvtInf || !lastEvtInf.lastEventAtMs
-        ? r.div({}, "No events, nothing has happened.")
-        : r.div({}, "Last event at: ", whenMsToIsoDate(lastEvtInf.lastEventAtMs),
+        ? r.div({ className: 'c_FormTxt' }, "No events, nothing has happened.")
+        : r.div({ className: 'c_FormTxt' }, "Last event at: ", whenMsToIsoDate(lastEvtInf.lastEventAtMs),
               ', ' + debiki.prettyDuration(lastEvtInf.lastEventAtMs, lastEvtInf.nowMs)),
+      r.br(),
       !theCurHook || !lastEvtInf.lastEventAtMs ? null :
-          rFr({},
-              r.div({}, "Sent up to: ", whenMsToIsoDate(theCurHook.sentUpToWhen), ' ', allDoneTxt),
-              reloadBtn, skipToNowBtn));
+          r.div({ className: 'c_FormTxt' },
+              "Sent up to: ", whenMsToIsoDate(theCurHook.sentUpToWhen), ' ', allDoneTxt));
 
   /*
   const enabledElm =
@@ -351,11 +351,12 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
         JSON.stringify(webhooksCur, undefined, 2),
         JSON.stringify(lastEvtInf));
 
-  const saveBtn =
+  // Break out a save button for "isolated" things like webhooks?  [single_setting_save_btn]
+  const saveBtn = !unsavedChanges && !savedMsg ? null :
       r.div({ className: 'form-group' },
       r.div({ className: 'col-xs-offset-2 col-xs-10' },
       Button({
-          className: 'e_Wh_SavB',
+          className: 'c_Wh_SavB',
           disabled: !unsavedChanges || badHeaders,
           onClick: () => {
             Server.upsertWebhooks(webhooksCur, (webhooks) => {
@@ -365,9 +366,11 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
               setSavedMsg("Saved.");
             });
           }, }, "Save"),
-        savedMsg));
+        !savedMsg ? null :
+            r.span({ className: 'e_Wh_Savd' }, savedMsg)));
 
-  const skipToNowBtn2 = unsavedChanges ? null : rFr({},
+  const skipToNowBtn = allDone || !theCurHook || unsavedChanges ? null :
+  /*const skipToNowBtn2 = unsavedChanges ? null : */ rFr({},
       Button({
           onClick: () => {
             util.openDefaultStupidDialog({
@@ -386,16 +389,14 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
                     primaryButtonTitle: "Yes, skip to now",
                     secondaryButonTitle: "No, cancel",
                     onPrimaryClick: () => {
-                      setRetryMsg("UNIMPL: Skip to now.");
-                      //Server.skipWebhooksToNow({ onOk: () => {
-                      //  setMessage("Done: Skipped to now.");
-                      //}});
+                      setRetryMsg("Skipping to now ...");
+                      alterWebhook({ skipToNow: true });
+                      //() => {
+                      //   setRetryMsg("Done: Skipped to now.");
+                      // });
                     },
                  });
                },
-            });
-            Server.retryWebhook(theCurHook.id, () => {
-              setRetryMsg("Will retry in a few seconds.");
             });
           }, }, "Skip to now ..."));
 
@@ -412,7 +413,10 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
       r.label({ className: 'col-xs-2 control-label' }, "Progress"),
       r.div({ className: 'col-xs-10' },
         lastEventElm,
-        showLogBtn,
+        r.div({},
+            showLogBtn,
+            reloadBtn,
+            skipToNowBtn),
       ));
 
   return r.div({ className: 'c_A_Api_Wh' },

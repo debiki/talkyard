@@ -18,6 +18,21 @@
 .c_A_Api_Wh_Url .input-group
   width: 100%;
 
+// [single_setting_save_btn]
+.c_Wh_SavB:not([disabled])
+  background: hsl($uiHue, 90%, 50%);
+  color: white;
+
+// .form-horizontal .control-label  has  7px padding. If displaying plain text in
+// the form (info text), we can use the below class to align with the label to the left.
+.c_FormTxt
+  display: inline-block;
+  padding-top: 7px;
+  
+.c_A_Api_Wh
+  .c_FormTxt,
+  .btn
+    margin-right: 8px;  // So not too close
 
 li.c_WbhkReqs_Req
   padding-left: 1em;

@@ -62,8 +62,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
 
 
   it(`Owen enables the webhook — not until now`, async () => {
-    await owen_brA.adminArea.apiTab.webhooks.setEnabled(true);
-    await owen_brA.adminArea.apiTab.webhooks.clickSave();
+    await owen_brA.adminArea.apiTab.webhooks.startWebhook();
   });
 
 
@@ -90,8 +89,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
   });
 
   it(`Owen disables the webhook`, async () => {
-    await owen_brA.adminArea.apiTab.webhooks.setEnabled(false);
-    await owen_brA.adminArea.apiTab.webhooks.clickSave();
+    await owen_brA.adminArea.apiTab.webhooks.pauseWebhook();
   });
 
   it(`Memah just cannot stop typing. She replies a 3rd time and a 4th`, async () => {
@@ -110,8 +108,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
   });
 
   it(`Owen enables the webhook`, async () => {
-    await owen_brA.adminArea.apiTab.webhooks.setEnabled(true);
-    await owen_brA.adminArea.apiTab.webhooks.clickSave();
+    await owen_brA.adminArea.apiTab.webhooks.startWebhook();
   });
 
   it(`Memah posts a 5th reply. It's her last — thereafter, her cat, and an unknown cat,
@@ -133,3 +130,4 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
   });
 
 });
+

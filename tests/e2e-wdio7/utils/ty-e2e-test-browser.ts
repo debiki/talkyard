@@ -9899,12 +9899,22 @@ export class TyE2eTestBrowser {
             await this.waitAndSetValue('.c_A_Api_Wh_Url input', url);
           },
 
-          setEnabled: async (enabled: Bo) => {
-            await this.setCheckbox('.c_A_Api_Wh_Ena input', enabled);
+          startWebhook: async () => {
+            await this.waitAndClick('.e_Wh_Start');
+            await this.waitForDisplayed('.c_A_Api_Wh_Act-Run');
           },
 
-          clickSave: async () => {
-            await this.waitAndClick('.e_Wh_SavB');
+          pauseWebhook: async () => {
+            await this.waitAndClick('.e_Wh_Pause');
+            await this.waitForDisplayed('.c_A_Api_Wh_Act-Pau');
+          },
+
+          clickSave: async () => {  // RENAME to saveWebhook
+            await this.adminArea.apiTab.webhooks.saveWebhook();
+          },
+          saveWebhook: async () => {
+            await this.waitAndClick('.c_Wh_SavB');
+            await this.waitForDisplayed('.e_Wh_Savd');
           },
         },
 
