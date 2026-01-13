@@ -492,6 +492,7 @@ trait WebhooksSiteDaoMixin {
 
 
   private def sendWebhookRequest(reqOut: WebhookReqOut): Future[WebhookReqOut] = {
+    // Check if self-hosted
     val wsClient: WSClient = globals.wsClient
     val request: WSRequest =
           wsClient.url(reqOut.sentToUrl).withHttpHeaders(
