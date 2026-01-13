@@ -292,7 +292,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
   const retryOnceMsg =
         !theCurHook.retryExtraTimes ? null :
             r.div({ className: 'e_WillExtraRetry c_FormTxt' },
-              " Will retry in a few seconds. Wait and reload page");
+              " Will retry in a few seconds. Wait and reload page, then click View Log");
 
   const retryOnceBtn = !theCurHook.lastFailedHow || unsavedChanges || retryOnceMsg ? null :
       Button({ className: 'c_A_Api_Wh_RetryB',
@@ -434,11 +434,26 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
             skipToNowBtn),
       ));
 
+  // Webhooks disabled server side too. [webhooks_ty_v1]
+  let enableWebhooks = isSelfHosted();
+  // But don't look at: isAutoTestSite()
+  // @ifdef DEBUG
+  enableWebhooks = true;
+  // @endif
+
   return r.div({ className: 'c_A_Api_Wh' },
       r.h3({}, "Webhooks"),
       r.p({}, "You can configure one webhook endpoint only, currently. " +
             "It'll get notified about new and edited pages and comments, " +
             "and new users (but currently not about updated user)."),
+      !enableWebhooks
+          ? r.div({},
+              r.p({},
+                  "Update 2025-01: Webhooks disabled, " +
+                  "unless you're self-hosted, which you are not."),
+              r.p({},
+                  "We'll enable again in Talkyard v1, later this year 2026."))
+          :
       r.div({ className: 'form-horizontal' },
         // Config:
         urlElm,
