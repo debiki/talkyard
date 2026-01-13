@@ -9901,12 +9901,12 @@ export class TyE2eTestBrowser {
 
           startWebhook: async () => {
             await this.waitAndClick('.e_Wh_Start');
-            await this.waitForDisplayed('.c_A_Api_Wh_Act-Run');
+            await this.waitForDisplayed('.c_Wh_Act-Run');
           },
 
           pauseWebhook: async () => {
             await this.waitAndClick('.e_Wh_Pause');
-            await this.waitForDisplayed('.c_A_Api_Wh_Act-Pau');
+            await this.waitForDisplayed('.c_Wh_Act-Pau');
           },
 
           clickSave: async () => {  // RENAME to saveWebhook
@@ -9915,6 +9915,30 @@ export class TyE2eTestBrowser {
           saveWebhook: async () => {
             await this.waitAndClick('.c_Wh_SavB');
             await this.waitForDisplayed('.e_Wh_Savd');
+          },
+
+          isPaused: async (): Pr<Bo> => {
+            return await this.isDisplayed('.c_Wh_Act-Pau');
+          },
+
+          isRunning: async (): Pr<Bo> => {
+            return await this.isDisplayed('.c_Wh_Act-Run');
+          },
+
+          allCaughtUp: async (): Pr<Bo> => {
+            return await this.isDisplayed('.e_Wh_AllDone');
+          },
+
+          lagsAfter: async (): Pr<Bo> => {
+            return await this.isDisplayed('.e_Wh_Lagging');
+          },
+
+          skipToNow: async () => {
+            await this.waitAndClick('.e_Skip2Now');
+            await this.waitAndClick('.e_YesSkip');
+            await this.waitAndClick('.e_Really');
+            await this.waitUntilModalGone();
+            await this.waitForGone('.e_Skip2Now');
           },
         },
 

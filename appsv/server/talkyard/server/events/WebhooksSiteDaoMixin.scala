@@ -79,7 +79,11 @@ trait WebhooksSiteDaoMixin {
       }
 
       // But [remove_isEnabling] below?
-      if (mutation.skipToNow) {
+      val skipToNow = mutation.skipToNow ||
+            // When starting the webhook for the first time,  [start_webhook_at_now]
+            // start sending at the current time (don't send old events).
+            mutation.setPaused.is(false) && webhookBef.sentUpToEventId.isEmpty
+      if (skipToNow) {
         tx.loadEventsFromAuditLog(1, newestFirst = true).headOption foreach { event =>
           val doneUpToId = math.max(event.id, webhookBef.sentUpToEventId getOrElse -1)
           val doneUpToWhen = When.latestOf(event.doneAtWhen, webhookBef.sentUpToWhen)
