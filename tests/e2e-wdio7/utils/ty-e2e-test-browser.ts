@@ -9904,6 +9904,13 @@ export class TyE2eTestBrowser {
             await this.waitForDisplayed('.c_Wh_Act-Run');
           },
 
+          startFresh: async () => {
+            await this.waitAndClick('.e_Wh_StartFresh');
+            await this.waitAndClick('.e_YesFresh');
+            await this.waitUntilModalGone();
+            await this.waitForDisplayed('.c_Wh_Act-Run');
+          },
+
           pauseWebhook: async () => {
             await this.waitAndClick('.e_Wh_Pause');
             await this.waitForDisplayed('.c_Wh_Act-Pau');

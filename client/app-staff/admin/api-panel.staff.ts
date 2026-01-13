@@ -161,7 +161,6 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
   const [lastEvtInf, setLastEvtInf] = React.useState<LastEvtInf | N>(null);
   const [badHeaders, setBadHeaders] = React.useState<Bo>(false);
   const [savedMsg, setSavedMsg] = React.useState<St | N>(null);
-  const [retryMsg, setRetryMsg] = React.useState<St | N>(null);
 
   React.useEffect(() => {
     Server.listWebhooks((whksResp: ListWebhooksResp) => {
@@ -193,7 +192,6 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
     const curHook = webhooksCur[0];
     const updatedHook = {...curHook, ...changes };
     setWebhooksCur([updatedHook]);   // currently there can be just one webhook
-    setRetryMsg(null);
     setSavedMsg(null);
   }
 
@@ -208,7 +206,6 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
       setWebhooksBef(resp.webhooks);
       setWebhooksCur(resp.webhooks);
       setLastEvtInf(resp.lastEvtInf);
-      setRetryMsg(null);
       setSavedMsg(null);
     });
   }
@@ -248,7 +245,8 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
                 r.span({}, `Error: Bad headers JSON, should be like:  `),
                 r.code({}, `{ "Header-Name": "Header value", ... }`))
           });  */
-  const activePausedTxt = theCurHook.enabled ? "Active" : "Paused";
+  const activePausedTxt = theCurHook.enabled ? "Active" : (
+            theCurHook.sentUpToEventId ? "Paused" : "New, not started");
   const activePausedCss = theCurHook.enabled ? "-Run" : "-Pau";
   const brokenCss = theCurHook.brokenReason ? "-Brkn" : '';
   const brokenTxt = !theCurHook.brokenReason ? '' : (
@@ -263,26 +261,51 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
                 ? Button({ className: 'e_Wh_Pause', onClick: () => {
                     alterWebhook({ setPaused: true });
                   }}, "Pause")
-                : Button({ className: 'e_Wh_Start', onClick: () => {
-                    alterWebhook({ setPaused: false });
-                  }}, "Resume"));
+                : rFr({},
+                    Button({ className: 'e_Wh_Start', onClick: () => {
+                        alterWebhook({ setPaused: false });
+                      }},
+                      theCurHook.sentUpToEventId ? "Resume from last sent event" : "Start"),
+                    Button({ className: 'e_Wh_StartFresh', onClick: () => {
+                        util.openDefaultStupidDialog({
+                          body: "Skip all pending events, start sending future events only?",
+                          primaryButtonTitle: r.span({ className: 'e_YesFresh' },
+                              "Yes: Skip, and start"),
+                          secondaryButonTitle: "No, cancel",
+                          onPrimaryClick: () => {
+                            alterWebhook({ setPaused: false, skipToNow: true });
+                          },
+                         });
+                      }},
+                      "Start fresh (ignore past events) …")));
 
-  const retryOnceBtn = !theCurHook.lastFailedHow || unsavedChanges ? null : rFr({},
+  // @ifdef DEBUG
+  // If broken, it must have failed. That's also enforced by db constraints:
+  // webhooks_c_failed_brokenreason  and  webhooks_c_failed_since_how.
+  dieIf(theCurHook.brokenReason && !theCurHook.lastFailedHow, 'TyE7FKSJ3LS8');
+  // @endif
+
+  const retryOnceMsg =
+        !theCurHook.retryExtraTimes ? null :
+            r.div({ className: 'e_WillExtraRetry c_FormTxt' },
+              " Will retry in a few seconds. Wait and reload page");
+
+  const retryOnceBtn = !theCurHook.lastFailedHow || unsavedChanges || retryOnceMsg ? null :
       Button({ className: 'c_A_Api_Wh_RetryB',
           onClick: () => {
             Server.retryWebhook(theCurHook.id, (resp: ListWebhooksResp) => {
+              setWebhooksBef(resp.webhooks);
               setWebhooksCur(resp.webhooks);
               setLastEvtInf(resp.lastEvtInf);
-              setRetryMsg("Will retry in a few seconds.");
             });
-          }, }, "Retry once"));
+          }, }, "Retry once");
 
-  const brokenInf = !theCurHook.brokenReason && !theCurHook.lastFailedHow ? null :
-      r.div({ className: 'c_Wh_Brokn c_Wh_Brokn-' + (
+  const brokenInf = !theCurHook.lastFailedHow ? null :
+      r.div({ className: 'c_FormTxt c_Wh_Brokn c_Wh_Brokn-' + (
                       theCurHook.brokenReason ? 'Stopped' : 'Failing') },
         theCurHook.brokenReason
-            ? r.div({}, "Broken, stopped")
-            : r.div({}, `Broken? Failed ${theCurHook.retriedNumTimes} times`),
+            ? r.b({}, "Broken, stopped")
+            : r.span({}, r.b({}, "Broken?"), `Failed ${theCurHook.retriedNumTimes} times.`),
       );
 
   const runningBrokenInf =
@@ -291,8 +314,8 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
       r.div({ className: 'col-xs-10' },
         runningPausedInfBtns,
         brokenInf,
+        retryOnceMsg,
         retryOnceBtn,
-        retryMsg,
         !theCurHook.lastErrMsgOrResp ? null :
               r.div({},
                   r.b({}, "Last error:"),
@@ -315,15 +338,14 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
           }}, "Refresh");
 
 
-  const lastEventElm = rFr({},
-      !lastEvtInf || !lastEvtInf.lastEventAtMs
-        ? r.div({ className: 'c_FormTxt' }, "No events, nothing has happened.")
-        : r.div({ className: 'c_FormTxt' }, "Last event at: ", whenMsToIsoDate(lastEvtInf.lastEventAtMs),
-              ', id ' + lastEvtInf.lastEventId +  // _bit_dupl_event_code
-              ', ' + debiki.prettyDuration(lastEvtInf.lastEventAtMs, lastEvtInf.nowMs)),
-      r.br(),
-      !theCurHook || !lastEvtInf.lastEventAtMs ? null :
-          r.div({ className: 'c_FormTxt' },
+  const lastEventElm = r.div({ className: 'c_FormTxt' },
+      !lastEvtInf?.lastEventAtMs
+          ? r.p({}, "No events, nothing has happened.")
+          : r.p({}, "Last event at: ", whenMsToIsoDate(lastEvtInf.lastEventAtMs),
+                ', event id ' + lastEvtInf.lastEventId +  // _bit_dupl_event_code
+                ', ' + debiki.prettyDuration(lastEvtInf.lastEventAtMs, lastEvtInf.nowMs)),
+      !theCurHook || !lastEvtInf?.lastEventAtMs ? null :
+          r.p({},
               "Sent up to: ", whenMsToIsoDate(theCurHook.sentUpToWhen), ' ', allDoneTxt));
 
   /* const retrySecs = null;  // Later:
@@ -380,7 +402,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
                     primaryButtonTitle: r.span({ className: 'e_Really' }, "Yes, really"),
                     secondaryButonTitle: "No, cancel",
                     onPrimaryClick: () => {
-                      setRetryMsg("Skipping to now ...");
+                      //setRetryMsg("Skipping to now ...");
                       alterWebhook({ skipToNow: true });
                     },
                  });

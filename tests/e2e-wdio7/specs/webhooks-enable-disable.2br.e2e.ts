@@ -15,6 +15,7 @@ let owen: Member;
 let owen_brA: TyE2eTestBrowser;
 let memah: Member;
 let memah_brB: TyE2eTestBrowser;
+let mysteryCat_brB: TyE2eTestBrowser;
 
 let testState: WebhookRetryTestState;
 
@@ -32,6 +33,8 @@ const memahsReplyFour = 'memahsReplyFour';
 const memahsReplyFive = 'memahsReplyFive';
 const memahsReplySix = 'gkfw96mt euw2gps 20LMmsNMXarxnpSRMRMJ206';
 const memahsReplySeven = 'memahsReplySeven';
+const memahsReplyEight = 'Mjaooo 11 mice outside the window'; // but cats can count to 10 only
+const memahsReplyNine = 'Three lions in the chimney';
 
 const nextEvent: Partial<Event_> = {
   eventData: {
@@ -52,6 +55,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
     owen_brA = brA = testState.brA;
     memah = forum.members.memah;
     memah_brB = brB = testState.brB;
+    mysteryCat_brB = memah_brB; // cat takes control over Memah's laptop
     nextEvent.id = testState.nextEventId;
   });
 
@@ -91,7 +95,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
   });
 
 
-  // ----- Stop, skip-to-now, resume
+  // ----- Stop, start fresh
 
   it(`Owen disables the webhook`, async () => {
     await owen_brA.adminArea.apiTab.webhooks.pauseWebhook();
@@ -113,14 +117,9 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
     assert.eq(allReqs.length, 2);
   });
 
-  // Skip to now.
-  it(`Owen clicks Skip-to-Now, so no webhook sent about replies 3 and 4`, async () => {
-    await owen_brA.refresh2(); // so the Skip button appears
-    await owen_brA.adminArea.apiTab.webhooks.skipToNow();
-  });
-
-  it(`Owen resumes the webhook`, async () => {
-    await owen_brA.adminArea.apiTab.webhooks.startWebhook();
+  it(`Owen clicks Start Fresh — so no webhooks get sent about replies 3 and 4`, async () => {
+    await owen_brA.refresh2(); // so the start buttons appear
+    await owen_brA.adminArea.apiTab.webhooks.startFresh();  // not startWebhook()
   });
 
   it(`Memah posts a 5th reply. It's her last — thereafter, her cat, and an unknown cat,
@@ -142,7 +141,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
   });
 
 
-  // ----- Stop, resume  (w/o skip-to-now)
+  // ----- Stop, resume
 
   it(`Owen disables the webhook`, async () => {
     await owen_brA.adminArea.apiTab.webhooks.pauseWebhook();
@@ -190,7 +189,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
     nextEvent.id += 1;
   });
 
-  it(`All done`, async () => {
+  it(`Webhook statuses look ok`, async () => {
     await owen_brA.refresh2();
     assert.not(await owen_brA.adminArea.apiTab.webhooks.lagsAfter());
     assert.that(await owen_brA.adminArea.apiTab.webhooks.allCaughtUp());
@@ -199,10 +198,51 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
     assert.that(await owen_brA.adminArea.apiTab.webhooks.isRunning());
   });
 
-  it(`In total, 5 webhook reqs got sent:`, async () => {
+  it(`In total, 5 webhook reqs sent this far:`, async () => {
     const allReqs = await fakeweb.getWebhookReqsTalkyardHasSent({ siteId: site.id });
     logDebugIf(allReqs.length !== 5, "This'll fail, num webhook reqs !== 5: " + j2s(allReqs));
     assert.eq(allReqs.length, 5);
   });
+
+
+  // ----- Stop, skip-to-now, resume
+
+  it(`Owen disables the webhook — he just can't make up his mind!`, async () => {
+    await owen_brA.adminArea.apiTab.webhooks.pauseWebhook();
+  });
+
+  it(`The mystery cat pretends to be just a cat, but too smart for its own good!`, async () => {
+    await mysteryCat_brB.complex.replyToPostNr(c.FirstReplyNr, memahsReplyEight);
+    nextEvent.id += 1;
+  });
+
+  // Skip to now.
+  it(`Owen clicks Skip-to-Now, so no webhook sent about reply 8`, async () => {
+    await owen_brA.refresh2(); // so the Skip button appears
+    await owen_brA.adminArea.apiTab.webhooks.skipToNow();
+  });
+
+  it(`Owen resumes the webhook`, async () => {
+    await owen_brA.adminArea.apiTab.webhooks.startWebhook();  // not startFresh()
+  });
+
+  it(`The mystery cat posts a code words message, but forgets to encrypt it!`, async () => {
+    await memah_brB.complex.replyToPostNr(c.FirstReplyNr, memahsReplyNine);
+    (nextEvent as PostCreatedEvent).eventData.post.approvedHtmlSanitized = memahsReplyNine;
+  });
+
+  it(`A webhook req about reply 9 gets sent — but not about reply 8`, async () => {
+    await fakeweb.checkNewReq(site.id, nextEvent, { skipEventId: nextEvent.id - 1 });
+    nextEvent.id += 1;
+  });
+
+
+  it(`6 webhook reqs have been sent:`, async () => {
+    const allReqs = await fakeweb.getWebhookReqsTalkyardHasSent({ siteId: site.id });
+    logDebugIf(allReqs.length !== 6, "This'll fail, num webhook reqs !== 6: " + j2s(allReqs));
+    assert.eq(allReqs.length, 6);
+  });
+
+
 });
 
