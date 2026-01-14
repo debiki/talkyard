@@ -305,7 +305,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
                       theCurHook.brokenReason ? 'Stopped' : 'Failing') },
         theCurHook.brokenReason
             ? r.b({}, "Broken, stopped")
-            : r.span({}, r.b({}, "Broken?"), `Failed ${theCurHook.retriedNumTimes} times.`),
+            : r.span({}, r.b({}, "Broken?"), ` Failed ${theCurHook.retriedNumTimes} times.`),
       );
 
   const runningBrokenInf =
