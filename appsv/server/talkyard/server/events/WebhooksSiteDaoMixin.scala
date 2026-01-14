@@ -67,6 +67,10 @@ trait WebhooksSiteDaoMixin {
 
 
   def alterWebhookConf(webhookId: WebhookId, mutation: Webhook.WebhookMutation): Webhook = {
+    // Fix some time later, in [ty_v1].  [webhooks_ty_v1]
+    dieIf(globals.isProdLive && this.siteId != globals.defaultSiteId,
+          "TyEWEBH0SELFH7", "Not self hosted")
+
     dieIf(webhookId != 1, "TyE603MRAEPJ7") // for now [only_1_webhook]
     writeTx { (tx, _) =>
       val webhookBef: Webhook = tx.loadWebhook(webhookId) getOrElse {
@@ -156,6 +160,9 @@ trait WebhooksSiteDaoMixin {
 
 
   def sendPendingWebhookReqs(webhooks: ImmSeq[Webhook]): U = {
+    dieIf(globals.isProdLive && this.siteId != globals.defaultSiteId, // [webhooks_ty_v1]
+          "TyEWEBH0SELFH8", "Not self hosted")
+
     webhooks foreach { whk =>
       try {
         sendReqsForOneWebhook(whk)
@@ -211,7 +218,7 @@ trait WebhooksSiteDaoMixin {
   * Otherwise there could e.g. be next-request-nr collisions, and things would get
   * more complicated for no good reason.
   */
-  def sendReqsForOneWebhook(webhookMaybeStale: Webhook): U = {
+  private def sendReqsForOneWebhook(webhookMaybeStale: Webhook): U = {
     val (webhook, events: ImmSeq[Event], now_, reqNr: i32, anyRetryNr: Opt[RetryNr]) =
           readTx { tx =>
 
@@ -492,6 +499,9 @@ trait WebhooksSiteDaoMixin {
 
 
   private def sendWebhookRequest(reqOut: WebhookReqOut): Future[WebhookReqOut] = {
+    dieIf(globals.isProdLive && this.siteId != globals.defaultSiteId, // [webhooks_ty_v1]
+          "TyEWEBH0SELFH9", "Not self hosted")
+
     // Check if self-hosted
     val wsClient: WSClient = globals.wsClient
     val request: WSRequest =

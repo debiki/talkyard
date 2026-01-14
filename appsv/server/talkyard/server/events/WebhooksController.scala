@@ -24,7 +24,7 @@ import talkyard.server.{TyContext, TyController}
 import talkyard.server.http._
 import WebhooksParSer._
 import debiki.JsonUtils.{parseJsArray, parseInt32}
-import debiki.EdHttp.throwBadReqIf
+import debiki.EdHttp.{throwBadReqIf, throwForbiddenIf}
 import debiki.RateLimits
 
 import javax.inject.Inject
@@ -36,6 +36,7 @@ import play.api.mvc._
 class WebhooksController @Inject()(cc: ControllerComponents, tyContext: TyContext)
   extends TyController(cc, tyContext) {
 
+  import context.globals.{defaultSiteId, isProdLive}
 
   def listWebhooks(): Action[U] = AdminGetAction { req: GetRequest =>
     listWebhooksImpl(req)
@@ -61,6 +62,10 @@ class WebhooksController @Inject()(cc: ControllerComponents, tyContext: TyContex
 
   def upsertWebhooks: Action[JsValue] = AdminPostJsonAction2(RateLimits.AdminWritesToDb,
         maxBytes = 8000) { req: JsonPostRequest =>
+    // Fix some time later, in [ty_v1].  [webhooks_ty_v1]
+    throwForbiddenIf(isProdLive && req.siteId != defaultSiteId,
+          "TyEWEBH0SELFH1", "Not self hosted")
+
     import req.dao
     val jsWebhooks: Seq[JsValue] = parseJsArray(req.body, "webhooks")
     val webhooks: Seq[Webhook] =
@@ -75,6 +80,9 @@ class WebhooksController @Inject()(cc: ControllerComponents, tyContext: TyContex
 
   def alterWebhook: Action[JsValue] = AdminPostJsonAction2(RateLimits.AdminWritesToDb,
         maxBytes = 500) { req: JsonPostRequest =>
+    throwForbiddenIf(isProdLive && req.siteId != defaultSiteId, // webhooks_ty_v1
+          "TyEWEBH0SELFH3", "Not self hosted")
+
     import req.{dao, body}
     import debiki.JsonUtils.{parseInt32, parseOptBo, parseBoDef}
     val webhookId = parseInt32(body, "webhookId")
@@ -104,6 +112,9 @@ class WebhooksController @Inject()(cc: ControllerComponents, tyContext: TyContex
 
   def retryWebhook: Action[JsValue] = AdminPostJsonAction2(RateLimits.AdminWritesToDb,
         maxBytes = 80) { req: JsonPostRequest =>
+    throwForbiddenIf(isProdLive && req.siteId != defaultSiteId, // [webhooks_ty_v1]
+          "TyEWEBH0SELFH5", "Not self hosted")
+
     val webhookId: WebhookId = parseInt32(req.body, "webhookId")
     // Move to WebhooksSiteDaoMixin?
     req.dao.writeTx { (tx, _) =>
