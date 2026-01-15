@@ -165,7 +165,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
   React.useEffect(() => {
     Server.listWebhooks((whksResp: ListWebhooksResp) => {
       const whks: Webhook[] = whksResp.webhooks;
-      // If there's not yet any webhook, let's make a new one, which the admins
+      // If there's not yet any webhook, let's make a new one [_lazy_create], which the admins
       // can edit and save. It'll get to know about everything that happens
       // (runs as sysbot).
       const whks2: Webhook[] = whks.length ? whks : [{
@@ -184,7 +184,8 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
     return r.p({}, "!lastEvtInf");
 
 
-  const theCurHook = webhooksCur[0];
+  // Lazy inited above if missing. [_lazy_create]
+  const theCurHook: Webhook = webhooksCur[0];
 
   const unsavedChanges =  !_.isEqual(webhooksBef, webhooksCur);
 
@@ -262,22 +263,25 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
                     alterWebhook({ setPaused: true });
                   }}, "Pause")
                 : rFr({},
+                    // When starting the first time, we always skip old events, start fresh
+                    // [start_webhook_at_now], so then we don't need any _skip_to_now btn.
                     Button({ className: 'e_Wh_Start', onClick: () => {
-                        alterWebhook({ setPaused: false });
-                      }},
-                      theCurHook.sentUpToEventId ? "Resume from last sent event" : "Start"),
-                    Button({ className: 'e_Wh_StartFresh', onClick: () => {
-                        util.openDefaultStupidDialog({
-                          body: "Skip all pending events, start sending future events only?",
-                          primaryButtonTitle: r.span({ className: 'e_YesFresh' },
-                              "Yes: Skip, and start"),
-                          secondaryButonTitle: "No, cancel",
-                          onPrimaryClick: () => {
-                            alterWebhook({ setPaused: false, skipToNow: true });
-                          },
-                         });
-                      }},
-                      "Start fresh (ignore past events) …")));
+                          alterWebhook({ setPaused: false });
+                        }},
+                        theCurHook.sentUpToEventId ? "Resume from last sent event" : "Start"),
+                    !theCurHook.sentUpToEventId ? null :  // _skip_to_now
+                        Button({ className: 'e_Wh_StartFresh', onClick: () => {
+                            util.openDefaultStupidDialog({
+                              body: "Skip all pending events, start sending future events only?",
+                              primaryButtonTitle: r.span({ className: 'e_YesFresh' },
+                                  "Yes: Skip, and start"),
+                              secondaryButonTitle: "No, cancel",
+                              onPrimaryClick: () => {
+                                alterWebhook({ setPaused: false, skipToNow: true });
+                              },
+                             });
+                          }},
+                          "Start fresh (ignore past events) …")));
 
   // @ifdef DEBUG
   // If broken, it must have failed. That's also enforced by db constraints:
@@ -308,7 +312,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
             : r.span({}, r.b({}, "Broken?"), ` Failed ${theCurHook.retriedNumTimes} times.`),
       );
 
-  const runningBrokenInf =
+  const runningBrokenInf = !theCurHook.sendToUrl ? null :
       r.div({ className: 'form-group' },
       r.label({ className: 'col-xs-2 control-label' }, "Status"),
       r.div({ className: 'col-xs-10' },
@@ -326,27 +330,21 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
   const allDone = theCurHook && lastEvtInf && (
             !lastEvtInf.lastEventAtMs || theCurHook.sentUpToWhen >= lastEvtInf.lastEventAtMs);
 
-  const allDoneTxt =
-      r.span({ className: allDone ? 'e_Wh_AllDone' : 'e_Wh_Lagging' },
-            allDone ? "— all caught up"
-                    : ', event id ' + theCurHook.sentUpToEventId +  // _bit_dupl_event_code
-                      ', ' + debiki.prettyDuration(theCurHook.sentUpToWhen, lastEvtInf.nowMs));
-
-  const reloadBtn = unsavedChanges ? null :
-          Button({ onClick: () => {
-            reloadWebhook();
-          }}, "Refresh");
-
-
   const lastEventElm = r.div({ className: 'c_FormTxt' },
       !lastEvtInf?.lastEventAtMs
           ? r.p({}, "No events, nothing has happened.")
           : r.p({}, "Last event at: ", whenMsToIsoDate(lastEvtInf.lastEventAtMs),
                 ', event id ' + lastEvtInf.lastEventId +  // _bit_dupl_event_code
                 ', ' + debiki.prettyDuration(lastEvtInf.lastEventAtMs, lastEvtInf.nowMs)),
-      !theCurHook || !lastEvtInf?.lastEventAtMs ? null :
-          r.p({},
-              "Sent up to: ", whenMsToIsoDate(theCurHook.sentUpToWhen), ' ', allDoneTxt));
+      !theCurHook.sentUpToWhen
+          ? r.p({}, "No events sent.")
+          : r.p({},
+              "Sent up to: ", whenMsToIsoDate(theCurHook.sentUpToWhen), ' ',
+              r.span({ className: allDone ? 'e_Wh_AllDone' : 'e_Wh_Lagging' },
+                  allDone
+                    ? "— all caught up"
+                    : ', event id ' + theCurHook.sentUpToEventId +  // _bit_dupl_event_code
+                      ', ' + debiki.prettyDuration(theCurHook.sentUpToWhen, lastEvtInf.nowMs))));
 
   /* const retrySecs = null;  // Later:
       Input({ type: 'number', label: "Retry max seconds",
@@ -382,7 +380,14 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
         !savedMsg ? null :
             r.span({ className: 'e_Wh_Savd' }, savedMsg)));
 
-  const skipToNowBtn = allDone || !theCurHook || unsavedChanges ? null :
+  const reloadBtn = !theCurHook.sendToUrl || unsavedChanges ? null :
+          Button({ onClick: () => {
+            reloadWebhook();
+          }}, "Refresh");
+
+
+  const skipToNowBtn = allDone || !theCurHook.sendToUrl || unsavedChanges ||
+            !theCurHook.sentUpToEventId ? null :  // if new, don't need any _skip_to_now
       Button({
           className: 'e_Skip2Now',
           onClick: () => {
