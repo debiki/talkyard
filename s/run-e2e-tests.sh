@@ -728,6 +728,8 @@ function runAllE2eTests {
 
   $r s/wdio-7     --only embcom.sort-order-op-likes-btn-txt.2br.ec --cd -i $args
 
+  $r s/wdio-7     --only embcom-modn-from-disc-appr-befr.2br.ec --cd -i $args
+
   $r s/wdio       --only embedded-comments-category-refs.2browsers $args
   $r s/wdio       --only embedded-comments-cat-refs-and-disc-ids.2browsers $args
   $r s/wdio       --only embedded-comments-uploads-origin $args

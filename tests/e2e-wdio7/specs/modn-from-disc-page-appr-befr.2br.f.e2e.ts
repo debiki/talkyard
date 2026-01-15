@@ -197,6 +197,7 @@ describe(`modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ`, () => {
     await mariasBrowser.topic.assertPageNotPendingApproval();
   });
 
+  // Similar to: [approve_comments_bef_from_disc], which is for embedded comments.
   it(`Maria posts four replies, in topic one`, async () => {
     await mariasBrowser.complex.replyToOrigPost(replA_txt);
     await mariasBrowser.complex.replyToOrigPost(replB_txt);
@@ -236,7 +237,7 @@ describe(`modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ`, () => {
   //  Mons approves from disc page, Modya approves & rejects from modn page.
   //  Mons rejects from disc page, Modya approves & rejects from modn page.
 
-  it(`Maria sees the page and reply D got approved`, async () => {
+  it(`Maria reloads the page, sees reply D got approved`, async () => {
     await mariasBrowser.topic.refreshUntilPostNotPendingApproval(replD_toApr_nr);
   });
 
@@ -246,7 +247,7 @@ describe(`modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ`, () => {
   }); */
 
   it(`... and two pending approval`, async () => {
-    assert.deepEq(await strangersBrowser.topic.countReplies({ skipWait: true }),
+    assert.deepEq(await mariasBrowser.topic.countReplies({ skipWait: true }),
           { numNormal: 1, numPreviews: 0, numDrafts: 0, numUnapproved: 2, numDeleted: 0 });
   });
 

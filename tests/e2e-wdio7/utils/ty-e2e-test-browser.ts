@@ -6443,6 +6443,22 @@ export class TyE2eTestBrowser {
     };
 
 
+    // Where to place this? Two buttons, or links, visible next to the Reply button
+    // at the top of an embedded comments iframe, if you're admin.
+    blogButtons = {
+      // This link opens the Moderation page in a new browser tab.
+      clickAdminLinkSwitchToModTab: async () => {
+        await this.switchToEmbCommentsIframeIfNeeded();
+        await this.waitAndClick('.dw-a-admin');
+        //assert.eq(await this.origin(), embeddingOrigin);
+        await this.swithToOtherTabOrWindow();
+        //assert.eq(await owen_brA.origin(), site.origin);
+        await this.adminArea.review.waitUntilLoaded();
+      },
+
+      // Other link:  .dw-a-other-topics
+    };
+
     topicTypeExpl = {
       isTopicTypeExplVisible: async (): Pr<Bo> => {
         await this.waitForDisplayed('.dw-p-ttl');
@@ -7655,8 +7671,11 @@ export class TyE2eTestBrowser {
         assert.ok(!await this.topic._isBodyVisible(postNr));
       },
 
-      refreshUntilPostNotPendingApproval: async (postNr: PostNr) => {
+      refreshUntilPostNotPendingApproval: async (postNr: PostNr, ps: { isEmbedded?: Bo } = {}) => {
         await this.waitUntil(async () => {
+          if (ps.isEmbedded) {
+            await this.switchToEmbeddedCommentsIrame();
+          }
           await this.topic.waitForLoaded();
           switch (postNr) {
             case c.TitleNr:

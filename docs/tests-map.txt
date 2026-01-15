@@ -1243,6 +1243,9 @@ embedded comments:
             - embcom.ignore-query-params.2br  TyTEEMCIGQPRMS
   sort order:
             - embcom.sort-order-op-likes-btn-txt.2br.ec  TyTEMBSORTLIKETXT
+  moderate from disc page,  # _mod_from_disc
+  ban from disc page:       # _ban_from_disc
+            - embcom-modn-from-disc-appr-befr.2br.ec  TyTEC_MODN_APRBF
   scroll and show #comment-n:
           - embedded-comments-scroll  TyT2K4DHR49-05
   scroll and load #comment-nnn:
@@ -1566,11 +1569,13 @@ review after:
     # Reject one — cannot undelete it.
     # Undo reject, and undelete — then, can approve?
     # Delete whole page. Undelete page. Then can approve / reject afterwards.
-  moderate from page:
+  moderate from page:  # _mod_from_disc
             - modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ
             - tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTAPRTGDPO
             - topic-prominent-pats-reply-approve.2br.d  TyTPROMPATS_REAPR.TyTAPRTHRT
-    deletes spammer's all other posts:
+    embedded comments:
+            - embcom-modn-from-disc-appr-befr.2br.ec  TyTEC_MODN_APRBF
+    deletes spammer's all other posts:  # _ban_from_disc
             - modn-ban-from-disc-page.2br.f  TyTEBANFROMDISC
     other mod moderates just after, from moderation page:
           - TESTS_MISSING TyT204RKSTEM
