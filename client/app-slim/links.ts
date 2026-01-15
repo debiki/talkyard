@@ -234,7 +234,15 @@ function makeTyLink(spaceWidgetClasses: St, extraProps?) {
         const afterClick = newProps.afterClick;  // field deleted below
 
         // Single-page-app navigate:
-        newProps.onClick = function(event) {
+        newProps.onClick = function(event: MouseEvent) {
+          if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
+            // The user is Ctrl-clicking or Shift-Ctrl-clicking or Mac-Command-clicking
+            // to open the href link in a new tab. So, let the browser handle this.
+            // Alt-click supposedly means "download linked thing". Shift-click supposedly opens
+            // in a new window, but seems to do nothing.
+            // TESTS_MISSING
+            return;
+          }
           event.preventDefault(); // avoids full page reload
           debiki2.page['Hacks'].navigateTo(href);
           // Some ancestor components ignore events whose target is not their own divs & stuff.
