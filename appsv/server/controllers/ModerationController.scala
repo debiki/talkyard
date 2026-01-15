@@ -112,8 +112,8 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: TyCont
 
 
   def moderateFromPage: Action[JsValue] = StaffPostJsonAction(
-        // So works for embedded comments.
-        MinAuthnStrength.EmbeddingStorageSid12,
+        // So works for embedded comments, and accepts the full sid if not embedded.
+        MinAuthnStrength.EmbgStorageSid12OrNormal,
         maxBytes = 100) { request =>
     import request.{dao, body}
     // Tests:

@@ -657,7 +657,7 @@ class PlainApiActions(
         // Or 2) the user is logged in, and this request does include the HttpOnly
         // session part — all fine.
       }
-      else if (minAuthnStrength.fullSidRequired || staffOnly || adminOnly || superAdminOnly) {
+      else if (minAuthnStrength.fullSidRequired) {
         // Part 4 HttpOnly is required, but is missing.  Dupl code [btr_sid_part_4]
         assert(anyTySession.isDefined, "TyE04MWG245")
         assert(anyTySession.get.part4Absent, "TyE04MWG246")
@@ -669,11 +669,18 @@ class PlainApiActions(
         }
       }
       else {
-        // Part 4 of the session is missing, and the current endpoint doesn't need part 4
-        // (such endpoints are for embedded discussions — then, cookies don't work (they
-        // generally don't work in iframes), so we're getting only session parts 1+2(+3) via
-        // javascript and custom HTTP headers).
-        dieUnless(anyTySession.exists(_.part4Absent), "TyE70MWEG25SM")
+        dieIf(adminOnly || superAdminOnly, "TyE702SKJXF")
+
+        if (minAuthnStrength == MinAuthnStrength.EmbgStorageSid12OrNormal) {
+          // Fine both with and without part 4 (but parts 1 and 2 always required).
+        }
+        else {
+          // Part 4 of the session is missing, and the current endpoint doesn't need part 4
+          // (such endpoints are for embedded discussions — then, cookies don't work (they
+          // generally don't work in iframes), so we're getting only session parts 1+2(+3) via
+          // javascript and custom HTTP headers).
+          dieUnless(anyTySession.exists(_.part4Absent), "TyE70MWEG25SM")
+        }
       }
 
       // ----- For super admins?
