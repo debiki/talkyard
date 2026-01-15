@@ -1,12 +1,30 @@
 # Configures a server that uses about 1.5G RAM, and to which you can connect a debugger,
 # and some passwords.
 
+networks:
+  test_int_net:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${TEST_INT_NET_SUBNET}
+  test_pub_net:
+    ipam:
+      config:
+        - subnet: ${TEST_PUB_NET_SUBNET}
+  test_ext_net:
+    ipam:
+      config:
+        - subnet: ${TEST_EXT_NET_SUBNET}
+
 services:
   web:
     #mem_limit: 140M
 
   app:
     #mem_limit: 700M
+    networks:
+      test_int_net:
+        ipv4_address: ${TEST_INT_NET_APP_IP}
     environment:
       PLAY_HEAP_MEMORY_MB: 500
       CREATE_SITE_HOSTNAME: 'localhost'
@@ -23,10 +41,17 @@ services:
   cache:
     #mem_limit: 30M
 
+  rdb:
+
   search:
     #mem_limit: 380M
     environment:
       ES_JAVA_OPTS: '-Xms260m -Xmx260m'
+
+  egressp:
+    networks:
+      test_ext_net:
+        ipv4_address: ${TEST_EXT_NET_EGRESSP_IP}
 
   #rdb:
     #mem_limit: 140M
@@ -47,13 +72,19 @@ services:
       # So the Webdriverio e2e tests can ask this server what HTTP requests
       # the Ty server has sent. E.g. outgoing webhooks, or anti spam service queries.
       - '8090:8090'
+    logging:
+      driver: local
     networks:
-      internal_net:
-        ipv4_address: ${INTERNAL_NET_TEST_IP}
+      test_ext_net:
+        ipv4_address: ${TEST_EXT_NET_FAKEWEB_IP}
 
 
   # This won't work; we're in the wrong dir:  [ghost_prod_test_img]
   #it-ghost:
   #  volumes:
   #    - ./tests/int-w/ghost/casper-post.hbs:/var/lib/ghost/current/content/themes/casper/post.hbs
+  #  networks:
+  #    test_ext_net:
+  #      ipv4_address: ${TEST_EXT_NET_GHOST_IP}
   #  ...
+

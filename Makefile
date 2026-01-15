@@ -639,7 +639,7 @@ dead:
 
 # Any old lingering prod build project, causes netw pool ip addr overlap error.
 _kill_old_prod_build_project:
-	$(d_c) -p tyb1 kill backup web app rendr search cache rdb ;\
+	$(d_c) -p tyb1 kill backup web app rendr cache rdb search egressp ;\
 	$(d_c) -p tyb1 down
 
 
@@ -681,6 +681,7 @@ tag-latest-images:
 	sudo docker tag $$REG_ORG/talkyard-rdb $$REG_ORG/talkyard-rdb:$(tag)  ;\
 	sudo docker tag $$REG_ORG/talkyard-cache $$REG_ORG/talkyard-cache:$(tag)  ;\
 	sudo docker tag $$REG_ORG/talkyard-search $$REG_ORG/talkyard-search:$(tag)  ;\
+	sudo docker tag $$REG_ORG/talkyard-egressp $$REG_ORG/talkyard-egressp:$(tag)  ;\
 	sudo docker tag $$REG_ORG/talkyard-backup $$REG_ORG/talkyard-backup:$(tag)
 	@echo
 
@@ -696,6 +697,7 @@ push-tagged-images:
 	sudo docker push $$REG_ORG/talkyard-rdb:$(tag)  ;\
 	sudo docker push $$REG_ORG/talkyard-cache:$(tag)  ;\
 	sudo docker push $$REG_ORG/talkyard-search:$(tag)  ;\
+	sudo docker push $$REG_ORG/talkyard-egressp:$(tag)  ;\
 	sudo docker push $$REG_ORG/talkyard-backup:$(tag)
 	@echo
 

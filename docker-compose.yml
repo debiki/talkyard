@@ -17,13 +17,61 @@ secrets:
   backup_password:
     file: ./tests/secrets/test_backup_password.txt
 
+# Internal networks are isolated from the external world, can't access the Internet.
+# See: https://docs.docker.com/reference/compose-file/networks/#internal
+#
+# This network structure reduces the blast damage. If someone breaks into Nginx, they still
+# can't access Postgres or ElasticSearch directly. But they could possibly inspect all
+# traffic to/from Nginx and look at any active admin sessions, and in that way get access
+# via the app server. So, reduces but doesn't elliminate damage (can't access a site if
+# no active session to steal?).
+#
+# The egress proxy & subnet prevent Server-Side Request Forgery (SSRF).
+#
+# The netw names get prefixed with COMPOSE_PROJECT_NAME = 'tyd1_' by Docker, from .env.
+#
 networks:
-  # This netw name get prefixed with COMPOSE_PROJECT_NAME  = 'tyd1_' by Docker, from .env.
-  internal_net:
-    driver: bridge
+  # Frontend public network. Connects Nginx to the Internet.
+  fe_pub_net:
     ipam:
       config:
-        - subnet: ${INTERNAL_NET_SUBNET}
+        - subnet: ${FE_PUB_NET_SUBNET}
+  # So Nginx can talk to the app server.
+  fe_int_net:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${FE_INT_NET_SUBNET}
+  # Backend network: the app server and various databases.
+  be_int_net:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${BE_INT_NET_SUBNET}
+  # So the app server can connect to the egress proxy.
+  eg_int_net:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${EG_INT_NET_SUBNET}
+  # So the egress proxy can access the Internet, e.g. to send webhooks or fetch link previews.
+  eg_pub_net:
+    ipam:
+      config:
+        - subnet: ${EG_PUB_NET_SUBNET}
+  test_int_net:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${TEST_INT_NET_SUBNET}
+  test_pub_net:
+    ipam:
+      config:
+        - subnet: ${TEST_PUB_NET_SUBNET}
+  test_ext_net:
+    ipam:
+      config:
+        - subnet: ${TEST_EXT_NET_SUBNET}
 
 # See: https://github.com/compose-spec/compose-spec/blob/main/spec.md#logging
 x-logging: &default_logging
@@ -68,8 +116,10 @@ services:
       - '80:80'
       - '443:443'
     networks:
-      internal_net:
-        ipv4_address: ${INTERNAL_NET_WEB_IP}
+      fe_pub_net:
+        ipv4_address: ${FE_PUB_NET_WEB_IP}
+      fe_int_net:
+        ipv4_address: ${FE_INT_NET_WEB_IP}
     depends_on:
       - app
       - cache
@@ -142,8 +192,14 @@ services:
       - source: postgres_password
         target: /tmp/postgres_password  # [postgres_pw_path]
     networks:
-      internal_net:
-        ipv4_address: ${INTERNAL_NET_APP_IP}
+      fe_int_net:
+        ipv4_address: ${FE_INT_NET_APP_IP}
+      be_int_net:
+        ipv4_address: ${BE_INT_NET_APP_IP}
+      eg_int_net:
+        ipv4_address: ${EG_INT_NET_APP_IP}
+      test_int_net:
+        ipv4_address: ${TEST_INT_NET_APP_IP}
     ports:
       # Let's expose these, for debugging and troubleshooting.
       - '9000:9000' # Play's HTTP listen port.
@@ -155,6 +211,7 @@ services:
       - cache
       - rdb
       - search
+      - egressp
     logging: *default_logging
     environment:
       PLAY_HEAP_MEMORY_MB: 2800
@@ -163,6 +220,11 @@ services:
       BECOME_OWNER_EMAIL_ADDRESS: "admin@example.com"
       E2E_TEST_PASSWORD: "public"
       FORBIDDEN_PASSWORD: "public"
+      # There's also proxy conf for play.lib.ws.WSClient in ./conf/app-dev.conf
+      # and ./conf/app-prod.conf.  [egressp_conf]
+      http_proxy: 'http://egressp:4750'
+      https_proxy: 'http://egressp:4750'
+      no_proxy: ''    # Empty to ensure no bypasses
 
       # ----- Tracing
       # See: https://github.com/jaegertracing/legacy-client-java/blob/master/jaeger-core/README.md
@@ -198,8 +260,8 @@ services:
     image: ${DOCKER_REG_ORG}/talkyard-rendr
     read_only: true  # will this work? If so, add to prod too
     networks:
-      internal_net:
-        ipv4_address: ${INTERNAL_NET_RENDR_IP}
+      be_int_net:
+        ipv4_address: ${BE_INT_NET_RENDR_IP}
     ports:
      # For debugging and troubleshooting, dev builds.
      - '8084:8084' # Deno listens on this port.
@@ -219,8 +281,8 @@ services:
     ports:
       - '6379:6379'
     networks:
-      internal_net:
-        ipv4_address: ${INTERNAL_NET_CACHE_IP}
+      be_int_net:
+        ipv4_address: ${BE_INT_NET_CACHE_IP}
     logging: *default_logging
     sysctls:
       net.core.somaxconn: 511
@@ -263,8 +325,8 @@ services:
       - '9200:9200'
       - '9300:9300'
     networks:
-      internal_net:
-        ipv4_address: ${INTERNAL_NET_SEARCH_IP}
+      be_int_net:
+        ipv4_address: ${BE_INT_NET_SEARCH_IP}
     logging: *default_logging
     environment:
       ES_JAVA_OPTS: '-Xms2024m -Xmx2024m'
@@ -306,8 +368,8 @@ services:
       # or: SELECT pg_reload_conf();
       - ./conf/rdb/:/var/lib/postgresql/conf/
     networks:
-      internal_net:
-        ipv4_address: ${INTERNAL_NET_RDB_IP}
+      be_int_net:
+        ipv4_address: ${BE_INT_NET_RDB_IP}
     logging: *default_logging
     environment:
       # The password instead gets read from ./tests/secrets/test_postgres_password.txt .
@@ -335,6 +397,25 @@ services:
       - SETGID
       - SETUID
       - SYS_NICE
+
+  # Egress proxy.
+  # Stops Server Side Request Forgery (SSRF).
+  egressp:
+    image: ${DOCKER_REG_ORG}/talkyard-egressp
+    build: images/egressp/
+    networks:
+      eg_int_net:
+        ipv4_address: ${EG_INT_NET_EGRESSP_IP}
+      eg_pub_net:
+        ipv4_address: ${EG_PUB_NET_EGRESSP_IP}
+      test_ext_net:
+        ipv4_address: ${TEST_EXT_NET_EGRESSP_IP}
+    logging: *default_logging
+    read_only: true
+    security_opt:
+      - no-new-privileges=true
+    cap_drop:
+      - ALL
 
   backup:
     build: images/backup/
@@ -368,7 +449,7 @@ services:
     depends_on:
       - rdb
     networks:
-      internal_net:
+      be_int_net:
     security_opt:
       - no-new-privileges=true
     cap_drop:
@@ -386,8 +467,8 @@ services:
   #  volumes:
   #    - pg2-data:/var/lib/postgresql
   #  networks:
-  #    internal_net:
-  #      ipv4_address: ${INTERNAL_NET_RDB2_IP}
+  #    be_int_net:
+  #      ipv4_address: ${BE_INT_NET_RDB2_IP}
   #  logging: *default_logging
   #  environment:
   #    POSTGRES_PASSWORD: 'public2'
@@ -405,8 +486,10 @@ services:
     profiles: [tools]
     logging: *default_logging
     ports:
-      # Pg's default port, 5432, backwars.
+      # Pg's default port, 5432, backwards.   Does this work, when on the be_int_net only ??
       - 2345:8080
+    networks:
+      be_int_net:
 
   # Remove this? Instead,  s/d run --rm -p '9229:9229' nodejs   .. ?
   # But how specify ipv4_address via `s/d run`?
@@ -444,8 +527,9 @@ services:
       - '8090:8090'
     logging: *default_logging
     networks:
-      internal_net:
-        ipv4_address: ${INTERNAL_NET_TEST_IP}
+      test_ext_net:
+        ipv4_address: ${TEST_EXT_NET_FAKEWEB_IP}
+    profiles: [e2etests]
 
   # Dummy SMTP server, for testing.
   # fakemail:
@@ -461,8 +545,10 @@ services:
   #    - '8027:8027'  # service port = api requests or what? '80' + 25 + 2
   #   logging: *default_logging
   #   networks:
-  #     internal_net:
-  #       ipv4_address: ${INTERNAL_NET_FAKEMAIL_IP}
+  #     test_int_net:
+  #       ipv4_address: ${TEST_INT_NET_FAKEMAIL_IP}
+  #     test_pub_net:  or  test_ext_net  ?
+  #       ipv4_address: ${TEST_PUB_NET_FAKEMAIL_IP}
   #   restart: 'no'
 
   # Jaeger Tracing. Access at http://localhost:16686.
@@ -478,8 +564,8 @@ services:
   #    - '14268:14268'    # Collector. accept jaeger.thrift directly from clients
   #    #- '9411:9411'     # Collector. Zipkin compatible endpoint
   #  networks:
-  #    internal_net:
-  #      ipv4_address: ${INTERNAL_NET_TRACER_IP}
+  #    be_int_net:  # or where?
+  #      ipv4_address: ${BE_INT_NET_TRACER_IP}
 
   # The same as the 'test' container, except that 'nodejs' won't start the rest of
   # the stack, instead it just transpiles Typescript and Stylus.
@@ -516,7 +602,9 @@ services:
     ports:
       # Why does Ghost like this port? Who knows
       - '2368:2368'
-    # networks — don't use the internal net; Ghost is usually hosted elsewhere.
+    networks:
+      test_ext_net:
+        ipv4_address: ${TEST_EXT_NET_GHOST_IP}
     restart: 'no'
     profiles: [e2etests]
 
