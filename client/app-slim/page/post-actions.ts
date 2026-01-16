@@ -468,6 +468,9 @@ export const PostActions = createComponent({
         r.a({ className: 'dw-a dw-a-other-topics icon-link-ext',
             href: origin() + pathToEmbDiscs(),
             target: '_blank' }, t.pa.DiscIx),
+        // Tests:
+        // - embcom-modn-from-disc-appr-befr.2br.ec  TyTEC_MODN_APRBF,
+        //   see clickAdminLinkSwitchToModTab()
         r.a({ className: 'dw-a dw-a-admin icon-link-ext',
             href: origin() + linkToReviewPage(), target: '_blank' }, t.pa.Admin));
 
