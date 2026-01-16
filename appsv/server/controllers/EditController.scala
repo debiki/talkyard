@@ -419,7 +419,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def movePost: Action[JsValue] = StaffPostJsonAction(
-          MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 300) { request =>
+          MinAuthnStrength.EmbgStorageSid12OrNormal, maxBytes = 300) { request =>
     val pageId = (request.body \ "pageId").as[PageId]   // apparently not used
     val postId = (request.body \ "postId").as[PostId]   // id not nr
     val newHost = (request.body \ "newHost").asOpt[String] // ignore for now though

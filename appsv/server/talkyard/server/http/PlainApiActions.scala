@@ -670,6 +670,9 @@ class PlainApiActions(
       }
       else {
         dieIf(adminOnly || superAdminOnly, "TyE702SKJXF")
+        // But `staffOnly` is fine. For example, EmbgStorageSid12OrNormal is used
+        // in the moderate-from-discussion endpoint, so can Approve/Reject/Ban directly
+        // from blog post page.
 
         if (minAuthnStrength == MinAuthnStrength.EmbgStorageSid12OrNormal) {
           // Fine both with and without part 4 (but parts 1 and 2 always required).

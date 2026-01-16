@@ -25,7 +25,6 @@ import debiki.EdHttp._
 import debiki.RateLimits
 import talkyard.server.http.{ApiRequest, GetRequest}
 import talkyard.server.{TyContext, TyController}
-
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc
@@ -112,7 +111,7 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: TyCont
 
 
   def moderateFromPage: Action[JsValue] = StaffPostJsonAction(
-        // So works for embedded comments, and accepts the full sid if not embedded.
+        // So works for embedded comments *and* accepts the full sid if *not* embedded.
         MinAuthnStrength.EmbgStorageSid12OrNormal,
         maxBytes = 100) { request =>
     import request.{dao, body}
