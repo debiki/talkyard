@@ -12,7 +12,7 @@ make tag-and-push-latest-images tag=...  # pushes images to your repo
 
 You can type `make` to see help about the Makefile targets.
 
-This has been tested in Debian Linux. If you're
+This has been tested on Debian Linux. If you're
 on Windows, probably you'll need [Cygwin](https://www.cygwin.com)
 or [MinGW](http://www.mingw.org), or maybe Linux Subsystem for Windows?
 
