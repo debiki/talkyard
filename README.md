@@ -58,7 +58,7 @@ StackOverflow for Teams, Discourse, Slack, Facebook Groups, Disqus? -->
 **Self-Hosting:**&thinsp; See [talkyard-prod-one](https://github.com/debiki/talkyard-prod-one/tree/ty-prod-one-v1) <!-- Or use our hosting service: https://www.talkyard.io. -->  
 **Demo:**&thinsp; https://insightful.demo.talkyard.io  
 **Discussion forum:**&thinsp; https://forum.talkyard.io  
-**Documentation:**&thinsp; https://docs.talkyard.io <!-- 
+**Documentation:**&thinsp; https://docs.talkyard.io (incomplete)<!--
 Features: Copy a https://www.talkyard.io/compare/(something) page and show only Ty? -->  
 **Development:**&thinsp; That's this repo! See: [docs/developing-talkyard.md](./docs/developing-talkyard.md)
 
