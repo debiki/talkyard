@@ -366,7 +366,7 @@ interface PostListed extends PostFoundOrListed {
   author: UserFound,
   // Present if post approved.
   approvedHtmlSanitized?: St
-  // Present if not yet approved.
+  // Present if not yet approved. Note: It's unsafe, not sanitized. Do not render as html.
   unapprovedSource?: St
 }
 
