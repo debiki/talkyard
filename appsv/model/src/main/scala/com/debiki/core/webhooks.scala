@@ -27,9 +27,7 @@ object Webhook {
 
   case class WebhookMutation(
     setPaused: Opt[Bo],
-    skipToNow: Bo) { // (mab: MessAborter) {
-    //mab.abortIf(pause && unpause, "TyE5WFNL", "Can't both pause and unpause a webhok")
-  }
+    skipToNow: Bo)
 
   val NewUnconfigured: Webhook = Webhook(
         id = 1,

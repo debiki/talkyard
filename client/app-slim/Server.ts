@@ -2614,14 +2614,14 @@ export function upsertWebhooks(webhooks: Webhook[], onOk: (webhooks: Webhook[]) 
 }
 
 
-export function deleteWebhooks(webhooks: Webhook[], onOk: () => Vo) {
-  postJsonSuccess('/-/delete-webhooks', onOk, { webhooks });
-}
-
-
 export function alterWebhook(webhookId: WebhookId, mutation,
         onOk: (resp: ListWebhooksResp) => V) {
   postJsonSuccess('/-/alter-webhook', onOk, { webhookId, ...mutation });
+}
+
+
+export function deleteWebhooks(webhooks: Webhook[], onOk: () => Vo) {
+  postJsonSuccess('/-/delete-webhooks', onOk, { webhooks });
 }
 
 

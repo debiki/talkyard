@@ -177,12 +177,8 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
     return () => isGone.current = true;
   }, []);
 
-  if (!webhooksCur)
+  if (!webhooksCur || !lastEvtInf)
     return r.p({}, "Loading webhooks ...");
-
-  if (!lastEvtInf)
-    return r.p({}, "!lastEvtInf");
-
 
   // Lazy inited above if missing. [_lazy_create]
   const theCurHook: Webhook = webhooksCur[0];
@@ -211,7 +207,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
     });
   }
 
-  const urlElm = rFr({},
+  const urlElm =
       Input({ label: "URL",
           labelClassName: 'col-xs-2',
           wrapperClassName: 'col-xs-10',
@@ -220,7 +216,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
           onChange: (event) => {
               updWebhook({ sendToUrl: event.target.value });
             }
-          }));
+          });
 
   /* Let's wait, next-next release.
   const customHeadersElm =
@@ -259,18 +255,18 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
             r.span({ className: 'c_FormTxt' }, activePausedTxt + brokenTxt),
             ' ',
             unsavedChanges ? null : theCurHook.enabled
-                ? Button({ className: 'e_Wh_Pause', onClick: () => {
+                ? Button({ className: 'e_Wh_PauseB', onClick: () => {
                     alterWebhook({ setPaused: true });
                   }}, "Pause")
                 : rFr({},
                     // When starting the first time, we always skip old events, start fresh
                     // [start_webhook_at_now], so then we don't need any _skip_to_now btn.
-                    Button({ className: 'e_Wh_Start', onClick: () => {
+                    Button({ className: 'e_Wh_StartB', onClick: () => {
                           alterWebhook({ setPaused: false });
                         }},
                         theCurHook.sentUpToEventId ? "Resume from last sent event" : "Start"),
                     !theCurHook.sentUpToEventId ? null :  // _skip_to_now
-                        Button({ className: 'e_Wh_StartFresh', onClick: () => {
+                        Button({ className: 'e_Wh_StartFreshB', onClick: () => {
                             util.openDefaultStupidDialog({
                               body: "Skip all pending events, start sending future events only?",
                               primaryButtonTitle: r.span({ className: 'e_YesFresh' },
@@ -328,7 +324,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
 
 
   const allDone = theCurHook && lastEvtInf && (
-            !lastEvtInf.lastEventAtMs || theCurHook.sentUpToWhen >= lastEvtInf.lastEventAtMs);
+            !lastEvtInf.lastEventAtMs || theCurHook.sentUpToEventId >= lastEvtInf.lastEventId);
 
   const lastEventElm = r.div({ className: 'c_FormTxt' },
       !lastEvtInf?.lastEventAtMs
@@ -389,14 +385,14 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
   const skipToNowBtn = allDone || !theCurHook.sendToUrl || unsavedChanges ||
             !theCurHook.sentUpToEventId ? null :  // if new, don't need any _skip_to_now
       Button({
-          className: 'e_Skip2Now',
+          className: 'e_Skip2NowB',
           onClick: () => {
             util.openDefaultStupidDialog({
               body: r.div({},
                 r.p({}, "Skip all events up to now?"),
                 r.p({},
                     "This is useful if webhookshave been broken or disabled " +
-                    "for very long, and you don'twant to send webhooks " +
+                    "for very long, and you don't want to send webhooks " +
                     "for past events, instead, only from now and onwards.")),
               primaryButtonTitle: r.span({ className: 'e_YesSkip' }, "Yes, skip to now"),
               // primaryIsDanger: true,

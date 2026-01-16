@@ -145,7 +145,7 @@ export function addWebhooksRetryStartSteps(ps: { postIdeaCheckWebhook?: Bo,
 
   it(`... Owen adds the site id to the webhook`, async () => {
     await owen_brA.adminArea.apiTab.webhooks.setUrl(webhookUrl + `?siteId=${site.id}`);
-    await owen_brA.adminArea.apiTab.webhooks.clickSave();
+    await owen_brA.adminArea.apiTab.webhooks.saveWebhook();
   });
 
 

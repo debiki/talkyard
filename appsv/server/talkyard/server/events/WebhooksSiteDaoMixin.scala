@@ -66,45 +66,6 @@ trait WebhooksSiteDaoMixin {
   val WebhookRequestTimeoutSecs = 20
 
 
-  def alterWebhookConf(webhookId: WebhookId, mutation: Webhook.WebhookMutation): Webhook = {
-    // Fix some time later, in [ty_v1].  [webhooks_ty_v1]
-    dieIf(globals.isProdLive && this.siteId != globals.defaultSiteId,
-          "TyEWEBH0SELFH7", "Not self hosted")
-
-    dieIf(webhookId != 1, "TyE603MRAEPJ7") // for now [only_1_webhook]
-    writeTx { (tx, _) =>
-      val webhookBef: Webhook = tx.loadWebhook(webhookId) getOrElse {
-        throwNotFound("TyE4LJKR29", s"No webhook with id ${webhookId}")
-      }
-
-      var webhookToSave = webhookBef
-      mutation.setPaused foreach { paused =>
-        webhookToSave = webhookToSave.copy(enabled = !paused)(IfBadAbortReq)
-      }
-
-      // But [remove_isEnabling] below?
-      val skipToNow = mutation.skipToNow ||
-            // When starting the webhook for the first time,  [start_webhook_at_now]
-            // start sending at the current time (don't send old events).
-            mutation.setPaused.is(false) && webhookBef.sentUpToEventId.isEmpty
-      if (skipToNow) {
-        tx.loadEventsFromAuditLog(1, newestFirst = true).headOption foreach { event =>
-          val doneUpToId = math.max(event.id, webhookBef.sentUpToEventId getOrElse -1)
-          val doneUpToWhen = When.latestOf(event.doneAtWhen, webhookBef.sentUpToWhen)
-          webhookToSave = webhookToSave.copyAsWorking(
-                sentUpToWhen = doneUpToWhen,
-                sentUpToEventId = Some(doneUpToId),
-                numPendingMaybe = None,
-                doneForNow = None)
-        }
-      }
-
-      tx.upsertWebhook(webhookToSave)
-      webhookToSave
-    }
-  }
-
-
   def upsertWebhookConf(webhook: Webhook): Webhook = {
     dieIf(webhook.id != 1, "TyE603MRAEPJ6") // for now [only_1_webhook]
 
@@ -130,13 +91,34 @@ trait WebhooksSiteDaoMixin {
             retryExtraTimes = webhook.retryExtraTimes,
             )(IfBadAbortReq)
 
-      // If enabling, don't send past event — only future events.
-      UX // Actually, maybe should ask the admin what hen wants? See below...
-      val isEnabling = !webhookBef.enabled && webhook.enabled
-      if (isEnabling) {  // [remove_isEnabling]
-        tx.loadEventsFromAuditLog(1, newestFirst = true).headOption foreach { event =>
+      tx.upsertWebhook(webhookToSave)
+      webhookToSave
+    }
+  }
 
-          // ... This sometimes makes sense:
+
+  def alterWebhookConf(webhookId: WebhookId, mutation: Webhook.WebhookMutation): Webhook = {
+    // Fix some time later, in [ty_v1].  [webhooks_ty_v1]
+    dieIf(globals.isProdLive && this.siteId != globals.defaultSiteId,
+          "TyEWEBH0SELFH7", "Not self hosted")
+    dieIf(webhookId != 1, "TyE603MRAEPJ7") // for now [only_1_webhook]
+
+    writeTx { (tx, _) =>
+      val webhookBef: Webhook = tx.loadWebhook(webhookId) getOrElse {
+        throwNotFound("TyE4LJKR29", s"No webhook with id ${webhookId}")
+      }
+
+      var webhookToSave = webhookBef
+      mutation.setPaused foreach { paused =>
+        webhookToSave = webhookToSave.copy(enabled = !paused)(IfBadAbortReq)
+      }
+
+      val skipToNow = mutation.skipToNow ||
+            // When starting the webhook for the first time,  [start_webhook_at_now]
+            // start sending at the current time (don't send old events).
+            mutation.setPaused.is(false) && webhookBef.sentUpToEventId.isEmpty
+      if (skipToNow) {
+        tx.loadEventsFromAuditLog(1, newestFirst = true).headOption foreach { event =>
           val doneUpToId = math.max(event.id, webhookBef.sentUpToEventId getOrElse -1)
           val doneUpToWhen = When.latestOf(event.doneAtWhen, webhookBef.sentUpToWhen)
           webhookToSave = webhookToSave.copyAsWorking(
@@ -144,10 +126,6 @@ trait WebhooksSiteDaoMixin {
                 sentUpToEventId = Some(doneUpToId),
                 numPendingMaybe = None,
                 doneForNow = None)
-
-          // ... But leaving it as is too, makes sense sometimes as well
-          // (if maybe disabling for 10 minutes, to do something, and then resuming
-          // — might want to get all events, then).
 
           COULD_OPTIMIZE // set doneForNow = true and numPendingMaybe = 0.
         }

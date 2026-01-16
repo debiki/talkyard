@@ -43,6 +43,9 @@ const nextEvent: Partial<Event_> = {
 };
 
 
+/// In this test:  Owen starts and stops a webhook in various ways,
+/// and we verify that the right events get sent.
+///
 describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
 
   webhooksRetryImpl.addWebhooksRetryStartSteps({ leaveWebhooksDisabled: true });
@@ -67,6 +70,10 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
   });
 
 
+  // ----- Start webhook
+
+  // Skips old events.
+
   it(`Owen enables the webhook — not until now`, async () => {
     await owen_brA.adminArea.apiTab.webhooks.startWebhook();
   });
@@ -80,7 +87,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
 
   it(`Just one webhook request gets sent — none for the PageCreated event, from before
           the webhook got enabled   [start_webhook_at_now]`, async () => {
-    await fakeweb.checkNewReq(site.id, nextEvent, { skipEventId: nextEvent.id - 1 });
+    await fakeweb.checkNewReq(site.id, nextEvent);
     nextEvent.id += 1;
   });
 
@@ -90,7 +97,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
   });
 
   it(`Another webhook req gets sent`, async () => {
-    await fakeweb.checkNewReq(site.id, nextEvent, { skipEventId: nextEvent.id - 1 });
+    await fakeweb.checkNewReq(site.id, nextEvent);
     nextEvent.id += 1;
   });
 
@@ -119,7 +126,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
 
   it(`Owen clicks Start Fresh — so no webhooks get sent about replies 3 and 4`, async () => {
     await owen_brA.refresh2(); // so the start buttons appear
-    await owen_brA.adminArea.apiTab.webhooks.startFresh();  // not startWebhook()
+    await owen_brA.adminArea.apiTab.webhooks.startFresh();
   });
 
   it(`Memah posts a 5th reply. It's her last — thereafter, her cat, and an unknown cat,
@@ -129,7 +136,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
   });
 
   it(`A webhook req about reply 5 gets sent — but not about 3 and 4`, async () => {
-    await fakeweb.checkNewReq(site.id, nextEvent, { skipEventId: nextEvent.id - 1 });
+    await fakeweb.checkNewReq(site.id, nextEvent);
     nextEvent.id += 1;
   });
 
@@ -143,7 +150,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
 
   // ----- Stop, resume
 
-  it(`Owen disables the webhook`, async () => {
+  it(`Owen pauses the webhook`, async () => {
     await owen_brA.adminArea.apiTab.webhooks.pauseWebhook();
   });
 
@@ -170,22 +177,23 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
   it(`Owen resumes the webhook`, async () => {
     await owen_brA.adminArea.apiTab.webhooks.startWebhook();
 
-    // Now this'll get sent:
+    // Now this old message will get sent — the webhook continues where it left off,
+    // when clicking Resume:
     (nextEvent as PostCreatedEvent).eventData.post.approvedHtmlSanitized = memahsReplySix;
   });
 
-  it(`A webhook req about reply 6 gets sent`, async () => {
-    await fakeweb.checkNewReq(site.id, nextEvent, { skipEventId: nextEvent.id - 1 });
+  it(`A webhook req about reply 6 gets sent — although happened when paused`, async () => {
+    await fakeweb.checkNewReq(site.id, nextEvent);
     nextEvent.id += 1;
   });
 
-  it(`Memah posts a 7th reply`, async () => {
+  it(`Memah posts a 7th reply (the cats are away drinking milk)`, async () => {
     await memah_brB.complex.replyToPostNr(c.FirstReplyNr, memahsReplySeven);
     (nextEvent as PostCreatedEvent).eventData.post.approvedHtmlSanitized = memahsReplySeven;
   });
 
   it(`A webhook req about reply 7 gets sent`, async () => {
-    await fakeweb.checkNewReq(site.id, nextEvent, { skipEventId: nextEvent.id - 1 });
+    await fakeweb.checkNewReq(site.id, nextEvent);
     nextEvent.id += 1;
   });
 
@@ -207,7 +215,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
 
   // ----- Stop, skip-to-now, resume
 
-  it(`Owen disables the webhook — he just can't make up his mind!`, async () => {
+  it(`Owen disables the webhook — he need to think: the random letters, why?`, async () => {
     await owen_brA.adminArea.apiTab.webhooks.pauseWebhook();
   });
 
@@ -232,7 +240,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
   });
 
   it(`A webhook req about reply 9 gets sent — but not about reply 8`, async () => {
-    await fakeweb.checkNewReq(site.id, nextEvent, { skipEventId: nextEvent.id - 1 });
+    await fakeweb.checkNewReq(site.id, nextEvent);
     nextEvent.id += 1;
   });
 

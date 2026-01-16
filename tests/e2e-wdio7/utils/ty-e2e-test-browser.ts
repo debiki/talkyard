@@ -9914,33 +9914,39 @@ export class TyE2eTestBrowser {
           getUrl: async (): Pr<St> => {
             return await this.waitAndGetValue('.c_A_Api_Wh_Url input');
           },
+
           setUrl: async (url: St) => {
             await this.waitAndSetValue('.c_A_Api_Wh_Url input', url);
           },
 
+          saveWebhook: async () => {
+            await this.waitAndClick('.c_Wh_SavB');
+            await this.waitForDisplayed('.e_Wh_Savd');
+          },
+
           startWebhook: async () => {
-            await this.waitAndClick('.e_Wh_Start');
+            await this.waitAndClick('.e_Wh_StartB');
             await this.waitForDisplayed('.c_Wh_Act-Run');
           },
 
           startFresh: async () => {
-            await this.waitAndClick('.e_Wh_StartFresh');
+            await this.waitAndClick('.e_Wh_StartFreshB');
             await this.waitAndClick('.e_YesFresh');
             await this.waitUntilModalGone();
             await this.waitForDisplayed('.c_Wh_Act-Run');
           },
 
-          pauseWebhook: async () => {
-            await this.waitAndClick('.e_Wh_Pause');
-            await this.waitForDisplayed('.c_Wh_Act-Pau');
+          skipToNow: async () => {
+            await this.waitAndClick('.e_Skip2NowB');
+            await this.waitAndClick('.e_YesSkip');
+            await this.waitAndClick('.e_Really');
+            await this.waitUntilModalGone();
+            await this.waitForGone('.e_Skip2NowB');
           },
 
-          clickSave: async () => {  // RENAME to saveWebhook
-            await this.adminArea.apiTab.webhooks.saveWebhook();
-          },
-          saveWebhook: async () => {
-            await this.waitAndClick('.c_Wh_SavB');
-            await this.waitForDisplayed('.e_Wh_Savd');
+          pauseWebhook: async () => {
+            await this.waitAndClick('.e_Wh_PauseB');
+            await this.waitForDisplayed('.c_Wh_Act-Pau');
           },
 
           isPaused: async (): Pr<Bo> => {
@@ -9957,14 +9963,6 @@ export class TyE2eTestBrowser {
 
           lagsAfter: async (): Pr<Bo> => {
             return await this.isDisplayed('.e_Wh_Lagging');
-          },
-
-          skipToNow: async () => {
-            await this.waitAndClick('.e_Skip2Now');
-            await this.waitAndClick('.e_YesSkip');
-            await this.waitAndClick('.e_Really');
-            await this.waitUntilModalGone();
-            await this.waitForGone('.e_Skip2Now');
           },
         },
 

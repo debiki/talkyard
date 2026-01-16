@@ -614,7 +614,6 @@ function runAllE2eTests {
   # But what about using server.playTimeSeconds(..) instead? Then, would finish fast?
   $r s/wdio-7 --only webhooks-retry.2br --cd -i --waitforTimeout 40100 $args
   $r s/wdio-7 --only webhooks-enable-disable.2br --cd -i $args
-  $r s/wdio-7 --only webhooks-skip-to-now.2br --cd -i $args
   $r s/wdio-7 --only webhooks-for-api-upserts.2br --cd -i $args
 
   $r s/wdio-7 --only plan-maintenance.2br.d --cd -i $args

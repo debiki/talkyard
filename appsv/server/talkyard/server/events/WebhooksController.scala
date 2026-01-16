@@ -23,7 +23,7 @@ import com.debiki.core.Prelude._
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.http._
 import WebhooksParSer._
-import debiki.JsonUtils.{parseJsArray, parseInt32}
+import debiki.JsonUtils.{parseJsArray, parseInt32, parseOptBo, parseBoDef}
 import debiki.EdHttp.{throwBadReqIf, throwForbiddenIf}
 import debiki.RateLimits
 
@@ -84,7 +84,6 @@ class WebhooksController @Inject()(cc: ControllerComponents, tyContext: TyContex
           "TyEWEBH0SELFH3", "Not self hosted")
 
     import req.{dao, body}
-    import debiki.JsonUtils.{parseInt32, parseOptBo, parseBoDef}
     val webhookId = parseInt32(body, "webhookId")
     val mutation = Webhook.WebhookMutation(
           setPaused = parseOptBo(body, "setPaused"),
@@ -124,40 +123,8 @@ class WebhooksController @Inject()(cc: ControllerComponents, tyContext: TyContex
       val webhookAft = webhook.copy(retryExtraTimes = Some(1))(IfBadAbortReq)
       tx.upsertWebhook(webhookAft)
     }
-    //Ok
     listWebhooksImpl(req)
   }
-
-
-  /*
-  def skipWebhooksToNow: Action[JsValue] = AdminPostJsonAction2(RateLimits.AdminWritesToDb,
-        maxBytes = 80) { req: JsonPostRequest =>
-    val webhookId: WebhookId = parseInt32(req.body, "webhookId")
-    // Move to WebhooksSiteDaoMixin?
-    req.dao.writeTx { (tx, _) =>
-      val webhook = tx.loadWebhook(webhookId) getOrElse {
-        debiki.EdHttp.throwNotFound("TyE0WBHK028055", s"No webhook with id $webhookId")
-      }
-
-      val lastLogEntry: AuditLogEntry =
-            tx.loadEventsFromAuditLog(limit = 1, newestFirst = true) getOrElse ??? // return
-
-      val webhookAft = webhook.copy(
-            retryExtraTimes = None,
-            retriedNumTimes = None,
-            retriedNumSecs = None,
-            // But don't clear lastErrMsgOrResp.
-            brokenReason = None,
-            sentUpToWhen = When.fromDate(lastLogEntry.doneAt),
-            sentUpToEventId = Some(lastLogEntry.id),
-            numPendingMaybe = None,
-            //doneForNow = Some(true),
-            )(IfBadAbortReq)
-
-      tx.upsertWebhook(webhookAft)
-    }
-    Ok
-  } */
 
 
   def listWebhookReqsOut(webhookId: WebhookId): Action[U] = AdminGetAction { req: GetRequest =>
