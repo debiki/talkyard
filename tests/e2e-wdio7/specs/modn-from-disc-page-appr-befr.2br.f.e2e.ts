@@ -42,6 +42,10 @@ const topicTwoTitle = 'topicTwoTitle';
 const topicTwoBody = 'topicTwoBody';
 
 
+//
+// Similar to:  embcom-modn-from-disc-appr-befr.2br.ec  TyTEC_MODN_APRBF
+// but this test is for forums, that test is for embedded comments.
+//
 describe(`modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ`, () => {
 
   it(`construct site`, async () => {

@@ -6450,9 +6450,9 @@ export class TyE2eTestBrowser {
       clickAdminLinkSwitchToModTab: async () => {
         await this.switchToEmbCommentsIframeIfNeeded();
         await this.waitAndClick('.dw-a-admin');
-        //assert.eq(await this.origin(), embeddingOrigin);
+        // We're still in the embedded comments iframe.
         await this.swithToOtherTabOrWindow();
-        //assert.eq(await owen_brA.origin(), site.origin);
+        // Now we're at the Talkyard forum, in another browser tab.
         await this.adminArea.review.waitUntilLoaded();
       },
 

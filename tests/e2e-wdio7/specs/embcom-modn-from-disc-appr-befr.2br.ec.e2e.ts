@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import server from '../utils/server';
 import * as utils from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/ty-e2e-test-browser';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import c from '../test-constants';
 
 let brA: TyE2eTestBrowser;
@@ -45,6 +45,9 @@ const replF_toBan_nr = c.FirstReplyNr + 5;
 //
 // Maria posts embedded comments.  Owen owner edits, approves, rejects directly from the emb page.
 // Mallory posts spam, Owen bans, directly from the emb page.
+//
+// Similar to:  modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ,
+// but this test is for embedded comments, that test is for forums.
 //
 describe(`embcom-modn-from-disc-appr-befr.2br.ec  TyTEC_MODN_APRBF`, () => {
 
@@ -90,10 +93,9 @@ describe(`embcom-modn-from-disc-appr-befr.2br.ec  TyTEC_MODN_APRBF`, () => {
   });
 
 
-  it(`Create embedding pages`, () => {
+  it(`Create embedding page`, () => {
     const dir = 'target';
-    fs.writeFileSync(`${dir}/page-a-slug.html`, makeHtml('aaa', '#500'));
-    fs.writeFileSync(`${dir}/page-b-slug.html`, makeHtml('bbb', '#040'));
+    fs.writeFileSync(`${dir}/page-mod-from.html`, makeHtml('mod-from', '#500'));
     function makeHtml(pageName: St, bgColor: St): St {
       return utils.makeEmbeddedCommentsHtml({
               pageName, discussionId: '', localHostname, bgColor});
@@ -101,8 +103,8 @@ describe(`embcom-modn-from-disc-appr-befr.2br.ec  TyTEC_MODN_APRBF`, () => {
   });
 
 
-  it(`Maria goes to emb page a`, async () => {
-    await maria_brB.go2(embeddingOrigin + '/page-a-slug.html');
+  it(`Maria goes to the embedding page`, async () => {
+    await maria_brB.go2(embeddingOrigin + '/page-mod-from.html');
   });
 
   it(`... logs in`, async () => {
@@ -125,18 +127,17 @@ describe(`embcom-modn-from-disc-appr-befr.2br.ec  TyTEC_MODN_APRBF`, () => {
   });
 
   it(`Owen goes to emb page a`, async () => {
-    await owen_brA.go2(embeddingOrigin + '/page-a-slug.html');
+    await owen_brA.go2(embeddingOrigin + '/page-mod-from.html');
   });
   it(`... logs in`, async () => {
     await owen_brA.complex.loginIfNeededViaMetabar(owen);
   });
 
   it(`Owen rejects reply C`, async () => {
-    await owen_brA.switchToEmbeddedCommentsIrame();
     await owen_brA.topic.rejectPostNr(replC_toRej_nr);
   });
 
-  it(`... edits reply D`, async () => {
+  it(`... edits reply D — before approving it`, async () => {
     await owen_brA.complex.editPostNr(replD_toEdApr_nr, replD_more_txt, { append: true });
   });
 
@@ -145,6 +146,7 @@ describe(`embcom-modn-from-disc-appr-befr.2br.ec  TyTEC_MODN_APRBF`, () => {
     await owen_brA.topic.waitForPostAssertTextMatches(  // _switches_if_needed
           replD_toEdApr_nr, replD_toEdApr_txt + replD_more_txt);
     await owen_brA.topic.assertPostNeedsApprovalBodyVisible(replD_toEdApr_nr);
+    // (Reply C is gone, Owen rejected it, so 3 left.)
     assert.deepEq(await owen_brA.topic.countReplies({ skipWait: true }),
           { numNormal: 0, numPreviews: 0, numDrafts: 0, numUnapproved: 3, numDeleted: 0 });
   });
@@ -164,7 +166,7 @@ describe(`embcom-modn-from-disc-appr-befr.2br.ec  TyTEC_MODN_APRBF`, () => {
     await maria_brB.topic.waitForPostAssertTextMatches(replA_toApr_nr, replA_toApr_txt);
   });
 
-  it(`... B is still pending approval`, async () => {
+  it(`... B is still pending approval. Text visible, since Maria is the author`, async () => {
     await maria_brB.topic.assertPostNeedsApprovalBodyVisible(replB_nr);
   });
 
@@ -222,7 +224,7 @@ describe(`embcom-modn-from-disc-appr-befr.2br.ec  TyTEC_MODN_APRBF`, () => {
     await owen_brA.topic.banSpammerViaPostNr(replF_toBan_nr);
   });
 
-  it(`... all Mallory's posts are gone`, async () => {
+  it(`... both Mallory's posts get deleted`, async () => {
     await owen_brA.topic.waitForPostVisibleAsDeleted(replE_nr);
     await owen_brA.topic.waitForPostVisibleAsDeleted(replF_toBan_nr);
 
@@ -240,6 +242,8 @@ describe(`embcom-modn-from-disc-appr-befr.2br.ec  TyTEC_MODN_APRBF`, () => {
   });
   it(`... because Mallory got logged out, when banned`, async () => {
     await mallory_brB.refresh2();
+    // Avoid race — don't look for the login buttons before page loaded. Not really
+    // needed (because waitUntilNotLoggedIn() calls waitForMyDataAdded()), but anyway.
     await mallory_brB.topic.waitForPostAssertTextMatches(replA_toApr_nr, replA_toApr_txt);
   });
   it(`... login button visible`, async () => {
@@ -252,6 +256,10 @@ describe(`embcom-modn-from-disc-appr-befr.2br.ec  TyTEC_MODN_APRBF`, () => {
     await stranger_brB.topic.assertPostNeedsApprovalBodyHidden(replB_nr);
     await stranger_brB.topic.waitForPostAssertTextMatches(
                                     replD_toEdApr_nr, replD_toEdApr_txt + replD_more_txt);
+  });
+  it(`... but none of Mallory's posts`, async () => {
+    assert.deepEq(await stranger_brB.topic.countReplies({ skipWait: true }),
+          { numNormal: 2, numPreviews: 0, numDrafts: 0, numUnapproved: 1, numDeleted: 0 });
   });
 
 

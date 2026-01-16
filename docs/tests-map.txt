@@ -1543,6 +1543,7 @@ review after:
           - new-member-allow-approve.2browsers.test.ts  TyT4AKBJ20.TyTE2E306RKP
     staff can edit:
           - modn-from-disc-page-appr-befr.2br.f  TyTE2E603RTJ.TyTE2E407RKS
+          - embcom-modn-from-disc-appr-befr.2br.ec  TyTEC_MODN_APRBF.TyTE2E407RKS
     staff can reply to not yet approved pages and comments:
             - topic-prominent-pats-reply-approve.2br.d  TyTPROMPATS_REAPR.TyTREBEFAPR
             - modn-ban-from-disc-page.2br.f  TyTEBANFROMDISC.TyTREBEFAPR
