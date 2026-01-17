@@ -670,20 +670,16 @@ class PlainApiActions(
       }
       else {
         dieIf(adminOnly || superAdminOnly, "TyE702SKJXF")
-        // But `staffOnly` is fine. For example, EmbgStorageSid12OrNormal is used
+        // But `staffOnly` is fine. For example, EmbeddingStorageSid12 is used
         // in the moderate-from-discussion endpoint, so can Approve/Reject/Ban directly
         // from blog post page.
 
-        if (minAuthnStrength == MinAuthnStrength.EmbgStorageSid12OrNormal) {
-          // Fine both with and without part 4 (but parts 1 and 2 always required).
-        }
-        else {
-          // Part 4 of the session is missing, and the current endpoint doesn't need part 4
-          // (such endpoints are for embedded discussions — then, cookies don't work (they
-          // generally don't work in iframes), so we're getting only session parts 1+2(+3) via
-          // javascript and custom HTTP headers).
-          dieUnless(anyTySession.exists(_.part4Absent), "TyE70MWEG25SM")
-        }
+        // Part 4 of the session is missing, otherwise we'd entered the `else if...part4Present`
+        // branch above instead.  And the current endpoint doesn't need part 4
+        // (such endpoints are for embedded discussions — then, cookies don't work (they
+        // generally don't work in iframes), so we're getting only session parts 1+2(+3) via
+        // javascript and custom HTTP headers).
+        dieUnless(anyTySession.exists(_.part4Absent), "TyE70MWEG25SM")
       }
 
       // ----- For super admins?
