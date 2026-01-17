@@ -126,7 +126,7 @@ describe(`embcom-modn-from-disc-appr-befr.2br.ec  TyTEC_MODN_APRBF`, () => {
     await maria_brB.topic.assertPostNeedsApprovalBodyVisible(replD_toEdApr_nr);
   });
 
-  it(`Owen goes to emb page a`, async () => {
+  it(`Owen goes to the embedding page`, async () => {
     await owen_brA.go2(embeddingOrigin + '/page-mod-from.html');
   });
   it(`... logs in`, async () => {
