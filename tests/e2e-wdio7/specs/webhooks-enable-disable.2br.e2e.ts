@@ -141,7 +141,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
   });
 
 
-  it(`3 webhook reqs have been sent:`, async () => {
+  it(`3 webhook reqs have been sent`, async () => {
     const allReqs = await fakeweb.getWebhookReqsTalkyardHasSent({ siteId: site.id });
     logDebugIf(allReqs.length !== 3, "This'll fail, num webhook reqs !== 3: " + j2s(allReqs));
     assert.eq(allReqs.length, 3);
@@ -187,7 +187,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
     nextEvent.id += 1;
   });
 
-  it(`Memah posts a 7th reply (the cats are away drinking milk)`, async () => {
+  it(`Memah posts a 7th reply (the cats are away buying, I mean drinking, milk)`, async () => {
     await memah_brB.complex.replyToPostNr(c.FirstReplyNr, memahsReplySeven);
     (nextEvent as PostCreatedEvent).eventData.post.approvedHtmlSanitized = memahsReplySeven;
   });
@@ -206,7 +206,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
     assert.that(await owen_brA.adminArea.apiTab.webhooks.isRunning());
   });
 
-  it(`In total, 5 webhook reqs sent this far:`, async () => {
+  it(`In total, 5 webhook reqs sent this far`, async () => {
     const allReqs = await fakeweb.getWebhookReqsTalkyardHasSent({ siteId: site.id });
     logDebugIf(allReqs.length !== 5, "This'll fail, num webhook reqs !== 5: " + j2s(allReqs));
     assert.eq(allReqs.length, 5);
@@ -245,7 +245,7 @@ describe(`webhooks-enable-disable.2br  TyTE2EWBHKENADIS`, () => {
   });
 
 
-  it(`6 webhook reqs have been sent:`, async () => {
+  it(`6 webhook reqs have been sent`, async () => {
     const allReqs = await fakeweb.getWebhookReqsTalkyardHasSent({ siteId: site.id });
     logDebugIf(allReqs.length !== 6, "This'll fail, num webhook reqs !== 6: " + j2s(allReqs));
     assert.eq(allReqs.length, 6);
