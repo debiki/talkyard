@@ -42,8 +42,8 @@ envsubst "$vars" < /etc/nginx/server-locations.conf.template  > /etc/nginx/serve
 
 # Generate a LetsEncrypt account key; otherwise LetsEncrypt might rate limit this
 # server a bit much.  Used in init-by-lua-file.lua (search for 'account_key_path').
-mkdir -p /etc/nginx/acme/
-account_key_path='/etc/nginx/acme/acme-account.key'
+mkdir -p /etc/nginx/generated/
+account_key_path='/etc/nginx/generated/acme-account.key'
 if [ ! -f $account_key_path ]; then
   echo
   echo "Generating a LetsEncrypt ACME account key,"
@@ -56,8 +56,7 @@ fi
 
 # Nginx won't start without a cert if TLS enabled, so generate a self signed
 # cert. It'll get used only temporarily, until we have a LetsEncrypt cert.
-# (Not much point in remembering these? Will disappear when container deleted.)
-fallback_cert_path='/etc/nginx/https-cert-self-signed-fallback'
+fallback_cert_path='/etc/nginx/generated/https-cert-self-signed-fallback'
 fallback_cert_path_key="$fallback_cert_path.key"
 fallback_cert_path_pem="$fallback_cert_path.pem"
 
