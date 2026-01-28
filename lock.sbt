@@ -161,7 +161,7 @@ Compile / dependencyOverrides ++= {
       "org.elasticsearch.plugin" % "rank-eval-client" % "6.8.23",
       "org.elasticsearch.plugin" % "reindex-client" % "6.8.23",
       "org.elasticsearch.plugin" % "transport-netty4-client" % "6.8.23",
-      "org.flywaydb" % "flyway-core" % "5.2.4",
+      "org.flywaydb" % "flyway-core" % "12.0.0",
       "org.hdrhistogram" % "HdrHistogram" % "2.1.9",
       "org.jsoup" % "jsoup" % "1.22.1",
       "org.jspecify" % "jspecify" % "1.0.0",
