@@ -443,7 +443,12 @@ trait WebhooksSiteDaoMixin {
             talkyard.server.UploadsUrlBasePath + siteIdsOrigins.pubId + '/'
 
     val eventsJsonList: ImmSeq[EventAndJson] = EventsParSer.makeEventsListJson(
-          events, dao = this, reqer = runAsUser, avatarUrlPrefix, authzCtx)
+          events, dao = this, reqer = runAsUser, avatarUrlPrefix, authzCtx,
+          // Let's limit the text length to 400K, because the column
+          // webhook_reqs_out_t.sent_json_c  is of type  jsonb_ste500_000_d, and if the
+          // request json payload is more than that, there'll be an error when saving
+          // the webhook reuqest before sending it, and the webhook would break.
+          maxTextLen = Some(400 * 1000))
 
     val webhookReqBodyJson = Json.obj(
           "origin" -> siteIdsOrigins.siteOrigin,

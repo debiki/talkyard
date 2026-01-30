@@ -110,9 +110,9 @@ object PostsListFoundJson {
     // but not necessarily when sending webhook events. [post_event_approved]
     post.approvedHtmlSanitized match {
       case Some(html) =>
-        json += "approvedHtmlSanitized" -> JsString(html)
+        json += "approvedHtmlSanitized" -> JsString(html take maxLength)
       case None =>
-        json += "unapprovedSource" -> JsStringOrNull(post.unapprovedSource)
+        json += "unapprovedSource" -> JsStringOrNull(post.unapprovedSource take maxLength)
     }
 
     if (authzCtx.maySeeExtIds) {

@@ -44,7 +44,9 @@ object EventsParSer {
   // ThingsFoundJson._makePagesJs()  [406RKD2JB]
   //
   def makeEventsListJson(events: ImmSeq[Event], dao: SiteDao, reqer: Opt[Pat],
-          avatarUrlPrefix: St, authzCtx: AuthzCtxOnForum): ImmSeq[EventAndJson] = {
+          avatarUrlPrefix: St, authzCtx: AuthzCtxOnForum, maxTextLen: Opt[i32] = None)
+          : ImmSeq[EventAndJson] = {
+    unimplIf(maxTextLen.isDefined, "maxTextLen")
 
     // --- Load posts and pages
 
