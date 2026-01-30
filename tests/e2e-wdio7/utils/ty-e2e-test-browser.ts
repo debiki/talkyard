@@ -132,6 +132,11 @@ type WaitForClickableResult = 'Clickable' | 'NotClickable';
 type ClickResult = 'Clicked' | 'CouldNotClick';
 
 
+interface EmbPs {
+  switchBackToIframe?: false
+}
+
+
 interface HowMany {
   atLeast?: Nr
   atMost?: Nr
@@ -10912,7 +10917,8 @@ export class TyE2eTestBrowser {
         } */
       },
 
-      loginIfNeededViaMetabar: async (ps: NameAndPassword, clickPs?: WaitAndClickPs) => {
+      loginIfNeededViaMetabar: async (ps: NameAndPassword, ps2: WaitAndClickPs & EmbPs = {}) => {
+        const clickPs = pluckWaitPs(ps2);
         await this.switchToEmbCommentsIframeIfNeeded();
         const isWhereBef = this.#isWhere;
         await this.waitForMyDataAdded();
@@ -10921,7 +10927,7 @@ export class TyE2eTestBrowser {
                 } — session id cookie blocked? [TyM306MRKTJ]`);
           await this.complex.loginWithPasswordViaMetabar(ps, clickPs);
         }
-        if (isWhereBef === IsWhere.EmbCommentsIframe) {
+        if (isWhereBef === IsWhere.EmbCommentsIframe && ps2.switchBackToIframe !== false) {
           await this.switchToEmbeddedCommentsIrame();
         }
       },

@@ -179,7 +179,7 @@ export function addEmbComManyFramesTests(ps: {
   else {
     it(`Maria logs in`, async () => {
       await maria_brB.switchToEmbeddedCommentsIrame({ discId: '222' });
-      await maria_brB.complex.loginIfNeededViaMetabar(maria);
+      await maria_brB.complex.loginIfNeededViaMetabar(maria, { switchBackToIframe: false });
     });
   }
 

@@ -102,7 +102,7 @@ describe(`embcom.sessions-emb-sess-cannot-moderate.3br  TyTEECSESS0MOD`, () => {
   });
 
   it(`... Mons logs in`, async () => {
-    await mons_brA.complex.loginIfNeededViaMetabar(mons);
+    await mons_brA.complex.loginIfNeededViaMetabar(mons, { switchBackToIframe: false });
   });
 
   it(`Mallory steals the session via the xss attack`, async () => {

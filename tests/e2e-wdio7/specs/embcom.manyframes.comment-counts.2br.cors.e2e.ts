@@ -205,9 +205,10 @@ describe(`embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS`, () => 
 
   it(`Maria logs in to discussion 222 with 2 comments`, async () => {
     maria_brB.useCommentsIframe_sync({ discussionId: '222' });
-    await maria_brB.complex.loginIfNeededViaMetabar(maria);
+    await maria_brB.complex.loginIfNeededViaMetabar(maria, { switchBackToIframe: false });
   });
   it("... posts a comment", async () => {
+    maria_brB.useCommentsIframe_sync({ discussionId: '222' });
     await maria_brB.complex.replyToEmbeddingBlogPost("The last reply")
   });
   it("... now there are three comments", async () => {
