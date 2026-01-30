@@ -53,7 +53,7 @@ Or use Talkyard for customer support, or for schools and students helping each o
 -->
 
 How does it compare with other software? &thinsp;
-<a href="https://business.talkyard.io/compare/">Find out here</a>.<!--
+<a href="https://www.talkyard.io/compare/">Find out here</a>.<!--
 StackOverflow for Teams, Discourse, Slack, Facebook Groups, Disqus? -->  
 **Self-Hosting:**&thinsp; See [talkyard-prod-one](https://github.com/debiki/talkyard-prod-one/tree/ty-prod-one-v1) <!-- Or use our hosting service: https://www.talkyard.io. -->  
 **Demo:**&thinsp; https://insightful.demo.talkyard.io  
