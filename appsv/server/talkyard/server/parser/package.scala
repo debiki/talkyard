@@ -32,7 +32,10 @@ package object parser {
     *
     * @param v0_1 — just "id" instead of "pageId" and "ppId".
     */
-  case class JsonConf(v0_0: Bo = false, v0_1: Bo = false, pretty: Bo = false) {
+  case class JsonConf(v0_0: Bo = false, v0_1: Bo = false, pretty: Bo = false,
+            // RENAME to approxMaxLen?  Isn't bytes, right, but chars.
+            // Andnot looking at all fields.
+            maxBytes: Opt[i32] = None) {
     dieIf(!v0_0 && !v0_1, "TyE7MRKRD3067A")
     dieIf(v0_0 && v0_1, "TyE7MRKRD3067B")
 
@@ -45,13 +48,11 @@ package object parser {
     private val _v0_0: JsonConf = JsonConf(v0_0 = true)
     private val _v0_1: JsonConf = JsonConf(v0_1 = true)
 
-    def v0_0(pretty: Bo = false): JsonConf =
-      if (!pretty) _v0_0
-      else _v0_0.copy(pretty = pretty)
+    def v0_0(maxBytes: Opt[i32] = None, pretty: Bo = false): JsonConf =
+      _v0_0.copy(maxBytes = maxBytes, pretty = pretty)
 
-    def v0_1(pretty: Bo = false): JsonConf =
-      if (!pretty) _v0_1
-      else _v0_1.copy(pretty = pretty)
+    def v0_1(maxBytes: Opt[i32] = None, pretty: Bo = false): JsonConf =
+      _v0_1.copy(maxBytes = maxBytes, pretty = pretty)
   }
 
 

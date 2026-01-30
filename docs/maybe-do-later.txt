@@ -413,6 +413,9 @@ Configurable rate limits.
 See: https://blog.openresty.com/en/luajit-bytecode/
 Many times faster startup time, hopefully uses less memory too?
 
+[page_api_limits]
+Configurable per server? Per site?
+
 [server_limits] [site_limits]
 If admins try to configure too "high" values, e.g. 1 TB upload size,
 need a way for them to know they're above the server or site limits,

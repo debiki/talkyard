@@ -108,11 +108,19 @@ object PostsListFoundJson {
 
     // Currently always approved if listing posts [4946RKTT2],
     // but not necessarily when sending webhook events. [post_event_approved]
+    val theMaxBytes = jsonConf.maxBytes getOrElse Int.MaxValue
+    var length = -1
     post.approvedHtmlSanitized match {
       case Some(html) =>
-        json += "approvedHtmlSanitized" -> JsString(html take maxLength)
+        length = html.length
+        json += "approvedHtmlSanitized" -> JsString(html take theMaxBytes)
       case None =>
-        json += "unapprovedSource" -> JsStringOrNull(post.unapprovedSource take maxLength)
+        length = post.unapprovedSource.map(_.length) getOrElse 0
+        json += "unapprovedSource" -> JsStringOrNull(
+                                          post.unapprovedSource.map(_ take theMaxBytes))
+    }
+    if (length > theMaxBytes) {
+      json += "originalLength" -> JsNumber(length)
     }
 
     if (authzCtx.maySeeExtIds) {

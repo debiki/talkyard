@@ -340,6 +340,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
   // Typescript: PostFound. Maybe RENAME to PostSearchFound?
   def JsPostFound(hit: SearchHit, anyAuthor: Opt[Pat], avatarUrlPrefix: St,
         jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): JsObject = {
+    unimplIf(com.debiki.core.isDevOrTest && jsonConf.maxBytes.isDefined, "htmlWithMarks with maxBytes")
     Json.obj(
       "isPageTitle" -> JsBoolean(hit.postNr == PageParts.TitleNr),
       "isPageBody" -> JsBoolean(hit.postNr == PageParts.BodyNr),

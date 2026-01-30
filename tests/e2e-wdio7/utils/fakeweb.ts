@@ -12,9 +12,11 @@ const fakewebOrigin = 'http://localhost:8090';
 let numHandled = 0;
 
 
-
+/// Returns the last event.
+///
 export async function checkNewReq(siteId: SiteId, expectedEvent: Partial<Event_>,
-      opts: { atLeastHowManyIdentical?: Nr, skipEventId?: Nr, answered?: Bo } = {}) {
+      opts: { atLeastHowManyIdentical?: Nr, skipEventId?: Nr, answered?: Bo } = {})
+      : Pr<Event_| U> {
 
   const reqs: WebhookReq[] = await waitForMoreTalkyardWebhookReqs(siteId, {
         howManyMore: opts.atLeastHowManyIdentical, skipEventId: opts.skipEventId });
@@ -26,10 +28,13 @@ export async function checkNewReq(siteId: SiteId, expectedEvent: Partial<Event_>
     assert.eq(reqs.length, 1, "reqs.length");
   }
 
+  let lastEvent: Event_ | U;
+
   for (let req of reqs) {
     assert.ok(req.events);
     assert.eq(req.events.length, 1, "events.length");
     const actualEvent = req.events[0];
+    lastEvent = actualEvent;
     assert.eq(actualEvent.eventType, expectedEvent.eventType, "event type");
     assert.eq(actualEvent.id, expectedEvent.id, "event id");
     switch (expectedEvent.eventType) {
@@ -75,6 +80,8 @@ export async function checkNewReq(siteId: SiteId, expectedEvent: Partial<Event_>
         // Noop, for now.
     }
   }
+
+  return lastEvent;
 }
 
 

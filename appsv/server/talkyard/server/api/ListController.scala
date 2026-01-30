@@ -208,8 +208,9 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
           // (then, fromAuditLogItem() returns None).
           auditLogItems.flatMap(Event.fromAuditLogItem)
         }
-        val eventsJson = EventsParSer.makeEventsListJson(
-              events, dao, reqer = requester, avatarUrlPrefix = avatarUrlPrefix, authzCtx)
+        val (eventsJson, _) = EventsParSer.makeEventsListJson(
+              events, dao, reqer = requester, avatarUrlPrefix = avatarUrlPrefix,
+              maxBytes = None, authzCtx)
 
         // Typescript: SearchQueryResults, and ListQueryResults
         controllers.Utils.OkApiJson(Json.obj(

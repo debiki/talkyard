@@ -197,7 +197,7 @@ trait WebhooksSiteDaoMixin {
   * more complicated for no good reason.
   */
   private def sendReqsForOneWebhook(webhookMaybeStale: Webhook): U = {
-    val (webhook, events: ImmSeq[Event], now_, reqNr: i32, anyRetryNr: Opt[RetryNr]) =
+    val (webhook, eventsTooMany: ImmSeq[Event], now_, reqNr: i32, anyRetryNr: Opt[RetryNr]) =
           readTx { tx =>
 
       // Reload the webhook, so it's from the same transaction, as the last request
@@ -306,7 +306,7 @@ trait WebhooksSiteDaoMixin {
     }
 
     COULD_OPTIMIZE // Mark webhooks as done_for_now_c, and mark dirty on new and edited posts.
-    if (events.isEmpty)
+    if (eventsTooMany.isEmpty)
       return ()
 
     // ----- Access control
@@ -320,11 +320,11 @@ trait WebhooksSiteDaoMixin {
 
     // ----- Prepare a request
 
-    val reqToSend = generateWebhookRequest(webhook, events, reqNr = reqNr, anyRetryNr,
-          authzCtx) getOrIfBad { problem =>
+    val (reqToSend, eventsIncluded) = generateWebhookRequest(webhook, eventsTooMany,
+          reqNr = reqNr, anyRetryNr, authzCtx) getOrIfBad { problem =>
       // Webhook broken — we'll stop sending; seems the config is invalid somehow,
       // since we couldn't even construct a request.
-      val webhookAfter = webhook.copy(
+      val brokenWebhook = webhook.copy(
             failedSince = Some(now_),
             lastFailedHow = Some(SendFailedHow.BadConfig),
             lastErrMsgOrResp = Some(problem),
@@ -332,7 +332,7 @@ trait WebhooksSiteDaoMixin {
             retriedNumSecs = Some(0),
             brokenReason = Some(WebhookBrokenReason.BadConfig))(IfBadDie)
       writeTx { (tx, _) =>
-        tx.updateWebhookState(webhookAfter)
+        tx.updateWebhookState(brokenWebhook)
       }
       return ()
     }
@@ -364,7 +364,7 @@ trait WebhooksSiteDaoMixin {
     futureReqWithResp onComplete {
       case Success(reqMaybeResp: WebhookReqOut) =>
         // The request might have failed, but at least we tried.
-        updWebhookAndReq(webhook, reqMaybeResp, events, now_)
+        updWebhookAndReq(webhook, reqMaybeResp, eventsIncluded, now_)
       case Failure(ex: Throwable) =>
         // Shouldn't happen — instead WebhookReqOut.errMsg should have been updated,
         // and saved by the Success case above.
@@ -420,8 +420,12 @@ trait WebhooksSiteDaoMixin {
 
 
 
+  /** Returns a webhook request, and the events that are included in the request.
+    * (If there's too many events in `events`, not all of them will be included.)
+    */
   private def generateWebhookRequest(webhook: Webhook, events: ImmSeq[Event],
-        reqNr: i32, retryNr: Opt[RetryNr], authzCtx: AuthzCtxOnForum): WebhookReqOut Or ErrMsg = {
+        reqNr: i32, retryNr: Opt[RetryNr], authzCtx: AuthzCtxOnForum)
+        : (WebhookReqOut, ImmSeq[Event]) Or ErrMsg = {
     dieIf(events.isEmpty, "TyE502MREDL6", "No events to send")
 
     val runAsUser = webhook.runAsId match {
@@ -442,13 +446,20 @@ trait WebhooksSiteDaoMixin {
           siteIdsOrigins.uploadsOrigin +
             talkyard.server.UploadsUrlBasePath + siteIdsOrigins.pubId + '/'
 
-    val eventsJsonList: ImmSeq[EventAndJson] = EventsParSer.makeEventsListJson(
-          events, dao = this, reqer = runAsUser, avatarUrlPrefix, authzCtx,
-          // Let's limit the text length to 400K, because the column
-          // webhook_reqs_out_t.sent_json_c  is of type  jsonb_ste500_000_d, and if the
-          // request json payload is more than that, there'll be an error when saving
-          // the webhook reuqest before sending it, and the webhook would break.
-          maxTextLen = Some(400 * 1000))
+    // Note: We might not add *all* events to eventsJsonList. If there's too many,
+    // the webhook request payload would become a bit long. Then we'll add the
+    // last events to the next webhook request instead.
+    // The database column  webhook_reqs_out_t.sent_json_c  can be at most 500k bytes
+    // (it's of type jsonb_ste500_000_d), let's stop at 400k.
+    //
+    // Let's limit the text length to 250K, because the column  [max_webhook_text_bytes]
+    // webhook_reqs_out_t.sent_json_c  is of type  jsonb_ste500_000_d, and if the
+    // request json payload is more than that, there'll be an error when saving
+    // the webhook reuqest before sending it, and the webhook would break.
+    val (eventsJsonList: ImmSeq[EventAndJson], eventsIncluded) =
+          EventsParSer.makeEventsListJson(
+              events, dao = this, reqer = runAsUser, avatarUrlPrefix,
+              maxBytes = Some(250 * 1000), authzCtx)
 
     val webhookReqBodyJson = Json.obj(
           "origin" -> siteIdsOrigins.siteOrigin,
@@ -476,7 +487,7 @@ trait WebhooksSiteDaoMixin {
           // ... etc, None is the default.
           )
 
-    Good(reqToSend)
+    Good(reqToSend, eventsIncluded)
   }
 
 

@@ -26,6 +26,7 @@ import talkyard.server.authz.{AuthzCtxOnForum, AuthzCtxOnPats}
 import talkyard.server.JsX
 import talkyard.server.parser.JsonConf
 import debiki.dao.{LoadPostsResult, PageStuff, SiteDao}
+import scala.util.control.Breaks._
 
 
 import play.api.libs.json._
@@ -43,10 +44,12 @@ object EventsParSer {
   // Vaguely similar code: ForumController.makeTopicsResponse()  and
   // ThingsFoundJson._makePagesJs()  [406RKD2JB]
   //
+  // Serializes events to json, but not more than `maxBytes`. Returns the json and
+  // the events included in the json.
+  //
   def makeEventsListJson(events: ImmSeq[Event], dao: SiteDao, reqer: Opt[Pat],
-          avatarUrlPrefix: St, authzCtx: AuthzCtxOnForum, maxTextLen: Opt[i32] = None)
-          : ImmSeq[EventAndJson] = {
-    unimplIf(maxTextLen.isDefined, "maxTextLen")
+          avatarUrlPrefix: St, maxBytes: Opt[i32], authzCtx: AuthzCtxOnForum)
+          : (ImmSeq[EventAndJson], ImmSeq[Event]) = {
 
     // --- Load posts and pages
 
@@ -130,7 +133,29 @@ object EventsParSer {
     // Later: Sort by id/time, so oldest first, if including more than one event
     // in the same request.  [whks_1_event]
 
-    val result: ImmSeq[EventAndJson] = events flatMap {
+    val result = MutArrBuf[EventAndJson]()
+    val eventsIncluded = MutArrBuf[Event]()
+
+    breakable {
+      for (event <- events) {
+        val couldAdd = _tryAddEvent(event, toList = result)
+        if (couldAdd) {
+          eventsIncluded.append(event)
+        }
+        else {
+          // Websocket request payload too long. Stop adding events; include in the next
+          // request instead.
+          break()
+        }
+      }
+    }
+
+
+  /** Generates json for the event, and adds to the list — unless the total json for all
+    * events in the list would become too long, then does nothing and returns false.
+    */
+  def _tryAddEvent(event: Event, toList: MutArrBuf[EventAndJson]): Bo = {
+    val anyEventAndJson: Opt[EventAndJson] = event match {
       case pageEvent: PageEvent if pageEvent.eventType == PageEventType.PageCreated =>
         for {
           page: PageStuff <- pageStuffById.get(pageEvent.pageId)
@@ -139,7 +164,8 @@ object EventsParSer {
         }
         yield {
           val json = JsPageEvent_apiv0(pageEvent, page, cat, anyOrigPost = Some(post),
-                pagePathsById, authorsById, avatarUrlPrefix = avatarUrlPrefix, authzCtx)
+                pagePathsById, authorsById, avatarUrlPrefix = avatarUrlPrefix,
+                maxBytes = maxBytes, authzCtx)
           EventAndJson(pageEvent, json)
         }
 
@@ -150,9 +176,13 @@ object EventsParSer {
         }
         yield {
           val json = JsPageEvent_apiv0(pageEvent, page, cat, anyOrigPost = None,
-                pagePathsById, authorsById, avatarUrlPrefix = avatarUrlPrefix, authzCtx)
+                pagePathsById, authorsById, avatarUrlPrefix = avatarUrlPrefix,
+                maxBytes = maxBytes, authzCtx)
           EventAndJson(pageEvent, json)
         }
+
+      case pageEvent: PageEvent =>
+        unimpl(s"Generating json for event type: ${classNameOf(pageEvent)} [TyE7WKU25]")
 
       case postEvent: PostEvent =>
         for {
@@ -162,7 +192,7 @@ object EventsParSer {
         }
         yield {
           val json = JsPostEvent_apiv0(postEvent, post, page, cat, authorsById,
-                avatarUrlPrefix = avatarUrlPrefix, authzCtx)
+                avatarUrlPrefix = avatarUrlPrefix, maxBytes = maxBytes, authzCtx)
           EventAndJson(postEvent, json)
         }
 
@@ -176,7 +206,31 @@ object EventsParSer {
         }
     }
 
-    result
+    val eventAndJson = anyEventAndJson getOrElse {
+      // Continue w next event.
+      return true
+    }
+
+    /* But can't use the same maxBytes here — would result in no events getting sent
+       at all, if a single post is = maxBytes long already  (because its json would be
+       longer than maxBytes, because of some fields & json symbols).
+       So let's wait with this:
+    maxBytes foreach { maxB =>
+      // The "[,,,,,]" list start, separtators and end are `toList.length + 1` bytes, right.
+      // (If list not empty.)
+      val lengthThisFar = toList.foldLeft(0)((sum, e) => sum + e.json.toString.length) +
+                             toList.length + 1  ; COULD_OPTIMIZE
+      val newLength = eventAndJson.json.toString.length + lengthThisFar + 1
+
+      if (newLength > maxB)
+        return false
+    } */
+
+    toList.append(eventAndJson)
+    true
+  }
+
+    (result.to(Vec), eventsIncluded.to(Vec))
   }
 
 
@@ -216,7 +270,8 @@ object EventsParSer {
 
   def JsPageEvent_apiv0(event: PageEvent, page: PageStuff, anyCat: Opt[Cat],
           anyOrigPost: Opt[Post], pagePathsById: Map[PageId, PagePathWithId],
-          authorsById: Map[PatId, Pat], avatarUrlPrefix: St, authzCtx: AuthzCtxOnForum,
+          authorsById: Map[PatId, Pat], avatarUrlPrefix: St,
+          maxBytes: Opt[i32], authzCtx: AuthzCtxOnForum,
           ): JsObject = {
     val pageFoundStuff = new ThingsFoundJson.PageFoundStuff(
           pagePath = pagePathsById.getOrElse(page.pageId, PagePathWithId.fromIdOnly(page.pageId,
@@ -233,13 +288,13 @@ object EventsParSer {
           avatarUrlPrefix = avatarUrlPrefix,
           anyCategory = anyCat,
           api.InclPageFields.Default,
-          JsonConf.v0_1(), authzCtx)
+          JsonConf.v0_1(maxBytes = maxBytes), authzCtx)
 
     anyOrigPost foreach { origPost =>
       val origPostJson = JsPostListFound(
             origPost, page, anyCat = None /* in pageJson already */,
             authorsById, avatarUrlPrefix = avatarUrlPrefix,
-            JsonConf.v0_1(), authzCtx, isWrappedInPage = true)
+            JsonConf.v0_1(maxBytes = maxBytes), authzCtx, isWrappedInPage = true)
       pageJson += "posts" -> Json.arr(origPostJson)
     }
 
@@ -256,10 +311,12 @@ object EventsParSer {
 
 
   def JsPostEvent_apiv0(event: PostEvent, post: Post, page: PageStuff, anyCat: Opt[Cat],
-        authorsById: Map[PatId, Pat], avatarUrlPrefix: St, authzCtx: AuthzCtxOnForum,
+        authorsById: Map[PatId, Pat], avatarUrlPrefix: St, maxBytes: Opt[i32],
+        authzCtx: AuthzCtxOnForum,
         ): JsObject = {
     val postJson = JsPostListFound(post, page, anyCat, authorsById,
-          avatarUrlPrefix = avatarUrlPrefix, JsonConf.v0_1(), authzCtx, isWrappedInPage = false)
+          avatarUrlPrefix = avatarUrlPrefix, JsonConf.v0_1(maxBytes = maxBytes), authzCtx,
+          isWrappedInPage = false)
     Json.obj(  // ts: Event_, in tests/e2e-wdio7/pub-api.ts.
         "id" -> event.id,
         "atMs" -> JsX.JsWhenMs(event.when),
