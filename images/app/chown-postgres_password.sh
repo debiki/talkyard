@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Let 'appuser' access the Postgres password secret file.  [appuser_id_1000]
+# Let 'appuser' access the Postgres password secret file.
 # (This is a Docker Compose startup hook, should run as root.)
 #
 # Update: Now, we run this from the entrypoint instead, since maaaaybe
@@ -23,7 +23,7 @@ pw_copy=/tmp/postgres_password
 if [ -f "$pw_src" ]; then
   echo "Copying Postgres password from $pw_src to $pw_copy..."
   cp $pw_src $pw_copy
-  chown 1000:1000 $pw_copy  # 'appuser' and 'appgroup' have id 1000.
+  chown 1000:1000 $pw_copy  # 'appuser' and 'appgroup' have id 1000. [appuser_id_1000]
   chmod 0400 $pw_copy       # read-only
 
   echo "Done copying Postgres password."

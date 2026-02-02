@@ -31,14 +31,13 @@ import debiki.EdHttp._
 import talkyard.server.spam.{SpamCheckActor, SpamChecker}
 import debiki.dao._
 import talkyard.server.logging.LastErrsActor
-import talkyard.server.migrations.ScalaBasedMigrations
 import talkyard.server.search.SearchEngineIndexer
 import talkyard.server.notf.NotifierActor
 import java.{lang => jl, net => jn, io => jio}
 import java.nio.{file => jf}
 import java.util.concurrent.TimeUnit
 import talkyard.server.pubsub.{PubSub, PubSubApi, StrangerCounterApi}
-import org.{elasticsearch => es}
+import co.elastic.{clients => es8}
 import org.scalactic._
 import play.{api => p}
 import play.api.libs.ws.WSClient
@@ -1121,8 +1120,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         val readOnlyDataSource = Debiki.createPostgresHikariDataSource(readOnly = true, conf, isOrWasTest)
         val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false, conf, isOrWasTest)
         val rdb = new Rdb(readOnlyDataSource, readWriteDataSource)
-        val dbDaoFactory = new RdbDaoFactory(
-              rdb, ScalaBasedMigrations, getCurrentTime = now _, isTest = isOrWasTest)
+        val dbDaoFactory = new RdbDaoFactory(rdb, getCurrentTime = now _, isTest = isOrWasTest)
 
         val sysDao = new SystemDao(dbDaoFactory, cache, this)
 
@@ -1135,7 +1133,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         val newState = new State(dbDaoFactory, cache)
 
         if (isOrWasTest && conf.getOptional[Boolean]("isTestShallEmptyDatabase").contains(true)) {
-          setStartupStep("Emptying database... [TyMSTART8EMPTYDB]")
+          setStartupStep("Emptying database before running tests... [TyMSTART8EMPTYDB]")
           newState.systemDao.emptyDatabase()
         }
 
@@ -1377,26 +1375,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
     BUG // Don't keep retrying & logging 99999 errors if can't connect, that can
     // generate GBs of log data, filling up a whole disk!
-
-    /*
-    val elasticSearchClient: es.client.transport.TransportClient =
-      new es.transport.client.PreBuiltTransportClient(es.common.settings.Settings.EMPTY)
-        .addTransportAddress(
-          new es.common.transport.TransportAddress(
-            jn.InetAddress.getByName(elasticSearchHost), 9300))
-            */
-
-    // ------------------------------
-    import org.apache.http.HttpHost;  // For HttpHost.create()
-    //import org.apache.http.impl.client.Header
-    //import org.apache.http.impl.client.BasicHeader;  // For BasicHeader (Authorization header)
-    import org.elasticsearch.client.RestClient;  // For RestClient.builder()
-    import co.elastic.clients.transport.ElasticsearchTransport;  // For ElasticsearchTransport
-    import co.elastic.clients.transport.rest_client.RestClientTransport;  // For RestClientTransport
-    import co.elastic.clients.json.jackson.JacksonJsonpMapper;  // For JacksonJsonpMapper
-    import co.elastic.clients.elasticsearch.ElasticsearchClient;  // For ElasticsearchClient
-    import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient
-    // ------------------------------
+    // But I've fixed this now, right?  [reconnect_to_ElasticSearch]
 
     val serverUrl = s"http://$elasticSearchHost:9200";
 
@@ -1406,24 +1385,26 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     // And: https://github.com/elastic/elasticsearch/blob/8.17/docs/reference/setup/install/docker/docker-compose.yml
     // for a way to auto generate certs.
     val restClient: org.elasticsearch.client.RestClient = org.elasticsearch.client.RestClient
-          .builder(HttpHost.create(serverUrl))
+          .builder(org.apache.http.HttpHost.create(serverUrl))
           // Later, if authz: (although not really needed)
+          //import org.apache.http.impl.client.Header
+          //import org.apache.http.impl.client.BasicHeader
           //.setDefaultHeaders(Array[org.apache.http.Header](
           //    new org.apache.http.message.BasicHeader("Authorization", "ApiKey " + apiKey)
           //))
           .build()
 
-    val elasticSearchTransport: ElasticsearchTransport =
-          new co.elastic.clients.transport.rest_client.RestClientTransport(
-                restClient, new JacksonJsonpMapper())
+    val elasticSearchTransport: es8.transport.ElasticsearchTransport =
+          new es8.transport.rest_client.RestClientTransport(
+                restClient, new es8.json.jackson.JacksonJsonpMapper())
 
-    // Synchronous. Nice (simpner) for creating indexes.
-    val elasticSearchClient: ElasticsearchClient =
-          new ElasticsearchClient(elasticSearchTransport);
+    // Synchronous. Nice (simpler) for creating indexes.
+    val elasticSearchClient: es8.elasticsearch.ElasticsearchClient =
+          new es8.elasticsearch.ElasticsearchClient(elasticSearchTransport);
 
     // Async, for indexing & searching.
-    val elasticSearchAsyncClient: ElasticsearchAsyncClient =
-          new ElasticsearchAsyncClient(elasticSearchTransport);
+    val elasticSearchAsyncClient: es8.elasticsearch.ElasticsearchAsyncClient =
+          new es8.elasticsearch.ElasticsearchAsyncClient(elasticSearchTransport);
 
     setStartupStep("Connected to search engine. Starting background jobs... [TyMSTART5BGJOBS]")
 

@@ -18,8 +18,6 @@
 package db.migration.y2015
 
 import db.migration.MigrationHelper
-import org.flywaydb.core.api.migration.jdbc.JdbcMigration
-import java.{sql => js}
 
 
 class v14__migrate_posts extends JdbcMigration {

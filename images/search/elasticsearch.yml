@@ -1,3 +1,4 @@
+# Internal private network, only the app container can access.
 network.host: 0.0.0.0
 
 # 1) Use a single index for all sites, but many shards, and route to the shard
@@ -7,6 +8,7 @@ network.host: 0.0.0.0
 # See: https://www.elastic.co/videos/big-data-search-and-analytics/ (a video)
 # 3) (Could keep current hot data in one index, and move old discussions that have
 # been closed, to an old & slow index on cheaper hardware. Combine time & user data flow?)
+# And keep deleted and unapproved posts in their own index too. [index_for_invisible]
 
 
 # Configuring ElasticSearch:
@@ -33,6 +35,18 @@ bootstrap.memory_lock: true
 xpack.security.enabled: false
 xpack.security.enrollment.enabled: false
 
-#logger.org.elasticsearch.rest: DEBUG
+# Save significant RAM by disabling Machine Learning [says_Gemini]
+xpack.ml.enabled: false
+
+# Disable the GeoIP downloader to prevent unnecessary background network calls [says_Gemini]
+# Magnus: Apparently off by default, silly AI.
+ingest.geoip.downloader.enabled: false
+
+# ES 9 uses a lot of memory for 'Circuit Breakers'.
+# On a small VPS, these help prevent OOM crashes. [says_Gemini]
+# See: https://www.elastic.co/docs/reference/elasticsearch/configuration-reference/circuit-breaker-settings
+indices.breaker.total.limit: 70%
+
+logger.org.elasticsearch.rest: DEBUG
 
 

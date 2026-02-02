@@ -22,8 +22,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import _root_.java.{util => ju}
 import java.{sql => js}
-//import org.flywaydb.core.Flyway
-//import org.flywaydb.core.api.configuration.{FluentConfiguration => flyway_FluentConfiguration}
 import scala.collection.{immutable => imm, mutable => mut}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
@@ -965,6 +963,7 @@ class RdbSystemTransaction(
           post_rows as (
               select 1 from  job_queue_t
               where   post_id is not null
+                 and  do_what_c = ${JobType.Index}
               limit $countUpTo)
           select count(*) num from post_rows  """
     runQueryFindExactlyOne(query, Nil, rs => {
@@ -979,6 +978,7 @@ class RdbSystemTransaction(
           select  site_id,  count(*) as queue_len
           from  job_queue_t
           where post_id is not null
+            and do_what_c = ${JobType.Index}
           group by site_id  """
     runQueryBuildMap(query, Nil, rs => {
       val siteId = rs.getInt("site_id")
@@ -1041,6 +1041,7 @@ class RdbSystemTransaction(
                   and bpo.page_id = po.page_id
                   and bpo.post_nr = ${PageParts.BodyNr}
           where  j.post_id  is not null
+            and  j.do_what_c = ${JobType.Index}
           order by  j.inserted_at  limit $limit  """
 
     runQueryFindMany(query, Nil, rs => {
@@ -1172,7 +1173,9 @@ class RdbSystemTransaction(
     }
     val statement = s"""
           delete from job_queue_t
-          where site_id = ? and (${ postIdsRevNrs.mkString(" or ") })
+          where site_id = ?
+            and (${ postIdsRevNrs.mkString(" or ") })
+            and do_what_c = ${JobType.Index}
           """
     runUpdate(statement, values.toList)
   }
@@ -1243,6 +1246,7 @@ class RdbSystemTransaction(
     val statement = s"""
           delete from job_queue_t
           where extract(epoch from time_range_from_c) = 0
+                and do_what_c = ${JobType.Index}
                 $andSiteIdIn  """
 
     runUpdate(statement, values.toList)
@@ -1426,88 +1430,6 @@ class RdbSystemTransaction(
           settings.maintWordsHtmlUnsafe.trimOrNullVarchar,
           settings.maintMessageHtmlUnsafe.trimOrNullVarchar)
     runUpdateSingleRow(stmt, values)
-  }
-
-
-  /** Finds all evolution scripts below src/main/resources/db/migration and applies them.
-    */
-  def applyEvolutions(databaseUrl: St, isTest: Bo): Opt[ErrMsgCode] = {
-    die("Dont_use__applyEvolutions")
-    /*
-
-    import sys.process._
-    var output: St = ""
-    val outputHandler = ProcessLogger((allOutput: St) => {
-      output = allOutput
-    })
-
-    // The url looks like:  "postgres://db_user:passwd@rdb/database_name"
-    val migrCmdWithPwd = s"""/usr/local/bin/sqlx migrate run --database-url "$databaseUrl" """
-    val dbAdr = databaseUrl.takeRightWhile(_ != '@') // removes the pwd
-    System.out.println(s"Migrating database $dbAdr:")
-    val exitCode = migrCmdWithPwd.!(outputHandler)
-    if (exitCode == 0) {
-      System.out.println(s"Done migrating database $dbAdr, output:\n\n$output\n")
-      None // no error
-    }
-    else if (isTest && _PreviouslyAppliedRegex.matches(output)) {
-      // Recreate test database. This'll apply all migrations, too.
-      System.out.println(o"""Migration files have been edited. Recreating test database $dbAdr,
-             then migrating ... [TyMSQLXRESET]""")
-
-      // Double check it's a test database.
-      dieIf(!databaseUrl.endsWith("@rdb:5432/talkyard_test"), s"Test database has unexpected name: ${
-            dbAdr}, not resetting it", "TyETESTDBNAME")
-
-      val resetCmdWithPwd =
-              s"""/usr/local/bin/sqlx database reset -y --database-url "$databaseUrl" """
-      val exitCode = resetCmdWithPwd.!(outputHandler)
-
-      if (exitCode == 0) {
-        System.out.println(s"Recreated & migrated database $dbAdr, output:\n\n$output\n")
-        None // no error
-      }
-      else {
-        System.err.println(s"Error recreating database $dbAdr:\n\n$output\n")
-        Some(ErrMsgCode(output, "TyESQLXRESET"))
-      }
-    }
-    else {
-      // Don't show the whole `migrCmdWithPwd` — it includes the db password!
-      System.err.println(s"Error code $exitCode when migrating database $dbAdr:\n\n$output\n")
-      Some(ErrMsgCode(output, "TyESQLXMIGR"))
-    }
-    */
-
-    // No, not Flyway any more.  [flyway_2_sqlx]
-    /*
-    val conf: flyway_FluentConfiguration = Flyway.configure()
-    conf.locations("classpath:db/migration")
-    conf.failOnMissingLocations(true)
-    conf.dataSource(db.readWriteDataSource)
-    // Flyway keeps the schema history in the default schema. We only use the 'public' schema.
-    conf.defaultSchema("public")
-    conf.schemas("public")
-    // Default prefixes are uppercase "V" and "R" but I want files in lowercase, e.g. v1__name.sql.
-    conf.sqlMigrationPrefix("v")
-    conf.repeatableSqlMigrationPrefix("r")
-    // Warning: Don't clean() in production, could wipe out all data.
-    conf.cleanOnValidationError(daoFactory.isTest)
-    conf.cleanDisabled(!daoFactory.isTest)
-    // Group all pending migrations together in the same transaction, so if
-    // upgrading from version 3 to version 8, migrations 4,5,6,7,8 will either succeed
-    // or fail all of them. This means that if there's any error, we'll be back at
-    // version 3 again — rather than some other unknown version for which we don't
-    // immediately know which *software* version to use.
-    conf.group(true)
-
-    // Make this DAO accessible to the Scala code in the Flyway migration.
-    _root_.db.migration.MigrationHelper.systemDbDao = this
-    _root_.db.migration.MigrationHelper.scalaBasedMigrations = daoFactory.migrations
-
-    val flyway: Flyway = conf.load()
-    flyway.migrate()
-    */
   }
 
 

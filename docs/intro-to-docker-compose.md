@@ -85,11 +85,12 @@ Where're the database files?
 There's a database container, 'rdb', but what happens if you delete it? (`docker compose rm rdb`)
 Is all database contents gone then?
 
-It won't disappear — because all database files are kept in `./volumes/pg17-data/`. That
-directory is mounted inside the rdb container. And if that container is deleted, the directory +
+It won't disappear — because the database files are elsewhere: in a Docker volume. That
+volume is mounted inside the rdb container. And if that container is deleted, the volume &
 files still exist. You can start a new 'rdb' cointainer, and it'll have the same database
 contents as the one you deleted.
 
+<!-- Update 2026:  now it's  `docker volume ...` or `docker compose down --volumes` instead.
 To really totally whipe out the database, you can:
 
     sudo docker compose stop CONTAINER_NAME
@@ -102,6 +103,7 @@ There're more volumes in `./volumes`, and inside `docker-compose.yml` the
 
 Please note that all this is for the development environment. The production environment
 is different.
+-->
 
 
 Viewing logs

@@ -5,13 +5,13 @@
 # (Rust has only Debian based images, Temurin (for Java) has only Ubuntu
 # based images.)
 #
-FROM rust:1.91.1-trixie AS rust_img
+FROM rust:1.93.0-trixie AS rust_img
 
 RUN cargo install sqlx-cli --no-default-features --features native-tls,postgres
 
 
 # Ubuntu 24.04. See: https://hub.docker.com/_/eclipse-temurin, and ./Dockerfile.dev .
-FROM  eclipse-temurin:11.0.29_7-jdk-noble
+FROM  eclipse-temurin:11.0.30_7-jdk-noble
 
 LABEL org.opencontainers.image.title="Talkyard App" \
       io.talkyard.edition="se" \
@@ -24,7 +24,9 @@ COPY --from=rust_img /usr/local/cargo/bin/sqlx     /usr/local/bin/sqlx
 RUN touch /var/mail/ubuntu && chown ubuntu /var/mail/ubuntu && userdel -r ubuntu
 
 # Create our own user: 'appuser', id 1000. [appuser_id_1000]
-RUN groupadd --gid 1000 appgroup && useradd --uid 1000 -s /bin/false -g appgroup appuser
+RUN groupadd --gid 1000 appgroup  && \
+    useradd --uid 1000 --no-create-home --shell /usr/sbin/nologin --system --gid appgroup \
+                                                                                  appuser
 # Not needed:  chown -R appuser:appgroup /the/binary
 
 # There's no longer any JRE-only image.
@@ -111,7 +113,7 @@ HEALTHCHECK \
     # Maybe JVM garbage collections can take long, if on a shared CPU VM.
     --timeout=30s \
     --retries=5 \
-    CMD curl --fail --silent http://localhost:9000/-/ping-exception-action || exit 1
+    CMD curl --fail --silent --show-error http://localhost:9000/-/ping-exception-action || exit 1
     # Would be better if we could ping:
     #    http://localhost:9000/-/ping-session-action
     # but then: 404 Not Found, because we didn't specify the hostname of a forum. Oh well.

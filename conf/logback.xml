@@ -29,7 +29,7 @@
   </appender>
 
   <!-- ElasticSearch request info. (Only in dev mode.) -->
-  <logger name="org.elasticsearch.client.RestClient" level="DEBUG" additivity="false">
+  <logger name="org.elasticsearch.client.RestClient" level="TRACE" additivity="false">
     <appender-ref ref="STDOUT"/>
   </logger>
   <!-- ElasticSearch request json, dev mode only. Needs lots of extra config [es_req_logs],

@@ -26,7 +26,7 @@ import Prelude._
   */
 abstract class DbDaoFactory {  CLEAN_UP; // Delete this class? And rename DbDao2 to DbTransactionFactory?
 
-  def migrations: ScalaBasedDatabaseMigrations
+  //def migrations: ScalaBasedDatabaseMigrations
 
   final def newDbDao2(): DbDao2 =
     new DbDao2(this)

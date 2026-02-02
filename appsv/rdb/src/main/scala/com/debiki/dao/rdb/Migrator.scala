@@ -3,6 +3,7 @@ package com.debiki.dao.rdb
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import scala.util.matching.Regex
+import sys.process._
 
 
 object Migrator {
@@ -16,21 +17,27 @@ object Migrator {
 
   /** Finds all pending migration scripts in images/app/migrations/ and applies them.
     */
-  def migrateDatabase(databaseUrlAndWoPwd: (St, St), isTest: Bo): Opt[ErrMsgCode] = {
-    import sys.process._
+  def migrateDatabase(dbUrl: PostgresDbUrl, isTest: Bo): Opt[ErrMsgCode] = {
     var output: St = ""
-    val outputHandler = ProcessLogger((allOutput: St) => {
+    val outputHandler = sys.process.ProcessLogger((allOutput: St) => {
       output = allOutput
     })
 
-   val (databaseUrl, urlNoPwd) = databaseUrlAndWoPwd
+   val PostgresDbUrl(urlWithPwd, urlPwdRedacted, dbAdr) = dbUrl
 
     // The url looks like:  "postgres://db_user:passwd@rdb/database_name"
-    val migrCmdWithPwd = s"""/usr/local/bin/sqlx migrate run --database-url "$databaseUrl" """
-    val dbAdr = databaseUrl.takeRightWhile(_ != '@') // removes the pwd
+    SHOULD // Group all pending migrations together in the same transaction, so if
+    // upgrading from version 3 to version 8, migrations 4,5,6,7,8 will either succeed
+    // or fail all of them. This means that if there's any error, we'll be back at
+    // version 3 again — rather than some other unknown version for which we don't
+    // immediately know which *software* version to use.
+    // GitHub --group feature discussion:  https://github.com/launchbadge/sqlx/discussions/3770
+    //
+    val migrCmdWithPwd = s"""/usr/local/bin/sqlx migrate run --database-url "$urlWithPwd" """
+
     System.out.println(
-          if (isTest) s"Migrating test database $databaseUrl:"  // test, ok show pwd
-          else s"Migrating database $urlNoPwd:")                // password redacted
+          if (isTest) s"Migrating test database $urlWithPwd:"  // test, ok show pwd
+          else s"Migrating database $urlPwdRedacted:")         // password redacted
     val exitCode = migrCmdWithPwd.!(outputHandler)
     if (exitCode == 0) {
       System.out.println(s"Done migrating database $dbAdr, output:\n\n$output\n")
@@ -42,11 +49,11 @@ object Migrator {
              then migrating ... [TyMSQLXRESET]""")
 
       // Double check it's a test database.
-      dieIf(!databaseUrl.endsWith("@rdb:5432/talkyard_test"),
+      dieIf(!urlWithPwd.endsWith("@rdb:5432/talkyard_test"),
             "TyETESTDBNAME", s"Test database has unexpected name: $dbAdr, not resetting it")
 
       val resetCmdWithPwd =
-            s"""/usr/local/bin/sqlx database reset -y --database-url "$databaseUrl" """
+            s"""/usr/local/bin/sqlx database reset -y --database-url "$urlWithPwd" """
       val exitCode = resetCmdWithPwd.!(outputHandler)
 
       if (exitCode == 0) {
@@ -59,10 +66,18 @@ object Migrator {
       }
     }
     else {
-      // Don't show the whole `migrCmdWithPwd` — it includes the db password!
       System.err.println(s"Error code $exitCode when migrating database $dbAdr:\n\n$output\n")
       Some(ErrMsgCode(output, "TyESQLXMIGR"))
     }
+
+    // Later: Could run Scala based migrations here, if need to migrate database content rather
+    // than table structures. Did once, long ago when using Flyway, see:
+    // - class db.migration.y2015.v14__migrate_posts
+    // - class db.migration.MigrationHelper
+    // - class talkyard.server.migrations.ScalaBasedMigrations
+    // - file appsv/server/talkyard/server/migrations/Migration14.scala
+    // But usually better to do that as background jobs, using the job_queue_t table,
+    // a little bit at a time, if the db is huge.
   }
 
 }

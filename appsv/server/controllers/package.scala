@@ -52,11 +52,10 @@ package object controllers {
     val serverJavascriptPath = "/opt/talkyard/app/assets/server-bundle.js"
 
     val tips = o"""If you ran 'make up' then this bundle should get
-      created automatically, but it might take a minute. You can:""" + i"""
-      |  - Wait for a short while, then reload this page, and
-      |    run 'make log' to see what's happening.
-      |  - Run 'docker compose ps' and, if the Gulp container isn't running,
-      |   'docker compose restart gulp'.
+      created automatically, but it might take a minute.""" + i"""
+      |
+      |If you feel impatient, try running:   make debug_asset_bundles
+      |and see what happens.
       """
 
     def fileName(path: String) = path.takeRightWhile(_ != '/')

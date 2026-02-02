@@ -340,7 +340,9 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
   // Typescript: PostFound. Maybe RENAME to PostSearchFound?
   def JsPostFound(hit: SearchHit, anyAuthor: Opt[Pat], avatarUrlPrefix: St,
         jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): JsObject = {
-    // To do, ES 8: Incl title with marks, if this is the orig post.
+    // Later: Incl title with marks, if this is the orig post [api_highlight_title_hits]
+    // — both the title and body might match the search query.
+    // Already present in:  SearchHit.approvedTitleHighligtsHtmlSafe, see SearchController.
     val htmlWithMarks = {
       val fragments: ImmSeq[St] = hit.approvedTextHighligtsHtmlSafe.getOrElse(
                                     hit.approvedTextNoHighligtsSafe.to(ImmSeq))

@@ -21,9 +21,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl vim tree less net-tools bash procps \
     && rm -rf /var/lib/apt/lists/*
 
-# Smokescreen user.  -M = no home dir. -r = system account (but id >= 1000).
-RUN groupadd --gid 1000 smokescreen  && \
-    useradd --uid 1000 -M -s /usr/sbin/nologin -r -g smokescreen smokescreen
+# Smokescreen user.
+RUN groupadd --gid 1000 smokegroup  && \
+    useradd --uid 1000 --no-create-home --shell /usr/sbin/nologin --system --gid smokegroup \
+                                                                                smokescreen
 
 COPY --from=smokescreen_builder /go/bin/smokescreen /ty/smokescreen
 

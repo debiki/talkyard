@@ -2,7 +2,7 @@
 # downloading and using that image, one automatically upgrades the Redis image,
 # whenever needed. (So won't need to configure Redis image version, separately, in Prod.)
 
-FROM redis:8.2.3-bookworm
+FROM redis:8.4.0-bookworm
 
 LABEL org.opencontainers.image.title="Talkyard Cache" \
       io.talkyard.edition="se" \
@@ -10,8 +10,8 @@ LABEL org.opencontainers.image.title="Talkyard Cache" \
 
 HEALTHCHECK \
     --start-period=60s \
-    --start-interval=1s \
-    --interval=20s \
+    --start-interval=5s \
+    --interval=30s \
     --timeout=5s \
     --retries=5 \
     CMD redis-cli ping || exit 1

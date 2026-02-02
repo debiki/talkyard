@@ -27,12 +27,12 @@ function deleteSome {
 
   min_recent_bkps=8
   recent_days=10
-  recent_bkps=$(run_find -not -mtime +$recent_days)
+  recent_bkp_paths=$(run_find -not -mtime +$recent_days)
 
   num_recent_bkps=0
   # Since _echo_prints_newline also if empty, first check if is empty.
-  if [ -n "$recent_bkps" ]; then
-    num_recent_bkps=$(echo "$recent_bkps" | wc --lines)
+  if [ -n "$recent_bkp_paths" ]; then
+    num_recent_bkps=$(echo "$recent_bkp_paths" | wc --lines)
   fi
 
   # If new backups don't work (i.e. there are too few recent backups) or we haven't yet
@@ -45,7 +45,7 @@ function deleteSome {
     log_message "than $recent_days days old. That's few — maybe something is amiss?"
     log_message "I won't delete any old backups of that type."
     log_message "I see only these recent backups:"
-    echo "$recent_bkps"
+    echo "$recent_bkp_paths"
     echo
   else
     # Delete all older than a year.
@@ -102,10 +102,10 @@ find_upl_bkps () {
   find $archives_dir -name '*-uploads-up-to-incl-*.d' -type d  "$@"
 }
 
-recent_bkps="$(find_upl_bkps -not -mtime +123)"
+recent_bkp_paths="$(find_upl_bkps -not -mtime +123)"
 num_recent_bkps=0  # _echo_prints_newline
-if [ -n "$recent_bkps" ]; then
-  num_recent_bkps=$(echo "$recent_bkps" | wc --lines)
+if [ -n "$recent_bkp_paths" ]; then
+  num_recent_bkps=$(echo "$recent_bkp_paths" | wc --lines)
 fi
 
 if [ "$num_recent_bkps" -le "2" ]; then
@@ -113,7 +113,7 @@ if [ "$num_recent_bkps" -le "2" ]; then
   log_message "That's few — maybe something is amiss?"
   log_message "I won't delete any old uploads backups."
   log_message "I see only these uploads backups:"
-  echo "$recent_bkps"
+  echo "$recent_bkp_paths"
   echo
 else
   find_upl_bkps -mtime +123  \

@@ -9,8 +9,6 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       # For 'gpg', to encrypt backups.
       gnupg2 \
-      # Avoids kernel panics when gzipping backups.
-      cpulimit \
       # For backing up uploaded files.
       rsync \
       # For installing psql.
@@ -45,8 +43,9 @@ RUN \
     . /etc/os-release  && \
     sh -c "echo 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $VERSION_CODENAME-pgdg main' > /etc/apt/sources.list.d/pgdg.list"  && \
     # Update package lists, and install.
-    apt update  && \
-    apt-get install -y postgresql-client-18  && \
+    apt-get update  && \
+    apt-get install -y --no-install-recommends \
+        postgresql-client-18  && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /ty/

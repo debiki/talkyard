@@ -25,7 +25,6 @@ import com.debiki.core.Prelude.dieIf
   */
 class RdbDaoFactory(
   val db: Rdb,
-  val migrations: ScalaBasedDatabaseMigrations,
   val getCurrentTime: () => When,
   val isTest: Boolean = false) extends DbDaoFactory {
 

@@ -498,12 +498,12 @@ EXPOSE 80 443
 
 HEALTHCHECK \
     # Compiling Lua code can take a while, if small VM.
-    --start-period=60s \
-    --start-interval=1s \
+    --start-period=120s \
+    --start-interval=5s \
     --interval=30s \
-    --timeout=10s \
+    --timeout=5s \
     --retries=5 \
-    CMD curl --fail --silent http://localhost:80/-/ping-nginx || exit 1
+    CMD curl --fail --silent --show-error http://localhost:80/-/ping-nginx || exit 1
 
 
 CMD ["/etc/nginx/run-envsubst-gen-keys-exec-nginx.sh"]

@@ -10,6 +10,7 @@ if [ -f "$pw_src" ]; then
   chmod 0400 $pw_copy  # read-only
   echo "Done copying Postgres password."
 else
-  echo "No Postgres password $pw_src found, not copying to $pw_copy."
+  echo "Error: No Postgres password $pw_src found, can't copy to $pw_copy. Aborting, bye."
+  exit 1
 fi
 

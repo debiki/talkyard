@@ -721,17 +721,20 @@ const isApiErrorResponse = (response: ApiResponse<any>)
   (response as ApiErrorResponse).error !== undefined;
 
 
-/// Same as fullTextSearch(), but any failure aborts the test.
+/// Same as fullTextSearch(), but any failure aborts the test (there's no { fail } param).
+///
 async function fullTextSearchOk<T extends ThingFound>(ps: {
       origin: St, queryText: St, opts?: {
           cookie?: St | Nl, sidHeader?: St, xsrfTokenHeader?: St | Nl }})
       :  Pr<SearchQueryResults<T>> {
   dieIf(ps['fail'], `You're calling fullTextSearchOk(... fail: true) — don't, instead
-        call fullTextSearch(..., fail: true)`);
+        call fullTextSearch(..., fail: true)   — that is, without '...Ok'`);
   return await fullTextSearch(ps) as SearchQueryResults<T>;
 }
 
 
+/// Pass ... { fail: true } if the server should reject the request.
+///
 async function fullTextSearch<T extends ThingFound>(ps: {
       origin: St, queryText: St, opts?: {
           cookie?: St | Nl, sidHeader?: St, xsrfTokenHeader?: St | Nl, fail?: true }})

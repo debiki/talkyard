@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Make the password readable by 'appuser'. [ty_v2] [dc_start_hook]
+# Make the Postgres password readable by 'appuser'. [ty_v2] [dc_start_hook]
 /ty/chown-postgres_password.sh
 #------------------
 # Later, when 'post_start' is guaranteed to be supported by

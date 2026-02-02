@@ -29,10 +29,6 @@ trait SystemTransaction {  RENAME // to SysTx, started already
 
   def now: When
 
-  /** If test mode, deletes and recreates the database, if there's a validation error.
-    */
-  def applyEvolutions(databaseUserUrl: St, isTest: Bo): Opt[ErrMsgCode]
-
   // ----- Sites
 
   def countWebsites(createdFromIp: String, creatorEmailAddress: Option[String], testSites: Boolean): Int

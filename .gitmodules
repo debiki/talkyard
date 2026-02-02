@@ -96,7 +96,7 @@
 
 # regular — later
 
-# [submodule "relchans/tyse-v1-stable"]  — later
+# [submodule "relchans/tyse-v1-lts"]  — later. Long-Term-Stable.
 
 
 # ----- Vendored dependencies

@@ -8074,7 +8074,7 @@ export class TyE2eTestBrowser {
       },
 
       assertResultLinksAre: async (expected: St[], ps: { anyOrder?: Bo,
-              countTitleLinks?: Bo} = {}) => {
+              countTitleLinks?: Bo } = {}) => {
         const exp = ps.anyOrder ? [...expected].sort() : expected;
         const actualLinks: (St | U)[] = await this.searchResultsPage.getHitLinks(ps);
         const act = ps.anyOrder ? [...actualLinks].sort() : actualLinks;

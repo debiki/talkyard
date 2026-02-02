@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Backup approach: Dump the database, rsync-&-gzp all uploaded files, copy-&-gzip all
-# config files and scripts. And gpg encrypt each file, if a password specified.
+# Backup approach: Dump the Postgres database, rsync-&-gzip all uploaded files, copy-&-gzip
+# all config files and scripts. And gpg encrypt each file, if a password specified.
 #
 # Maybe can use sth like Restic, Rustic or BorgBackup in the future. Could add some
 # flag to also backup using R[eu]stic, that is, double backups (both tar-gz and R[eu]stic)
@@ -28,10 +28,14 @@ function log_message {
 }
 
 if [ $# -ne 3 ]; then
+  echo 'Invalid arguments.'
+  echo
   echo 'Usage: $0 backupLabel hostname date'
   echo 'where the date should be: `date '+%FT%H%MZ' --utc`.'
 
   echo 'E.g.: $0 someLabel "$(hostname)" "$(date '+%FT%H%MZ' --utc)"'
+  echo
+  echo 'Aborting. Bye'
   exit 1
 fi
 
@@ -42,6 +46,9 @@ fi
 # This'll be like:  '2025-03-17T2359Z'
 when="$3"      # "${HOST_DATE:-$(date '+%FT%H%MZ' --utc)}"
 hostname="$2"  # "${HOST_HOSTNAME:-unknownhost}"
+# Use SQL bind var?
+
+#label="$1"  — using "$1" instead, so smaller diff.
 
 # COULD use Bash arrays instead:
 # psql_cmd=(psql -h rdb -d talkyard -U talkyard)
@@ -50,7 +57,7 @@ hostname="$2"  # "${HOST_HOSTNAME:-unknownhost}"
 #   "... values (now_utc(), :PG_HOSTNAME, 'rdb', :PG_BACKUP_FILE, :PG_RAND_VAL);"
 # Currently does not matter.
 #
-psql="psql -h rdb talkyard talkyard"  # connects to database Ty as user Ty
+psql="psql --host=rdb talkyard talkyard"  # connects to database Ty as user Ty
 
 encrypted=''
 dot_gpg=''
@@ -62,9 +69,15 @@ if [ -s $backup_pwd_file ]; then
   dot_gpg='.gpg'
 fi
 
-log_message "Backing up '$hostname', when: '$when', tag: '$1' ..."
+log_message "Backing up '$hostname', when: '$when', tag: '$1'$encrypted ..."
 
 gpg_encrypt="gpg --batch --symmetric --cipher-algo AES256 --passphrase-file $backup_pwd_file"
+
+
+# Directories
+# -------------------
+
+# These dirs are mounted in docker-compose.yml  (see 'backup: ... volumes: ...').
 
 # (Avoid /var/backups/ — the OS uses it for backing up OS related files.)
 backup_archives_dir=/var/opt/backups/talkyard/v1/archives
@@ -73,18 +86,17 @@ talkyard_dir=/opt/talkyard-v1
 ty_data_dir=/var/talkyard/v1
 uploads_dir=$ty_data_dir/pub-files/uploads
 
-
 # Make the archives dir writable to root, and readable only by people in the root group.
 # (--mode has precedence over umask.)
 #
 mkdir -p --mode=750 $backup_archives_dir
 
-random_value=$( cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 20 )
-log_message "Generated random test-that-backups-work value: '$random_value'"
-
 
 # A random value
 # -------------------
+
+random_value=$( cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 20 )
+log_message "Generated random test-that-backups-work value: '$random_value'"
 
 # Include a file with a per backup random value. We'll insert this random value
 # into the PostgreSQL database and uploads directory too. Then, on an off-site
@@ -103,13 +115,13 @@ fi
 # Backup Postgres
 # -------------------
 
-postgres_backup_file_name="$hostname-$when-$1-postgres.sql"
-postgres_backup_path="$backup_archives_dir/$postgres_backup_file_name.gz$dot_gpg"
+postgres_backup_file_name="$hostname-$when-$1-postgres.sql.gz$dot_gpg"
+postgres_backup_path="$backup_archives_dir/$postgres_backup_file_name"
 
 log_message "Backing up Postgres$encrypted to: $postgres_backup_path ..."
 
-pgpass_file="/tmp/.pgpass"
-export PGPASSFILE="$pgpass_file"  # default is ~/.pgpass
+pgpass_file="/tmp/.pgpass"  # created in ./entrypoint.sh
+export PGPASSFILE="$pgpass_file"  # default would have been ~/.pgpass
 
 # Insert a backup test timestamp, and the random value, so we can check, on an
 # off-site backup server, that the contents of the backup is recent and okay.
@@ -141,14 +153,12 @@ $psql -c \
 # Specify --clean to include commands to drop databases, roles, tablespaces
 # before recreating them.
 #
-# (cron's path apparently doesn't include /sur/local/bin/  hmm I mean /usr/...)
-#
 # Pipe to gzip — don't save any .sql file in a separate step, because that uses more disk,
-# and leave self-hosters confused if they've run out of disk and there's uncompressed .sql
+# and leaves self-hosters confused if they've run out of disk and there's uncompressed .sql
 # files seemingly causing the problem.  (But the problem is rather that the disk is
 # dangerously small. Therefore, running gzip in a separate step failed — gzip, when run on its
-# own (not in a pipe) needs space for both the .sql and .sql.gz — but when piping, needs space
-# only for .sql.gz).)
+# own (not in a pipe) needs space for both the .sql and .sql.gz, but when piping, needs space
+# only for .sql.gz.)
 #
 if [ -n "$encrypted" ]; then
   pg_dumpall --host rdb --username=postgres --clean --if-exists  \
@@ -177,8 +187,8 @@ config_backup_path="$backup_archives_dir/$config_backup_file_name"
 
 log_message "Backing up config$encrypted to: $config_backup_path ..."
 
-#onf_files=".env docker-compose.* talkyard-maint.log conf data/certbot data/sites-enabled-auto-gen"
-# Just backup everything we find in /opt/talkyard-v1  ?
+# Just backup everything we find in /opt/talkyard-v1? (We used to back up only:
+#".env docker-compose.* talkyard-maint.log conf data/certbot data/sites-enabled-auto-gen".)
 conf_files="*"
 
 cd $talkyard_dir
@@ -212,18 +222,22 @@ log_message "Done backing up config."
 # This file is owned by user 'redis' id 999. We've added CAP_DAC_READ_SEARCH
 # in docker-compose.yml so that 'root' can access this file.
 redis_dump_file="$ty_data_dir/redis-data/dump.rdb"
+redis_backup_file_name="$hostname-$when-$1-redis.rdb.gz$dot_gpg"
 
-redis_backup_path="$backup_archives_dir/$hostname-$when-$1-redis.rdb.gz$dot_gpg"
+redis_backup_path="$backup_archives_dir/$redis_backup_file_name"
 
 if [ -f $redis_dump_file ]; then
   log_message "Backing up Redis$encrypted to: $redis_backup_path ..."
   if [ -n "$encrypted" ]; then
     # -c writes to stdout.
-    gzip -c $redis_dump_file \
+    gzip --to-stdout $redis_dump_file \
         |  $gpg_encrypt --output $redis_backup_path
   else
-    gzip -c $redis_dump_file  >  $redis_backup_path
+    gzip --to-stdout $redis_dump_file  >  $redis_backup_path
   fi
+  $psql -c \
+    "insert into backup_test_log3 (logged_at, logged_by, backup_of_what, file_name, random_value)
+     values (now_utc(), '$hostname', 'redis', '$redis_backup_file_name', '$random_value');"
   log_message "Done backing up Redis."
 else
   log_message "No Redis dump.rdb to backup."
@@ -247,19 +261,6 @@ last_upl_bkp_d="$hostname-uploads-up-to-incl-$last_yyyy_mm.d"
 uploads_backup_d="$hostname-uploads-up-to-incl-$cur_yyyy_mm.d"
 
 log_message "Backing up uploads$encrypted to: $backup_archives_dir/$uploads_backup_d ..."
-
-# Insert a backup test timestamp, so we can check that the backup archive contents is fresh.
-# Do this as files with the timestamp in the file name — because then they can be checked for
-# by just listing (but not extracting) the contents of the archive.
-# This creates a file like:  2017-04-21T0425--server-hostname--NxWsTsQvVnp2y0YvN8sb
-#
-# Maybe skip. Now in Ty v1, this dir is mounted read-only.
-#
-# backup_test_dir="$uploads_dir/backup-test"
-# mkdir -p $backup_test_dir
-# find $backup_test_dir -type f -mtime +31 -delete
-# touch $backup_test_dir/$when--$hostname--$random_value
-
 
 # Don't archive all uploads every day — then we might soon run out of disk
 # (if there're many uploads — they can be huge). Instead, _each_month,
@@ -375,6 +376,12 @@ else
       $uploads_dir/  \
       $backup_archives_dir/$uploads_backup_d/
 fi
+
+# Add a backup test timestamp file, so we can check that the backup archive contents is fresh.
+# This creates a file like:  rand-val--2026-02-06T0425--server-hostname--NxWsTsQvVnp2y0YvN8sb
+echo "$random_value" > \
+    $backup_archives_dir/$uploads_backup_d/rand-val--$when--$hostname--$random_value
+
 
 # Bump the mtime, so scripts/delete-old-backups.sh won't delete it too soon.
 # (Otherwise rsync will have preserved the creation date of the uploads dir,

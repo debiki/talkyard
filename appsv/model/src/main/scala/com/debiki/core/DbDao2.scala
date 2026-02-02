@@ -18,6 +18,17 @@
 package com.debiki.core
 
 
+
+/**
+ * @param urlWithPassword The database connection url, incl password — all that's
+ * needed to connect.
+ * @param urlPwdRedacted The database connection url, but with the password redacted,
+ * fror log messages.
+ * @param dbAdr Just the "host:port/database-name", for log messages.
+ */
+case class PostgresDbUrl(urlWithPassword: St, urlPwdRedacted: St, dbAdr: St)
+
+
 /**
   *
   * @param maintenanceUntilUnixSecs Non-zero means server maintenance is ongoing,

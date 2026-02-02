@@ -369,20 +369,24 @@ function makeTagLabelValues(tagsStuff: TagsStuff) {
 function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: St | Nr, store: Store }) {
   const pageAndHits: PageAndHits = props.pageAndHits;
   const hitsNotTitle = [];
-  // Any search hit that matches the page title or body. And...
-  let pageHit: SearchHit | U;
-  // ... if that search hit matches the title, or body.
-  let titleHit: Bo | U;
-  let bodyHit: Bo | U;
+  // Any search hit that matches the page title or body text. And...
+  let pageHit_dbg: SearchHit | U;
+  // ... if that search hit matches the title, or body: the fragments that matched.
+  let titleTextHit: St[] | U;
+  let bodyTextHit: St[] | U;
 
-  // Find out if the title or orig post matched — we want to show first.
+  // Find out if the title or orig post matched — we want to show that hit first
+  // (before any matching comments on the same page).
   for (let hit of pageAndHits.hits) {
     // The page title & body are in the same ElasticSearch document, with the post nr
     // being that of the original post —  we [index_title_and_body_together].
-    if (hit.postNr === BodyNr) {
-      titleHit ||= !!hit.titleHighlightsHtmlSafe;
-      bodyHit ||= !!hit.approvedTextHighligtsHtmlSafe;
-      pageHit = hit;
+    const isOrigPost = hit.postNr === BodyNr;
+    if (isOrigPost) {
+      // Can't find the same page more than once.
+      dieIf(!!pageHit_dbg, 'TyEPOSTHITTWICE');
+      titleTextHit = hit.titleHighlightsHtmlSafe;
+      bodyTextHit = hit.approvedTextHighligtsHtmlSafe;
+      pageHit_dbg = hit;
     }
 
     // If the OP (orig post) is among the hits, place it first, even if some comments
@@ -390,19 +394,19 @@ function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: St | Nr, 
     // results, with the OP first (if present)? Also, we no longer prefix any orig
     // post hit with "_in_the_page_text", so now it "must" be first.
     const res = SearchResultHit({ hit, urlPath: pageAndHits.urlPath });
-    hit.postNr === BodyNr ?
+    isOrigPost ?
           hitsNotTitle.unshift(res) : hitsNotTitle.push(res);
   }
 
   // If the title matched, show the matches inline in the <h3> as the title
   // itself, instead of showing the title again in the results list.
-  const titleHitClass = !titleHit ? '' : ' c_SR_Ttl-HitTtl';
-  const bodyHitClass  = !bodyHit  ? '' : ' c_SR_Ttl-HitOp';
+  const titleHitClass = !titleTextHit ? '' : ' c_SR_Ttl-HitTtl';
+  const bodyHitClass  = !bodyTextHit  ? '' : ' c_SR_Ttl-HitOp';
   let titleText = pageAndHits.pageTitle;
-  if (titleHit) {
+  if (titleTextHit) {
     // (I wonder if any title is long enough to be split by ElasticSearch into two parts?
     // There's a max length: PageParts.MaxTitleLength in Scala.)
-    const safeHtml = pageHit.titleHighlightsHtmlSafe.join(" <b>...</b> ");
+    const safeHtml = titleTextHit.join(" <b>...</b> ");
     titleText = r.span({ className: 'esSERP_Hit_Text',
           // Sanitized here: [safe_hit_highlights]
           dangerouslySetInnerHTML: { __html: safeHtml }});
@@ -425,7 +429,7 @@ function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: St | Nr, 
 
 function SearchResultHit(props: { hit: SearchHit, urlPath: St }) {
   const hit: SearchHit = props.hit;
-  // Any html stuff was escaped here: [7YK24W].
+  // Any html stuff was escaped here: [safe_hit_highlights].
   const highlights = hit.approvedTextHighligtsHtmlSafe;
   const safeHtml = highlights ? highlights.join(" <b>...</b> ") : hit.approvedTextNoHighligtsSafe;
   const textHit = !!hit.approvedTextHighligtsHtmlSafe;

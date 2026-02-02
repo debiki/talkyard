@@ -25,7 +25,18 @@ file_owner_id=`ls -adn | awk '{ print $3 }'`
 
 if getent passwd $file_owner_id > /dev/null; then
   owner_username=$(id -u -n $file_owner_id)
-  echo "User with id $file_owner_id exists, need not create. Name: '$owner_username'"
+  echo "User with id $file_owner_id exists. Name: '$owner_username'"
+  if [[ "$owner_username" != 'owner' ]]; then
+    echo
+    echo "Wrong file owner username. Should be 'owner', but is: '$owner_username'"
+    echo "— now the Scala build cache won't work (at /home/owner/.sbt/)."
+    echo
+    echo "Maybe you'd like to do something about that?  For example, changing its"
+    echo "home dir (in this container only!) to:  /home/owner/  somehow?"
+    echo "Exiting, bye."
+    echo
+    exit 1
+  fi
 else
   # There's no user with the same id as the files. Let's create such a user,
   # and call it 'owner':

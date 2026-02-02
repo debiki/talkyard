@@ -38,9 +38,11 @@ when we can't use Nashorn any longer (it was removed in Java 17).
 
 ### [cache](../images/cache/)
 
-This is Redis, an in-memory cache that remembers things accross server restart
-(although currently most in-memory cached things are cached in the *app* container
-and forgotten on restart).
+This is Redis, an in-memory cache that remembers things accross server restart,
+e.g. HTTPS certificates and number of users online.
+Maybe it'd been better to use something else / do in some other way.
+Not used much — most in-memory cached things are instead cached in the *app* container
+and forgotten on restart.
 
 
 ### [search](../images/search/)
@@ -57,6 +59,12 @@ A relational database, namely PostgreSQL. Here's where all discussion topics and
 users and everything is saved — except for uploaded files. Those might be large, like
 5 or 50 or 500 MB and are instead stored in the file system (or maybe, later on,
 optionally in an object storage like Google Cloud Storage or Amazon S3).
+
+
+### [egressp](../images/egressp/)
+
+An egress proxy — for making outbound connections to external things, e.g. for sending
+webhooks. Stops Server Side Request Forgery (SSRF).
 
 
 ### [nodejs](../images/nodejs/) (dev only)

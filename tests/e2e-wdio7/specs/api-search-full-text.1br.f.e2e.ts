@@ -1,6 +1,5 @@
 /// <reference path="../test-types.ts"/>
 
-import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
 import server from '../utils/server';
 import * as utils from '../utils/utils';
@@ -205,8 +204,9 @@ describe(`api-search-full-text.1br.f  TyT70ADNEFTD36`, () => {
   });
 
 
-  /* SHOULD [ty_v1]: Incl the title again, and add back this test  [index_title_and_body_together]
-   * Search for:  titleFound  in this file
+  /* SHOULD [ty_v1], TESTS_MISSING: Incl the title again,  [index_title_and_body_together]
+   * and add back this test. Search for:  titleFound  in this file
+   *
   it("... and the word 'curiosity' was found in the title", async () => {
     assert.eq(titleFound.htmlWithMarks.length, 1);
     assert.includes(titleFound.htmlWithMarks[0], 'curiosity');

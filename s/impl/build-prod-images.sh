@@ -186,9 +186,6 @@ if [ -z "$skip_e2e_tests" ]; then
   if [ -z "$skip_restart"  -o  -z "`containers_running_test`" ]; then
     sudo $latest_test_containers down --volumes
 
-    # No longer any data/ dir!
-    #sudo rm -fr modules/ed-prod-one-test/data
-
     echo
     echo '------------------------------------------------------------------'
     echo "Starting e2e test servers:"

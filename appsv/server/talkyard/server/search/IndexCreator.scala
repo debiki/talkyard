@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016 Kaj Magnus Lindberg
+ * Copyright (c) 2016–2026 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -22,14 +22,6 @@ import com.debiki.core._
 import co.elastic.clients.{elasticsearch => es8}
 import co.elastic.clients.transport.endpoints.{BooleanResponse => es8_BooleanResponse}
 import es8._types.{ElasticsearchException => es8_ElasticsearchException}
-/*
-import org.{elasticsearch => es}
-import es.action.admin.indices.create.{CreateIndexRequest => es_CreateIndexRequest}
-import es.action.admin.indices.delete.{DeleteIndexRequest => es_DeleteIndexRequest}
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse
-import es.action.support.master.{AcknowledgedResponse => es_AcknowledgedResponse}
-import org.elasticsearch.common.xcontent.XContentType
-*/
 import scala.util.control.NonFatal
 import scala.collection.mutable
 import talkyard.server.TyLogger
@@ -46,6 +38,10 @@ class IndexCreator {
 
   @volatile
   private var _numConnFails = 0
+  private val _NumOkConnFails = 10
+
+  @volatile
+  private var _esHasStarted = false
 
   /** Returns all indexes that were created. Everything in the languages used in these
     * indexes should be (re)indexed.
@@ -53,15 +49,18 @@ class IndexCreator {
   def createIndexesIfNeeded(client: es8.ElasticsearchClient)
         : Seq[IndexSettingsAndMappings] Or ErrMsg = Good {
     Indexes filter { indexSettings =>
-      _createIndexIfNeeded(indexSettings, client) getOrIfBad { msg =>
+      val wasCreated = _createIndexIfNeeded(indexSettings, client) getOrIfBad { msg =>
         // Since there's currently [only_1_ix], this works:
         return Bad(msg)
       }
+      wasCreated
     }
   }
 
 
-  /** Returns true iff the index was created. (False if it already exists.)
+  /** Returns Good(true) iff the index was created, false if it already exists.
+    *
+    * Returns Bad(info-message) if there's a problem, e.g. ElasticSearch not yet started.
     */
   private def _createIndexIfNeeded(indexSettings: IndexSettingsAndMappings,
         client: es8.ElasticsearchClient): Bo Or ErrMsg = {
@@ -89,8 +88,12 @@ class IndexCreator {
                   val msg = o"""Connection to 'search' container refused, when checking" +
                               if search index '$IndexName' exists"""
                   _numConnFails += 1
-                  if (_numConnFails < 10) {
-                    logger.info(s"ElasticSearch not yet started? $msg. Probably fine")
+                  if (_esHasStarted) {
+                    logger.warn(s"ElasticSearch stopped working: $msg. [TyESIX_ESBROKE]")
+                  }
+                  else if (_numConnFails <= _NumOkConnFails) {
+                    logger.info(s"ElasticSearch not yet started? ${msg
+                            }. Probably fine. [TyMSIX_WAIT4ES]")
                   }
                   else {
                     logger.warn(o"""ElasticSearch should have started by now?
@@ -112,8 +115,7 @@ class IndexCreator {
               return Bad(msg)
           }
 
-    // Any failure hereafter is suspicious.
-    _numConnFails = 999
+    _esHasStarted = true
 
     if (existsResp.value())
       return Good(false)
@@ -122,7 +124,9 @@ class IndexCreator {
   }
 
 
-  /** Returns true iff the index was created.
+  /** Returns Good(true) iff the index was created.
+    *
+    * Doesn't return Good(false) any more, instead Bad(error-message). Oh well.
     */
   private def _doCreateIndex(indexSettings: IndexSettingsAndMappings,
         client: es8.ElasticsearchClient): Bo Or ErrMsg = {
@@ -131,17 +135,9 @@ class IndexCreator {
 
     SHOULD // use the same language as the site, when creating the index. [es_wrong_lang]
 
-    // Test, ES8:
-    // final RestClient restClient = RestClient
-    //         .builder(new HttpHost(hostName, port, "https"))
-    //         .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(provider))
-    //         .build();
-
-    // final ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
-
-    // final ElasticsearchClient client = new ElasticsearchClient(transport);
-
     val mapper: co.elastic.clients.json.JsonpMapper = client._transport().jsonpMapper()
+
+    // Deserialize JSON for indexes and mappings:
 
     val ixSettingsParser: jakarta.json.stream.JsonParser = mapper.jsonProvider().createParser(
           new java.io.StringReader(
@@ -154,130 +150,24 @@ class IndexCreator {
     // Later, add an index for searching usernames, bios, email adrs, too.  [fuzzy_user_search]
     //val patsMappingParser = ...
 
-    val settings = es8.indices.IndexSettings._DESERIALIZER.deserialize(
+    val ixSettings = es8.indices.IndexSettings._DESERIALIZER.deserialize(
           ixSettingsParser, mapper)
 
-    val mappings = es8._types.mapping.TypeMapping._DESERIALIZER.deserialize(
+    val postMappings = es8._types.mapping.TypeMapping._DESERIALIZER.deserialize(
           postMappingParser, mapper)
-/*
-    client.indices().create(builder =>
-        builder.index(ixName).mappings(TypeMapping._DESERIALIZER.deserialize(parser, mapper)));
-        */
-
-    // ChatGPT says:
-    import co.elastic.clients.elasticsearch.ElasticsearchClient;
-    import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
-    import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
-    import co.elastic.clients.json.jackson.JacksonJsonpMapper;
-    import co.elastic.clients.transport.rest_client.RestClientTransport;
-    import org.apache.http.HttpHost;
-    import org.elasticsearch.client.RestClient;
-
-    // val restClient: RestClient = RestClient.builder(new HttpHost("search", 9200)).build();
-    // RestClientTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
-    // ElasticsearchClient client = new ElasticsearchClient(transport);
-
-    // ?
-    //val mapper = new JacksonJsonpMapper();
-    //RestClientTransport transport = new RestClientTransport(restClient, mapper);
-    //ElasticsearchClient client = new ElasticsearchClient(transport);
-
-/*
-        // Hardcoded JSON strings for settings and mappings
-        String settingsJson = """
-            {
-              "number_of_shards": 1,
-              "number_of_replicas": 1
-            }
-        """;
-
-        String mappingsJson = """
-            {
-              "properties": {
-                "title": { "type": "text" },
-                "views": { "type": "integer" }
-              }
-            }
-        """; */
-
-    //val settingsParser: JsonParser = Json.createParser(new StringReader(settingsJson));
-    //val mappingsParser: jakarta.json.stream.JsonParser = jakarta.json.Json.createParser(
-    //      new java.io.StringReader(indexSettings.postMappingJsonString))
-
-    // Deserialize JSON to correct types
-    import es8.indices.IndexSettings
-    import es8._types.mapping.TypeMapping
-    //val mappings: TypeMapping = mapper.deserialize(new StringReader(mappingsJson), TypeMapping.class);
-    /*
-    val mappings: TypeMapping = TypeMapping._DESERIALIZER.deserialize(parser, mapper)
-    val mappings: TypeMapping = mapper.deserialize[TypeMapping](  // [jakarta.json.stream.JsonParser, Class]
-          mappingsParser, classOf[TypeMapping])
-          // new java.io.StringReader(indexSettings.postMappingJsonString), classOf[TypeMapping])
-     */
-
-    /*
-    val settings: IndexSettings = mapper.jsonProvider()
-        .createParser(new StringReader(settingsJson))
-        .deserialize(IndexSettings.class);
-
-    val mappings: TypeMapping = mapper.jsonProvider()
-        .createParser(new StringReader(mappingsJson))
-        .deserialize(TypeMapping.class); */
-
-    /*
-    import jakarta.json.Json;
-    import jakarta.json.stream.JsonParser;
-    val settingsParser: JsonParser = Json.createParser(new java.io.StringReader(settingsJson));
-    val mappingsParser: JsonParser = Json.createParser(new java.io.StringReader(mappingsJson));
-    */
-    import co.elastic.clients.json.JsonData
-    //val mappings = JsonData.fromJson(indexSettings.postMappingJsonString)
-
-    //val settings: co.elastic.clients.elasticsearch.indices.IndexSettings = ???
-    //val mappings: co.elastic.clients.elasticsearch._types.mapping.TypeMapping = ???
 
     // See: https://www.elastic.co/docs/api/doc/elasticsearch/v8/operation/operation-indices-create
     var builder = new es8.indices.CreateIndexRequest.Builder().index(ixName)
-    builder = builder.settings(settings) // s => s.withJson(settingsParser)) // ixSettings)
-    builder = builder.mappings(mappings)
+    builder = builder.settings(ixSettings)
+    builder = builder.mappings(postMappings)
 
-    val request: CreateIndexRequest = builder.build()
-          /*
-          .settings(ixSettings)
-          .mappings(mappings)  /*m -> m
-              .properties("title", p -> p.text(t -> t))
-              .properties("views", p -> p.integer_(i -> i))
-          ) */
-          .build() */
+    val request: es8.indices.CreateIndexRequest = builder.build()
 
-    //val response: CreateIndexResponse = client.indices().create(request)
-
-    //System.out.println("Index created: " + response.acknowledged());
-
-    // restClient.close();
-
-    /*
-
-    // (Is there any way to specify `include_type_name=false`, for ES7 compat?)
-    val createIndexRequest: es_CreateIndexRequest =
-          es.client.Requests.createIndexRequest(ixName)
-                .source(indexSettings.indexSettingsJsonString, XContentType.JSON)
-                .mapping("_doc", indexSettings.postMappingJsonString, XContentType.JSON)
-    //-----
-    // Hallucinated:
-    val createIndexRequest = new CreateIndexRequest(ixName)
-          .source(indexSettings.indexSettingsJsonString, XContentType.JSON)
-          .mapping(indexSettings.postMappingJsonString, XContentType.JSON)
-    //-----
-    */
-
-    // Attempt to create the index, synchronously, and see if there's any
-    // it-already-exists exception.
     val wasCreated = try {
       // (Synchronous, fine. Runs very infrequently.)
-      val response: CreateIndexResponse =
+      val response: es8.indices.CreateIndexResponse =
             client.indices().create(request)
-            //client.admin().indices().create(createIndexRequest).actionGet()
+
       val message = s"Created search index '$ixName' [TyMCRDSEIX]."
       if (response.acknowledged()) {
         logger.info(message)
@@ -313,7 +203,7 @@ class IndexCreator {
     }
 
     // This no longer needed. Index recreated, with updated mapping, as part of
-    // migrating to ElasticSearch 8.
+    // migrating to ElasticSearch 9. — Let's keep, nice to review if need to do again.
     /*
     // Update the mapping: Include tags.  Ok to do many times (once each server startup).
     // See the [index_mapping_changelog].
@@ -351,7 +241,8 @@ class IndexCreator {
 
   def deleteAnyOldIndex(indexName: St, client: es8.ElasticsearchClient): U = {
     // Right now there are no too old indexes. Everything recreated & reindexed
-    // as part of migrating to ElasticSearch 8.  So this old Es 6 code not currently needed:
+    // as part of migrating to ElasticSearch 9.  So this old ES 6 code not currently needed,
+    // but let's keep, so can review, if we need to delete indexes again.
     /*
     val deleteIndexRequest: es_DeleteIndexRequest =
           es.client.Requests.deleteIndexRequest(indexName)

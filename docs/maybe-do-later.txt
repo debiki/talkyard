@@ -388,15 +388,8 @@ for these too, which one is the most up-to-date, or equally up-to-date, if we ha
 prevent usernames from being displayed in Unicode, if mixed charsets used,
 e.g. Latin + Cryllic = facebooĸ.com  (homograph attacks).
 
-Switch to firewalld.
-
 use gVisor / runsc or Firecracker.
 See: https://fly.io/blog/sandboxing-and-workload-isolation/
-
-Optionally encrypt off-site backups? Maybe:  https://github.com/borgbackup/borg
-    (plus instructions to copy the backup encryption key!)
-    Seems ppl like it:  https://news.ycombinator.com/item?id=21642364  "the holy grail"
-      rsync.net
 
 Add CSP to all page types / routes: CSP_MISSING, [script_src_self].
 
@@ -1324,9 +1317,19 @@ Index plain text for these too, nice for mods to search & find?  In an [inactive
 
 [search_hmm]
 Surprising search behavior:
-  - Only exact category matches (ignores sub cats).
+  - Only exact category matches (ignores sub cats). [es_search_sub_cats]
   - Only exact tag matches too [how_ix_page_tags]  (not comments on a tagged page).
-  - "is:aa,bb,cc" is incorrectly interpreted as  "is:aa is:bb is:cc".
+  - "is:aa,bb,cc" is incorrectly interpreted as  "is:aa is:bb is:cc".  [es_match_all_or_any]
+  - Public API: [api_highlight_title_hits]
+  - Index deleted and not-yet-deleted things in a separate index, [deleted_posts_ix]
+    since rarely searched for. Unapproved posts in their own index too? [index_for_invisible]
+  - Should use same language as the site. [es_wrong_lang]
+  - Maybe [per_country_code_index] — for Portuguese and Chinese, but not Spanish? Says Gemini.
+
+[reconnect_to_ElasticSearch]
+Did I fix this?: "Don't keep retrying & logging 99999 errors"
+when "Connecting to search engine... [TyMSTART4CONSEARCH]".
+I think so? See: `IndexingActor.expBackoffCount`.
 
 [show_hit_tags]
 Highlight tags that matched the search query. (Currently highlights only *text*.) Cats too?

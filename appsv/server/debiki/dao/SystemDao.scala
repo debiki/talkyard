@@ -110,11 +110,6 @@ class SystemDao(
   }
 
 
-  def applyEvolutions(databaseUrl: St, isTest: Bo): Opt[ErrMsgCode] = {
-    writeTxLockAllSites(_.applyEvolutions(databaseUrl, isTest = isTest))
-  }
-
-
 
   // ----- Sites
 

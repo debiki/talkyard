@@ -164,8 +164,8 @@ require("resty.acme.autossl").init({
     storage_config = {
         host = 'cache',  -- the service name in docker-compose.yml
         port = 6379,     -- the default Redis port
-        database = 0,    -- Ty uses just one Redis database  [careless_rdb] later, could use
-                         -- on dedicated Redis for HTTPS certs
+        database = 0,    -- Ty uses just one Redis database.  [careless_rdb] Later, could use
+                         -- one dedicated Redis for HTTPS certs
         auth = nil,      -- no password, Redis not publ accessible
     },
 })

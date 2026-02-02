@@ -38,10 +38,13 @@ services:
       TY_FEATURE_FLAGS: 'ffMayPatchSite'
       MAY_FAST_FORWARD_TIME: 'true'
 
+  rendr:
+
   cache:
     #mem_limit: 30M
 
   rdb:
+    #mem_limit: 140M
 
   search:
     #mem_limit: 380M
@@ -52,11 +55,6 @@ services:
     networks:
       test_ext_net:
         ipv4_address: ${TEST_EXT_NET_EGRESSP_IP}
-
-  #rdb:
-    #mem_limit: 140M
-    #environment:
-    #  POSTGRES_PASSWORD: 'public'
 
   # A fake external server, for e2e tests, when the Ty server sends its own HTTP
   # requests to external things.

@@ -61,6 +61,10 @@ https://en.cppreference.com/w/c/string/byte/isgraph
 If the disk is >= 95% full, ElasticSearch enters read-only mode (or read-delete-only).
 Once you've freed up disk, you need to tell ElasticSearch about this:
 
+Note: If the `search` container is on an `internal: true` network, you cannot access
+`localhost:9200`. But you could jump into the `app` container and send requests
+to `search:9200` instead.
+
 ```
 curl -XPUT -H "Content-Type: application/json" \
     http://localhost:9200/_all/_settings \
@@ -71,9 +75,9 @@ Thereafter ElasticSearch should start working again. Docs:
 https://www.elastic.co/guide/en/elasticsearch/reference/6.2/disk-allocator.html
 
 
-List indexes & show mappins of one:
+List indexes & show mappings of one:
 d/c exec search curl http://localhost:9200/_aliases?pretty
-d/c exec search curl http://localhost:9200/posts_es8_v1_en?pretty
+d/c exec search curl http://localhost:9200/posts_es9_v1?pretty
 
 Create (but w/o mapping):
 d/c exec search curl -X PUT 'localhost:9200/new_test_index?pretty'
@@ -81,7 +85,7 @@ d/c exec search curl -X PUT 'localhost:9200/new_test_index?pretty'
 d/c exec search curl -X PUT 'localhost:9200/_cluster/settings' -d '{
    "transient" : {
       "logger.org.elasticsearch.http.HttpTracer" : "TRACE",
-      "http.tracer.include" : [ "*posts_es8_v1_en*" ]
+      "http.tracer.include" : [ "*posts_es9_v1*" ]
    }
 }'
 
@@ -89,13 +93,13 @@ List all indexed docs:
 http://localhost:9200/_search?pretty&size=9999
 
 List posts in site 3:  (note: routing=3)
-http://localhost:9200/posts_es6_v2_english/_doc/_search?pretty&routing=3&size=9999
+http://localhost:9200/posts_es9_v1/_search?pretty&routing=3&size=9999
 
 Get post 110, site -12, by id: (note that the id must be "quoted")
-curl 'http://localhost:9200/posts_es6_v2_english/_doc/_search?pretty&q=_id:"-12:110"'
+curl 'http://localhost:9200/posts_es9_v1/_search?pretty&q=_id:"-12:110"'
 
 Show mappings:
-curl http://localhost:9200/posts_es6_v2_english/_mapping
+curl http://localhost:9200/posts_es9_v1/_mapping
 
 Search:  
 http://localhost:9200/_search?pretty&q=approvedText:zzwwqq2
@@ -122,7 +126,7 @@ curl -X POST -H 'Content-Type: application/json' 'http://localhost:9200/_search'
 Reindex everything: (might take long: minutes/hours/weeks, depending on db size)
 
 ```
-curl -XDELETE 'http://localhost:9200/posts_es6_v2_english/'
+curl -XDELETE 'http://localhost:9200/posts_es9_v1/'
 docker-compose restart web app
 ```
 

@@ -59,12 +59,6 @@ $tagCatCol = hsl(0 0% 41%);
   line-height: 1.3;
   color: hsl(0 0% 23%);
 
-// Text matching the search query, highlighted
-em.hlt1
-  background: hsl(58 100% 50%);  // 60 is yellow, but 58 (a tint of red) simspler to see
-  font-style: normal;
-  color: #000;
-
 .s_SR,
 .s_SR_Hit
   list-style: none;
@@ -135,6 +129,15 @@ em.hlt1
 .esSERP_Hit_In_Where
   color: hsl($uiHue, 100%, 47%);
 
+
+// Highlight matching text.
+// We've told ES to use <mark> tags. [es_highlight_mark]
+.esSERP_Hit_Text mark
+  // 60 is yellow, but 58 (a tint of red) is simpler to see.
+  background: hsl(58, 100%, 50%);
+  font-weight: bold;
+
+/* If using the Fast Vector Highlighter (FVH):  (but we don't)
 .esSERP_Hit_Text
   mark,
   .esHL1, .esHL2, .esHL3, .esHL4, .esHL5, .esHL6, .esHL7
@@ -155,4 +158,5 @@ em.hlt1
     background: hsl(60, 100%, 75%);
   .esHL7
     background: hsl(60, 100%, 80%);
+*/
 

@@ -22,10 +22,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.PageStuff
 import debiki.dao.PageStuffDao.ExcerptLength
-/*
-import org.{elasticsearch => es}
-import org.elasticsearch.search.fetch.subphase.highlight.HighlightField
-*/
 import co.elastic.clients.{elasticsearch => es8}
 import co.elastic.clients.json.{JsonData => es8_JsonData}
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
@@ -33,7 +29,6 @@ import play.api.libs.json._
 import scala.collection.{immutable => imm, mutable => mut}
 import scala.collection.immutable
 import scala.jdk.CollectionConverters._ // for `.asScala`
-import java.{util => ju}
 import talkyard.server.JsX._
 
 
@@ -108,26 +103,37 @@ package object search {
   /** Include a version number in the index name. See:
     *  https://www.elastic.co/blog/changing-mapping-with-zero-downtime
     *
-    * Created using ElasticSearch version 8.17 or later.
+    * Created using ElasticSearch version 9 or later.
     * Always English, for now.  [es_wrong_lang]
     *
-    * Format: "posts_" + "es9" + ES version 9 + "_v1_" Talkyard epoch
-    *          + language code (skip country code)
+    * Format: "posts_" + "es9" (ES version 9) + "_v1_" (the Talkyard epoch )
+    *          + language code  + maybe [per_country_code_index]
     *
     * Include language, because: """A single predominant language per document requires
     * a relatively simple setup. Documents from different languages can be stored
     * in separate indices"""
     * See: https://www.elastic.co/guide/en/elasticsearch/guide/current/one-lang-docs.html
     * More: https://www.elastic.co/guide/en/elasticsearch/guide/current/language-intro.html
+    *
+    * Re country code: Gemini thinks a country code makes sense for Portuguese and Chinese:
+    * ..._pt_br  and  ..._pt_pt  for Brazil and Portugal.
+    * ..._zh_cn  and  ..._zh_tw  for China and Taiwan.
+    * But Spanish is, thinks Gemini, pretty similar everywhere, so no need for "_es_mx"
+    * for Mexico for example.
+    * Better think more about this later! When adding multi langs & indexes.
     */
   val IndexName = "posts_es9_v1_en"
 
   // ?? Later, there might be more indexes, e.g. one for deleted posts (which can be
   // good to be able to search, but isn't usually done, no need for high performance). ??
-  // [deleted_posts_ix]
+  // [deleted_posts_ix]  [index_for_invisible]
   // ActivePostsIxName   = "posts_active_es6_v3_english"    // normal
   // HiddenPostsIxName   = "posts_inactive_es6_v3_english"  // e.g. not approved or flagged ??
   // DeletedPostsIxName  = "posts_deleted_es6_v3_english"
+
+  // Later: [fuzzy_user_search]  Is one index for all pats enough? (Per lang maybe)
+  // val PatsIndexNAme = "pats_es9_v1_en"
+
 
   def makeElasticSearchIdFor(siteId: SiteId, post: Post): String =
     makeElasticSearchIdFor(siteId, postId = post.id)
@@ -159,10 +165,10 @@ package object search {
     currentRevisionNr: Int,
     unapprovedSource: Option[String], // not in use? Later, for mods & oneself
     approvedTitleHighligtsHtmlSafe: Opt[immutable.Seq[String]])(
-    private val underlying: es8.core.search.Hit[es8_JsonData]) { // es.search.SearchHit
+    private val underlying: es8.core.search.Hit[es8_JsonData]) {
 
     /** How good this hit is, compared to the other hits. Computed by ElasticSearch. */
-    def score: Float = ??? // underlying.getScore
+    // def score: f32 = ??? // underlying.getScore
   }
 
 
@@ -213,18 +219,27 @@ package object search {
       Fields.PostNr -> post.nr,
       Fields.PostType -> (
           // Let's reuse postType to know what's a title, orig post or comment. [depr_post_type]
+          // We index the title as part of the orig post, not separately.
           if (post.isTitle) die("TyEIX_TitlePostType")
           else if (post.isOrigPost) OrigPostType
           else post.tyype.toInt),
       Fields.PostJoin -> (
-          // We index the title and page together into a Page "join doc", when we encounter
-          // the orig post.  [index_title_and_body_together]
-          if (post.isOrigPost)
+          // We index the title and orig post together into a Page "join doc" [es_page_join_doc],
+          // when we encounter the orig post.  [index_title_and_body_together]
+          // Comments are children of that parent "join doc".
+          if (post.isOrigPost) {
+            warnDevDieIf(anyParentDocId.isDefined, "TyEIX_ORIG_POST_PARENT_DOC",
+                  s"s$siteId: anyParentDocId defined for title + OP, orig post id: ${post.id}")
             Json.obj("name" -> "Page")
-          else if (anyParentDocId.isEmpty)
+          }
+          else if (anyParentDocId.isEmpty) {
+            // Can this happen? I forgot. Maybe for embedded comments discussions?
             JsNull
-          else
-            Json.obj("name" -> "Post", "parent" -> anyParentDocId.get)),
+          }
+          else {
+            // This can be a comment, for example. We'll index it as a child doc.
+            Json.obj("name" -> "Post", "parent" -> anyParentDocId.get)
+          }),
       Fields.ApprovedRevisionNr -> post.approvedRevisionNr,
       Fields.ApprovedPlainText -> JsStringOrNull(approvedPlainText),
       Fields.CurrentRevisionNr -> post.currentRevisionNr,
@@ -232,7 +247,7 @@ package object search {
         if (post.isCurrentVersionApproved) JsNull else JsString(post.currentSource)),
 
       Fields.PageCatId -> JsNumberOrNull(pageMeta.categoryId),
-      // Fields.AncCatIds_unused -> JsArray(ancestorCatIds),
+      // Fields.AncCatIds_unused -> JsArray(ancestorCatIds),   [es_search_sub_cats]
       //          — needs to reindex if moving to other cat, ok? If throttling reindexing,
       //          & maybe doing with a bit lower prio, than indexing new stuff?
 
@@ -253,15 +268,17 @@ package object search {
       // Fields.PageTagValues — "multiplied" by all comments!? Bad idea I suppose?
       )
 
-    val refIds = MutArrBuf[RefId]()
-    post.extImpId.foreach(refIds.append)
+    // ----- External ids
+
+    val extIds = MutArrBuf[RefId]()
+    post.extImpId.foreach(extIds.append)
     if (post.isOrigPost) {
-      pageMeta.extImpId.foreach(refIds.append)
+      pageMeta.extImpId.foreach(extIds.append)
     }
 
     // [index_title_and_body_together]
     title foreach { ttl =>
-      ttl.extImpId.foreach(refIds.append)
+      ttl.extImpId.foreach(extIds.append)
       // The title is plain text, not html, so we use the source fields. [title_plain_txt]
       // (But not post.approvedHtmlSanitized + Jsoup.)
       ttl.approvedSource foreach {
@@ -272,12 +289,15 @@ package object search {
       }
     }
 
-    if (refIds.nonEmpty) {
-      json += Fields.RefIds -> JsArray(refIds.map(JsString))
+    if (extIds.nonEmpty) {
+      json += Fields.ExtIds -> JsArray(extIds.map(JsString))
     }
 
-    // To find *comments* on pages that are open or closed etc, or with ceratin tags,
-    // To find
+    // ----- Page statuses
+
+    // Page type and open/closed were included above already.
+
+    // To find *comments* on pages that are open or closed etc, or with certain tags,
     // Or is  PageSolved: false  totally uninteresting, can use  'is:open'  instead?
     // And add  PageSolved  only if is solved?
     if (pageMeta.pageType.canBeSolved) {
@@ -299,6 +319,8 @@ package object search {
     /*
     if (..) HasAttachment -> JsTrue?  AttachmentSizeBytes -> JsNum...?
     */
+
+    // ----- Post tags
 
     if (tags.exists(_.hasValue)) {
       val tagsWithValue = tags.filter(_.hasValue)
@@ -350,104 +372,64 @@ package object search {
 
     // If you do: `SubmitRequest.Builder().explain(true)`, this'll contain
     // some debugging info explaining why this doc was returned & its score.
-    esHit.explanation()
+    //esHit.explanation()
 
-    // Any matching tags and user badges? See:
-    // https://www.elastic.co/guide/en/elasticsearch/reference/8.17/inner-hits.html
-    esHit.innerHits()
+    // Any matching tags and user badges? [show_hit_tags]
+    // See: https://www.elastic.co/docs/reference/elasticsearch/rest-apis/retrieve-inner-hits
+    // esHit.innerHits()
 
     val Fields = PostDocFields
-    /*
-    val jsonString = hit.getSourceAsString
-    val json = play.api.libs.json.Json.parse(jsonString)
-     */
 
-    def approvedTextNoHighligtsSafe(): St = {
-        // If we searched for tags or categories, but no text, then, there's nothing
-        // to highlight. Then we'll use the plain text of the post whose tags or category
-        // matched.
+    // If we searched for tags or categories, but no text, then, there's nothing
+    // to highlight. Then we'll use the plain text of the post whose tags or category
+    // matched.
+    def approvedTextNoHighligtsSafe(): Opt[St] = Some {
           val textUnsafe: St = json.getString(Fields.ApprovedPlainText, "")
-                //  (json \ Fields.ApprovedPlainText).as[String]
+          if (textUnsafe.isEmpty)
+            return None
+
           // If the text is long, not much point in returning all of it. Then it's better
           // to visit the page, and see the real thing instead of a long long plain text line.
           val excerptUnsafe =
                 if (textUnsafe.length <= ExcerptLength + 10) textUnsafe
                 else textUnsafe.take(ExcerptLength) + "..."
 
-          SECURITY; TESTS_MISSING  // Use Jsoup to sanitize too just in case? [safe_hit_highlights]
+          SECURITY; TESTS_MISSING  // [safe_hit_highlights]
           org.owasp.encoder.Encode.forHtmlContent(excerptUnsafe)
-
-        // But if we searched for "some words", then, they'd be highlighted.
-        // (For example, you search for "cute kittens". Then, highlightFields below
-        // could be: ["a carrot for your <em>kittens</em>", "Everyone must eat
-        // healthy food, <em>cute kittens<em> too"].)
-        /*
-        case highlightFields: ju.List[String] =>  //HighlightField
-          // Html already escaped. [7YK24W]
-          highlightFields.asScala.to(Vec)
-          val fragments = Option(highlightField.getFragments).map(_.toVector) getOrElse Nil
-          fragments.map(_.toString)
-          */
-    }
+        }
 
     val postNr = json.getInt(Fields.PostNr)
 
     def getHighlightedSafe(field: St): Opt[ImmSeq[St]] =
           Option(esHit.highlight().get(field)).map(_.asScala.to(Vec))
 
+    // If we searched for "some words", ElasticSearch highlights any matches.
+    // (For example, you search for "cute kittens". Then, highlightFields below
+    // could be: ["a carrot for your <em>kittens</em>", "Everyone must eat
+    // healthy food, <em>cute kittens<em> too"].)
+    //
+    // ElasticSearch has sanitized these. Maybe sanitize w Jsoup too?
+    SECURITY; TESTS_MISSING // [safe_hit_highlights]
     val approvedTextHighligtsHtmlSafe = getHighlightedSafe(Fields.ApprovedPlainText)
     val approvedTitleHighligtsHtmlSafe = getHighlightedSafe(Fields.ApprTitlePlainText)
 
-    /*
-    val approvedTitleHighligtsHtmlSafe =
-          if (!PageParts.isArticleOrTitlePostNr(postNr)) None
-          else getHighlightedSafe(Fields.ApprTitlePlainText) */
-
     try {
-      val siteId = json.getInt(Fields.SiteId) /* match {
-        case s: jakarta.json.JsonString =>
-          // Isn't this *always* an int, never a string? Yes, now with ES 8.
-          try s.getString().toInt
-          catch {
-            case ex: NumberFormatException =>
-              die("TyESE_SITEIDSTR", s"Bad site id str, can't parse as an int: ``$s''")
-          }
-        case n: jakarta.json.JsonNumber =>
-          try n.intValueExact()
-          catch {
-            case ex: ArithmeticException =>
-              die("TyESE_SITEIDNR", s"Bad site id nr, not an int: ``$n''")
-          }
-        case x: JsString => x.value.toInt  // <— CLEAN_UP remove once I've reindexed edm & edc.
-        case x: JsNumber => x.value.toInt
-        case x => die("TyESESITEID", s"Bad site id: '$x', type: ${classNameOf(x)}")
-      } */
+      val siteId = json.getInt(Fields.SiteId)
       Good(SearchHit(
             siteId = siteId,
-            pageId = json.getString(Fields.PageId), //.as[PageId],
-            postId = json.getInt(Fields.PostId), //.as[PostId],
-            postNr = postNr, //.as[PostNr],
+            pageId = json.getString(Fields.PageId),
+            postId = json.getInt(Fields.PostId),
+            postNr = postNr,
             approvedRevisionNr = json.getInt(Fields.ApprovedRevisionNr),
             approvedTextNoHighligtsSafe =
                   // Only incl if nothing got highlighted.
                   if (approvedTextHighligtsHtmlSafe.isDefined) None
-                  else Some(approvedTextNoHighligtsSafe()),
+                  else approvedTextNoHighligtsSafe(),
             approvedTextHighligtsHtmlSafe = approvedTextHighligtsHtmlSafe,
             currentRevisionNr = json.getInt(Fields.CurrentRevisionNr),
             unapprovedSource = Opt(json.getString(Fields.UnapprovedSource, null)),
             approvedTitleHighligtsHtmlSafe = approvedTitleHighligtsHtmlSafe,
             )(underlying = esHit))
-      /*
-        siteId = siteId,
-        pageId = (json \ Fields.PageId).as[PageId],
-        postId = (json \ Fields.PostId).as[PostId],
-        postNr = (json \ Fields.PostNr).as[PostNr],
-        approvedRevisionNr = (json \ Fields.ApprovedRevisionNr).as[Int],
-        approvedTextWithHighligtsHtml = approvedTextWithHighligtsHtml,
-        currentRevisionNr = (json \ Fields.CurrentRevisionNr).as[Int],
-        unapprovedSource = (json \ Fields.UnapprovedSource).asOpt[String])(
-        underlying = hit))
-        */
     }
     catch {
       case ex: Exception =>
@@ -467,7 +449,7 @@ package object search {
     val PageOpen = "pageOpen"  // true/false  (false if any of:  closed, locked, frozen)
     val PageSolved = "pageSolved"  // true/false, for Questions and Problems
     val PageDoingStatus = "pageDoingStatus" // new -> planned -> started -> done
-    val IsPageEmbedded = "pageEmb"
+    val IsPageEmbedded = "pageEmbd"
 
     // If a comment is a solution to a question/problem.
     // 1 = yes, the accepted solution. 2 = yes, a secondary also good solution (can be many).
@@ -485,17 +467,24 @@ package object search {
     val PostId = "postId"
     val PostNr = "postNr"
     val PostType = "postType" // currently can be stale [ix_post_type]
-    val RefIds = "refIds"
-    val PostJoin = "postJoin"
+    val ExtIds = "extIds"
+    val PostJoin = "postJoin" // [es_page_join_doc]
     /* Wait. [es_dont_ix_now]
     val HasAttachment = "hasAttachment"
     */
+
     // [dupl_es_fields] A bit duplicated fields. Could use two indexes instead: 1) approved
-    // and not-deleted posts, another 2) for not-yet-approved or has-been-deleted posts.
+    // and not-deleted posts [index_for_invisible], another 2) for not-yet-approved or
+    // has-been-deleted posts.
     val ApprTitlePlainText = "approvedTitle"
     val UnapprTitlePlainText = "unapprovedTitle"
-    // For pages: The rev nr of the orig post. (But no the title?)
+
+    // For pages: The rev nr of the orig post, not the title.
+    // (For comments: The rev nr of the comment, they have no titles.)
     val ApprovedRevisionNr = "approvedRevNr"
+
+    // For pages: The text of the orig post — the title is in `this.ApprTitlePlainText`.
+    // (For comments: The text of the comment.)
     val ApprovedPlainText = "approvedText"
     val CurrentRevisionNr = "curRevNr"
     val UnapprovedSource = "unapprovedSrc"
@@ -517,7 +506,7 @@ package object search {
     /** The parent category of the page. */
     val PageCatId = "pageCatId"
 
-    /** The parent category and all ancestor categories.
+    /** The parent category and all ancestor categories. [es_search_sub_cats]
       * Or skip? Is it better to send category ids for the whole sub tree of the
       * category one searches in?  In most cases I'd think so?  Unless *very* many?
       */
@@ -613,6 +602,8 @@ package object search {
     val formatEpochSeconds = """"format": "epoch_second""""
     def analyzerLang = s""""analyzer": "$language""""
 
+    // Makes the unified highlighter faster, see:
+    // https://www.elastic.co/docs/reference/elasticsearch/mapping-reference/index-options
     val ixOffsets = """"index_options": "offsets""""
 
     import PostDocFields._
@@ -651,9 +642,9 @@ package object search {
       * storage space, and gives quick term queries. We typically don't currently do
       * ranqe queries on any enums. [enum_as_kwd]
       *
-      * We use joins: The title and orig post together form the parent ElasticSerach doc,
-      * and all comments are child docs. See:
-      * https://www.elastic.co/guide/en/elasticsearch/reference/8.17/parent-join.html
+      * We use joins: The title and orig post together form the parent ElasticSearch doc,
+      * and all comments are child docs. [es_page_join_doc] See:
+      * https://www.elastic.co/docs/reference/elasticsearch/mapping-reference/parent-join
       */
     private def postMappingJsonStringContent: St = i"""
       |    "$SiteId":                { $typeKeyword, $indexed ${/* [ids_as_kwd] */""}},
@@ -664,8 +655,9 @@ package object search {
       |    "$PageDoingStatus":       { $typeKeyword, $indexed },
       |    "$PostId":                { $typeInteger, $notIndexed ${/* in doc id already */""}},
       |    "$PostNr":                { $typeInteger, $notIndexed }, ${/*
-      |    For the page, this'll be re ids for the title post, orig post and page itself. */""}
-      |    "$RefIds":                { $typeKeyword, $indexed },
+      |    For the page, this'll be ext ids of the title post, orig post and page itself.
+      |    (For a comment, it's any ext ids of the comment, of course.) */""}
+      |    "$ExtIds":                { $typeKeyword, $indexed },
       |    "$PostType":              { $typeKeyword, $indexed },
       |    "$PostJoin": {
       |       $typeJoin,
@@ -679,8 +671,8 @@ package object search {
       |    "$IsPageEmbedded":        { $typeBool,    $indexed }, ${""/*
       |    "$HasAttachment":         { $typeBool,    $indexed }, */}
       |    "$ApprovedRevisionNr":    { $typeInteger, $notIndexed },${""/*
-      |    // index_options: offsets is appropriate here?
-      |    // GitLab writes, https://gitlab.com/gitlab-org/gitlab/-/issues/28085, that:
+      |    // index_options: offsets is appropriate here? So highlighting will be faster.
+      |    // Any drawbacks? GitLab writes, https://gitlab.com/gitlab-org/gitlab/-/issues/28085:
       |    // """Use positions for index_options on fields that require highlighting.
       |    // This saves about ~33% index size.""" While 'docs' option if no
       |    // highlighting & good scoring needed, saves just ~2% index size (in their case).
@@ -691,8 +683,8 @@ package object search {
       |    "$ApprovedPlainText":     { $typeText,    $indexed, $analyzerLang, $ixOffsets },
       |    "$CurrentRevisionNr":     { $typeInteger, $notIndexed },
       |    "$UnapprovedSource":      { $typeText,    $indexed, $analyzerLang, $ixOffsets },${""/*
-      |    // Let's store the page title together with the orig post, nr 1.
-      |    // And *not* have the title as a separate ElasticSearch document?
+      |    // Let's store page title and orig post in same doc. [index_title_and_body_together]
+      |    // Let's *not* have the title as a separate ElasticSearch document.
       |    // Especially now with Page-Post join field, it'd be confusing to
       |    // have both a title doc and an orig post doc — which one would
       |    // be the parent of the comments? (The title or the orig post as parent?)
@@ -787,6 +779,7 @@ package object search {
 
 
     // Later.  [fuzzy_user_search]
+    // When adding more indexes, need to review index creation. [only_1_ix].
 
     def patMappingJsonString: St = i"""{
          |$dynamicFalse,

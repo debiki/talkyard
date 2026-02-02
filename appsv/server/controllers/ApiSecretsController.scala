@@ -87,14 +87,14 @@ val maintenanceApiSecret = context.globals.conf.getOptional[St]("talkyard.mainte
   .getOrThrowForbidden("TyE0MAINTSECRETCONF", i"""
       |No maintenance API secret configured.
       |
-      |Add this to /opt/talkyard/conf/play-framework.conf:
+      |Add this to /opt/talkyard-v1/conf/app/play-framework.conf:
       |
       |    talkyard.maintenanceApiSecret="long_random_maintenance_API_secret"
       |
       |and restart the Talkyard app server:
       |
       |    sudo -i
-      |    cd /opt/talkyard/
+      |    cd /opt/talkyard-v1/
       |    docker compose restart app
       |
       |Then, include in this API request:
