@@ -282,8 +282,8 @@ services:
     ports:
       - '6379:6379'
     networks:
-      be_int_net:
-        ipv4_address: ${BE_INT_NET_CACHE_IP}
+      fe_int_net:
+        ipv4_address: ${FE_INT_NET_CACHE_IP}
     logging: *default_logging
     sysctls:
       net.core.somaxconn: 511
