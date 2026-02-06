@@ -8,15 +8,15 @@
 
 echo "Running /docker-entrypoint-initdb.d/init.sh as user:  $(id)"
 
-# Fallback to env var.
-pg_pwd="$POSTGRES_PASSWORD"
 pg_pwd_file=/tmp/postgres_password   # [same_pg_pw]
 
 if [ -s $pg_pwd_file ]; then
   echo "Picking Postgres password from Docker secrets file: $pg_pwd_file"
   pg_pwd="$(cat $pg_pwd_file)"
 else
-  echo "Postgres password secrets file: $pg_pwd_file missing, trying POSTGRES_PASSWORD env var"
+  echo "ERROR: Postgres password file missing or empty: $secret_file"
+  echo "Check the 'secrets: ...' section in your docker-compose.yml. Aborting. Bye."
+  exit 1
 fi
 
 # So ':pg_pwd' works in psql commands.
@@ -28,10 +28,10 @@ set -e
 # Create a Talkyard user, and a replication user.
 # ------------------------
 
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
-create user repl replication login connection limit 1 encrypted password '$pg_pwd';
+psql -v pg_pwd="$pg_pwd" -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
+create user repl replication login connection limit 1 encrypted password :'pg_pwd';
 
-create user talkyard password '$pg_pwd';
+create user talkyard password :'pg_pwd';
 create database talkyard;
 grant all privileges on database talkyard to talkyard;
 -- Grant 'create' to user 'talkyard' so it can run database migrations. (Otherwise,
