@@ -28,7 +28,7 @@ function log_message {
 }
 
 if [ $# -ne 3 ]; then
-  echo 'Invalid arguments.'
+  echo 'ERROR: Invalid arguments.'
   echo
   echo 'Usage: $0 backupLabel hostname date'
   echo 'where the date should be: `date '+%FT%H%MZ' --utc`.'
@@ -43,21 +43,10 @@ fi
 # docker compose run ...
 #     -e HOST_HOSTNAME="$(hostname)" -e HOST_DATE="$(`date '+%FT%H%MZ' --utc`)"
 
+label="$1"
 # This'll be like:  '2025-03-17T2359Z'
 when="$3"      # "${HOST_DATE:-$(date '+%FT%H%MZ' --utc)}"
 hostname="$2"  # "${HOST_HOSTNAME:-unknownhost}"
-# Use SQL bind var?
-
-#label="$1"  — using "$1" instead, so smaller diff.
-
-# COULD use Bash arrays instead:
-# psql_cmd=(psql -h rdb -d talkyard -U talkyard)
-# "${psql_cmd[@]}" -c ...
-# and SQL variable substitution syntax:
-#   "... values (now_utc(), :PG_HOSTNAME, 'rdb', :PG_BACKUP_FILE, :PG_RAND_VAL);"
-# Currently does not matter.
-#
-psql="psql --host=rdb talkyard talkyard"  # connects to database Ty as user Ty
 
 encrypted=''
 dot_gpg=''
@@ -69,7 +58,7 @@ if [ -s $backup_pwd_file ]; then
   dot_gpg='.gpg'
 fi
 
-log_message "Backing up '$hostname', when: '$when', tag: '$1'$encrypted ..."
+log_message "Backing up '$hostname', when: '$when', tag: '$label'$encrypted ..."
 
 gpg_encrypt="gpg --batch --symmetric --cipher-algo AES256 --passphrase-file $backup_pwd_file"
 
@@ -103,7 +92,7 @@ log_message "Generated random test-that-backups-work value: '$random_value'"
 # backup server, we can check that this value is indeed included in the backups.
 # If it's not, the backups are broken, and we could send an email [BADBKPEML].
 
-rand_val_file="$backup_archives_dir/$hostname-$when-$1-random-value.txt$dot_gpg"
+rand_val_file="$backup_archives_dir/$hostname-$when-$label-random-value.txt$dot_gpg"
 
 if [ -n "$encrypted" ]; then
   echo "$random_value" | $gpg_encrypt --output "$rand_val_file"
@@ -112,10 +101,38 @@ else
 fi
 
 
+# Backups log table
+# -------------------
+
+# We remember backup file names, dates, and the random value, in our Postgres db,
+# so we can check, on an off-site backup server, that the backups look recent and okay.
+#
+# Params:
+#   $1: What are we backing up
+#   $2: Backup file name.
+#
+insert_backup_log_row() {
+  # Connects to database Ty as user Ty, and we can use :'bind_vars' in the SQL commands
+  # (to avoid SQL errors if a password or label includes "'" quotes or spaces).
+  psql -v when="$when" \
+       -v hostname="$hostname" \
+       -v label="$label" \
+       -v random_value="$random_value" \
+       -v what="$1" \
+       -v file_name="$2" \
+       --host=rdb talkyard talkyard \
+       -c \
+    "insert into backup_test_log3 (
+        logged_at, logged_by, backup_of_what, file_name, random_value)
+     values (
+        now_utc(), :'hostname', :'what', :'file_name', :'random_value');"
+}
+
+
 # Backup Postgres
 # -------------------
 
-postgres_backup_file_name="$hostname-$when-$1-postgres.sql.gz$dot_gpg"
+postgres_backup_file_name="$hostname-$when-$label-postgres.sql.gz$dot_gpg"
 postgres_backup_path="$backup_archives_dir/$postgres_backup_file_name"
 
 log_message "Backing up Postgres$encrypted to: $postgres_backup_path ..."
@@ -123,11 +140,7 @@ log_message "Backing up Postgres$encrypted to: $postgres_backup_path ..."
 pgpass_file="/tmp/.pgpass"  # created in ./entrypoint.sh
 export PGPASSFILE="$pgpass_file"  # default would have been ~/.pgpass
 
-# Insert a backup test timestamp, and the random value, so we can check, on an
-# off-site backup server, that the contents of the backup is recent and okay.
-$psql -c \
-    "insert into backup_test_log3 (logged_at, logged_by, backup_of_what, file_name, random_value)
-     values (now_utc(), '$hostname', 'rdb', '$postgres_backup_file_name', '$random_value');"
+insert_backup_log_row 'rdb' "$postgres_backup_file_name"
 
 # ---------------
 # There's `cpu_*` limits in docker-compose.yml, because:
@@ -182,7 +195,7 @@ log_message "Done backing up Postgres."
 # Backup config
 # -------------------
 
-config_backup_file_name="$hostname-$when-$1-config.tar.gz$dot_gpg"
+config_backup_file_name="$hostname-$when-$label-config.tar.gz$dot_gpg"
 config_backup_path="$backup_archives_dir/$config_backup_file_name"
 
 log_message "Backing up config$encrypted to: $config_backup_path ..."
@@ -203,9 +216,7 @@ else
 fi
 
 # Hmm, better backup config first? So this'll be incl in the .sql dump?
-$psql -c \
-    "insert into backup_test_log3 (logged_at, logged_by, backup_of_what, file_name, random_value)
-     values (now_utc(), '$hostname', 'appconf', '$config_backup_file_name', '$random_value');"
+insert_backup_log_row 'appconf' "$config_backup_file_name"
 
 log_message "Done backing up config."
 
@@ -222,7 +233,7 @@ log_message "Done backing up config."
 # This file is owned by user 'redis' id 999. We've added CAP_DAC_READ_SEARCH
 # in docker-compose.yml so that 'root' can access this file.
 redis_dump_file="$ty_data_dir/redis-data/dump.rdb"
-redis_backup_file_name="$hostname-$when-$1-redis.rdb.gz$dot_gpg"
+redis_backup_file_name="$hostname-$when-$label-redis.rdb.gz$dot_gpg"
 
 redis_backup_path="$backup_archives_dir/$redis_backup_file_name"
 
@@ -235,9 +246,7 @@ if [ -f $redis_dump_file ]; then
   else
     gzip --to-stdout $redis_dump_file  >  $redis_backup_path
   fi
-  $psql -c \
-    "insert into backup_test_log3 (logged_at, logged_by, backup_of_what, file_name, random_value)
-     values (now_utc(), '$hostname', 'redis', '$redis_backup_file_name', '$random_value');"
+  insert_backup_log_row 'redis' "$redis_backup_file_name"
   log_message "Done backing up Redis."
 else
   log_message "No Redis dump.rdb to backup."
@@ -391,9 +400,7 @@ touch $backup_archives_dir/$uploads_backup_d
 log_message "Done backing up uploads."
 
 # Keep track of what we've backed up:
-$psql -c \
-    "insert into backup_test_log3 (logged_at, logged_by, backup_of_what, file_name, random_value)
-     values (now_utc(), '$hostname', 'pub-uploads', '$uploads_backup_d', '$random_value');"
+insert_backup_log_row 'pub-uploads' "$uploads_backup_d"
 
 
 
