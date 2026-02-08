@@ -36,6 +36,7 @@ class IndexCreator {
   private val languagesLogged = mutable.HashSet[String]()
   private val logger = TyLogger("IndexCreator");
 
+  // This is just for writing better log messages.
   @volatile
   private var _numConnFails = 0
   private val _NumOkConnFails = 10

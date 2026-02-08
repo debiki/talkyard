@@ -122,8 +122,24 @@ class IndexingActor(
   @volatile var expBackoffCount = 0f
   @volatile var expBackoffStart = expBackoffMinStart
 
+  private def _doExpBackoff() {
+    expBackoffCount = expBackoffStart
+    expBackoffStart = Math.min(expBackoffMaxStart, expBackoffStart * 1.5f)
+  }
+
+  /** Call when ElasticSearch starts working (again). */
+  private def _resetEXpBackoff() {
+    expBackoffStart = expBackoffMinStart
+  }
+
   def tryReceiveUnlessJobsPaused(message: Any): U = message match {
     case IndexStuff =>
+      // Don't fill disk w error log messages, if the search engine isn't working.
+      if (expBackoffCount > 0) {
+        expBackoffCount -= 1
+        return
+      }
+
       // BUG race condition. Could instead: 1) find out in which languages indexes are missing.
       // 2) insert into the index queue entries for stuff in those languages. 3) create indexes.
       // Edit 2023: ?? Why not create indexes first, once, on startup, and thereafter add stuff
@@ -131,17 +147,10 @@ class IndexingActor(
       // (Except for once per startup if already exists.)
       if (!doneCreatingIndexes) {
 
-        // Don't fill disk w error log messages, if the search engine isn't working.
-        if (expBackoffCount > 0) {
-          expBackoffCount -= 1
-          return
-        }
-
         logger.debug(s"Trying to create search engine indices if needed... [TyMSIX_TRYCREA]")
         val newIndexes: Seq[IndexSettingsAndMappings] =
               indexCreator.createIndexesIfNeeded(client) getOrIfBad { err =>
-                expBackoffCount = expBackoffStart
-                expBackoffStart = Math.min(expBackoffMaxStart, expBackoffStart * 1.5f)
+                _doExpBackoff()
                 // (indexCreator has logged an error level message already, if appropriate.)
                 logger.info(s"Can't use the search engine. Will retry after ${
                             expBackoffCount} intervals. [TyMSIX_RETRYCREA]")
@@ -149,7 +158,7 @@ class IndexingActor(
               }
 
         // Reset backoff — the search engine works.
-        expBackoffStart = expBackoffMinStart
+        _resetEXpBackoff()
 
         BUG; COULD // fix in [ty_v2]? [search_hmm] What if, when starting the *very first* time,
         // the server crashes here?  Then, after restart, newIndexes would be empty,
@@ -173,8 +182,19 @@ class IndexingActor(
       }
 
       deleteAlreadyIndexedPostsFromQueue()
+
       _addPendingPostsFromTimeRanges()
-      loadAndIndexPendingPosts()
+      val anyErr = _loadAndIndexPendingPosts()
+
+      if (anyErr.isDefined) {
+        _doExpBackoff()
+        // (_loadAndIndexPendingPosts() has logged an error level message already.)
+        logger.info(s"Can't use the search engine. Will retry after ${
+                expBackoffCount} intervals. [TyMSIX_RETRYIX]")
+        return
+      }
+
+      _resetEXpBackoff()
 
     case ReplyWhenDoneIndexing =>
       ???
@@ -206,7 +226,7 @@ class IndexingActor(
           desiredQueueLen = batchSize * (if (!core.isDevOrTest) 4 else 1))
   }
 
-  private def loadAndIndexPendingPosts(): Unit = {
+  private def _loadAndIndexPendingPosts(): Opt[ErrMsgCode] = {
     WOULD_OPTIMIZE // If there's more than X posts, can set the index
     // refresh_interval to -1, to avoid refreshes when indexing a lot.
     // And set it back to 1s (the default?) or 2s afterwards. See:
@@ -235,37 +255,49 @@ class IndexingActor(
                         !relevantPost.isVisible
         shallUnindex
       })
-      _unindexPosts(siteId, toUnindex)
-      _indexPosts(siteId, toIndex, postsToIndex)
+
+      var anyErr = _unindexPosts(siteId, toUnindex)
+      if (anyErr.isDefined)
+        return anyErr
+
+      anyErr = _indexPosts(siteId, toIndex, postsToIndex)
+      if (anyErr.isDefined)
+        return anyErr
     }
+
+    None
   }
 
 
-  private def _indexPosts(siteId: SiteId, posts: Seq[Post], postsToIndex: PostsToIndex): Unit = {
+  private def _indexPosts(siteId: SiteId, posts: Seq[Post], postsToIndex: PostsToIndex)
+            : Opt[ErrMsgCode] = {
     if (posts.isEmpty)
-      return
+      return None
 
     COULD_OPTIMIZE // Later: Use the bulk index API. [es8_bulk_req]
     posts foreach { post =>
-      _indexPost(post, siteId, postsToIndex)
+      val anyErr = _indexPost(post, siteId, postsToIndex)
+      if (anyErr.isDefined)
+        return anyErr
     }
+    None
   }
 
 
-  private def _indexPost(post: Post, siteId: SiteId, postsToIndex: PostsToIndex): Unit = {
+  private def _indexPost(post: Post, siteId: SiteId, postsToIndex: PostsToIndex): Opt[ErrMsgCode] = {
     if (post.isTitle) {
       // We'll index the title & body into one ElasticSearch doc, when we encounter
       // the body post (they're always loaded together).  [index_title_and_body_together]
       // But skip the title here, so won't index the (tilet + body) twice.
       COULD // debug warn if body not in postsToIndex list.
-      return
+      return None
     }
 
     val pagePostNr = s"page ${post.pageId} nr ${post.nr}"
     val pageMeta = postsToIndex.page(siteId, post.pageId) getOrElse {
       logger.warn(s"Not indexing siteid:postid $siteId:${post.id
             }, $pagePostNr — page gone, deleted?")
-      return
+      return None
     }
     val tags = postsToIndex.tags(siteId, post.id)
     val tags_old = postsToIndex.tags_old(siteId, post.id)
@@ -281,7 +313,7 @@ class IndexingActor(
                     postsToIndex.postsToIndexBySite(siteId).find(_.id == titleId)) getOrElse {
                 logger.warn(s"s$siteId: Not indexing title + body on page ${post.pageId
                       } — title post missing, only body post id ${post.id} found.")
-                return
+                return None
               })
         // This is the parent doc (page title + body).
         val doc = makeElasticSearchJsonDocFor(
@@ -321,14 +353,18 @@ class IndexingActor(
           }
           catch {
             case ex: IOException =>
-              // Just a warning. We'll try again, since the post is still in the index queue.
-              logger.warn("IO error indexing [TyESIX_IXPO1]", ex)
-              return
+              // Just a warning. We'll try again, since the post is still in the index
+              // queue. [es_warn_or_err]
+              val err = ErrMsgCode("IO error indexing", "TyESIX_IXPO1")
+              logger.warn(s"s$siteId: ${err.toMsgCodeStr}", ex)
+              return Some(err)
+
             case ex: es8_ElasticsearchException =>
               val prettyReason = ex.response().error().reason()
-              logger.warn(o"""ElasticsearchException indexing docId: $docId site: $siteId,
-                    error: $prettyReason [TyESIX_IXPO2]""", ex)
-              return
+              val err = ErrMsgCode(o"""ElasticsearchException indexing docId: $docId,
+                    error: $prettyReason""", "[TyESIX_IXPO2]")
+              logger.warn(s"s$siteId: ${err.toMsgCodeStr}", ex)
+              return Some(err)
           }
 
     // Remember to delete the now indexed posts from the index queue, later.
@@ -347,6 +383,7 @@ class IndexingActor(
     // We [index_title_and_body_together] — don't forget to add the title post too here,
     // (if it got indexed) so it'll get removed from the job queue.
     anyTitlePost.foreach(ttl => postsRecentlyIndexed.add(SiteIdAndPost(siteId, ttl)))
+    None
   }
 
 
@@ -378,9 +415,9 @@ class IndexingActor(
   }
 
 
-  private def _unindexPosts(siteId: SiteId, posts: ImmSeq[Post]): U = {
+  private def _unindexPosts(siteId: SiteId, posts: ImmSeq[Post]): Opt[ErrMsgCode] = {
     if (posts.isEmpty)
-      return
+      return None
 
     COULD_OPTIMIZE // Don't unindex once per site. Do all at once instead.
 
@@ -412,18 +449,22 @@ class IndexingActor(
             case ex: IOException =>
               // Warning or error? Since we retry on failure, warning is better? [es_warn_or_err]
               // If *some* docs got deleted, don't need to retry those, oh well.
-              logger.warn(s"s$siteId: IO error unindexing posts [TyESIX_UNIXPO1]", ex)
-              return
+              val err = ErrMsgCode(s"IO error unindexing post: ${ex.getMessage}", "TyESIX_UNIXPO1")
+              logger.warn(s"s$siteId: ${err.toMsgCodeStr}", ex)
+              return Some(err)
+
             case ex: es8_ElasticsearchException =>
               val prettyReason = ex.response().error().reason()
-              logger.warn(o"""s$siteId: ElasticsearchException unindexing ${posts.length} posts:
-                      $prettyReason [TyESIX_UNIXPO2]""", ex)
-              return
+              val err = ErrMsgCode(o"""ElasticsearchException unindexing ${posts.length} posts:
+                      $prettyReason""", "TyESIX_UNIXPO2")
+              logger.warn(s"s$siteId: ${err.toMsgCodeStr}", ex)
+              return Some(err)
           }
 
     logger.debug(s"""s$siteId: Unindexed ${posts.length} posts, deleting from
           job queue ... [TyMSIX_Y5KF0]""")
     systemDao.deleteFromIndexQueue(posts, siteId)
+    None
   }
 
 }
