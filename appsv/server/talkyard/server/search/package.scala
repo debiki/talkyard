@@ -679,7 +679,9 @@ package object search {
       |    // But at GitLab, people fork each others' repositories, resulting in lots of
       |    // text to index many many times? Maybe 'offsets' is a problem for them, but
       |    // not for Ty? And, this is just *one* field out of many! So the overall
-      |    // size increment, should be negligible. */}
+      |    // size increment, should be negligible.
+      |    // Later, could add a 'suggest' subfield for autocomplete search of titles, e.g. typing
+      |    // "kitt cu" would quickly match "cute kittens". See [es_autocomplete_titles] in wip/.
       |    "$ApprovedPlainText":     { $typeText,    $indexed, $analyzerLang, $ixOffsets },
       |    "$CurrentRevisionNr":     { $typeInteger, $notIndexed },
       |    "$UnapprovedSource":      { $typeText,    $indexed, $analyzerLang, $ixOffsets },${""/*

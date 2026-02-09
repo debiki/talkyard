@@ -7,6 +7,25 @@ not-apporved things). And, smaller mappings: Not two fields per text (both
 approved & unapproved). And, simpler? A checkbox  include deleted & unapproved
 [y/n] and if yes, then query both indexes.
 
+COULD [es_autocomplete] [es_autocomplete_titles]: Add an 'suggest' subfield
+to $ApprovedPlainText for autocomplete search of titles, e.g. typing:  "kitt cu"
+would quickly match "cute kittens". Gemini suggests:
+  "$ApprovedPlainText": {
+    ....same-as-now....,
+    fields: { suggest: { type: text, analyzer: autocomplete, search_analyzer: standard }}
+  }
+Supposedly also needs updated settings — the 'autocomplete' analyzer:
+  "analysis": {
+    "filter": { "autocomplete_filter": { "type": "edge_ngram", "min_gram": 2, "max_gram": 20 } },
+    "analyzer": {
+      "autocomplete": { "type": "custom", "tokenizer": "standard",
+                          "filter": [ "lowercase", "autocomplete_filter" ] }
+    }
+  }
+Docs about ngrams e.g. `edge_ngram`:
+https://www.elastic.co/docs/reference/text-analysis/tokenizer-reference#_partial_word_tokenizers
+https://www.elastic.co/docs/reference/text-analysis/analysis-edgengram-tokenizer  (read this!)
+
 
 COULD_OPTIMIZE: Use `"copy_to": "titleAndText"`  [es_use_copy_to]  to search
 title and page body at the same time, using a matchQuery instead of a
