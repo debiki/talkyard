@@ -14,8 +14,12 @@ RUN \
       procps \
   && rm -rf /var/lib/apt/lists/*
 
-COPY ./docker-entrypoint-initdb.d/ /docker-entrypoint-initdb.d/
-COPY ./entrypoint.sh ./chown-postgres_password.sh  /ty/
+COPY docker-entrypoint-initdb.d/  /docker-entrypoint-initdb.d/
+COPY \
+    entrypoint.sh  \
+    chown-postgres_password.sh  \
+    postgresql.conf  \
+    /ty/
 
 HEALTHCHECK \
     --start-period=60s \
@@ -29,7 +33,6 @@ HEALTHCHECK \
 # entrypoint.
 ENTRYPOINT ["/ty/entrypoint.sh"]
 
-# Need to redefine, apparently gets unset if specifying an entrypoint (without,
-# `docker compose up rdb` just exits w status 0).
-CMD ["postgres"]
+# Use our own config file.
+CMD ["postgres", "-c", "config_file=/ty/postgresql.conf"]
 

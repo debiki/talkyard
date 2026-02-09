@@ -367,16 +367,11 @@ services:
     secrets:
       - postgres_password
     volumes:
-      # PostgreSQL 18 creates a sub dir, e.g. /var/lib/postgresql/18/something
+      # PostgreSQL 18 creates a sub dir, e.g. /var/lib/postgresql/18/docker/
       # PostgreSQL 19 creates a .../19/... dir, etc, to allow upgrading between major
       # versions using `--link` when running pg_upgrade and mounting /var/lib/postgresql.
       # See: https://github.com/docker-library/postgres/issues/37#issuecomment-3476426533
       - pg-data:/var/lib/postgresql
-      # Can live reload the config like so:  ([todoc] document this where?)
-      #    # bash-4.4# su - postgres   # as root in the container
-      #    $ pg_ctl reload -D /var/lib/postgresql/18/data/   # ok path?
-      # or: SELECT pg_reload_conf();
-      - ./conf/rdb/:/var/lib/postgresql/conf/
     networks:
       be_int_net:
         ipv4_address: ${BE_INT_NET_RDB_IP}
