@@ -21,7 +21,8 @@ import scala.collection.Seq
 import akka.actor._
 import com.debiki.core
 import com.debiki.core._
-import debiki.dao.SystemDao
+import debiki.EffectiveSettings
+import debiki.dao.{SiteDao, SiteDaoFactory, SystemDao}
 import co.elastic.clients.{elasticsearch => es8}
 import es8._types.{ElasticsearchException => es8_ElasticsearchException}
 import scala.concurrent.duration._
@@ -51,11 +52,12 @@ object SearchEngineIndexer extends TyLogging {
   def startNewActor(indexerBatchSize: Int, initialDelaySecs: i32, intervalSeconds: Int,
         executionContext: ExecutionContext,
         elasticSearchClient: es8.ElasticsearchClient,
-        actorSystem: ActorSystem, systemDao: SystemDao)
+        actorSystem: ActorSystem, systemDao: SystemDao, siteDaoFactory: SiteDaoFactory)
         : ActorRef = {
     implicit val execCtx = executionContext
     val actorRef = actorSystem.actorOf(Props(
-      new IndexingActor(indexerBatchSize, elasticSearchClient, systemDao)), name = s"IndexingActor")
+          new IndexingActor(indexerBatchSize, elasticSearchClient, systemDao, siteDaoFactory)),
+          name = s"IndexingActor")
     actorSystem.scheduler.scheduleWithFixedDelay(
         initialDelay = initialDelaySecs seconds, intervalSeconds seconds, actorRef, IndexStuff)
     actorRef
@@ -105,12 +107,13 @@ case object ReplyWhenDoneIndexing
 class IndexingActor(
   private val batchSize: i32,
   private val client: es8.ElasticsearchClient,
-  private val systemDao: SystemDao) extends BackgroundJobsActor("IndexActor") {
+  private val systemDao: SystemDao,
+  private val siteDaoFactory: SiteDaoFactory) extends BackgroundJobsActor("IndexActor") {
 
   val globals: debiki.Globals = systemDao.globals
 
   val indexCreator = new IndexCreator()
-  val postsRecentlyIndexed = new java.util.concurrent.ConcurrentLinkedQueue[SiteIdAndPost]
+  val postsToRemoveFromQueue = new java.util.concurrent.ConcurrentLinkedQueue[SiteIdAndPost]
 
   @volatile
   var doneCreatingIndexes: Bo = false
@@ -172,7 +175,7 @@ class IndexingActor(
         // (Or, if exporting & importing?)
 
         if (newIndexes.nonEmpty) {
-          enqueueEverythingInLanguages(newIndexes.map(_.language).toSet)
+          _enqueueEverything()
         }
 
         // Too old indexes prevent newer major versions of ElasticSearch from starting.
@@ -208,8 +211,8 @@ class IndexingActor(
 
   /** Adds all posts and pages in the specified languages to the (re)index queue.
     */
-  def enqueueEverythingInLanguages(languages: Set[String]): Unit = {
-    systemDao.addEverythingInLanguagesToIndexQueue(languages)
+  private def _enqueueEverything(): Unit = {
+    systemDao.addEverythingToSearchIndexQueue()
   }
 
 
@@ -237,7 +240,7 @@ class IndexingActor(
     postsToIndex.postsToIndexBySite foreach { case (siteId: SiteId, posts: Seq[Post]) =>
       val (toUnindex, toIndex) = posts.partition(post => {
         // Later: COULD index also deleted and hidden posts, and make available to staff.
-        // Or, better?: Store in two separate indexes [index_for_invisible].
+        // [index_for_invisible].
         //
         // Bit hacky: We [index_title_and_body_together] when we see the body post,
         // but do nothing when we see the title post. Therefore, if `post` is the title,
@@ -248,6 +251,8 @@ class IndexingActor(
                 posts.find(otr => otr.pageId == post.pageId && otr.isOrigPost) getOrElse {
                   // Weird, we load them together. One missing, but why?
                   // logger.warn(... ?)
+                  logger.warn(s"s$siteId: Orig post not loaded for title post ${post.id}, page ${
+                        post.pageId}. [TyEIX_TITLINQ1]")
                   post
                 }
               }
@@ -285,20 +290,41 @@ class IndexingActor(
 
 
   private def _indexPost(post: Post, siteId: SiteId, postsToIndex: PostsToIndex): Opt[ErrMsgCode] = {
-    if (post.isTitle) {
-      // We'll index the title & body into one ElasticSearch doc, when we encounter
-      // the body post (they're always loaded together).  [index_title_and_body_together]
-      // But skip the title here, so won't index the (tilet + body) twice.
-      COULD // debug warn if body not in postsToIndex list.
-      return None
+    def removeFromQueue(): U = {
+      postsToRemoveFromQueue.add(SiteIdAndPost(siteId, post))
     }
 
     val pagePostNr = s"page ${post.pageId} nr ${post.nr}"
-    val pageMeta = postsToIndex.page(siteId, post.pageId) getOrElse {
-      logger.warn(s"Not indexing siteid:postid $siteId:${post.id
-            }, $pagePostNr — page gone, deleted?")
+
+    if (post.isTitle) {
+      // We'll index the title & body into one ElasticSearch doc, when we encounter
+      // the body post (they're always loaded together).  [index_title_and_body_together]
+      // But the title shouldn't have been added to the queue (only the body).
+      // Skip the title, so won't index the (tilet + body) twice.
+      logger.warn(s"s$siteId: Title post ${post.id}, ${pagePostNr
+            }, w/o orig post in ix queue. Removing w/o indexing it. [TyEIX_TITLINQ2]")
+      removeFromQueue()
       return None
     }
+
+    // Currently we don't index unapproved posts. [ix_unappr]
+    if (!post.isSomeVersionApproved) {
+      logger.warn(s"s$siteId: Unapproved post ${post.id}, ${pagePostNr
+            }, in ix queue. Removing from queue w/o indexing it. [TyEIX_UNAPINQ]")
+      removeFromQueue()
+      return None
+    }
+
+    val siteDao = this.siteDaoFactory.newSiteDao(siteId)
+    val settings: EffectiveSettings = siteDao.getWholeSiteSettings()
+
+    val pageMeta = postsToIndex.page(siteId, post.pageId) getOrElse {
+      logger.warn(s"s$siteId: Not indexing post ${post.id
+            }, $pagePostNr — page gone, deleted?")
+      removeFromQueue()
+      return None
+    }
+
     val tags = postsToIndex.tags(siteId, post.id)
     val tags_old = postsToIndex.tags_old(siteId, post.id)
 
@@ -313,19 +339,29 @@ class IndexingActor(
                     postsToIndex.postsToIndexBySite(siteId).find(_.id == titleId)) getOrElse {
                 logger.warn(s"s$siteId: Not indexing title + body on page ${post.pageId
                       } — title post missing, only body post id ${post.id} found.")
+                removeFromQueue()
                 return None
               })
         // This is the parent doc (page title + body).
         val doc = makeElasticSearchJsonDocFor(
-              siteId, pageMeta, post, title = anyTitlePost, anyParentDocId = None, tags)
+              siteId, pageMeta, post, title = anyTitlePost, anyParentDocId = None, tags,
+              languageCode = settings.languageCode)
+        // Later, if indexing & giving different ids to unapproved or deleted posts,
+        // should unapproved comments point to the doc id of the approved page? But what
+        // if the page hasn't been approved yet? [es_page_doc_id] [ix_unappr]
+        // (Mods can reply to not-yet-approved pages, I think.)
         val docId = makeElasticSearchIdFor(siteId, anyTitlePost.get)
         (doc, docId)
       }
       else {
         // This is a child doc (e.g. a comment). [ElasticSearch_join_parent_id]
-        val anyParentDocId: Opt[St] = titlePostId.map(makeElasticSearchIdFor(siteId, _))
+        val anyParentDocId: Opt[St] = titlePostId.map(makeElasticSearchIdFor(siteId, _,
+              // Let's always use the doc id of the approved and not-deleted parent page,
+              // even if the page has been deleted. [es_page_doc_id]
+              unapprovedIsOk = true))
         val doc = makeElasticSearchJsonDocFor(
-              siteId, pageMeta, post, title = None, anyParentDocId = anyParentDocId, tags) // tags_old)
+              siteId, pageMeta, post, title = None, anyParentDocId = anyParentDocId, tags,
+              languageCode = settings.languageCode)
         val docId = makeElasticSearchIdFor(siteId, post)
         (doc, docId)
       }
@@ -378,25 +414,25 @@ class IndexingActor(
     // Instead, remember and delete later:
     // ----------------------------------------------
     //
-    postsRecentlyIndexed.add(SiteIdAndPost(siteId, post))
+    postsToRemoveFromQueue.add(SiteIdAndPost(siteId, post))
 
     // We [index_title_and_body_together] — don't forget to add the title post too here,
     // (if it got indexed) so it'll get removed from the job queue.
-    anyTitlePost.foreach(ttl => postsRecentlyIndexed.add(SiteIdAndPost(siteId, ttl)))
+    anyTitlePost.foreach(ttl => postsToRemoveFromQueue.add(SiteIdAndPost(siteId, ttl)))
     None
   }
 
 
   private def deleteAlreadyIndexedPostsFromQueue(): Unit = {
     var sitePostIds = Vector[SiteIdAndPost]()
-    while (!postsRecentlyIndexed.isEmpty) {
-      sitePostIds +:= postsRecentlyIndexed.remove()
+    while (!postsToRemoveFromQueue.isEmpty) {
+      sitePostIds +:= postsToRemoveFromQueue.remove()
     }
     val postsBySiteId: Map[SiteId, ImmSeq[Post]] = sitePostIds.groupMap(_.siteId)(_.post)
     postsBySiteId foreach { case (siteId: SiteId, posts: ImmSeq[Post]) =>
       try {
-        logger.debug(o"""s$siteId: Deleting ${posts.length} now indexed posts
-              from the job queue... [TyMSIX_DELIXD]""")
+        logger.debug(o"""s$siteId: Deleting ${posts.length} posts
+              from the index queue... [TyMSIX_DELIXD]""")
         systemDao.deleteFromIndexQueue(posts, siteId)
       }
       catch {
@@ -425,7 +461,7 @@ class IndexingActor(
     val bulkOpsList = new java.util.ArrayList[es8.core.bulk.BulkOperation]()
 
     posts foreach { post =>
-      val docId = makeElasticSearchIdFor(siteId, post)
+      val docId = makeElasticSearchIdFor(siteId, post, unapprovedIsOk = true)
       val deleteOp = new es8.core.bulk.DeleteOperation.Builder()
             .index(IndexName)
             .id(docId)

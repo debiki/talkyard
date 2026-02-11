@@ -102,7 +102,7 @@ trait SystemTransaction {  RENAME // to SysTx, started already
   def loadJobQueueLengthsBySiteId(): Map[SiteId, i32]
   def loadPostsToIndex(limit: i32): PostsToIndex
   def deleteFromIndexQueue(posts: ImmSeq[Post], siteId: SiteId): Unit
-  def addEverythingInLanguagesToIndexQueue(
+  def addEverythingToSearchIndexQueue(
         siteIds: Set[SiteId] = Set.empty, allSites: Bo = false): U
 
   // ----- Spam check queue

@@ -697,13 +697,13 @@ class SystemDao(
 
   def reindexSites(siteIds: Set[SiteId]): U = {
     writeTxLockAllSites { tx =>
-      tx.addEverythingInLanguagesToIndexQueue(siteIds)
+      tx.addEverythingToSearchIndexQueue(siteIds)
     }
   }
 
-  def addEverythingInLanguagesToIndexQueue(languages: Set[St]): U = {
+  def addEverythingToSearchIndexQueue(): U = {
     writeTxLockAllSites { tx =>
-      tx.addEverythingInLanguagesToIndexQueue(allSites = true)
+      tx.addEverythingToSearchIndexQueue(allSites = true)
     }
   }
 
@@ -779,7 +779,8 @@ class SystemDao(
         siteTx)
 
       siteTx.updatePost(postAfter)
-      // Currently doesn't make a difference, but better avoid sleeping bugs. [ix_hidden]
+
+      // Remove this maybe-spam post from the search index. [ix_hidden]
       siteTx.indexPostsSoon(postAfter)
 
       // Add a review task, so a human will check this out. When hen has

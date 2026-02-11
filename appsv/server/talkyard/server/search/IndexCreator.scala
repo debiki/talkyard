@@ -33,7 +33,6 @@ import org.scalactic.{Good, Or, Bad}
 
 class IndexCreator {
 
-  private val languagesLogged = mutable.HashSet[String]()
   private val logger = TyLogger("IndexCreator");
 
   // This is just for writing better log messages.
@@ -134,8 +133,6 @@ class IndexCreator {
 
     val ixName = IndexName
 
-    SHOULD // use the same language as the site, when creating the index. [es_wrong_lang]
-
     val mapper: co.elastic.clients.json.JsonpMapper = client._transport().jsonpMapper()
 
     // Deserialize JSON for indexes and mappings:
@@ -191,11 +188,10 @@ class IndexCreator {
     }
     catch {
       case ex: es8_ElasticsearchException =>
+        // This is an error, since ES is running (it replied to the indices.ExistsRequest).
         val prettyReason = ex.response().error().reason()
-        //if (!languagesLogged.contains(indexSettings.language)) {
-          val msg = o"ElasticsearchException creating search index '$ixName': $prettyReason"
-          logger.error(s"$msg [TyESIX_CREA1]", ex)
-        //}
+        val msg = o"ElasticsearchException creating search index '$ixName': $prettyReason"
+        logger.error(s"$msg [TyESIX_CREA1]", ex)
         return Bad(msg)
       case NonFatal(error) =>
         val msg = s"Error creating search index '$ixName'"
@@ -235,7 +231,6 @@ class IndexCreator {
         false
     } */
 
-    languagesLogged.add(indexSettings.language)
     Good(wasCreated)
   }
 

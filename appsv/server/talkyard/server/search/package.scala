@@ -34,8 +34,8 @@ import talkyard.server.JsX._
 
 /** Full text search and faceted search.
   *
-  * 1) There's just one index, for all sites. But each site is routed to just one
-  * single ElasticSearch shard (possibly shared with other sites).
+  * 1) There's just one index, for all sites. Per language text fields. Each site
+  * is routed to the same ElasticSearch shard (possibly shared with other sites).
   * This is the "user data flow" in this video:
   * and called "shared index" in this doc:
   *  https://www.elastic.co/guide/en/elasticsearch/guide/current/user-based.html
@@ -46,9 +46,11 @@ import talkyard.server.JsX._
   *   What we need is a way to share resources across users, to give the impression
   * that each user has his own index without wasting resources on small users
   * """
+  * Update 2026: Now we use just 1 shard. [big_shards]  Turns out one is better,
+  * until there's > 200M documents or it grows above 50 GB, roughly.
   *
-  * 2) There's a queue with stuff to index. And a single actor (across all servers) that
-  * takes stuff from this queue and indexes it, every 10 seconds or so.
+  * 2) There's a queue with stuff to index. And a single actor (across all sites) that
+  * takes stuff from this queue and indexes it, every few seconds.
   *
   * Read this to understand why works in the way it does:
   *   https://www.elastic.co/blog/found-keeping-elasticsearch-in-sync: [30G23]
@@ -89,57 +91,51 @@ package object search {
     */
   val ReindexLimit = 1000
 
-  /** These are the languages ElasticSearch can index. See:
-    *   https://www.elastic.co/guide/en/elasticsearch/reference/master/analysis-lang-analyzer.html
-    *       #_configuring_language_analyzers
-    */
-  val SupportedLanguages: Vec[St] = Vector(
-    "arabic", "armenian", "basque", "brazilian", "bulgarian", "catalan", "cjk", "czech",
-    "danish", "dutch", "english", "finnish", "french", "galician", "german", "greek",
-    "hindi", "hungarian", "indonesian", "irish", "italian", "latvian", "lithuanian",
-    "norwegian", "persian", "portuguese", "romanian", "russian", "sorani", "spanish",
-    "swedish", "turkish", "thai")
-
   /** Include a version number in the index name. See:
     *  https://www.elastic.co/blog/changing-mapping-with-zero-downtime
     *
     * Created using ElasticSearch version 9 or later.
-    * Always English, for now.  [es_wrong_lang]
     *
-    * Format: "posts_" + "es9" (ES version 9) + "_v1_" (the Talkyard epoch )
-    *          + language code  + maybe [per_country_code_index]
-    *
-    * Include language, because: """A single predominant language per document requires
-    * a relatively simple setup. Documents from different languages can be stored
-    * in separate indices"""
-    * See: https://www.elastic.co/guide/en/elasticsearch/guide/current/one-lang-docs.html
-    * More: https://www.elastic.co/guide/en/elasticsearch/guide/current/language-intro.html
-    *
-    * Re country code: Gemini thinks a country code makes sense for Portuguese and Chinese:
-    * ..._pt_br  and  ..._pt_pt  for Brazil and Portugal.
-    * ..._zh_cn  and  ..._zh_tw  for China and Taiwan.
-    * But Spanish is, thinks Gemini, pretty similar everywhere, so no need for "_es_mx"
-    * for Mexico for example.
-    * Better think more about this later! When adding multi langs & indexes.
+    * Format: "posts_" + "es9" (ES version 9) + "_v1_" (the Talkyard epoch).
     */
-  val IndexName = "posts_es9_v1_en"
+  val IndexName = "posts_es9_v1"
 
   // ?? Later, there might be more indexes, e.g. one for deleted posts (which can be
   // good to be able to search, but isn't usually done, no need for high performance). ??
+  // Update 2026: Seems it's better with a single index and filtering on bools.
   // [deleted_posts_ix]  [index_for_invisible]
   // ActivePostsIxName   = "posts_active_es6_v3_english"    // normal
   // HiddenPostsIxName   = "posts_inactive_es6_v3_english"  // e.g. not approved or flagged ??
   // DeletedPostsIxName  = "posts_deleted_es6_v3_english"
 
   // Later: [fuzzy_user_search]  Is one index for all pats enough? (Per lang maybe)
-  // val PatsIndexNAme = "pats_es9_v1_en"
+  // val PatsIndexNAme = "pats_es9_v1"
 
 
-  def makeElasticSearchIdFor(siteId: SiteId, post: Post): String =
-    makeElasticSearchIdFor(siteId, postId = post.id)
+  def makeElasticSearchIdFor(siteId: SiteId, post: Post, unapprovedIsOk: Bo = false): St = {
+    // If not approved, need to construct a different doc id, otherwise we'd overwrite
+    // the ElasticSearch doc for the *approved* version of the post. [ix_unappr]
+    warnDevDieIf(!post.isSomeVersionApproved && !unapprovedIsOk, "TyEESID4UNAPR1")
+    makeElasticSearchIdFor(siteId, postId = post.id,
+          // The warning above is enough.
+          unapprovedIsOk = true)
+  }
 
-  def makeElasticSearchIdFor(siteId: SiteId, postId: PostId): String =
+  /** Later: Add something, e.g. author id, or "-d", to unapproved or deleted posts.
+    * Maybe:  siteId + postId + "-u-[author-id]" + "-d"
+    * would mean [an unapproved post by that user] that's been deleted.
+    * Why incl author id? Because if 2 ppl edit & suggest new revisions at the same time,
+    * (say, the post author hanself and a Core Member) maybe there could be 2 unapproved posts
+    * simultaneously, hmm.
+    * But currently we don't index unapproved and deleted posts at all.
+    * [deleted_posts_ix][index_for_invisible]
+    */
+  def makeElasticSearchIdFor(siteId: SiteId, postId: PostId, unapprovedIsOk: Bo): St = {
+    // Here we don't verify that postId has been approved, so, require that constructing
+    // ids for *unapproved* posts is fine.
+    require(unapprovedIsOk, "TyEESID4UNAPR2")
     s"$siteId:$postId"
+  }
 
 
   /** The search hits can be a bit out-of-date, and up-to-date stuff should be
@@ -160,10 +156,13 @@ package object search {
     postId: PostId,
     postNr: PostNr,
     approvedRevisionNr: Int,
+    // RENAME to just textNoHighligtsSafe (remove "approved")
     approvedTextNoHighligtsSafe: Opt[St],
+    // RENAME to textHighligtsHtmlSafe
     approvedTextHighligtsHtmlSafe: Opt[ImmSeq[St]],
     currentRevisionNr: Int,
-    unapprovedSource: Option[String], // not in use? Later, for mods & oneself
+    unapprovedSource: Option[String], // not in use? Later, for mods & oneself  REMOVE
+    // RENAME to titleHighligtsHtmlSafe
     approvedTitleHighligtsHtmlSafe: Opt[immutable.Seq[String]])(
     private val underlying: es8.core.search.Hit[es8_JsonData]) {
 
@@ -203,12 +202,21 @@ package object search {
 
 
   def makeElasticSearchJsonDocFor(siteId: SiteId, pageMeta: PageMeta,
-          post: Post, title: Opt[Post], anyParentDocId: Opt[St], tags: imm.Seq[Tag]) // tags_old: Set[TagLabel])
+          post: Post, title: Opt[Post], anyParentDocId: Opt[St], tags: imm.Seq[Tag],
+          languageCode: St) // tags_old: Set[TagLabel])
           : JsObject = {
+
     // Sync with needs-reindex-or-not [ix_fields].
     val Fields = PostDocFields
-    // Might be absent — unapproved posts are indexed too, for mods.  [ix_unappr]
+
+    val langField = Fields.langFieldForLangCode(languageCode)
+
+    // Currently we index only approved posts, so, shouldn't be missing. [ix_unappr]
     val approvedPlainText = post.approvedHtmlSanitized.map(org.jsoup.Jsoup.parse(_).text())
+    assert(approvedPlainText.isDefined, "approvedPlainText empty [TyE4G07NSG4]")
+    assert(post.approvedRevisionNr.exists(_ >= 1), "Indexing unapproved posts [TyEIX_UNAPPR]")
+    assert(!post.isDeleted, "Indexing deleted posts [TyEIX_DELD]")
+
     var json = Json.obj(
       Fields.SiteId -> siteId,
       Fields.PageId -> post.pageId,
@@ -241,10 +249,25 @@ package object search {
             Json.obj("name" -> "Post", "parent" -> anyParentDocId.get)
           }),
       Fields.ApprovedRevisionNr -> post.approvedRevisionNr,
-      Fields.ApprovedPlainText -> JsStringOrNull(approvedPlainText),
+      // We currently index only approved posts. [ix_unappr]
+      // Unapproved posts are going to have different doc ids, since there might be both an
+      // approved version, and an unapproved draft with edits, for the same post id. Maybe
+      // [index_for_invisible]
+      Fields.IsApproved -> post.approvedRevisionNr.isDefined,
+      Fields.IsDeleted -> post.isDeleted,
+
+      Fields.BodyText -> Json.obj(
+            // Will need to change this, if indexing not-yet-approved posts, later. [ix_unappr]
+            // (Then, there won't be any `approvedPlainText` to index.)
+            langField -> JsString(approvedPlainText getOrElse ""),
+            Fields.UniversalLang -> JsString(approvedPlainText getOrElse "")),
+
+      // Remember which per-language field we indexed the text into.
+      Fields.OrigLang -> JsString(langField),
+      //Fields.ManTranslLangs -> JsString(...),   // later
+      //Fields.AutoTranslLangs -> JsString(...),  // later
+
       Fields.CurrentRevisionNr -> post.currentRevisionNr,
-      Fields.UnapprovedSource -> (  // [ix_unappr]
-        if (post.isCurrentVersionApproved) JsNull else JsString(post.currentSource)),
 
       Fields.PageCatId -> JsNumberOrNull(pageMeta.categoryId),
       // Fields.AncCatIds_unused -> JsArray(ancestorCatIds),   [es_search_sub_cats]
@@ -268,7 +291,7 @@ package object search {
       // Fields.PageTagValues — "multiplied" by all comments!? Bad idea I suppose?
       )
 
-    // ----- External ids
+    // ----- Title & External ids
 
     val extIds = MutArrBuf[RefId]()
     post.extImpId.foreach(extIds.append)
@@ -281,11 +304,11 @@ package object search {
       ttl.extImpId.foreach(extIds.append)
       // The title is plain text, not html, so we use the source fields. [title_plain_txt]
       // (But not post.approvedHtmlSanitized + Jsoup.)
-      ttl.approvedSource foreach {
-        json += Fields.ApprTitlePlainText -> JsString(_)
-      }
-      ttl.unapprovedSource foreach {
-        json += Fields.UnapprTitlePlainText -> JsString(_)
+      // Later, if indexing unpproved posts, use: `ttl.unapprovedSource` instead. [ix_unappr]
+      ttl.approvedSource foreach { tilteText =>
+        json += Fields.TitleText -> Json.obj(
+                    langField -> JsString(tilteText),
+                    Fields.UniversalLang -> JsString(tilteText))
       }
     }
 
@@ -358,8 +381,10 @@ package object search {
   }
 
 
-  def parseElasticSearchJsonDoc(esHit: es8.core.search.Hit[es8_JsonData])
+  def parseElasticSearchJsonDoc(esHit: es8.core.search.Hit[es8_JsonData], dotLangField: St)
           : SearchHit Or ErrorMessage = {
+    assert(dotLangField(0) == '.', "dotLangField [TyENODOT074]")
+
     val esJsonData: es8_JsonData = esHit.source()
     val jsonAny: jakarta.json.JsonValue = esJsonData.toJson()
     val json: jakarta.json.JsonObject =
@@ -384,7 +409,7 @@ package object search {
     // to highlight. Then we'll use the plain text of the post whose tags or category
     // matched.
     def approvedTextNoHighligtsSafe(): Opt[St] = Some {
-          val textUnsafe: St = json.getString(Fields.ApprovedPlainText, "")
+          val textUnsafe: St = json.getString(Fields.BodyText, "")
           if (textUnsafe.isEmpty)
             return None
 
@@ -408,11 +433,18 @@ package object search {
     // could be: ["a carrot for your <em>kittens</em>", "Everyone must eat
     // healthy food, <em>cute kittens<em> too"].)
     //
-    // ElasticSearch has sanitized these. Maybe sanitize w Jsoup too?
+    // ElasticSearch has sanitized these. Maybe sanitize w Jsoup too? (keep <mark> html tags)
     SECURITY; TESTS_MISSING // [safe_hit_highlights]
-    val approvedTextHighligtsHtmlSafe = getHighlightedSafe(Fields.ApprovedPlainText)
-    val approvedTitleHighligtsHtmlSafe = getHighlightedSafe(Fields.ApprTitlePlainText)
-
+    // (If the title is from the dotLangField, and body from dotUniversalLang, or vice versa
+    // — that should be fine, doesn't matter.)
+    val bodyHighligtsHtmlSafe =
+            // Prioritize same language match: dotLangField before dotUniversalLang.
+            // Also done during the search. [boost_lang_fields].
+            getHighlightedSafe(Fields.BodyText + dotLangField).orElse(
+            getHighlightedSafe(Fields.BodyText + PostDocFields.dotUniversalLang))
+    val titleHighligtsHtmlSafe =
+            getHighlightedSafe(Fields.TitleText + dotLangField).orElse(
+            getHighlightedSafe(Fields.TitleText + PostDocFields.dotUniversalLang))
     try {
       val siteId = json.getInt(Fields.SiteId)
       Good(SearchHit(
@@ -423,12 +455,12 @@ package object search {
             approvedRevisionNr = json.getInt(Fields.ApprovedRevisionNr),
             approvedTextNoHighligtsSafe =
                   // Only incl if nothing got highlighted.
-                  if (approvedTextHighligtsHtmlSafe.isDefined) None
+                  if (bodyHighligtsHtmlSafe.isDefined) None
                   else approvedTextNoHighligtsSafe(),
-            approvedTextHighligtsHtmlSafe = approvedTextHighligtsHtmlSafe,
+            approvedTextHighligtsHtmlSafe = bodyHighligtsHtmlSafe,
             currentRevisionNr = json.getInt(Fields.CurrentRevisionNr),
-            unapprovedSource = Opt(json.getString(Fields.UnapprovedSource, null)),
-            approvedTitleHighligtsHtmlSafe = approvedTitleHighligtsHtmlSafe,
+            unapprovedSource = None,
+            approvedTitleHighligtsHtmlSafe = titleHighligtsHtmlSafe,
             )(underlying = esHit))
     }
     catch {
@@ -473,23 +505,55 @@ package object search {
     val HasAttachment = "hasAttachment"
     */
 
-    // [dupl_es_fields] A bit duplicated fields. Could use two indexes instead: 1) approved
-    // and not-deleted posts [index_for_invisible], another 2) for not-yet-approved or
-    // has-been-deleted posts.
-    val ApprTitlePlainText = "approvedTitle"
-    val UnapprTitlePlainText = "unapprovedTitle"
+    val UniversalLang = "univ_icu"
+    val dotUniversalLang = "." + UniversalLang
+
+    val TitleText = "titleText"
+    val TitleText_Universal = s"$TitleText.$UniversalLang"
+
+   /** The per-language field is just the same as the language code, or sometimes
+     * language code + country code.
+     * Analyzers are defined in: IndexSettingsAndMappings.multilingObj, with these
+     * field names. [es_lang_field_names]
+     */
+    def langFieldForLangCode(langCode: St): St = {
+      langCode match {
+        case "pt_BR" | "pt_PT" | "zh_CN" | "zh_TW" =>
+          // Brazilian Portuguese is a bit different from Portuguese Portuguese, so
+          // ElasticSearch has different analyzears.
+          // Traditional and Simplified Chinese are also a bit different.
+          langCode
+        case _ =>
+          // Drop the country code, e.g. "en_US" —> "en", "sv_SE" —> "sv".
+          langCode.takeWhile(_ != '_')
+      }
+    }
 
     // For pages: The rev nr of the orig post, not the title.
     // (For comments: The rev nr of the comment, they have no titles.)
     val ApprovedRevisionNr = "approvedRevNr"
 
-    // For pages: The text of the orig post — the title is in `this.ApprTitlePlainText`.
-    // (For comments: The text of the comment.)
-    val ApprovedPlainText = "approvedText"
+    // For pages: The text of the orig post — the title is in `this.TitleText`.
+    // For comments: The text of the comment.
+    // With html tags removed, e.g. "cat" instead of "<bold>cat</bold>".
+    val BodyText = "bodyText"
+    val BodyText_Universal = s"$BodyText.$UniversalLang"
+
+    // Maybe later, if want to make CommonMark source & symbols & tags searchable.
+    val BodySource_unused = "bodySrc"
+
+    // Which per-language field we've stored the texts in. (I.e. post body and any title.)
+    val OrigLang = "origLang"
+    // Manually translated to these languages? (Probably won't ever be supported.)
+    val ManTranslLangs = "manTransLangs"
+    // Automatically translated to these languages.
+    val AutoTranslLangs = "autoTransLangs"
+
     val CurrentRevisionNr = "curRevNr"
-    val UnapprovedSource = "unapprovedSrc"
+
     val CreatedAt = "createdAt"  // stored as type: date, so no Ms or Sec suffix needed.
-    val IsDeleted_unused = "isDeleted"  // true/false
+    val IsDeleted = "isDeleted"    // true/false
+    val IsApproved = "isApproved"  // true/false
 
     val OwnerIds_later = "ownerIds"
     val AuthorIds = "authorIds"
@@ -521,6 +585,10 @@ package object search {
     val RankTweak_unused = "rankTweak"
   }
 
+  object AsFields {
+    val AsWildcard = "asWildcrd"
+    val AsNgram = "asNgram"
+  }
 
   object ValFields {
     // One tag type field:
@@ -541,7 +609,7 @@ package object search {
     val ValInt64 = "valInt64" // let's call it Int64 although js has only 53 "int bits"
     val ValFlt64 = "valFlt64"
     val ValKwd = "valKwd"
-    val ValTxt = "valTxt"
+    //val ValTxt = "valTxt"  // or skip forever — too messy w different languages
     val ValVersion = "valVers"
     val ValDate = "valDate"
     val ValDateRange = "valDateRange"
@@ -558,23 +626,33 @@ package object search {
   }
 
 
-  case class IndexSettingsAndMappings(language: String, shards: Int) {
-    require(SupportedLanguages.contains(language), s"Unsupported language: $language [EsE5Y2K7]")
+  case class IndexSettingsAndMappings(numShards: i32) {
+    require(numShards == 1, s"Only 1 shard per index supported. [TyEES_NSHARDS]")
 
-    // Later, for English & the most frequent languages: Change to 50 shards? because each site
-    // is placed one shard only, so more shards –> smaller shards –> faster searches?
-    // How make this work well both for 1) installations for single forum, single server, only
-    // and for 2) many servers serving many 9999 forums? I guess config values will be needed.
-    //
     // Let's sort by time — can be nice to be able to more quickly search & find
-    // current discussions. Or in a data range.
+    // current discussions. Or in a date range.
     //
     def indexSettingsJsonString: St = /* [es_ix_settings] */ i"""{
-      |"number_of_shards": 5,
+      |"number_of_shards": $numShards,
       |"number_of_replicas": 0,
       |"sort.field": "${PostDocFields.CreatedAt}",
-      |"sort.order": "desc"
-      |}"""
+      |"sort.order": "desc",
+      |"analysis": {
+      |  "analyzer": {
+      |    "ngram_3_4_lowercase_analyzer": {
+      |      "tokenizer": "ngram_3_4_tokenizer",
+      |      "filter": ["lowercase"]
+      |    }
+      |  },
+      |  "tokenizer": {
+      |    "ngram_3_4_tokenizer": {
+      |      "type": "ngram",
+      |      "min_gram": 3,
+      |      "max_gram": 4,
+      |      "token_chars": ["letter", "digit"]
+      |    }
+      |  }
+      |}} """
 
     // See: https://www.elastic.co/guide/en/elasticsearch/reference/8.9/number.html
     val typeText = """"type": "text""""
@@ -585,7 +663,9 @@ package object search {
     val typeLong = """"type": "long""""
     val typeFloat = """"type": "float""""
     val typeDouble = """"type": "double""""
+    //  A `type: keyword` field doesn't have any 'analyzer' property (instead, exact matches only).
     val typeKeyword = """"type": "keyword""""
+    val typeWildcard = """"type": "wildcard""""
     // See: https://www.elastic.co/guide/en/elasticsearch/reference/8.17/version.html
     val typeVersion = """"type": "version""""
     val typeDate = """"type": "date""""
@@ -596,23 +676,137 @@ package object search {
     val typeIpAdr = """"type": "ip""""
     val typeNested = """"type": "nested""""
     val typeJoin = """"type": "join""""
-    val indexed = """"index": true"""
+    val indexed = """"index": true"""  // the default
     val notIndexed = """"index": false"""
-    val dynamicFalse = """"dynamic": false"""
+    val dynamicFalse = """"dynamic": "strict""""  // was: false. RENAME to dynamicStrict
     val formatEpochSeconds = """"format": "epoch_second""""
-    def analyzerLang = s""""analyzer": "$language""""
 
     // Makes the unified highlighter faster, see:
     // https://www.elastic.co/docs/reference/elasticsearch/mapping-reference/index-options
+    // Uses a bit more disk, maybe 20%–50% more.
+    //
+    // GitLab writes, https://gitlab.com/gitlab-org/gitlab/-/issues/28085:
+    // """Use positions [instead of 'offsets'] for index_options on fields that require highlighting.
+    // This saves about ~33% index size.""" While 'docs' option if no
+    // highlighting & good scoring needed, saves just ~2% index size (in their case).
     val ixOffsets = """"index_options": "offsets""""
+
+
+    // For the actual forum content: Page and comment texts.
+    // One field per language. [multilingual_mapping]
+    //
+    // We index the text into the relevant per-language field,  [es_lang_field_names]
+    // e.g. the field 'en' for English, 'ja' for Japanese, 'pt_BR' for Brazilian Portuguese,
+    // 'pt_PT' for European Portuguese.
+    //
+    // We also index into the 'univ_icu' field as some kind of fallback, if, for example:
+    // 1) A text includes a quote of what sbd said but in a different language. Say,
+    // the main language is French but someone pastes a quote in Korean. The 'univ_icu'
+    // would handle Korean better than the Latin focused French analyzer.
+    // 2) If the text is in language XX but someone searches in language YY — then,
+    // if looking in field 'yy' we'd find nothing, because the text was indexed into 'xx'.
+    // But since we index into both 'xx' and 'univ_icu', and also search both, we can find
+    // something in 'univ_icu', in spite of the language mismatch (between the indexed document
+    // and the search query).
+    // (Some day, which language to look in, and index into, will be based on the actual language
+    // in the search query or post text, instead of a site setting. [es_right_lang_field]
+    //
+    // Note: Even though we already index everything into the 'univ_icu' field, using
+    // the icu_analyzer, we also index [languages without their own dedicated analyzer]
+    // into language specific fields also using the icu_analyzer (the same analyzer!).
+    // This is to avoid incorrect inverse document frequencies, that is, to avoid that common
+    // words in one language skew the relevance scoring for documents in another language.
+    // See:
+    //    https://www.elastic.co/guide/en/elasticsearch/guide/current/language-pitfalls.html
+    //                                                #_incorrect_inverse_document_frequencies.
+    // All built-in language analyzers:
+    //   https://www.elastic.co/docs/reference/text-analysis/analysis-lang-analyzer
+    // We've added more analyzers from plugins: (in images/search/Dockerfile)
+    //   https://www.elastic.co/docs/reference/elasticsearch/plugins/analysis-plugins
+    //
+    // Some day, could use two external plugins: 'stconvert' to convert Traditional Chinese
+    // (Taiwan, Hong Kong, Macao) to Simplified Chinese (China Mainland), then analyze
+    // using 'ik_max_words', and store in a single 'zh' field. Then, you could search in
+    // any of Trad and Simp and it'd work. [zh_universal]
+    // However, we'd need to build those plugins ourselves and do a security code review
+    // for each minor ElasticSearch version upgrade — that's a big task.
+    // (These plugins are not official ElasticSearch plugins.)
+    //
+    // $ixOffsets for faster highlighting.
+    // Later, could add a 'suggest' subfield for autocomplete search of titles, e.g. typing
+    // "kitt cu" would quickly match "cute kittens". See [es_autocomplete_titles] in wip/.
+    //
+    // 2 letters language codes: https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes
+    // 3 letter codes: https://en.wikipedia.org/wiki/List_of_ISO_639-3_codes
+    //
+    val multilingObj = i"""{
+          "properties": {${/*
+            Don't think so, but maybe one day there'll also be a 'univ_std' analyzer that
+            uses the 'standard' analyzer. So, let's name this one 'univ_icu' instead of
+            just 'univ' or 'universal'. */""}
+            "univ_icu": { $typeText, "analyzer": "icu_analyzer", $ixOffsets },
+            "ar":    { $typeText,  "analyzer": "arabic",       $ixOffsets },
+            "bg":    { $typeText,  "analyzer": "bulgarian",    $ixOffsets },${/*
+            Bangladesh and West Bengal (north-eastern India). */""}
+            "bn":    { $typeText,  "analyzer": "bengali",      $ixOffsets },${/*
+            This is a Kurdish dialect, written in Arabic letters, so ElasticSearch has
+            an analyzear. In addition to Sorani, there's Kurmanji (ku), but that Kurdish
+            dialect is written in Latin letters, so the 'standard' analyzer works ok,
+            so no one has written a custom analyzer. [says_Gemini]
+            It's short for: "Central Kurdish Behdini" (ckb) or "... Based".  */""}
+            "ckb":   { $typeText,  "analyzer": "sorani",       $ixOffsets },
+            "cs":    { $typeText,  "analyzer": "czech",        $ixOffsets },
+            "da":    { $typeText,  "analyzer": "danish",       $ixOffsets },
+            "de":    { $typeText,  "analyzer": "german",       $ixOffsets },
+            "el":    { $typeText,  "analyzer": "greek",        $ixOffsets },
+            "en":    { $typeText,  "analyzer": "english",      $ixOffsets },
+            "es":    { $typeText,  "analyzer": "spanish",      $ixOffsets },
+            "et":    { $typeText,  "analyzer": "estonian",     $ixOffsets },
+            "fa":    { $typeText,  "analyzer": "persian",      $ixOffsets },
+            "fi":    { $typeText,  "analyzer": "finnish",      $ixOffsets },
+            "fr":    { $typeText,  "analyzer": "french",       $ixOffsets },
+            "ga":    { $typeText,  "analyzer": "irish",        $ixOffsets },${/*
+            Hebrew */""}
+            "he":    { $typeText,  "analyzer": "icu_analyzer", $ixOffsets },
+            "hi":    { $typeText,  "analyzer": "hindi",        $ixOffsets },
+            "hu":    { $typeText,  "analyzer": "hungarian",    $ixOffsets },
+            "hy":    { $typeText,  "analyzer": "armenian",     $ixOffsets },
+            "id":    { $typeText,  "analyzer": "indonesian",   $ixOffsets },${/*
+            Icelandic. There's no Icelandic analyzer. */""}
+            "is":    { $typeText,  "analyzer": "icu_analyzer", $ixOffsets },
+            "it":    { $typeText,  "analyzer": "italian",      $ixOffsets },${/*
+            Japanese */""}
+            "ja":    { $typeText,  "analyzer": "kuromoji",     $ixOffsets },${/*
+            Korean */""}
+            "ko":    { $typeText,  "analyzer": "nori",         $ixOffsets },${/*
+            Kurdish dialect, written in latin letters. */""}
+            "ku":    { $typeText,  "analyzer": "standard",     $ixOffsets },
+            "lt":    { $typeText,  "analyzer": "lithuanian",   $ixOffsets },
+            "lv":    { $typeText,  "analyzer": "latvian",      $ixOffsets },
+            "nl":    { $typeText,  "analyzer": "dutch",        $ixOffsets },
+            "no":    { $typeText,  "analyzer": "norwegian",    $ixOffsets },
+            "pl":    { $typeText,  "analyzer": "polish" ,      $ixOffsets },
+            "pt_PT": { $typeText,  "analyzer": "portuguese",   $ixOffsets },
+            "pt_BR": { $typeText,  "analyzer": "brazilian",    $ixOffsets },
+            "ro":    { $typeText,  "analyzer": "romanian",     $ixOffsets },
+            "ru":    { $typeText,  "analyzer": "russian",      $ixOffsets },
+            "sr":    { $typeText,  "analyzer": "serbian",      $ixOffsets },
+            "sv":    { $typeText,  "analyzer": "swedish",      $ixOffsets },
+            "th":    { $typeText,  "analyzer": "thai",         $ixOffsets },
+            "tr":    { $typeText,  "analyzer": "turkish",      $ixOffsets },
+            "uk":    { $typeText,  "analyzer": "ukrainian",    $ixOffsets },${/*
+            Some day, maybe store both Simplified and Traditional Chinese in the same field,
+            by first converting Trad to Simp. See: [zh_universal]. But for now:
+            Simplified: */""}
+            "zh_CN": { $typeText,  "analyzer": "smartcn",      $ixOffsets },${/*
+            Traditional: */""}
+            "zh_TW": { $typeText,  "analyzer": "icu_analyzer", $ixOffsets }
+          }
+        }"""
 
     import PostDocFields._
 
-    // - Don't analyze anything with the standard analyzer. It is good for most European
-    //   language documents.
-    // - A `type: keyword` field doesn't have any 'analyzer' property (instead,
-    //   exact matches only).
-    //
+    // Update 2026: Now using `dynamic: strict` instead, to catch bugs.
     // `dynamic: false`, because ElasticSearch otherwise usually guesses the *wrong*
     // mapping type, e.g. 'long' instead of 'keyword', which is annoying since the mapping
     // type cannot be changed later. (This setting is inherited to inner objects, so
@@ -652,17 +846,18 @@ package object search {
       |    "$PageType":              { $typeKeyword, $indexed ${/* [enum_as_kwd] */""}},
       |    "$PageOpen":              { $typeBool,    $indexed },
       |    "$PageSolved":            { $typeBool,    $indexed },
-      |    "$PageDoingStatus":       { $typeKeyword, $indexed },
-      |    "$PostId":                { $typeInteger, $notIndexed ${/* in doc id already */""}},
-      |    "$PostNr":                { $typeInteger, $notIndexed }, ${/*
+      |    "$PageDoingStatus":       { $typeKeyword, $indexed },${/*
+      |    Index the post id, so we can look up unapproved revisions of the same post. */""}
+      |    "$PostId":                { $typeKeyword, $indexed },${/*
+      |    Integer, so can do range queries, e.g. range search messages in a chat. */""}
+      |    "$PostNr":                { $typeInteger, $indexed }, ${/*
       |    For the page, this'll be ext ids of the title post, orig post and page itself.
       |    (For a comment, it's any ext ids of the comment, of course.) */""}
       |    "$ExtIds":                { $typeKeyword, $indexed },
       |    "$PostType":              { $typeKeyword, $indexed },
       |    "$PostJoin": {
       |       $typeJoin,
-      |       "relations": { "Page": ["Post"] },
-      |       $indexed
+      |       "relations": { "Page": ["Post"] }
       |    }, ${""/*
       |    // Let's wait with this. Maybe better to index the embedded url as type keyword,
       |    // and can then prefix-search for embedding pages, e.g. type:
@@ -670,30 +865,21 @@ package object search {
       |    // website uses that format).  [es_dont_ix_now]  */}
       |    "$IsPageEmbedded":        { $typeBool,    $indexed }, ${""/*
       |    "$HasAttachment":         { $typeBool,    $indexed }, */}
-      |    "$ApprovedRevisionNr":    { $typeInteger, $notIndexed },${""/*
-      |    // index_options: offsets is appropriate here? So highlighting will be faster.
-      |    // Any drawbacks? GitLab writes, https://gitlab.com/gitlab-org/gitlab/-/issues/28085:
-      |    // """Use positions for index_options on fields that require highlighting.
-      |    // This saves about ~33% index size.""" While 'docs' option if no
-      |    // highlighting & good scoring needed, saves just ~2% index size (in their case).
-      |    // But at GitLab, people fork each others' repositories, resulting in lots of
-      |    // text to index many many times? Maybe 'offsets' is a problem for them, but
-      |    // not for Ty? And, this is just *one* field out of many! So the overall
-      |    // size increment, should be negligible.
-      |    // Later, could add a 'suggest' subfield for autocomplete search of titles, e.g. typing
-      |    // "kitt cu" would quickly match "cute kittens". See [es_autocomplete_titles] in wip/.
-      |    "$ApprovedPlainText":     { $typeText,    $indexed, $analyzerLang, $ixOffsets },
-      |    "$CurrentRevisionNr":     { $typeInteger, $notIndexed },
-      |    "$UnapprovedSource":      { $typeText,    $indexed, $analyzerLang, $ixOffsets },${""/*
+      |    "$ApprovedRevisionNr":    { $typeInteger, $notIndexed },
+      |    "$IsApproved":            { $typeBool,    $indexed },
+      |    "$BodyText":              $multilingObj,
+      |    "$OrigLang":              { $typeKeyword, $indexed },
+      |    "$ManTranslLangs":        { $typeKeyword, $indexed },
+      |    "$AutoTranslLangs":       { $typeKeyword, $indexed },
+      |    "$CurrentRevisionNr":     { $typeInteger, $notIndexed },${""/*
       |    // Let's store page title and orig post in same doc. [index_title_and_body_together]
       |    // Let's *not* have the title as a separate ElasticSearch document.
       |    // Especially now with Page-Post join field, it'd be confusing to
       |    // have both a title doc and an orig post doc — which one would
       |    // be the parent of the comments? (The title or the orig post as parent?)
-      |    // WOULD_OPTIMIZE: Use `"copy_to": "titleAndText"`? [es_use_copy_to]  */}
-      |    "$ApprTitlePlainText":    { $typeText,    $indexed, $analyzerLang, $ixOffsets },
-      |    "$UnapprTitlePlainText":  { $typeText,    $indexed, $analyzerLang, $ixOffsets },
-      |    "$IsDeleted_unused":      { $typeBool,    $indexed },
+      |    // WOULD_OPTIMIZE: Use `"copy_to": "titleAndText"`? [es_use_copy_to] */}
+      |    "$TitleText":             $multilingObj,
+      |    "$IsDeleted":             { $typeBool,    $indexed },
       |    "$OwnerIds_later":        { $typeKeyword, $indexed },
       |    "$AuthorIds":             { $typeKeyword, $indexed ${/* [ids_as_kwd] */""}},
       |    "$AssigneeIds":           { $typeKeyword, $indexed },
@@ -709,14 +895,22 @@ package object search {
       |          "${ValFields.ValInt64}":       { $typeLong,    $indexed },
       |          "${ValFields.ValFlt64}":       { $typeDouble,  $indexed },${""/*
       |          Type 'keyword' is Ty's default. But sometimes indexing as 'text' is better? */}
-      |          "${ValFields.ValKwd}":         { $typeKeyword, $indexed },
-      |          "${ValFields.ValTxt}":         { $typeText,    $indexed, $analyzerLang },
-      |          "${ValFields.ValVersion}":     { $typeVersion, $indexed },
+      |          "${ValFields.ValKwd}":         { $typeKeyword, $indexed,
+      |                                           "fields": {
+      |                                             "${AsFields.AsWildcard}": { $typeWildcard },
+      |                                             "${AsFields.AsNgram}": {
+      |                                                   $typeText,
+      |                                                   "analyzer": "ngram_3_4_lowercase_analyzer" }
+      |                                           }
+      |                                         },${/*
+      |          "${ValFields.ValTxt}":         { $typeText,    $indexed, $analyzerLang }, */""}
+      |          "${ValFields.ValVersion}":     { $typeVersion },
       |          "${ValFields.ValDate}":        { $typeDate,    $indexed },
       |          "${ValFields.ValDateRange}":   { $typeDateRange, $indexed },
       |          "${ValFields.ValGeoPoint}":    { $typeGeoPoint, $indexed },
       |          "${ValFields.ValIpAdr}":       { $typeIpAdr,   $indexed }
       |       }${""/*
+      |    --- _Alt_tags_approach --------------------------------------------------
       |    Could also, if won't be that many tags with values — but wouldn't work
       |    with multitenancy? Because then all sites together can have many tag types
       |    with values.
@@ -763,6 +957,7 @@ package object search {
       |          // (Might need to reindex.)  Might even use the tags-in-fields
       |          // approach for the most commonly searched tags, and nested-doc-tags
       |          // for infrequently used tags? Getting complicated...
+      |    --- /_Alt_tags_approach -------------------------------------------------
       |        */}
       |    },${""/*
       |     Or is it too bad for performance to repeat all page tag values,
@@ -796,10 +991,16 @@ package object search {
   }
 
 
-  // all built-in languages:
-  // https://www.elastic.co/guide/en/elasticsearch/reference/master/analysis-lang-analyzer.html#analysis-lang-analyzer
+  /** Re shards, 1 per index. Elastic says and recommends: [big_shards]
+    *   > Too many shards can degrade search performance ...
+    *   > Aim for shards of up to 200M documents, or with sizes between 10GB and 50GB
+    * See:
+    * https://www.elastic.co/docs/deploy-manage/production-guidance/optimize-performance/size-shards
+    *
+    * So, 1 shard per index is best. (There will be 1 index per language.)
+    */
   val Indexes = Seq[IndexSettingsAndMappings](
-    IndexSettingsAndMappings(shards = 5, language = "english"))
+        IndexSettingsAndMappings(numShards = 1))
 
 }
 

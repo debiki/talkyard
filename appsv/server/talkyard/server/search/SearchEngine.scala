@@ -38,9 +38,9 @@ import java.util.concurrent.{CompletableFuture => j_CompletableFuture}
 
 class SearchEngine(
   private val siteId: SiteId,
+  private val languageCode: St,
   //private val elasticSearchAsyncClient: es8.ElasticsearchAsyncClient,
-  private val elasticSearchClient: es8.ElasticsearchClient,
-  private val ffIxMapping2: Bo) extends TyLogging {
+  private val elasticSearchClient: es8.ElasticsearchClient) extends TyLogging {
 
   /**
     *
@@ -67,26 +67,38 @@ class SearchEngine(
 
     // ----- Free text
 
-    // Fuzzy search, should find "shoe" also if you search for "shoes".
-    // (Don't use `fullTextQuery` — it includes params like "tags:... category:...".)
-    // BUT this only works if the correct language settings are used,
-    // however currently we use English always. [es_wrong_lang]
+    // See: https://www.elastic.co/docs/reference/
+    //          query-languages/query-dsl/query-dsl-multi-match-query#field-boost
+    val titleBoost = "^1.5"
+    val sameLangBodyBoost = "^3.5"  // [boost_lang_fields]
+    val sameLangTitleBoost = "^7"   //
+
+    val dotLangField = "." + PostDocFields.langFieldForLangCode(languageCode)
+
+    val titleTextField = PostDocFields.TitleText + dotLangField
+    val bodyTextField = PostDocFields.BodyText + dotLangField
+
+    // This'll find "shoe" also if you search for "shoes", and "run" if you search for
+    // "running", thanks to language aware analyzers, see [multilingual_mapping].
     //
-    // Search approved text only, but not not-yet-approved edits or new posts — not-yet-
-    // -approved things shouldn't be visible or searchable.
-    // (Any unapproved source is still indexed, but we don't search it here. [ix_unappr])
+    // (Don't use `fullTextQuery` — it includes params like "tags:... category:...".)
     //
     if (searchQuery.queryWithoutParams.nonEmpty) {
       boolBuilder.must(
-            // If is staff, could search unapproved html too. [index_for_invisible]
             es8_qs.MultiMatchQuery.of(q => q
                 // We index the page title and orig post into the same ES doc, althoug
                 // in Ty they're stored separately. [index_title_and_body_together]
                 // (The title field is absent for all docs, e.g. all comments, except for
                 // the title + orig post doc.)
                 .fields(
-                    PostDocFields.ApprTitlePlainText,
-                    PostDocFields.ApprovedPlainText)
+                    // Search language agnostic icu_analyzer title & body fields.
+                    PostDocFields.TitleText_Universal + titleBoost,
+                    PostDocFields.BodyText_Universal,
+                    // Search, and prioritize, language fields in the same language
+                    // as the search query.
+                    titleTextField + sameLangTitleBoost,
+                    bodyTextField  + sameLangBodyBoost,
+                    )
                 .query(searchQuery.queryWithoutParams))._toQuery())
     }
     else {
@@ -100,6 +112,13 @@ class SearchEngine(
                 .value(OrigPostType))._toQuery())
     }
 
+    // ----- Only approved
+
+    // Currently we only index approved posts, so need do nothing here.
+    // Later, though, if we make it possible for mods & admins to search unapproved
+    // or deleted posts [index_for_invisible],
+    // we'd need to add some  filter(is-approved & is-not-deleted)  here.
+
     // ----- Special
 
     // Form submissions are private, currently for admins only. [5GDK02]
@@ -107,6 +126,8 @@ class SearchEngine(
       WOULD_OPTIMIZE // Use some flavor of  filterNot() instead, for performance. [filter_not]
       // Or use separate indexes for deleted and unapproved posts
       //    — and for form submissoins? [index_for_invisible]
+      // Update 2026: Apparently filtering on keywords (like post type) or booleans
+      // is really fast — can probably index everything into the same index. [only_1_ix]
       //
       // (Any matches are filtered out anyway, later.  [se_acs_chk])
       //
@@ -408,11 +429,17 @@ class SearchEngine(
 
     val highlight = es8.core.search.Highlight.of(_
           .fields(
-              PostDocFields.ApprovedPlainText,
+              titleTextField,
               // No special settings.
               es8.core.search.HighlightField.of(identity))
           .fields(
-              PostDocFields.ApprTitlePlainText,
+              PostDocFields.TitleText_Universal,
+              es8.core.search.HighlightField.of(identity))
+          .fields(
+              bodyTextField,
+              es8.core.search.HighlightField.of(identity))
+          .fields(
+              PostDocFields.BodyText_Universal,
               es8.core.search.HighlightField.of(identity))
           // -------
           // Highlighting.
@@ -471,10 +498,10 @@ class SearchEngine(
       // Synchronous execution - this call blocks until a response is received
       val response: es8.core.SearchResponse[es8_JsonData] =
             elasticSearchClient.search(searchReq, classOf[es8_JsonData])
-      _handleResponse(response, null, searchQuery.fullTextQuery, searchReq, promise)
+      _handleResponse(response, null, searchQuery.fullTextQuery, searchReq, dotLangField, promise)
     } catch {
       case ex: Exception =>
-        _handleResponse(null, ex, searchQuery.fullTextQuery, searchReq, promise)
+        _handleResponse(null, ex, searchQuery.fullTextQuery, searchReq, dotLangField, promise)
     }
 
     /*---- [ES8_async] ----------------------------
@@ -496,6 +523,7 @@ class SearchEngine(
            exOrNull: Throwable,
            rawQuery: St,
            searchReq: es8.core.SearchRequest,
+           dotLangField: St,
            promise: Promise[immutable.Seq[SearchHit]]): U = {
 
     /*---- [ES8_async] ----------------------------
@@ -546,7 +574,7 @@ class SearchEngine(
     val results = MutArrBuf[SearchHit]()
 
     hitsList.forEach((esHit: es8.core.search.Hit[es8_JsonData]) => {
-      parseElasticSearchJsonDoc(esHit) match {
+      parseElasticSearchJsonDoc(esHit, dotLangField) match {
         case Good(hit) =>
           results.append(hit)
         case Bad(errorMessage) =>

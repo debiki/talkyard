@@ -55,7 +55,16 @@ trait SearchSiteDaoMixin extends SiteTransaction {
   def indexPostsSoon(posts: Post*): i32 = {
     var numEnqueued = 0
     posts foreach { p =>
-      val gotEnqueued = _enqueuePost(p)
+      // We currently don't index unapproved posts. [ix_unappr]
+      // However, do add deleted posts to the queue — we need to *un*index them.
+      // Also, not sure if there might be (or will be) any code path where `p` is a too recent
+      // and not-yet-approved post, even though we do want to index an older revision — so
+      // look at `isSomeVersionApproved()` rather than `isCurrentVersionApproved()`.
+      val gotEnqueued =
+            if (!p.isSomeVersionApproved) false
+            else {
+              _enqueuePost(p)
+            }
       if (gotEnqueued) numEnqueued += 1
     }
     numEnqueued

@@ -38,14 +38,15 @@ xpack.security.enrollment.enabled: false
 # Save significant RAM by disabling Machine Learning [says_Gemini]
 xpack.ml.enabled: false
 
-# Disable the GeoIP downloader to prevent unnecessary background network calls [says_Gemini]
-# Magnus: Apparently off by default, silly AI.
+# Don't try to download the GeoIP database. We don't use it and can't access the Internet anyway
+# (since we're on an `internal: true` Docker private net: 'be_int_net').
 ingest.geoip.downloader.enabled: false
 
-# ES 9 uses a lot of memory for 'Circuit Breakers'.
-# On a small VPS, these help prevent OOM crashes. [says_Gemini]
+# How much of the ES_JAVA_OPTS '-Xmx' RAM to use, before starting rejecting requests,
+# to prevent OOM errors.
+# Default is 95% (when `indices.breaker.total.use_real_memory` is true, the default).
 # See: https://www.elastic.co/docs/reference/elasticsearch/configuration-reference/circuit-breaker-settings
-indices.breaker.total.limit: 70%
+#indices.breaker.total.limit: 95%
 
 logger.org.elasticsearch.rest: DEBUG
 

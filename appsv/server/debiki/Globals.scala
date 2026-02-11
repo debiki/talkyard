@@ -1449,7 +1449,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
       else Some(SearchEngineIndexer.startNewActor(
           indexerBatchSize, initialDelaySecs = indexerDelaySecs,
           intervalSeconds = indexerIntervalSeconds, executionContext,
-          elasticSearchClient, actorSystem, systemDao))
+          elasticSearchClient, actorSystem, systemDao, siteDaoFactory))
 
     def spamCheckBatchSize: Int = getIntOrDefault("talkyard.spamcheck.batchSize", 20)
     def spamCheckIntervalSeconds: Int =

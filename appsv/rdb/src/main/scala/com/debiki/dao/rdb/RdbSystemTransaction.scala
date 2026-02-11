@@ -1181,7 +1181,7 @@ class RdbSystemTransaction(
   }
 
 
-  def addEverythingInLanguagesToIndexQueue(siteIds: Set[SiteId], allSites: Bo): U = {
+  def addEverythingToSearchIndexQueue(siteIds: Set[SiteId], allSites: Bo): U = {
     dieIf(siteIds.nonEmpty && allSites, "TyE602RMGLC4")
     if (siteIds.isEmpty && !allSites)
       return

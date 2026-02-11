@@ -15,6 +15,50 @@ LABEL org.opencontainers.image.title="Talkyard Search" \
       io.talkyard.edition="se" \
       io.talkyard.epoch="1"
 
+# Install analyzers for more languages.
+#
+# These are safe to use — they're ElasticSearch's official plugins, gets downloaded
+# from Elastic's servers.
+#
+# (There's also 'ik_max_words' and 'stconvert' for Chinese [zh_universal], but
+# they're not official ElasticSearch plugins so let's wait, and be happy with
+# 'smartcn' for now.)
+#
+RUN bin/elasticsearch-plugin install --batch \
+    # Various languages.
+    # Extended Unicode support using the ICU libraries, including better analysis of
+    # Asian languages, Unicode normalization, Unicode-aware case folding,
+    # collation support, and transliteration.
+    # Note: "ICU library receives updates such as adding new characters and emojis,
+    # and improving collation (sort) orders. These changes may or may not affect
+    # search and sort orders"
+    # https://www.elastic.co/docs/reference/elasticsearch/plugins/analysis-icu
+    analysis-icu \
+    # Japanese.
+    # Integrates the Lucene kuromoji analysis module.
+    # https://www.elastic.co/docs/reference/elasticsearch/plugins/analysis-kuromoji
+    analysis-kuromoji \
+    # Korean.
+    # Integrates Lucene nori analysis module.
+    # https://www.elastic.co/docs/reference/elasticsearch/plugins/analysis-nori
+    analysis-nori \
+    # Chinese (Simplified) and mixed Chinese-English text.
+    # Provides the smartcn analyzer, smartcn_tokenizer tokenizer, and smartcn_stop
+    # token filter, which are not configurable.
+    # https://www.elastic.co/docs/reference/elasticsearch/plugins/analysis-smartcn
+    analysis-smartcn \
+    # Polish.
+    # High quality stemming for Polish.
+    # Provides the polish analyzer and the polish_stem and polish_stop token filters,
+    # which are not configurable.
+    # https://www.elastic.co/docs/reference/elasticsearch/plugins/analysis-stempel
+    analysis-stempel \
+    # Ukrainian.
+    # Provides the ukrainian analyzer.
+    # https://www.elastic.co/docs/reference/elasticsearch/plugins/analysis-ukrainian
+    analysis-ukrainian
+
+
 # Copy config.
 # Or maybe add configurable files in a conf/search/ directory in the prod repo?
 # Then, in dev builds, mount the conf from  modules/ed-prod-one-test/conf/search/.

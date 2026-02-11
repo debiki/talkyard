@@ -528,9 +528,11 @@ trait PostsDao {
     addUserStats(stats)(tx)
 
     tx.insertPost(newPost)
-    // Index post, also if not yet approved [ix_unappr] — can be nice for mods to be able to
-    // search & find such posts too? We _reindexed_if_approved_later.
+
+    // (If not yet approved, it'll be ignored (not added to the index queue). [ix_unappr]
+    // Then it gets indexed later instead, when it gets approved.)
     tx.indexPostsSoon(newPost)
+
     tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = shallApprove)
 
     // (This excludes bookmarks and private comments — they don't get approved.)
@@ -1155,7 +1157,12 @@ trait PostsDao {
           requestStuff = spamRelReqStuff))
 
     tx.updatePost(editedPost)
+
+    // Currently chat messages are auto approved. [ix_unappr]
+    warnDevDieIf(!editedPost.isCurrentVersionApproved,
+          "Trying to index unapproved chat msg [TyE5SMJLX]")
     tx.indexPostsSoon(editedPost)
+
     anySpamCheckTask.foreach(tx.insertSpamCheckTask)
     saveDeleteUploadRefs(lastPost, editedPost = editedPost, textAndHtml,
           isAppending = true, isEditing = false, author.trueId2, tx)
@@ -1536,8 +1543,14 @@ trait PostsDao {
               else Some(postAuthor.trueId2))
 
       tx.updatePost(editedPost)
-      // Pointless, if edits not approved? We only index the approved plain text? [ix_unappr]
-      tx.indexPostsSoon(editedPost)
+
+      // We don't currently index unapproved edits. [ix_unappr]
+      if (editedPost.isCurrentVersionApproved) {
+        tx.indexPostsSoon(editedPost)
+      }
+      // Else: The post might still be searchable — an older & approved revision might
+      // have been indexed.
+
       anySpamCheckTask.foreach(tx.insertSpamCheckTask)
       newRevision.foreach(tx.insertPostRevision)
       saveDeleteUploadRefs(postToEdit, editedPost = editedPost, newTextAndHtml,
@@ -1954,6 +1967,7 @@ trait PostsDao {
       // (Don't reindex. For now, don't send any notifications (since currently just toggling
       // branch-sideways))
       tx.updatePost(postAfter)
+      // Need not reindex — `branchSideways` isn't searchable.
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = false)
       insertAuditLogEntry(auditLogEntry, tx)
 
@@ -2049,11 +2063,15 @@ trait PostsDao {
       val newMeta = oldMeta.copy(version = oldMeta.version + 1)
 
       if (movesToOtherSection) {
-        // Move all descendants replies too. (This might mean updating many posts,
-        // and that's fine; this operation is barely ever done.)
+        // Update the post type of descendant replies too. (Changed from BottomComment
+        // to Normal or vice versa.)
         val descendantPosts = page.parts.descendantsOf(postAfter.nr)
         for (descendant <- descendantPosts) {
-          tx.updatePost(descendant.copy(tyype = postAfter.tyype))
+          val descendantAft = descendant.copy(tyype = postAfter.tyype)
+          tx.updatePost(descendantAft)
+          // Maybe better reindex it. The type is incl in the ElasticSearch mapping
+          // (`PostDocFields.PostType`). [ix_post_type]
+          tx.indexPostsSoon(descendantAft)
         }
       }
 
@@ -2065,6 +2083,7 @@ trait PostsDao {
 
       tx.updatePost(postAfter)
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = false)
+
       // Currently usually not needed — currently the post type field is only used for
       // finding the title or orig post. But better avoid sleeping bugs.  [ix_post_type]
       tx.indexPostsSoon(postAfter)
@@ -2247,8 +2266,14 @@ trait PostsDao {
           if (successor.collapsedStatus.areAncestorsCollapsed) None
           else Some(successor.copyWithNewStatus(now, doerPersona.id, ancestorsCollapsed = true))
         case PSA.DeleteTree =>
-          if (successor.deletedStatus.areAncestorsDeleted) None
+          if (successor.deletedStatus.areAncestorsDeleted) {
+            // An ancestor has been deleted, so `successor` is deleted, too, already
+            None
+          }
           else {
+            // If this post itself is _already_deleted, we still need to update its
+            // ancestors-deleted-status, in case someone tries to undelete it later.
+            // However, we will _not_reindex it.
             val successorDeleted = successor.copyWithNewStatus(
                   now, doerPersona.id, ancestorsDeleted = true)
             postsDeleted.append(successorDeleted)
@@ -2259,10 +2284,11 @@ trait PostsDao {
       }
 
       anyUpdatedSuccessor foreach { updatedSuccessor =>
+        // Does nothing if _already_deleted.
         rememberBacklinksUpdCounts(postBefore = successor, postAfter = updatedSuccessor)
         tx.updatePost(updatedSuccessor)
         allUpdatedPosts.append(updatedSuccessor)
-        if (successor.isDeleted != updatedSuccessor.isDeleted) {
+        if (successor.isDeleted != updatedSuccessor.isDeleted) {  // _not_reindex
           postsToReindex.append(updatedSuccessor)
         }
       }
@@ -2457,7 +2483,9 @@ trait PostsDao {
       bodyHiddenReason = None)
 
     tx.updatePost(postAfter)
-    tx.indexPostsSoon(postAfter)  // _reindexed_if_approved_later
+
+    // We currently don't index posts, until they've been approved — that's here. [ix_unappr]
+    tx.indexPostsSoon(postAfter)
 
     if (postBefore.isDeleted) {
       UNTESTED  // [4MT05MKRT]
@@ -2623,7 +2651,7 @@ trait PostsDao {
         currentRevSourcePatch = None)
 
       tx.updatePost(postAfter)
-      tx.indexPostsSoon(postAfter)
+      tx.indexPostsSoon(postAfter)  // [ix_unappr]
       allUpdatedPosts.append(postAfter)
 
       val author = tx.loadTheParticipant(post.createdById)
@@ -3329,7 +3357,11 @@ trait PostsDao {
                 parentNr = Some(anyNewParentPost.getOrDie("TyE4SL5W7").nr),
                 tyype = postTypeAfter)
           tx.updatePost(postAfter)
-          // (Need not reindex.)
+          // Unless the post type changed [ix_post_type], no need to reindex it — it's
+          // still on the same page.
+          if (postAfter.tyype != postToMove.tyype) {
+            tx.indexPostsSoon(postAfter)
+          }
           tx.insertAuditLogEntry(moveTreeAuditEntry)
           postAfter
         }
@@ -3420,7 +3452,8 @@ trait PostsDao {
           }
 
           postsAfter foreach tx.updatePost
-          // Reindex any moved bookmark too? [mv_bookmarked_post]
+
+          // Posts moved to other page, so reindex all. Bookmarks too? [mv_bookmarked_post]
           tx.indexPostsSoon(postsAfter.to(Vec): _*)
 
           // Uncache backlinked pages. [uncache_blns]
@@ -3721,8 +3754,7 @@ trait PostsDao {
 
       tx.updatePost(postAfter)
 
-      // Let's reindex, although currently is/not-hidden isn't searchable,  [ix_hidden]
-      // but better avoid sleeping bugs.
+      // Remove from the search index — hidden posts currently aren't searchable. [ix_hidden]
       tx.indexPostsSoon(postAfter)
     }
 

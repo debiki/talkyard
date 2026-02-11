@@ -592,7 +592,12 @@ case class Post(   // [exp] ok use
   def isMetaMessage: Boolean = tyype == PostType.MetaMessage
   def isBottomComment: Boolean = tyype == PostType.BottomComment   // RENAME to isProgressReply
   def shallAppendLast: Boolean = isMetaMessage || isBottomComment
+
+  /** For example, if this post seems to be spam, and got hidden pending review.
+    * Or if got too many flags.
+    */
   def isBodyHidden: Boolean = bodyHiddenAt.isDefined
+
   def isDeleted: Boolean = deletedStatus.isDeleted
   def isSomeVersionApproved: Boolean = approvedRevisionNr.isDefined
   def isCurrentVersionApproved: Boolean = approvedRevisionNr.contains(currentRevisionNr)

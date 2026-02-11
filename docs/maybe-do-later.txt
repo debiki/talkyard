@@ -1323,8 +1323,12 @@ Surprising search behavior:
   - Public API: [api_highlight_title_hits]
   - Index deleted and not-yet-deleted things in a separate index, [deleted_posts_ix]
     since rarely searched for. Unapproved posts in their own index too? [index_for_invisible]
-  - Should use same language as the site. [es_wrong_lang]
-  - Maybe [per_country_code_index] — for Portuguese and Chinese, but not Spanish? Says Gemini.
+    Update 2026: No, don't — seems it's better to add boolean or type fields,
+    use a single index, and filter on bools and keywords; this is supposedly really fast.
+    And more flexible, that's important. [big_shards] [only_1_ix]
+  - Automatically pick the right per-language ES doc field to index into and to search,
+    based on the language in the post, or in the search query. [es_right_lang_field]
+    Instead of just looking at a site global setting.
 
 [reconnect_to_ElasticSearch]
 Did I fix this?: "Don't keep retrying & logging 99999 errors"
