@@ -2667,32 +2667,22 @@ const LanguageSettings = createFactory({
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
     // Sync this list with the language files in /translations/ and the server scripts bundle. [5JUKQR2].
-    const languageOptions = [{
-      // Don't mention this is en-US, people might then want -GB too and -AU (for the UK and Australia)?
-      value: 'en_US', label: "English"
-    }, {
-      value: 'zh_CN', label: "Chinese (PRC)"
-    }, {
-      value: 'nl_NL', label: "Dutch"
-    }, {
-      value: 'de_DE', label: "German"
-    }, {
-      value: 'he_IL', label: "Hebrew"
-    }, {
-      value: 'lv_LV', label: "Latvian"
-    }, {
-      value: 'pl_PL', label: "Polish"
-    }, {
-      value: 'pt_BR', label: "Portuguese (Brazilian)"
-    }, {
-      value: 'ru_RU', label: "Russian"
-    }, {
-      value: 'es_CL', label: "Spanish (Chile)"
-    }, {
-      value: 'sv_SE', label: "Swedish"
-    }, {
-      value: 'uk_UA', label: "Ukrainian"
-    }];
+    const languageOptions = [
+        // Don't mention this is en-US, people might then want -GB too and -AU (for the
+        // UK and Australia)?
+        { value: 'en_US', label: "English"                      },
+        { value: 'zh_CN', label: "Chinese (Simplified)"         },
+        { value: 'nl_NL', label: "Dutch"                        },
+        { value: 'de_DE', label: "German"                       },
+        { value: 'he_IL', label: "Hebrew"                       },
+        { value: 'lv_LV', label: "Latvian"                      },
+        { value: 'pl_PL', label: "Polish"                       },
+        { value: 'pt_BR', label: "Portuguese (Brazil)"          },
+        { value: 'ru_RU', label: "Russian"                      },
+        { value: 'es_CL', label: "Spanish (Chile)"              },
+        { value: 'sv_SE', label: "Swedish"                      },
+        { value: 'uk_UA', label: "Ukrainian"                    },
+        ];
 
     const selectedLangCode = firstDefinedOf(editedSettings.languageCode, currentSettings.languageCode);
     const selectedLangOpt = _.find(languageOptions, (opt) => opt.value === selectedLangCode);
