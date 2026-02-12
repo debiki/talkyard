@@ -1,211 +1,216 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
-import { TyE2eTestBrowser, MemberBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import make = require('../utils/make');
-import logAndDie = require('../utils/log-and-die');
-import c = require('../test-constants');
+import assert from '../utils/ty-assert';
+import server from '../utils/server';
+import * as make from '../utils/make';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 
 let everyone: TyAllE2eTestBrowsers;
-let owen: MemberBrowser;
-let maria: MemberBrowser;
-let stranger: TyE2eTestBrowser;
-let guest: TyE2eTestBrowser;
+let brA: TyE2eTestBrowser;
+let brB: TyE2eTestBrowser;
+let owen: Member;
+let owen_brA: TyE2eTestBrowser;
+let maria: Member;
+let maria_brB: TyE2eTestBrowser;
+let stranger_brB: TyE2eTestBrowser;
+let guest_brB: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
-let forumTitle = "Publ Search Forum";
+const forumTitle = "Publ Search Forum";
 
-let wordQwertyTitle = "qwerty_title";
-let wordQwertyBody = "qwerty_body";
-let wordQwertyReply = "qwerty_reply";
-let wordMagicMonsters = "magic_monsters";
+const wordQwertyTitle = "qwerty_title";
+const wordQwertyBody = "qwerty_body";
+const wordQwertyReply = "qwerty_reply";
+const wordMagicMonsters = "magic_monsters";
 
-let wordAbcdef = "abcdef";
+const wordAbcdef = "abcdef";
 
-let qwertyAbcTitle = `${wordQwertyTitle} ${wordAbcdef}`;
-let qwertyAbcBody = `${wordQwertyBody} ${wordAbcdef}`;
-let qwertyAbcReply = `${wordQwertyReply} ${wordAbcdef}`;
+const qwertyAbcTitle = `${wordQwertyTitle} ${wordAbcdef}`;
+const qwertyAbcBody = `${wordQwertyBody} ${wordAbcdef}`;
+const qwertyAbcReply = `${wordQwertyReply} ${wordAbcdef}`;
 
-let xyzTitle = "xyz_title";
+const xyzTitle = "xyz_title";
 
 
-describe("search-public-basic.2br  TyTSEARCHPUBBASIC", () => {
+describe("search-public-basic.2br.f  TyTSEARCHPUBBASIC", () => {
 
-  it("initialize people", () => {
-    everyone = new TyE2eTestBrowser(wdioBrowser);
-    owen = _.assign(new TyE2eTestBrowser(browserA), make.memberOwenOwner());
-    maria = _.assign(new TyE2eTestBrowser(browserB), make.memberMaria());
+  it("initialize people", async () => {
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
+
+    everyone = new TyE2eTestBrowser(allWdioBrowsers, 'brAll');
+    owen_brA = brA;
+    owen = make.memberOwenOwner();
+    maria_brB = brB;
+    maria = make.memberMaria();
     // Reuse the same browser.
-    stranger = maria;
-    guest = maria;
+    stranger_brB = maria_brB;
+    guest_brB = maria_brB;
   });
 
-  it("import a site", () => {
+  it("import a site", async () => {
     let site: SiteData = make.forumOwnedByOwen('impersonate', { title: forumTitle });
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;
     site.settings.mayPostBeforeEmailVerified = true; // remove later, if email not required [0KPS2J]
     site.members.push(make.memberMaria());
-    idAddress = server.importSiteData(site);
+    idAddress = await server.importSiteData(site);
   });
 
-  it("Owen and Maria go to the homepage and log in", () => {
-    everyone.go(idAddress.origin);
-    owen.assertPageTitleMatches(forumTitle);
-    maria.assertPageTitleMatches(forumTitle);
-    owen.complex.loginWithPasswordViaTopbar(owen);
-    maria.complex.loginWithPasswordViaTopbar(maria);
+  it("Owen and Maria go to the homepage and log in", async () => {
+    await everyone.go2(idAddress.origin);
+    await owen_brA.assertPageTitleMatches(forumTitle);
+    await maria_brB.assertPageTitleMatches(forumTitle);
+    await owen_brA.complex.loginWithPasswordViaTopbar(owen);
+    await maria_brB.complex.loginWithPasswordViaTopbar(maria);
     // Maria will search a lot.
-    maria.disableRateLimits();
+    await maria_brB.disableRateLimits();
   });
 
-  it(`Maria searches for '${wordQwertyTitle}'`, () => {
-    maria.topbar.searchFor(wordQwertyTitle);
+  it(`Maria searches for '${wordQwertyTitle}'`, async () => {
+    await maria_brB.topbar.searchFor(wordQwertyTitle);
   });
 
-  it("... finds nothing", () => {
-    maria.searchResultsPage.assertPhraseNotFound(wordQwertyTitle);
+  it("... finds nothing", async () => {
+    await maria_brB.searchResultsPage.assertPhraseNotFound(wordQwertyTitle);
   });
 
-  it(`... then searches for '${wordAbcdef}', finds nothing`, () => {
-    maria.searchResultsPage.searchForWaitForResults(wordAbcdef);
+  it(`... then searches for '${wordAbcdef}', finds nothing`, async () => {
+    await maria_brB.searchResultsPage.searchForWaitForResults(wordAbcdef);
   });
 
-  it("... finds nothing", () => {
-    maria.searchResultsPage.assertPhraseNotFound(wordAbcdef);
+  it("... finds nothing", async () => {
+    await maria_brB.searchResultsPage.assertPhraseNotFound(wordAbcdef);
   });
 
-  it("Owen creates a page with title & body 'will_not_be_found'", () => {
-    owen.complex.createAndSaveTopic({ title: 'will_not_be_found', body: 'will_not_be_found' });
+  it("Owen creates a page with title & body 'will_not_be_found'", async () => {
+    await owen_brA.complex.createAndSaveTopic({ title: 'will_not_be_found', body: 'will_not_be_found' });
   });
 
-  it(`... and another page with 'qwertyTitle/Body abcdef' title & body`, () => {
-    owen.back();
-    owen.complex.createAndSaveTopic({ title: qwertyAbcTitle, body: qwertyAbcBody });
+  it(`... and another page with 'qwertyTitle/Body abcdef' title & body`, async () => {
+    await owen_brA.back();
+    await owen_brA.complex.createAndSaveTopic({ title: qwertyAbcTitle, body: qwertyAbcBody });
   });
 
-  it(`... and two replies: '${qwertyAbcReply}' and '${wordMagicMonsters}'`, () => {
-    owen.complex.replyToOrigPost(qwertyAbcReply);
-    owen.complex.replyToOrigPost(wordMagicMonsters);
+  it(`... and two replies: '${qwertyAbcReply}' and '${wordMagicMonsters}'`, async () => {
+    await owen_brA.complex.replyToOrigPost(qwertyAbcReply);
+    await owen_brA.complex.replyToOrigPost(wordMagicMonsters);
   });
 
   // Search for the most recently added comment first — when that one has been indexed,
   // everything else should have been indexed, too.
 
-  it(`Maria searches for '${wordMagicMonsters}', finds that reply (only)`, () => {
-    maria.searchResultsPage.searchForUntilNumPagesFound(wordMagicMonsters, 1);
-    maria.assertTextMatches('.c_SR_Ttl', qwertyAbcTitle);
-    maria.assertNoTextMatches('.esSERP_Hit_Text', wordQwertyTitle);
-    maria.assertNoTextMatches('.esSERP_Hit_Text', wordQwertyBody);
-    maria.assertNoTextMatches('.esSERP_Hit_Text', wordQwertyReply);
-    maria.assertTextMatches('.esSERP_Hit_In', /comment|reply/);
-    maria.assertTextMatches('.esSERP_Hit_Text', wordMagicMonsters);
-    maria.assertExactly(1, '.esSERP_Hit_In');
-    maria.assertExactly(1, '.esSERP_Hit_Text');
+  it(`Maria searches for '${wordMagicMonsters}', finds that reply (only)`, async () => {
+    await maria_brB.searchResultsPage.searchForUntilNumPagesFound(wordMagicMonsters, 1);
+    await maria_brB.assertTextMatches('.c_SR_Ttl', qwertyAbcTitle);
+    await maria_brB.assertNoTextMatches('.esSERP_Hit_Text', wordQwertyTitle);
+    await maria_brB.assertNoTextMatches('.esSERP_Hit_Text', wordQwertyBody);
+    await maria_brB.assertNoTextMatches('.esSERP_Hit_Text', wordQwertyReply);
+    await maria_brB.assertTextMatches('.esSERP_Hit_In', /comment|reply/);
+    await maria_brB.assertTextMatches('.esSERP_Hit_Text', wordMagicMonsters);
+    await maria_brB.assertExactly(1, '.esSERP_Hit_In');
+    await maria_brB.assertExactly(1, '.esSERP_Hit_Text');
   });
 
-  it(`... she searches for '${wordQwertyTitle}' and finds the page title`, () => {
-    maria.searchResultsPage.searchForUntilNumPagesFound(wordQwertyTitle, 1);
-    maria.assertTextMatches('.c_SR_Ttl-HitTtl', qwertyAbcTitle);
-    maria.assertTextMatches('.esSERP_Hit_Text', wordQwertyTitle);
-    assert.ok(!maria.isVisible('.esSERP_Hit_In'));
-    maria.assertExactly(1, '.esSERP_Hit_Text');
+  it(`... she searches for '${wordQwertyTitle}' and finds the page title`, async () => {
+    await maria_brB.searchResultsPage.searchForUntilNumPagesFound(wordQwertyTitle, 1);
+    await maria_brB.assertTextMatches('.c_SR_Ttl-HitTtl', qwertyAbcTitle);
+    await maria_brB.assertTextMatches('.esSERP_Hit_Text', wordQwertyTitle);
+    assert.ok(!(await maria_brB.isVisible('.esSERP_Hit_In')));
+    await maria_brB.assertExactly(1, '.esSERP_Hit_Text');
   });
 
-  it(`... she searches for '${wordQwertyBody}', finds the page body`, () => {
-    maria.searchResultsPage.searchForWaitForResults(wordQwertyBody);
-    maria.assertTextMatches('.c_SR_Ttl-HitOp', qwertyAbcTitle);
+  it(`... she searches for '${wordQwertyBody}', finds the page body`, async () => {
+    await maria_brB.searchResultsPage.searchForWaitForResults(wordQwertyBody);
+    await maria_brB.assertTextMatches('.c_SR_Ttl-HitOp', qwertyAbcTitle);
     //maria.assertTextMatches('.esSERP_Hit_In', "page text");
-    maria.assertTextMatches('.esSERP_Hit_Text', wordQwertyBody);
+    await maria_brB.assertTextMatches('.esSERP_Hit_Text', wordQwertyBody);
     //maria.assertExactly(1, '.esSERP_Hit_In');
-    assert.ok(!maria.isVisible('.esSERP_Hit_In'));
-    maria.assertExactly(1, '.esSERP_Hit_Text');
+    assert.ok(!(await maria_brB.isVisible('.esSERP_Hit_In')));
+    await maria_brB.assertExactly(1, '.esSERP_Hit_Text');
   });
 
-  it(`... she searches for '${wordQwertyReply}', finds the reply`, () => {
-    maria.searchResultsPage.searchForWaitForResults(wordQwertyReply);
-    maria.assertTextMatches('.c_SR_Ttl', qwertyAbcTitle);
-    maria.assertTextMatches('.esSERP_Hit_In', /comment|reply/);
-    maria.assertTextMatches('.esSERP_Hit_Text', wordQwertyReply);
-    maria.assertExactly(1, '.esSERP_Hit_In');
-    maria.assertExactly(1, '.esSERP_Hit_Text');
+  it(`... she searches for '${wordQwertyReply}', finds the reply`, async () => {
+    await maria_brB.searchResultsPage.searchForWaitForResults(wordQwertyReply);
+    await maria_brB.assertTextMatches('.c_SR_Ttl', qwertyAbcTitle);
+    await maria_brB.assertTextMatches('.esSERP_Hit_In', /comment|reply/);
+    await maria_brB.assertTextMatches('.esSERP_Hit_Text', wordQwertyReply);
+    await maria_brB.assertExactly(1, '.esSERP_Hit_In');
+    await maria_brB.assertExactly(1, '.esSERP_Hit_Text');
   });
 
-  it(`... she searches for '${wordAbcdef}', finds title, body, one reply`, () => {
-    maria.searchResultsPage.searchForWaitForResults(wordAbcdef);
-    assert(maria.searchResultsPage.countNumPagesFound_1() === 1);
-    maria.assertTextMatches('.c_SR_Ttl-HitTtl', qwertyAbcTitle);
-    maria.assertAnyTextMatches('.esSERP_Hit_Text', qwertyAbcTitle); // wordQwertyTitle);
-    maria.assertAnyTextMatches('.esSERP_Hit_Text', qwertyAbcBody); // wordQwertyBody);
-    maria.assertAnyTextMatches('.esSERP_Hit_Text', qwertyAbcReply); // wordQwertyReply);
-    maria.assertNoTextMatches('.esSERP_Hit_Text', wordMagicMonsters);
-    maria.assertExactly(1, '.esSERP_Hit_In'); // only for the reply
-    maria.assertExactly(3, '.esSERP_Hit_Text');
+  it(`... she searches for '${wordAbcdef}', finds title, body, one reply`, async () => {
+    await maria_brB.searchResultsPage.searchForWaitForResults(wordAbcdef);
+    assert.eq(await maria_brB.searchResultsPage.countNumPagesFound_1(), 1);
+    await maria_brB.assertTextMatches('.c_SR_Ttl-HitTtl', qwertyAbcTitle);
+    await maria_brB.assertAnyTextMatches('.esSERP_Hit_Text', qwertyAbcTitle); // wordQwertyTitle);
+    await maria_brB.assertAnyTextMatches('.esSERP_Hit_Text', qwertyAbcBody); // wordQwertyBody);
+    await maria_brB.assertAnyTextMatches('.esSERP_Hit_Text', qwertyAbcReply); // wordQwertyReply);
+    await maria_brB.assertNoTextMatches('.esSERP_Hit_Text', wordMagicMonsters);
+    await maria_brB.assertExactly(1, '.esSERP_Hit_In'); // only for the reply
+    await maria_brB.assertExactly(3, '.esSERP_Hit_Text');
   });
 
-  it(`Owen creates a third page, title & body '${xyzTitle}' and '${wordQwertyBody}'`, () => {
-    owen.back();
-    owen.complex.createAndSaveTopic({ title: xyzTitle, body: wordQwertyBody });
+  it(`Owen creates a third page, title & body '${xyzTitle}' and '${wordQwertyBody}'`, async () => {
+    await owen_brA.back();
+    await owen_brA.complex.createAndSaveTopic({ title: xyzTitle, body: wordQwertyBody });
   });
 
-  it(`Maria searches for '${wordQwertyBody}', finds both pages, xyz first, then qwerty`, () => {
-    maria.searchResultsPage.searchForUntilNumPagesFound(wordQwertyBody, 2);
-    assertFoundTwoQwertyBodies(maria);
+  it(`Maria searches for '${wordQwertyBody}', finds both pages, xyz first, then qwerty`, async () => {
+    await maria_brB.searchResultsPage.searchForUntilNumPagesFound(wordQwertyBody, 2);
+    await assertFoundTwoQwertyBodies(maria_brB);
   });
 
-  function assertFoundTwoQwertyBodies(someone) {
+  async function assertFoundTwoQwertyBodies(brX: TyE2eTestBrowser) {
     // xyz should be first, because its page body matches the search phrase exactly,
     // but the qwerty page also includes the text "abcdef" = less good match?
-    someone.assertNthTextMatches('.c_SR_Ttl', 1, xyzTitle);
-    someone.assertNthTextMatches('.c_SR_Ttl', 2, qwertyAbcTitle);
-    someone.assertNthTextMatches('.esSERP_Hit_Text', 1, wordQwertyBody);
-    someone.assertNthTextMatches('.esSERP_Hit_Text', 2, qwertyAbcBody);
-    someone.assertExactly(0, '.esSERP_Hit_In'); // only for comments, not the orig-post
-    someone.assertExactly(2, '.esSERP_Hit_Text');
+    await brX.assertNthTextMatches('.c_SR_Ttl', 1, xyzTitle);
+    await brX.assertNthTextMatches('.c_SR_Ttl', 2, qwertyAbcTitle);
+    await brX.assertNthTextMatches('.esSERP_Hit_Text', 1, wordQwertyBody);
+    await brX.assertNthTextMatches('.esSERP_Hit_Text', 2, qwertyAbcBody);
+    await brX.assertExactly(0, '.esSERP_Hit_In'); // only for comments, not the orig-post
+    await brX.assertExactly(2, '.esSERP_Hit_Text');
   }
 
-  it(`Owen also searches for '${wordQwertyBody}'`, () => {
-    owen.topbar.searchFor(wordQwertyBody);
+  it(`Owen also searches for '${wordQwertyBody}'`, async () => {
+    await owen_brA.topbar.searchFor(wordQwertyBody);
   });
 
-  it(`... and finds both pages`, () => {
-    assertFoundTwoQwertyBodies(owen);
+  it(`... and finds both pages`, async () => {
+    await assertFoundTwoQwertyBodies(owen_brA);
   });
 
-  it(`Maria leaves; a stranger arrives`, () => {
-    assert(stranger === maria);
-    maria.go(idAddress.origin);
-    maria.topbar.clickLogout();
+  it(`Maria leaves; a stranger arrives`, async () => {
+    assert.eq(stranger_brB, maria_brB);
+    await maria_brB.go2(idAddress.origin);
+    await maria_brB.topbar.clickLogout();
   });
 
-  it(`The stranger searches for '${wordQwertyBody}', finds both pages`, () => {
-    stranger.topbar.searchFor(wordQwertyBody);
-    assertFoundTwoQwertyBodies(stranger);
+  it(`The stranger searches for '${wordQwertyBody}', finds both pages`, async () => {
+    await stranger_brB.topbar.searchFor(wordQwertyBody);
+    await assertFoundTwoQwertyBodies(stranger_brB);
   });
 
-  it(`... but doesn't find 'non_existing_text'`, () => {
-    stranger.searchResultsPage.searchForWaitForResults('non_existing_text');
-    stranger.searchResultsPage.assertPhraseNotFound('non_existing_text');
+  it(`... but doesn't find 'non_existing_text'`, async () => {
+    await stranger_brB.searchResultsPage.searchForWaitForResults('non_existing_text');
+    await stranger_brB.searchResultsPage.assertPhraseNotFound('non_existing_text');
   });
 
-  it(`A guest logs in`, () => {
-    assert(guest === stranger);
-    stranger.go(idAddress.origin);
-    guest.complex.signUpAsGuestViaTopbar("Gunnar Guest");
+  it(`A guest logs in`, async () => {
+    assert.eq(guest_brB, stranger_brB);
+    await stranger_brB.go2(idAddress.origin);
+    await guest_brB.complex.signUpAsGuestViaTopbar("Gunnar Guest");
   });
 
-  it(`The guest searches for '${wordQwertyBody}', finds both pages`, () => {
-    guest.topbar.searchFor(wordQwertyBody);
-    assertFoundTwoQwertyBodies(guest);
+  it(`The guest searches for '${wordQwertyBody}', finds both pages`, async () => {
+    await guest_brB.topbar.searchFor(wordQwertyBody);
+    await assertFoundTwoQwertyBodies(guest_brB);
   });
 
-  it(`... but doesn't find 'non_existing_text'`, () => {
-    guest.searchResultsPage.searchForWaitForResults('non_existing_text');
-    guest.searchResultsPage.assertPhraseNotFound('non_existing_text');
+  it(`... but doesn't find 'non_existing_text'`, async () => {
+    await guest_brB.searchResultsPage.searchForWaitForResults('non_existing_text');
+    await guest_brB.searchResultsPage.assertPhraseNotFound('non_existing_text');
   });
 
 });

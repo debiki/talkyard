@@ -510,8 +510,8 @@ function runAllE2eTests {
   # Seach
   # ------------
 
-  $r s/wdio --only search-public-basic.2browsers $args
-  $r s/wdio --only search-private-chat.2browsers $args
+  $r s/wdio-7 --only search-public-basic.2br.f --cd -i $args
+  $r s/wdio-7 --only search-private-chat.2br.f --cd -i $args
   $r s/wdio-7 --only reindex-sites.2br.f --cd -i $args
 
 
