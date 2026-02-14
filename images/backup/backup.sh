@@ -129,6 +129,39 @@ insert_backup_log_row() {
 }
 
 
+# Backup config
+# -------------------
+
+# _Backup_order: Seems nice to backup the configuration, so the backup logs table
+# will tell you which config backup is for the latest database backup.
+# (The database and app conf are usually most important.)
+
+config_backup_file_name="$hostname-$when-$label-config.tar.gz$dot_gpg"
+config_backup_path="$backup_archives_dir/$config_backup_file_name"
+
+log_message "Backing up config$encrypted to: $config_backup_path ..."
+
+# Just backup everything we find in /opt/talkyard-v1? (We used to back up only:
+#".env docker-compose.* talkyard-maint.log conf data/certbot data/sites-enabled-auto-gen".)
+conf_files="*"
+
+cd $talkyard_dir
+
+if [ -n "$encrypted" ]; then
+  # This pipes to stdout:  `tar -f -`   that is, setting the file to '-'.
+  tar -czf - $conf_files  \
+      | $gpg_encrypt --output $config_backup_path
+else
+  # This writes directly to the backup file.
+  tar -czf $config_backup_path $conf_files
+fi
+
+insert_backup_log_row 'appconf' "$config_backup_file_name"
+
+log_message "Done backing up config."
+
+
+
 # Backup Postgres
 # -------------------
 
@@ -140,6 +173,7 @@ log_message "Backing up Postgres$encrypted to: $postgres_backup_path ..."
 pgpass_file="/tmp/.pgpass"  # created in ./entrypoint.sh
 export PGPASSFILE="$pgpass_file"  # default would have been ~/.pgpass
 
+# Insert row before dumping db, so will be incl in the dump.
 insert_backup_log_row 'rdb' "$postgres_backup_file_name"
 
 # ---------------
@@ -192,38 +226,11 @@ log_message "Done backing up Postgres."
 
 
 
-# Backup config
-# -------------------
-
-config_backup_file_name="$hostname-$when-$label-config.tar.gz$dot_gpg"
-config_backup_path="$backup_archives_dir/$config_backup_file_name"
-
-log_message "Backing up config$encrypted to: $config_backup_path ..."
-
-# Just backup everything we find in /opt/talkyard-v1? (We used to back up only:
-#".env docker-compose.* talkyard-maint.log conf data/certbot data/sites-enabled-auto-gen".)
-conf_files="*"
-
-cd $talkyard_dir
-
-if [ -n "$encrypted" ]; then
-  # This pipes to stdout:  `tar -f -`   that is, setting the file to '-'.
-  tar -czf - $conf_files  \
-      | $gpg_encrypt --output $config_backup_path
-else
-  # This writes directly to the backup file.
-  tar -czf $config_backup_path $conf_files
-fi
-
-# Hmm, better backup config first? So this'll be incl in the .sql dump?
-insert_backup_log_row 'appconf' "$config_backup_file_name"
-
-log_message "Done backing up config."
-
-
-
 # Backup Redis
 # -------------------
+#
+# _Backup_order: Less important than the Postgres database, so let's do here, after.
+#
 # """Redis is very data backup friendly since you can copy RDB files while the
 # database is running: the RDB is never modified once produced, and while it gets
 # produced it uses a temporary name and is renamed into its final destination
