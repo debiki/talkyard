@@ -1,3 +1,7 @@
+[use_Mexican_Spanish]. Some time later, change: es_CL => es_MX. No hurry, they're almost the same.
+We'll prioritize words are common in both Spain/Europe and South America, e.g. "Crear tema"
+instead of "Crear hilo", and if we have to choose, pick words that are common in Mexico
+/ South America. — There's many more Spanish speakers in South America.
 
 COULD_OPTIMIZE: Store approved and not-deleted things in one index, and   [index_for_invisible]
 not-yet-approved or has-been-deleted in another index. Then, a bit faster
