@@ -473,6 +473,13 @@ case class SettingsToSave(
   // The language code must be like en_US.
   require(languageCode.forall(_.forall(_.isAToZUnderscoreOnly)), "Weird lang code [TyE2WKBYF]")
   require(languageCode.forall(_.forall(_.length < 10)), "Too long language code [TyE2WKBP5]")
+  // 2026: Actually, allow only well-known language codes. Otherwise ElasticSearch says Error
+  // when there's no multilingual field for that language code. [multilingual_mapping]
+  languageCode.foreach(anyNewCode => anyNewCode.foreach(theNewCode => {
+    if (!Validation.isLangCodeSupported(theNewCode)) {
+      throwBadReq3("TyELANGCODE", s"Unsupported language code: $theNewCode")
+    }
+  }))
 
   // useOnlyCustomIdps and enableCustomIdps: See SettingsDao, [onl_cust_idp].
 
