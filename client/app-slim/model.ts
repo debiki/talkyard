@@ -2761,6 +2761,12 @@ interface IdentityProviderSecretConf extends IdentityProviderPubFields {
 // =========================================================================
 
 
+interface LabelValue {
+  label: St
+  value: St
+}
+
+
 /// For rendering a (A) text/image circle with one's first letter or tiny profile pic.
 interface AvatarProps {
   user: BriefUser
