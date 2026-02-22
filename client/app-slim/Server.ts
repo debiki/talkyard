@@ -1083,7 +1083,7 @@ function loadJQuery(callback?) {
 
 
 export function createSite(ps: { localHostname: St,
-    anyEmbeddingSiteAddress: St, organizationName: St, makePublic: Bo,
+    anyEmbeddingSiteAddress: St, organizationName: St, makePublic: Bo, langCode: St,
     onOk: (nextUrl: St) => V }) {
   const params = new URLSearchParams(window.location.search);
   // The server will [remove_not_allowed_feature_flags].
@@ -1096,6 +1096,7 @@ export function createSite(ps: { localHostname: St,
       localHostname: ps.localHostname,
       embeddingSiteAddress: ps.anyEmbeddingSiteAddress,
       organizationName: ps.organizationName,
+      langCode: ps.langCode,
       makePublic: ps.makePublic,
       featureFlags,
       testSiteOkDelete,

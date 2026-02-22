@@ -1319,9 +1319,11 @@ case class SitePatcher(globals: debiki.Globals) {
         siteToSave.status,
         hostname = siteToSave.canonicalHostname.map(_.hostname),
         featureFlags = siteToSave.featureFlags,
-        // Any embedding url and org name get updated below (0296537).
+        // Any embedding url, org name and site language get updated below (0296537).
+        // [split_create_site_params]
         embeddingSiteUrl = None,
         organizationName = "Organization name missing [TyM8YKWP3]",
+        languageCode = None, // updated below (0296537)
         makePublic = None,
         creatorId = SystemUserId,
         browserIdData = browserIdData,
@@ -1341,10 +1343,11 @@ case class SitePatcher(globals: debiki.Globals) {
       tx.deferConstraints()
 
       // The canonical hostname got inserted already, by createAdditionalSite() above.
+      // (But not the site language and other settings. [split_create_site_params])
       val otherHostnames = siteToSave.hostnames.filter(_.role != Hostname.RoleCanonical)
       otherHostnames.foreach(hn => tx.insertSiteHost(hn.noDetails))
 
-      // This also updates any embedding url and org name (0296537).
+      // This also updates any embedding url and org name and lang code (0296537).
       tx.upsertSiteSettings(siteSettings)
 
       siteData.apiSecrets foreach tx.insertApiSecret

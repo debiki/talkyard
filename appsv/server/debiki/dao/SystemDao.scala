@@ -380,6 +380,9 @@ class SystemDao(
     * a single site server.
     *
     * The first site is instead created by [[createFirstSite()]] above.
+    *
+    * REFACTOR: Could split into 2 param groups: [split_create_site_params]
+    * The site (name, id, hostname, status), and settings (language, org name, embedded, etc).
     */
   def createAdditionalSite(
     anySiteId: Opt[SiteId],
@@ -390,6 +393,7 @@ class SystemDao(
     featureFlags: St,
     embeddingSiteUrl: Opt[St],
     organizationName: St,
+    languageCode: Opt[St],
     makePublic: Opt[Bo],
     creatorId: UserId,   // change to Option, present iff createdFromSiteId ?
     browserIdData: BrowserIdData,
@@ -503,7 +507,10 @@ class SystemDao(
         // (This is not the very first site on this server, so the person creating this site,
         // is apparently not doing a self hosted installation.)
         enableApi = Some(Some(false)),
-        orgFullName = Some(Some(organizationName))))
+        orgFullName = Some(Some(organizationName)),
+        languageCode =
+            // Clearing the language code makes no senes — don't pass Some(None).
+            if (languageCode.isEmpty) None else Some(languageCode)))
 
       val newSiteHost = hostname.map(Hostname(_, Hostname.RoleCanonical))
       newSiteHost foreach { h =>

@@ -174,6 +174,7 @@ class DaoAppSuite(
           pubId = pubId, name = siteName, status = SiteStatus.Active,
           hostname = Some(hostname), featureFlags = "",
           embeddingSiteUrl = None, organizationName = s"Site $hostname Organization Name",
+          languageCode = None,
           makePublic = None, creatorId = UnknownUserId, browserIdData,
           isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,
           createdFromSiteId = None)
