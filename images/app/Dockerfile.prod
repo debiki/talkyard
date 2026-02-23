@@ -113,7 +113,9 @@ HEALTHCHECK \
     # Maybe JVM garbage collections can take long, if on a shared CPU VM.
     --timeout=30s \
     --retries=5 \
-    CMD curl --fail --silent --show-error http://localhost:9000/-/ping-exception-action || exit 1
+    # Curl would try to connect via egressp, had we not specified --noproxy. [egressp_conf]
+    CMD curl --fail --silent --show-error --noproxy '*' \
+           http://localhost:9000/-/ping-exception-action || exit 1
     # Would be better if we could ping:
     #    http://localhost:9000/-/ping-session-action
     # but then: 404 Not Found, because we didn't specify the hostname of a forum. Oh well.
