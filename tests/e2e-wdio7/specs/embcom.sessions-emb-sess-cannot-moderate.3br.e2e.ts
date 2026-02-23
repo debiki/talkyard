@@ -102,7 +102,9 @@ describe(`embcom.sessions-emb-sess-cannot-moderate.3br  TyTEECSESS0MOD`, () => {
   });
 
   it(`... Mons logs in`, async () => {
-    await mons_brA.complex.loginIfNeededViaMetabar(mons);
+    await mons_brA.complex.loginIfNeededViaMetabar(mons, {
+            // Stay in the main win, so can access `talkyardSession` in `localStorage`.
+            switchBackToIframe: false });
   });
 
   it(`Mallory steals the session via the xss attack`, async () => {

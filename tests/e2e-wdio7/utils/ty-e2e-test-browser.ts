@@ -10919,7 +10919,8 @@ export class TyE2eTestBrowser {
         } */
       },
 
-      loginIfNeededViaMetabar: async (ps: NameAndPassword, clickPs?: WaitAndClickPs) => {
+      loginIfNeededViaMetabar: async (ps: NameAndPassword,
+              clickPs: WaitAndClickPs & { switchBackToIframe?: Bo } = {}) => {
         await this.switchToEmbCommentsIframeIfNeeded();
         const isWhereBef = this.#isWhere;
         await this.waitForMyDataAdded();
@@ -10928,7 +10929,7 @@ export class TyE2eTestBrowser {
                 } — session id cookie blocked? [TyM306MRKTJ]`);
           await this.complex.loginWithPasswordViaMetabar(ps, clickPs);
         }
-        if (isWhereBef === IsWhere.EmbCommentsIframe) {
+        if (isWhereBef === IsWhere.EmbCommentsIframe && clickPs.switchBackToIframe !== false) {
           await this.switchToEmbeddedCommentsIrame();
         }
       },
