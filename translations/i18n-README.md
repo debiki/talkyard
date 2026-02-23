@@ -16,6 +16,13 @@ To add a new language:
    and you can edit and save your new translation
    (and still see the English version to the left).
 
+2. Copy the email templates to `modules/ty-translations/emails/nn_NN/`
+   and translate to your language. The email templates are
+   in various locations in `appsv/server/views/`, look:
+   `find appsv/server/views/ -iname '*email*'`. When copying,
+   flatten the directory structure (that is, place all email templates
+   directly under `nn_NN`, not in sub directories).
+
 3. Clone the repository `ty-translations` https://github.com/debiki/ty-translations.
    Add your translation at `(ty-translations)/ui/nn_NN/i18n.ts`,
    and submit a pull request (to the `ty-translations` repo).  (Or send us
@@ -47,11 +54,11 @@ To add a new language:
         - Edit `app/debiki/Nashorn.scala` so the language file gets included in the
           server side Javascript bundle.
 
-        - Edit `client/app/admin/admin-app.staff.ts`: add the language
+        - Edit `client/app-staff/admin/admin-app.staff.ts`: add the language
           to the select-language dropdown.
 
-        - Edit `app/talkyard/server/emails/Emails.scala`, if any emails
-          were translated.
+        - Edit `appsv/server/talkyard/server/emails/out/Emails.scala`,
+          if any emails were translated.
 
         - Edit `Makefile`: add the language to the `prod_asset_bundle_files` list.
 
