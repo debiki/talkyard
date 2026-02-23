@@ -1,20 +1,12 @@
-# Node.js Linux Dockerfile, for running Gulp and Webdriverio, for Talkyard.
-
-# Let's use Debian, not Alpine, so various e2e test Bash scripts
-# will work as "expected" and not run into any Alpine oddities.
+# Node.js Linux Dockerfile, for running Gulp and transpiling & minifying Javascript & CSS.
 #
-# Nodejs Fibers 3.x, used by wdio-sync, won't build with Node 13 yet,
-# wait until the new wdio-sync version that uses Fibers 4.x has been released:
-# https://github.com/webdriverio-boneyard/wdio-sync/commit/dce97e0482a712660d269beb9b575bd731f26977
-# (unreleased).
-# ???
-#FROM node:13.8.0-buster-slim
-# Dockerfiles:
-#   https://hub.docker.com/_/node/
-#   https://github.com/nodejs/docker-node/blob/master/10/buster-slim/
-FROM node:14.15.1-buster-slim
-# Will this work?:  no, python gone — only python3. Probably won't work.
-#FROM node:25.1.0-trixie-slim
+# Previously, this image was used for running Webdriverio tests but now we run
+# those directly on the host, and install the appropriate version of Nodejs
+# using Nix, see: ../../flake.nix and, for old Webdriverio 6 tests
+# we use: ../../tests/e2e/flake.nix.
+
+# Images list: https://hub.docker.com/_/node/
+FROM node:24.14.0-trixie-slim
 
 LABEL org.opencontainers.image.title="Talkyard Nodejs" \
       io.talkyard.edition="se" \
@@ -44,9 +36,11 @@ RUN \
       git \
       # Oddly enough, 'ps' not installed:
       procps \
-      # For building node-gyp:
-      python \
-      g++ \
+      # For building node-gyp: — not using any more? No, using ../../tests/e2e/flake.nix
+      # instead for old Webdriverio 6 tests.
+      #python \
+      # For the C preprocessor:
+      gcc \
       build-essential
 
 
