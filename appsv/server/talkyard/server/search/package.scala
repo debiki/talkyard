@@ -231,23 +231,6 @@ package object search {
           if (post.isTitle) die("TyEIX_TitlePostType")
           else if (post.isOrigPost) OrigPostType
           else post.tyype.toInt),
-      Fields.PostJoin -> (
-          // We index the title and orig post together into a Page "join doc" [es_page_join_doc],
-          // when we encounter the orig post.  [index_title_and_body_together]
-          // Comments are children of that parent "join doc".
-          if (post.isOrigPost) {
-            warnDevDieIf(anyParentDocId.isDefined, "TyEIX_ORIG_POST_PARENT_DOC",
-                  s"s$siteId: anyParentDocId defined for title + OP, orig post id: ${post.id}")
-            Json.obj("name" -> "Page")
-          }
-          else if (anyParentDocId.isEmpty) {
-            // Can this happen? I forgot. Maybe for embedded comments discussions?
-            JsNull
-          }
-          else {
-            // This can be a comment, for example. We'll index it as a child doc.
-            Json.obj("name" -> "Post", "parent" -> anyParentDocId.get)
-          }),
       Fields.ApprovedRevisionNr -> post.approvedRevisionNr,
       // We currently index only approved posts. [ix_unappr]
       // Unapproved posts are going to have different doc ids, since there might be both an
@@ -290,6 +273,28 @@ package object search {
       // Fields.PageTagTypeIds -> Json.arr(tags.map(_.tagTypeId)),
       // Fields.PageTagValues — "multiplied" by all comments!? Bad idea I suppose?
       )
+
+    // ----- Page-comment join doc
+
+    if (post.isOrigPost || anyParentDocId.nonEmpty) {
+      json += Fields.PostJoin -> (
+            // We index the title and orig post together into a Page "join doc" [es_page_join_doc],
+            // when we encounter the orig post.  [index_title_and_body_together]
+            // Comments are children of that parent "join doc".
+            if (post.isOrigPost) {
+              warnDevDieIf(anyParentDocId.isDefined, "TyEIX_ORIG_POST_PARENT_DOC",
+                s"s$siteId: anyParentDocId defined for title + OP, orig post id: ${post.id}")
+              Json.obj("name" -> "Page")
+            }
+            else {
+              // This can be a comment, for example. We'll index it as a child doc.
+              Json.obj("name" -> "Post", "parent" -> anyParentDocId.getOrDie("TyE7SNKWP2"))
+            })
+    }
+    else {
+      // Title missing or wrong id or something. Happened for a really old page (<= 2012) where
+      // the title post didn't have nr 0. Just ignore, pretty uninteresting?
+    }
 
     // ----- Title & External ids
 

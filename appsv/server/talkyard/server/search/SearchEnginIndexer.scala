@@ -150,7 +150,7 @@ class IndexingActor(
       // (Except for once per startup if already exists.)
       if (!doneCreatingIndexes) {
 
-        logger.debug(s"Trying to create search engine indices if needed... [TyMSIX_TRYCREA]")
+        logger.debug(s"Creating search engine indexes if needed... [TyMSIX_TRYCREA]")
         val newIndexes: Seq[IndexSettingsAndMappings] =
               indexCreator.createIndexesIfNeeded(client) getOrIfBad { err =>
                 _doExpBackoff()
@@ -175,7 +175,12 @@ class IndexingActor(
         // (Or, if exporting & importing?)
 
         if (newIndexes.nonEmpty) {
+          logger.info(s"I just created search engine indexes, " +
+                "now slowly indexing everything. [TyMSIX_REIX]")
           _enqueueEverything()
+        }
+        else {
+          logger.debug(s"Search engine indexes already created. [TyMSIX_ALRCREA]")
         }
 
         // Too old indexes prevent newer major versions of ElasticSearch from starting.
@@ -338,7 +343,7 @@ class IndexingActor(
               titlePostId.flatMap(titleId =>
                     postsToIndex.postsToIndexBySite(siteId).find(_.id == titleId)) getOrElse {
                 logger.warn(s"s$siteId: Not indexing title + body on page ${post.pageId
-                      } — title post missing, only body post id ${post.id} found.")
+                      } — title post missing, only body post id ${post.id} found. [TyESIX_0TTL")
                 removeFromQueue()
                 return None
               })
