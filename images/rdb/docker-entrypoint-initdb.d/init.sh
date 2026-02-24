@@ -25,7 +25,7 @@ set -e  # abort on error
 # Create a Talkyard user, and a replication user.
 # ------------------------
 
-psql -v pg_pwd="$pg_pwd" -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
+psql -v pg_pwd="$pg_pwd" -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<'EOF'
 create user repl replication login connection limit 1 encrypted password :'pg_pwd';
 
 create user talkyard password :'pg_pwd';
@@ -43,7 +43,7 @@ EOF
 
 if [ -n "$CREATE_TEST_USER" ]; then
   # For running Talkyard's integration tests.
-  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
+  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<'EOF'
   create user talkyard_test password 'public';  -- [test_db_pwd]
   create database talkyard_test;
   grant all privileges on database talkyard_test to talkyard_test;
@@ -53,7 +53,7 @@ EOF
 
   # For testing OIDC login via Keycloak — seems importing a Keycloak realm
   # won't work with the h2 database; needs sth like Postgres. [ty_kc_db]
-  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
+  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<'EOF'
   create user keycloak_test password 'public';  -- [test_db_pwd]
   create database keycloak_test owner keycloak_test;
   grant all privileges on database keycloak_test to keycloak_test;
@@ -81,7 +81,7 @@ host replication repl 0.0.0.0/0 md5' $PGDATA/pg_hba.conf
 
 mv $PGDATA/postgresql.conf $PGDATA/postgresql.conf.orig
 
-cat << EOF >> $PGDATA/postgresql.conf
+cat << 'EOF' >> $PGDATA/postgresql.conf
 include '/var/lib/postgresql/conf/postgresql.conf'
 EOF
 

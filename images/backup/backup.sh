@@ -120,12 +120,12 @@ insert_backup_log_row() {
        -v random_value="$random_value" \
        -v what="$1" \
        -v file_name="$2" \
-       --host=rdb talkyard talkyard \
-       -c \
-    "insert into backup_test_log3 (
+       --host=rdb talkyard talkyard  <<'EOF'
+     insert into backup_test_log3 (
         logged_at, logged_by, backup_of_what, file_name, random_value)
      values (
-        now_utc(), :'hostname', :'what', :'file_name', :'random_value');"
+        now_utc(), :'hostname', :'what', :'file_name', :'random_value');
+EOF
 }
 
 
