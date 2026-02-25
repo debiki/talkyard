@@ -561,7 +561,7 @@ db-cli:
 	  def_user="$${def_user:-talkyard}" ;\
 	  read -p "Connect to the PostgreSQL database as which user? [$$def_user] " db_user ;\
 	  db_user="$${db_user:-$$def_user}" ;\
-	  s/d-psql "$$db_user" "$$db_user"
+	  $(d_c) exec rdb psql "$$db_user" "$$db_user"
 
 
 up: debug_asset_bundles
