@@ -111,20 +111,19 @@ fi
 #   $1: What are we backing up
 #   $2: Backup file name.
 #
-insert_backup_log_row() {
+insert_backup_history_row() {
   # Connects to database Ty as user Ty, and we can use :'bind_vars' in the SQL commands
   # (to avoid SQL errors if a password or label includes "'" quotes or spaces).
-  psql -v when="$when" \
-       -v hostname="$hostname" \
+  psql -v hostname="$hostname" \
        -v label="$label" \
        -v random_value="$random_value" \
-       -v what="$1" \
+       -v component="$1" \
        -v file_name="$2" \
        --host=rdb talkyard talkyard  <<'EOF'
-     insert into backup_test_log3 (
-        logged_at, logged_by, backup_of_what, file_name, random_value)
+     insert into sys_backup_history_t (
+        created_at_c,  by_host_c,  component_c,  file_name_c,  rand_val_c,  label_c)
      values (
-        now_utc(), :'hostname', :'what', :'file_name', :'random_value');
+        now_utc(),  :'hostname',  :'component',  :'file_name',  :'random_value',  :'label');
 EOF
 }
 
@@ -156,7 +155,7 @@ else
   tar -czf $config_backup_path $conf_files
 fi
 
-insert_backup_log_row 'appconf' "$config_backup_file_name"
+insert_backup_history_row 'AppConf' "$config_backup_file_name"
 
 log_message "Done backing up config."
 
@@ -174,7 +173,7 @@ pgpass_file="/tmp/.pgpass"  # created in ./entrypoint.sh
 export PGPASSFILE="$pgpass_file"  # default would have been ~/.pgpass
 
 # Insert row before dumping db, so will be incl in the dump.
-insert_backup_log_row 'rdb' "$postgres_backup_file_name"
+insert_backup_history_row 'Rdb' "$postgres_backup_file_name"
 
 # ---------------
 # There's `cpu_*` limits in docker-compose.yml, because:
@@ -253,7 +252,7 @@ if [ -f $redis_dump_file ]; then
   else
     gzip --to-stdout $redis_dump_file  >  $redis_backup_path
   fi
-  insert_backup_log_row 'redis' "$redis_backup_file_name"
+  insert_backup_history_row 'Redis' "$redis_backup_file_name"
   log_message "Done backing up Redis."
 else
   log_message "No Redis dump.rdb to backup."
@@ -407,7 +406,7 @@ touch $backup_archives_dir/$uploads_backup_d
 log_message "Done backing up uploads."
 
 # Keep track of what we've backed up:
-insert_backup_log_row 'pub-uploads' "$uploads_backup_d"
+insert_backup_history_row 'PubUploads' "$uploads_backup_d"
 
 
 
