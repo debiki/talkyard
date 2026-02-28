@@ -3,6 +3,15 @@ We'll prioritize words are common in both Spain/Europe and South America, e.g. "
 instead of "Crear hilo", and if we have to choose, pick words that are common in Mexico
 / South America. — There's many more Spanish speakers in South America.
 
+[es_toggle_univ_icu] Since we double-index into both lang specific fields,
+e.g. sv_SE, *and* the univ_icu field, we can find "får" if searching for "far".
+Sometimes that's good (say, English user typing on an English keyboard)
+sometimes annoying.
+So, later, maybe a checkbox that toggles univ_icu search on/off?
+And if off, then we'd search only the language specific field, e.g. sv_SE
+if the search q is in Swedish.
+There's already a server side param (&univ=false) only used in e2e tests right now.
+
 COULD_OPTIMIZE: Store approved and not-deleted things in one index, and   [index_for_invisible]
 not-yet-approved or has-been-deleted in another index. Then, a bit faster
 searches: only the relevant things, in each index (ppl typically look only for

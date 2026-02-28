@@ -514,6 +514,15 @@ function runAllE2eTests {
   $r s/wdio-7 --only search-private-chat.2br.f --cd -i $args
   $r s/wdio-7 --only reindex-sites.2br.f --cd -i $args
 
+  # Many languages
+  # ------------
+
+  # After the search tests, since these assume basic search works.
+
+  # A different left-to-right language.
+  $r s/wdio-7 --only create-site-lang-sv_SE.2br.f --cd -i $args
+  # A different right-to-left language.
+  $r s/wdio-7 --only create-site-lang-he_IL.2br.f --cd -i $args
 
   # This test is flaky because missing feature: disabling email notfs for replies
   # one has seen.

@@ -2683,7 +2683,7 @@ const LanguageSettings = createFactory({
             undo: () => setLangCode(currentSettings.languageCode),
             reset: () => setLangCode(defaultSettings.languageCode) },
           rFragment({},
-            rb.ReactSelect({ multi: false, clearable: false,
+            rb.ReactSelect({ multi: false, clearable: false, className: 'e_LangDrpd',
                 value: selectedLangOpt, options: langOpts,
                 onChange: (langCodeAndName: LabelValue) => {
                   setLangCode(langCodeAndName.value);

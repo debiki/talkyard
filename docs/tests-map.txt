@@ -85,6 +85,10 @@ create site & forum -
   not too many per ip / email:
   not too many in total:
   reserved subdomain:
+  different language:
+            - create-site-lang-sv_SE.2br.f  TyTE_NEWF_LANG_SV_SE.TyTMULTILING_SEARCH
+    right-to-left, rtl:
+            - create-site-lang-he_IL.2br.f  TyTE_NEWF_LANG_HE_IL.TyTMULTILING_SEARCH
 
 move site to new hostname:
   move to new,
@@ -2140,6 +2144,9 @@ export and restore:  (impexp)
     - guestEmailPrefs, not yet incl in export
     - Include category ext id in imported dump. Also speeds up test. TyT60FKTEXK53
 
+feature flags:
+  manual tests:
+            - create-site-password-run-admin-intro-tours.1br.d  TyT7BAWFPK9.TyTNEWSITEFFS
 
 maintenance mode:
   start via API,

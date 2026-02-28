@@ -3300,6 +3300,12 @@ export class TyE2eTestBrowser {
           }
         }
 
+        if (data.langName) {
+          logMessage(`Changing language to ${data.langName}...`);
+          await this.createSite.selectLanguage(data.langName);
+        }
+        // Else: English is the default, fine.
+
         logMessage(`Submitting, to create site...`);
         await this.waitAndClick('input[type=submit]');
 
@@ -3308,6 +3314,12 @@ export class TyE2eTestBrowser {
         logMessage(`Clicking owner signup buton ...`);
         await this.waitForVisible('#t_OwnerSignupB');
         assert.equal(data.origin, await this.origin());
+      },
+
+      selectLanguage: async (langName: St) => {
+        // It's basically the same language selector widget here and in the admin area,
+        // so this works:
+        await this.adminArea.settings.language.selectLanguage(langName);
       },
 
       clickOwnerSignupButton: async () => {
@@ -6486,6 +6498,15 @@ export class TyE2eTestBrowser {
 
 
     topic = {
+      // If *anything* appears in the correct language, then with 99.8% likelihood all is fine.
+      // (In the sense that everything that's been translated to that language, will work
+      // fine.) So, just checking 2 texts, does *a lot*.
+      assertTranslationLooksOk: async (ps: { viewCatsLink: St, createTopicBtn: St }) => {
+        const viewCatsLink = await this.waitAndGetText('#e_ViewCatsB');
+        const createTopicBtn = await this.waitAndGetText('.esF_BB_NewTpcB');
+        tyAssert.deepEq({ viewCatsLink, createTopicBtn }, ps);
+      },
+
       waitUntilPageDeleted: async () => {
         await this.waitForVisible('.s_Pg_DdInf');
       },
@@ -9474,6 +9495,17 @@ export class TyE2eTestBrowser {
           },
         },
 
+        language: {
+          selectLanguage: async (langName: St) => {
+            await this.widgets.reactSelect('.e_LangDrpd').startTypingItemName(langName, {
+                  // The current language name (e.g. "English") occludes the language
+                  // selector input, but we can just ignore this, works anyway.
+                  skipWait: true });
+            await this.widgets.reactSelect('.e_LangDrpd').hitEnterToSelectItem();
+            await this.widgets.reactSelect('.e_LangDrpd').waitUntilNumItems(1);
+          },
+        },
+
         advanced: {
           duplHostnamesSelector: '.s_A_Ss_S-Hostnames-Dupl pre',
           redirHostnamesSelector: '.s_A_Ss_S-Hostnames-Redr pre',
@@ -11417,10 +11449,10 @@ export class TyE2eTestBrowser {
     },
 
     reactSelect: (selector: St) => { return {
-      startTypingItemName: async (chars: St) => {
+      startTypingItemName: async (chars: St, ps: { skipWait?: true } = {}) => {
         // Dupl code. [.react_select]
         await this.waitAndSetValue(`${selector} .Select-input > input`, chars,
-            { okayOccluders: '.Select-placeholder', checkAndRetry: true });
+            { okayOccluders: '.Select-placeholder', checkAndRetry: true, ...ps });
       },
 
       appendChars: async (chars: St) => {

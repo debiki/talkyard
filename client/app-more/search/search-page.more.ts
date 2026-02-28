@@ -138,7 +138,8 @@ var SearchPageContentComponent = createReactClass(<any> {
     // Later, could [use_search_results_cursor] instead, to avoid races.
     const offset = !toLoadMore ? 0 : prevResults.pagesAndHits.length;
 
-    // For now. This is just for better e2e tests of language specific ElasticSearch fields.
+    // For now, for e2e tests of language specific ElasticSearch fields. [es_toggle_univ_icu]
+    // Later, maybe some checkboxes? Language dropdowns? Or analyze query, auto pick lang?
     const skipUniversalFallback = location.search.indexOf('&univ=false') >= 0;
     const languages = skipUniversalFallback ? ['SiteDefLang'] : undefined;
 

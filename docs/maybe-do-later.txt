@@ -1343,6 +1343,8 @@ Surprising search behavior:
   - Automatically pick the right per-language ES doc field to index into and to search,
     based on the language in the post, or in the search query. [es_right_lang_field]
     Instead of just looking at a site global setting.
+  - Toggle international fallback search on/off, if annoying, [es_toggle_univ_icu]
+    e.g. don't want to find "får" if searching for "far" in Swedish.
 
 [reconnect_to_ElasticSearch]
 Did I fix this?: "Don't keep retrying & logging 99999 errors"

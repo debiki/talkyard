@@ -199,7 +199,6 @@ const CreateWebsiteComponent = createFactory<any, any>({
           !state.showPrivPubl || isComments ? null :
             r.div({ className: 'n_InpSec' },
               r.p({}, r.b({}, "Who can see your forum?")),
-              r.p({}, youCanChangeThisLater),
               /* This is too much to read, things both ChatGPT and Gemini.
               r.p({},
                   "Shall people on the Internet see the discussions in the forum? ", r.br(),
@@ -226,12 +225,13 @@ const CreateWebsiteComponent = createFactory<any, any>({
                       "Good for company internal forums or private groups."),
                   checked: state.makePublic === false,
                   onChange: () => this.setState({ makePublic: false }),
-                  })),
+                  }),
+              r.p({}, youCanChangeThisLater)),
 
           !showLangSelector ? null :
               r.div({ className: 'form-group' },
                 r.label({ className: 'control-label' }, "Language"),
-                rb.ReactSelect({ multi: false, clearable: false,
+                rb.ReactSelect({ multi: false, clearable: false, className: 'e_LangDrpd',
                     value: selectedLangOpt, options: langOpts,
                     onChange: (langCodeAndName: LabelValue) => {
                       this.setState({

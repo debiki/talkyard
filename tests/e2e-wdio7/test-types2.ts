@@ -150,6 +150,7 @@ interface NewSiteDataSharedFields {
   siteType: SiteType;
   localHostname?: string;
   orgName?: string;
+  langName?: St
   origin?: string;
   embeddingUrl?: string;
 
