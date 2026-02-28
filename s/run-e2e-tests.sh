@@ -700,6 +700,7 @@ function runAllE2eTests {
   $r s/wdio-7     --only embcom.create-site-admin-intro-tour-no-verif-email.2br.ec --cd -i $args
   $r s/wdio-7     --only embcom.create-site-req-verif-email-exit-tours.2br --cd -i $args
   $r s/wdio-7     --only embcom.create-site-forum-intro-tour.2br.ec --cd -i  $args
+  # PORT TO -7  TODO
   $r s/wdio       --only embedded-comments-create-site-import-disqus.2br $args
   $r s/wdio-7     --only embcom.drafts-previews-not-logged-in.2br --cd -i $args
   $r s/wdio-7     --only embcom.scroll-and-load-more.2br.ec --cd -i $args

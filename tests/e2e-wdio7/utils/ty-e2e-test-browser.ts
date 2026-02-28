@@ -3294,6 +3294,10 @@ export class TyE2eTestBrowser {
             logMessage(`Selecting Private forum (not public)...`);
             await this.waitAndClick('#e_MkPriv');
           }
+          else {
+            logMessage(`Selecting Public forum (the default, in e2e tests) ...`);
+            await this.waitAndClick('#e_MkPub');
+          }
         }
 
         logMessage(`Submitting, to create site...`);
