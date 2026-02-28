@@ -19,7 +19,7 @@ package controllers
 
 import com.debiki.core._
 import debiki.{RateLimits, SiteTpi}
-import debiki.JsonUtils.{parseOptInt32}
+import debiki.JsonUtils.{parseSt, parseOptStArr, parseOptInt32}
 import talkyard.server.search._
 import talkyard.server.http._
 import talkyard.server.authz.AuthzCtxOnForum
@@ -59,9 +59,22 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
         maxBytes = 1000, ignoreAlias = true) { request: JsonPostRequest =>
     import request.dao
 
-    val rawQuery = (request.body \ "rawQuery").as[String]
+    val rawQuery = parseSt(request.body, "rawQuery")
     val anyOffset = parseOptInt32(request.body, "offset")
+    val languages: Opt[Seq[St]] = parseOptStArr(request.body, "languages")
+
+    val searchUniversalFallback = languages match {
+      case None => true
+      case Some(langs) =>
+        // Anything else not yet implemented, and probably some invalid nonsense.
+        throwBadReqIf(langs != Seq("SiteDefLang"), "TyE5LKRHF25")
+        // When ['SiteDefLang'] specified, we search only the site default language,
+        // but skip the universal fallback 'univ_icu' field.
+        false
+    }
+
     val searchQuery = SearchQueryParser.parseRawSearchQueryString(rawQuery, dao.readOnly)
+                        .copy(searchUniversalFallback = searchUniversalFallback)
 
     dao.fullTextSearch(searchQuery, anyRootPageId = None, request.authzContext,
             anyOffset = anyOffset, addMarkTagClasses = true) map {

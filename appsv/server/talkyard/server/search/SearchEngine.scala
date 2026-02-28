@@ -80,11 +80,13 @@ class SearchEngine(
 
     // This'll find "shoe" also if you search for "shoes", and "run" if you search for
     // "running", thanks to language aware analyzers, see [multilingual_mapping].
+    // And "älgar" (elks, in Swedish) if you search for "älgen" (the elk).
     //
     // (Don't use `fullTextQuery` — it includes params like "tags:... category:...".)
     //
     if (searchQuery.queryWithoutParams.nonEmpty) {
-      boolBuilder.must(
+      val textFieldsQuery =
+          if (searchQuery.searchUniversalFallback) {
             es8_qs.MultiMatchQuery.of(q => q
                 // We index the page title and orig post into the same ES doc, althoug
                 // in Ty they're stored separately. [index_title_and_body_together]
@@ -99,7 +101,18 @@ class SearchEngine(
                     titleTextField + sameLangTitleBoost,
                     bodyTextField  + sameLangBodyBoost,
                     )
-                .query(searchQuery.queryWithoutParams))._toQuery())
+                .query(searchQuery.queryWithoutParams))._toQuery()
+          }
+          else {
+            // Skip  TitleText_Universal  and  BodyText_Universal.
+            es8_qs.MultiMatchQuery.of(q => q
+                .fields(
+                    titleTextField + sameLangTitleBoost,
+                    bodyTextField  + sameLangBodyBoost,
+                    )
+                .query(searchQuery.queryWithoutParams))._toQuery()
+          }
+      boolBuilder.must(textFieldsQuery)
     }
     else {
       // Then maybe we're searching for tags, categories, is:idea/closed/solved/etc only,

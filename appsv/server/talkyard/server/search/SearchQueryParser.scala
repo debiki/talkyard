@@ -215,6 +215,7 @@ object SearchQueryParser {
               // Let 'sort:...' have precedence over 'tags:tag-name:asc/desc' — 'sort:'
               // is more explicit, intentional?
               sortOrders ++ sortByTags,
+          searchUniversalFallback = true, // the default
           warnings = warnings.to(Vec))
   }
 

@@ -137,7 +137,12 @@ var SearchPageContentComponent = createReactClass(<any> {
     const prevResults: SearchResults | U = this.state.searchResults;
     // Later, could [use_search_results_cursor] instead, to avoid races.
     const offset = !toLoadMore ? 0 : prevResults.pagesAndHits.length;
-    Server.search({ rawQuery: query.rawQuery, offset }, (results: SearchResults) => {
+
+    // For now. This is just for better e2e tests of language specific ElasticSearch fields.
+    const skipUniversalFallback = location.search.indexOf('&univ=false') >= 0;
+    const languages = skipUniversalFallback ? ['SiteDefLang'] : undefined;
+
+    Server.search({ rawQuery: query.rawQuery, offset, languages }, (results: SearchResults) => {
       this.searchingFor = null;
       if (this.isGone) return;
       let searchResults = results;

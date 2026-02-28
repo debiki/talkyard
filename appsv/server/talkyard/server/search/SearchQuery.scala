@@ -36,6 +36,7 @@ case class SearchQuery(
   authorUsernames: Set[St],
   authorIds: Set[PatId],
   sortOrder: ImmSeq[SortHitsBy],
+  searchUniversalFallback: Bo,
   warnings: Vec[ErrMsgCode],
 ) {
 
