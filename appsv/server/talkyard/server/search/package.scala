@@ -517,19 +517,32 @@ package object search {
     val TitleText_Universal = s"$TitleText.$UniversalLang"
 
    /** The per-language field is just the same as the language code, or sometimes
-     * language code + country code.
+     * language code + country code. And in a few cases with an "_icu" suffix — if there's
+     * no language specific analyzer so we have to use the icu_analyzer.
      * Analyzers are defined in: IndexSettingsAndMappings.multilingObj, with these
      * field names. [es_lang_field_names]
      */
     def langFieldForLangCode(langCode: St): St = {
       langCode match {
-        case "pt_BR" | "pt_PT" | "zh_CN" | "zh_TW" =>
-          // Brazilian Portuguese is a bit different from Portuguese Portuguese, so
-          // ElasticSearch has different analyzears.
-          // Traditional and Simplified Chinese are also a bit different.
+        // Brazilian Portuguese is a bit different from Portuguese Portuguese, so
+        // ElasticSearch has different analyzears.
+        // Traditional and Simplified Chinese are also a bit different.
+        case "pt_BR" | "pt_PT" | "zh_CN" =>  // zh_TW: see below
           langCode
+        // Hebrew, Icelandic and Traditional Chinese don't currently have their own analyzers.
+        // But maybe one day they will? For example, [es_hebrew]. Therefore, let's name these
+        // fields "..._icu", since we use the ICU analyzer right now. Later, we can add another
+        // field without "_icu" that uses the language specific analyzer.
+        // (ElasticSearch doesn't let us change a field's type, but we can add *new* fields,
+        // that is, fields "he", "is" and "zh_TW", later when such analyzers are available.)
+        case "he_IL" => "he_icu"
+        case "is_IS" => "is_icu"
+        case "zh_TW" => "zh_TW_icu"
+        // Kurdish (Kurmanji) also doesn't yet have its own analyzer. Append '_std' since we use
+        // the 'standard' analyzer (just like we append '_icu' for the icu_analyzer above).
+        case "ku_TR" => "ku_std"
+        // All other languages: Drop the country code, e.g. "en_US" —> "en", "sv_SE" —> "sv".
         case _ =>
-          // Drop the country code, e.g. "en_US" —> "en", "sv_SE" —> "sv".
           langCode.takeWhile(_ != '_')
       }
     }
@@ -719,6 +732,7 @@ package object search {
     // Note: Even though we already index everything into the 'univ_icu' field, using
     // the icu_analyzer, we also index [languages without their own dedicated analyzer]
     // into language specific fields also using the icu_analyzer (the same analyzer!).
+    // (Namely Hebrew, Icelandic and Traditional Chinese, into he_icu, is_icu, zh_TW_icu.)
     // This is to avoid incorrect inverse document frequencies, that is, to avoid that common
     // words in one language skew the relevance scoring for documents in another language.
     // See:
@@ -771,21 +785,21 @@ package object search {
             "fi":    { $typeText,  "analyzer": "finnish",      $ixOffsets },
             "fr":    { $typeText,  "analyzer": "french",       $ixOffsets },
             "ga":    { $typeText,  "analyzer": "irish",        $ixOffsets },${/*
-            Hebrew */""}
-            "he":    { $typeText,  "analyzer": "icu_analyzer", $ixOffsets },
+            Hebrew. There's an Hebrew analyzer [es_hebrew] but it's not ES' official. */""}
+            "he_icu":{ $typeText,  "analyzer": "icu_analyzer", $ixOffsets },
             "hi":    { $typeText,  "analyzer": "hindi",        $ixOffsets },
             "hu":    { $typeText,  "analyzer": "hungarian",    $ixOffsets },
             "hy":    { $typeText,  "analyzer": "armenian",     $ixOffsets },
             "id":    { $typeText,  "analyzer": "indonesian",   $ixOffsets },${/*
             Icelandic. There's no Icelandic analyzer. */""}
-            "is":    { $typeText,  "analyzer": "icu_analyzer", $ixOffsets },
+            "is_icu":{ $typeText,  "analyzer": "icu_analyzer", $ixOffsets },
             "it":    { $typeText,  "analyzer": "italian",      $ixOffsets },${/*
             Japanese */""}
             "ja":    { $typeText,  "analyzer": "kuromoji",     $ixOffsets },${/*
             Korean */""}
             "ko":    { $typeText,  "analyzer": "nori",         $ixOffsets },${/*
             Kurdish dialect, written in latin letters. */""}
-            "ku":    { $typeText,  "analyzer": "standard",     $ixOffsets },
+            "ku_std":{ $typeText,  "analyzer": "standard",     $ixOffsets },
             "lt":    { $typeText,  "analyzer": "lithuanian",   $ixOffsets },
             "lv":    { $typeText,  "analyzer": "latvian",      $ixOffsets },
             "nl":    { $typeText,  "analyzer": "dutch",        $ixOffsets },
@@ -805,7 +819,7 @@ package object search {
             Simplified: */""}
             "zh_CN": { $typeText,  "analyzer": "smartcn",      $ixOffsets },${/*
             Traditional: */""}
-            "zh_TW": { $typeText,  "analyzer": "icu_analyzer", $ixOffsets }
+            "zh_TW_icu": { $typeText,  "analyzer": "icu_analyzer", $ixOffsets }
           }
         }"""
 

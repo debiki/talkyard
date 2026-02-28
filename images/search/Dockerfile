@@ -23,6 +23,11 @@ LABEL org.opencontainers.image.title="Talkyard Search" \
 # (There's also 'ik_max_words' and 'stconvert' for Chinese [zh_universal], but
 # they're not official ElasticSearch plugins so let's wait, and be happy with
 # 'smartcn' for now.)
+# (Now Feb 2026 there's a Hebrew analyzer too:  [es_hebrew]
+# https://github.com/liladler/elasticsearch-analysis-hebrew-plugin, MIT.
+# It's a 3rd party plugin — needs code review & its own build steps.
+# Let's wait until Elastic has made it one of their official plugins.
+# An old & abandoned: https://github.com/synhershko/elasticsearch-analysis-hebrew, AGPLv3.)
 #
 RUN bin/elasticsearch-plugin install --batch \
     # Various languages.
