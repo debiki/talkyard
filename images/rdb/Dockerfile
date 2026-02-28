@@ -1,5 +1,5 @@
 # See: https://hub.docker.com/_/postgres
-FROM postgres:18.1-trixie
+FROM postgres:18.3-trixie
 
 LABEL org.opencontainers.image.title="Talkyard Rdb" \
       io.talkyard.edition="se" \
