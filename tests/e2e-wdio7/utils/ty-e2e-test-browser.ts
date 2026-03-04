@@ -2722,6 +2722,7 @@ export class TyE2eTestBrowser {
     }
 
 
+    // Also see: _assertListTextsAreAndOrder, very useful.
     async waitAndGetListTexts(selector: St, ps: { allElemPromisesTimeoutMs?: Nr } = {}): Pr<St[]> {
       return await this.__waitAndGetThingsInList(
             selector, ps, async (e) => await e.getText());
@@ -5317,8 +5318,10 @@ export class TyE2eTestBrowser {
         return await this.waitAndClick('.load-more', opts);
       },
 
-      switchToCategory: async (toCatName: St) => {
-        await this.waitAndClick('.esForum_catsDrop.s_F_Ts_Cat_Ttl');
+      switchToCategory: async (toCatName: St, ps: { isSubCat?: Bo } = {}) => {
+        const sel = ps.isSubCat ? '.esForum_catsDrop.s_F_Ts_Cat_Ttl-SubCat'
+                                : '.esForum_catsDrop.s_F_Ts_Cat_Ttl';
+        await this.waitAndClick(sel);
         await this.waitAndClickSelectorWithText('.s_F_BB_CsM a', toCatName);
         await this.forumTopicList.waitForCategoryName(toCatName);
       },
@@ -5387,17 +5390,37 @@ export class TyE2eTestBrowser {
       },
 
       assertTopicTitlesAreAndOrder: async (titles: St[]) => {
+        await this.forumTopicList._assertListTextsAreAndOrder(titles, "Topic titles", 'Eq',
+                  this.forumTopicList.titleSelector);
+      },
+
+      // MOVE to __waitAndGetThingsInList.
+      _assertListTextsAreAndOrder: async (expectedTexts: St[], what: St,
+              compOp: 'Eq' | 'Substring', selector: St) => {
         // If there's a React component change, the elems go stale, so try a few times.
-        await utils.tryManyTimes(`Checking topic titles and order`, 3, async () => {
-          const actualTitles = await this.waitAndGetListTexts(this.forumTopicList.titleSelector);
-          logBoring(`Found ${actualTitles.length} titles, comparing with expected ...`);
-          for (let i = 0; i < titles.length; ++i) {
-            const titleShouldBe = titles[i];
-            const actualTitle = actualTitles[i];
-            tyAssert.ok(!!actualTitle, `Title ix ${i} missing, should be: "${titleShouldBe}"`);
-            tyAssert.eq(actualTitle, titleShouldBe, `Title ix ${i}`);
+        const whatLower = what.toLowerCase();
+        await utils.tryManyTimes(`Checking ${whatLower} and order`, 3, async () => {
+          const actualTexts = await this.waitAndGetListTexts(selector);
+          logBoring(`Found ${actualTexts.length} ${whatLower}, comparing with ${
+                        expectedTexts.length} expected ...`);
+          for (let i = 0; i < expectedTexts.length; ++i) {
+            const expectedText = expectedTexts[i];
+            const actualText = actualTexts[i];
+            tyAssert.ok(!!actualText, `${what} ix ${i} missing, should be: "${expectedText}"`);
+            switch (compOp) {
+              case 'Eq':
+                tyAssert.eq(actualText, expectedText, `${what} ix ${i}`);
+                break;
+              case 'Substring':
+                tyAssert.includes2(actualText, expectedText, { prefixMsg: `${what} ix ${i}:` });
+                break;
+              default:
+                die('TyE70FKCNWJ2');
+            }
           }
-          tyAssert.eq(actualTitles.length, titles.length, `Too many titles: ${j2s(actualTitles)}`);
+          tyAssert.eq(actualTexts.length, expectedTexts.length,
+                      `Too many ${whatLower}, expected only ${expectedTexts.length}: ${
+                          j2s(actualTexts)}`);
         });
       },
 
@@ -8531,6 +8554,11 @@ export class TyE2eTestBrowser {
             let selector = this.userProfilePage.activity.posts.postSelector;
             await this.assertNoTextMatches(selector, postText);
           },
+
+          assertPostTextsIncludeAndOrder: async (texts: St[]) => {
+            await this.forumTopicList._assertListTextsAreAndOrder(texts, "Posts", 'Substring',
+                    this.userProfilePage.activity.posts.postSelector);
+          },
         },
 
         topics: {
@@ -8580,6 +8608,11 @@ export class TyE2eTestBrowser {
           assertTopicTitleAbsent: async (title: St) => {
             let selector = this.userProfilePage.activity.topics.topicsSelector;
             await this.assertNoTextMatches(selector, title);
+          },
+
+          assertTopicTitlesAreAndOrder: async (titles: St[]) => {
+            await this.forumTopicList._assertListTextsAreAndOrder(titles, "Titles", 'Substring',
+                    this.userProfilePage.activity.topics.topicsSelector);
           },
           
           getTags: async (ps: { forPagePath: PageId, howManyTags: Nr }): Pr<St[]> => {

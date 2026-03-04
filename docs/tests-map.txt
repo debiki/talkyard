@@ -802,11 +802,20 @@ categories:
             - link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837.TyT0ACSPG043
             - link-previews-internal-to-cats-not-see.2br.f  TyTE2ELN2CAT
     new cat security config:
-            - perms-see-own.2br.f   TyTPERMSEEOWN.TyTDEFCATPERMS & TyTSTAFDEFPERMS
+            - perms-see-own.2br.f  TyTPERMSEEOWN.TyTDEFCATPERMS & TyTSTAFDEFPERMS
     new group perms security config:
-            - perms-see-own.2br.f   TyTPERMSEEOWN.TyTNEWPERMSEMPTY
+            - perms-see-own.2br.f  TyTPERMSEEOWN.TyTNEWPERMSEMPTY
     see-own:
-            - perms-see-own.2br.f   TyTPERMSEEOWN  CR_MISSING
+            - perms-see-own.2br.f  TyTPERMSEEOWN
+                incl:
+                  - Emails about sbd else's see-own pages
+                  - Searching for other's see-own pages
+                  - Backlinks from see-own pages  [links_from_see_own]  TyTLNBK_SEEOWN
+                  - Link previews of see-own pages  [links_to_see_own]  TyTLNPV_SEEOWN
+                  - Direct accessing sbd's see-own  TyTSEEOWN_DIR_ACS
+                  - Listing see-own categories  TyTSEEOWN_LIST_PGS
+                  - Listing topics on sbd's profile page
+                  - Listing comments on sbd's profile page
             - categories-basic.3br.d   TyTCATSBASIC.TyTSEEOWN
       move cat & back:
             - TESTS_MISSING: Move away: Doesn't inherit.  Move back: does.
@@ -1037,7 +1046,7 @@ mentions:
 
 link previews:
   editor maximized, split, noraml,
-  innline-in-page,
+  inline-in-page,
   in-editor:
           - link-previews-images-mp4-youtube.1br.extln  TyTE2E2G3MAWKT4
           - embed-twitter-tweets-etc.test.ts  TyT0JSM8PF68   RENAME to link-preview-twitter?
@@ -1052,7 +1061,7 @@ link previews:
     restricted category:
           - link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837
     see-own category:
-            - perms-see-own.2br.f  TyTPERMSEEOWN.TyTLNSEEOWN
+            - perms-see-own.2br.f  TyTPERMSEEOWN.TyTLNPV_SEEOWN
     private message:
     private chat:
     whisper post:
@@ -1067,18 +1076,20 @@ link previews:
           - TESTS_MISSING: CDN w/o emb coms.
           (Not tested here: upload-images-and-files  TyT50E6KTDU7 )
 
+# Maybe [break_out_checkBacklinks_fn]?
 backlinks,
 internal links:  # (687295)
   blockquote:
           - backlinks-basic.2br.d  TyTINTLNS54824
           - link-previews-internal-may-see.2br  TyTE2ELNPVIN7252.TyT606SRTR3
           - link-previews-internal-not-see-cat.2br TyTE2ELNPVIN4837.TyT60T6SRTR3
+          - perms-see-own.2br.f  TyTPERMSEEOWN.TyTLNBK_SEEOWN
   inline, just title:
           - TESTS_MISSING
   to category:
             - link-previews-internal-to-cats-not-see.2br.d  TyTE2ELN2CAT
-  see-own category:
-            - perms-see-own.2br.f  TyTPERMSEEOWN.TyTLNSEEOWN
+  from see-own category:
+            - perms-see-own.2br.f  TyTPERMSEEOWN.TyTLNBK_SEEOWN
 
 discussion -
   users on page:
@@ -2129,7 +2140,7 @@ export and restore:  (impexp)
             - embcom.expimpjson.restore-overwrite-site-new-domain.2br  TyT603KNF62
   exp imp groups & members:
     import:
-            - perms-see-own.2br.f   TyTPERMSEEOWN.TyTIMPGROUP
+            - perms-see-own.2br.f  TyTPERMSEEOWN.TyTIMPGROUP
   exp imp images:
             - embcom.expimpjson.create-site-exp-json.2br  [402KGS4RQ]
   sanitize html:

@@ -1,5 +1,4 @@
 /// <reference path="../test-types.ts"/>
-// CR_MISSING
 
 import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
@@ -40,6 +39,10 @@ let supportGroup: GroupInclDetails;
 let site: IdAddress;
 let forum: TwoCatsTestForum;  // or TwoPagesTestForum or EmptyTestForum or LargeTestForum
 
+// We'll use these categories:
+// (seeOthers isn't a real permission. Just means that maySee hasn't been set,
+// so you can't see other people's pages.)
+//
 // CatA seeOwn: true, seeOthers: false
 // CatAC inherits:  If can't see base cat, then, can't see sub cat. [see_sub_cat]
 //
@@ -47,7 +50,8 @@ let forum: TwoCatsTestForum;  // or TwoPagesTestForum or EmptyTestForum or Large
 // CatBC seeOwn: true  (but seeOthers: false)
 // CatBC2 seethers: true
 
-const catA   = { slug: 'category-a', name: "CatA" };
+const catA   = { slug: 'category-a', name: "CatA" }; // oh, the name is actually "CategoryA"
+const catARealName = "CategoryA";
 const catAC  = { slug: 'cat-ac', name: "CatAC", id: 6 }; // Owen alters
 
 const catB   = { slug: 'cat-b', name: "CatB" };
@@ -55,18 +59,43 @@ const catBC  = { slug: "catbc", name: "CatBC" }; // Owen creates
 const catBC2 = {  slug: 'cat-bc2', name: "CatBC2", id: 7 };
 
 // We'll post here last —> last email from here.
-const lastCat = catBC2;
+const catBC2_lastCat = catBC2;
 
 // Owen won't make these cats only-see-own. (CatAC will be see-own because CatA will be.)
-const pubCats = [catB, lastCat];
+const pubCats = [catB, catBC2_lastCat];
 
 // Owen makes CatA and CatBC only-see-own. CatAC becomes only-see-own too,
 // since is a child of CatA. HMM
 const privCats = [catA, catAC, catBC];
 
 // Let's use this category order, when posting topics and checking for notf emails.
-const allCats = [catA, catAC, catB, catBC, lastCat];
+const allCats = [catA, catAC, catB, catBC, catBC2_lastCat];
 
+const allMariasTopicTitles = [
+          'Maria_in_CatBC2',
+          'Maria_in_CatBC',
+          'Maria_in_CatB',
+          'Maria_in_CatAC',
+          'Maria_in_CatA',
+          ];
+
+const allMichaelsTopicTitles = [
+          'Michael_in_CatBC2',
+          'Michael_in_CatBC',
+          'Michael_in_CatB',
+          'Michael_in_CatAC',
+          'Michael_in_CatA',
+          ];
+
+const itIsImportant = `It is important_to_help_Michael`;
+const allMichaelsPostTexts = [
+          itIsImportant,
+          'Hi Michael_wants_help',
+          'Hi Michael_wants_help',
+          'Hi Michael_wants_help',
+          'Hi Michael_wants_help',
+          'Hi Michael_wants_help',
+          ];
 
 /// Maria and Michael post topics in See-own (only) categories, can't see
 /// each others topics (in those categories, but can see, in others).
@@ -176,7 +205,7 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
   it(`Import site`, async () => {
     site = await server.importSiteData(forum.siteData);
     kittensUrl = site.origin + kittensUrl;
-    await server.skipRateLimits(site.id);
+    server.skipLimits_sync(site.id, { rateLimits: true });
   });
 
 
@@ -218,6 +247,8 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
       await assertMay('EditOthersTopics',       supportGroup.id, false);
       await assertMay('EditOthersReplies',      supportGroup.id, false);
       await assertMay('EditWikis',              supportGroup.id, false);
+      // 'ShouldBeDisabled' means we also check that the checkbox is disabled (can't be
+      // toggled to `false` — because `true` is inherited from an ancestor group).
       await assertMay('EditOwn',                supportGroup.id, true, 'ShouldBeDisabled');
       await assertMay('DeleteOthersTopics',     supportGroup.id, false);
       await assertMay('DeleteOthersReplies',    supportGroup.id, false);
@@ -265,11 +296,12 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
     await assertMay('SeeOwn',                 c.EveryoneId, true);
   });
 
-  it(`... Full Members inherit Everyone's perms, and can edit wikis  TyTDEFCATPERMS`, async () => {
+  it(`... Full Members inherit Everyone's perms, & can edit _wikis  TyTDEFCATPERMS`, async () => {
     const assertMay = owen_brA.categoryDialog.securityTab.assertMay;
     await assertMay('EditOthersTopics',       c.FullMembersId, false);
     await assertMay('EditOthersReplies',      c.FullMembersId, false);
-    await assertMay('EditWikis',              c.FullMembersId, true);   // <——  wikis
+    // By default, this is the only perm that's different for Full Members.
+    await assertMay('EditWikis',              c.FullMembersId, true);   // <—— _wikis
     // Intherited from Everyone, so can't be set to false, therefore true & disabled.
     await assertMay('EditOwn',                c.FullMembersId, true, 'ShouldBeDisabled');
     await assertMay('DeleteOthersTopics',     c.FullMembersId, false);
@@ -301,10 +333,13 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
     await owen_brA.categoryDialog.securityTab.setMay('SeeOthers', c.EveryoneId, false);
   });
   it(`... Full Members then also cannot`, async () => {
+    // But no longer 'ShouldBeDisabled' — since can now be granted (toggled `true`).
     await owen_brA.categoryDialog.securityTab.assertMay('SeeOthers', c.FullMembersId, false);
   });
   it(`... but Staff still can — their group has all perms granted to it,
-            rather than just inheriting from Everyone  TyTSTAFDEFPERMS`, async () => {
+            in addition to inheriting from Everyone  TyTSTAFDEFPERMS`, async () => {
+    // It's less confusing if mods can still see a category, after having
+    // revoked `maySee` from the Everyone group.
     await owen_brA.categoryDialog.securityTab.assertMay('SeeOthers', c.StaffId, true);
   });
 
@@ -319,7 +354,7 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
   postTopicInEachCat(() => maria_brB, "Maria", mariasPagesByCatSlug);
 
 
-  it(`Memah gets notified of each of Maria's new topics`, async () => {
+  it(`Memah (support team) gets notified of each of Maria's new topics`, async () => {
     const emails: EmailSubjectBody[] = await server.waitGetLastEmailsSentTo(
                                 site.id, memah.emailAddress, allCats.length);
     //logMessage(j2s(emails));
@@ -356,8 +391,9 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
   postTopicInEachCat(() => michael_brA, "Michael", michaelsPagesByCatSlug);
 
 
-  it(`Memah gets notified of each of Michael's new topics`, async () => {
+  it(`Memah (support team) gets notified of each of Michael's new topics`, async () => {
     const allEmails = await server.waitGetLastEmailsSentTo(
+                                // `* 2` since first Maria's, now Michael's emails.
                                 site.id, memah.emailAddress, allCats.length * 2);
     // Skip the one's about Maria's topics.
     const emails = allEmails.slice(allCats.length);
@@ -374,7 +410,8 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
 
   it(`... Mallory too`, async () => {
     const allEmails = await server.waitGetLastEmailsSentTo(
-                        site.id, mallory.emailAddress, pubCats.length);
+                        // `* 2` since first Maria's, now Michael's emails.
+                        site.id, mallory.emailAddress, pubCats.length * 2);
     // Skip the one's about Maria's topics.
     const emails = allEmails.slice(pubCats.length);
     logMessage(j2s(emails));
@@ -383,13 +420,14 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
 
   it(`No other emails get sent`, async () => {
     // At most 15 per address hmm,  [R2AB067]
+    // `allCats.length` = 5, and * 2 —> 10, <= 15, so, fine.
     const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(site.id);
     assert.eq(num, (allCats.length + pubCats.length * 2) * 2, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
 
   // [_dir_access_test]
-  it(`Maria can't access Michael's private topics`, async () => {
+  it(`Maria can't access Michael's private topics  TyTSEEOWN_DIR_ACS`, async () => {
     for (let cat of privCats) {
       const page = michaelsPagesByCatSlug[cat.slug];
       await maria_brB.go2(page.url);
@@ -410,20 +448,20 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
     await memah_brB.complex.loginWithPasswordViaTopbar(memah);
   });
 
-  // Memah replies to Maria [_dir_access_test]
+  // Memah replies to Maria
+  //
+  // Also tests that you *can* access see-own topics, if granted permission. [_dir_access_test]
   //
   const memahToMariaCats = [catAC, catBC, catBC2]; // only catBC2 is public, others are see-own
   addReplyInEachCatStep(() => memah_brB, "Memah", "Maria", memahToMariaCats,
         mariasPagesByCatSlug);
 
   it(`Maria gets notified`, async () => {
+    // Michael's publ posts + Memah's replies to Maria.
+    const numEmailsExpected = pubCats.length + memahToMariaCats.length;
     const allEmails = await server.waitGetLastEmailsSentTo(
-                              site.id, maria.emailAddress, pubCats.length + memahToMariaCats.length);
-    assert.eq(allEmails.length,
-          pubCats.length + // Michael's publ posts
-                memahToMariaCats.length, // Memah's replies to Maria
-          `allEmails to Maria: ${j2s(allEmails)}`);
-
+                                site.id, maria.emailAddress, numEmailsExpected);
+    assert.eq(allEmails.length, numEmailsExpected, `allEmails to Maria: ${j2s(allEmails)}`);
     const emails = allEmails.slice(-memahToMariaCats.length);
     checkReplyEmails(emails, memahToMariaCats, memah, "Memah", "Maria");
   });
@@ -455,7 +493,7 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
             // Initial posts: Notfs to Memah, and Maria/Michael & Mallory. By Michael & Memah.
             (allCats.length + pubCats.length * 2) * 2 +
                 memahToMariaCats.length + // Memah's replies to Maria
-                1 + 1; // Memah's publ reply —> notf to Michael & Mallory
+                1 + 1; // Memah's publ reply to Maria —> notf to Michael & Mallory
     assert.eq(num, numTotalEmailsExpected,
            `Emails sent to: ${addrsByTimeAsc}`);
   });
@@ -468,7 +506,7 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
         michaelsPagesByCatSlug);
 
   it(`Michael gets notified`, async () => {
-    numTotalEmailsExpected += memahToMariaCats.length;
+    numTotalEmailsExpected += memahToMichaelCats.length;
     const numEmailsExpected =
             pubCats.length +  // Maria's publ posts
             1 +  // Memah's publ reply to Maria
@@ -509,11 +547,13 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
     assert.eq(num, numTotalEmailsExpected, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
-  const itIsImportant = `It is important to help Michael`;
+
+  // Verify that one can reply on one's own `seeOwn` page,
+  // and that one's replies stay private.
 
   it(`Michael replies to Memah's reply to him in private CatBC  [_dir_access_test]`, async () => {
     await michael_brA.go2(michaelsPagesByCatSlug[catBC.slug].url);
-    await michael_brA.complex.replyToOrigPost(itIsImportant);
+    await michael_brA.complex.replyToPostNr(c.FirstReplyNr, itIsImportant);
   });
 
   it(`Memah gets notified about Michael's reply to her`, async () => {
@@ -530,18 +570,38 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
   it(`Michael goes to the topic list`, async () => {
     await michael_brA.forumTopicList.goHere();
   });
-  it(`... sees his own topics, and Memah's public topics`, async () => {
+  it(`... sees his own topics, and Maria's public topics  TyTSEEOWN_LIST_PGS`, async () => {
     await michael_brA.forumTopicList.assertTopicTitlesAreAndOrder([
             'Michael_in_CatBC',   // bumped by Michael's reply to Memah
             'Michael_in_CatB',    // bumped by Memah's reply to Michael
             'Michael_in_CatA',    //          – '' –
             'Maria_in_CatBC2',    // bumped by Memah's reply to Maria
             'Michael_in_CatBC2',  // Michael's last not-bumped topic
-            'Michael_in_CatAC',   // FOK w Category AC
+            'Michael_in_CatAC',   //
             'Maria_in_CatB',      // Maria's first publ topic
             'Ask the Kittens',
             ]);
   });
+
+  // Let's verify topics filtered properly from sub cats too.
+  it(`Michael opens ${catA.name}, a see-own (only) category  TyTSEEOWN_LIST_PGS`, async () => {
+    await michael_brA.forumTopicList.switchToCategory(catARealName);
+  });
+  it(`... sees his own topics only, from cat A and sub cat AC`, async () => {
+    await michael_brA.forumTopicList.assertTopicTitlesAreAndOrder([
+            'Michael_in_CatA',
+            'Michael_in_CatAC',
+            ]);
+  });
+  it(`Michael opens sub cat ${catAC.name}`, async () => {
+    await michael_brA.forumTopicList.switchToCategory(catAC.name, { isSubCat: true });
+  });
+  it(`... sees his own ${catAC.name} topic only  TyTSEEOWN_LIST_PGS`, async () => {
+    await michael_brA.forumTopicList.assertTopicTitlesAreAndOrder([
+            'Michael_in_CatAC',
+            ]);
+  });
+
 
   // Break out fn: _see_public ?
   it(`Michael goes to Maria's posts page`, async () => {
@@ -549,7 +609,13 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
     await michael_brA.userProfilePage.activity.posts.waitForPostTextsVisible();
   });
   it(`... sees only Maria's two public posts`, async () => {
-    await michael_brA.userProfilePage.activity.posts.assertExactly(pubCats.length);
+    await michael_brA.userProfilePage.activity.posts.assertExactly(pubCats.length); // ttt
+  });
+  it(`... the correct contents 001`, async () => {
+    await michael_brA.userProfilePage.activity.posts.assertPostTextsIncludeAndOrder([
+            'Hi Maria_wants_help',
+            'Hi Maria_wants_help',
+            ]);
     // Maria_in_CatBC2
     // By Maria @maria11 hours ago
     // Hi Maria_wants_help
@@ -560,11 +626,13 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
   });
   it(`... goes to Maria's topics page`, async () => {
     await michael_brA.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
-    //Maria_in_CatBC2
-    //Maria_in_CatB
   });
   it(`... sees only Maria's two public topics`, async () => {
-    await michael_brA.userProfilePage.activity.topics.assertExactly(pubCats.length);
+    await michael_brA.userProfilePage.activity.topics.assertExactly(pubCats.length); // ttt
+    await michael_brA.userProfilePage.activity.topics.assertTopicTitlesAreAndOrder([
+            'Maria_in_CatBC2',
+            'Maria_in_CatB',  // Maria's first publ topic
+            ]);
   });
 
   // Break out fn: _see_all ?
@@ -572,11 +640,15 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
     await michael_brA.userProfilePage.activity.posts.goHere(michael.username);
     await michael_brA.userProfilePage.activity.posts.waitForPostTextsVisible();
   });
-  it(`... sees all his posts, incl Michael's reply to Memah`, async () => {
-    await michael_brA.userProfilePage.activity.posts.assertExactly(allCats.length + 1);
+  it(`... sees all his posts, incl his reply to Memah`, async () => {
+    await michael_brA.userProfilePage.activity.posts.assertExactly(allCats.length + 1); // ttt
+  });
+  it(`... the correct contents 003`, async () => {
+    await michael_brA.userProfilePage.activity.posts.assertPostTextsIncludeAndOrder(
+              allMichaelsPostTexts);
     // Michael_in_CatBC
     // Michael @michael11 hours ago
-    // It is important to help Michael
+    // It is important_to_help_Michael
     // 
     // Michael_in_CatBC2
     // By Michael @michael11 hours ago
@@ -601,22 +673,30 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
   it(`... goes to his topics page`, async () => {
     await michael_brA.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
   });
+
   it(`... sees all his topics`, async () => {
     await michael_brA.userProfilePage.activity.topics.assertExactly(allCats.length);
-    // Michael_in_CatBC2
-    // Michael_in_CatBC
-    // Michael_in_CatB
-    // Michael_in_CatAC
-    // Michael_in_CatA
+    await michael_brA.userProfilePage.activity.topics.assertTopicTitlesAreAndOrder(
+            allMichaelsTopicTitles);
   });
 
   it(`Michael goes to Memah's posts page`, async () => {
     await michael_brA.userProfilePage.activity.posts.goHere(memah.username);
     await michael_brA.userProfilePage.activity.posts.waitForPostTextsVisible();
   });
-  it(`... sees Memah's "shall_help_" replies: 3 to Michael, 1 publ to Maria`, async () => {
+  it(`... sees Memah's "shall_help_" replies: 3 to Michael, only 1 publ to Maria`, async () => {
     // And the Kittens page too.
-    await michael_brA.userProfilePage.activity.posts.assertExactly(3 + 1 + 1);
+    await michael_brA.userProfilePage.activity.posts.assertExactly(3 + 1 + 1);  // ttt
+  });
+  it(`... the correct contents 005`, async () => {
+    // But all replies to Maria are left out, except for the reply in CatBC2, which is public.
+    await michael_brA.userProfilePage.activity.posts.assertPostTextsIncludeAndOrder([
+            'I, Memah, shall_help_Michael_in_cat-b',
+            'I, Memah, shall_help_Michael_in_catbc',
+            'I, Memah, shall_help_Michael_in_category-a',
+            'I, Memah, shall_help_Maria_in_cat-bc2',
+            'Kittens are cute, kittens are clever. Kittens will help you, forever.',
+            ]);
     // Michael_in_CatB
     // Memah @memah11 hours ago
     // I, Memah, shall_help_Michael_in_cat-b
@@ -639,6 +719,9 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
   it(`... goes to _Memahs_topics_page, only the Kittens topic there`, async () => {
     await michael_brA.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
     await michael_brA.userProfilePage.activity.topics.assertExactly(1);
+    await michael_brA.userProfilePage.activity.topics.assertTopicTitlesAreAndOrder([
+            'Ask the Kittens',
+            ]);
   });
 
   addSearchTestSteps("Michael", () => michael_brA, {
@@ -664,6 +747,29 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
             'Ask the Kittens',
             ]);
   });
+
+  it(`Memah opens ${catA.name}, a see-own (only) category`, async () => {
+    await memah_brB.forumTopicList.switchToCategory(catARealName);
+  });
+  it(`... sees both Michael's and Maria's topics in A and AC TyTSEEOWN_LIST_PGS`,
+          async () => {
+    await memah_brB.forumTopicList.assertTopicTitlesAreAndOrder([
+            'Michael_in_CatA',
+            'Maria_in_CatAC',
+            'Michael_in_CatAC',
+            'Maria_in_CatA',
+            ]);
+  });
+  it(`... switches to sub cat AC`, async () => {
+    await memah_brB.forumTopicList.switchToCategory(catAC.name, { isSubCat: true });
+  });
+  it(`... sees both Michael's and Maria's topics  TyTSEEOWN_LIST_PGS`, async () => {
+    await memah_brB.forumTopicList.assertTopicTitlesAreAndOrder([
+            'Maria_in_CatAC',
+            'Michael_in_CatAC',
+            ]);
+  });
+
 
   // Break out fn: _see_all ?
   it(`Memah goes to Maria's posts page`, async () => {
@@ -694,14 +800,11 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
   });
   it(`... goes to Maria's topics page`, async () => {
     await memah_brB.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
-    // Maria_in_CatBC2
-    // Maria_in_CatBC
-    // Maria_in_CatB
-    // Maria_in_CatAC
-    // Maria_in_CatA
   });
   it(`... sees all Maria's topics`, async () => {
     await memah_brB.userProfilePage.activity.topics.assertExactly(allCats.length);
+    await memah_brB.userProfilePage.activity.topics.assertTopicTitlesAreAndOrder(
+              allMariasTopicTitles);
   });
 
   // Break out fn: _see_all ?
@@ -710,10 +813,14 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
     await memah_brB.userProfilePage.activity.posts.waitForPostTextsVisible();
   });
   it(`... sees all Michal's posts, incl Michael's reply to Memah`, async () => {
-    await memah_brB.userProfilePage.activity.posts.assertExactly(allCats.length + 1);
+    await memah_brB.userProfilePage.activity.posts.assertExactly(allCats.length + 1);  // ttt
+  });
+  it(`... the correct contents  007`, async () => {
+    await memah_brB.userProfilePage.activity.posts.assertPostTextsIncludeAndOrder(
+              allMichaelsPostTexts);
     // Michael_in_CatBC
     // Michael @michael11 hours ago
-    // It is important to help Michael
+    // It is important_to_help_Michael
     // 
     // Michael_in_CatBC2
     // By Michael @michael11 hours ago
@@ -740,11 +847,8 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
   });
   it(`... sees all Michal's topics`, async () => {
     await memah_brB.userProfilePage.activity.topics.assertExactly(allCats.length);
-    // Michael_in_CatBC2
-    // Michael_in_CatBC
-    // Michael_in_CatB
-    // Michael_in_CatAC
-    // Michael_in_CatA
+    await memah_brB.userProfilePage.activity.topics.assertTopicTitlesAreAndOrder(
+              allMichaelsTopicTitles);
   });
 
   it(`Memah goes to her own posts page`, async () => {
@@ -817,7 +921,8 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
   it(`Memah goes to the Kittens page`, async () => {
     await memah_brB.go2(kittensUrl);
   });
-  it(`... sees 10 backlinks: Maria's 5, Michael's 5  (incl both publ and priv)`, async () => {
+  it(`... sees 10 backlinks: Maria's 5, Michael's 5  (incl both publ and priv)  TyTLNBK_SEEOWN`,
+          async () => {
     const backlinks = await memah_brB.topic.backlinks.getBacklinkUrlsAndTitles();
     checkBacklinks(backlinks, {
           ...mariasPrivBacklinkPagesById,
@@ -837,6 +942,7 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
     privPageUrl = michaelsPagesByCatSlug[catA.slug].url;  // A is see-own
     privSubCatPageUrl = michaelsPagesByCatSlug[catAC.slug].url; // AC is see-own, since sub cat
 
+    // (We're editing the Kittens page body.)
     await memah_brB.complex.editPageBody(`\n\n` +
             `${privPageUrl}\n\n` +
             `${pubPageUrl}\n\n` +  // _Memah_2_Michael_link
@@ -846,19 +952,29 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
 
   addCheckLinkPreviewsToMichaelSteps(() => memah_brB, "Memah");
   
+  // These links are in the Kittens page body.
+  //
+  // The page looks the same, regardless of if you can see the linked posts or not.
+  // It's 1) too complicated to generate different html for different people, and
+  // maybe 2) just a bad idea, since could give [those who *can* see all linked pages]
+  // the incorrect impression that *everyone* can see link previews of private
+  // linked pages. [links_to_see_own]
+  //
   function addCheckLinkPreviewsToMichaelSteps(brX: () => TyE2eTestBrowser, who: St) {
-    it(`${who} looks at preview links:  There're 2 broken link previews ...  TEST MAP`, async () => {
+    // First, any broken previews at all?
+    it(`${who} looks at preview links:  2 broken link previews...  TyTLNPV_SEEOWN`, async () => {
       const sel = utils.makePreviewBrokenSelector('InternalLink');
       await brX().topic.waitForExistsInPost(c.BodyNr, sel, { howMany: 2 });
     });
-    it(`... the one to Michael's CatA page — it's access restricted`, async () => {
+    // Now, check the exact urls, and the reasons they're broken.
+    it(`... the one to Michael's CatA page — it's see-own-only access restricted`, async () => {
       const sel = utils.makePreviewBrokenSelector('InternalLink', {
             url: privPageUrl,
             errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-EdMMSEEADDCATPERM-ABX94WN_',
             });
       await brX().topic.waitForExistsInPost(c.BodyNr, sel, { howMany: 1 });
     });
-    it(`... the one to CatAC, also access restricted`, async () => {
+    it(`... the one to CatAC, also access restricted  (because in sub cat of CatA)`, async () => {
       const sel = utils.makePreviewBrokenSelector('InternalLink', {
             url: privSubCatPageUrl,
             errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-EdMMSEEADDCATPERM-ABX94WN_',
@@ -942,8 +1058,8 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
   it(`Maria goes to the Kittens page`, async () => {
     await maria_brB.go2(kittensUrl);
   });
-  it(`... sees 7 backlinks: Maria's 5, Michael's 2 public  TyTLNSEEOWN`, async () => {
-    // [_links_from_see_own]
+  it(`... sees 7 backlinks: Maria's 5, Michael's 2 public  TyTLNBK_SEEOWN`, async () => {
+    // [links_from_see_own]
     const backlinks = await maria_brB.topic.backlinks.getBacklinkUrlsAndTitles();
     checkBacklinks(backlinks, { ...mariasPrivBacklinkPagesById, ...publBacklinkPagesById });
   });
@@ -958,6 +1074,7 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
     mariasPubPageUrl = mariasPagesByCatSlug[catBC2.slug].url;  // BC2 is public
     mariasPrivPageUrl = mariasPagesByCatSlug[catBC.slug].url;  // BC is see-own
 
+    // (We're on the Kittens page.)
     await maria_brB.complex.replyToOrigPost(
             `${mariasPrivPageUrl}\n\n` +
             `${mariasPubPageUrl}\n\n`);
@@ -965,10 +1082,14 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
 
   addCheckLinkPreviewsToMariaSteps(() => maria_brB, "Maria");
   
+  // These links are in a reply by Maria on the Kittens page.
+  // (But the links to Michael's posts are in the orig post.)
+  //
+  // The generated html is the same for everyone, see: [links_to_see_own].
+  //
   function addCheckLinkPreviewsToMariaSteps(brX: () => TyE2eTestBrowser, who: St) {
     it(`${who} looks at preview links to Maria's pages:
-            There're 1 broken link preview  TyTLNSEEOWN`, async () => {
-      // [_links_to_see_own]
+            There're 1 broken link preview...  TyTLNPV_SEEOWN`, async () => {
       const sel = utils.makePreviewBrokenSelector('InternalLink');
       await brX().topic.waitForExistsInPost(c.FirstReplyNr, sel, { howMany: 1 });
     });
@@ -988,14 +1109,23 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
   it(`Michael goes to the Kittens page`, async () => {
     await michael_brA.go2(kittensUrl);
   });
-  it(`... sees 7 backlinks: Michael's 5, Maria's 2 public`, async () => {
+  it(`... sees 7 backlinks: Michael's 5, Maria's 2 public  TyTLNBK_SEEOWN`, async () => {
     const backlinks = await michael_brA.topic.backlinks.getBacklinkUrlsAndTitles();
     checkBacklinks(backlinks, { ...michaelsPrivBacklinkPagesById, ...publBacklinkPagesById });
   });
 
+  // (Checks link previews in the page body.)
   addCheckLinkPreviewsToMichaelSteps(() => michael_brA, "Michael");
 
+  // (Checks link previews in Maria's reply.)
   addCheckLinkPreviewsToMariaSteps(() => michael_brA, "Michael");
+
+  // The end.
+
+
+  // ========================================================================
+  // Helper fns
+  // ========================================================================
 
 
   function postTopicInEachCat(brX: () => TyE2eTestBrowser, who: St,
@@ -1004,14 +1134,16 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
       for (let cat of allCats) {
         logBoring(`${who} posts in ${cat.name} ...`)
         const title = `${who}_in_${cat.name}`;
-        const bodyTxt = `Hi ${who}_wants_help`;
+        // TESTS_MISSING: Could include cat name in body text, and compare w later. Oh well.
+        const bodyTxt = `Hi ${who}_wants_help`;    // Could:  + `_in_${cat.name}`
         await brX().go2('/latest/' + cat.slug);
         await brX().complex.createAndSaveTopic({
                 title,
+                // (The generated regex wouldn't work if we tried to match too much.)
                 bodyMatchAfter: bodyTxt,
                 body: bodyTxt +
                     // So we can check if links from only-see-own pages are left out,
-                    // when showing incoming links. [_links_from_see_own] [_links_to_see_own]
+                    // when showing incoming links. [links_from_see_own] [links_to_see_own]
                     // (This expands to a link preview — everyone can see the kittens page.)
                     '\n\n' + kittensUrl,
                 });
@@ -1024,12 +1156,13 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
 
   function checkNewTopicEmails(emails, cats, aboutWho: Member, aboutWhoName: St) {
     for (let i = 0; i < emails.length; ++i) {
-      logBoring(`Checking new topic email at ix ${i}`)
-      const email = emails[i];
       const cat = cats[i];
+      logBoring(`Checking new topic email at ix ${i},  category ${cat.name}`);
+      const email = emails[i];
       const bodyHtml: St = email.bodyHtmlText;
       assert.includes(bodyHtml, `${aboutWhoName}_in_${cat.name}`);
       assert.includes(bodyHtml, `${aboutWhoName}_wants_help`);
+      // The author's username is in the email.
       assert.includes(bodyHtml, `>${aboutWho.username}</`); // between <i>..</i> tags
     }
   }
@@ -1048,15 +1181,15 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
 
   function checkReplyEmails(emails, cats, who: Member, whoName: St, toWho: St) {
     for (let i = 0; i < emails.length; ++i) {
-      logBoring(`Checking reply email at ix ${i}`)
-      const email = emails[i];
       const cat = cats[i];
+      logBoring(`Checking reply email at ix ${i},  category ${cat.name}`)
+      const email = emails[i];
       const bodyHtml: St = email.bodyHtmlText;
       assert.includes(bodyHtml, `I, ${whoName}, shall_help_${toWho}_in_${cat.slug}`);
       assert.includes(bodyHtml, `>${who.username}</`); // between <i>..</i> tags
     }
   }
-  
+
 
   function addSearchTestSteps(who: St, brX: () => TyE2eTestBrowser,
           ps: { seeMichaelsPriv: Bo, seeMariasPriv: Bo, linkFromKittensToMichaelsPage?: Bo }) {
@@ -1065,11 +1198,18 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
     const michaelPublTopicTitle = 'Michael_in_CatB';
     const mariaPrivTopicTitle = 'Maria_in_CatAC';
     const mariaPublTopicTitle = 'Maria_in_CatBC2';
+    const shallHelpMariaSearchPhrase = 'shall_help_Maria_in_cat shall_help_Maria_in_catbc';
+    const shallHelpMichaelSearchPhrase = (
+        // Not  "shall_help_Michael_in_category-a", instead
+        // just "shall_help_Michael_in_category", otherwise we'll find the word "a" (a/an).
+        'shall_help_Michael_in_cat shall_help_Michael_in_category shall_help_Michael_in_catbc');
 
     it(`${who} searches & finds Michael's private topic: ${ps.seeMichaelsPriv}`, async () => {
       await brX().topbar.searchFor(michaelPrivTopicTitle);
       if (ps.seeMichaelsPriv) {
         await brX().searchResultsPage.waitForAssertNumPagesFound(michaelPrivTopicTitle, 1);
+        logBoring(`Check link URL ...`)
+        await brX().searchResultsPage.assertResultLinksAre(['/-11/michaelincatbc']);
       }
       else {
         await brX().searchResultsPage.assertPhraseNotFound(michaelPrivTopicTitle);
@@ -1077,13 +1217,24 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
     });
 
     it(`... finds Michael's public topic`, async () => {
+      const expected = ['/-10/michaelincatb'];
+      if (ps.linkFromKittensToMichaelsPage) {
+        // The title of page `michaelPublTopicTitle` (which is 'Michael_in_CatB') has been
+        // link-preview included in the HTML on the Kittens page,  TyTLNPV_SEEOWN
+        // so we find it too.
+        expected.push('/help-from-kittens');
+      }
       await brX().searchResultsPage.searchForUntilNumPagesFound(michaelPublTopicTitle,
-            1 + (ps.linkFromKittensToMichaelsPage ? 1 : 0));
+            expected.length);
+      logBoring(`Check link URL ...`)
+      await brX().searchResultsPage.assertResultLinksAre(expected);
     });
 
     it(`... finds Maria's private topic: ${ps.seeMariasPriv}`, async () => {
       if (ps.seeMariasPriv) {
         await brX().searchResultsPage.searchForUntilNumPagesFound(mariaPrivTopicTitle, 1);
+        logBoring(`Check link URL ...`)
+        await brX().searchResultsPage.assertResultLinksAre(['/-4/mariaincatac']);
       }
       else {
         await brX().searchResultsPage.searchForWaitForResults(mariaPrivTopicTitle);
@@ -1093,25 +1244,74 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
 
     it(`... finds Maria's public topic`, async () => {
       await brX().searchResultsPage.searchForUntilNumPagesFound(mariaPublTopicTitle, 1);
+      logBoring(`Check link URL ...`)
+      await brX().searchResultsPage.assertResultLinksAre(['/-7/mariaincatbc2']);
     });
 
-    /*
-    it(`... finds Memah's reply to Maria: ${ps.seeMariasPriv} `, async () => {
-      await michael_brA.searchResultsPage.searchForUntilNumPagesFound(__, 1);
+    it(`... finds Memah's private replies to Maria: ${ps.seeMariasPriv} `, async () => {
+      if (ps.seeMariasPriv) {
+        await brX().searchResultsPage.searchForUntilNumPagesFound(shallHelpMariaSearchPhrase, 3);
+        logBoring(`Check link URLs ...`)
+        await brX().searchResultsPage.assertResultLinksAre([
+                      '/-4/mariaincatac#post-2',
+                      '/-6/mariaincatbc#post-2',
+                      '/-7/mariaincatbc2#post-2'], { anyOrder: true });
+      }
+      else {
+        // Sees only Memah's public reply to Maria on page Maria_in_CatBC2.
+        await brX().searchResultsPage.searchForUntilNumPagesFound(shallHelpMariaSearchPhrase, 1);
+        logBoring(`Check link URLs ...`)
+        await brX().searchResultsPage.assertResultLinksAre([
+                      '/-7/mariaincatbc2#post-2']);
+      }
     });
 
-    it(`... finds Memah's reply to Michael: ${ps.seeMichaelsPriv}`, async () => {
-      await michael_brA.searchResultsPage.searchForUntilNumPagesFound(__, 1);
-    }); */
+    it(`... finds Memah's private replies to Michael: ${ps.seeMichaelsPriv}`, async () => {
+      if (ps.seeMichaelsPriv) {
+        await brX().searchResultsPage.searchForUntilNumPagesFound(shallHelpMichaelSearchPhrase, 3);
+        logBoring(`Check link URLs ...`)
+        await brX().searchResultsPage.assertResultLinksAre([
+                      '/-8/michaelincata#post-2',
+                      '/-10/michaelincatb#post-2',
+                      '/-11/michaelincatbc#post-2'], { anyOrder: true });
+      }
+      else {
+        // Sees only Memah's public reply to Michael on page Michael_in_CatB.
+        await brX().searchResultsPage.searchForUntilNumPagesFound(shallHelpMichaelSearchPhrase, 1);
+        logBoring(`Check link URLs ...`)
+        await brX().searchResultsPage.assertResultLinksAre([
+                      '/-10/michaelincatb#post-2']);
+      }
+    });
+
+    it(`... finds Michael's private reply to Memah: ${ps.seeMichaelsPriv}`, async () => {
+      if (ps.seeMichaelsPriv) {
+        await brX().searchResultsPage.searchForUntilNumPagesFound(itIsImportant, 1);
+        logBoring(`Check link URLs ...`)
+        await brX().searchResultsPage.assertResultLinksAre([
+                      '/-11/michaelincatbc#post-3']);
+      }
+      else {
+        await brX().searchResultsPage.searchForWaitForResults(itIsImportant);
+        await brX().searchResultsPage.assertPhraseNotFound(itIsImportant);
+      }
+    });
   }
 
-  function checkBacklinks(backlinks: { url: St, title: St }[],
-          pagesById: { [pageId: PageId]: Page }) {
+  /// Asserts that there are backlinks to the pages in `pagesById`.
+  /// And that there are no more backlinks than those.
+  ///
+  /// Maybe [break_out_checkBacklinks_fn]?
+  function checkBacklinks(
+        actualBacklinks: { url: St, title: St }[],
+        expectedPagesById: { [pageId: PageId]: Page }) {
 
-    // `backlinks` looks like:
-    // [{"url":"/-12","title":"Michael_in_CatBC2"}, {"url":"/-5","title":"Maria_in_CatB"}, ...]
+    // The `actualBacklinks` param looks like:
+    // [{ "url": "/-12", "title": "Michael_in_CatBC2" },
+    //  { "url": "/-5",  "title": "Maria_in_CatB"     },
+    //  ...]
     //
-    // `pagesById` looks like:   {
+    // `expectedPagesById` looks like:   {
     //   "3": { "id": "3", "url": "http://e2e-test-cid-0-0-now-7487.localhost/-3/mariaincata",
     //         "title":"Maria_in_CatA" },
     //   "4": { "id": "4", "url": "http://e2e-test-cid-0-0-now-7487.localhost/-4/mariaincatac",
@@ -1120,26 +1320,26 @@ describe(`perms-see-own.2br.f  TyTPERMSEEOWN`, () => {
     //  }
 
     const tooManyLinks = [];
-    const linksLeft = { ...pagesById };
+    const linksLeft = { ...expectedPagesById };
 
-    for (let link of backlinks) {
+    for (let backlink of actualBacklinks) {
       // Extract page id from url. All urls are like:  "/-pageId" right now (Sept 2024)
       // but let's use a regex that works with complete urls.  [ty_url_fmt]
       // 'https://ex.com/-4/ab/cd?q=p'.replace(/(https?:\/\/[^/]+)?\/-([^/]+).*/, '$2')
-      const pageId = link.url.replace(/(https?:\/\/[^/]+)?\/-([^/]+).*/, '$2');
-      const page = pagesById[pageId];
+      const fromPageId = backlink.url.replace(/(https?:\/\/[^/]+)?\/-([^/]+).*/, '$2');
+      const page = expectedPagesById[fromPageId];
       if (!page) {
-        tooManyLinks.push(link);
+        tooManyLinks.push(backlink);
       }
-      delete linksLeft[pageId];
+      delete linksLeft[fromPageId];
     }
 
     assert.that(!tooManyLinks.length && _.isEmpty(linksLeft),
         `Backlinks error — too many links, and/or links missing:\n`+
         `    tooManyLinks: ${j2s(tooManyLinks)}\n` +
         `    linksLeft: ${j2s(linksLeft)}\n` +
-        `    backlinks: ${j2s(backlinks)}\n` +
-        `    pagesById: ${j2s(pagesById)}`);
+        `    actualBacklinks: ${j2s(actualBacklinks)}\n` +
+        `    expectedPagesById: ${j2s(expectedPagesById)}`);
   }
 
 });
