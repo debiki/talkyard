@@ -354,6 +354,11 @@ function skipRateLimits(siteId: SiteId) {
   skipLimits(siteId, { rateLimits: true });
 }
 
+function skipLimits_sync(siteId: SiteId, ps: { rateLimits?: Bo, diskQuotaLimits?: Bo }) {
+  skipLimits(siteId, ps);
+}
+
+// DEPRECATED use skipLimits_sync(..) above, instead?
 function skipLimits(siteId: SiteId, ps: { rateLimits?: Bo, diskQuotaLimits?: Bo }) {
   postOrDie(settings.mainSiteOrigin + '/-/skip-limits', { ...ps, siteId });
 }
@@ -904,6 +909,7 @@ export default {
   importSiteData: importTestSiteData,
   deleteOldTestSite,
   skipRateLimits,
+  skipLimits_sync,
   skipLimits,
   reindexSites,
   pauseJobs,
