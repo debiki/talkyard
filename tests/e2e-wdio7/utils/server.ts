@@ -927,8 +927,6 @@ export default {
   sendIncomingEmailWebhook,
   waitAndGetLastReplyNotfLinkEmailedTo,
   waitAndGetLastVerifyEmailAddressLinkEmailedTo,  // was: getLastVerifyEmailAddressLinkEmailedTo
-  // no, worse name:
-  // getVerifyEmailAddressLinkFromLastEmailTo: waitAndGetLastVerifyEmailAddressLinkEmailedTo,
   waitAndGetVerifyAnotherEmailAddressLinkEmailedTo,
   waitAndGetInviteLinkEmailedTo,
   waitAndGetThanksForAcceptingInviteEmailResetPasswordLink,

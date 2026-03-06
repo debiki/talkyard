@@ -1233,7 +1233,7 @@ embedded comments:
             - embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20.TyTSEC_FRAMEANC
             - embcom.create-site-forum-intro-tour.2br.ec  TyT6AKBR2044
             - embcom.create-site-req-verif-email-exit-tours.2br TyTE2ECREMBCOM1
-            - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
+            - embcom.create-site-import-disqus.2br.ec  TyT5KFG0P75
             - no verif email
   no about page created:  [5WAKR02]
   post comment:
@@ -1276,7 +1276,7 @@ embedded comments:
   import with discussion id:
           - MISSING
   import from Disqus xml export file:  (impexp)
-          - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
+          - embcom.create-site-import-disqus.2br.ec  TyT5KFG0P75
   image links work although <base> tag: (EMBORG)
   won't load at wrong domain / origin / hostname:
             - embcom.create-site-admin-intro-tour-no-verif-email.2br.ec  TyT6KRKV20.TyTSEC_FRAMEANC
@@ -1941,7 +1941,7 @@ email notifications:  (5ABKR024)
   watching:
   not until after email verified:
             - unsubscribe.2browsers.test.ts  [TyT2ABKR04]
-            - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT305RKTH4
+            - embcom.create-site-import-disqus.2br.ec  TyT5KFG0P75.TyT305RKTH4
   new topics:
             - api-upsert-page-notfs.2browsers.test.ts  TyT502RKTLXM296
             - ... more, which?
@@ -1990,7 +1990,7 @@ api:
             - embcom.create-site-via-api.2br  TyTE2ECREAEMBSITAPI
             - site-api-secrets-not-global.2br.f  TyTSITESECR0GLOB.TyTCREASITSECR
   enable API:
-            - embedded-comments-create-site-import-disqus.2br.test.ts  TyT5KFG0P75.TyTENAAPI
+            - embcom.create-site-import-disqus.2br.ec  TyT5KFG0P75.TyTENAAPI
             - dir.create-site-imp-json.2br  TyTEIMPJSON01.TyTENAAPI
   ext id, weird chars and loong id:
           - api-upsert-categories.2browsers.test.ts  TyT602RHK42JF
@@ -2121,12 +2121,12 @@ webhooks:  [.webhooks_api]
 import,
 export and restore:  (impexp)
   site patch:
-            - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
+            - embcom.create-site-import-disqus.2br.ec  TyT5KFG0P75
             - dir.create-site-imp-json.2br  TyTEIMPJSON01
     import unapproved page and posts:
             - TESTS_MISSING
   import Disqus comments:
-            - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
+            - embcom.create-site-import-disqus.2br.ec  TyT5KFG0P75
   export json:
     embedded comments:
             - embcom.expimpjson.create-site-exp-json.2br TyT7FKDJF3

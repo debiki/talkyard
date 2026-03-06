@@ -132,7 +132,7 @@ function constructEmbCommentsImportTest(testName: string, variants: {
         apiSecret = await owensBrowser.adminArea.apiTab.showAndCopyMostRecentSecret();
       });
 
-      function postCommentsToTalkyard(filePath: string) {
+      function postCommentsToTalkyard(filePath: string) { // utils.postJsonPatchToTalkyard in wdio-7
         const cmd =
             'node to-talkyard/dist/to-talkyard/src/to-talkyard.js ' +
               `--talkyardJsonPatchFile=${filePath} ` +

@@ -50,7 +50,7 @@ case class SitePatcher(globals: debiki.Globals) {
 
     // Tested e.g. here:
     // - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
-    // - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
+    // - embcom.create-site-import-disqus.2br.ec  TyT5KFG0P75
     // - SiteDumpImporterAppSpec  TyT2496ANPJ3
 
     val dao = globals.siteDao(siteId)
