@@ -7,6 +7,18 @@ drop table if exists flyway_schema_history;
 drop table if exists schema_version;
 
 
+-- Drop this unused fn. But it doesn't exist in all databases; apparently I've
+-- added it manually in one db and forgotten about it.
+drop function if exists member_page_settings3_sum_quota();
+
+-- Another old unused fn that might not exist.
+drop function if exists inc_next_page_id(site_id character varying);
+
+-- Comment sometimes present. Was in a Flyway-repeatable-migration but then removed.
+-- We'll delete this column anyway so let's remove the comment until then.
+comment on column posts3.private_pats_id_c is null;
+
+
 create domain text_oneline_250_d as text_oneline_d
 	constraint text_oneline_250_d_c_ste250 check ((length((value)::text) <= 250));
 
