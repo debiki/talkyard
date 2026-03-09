@@ -159,6 +159,10 @@ CMD exec /opt/talkyard/app/bin/talkyard-server \
   # Anyway, maybe makes *something* use only TLS 1.3 and 1.2 (not SSL), so let's do it:
   -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2 \
   #
+  # Since we are on an internal network, we need to tunnel SMTP. [egressp_conf]
+  -Dmail.smtp.proxy.host=egressp \
+  -Dmail.smtp.proxy.port=4750 \
+  #
   # It's ok to use urandom, see:   [30PUK42]
   # - http://www.2uo.de/myths-about-urandom/
   # - http://sockpuppet.org/blog/2014/02/25/safely-generate-random-numbers/

@@ -189,6 +189,17 @@ CMD \
   # [PROTOCONF]
   -Dhttps.protocols=TLSv1.3,TLSv1.2 \
   -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2 \
+  #
+  # Since we are on an internal network, we need to tunnel SMTP. [egressp_conf]
+  # This will send a HTTP CONNECT request to Smokescreen which will
+  # establish an HTTP tunnel to the SMTP server. (HTTP CONNECT will be over
+  # HTTP (not HTTPS), which is fine, we're on an internal network.)
+  # See: https://en.wikipedia.org/wiki/HTTP_tunnel
+  #   > the client asks an HTTP proxy server to forward the TCP connection
+  #   > to the desired destination
+  -Dmail.smtp.proxy.host=egressp \
+  -Dmail.smtp.proxy.port=4750 \
+  #
   # Otherwise ignored, although as per the docs it should be found since it's on the classpath.
   -Dlogback.configurationFile=/opt/talkyard/app/conf/logback.xml \
   # log4j2 problem, disable this:

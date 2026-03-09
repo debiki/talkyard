@@ -459,7 +459,12 @@ class MailerActor(
           perSiteFromName: Opt[St]): acm.HtmlEmail = {
     val apacheCommonsEmail = new SensibleHtmlEmail(anySmtpMsgId = email.smtpMsgId)
     apacheCommonsEmail.setDebug(debug)
+
+    // We'll connect to the SMTP server via our egress proxy, continer egressp w Smokescreen,
+    // as configured in:  images/app/Dockerfile.dev & .prod  [egressp_conf].   Can't connect
+    // directly, since we're on internal networks only  (fe_int_net, be_int_net and eg_int_net).
     apacheCommonsEmail.setHostName(serverName)
+
     apacheCommonsEmail.setCharset("utf8")
 
     // Authentication not always required — SMTP servers are sometimes configured to
