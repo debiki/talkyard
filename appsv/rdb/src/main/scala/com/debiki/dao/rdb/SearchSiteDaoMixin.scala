@@ -47,12 +47,21 @@ object SearchSiteDaoMixin {
     *
     * Hmm, maybe could rename this to 'PostShouldBeAddedToIndexQueueTests'
     * since we do index the title, but we don't add it to the index queue.
+    *
+    * Also, don't index custom CSS and Javascript — that just changes how a site
+    * looks, or adds new functionality e.g. Prism.js.
+    * ("_stylesheet" and "_javascript" are constants in
+    * `debiki.SpecialContentPages.StylesheetId` and `JavascriptId`,
+    * but we can't access from here, oh well.)
+    * Alternatively, we can look up the page type, and see if it's SpecialContent
+    * or Code, and then skip it. But this is quicker.
     */
   val PostShouldBeIndexedTests = /* [do_not_index] */ o"""
     posts3.post_nr != ${TitleNr} and
     posts3.approved_rev_nr is not null and
     posts3.deleted_status = ${DeletedStatus.NotDeleted.toInt} and
-    posts3.hidden_at is null
+    posts3.hidden_at is null and
+    posts3.page_id not in ('_stylesheet', '_javascript')
     """
 }
 
