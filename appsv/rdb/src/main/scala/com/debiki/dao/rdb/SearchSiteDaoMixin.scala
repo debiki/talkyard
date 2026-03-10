@@ -38,7 +38,18 @@ object SearchSiteDaoMixin {
       //   lang_codes_c      = array_cat(lang_codes_c,       excluded.lang_codes_c),
       //   search_eng_vers_c = array_cat(dsearch_eng_vers_c, exclude.search_eng_vers_c)
 
+
+  /** Right now, we index only posts that "ordinary members" can see. And skip
+    * unapproved and deleted posts, which only mods & admins can see.
+    *
+    * Also, we  [index_title_and_body_together], therefore we add only
+    * the orig post (page body), but skip the title here (nr != TitleNr).
+    *
+    * Hmm, maybe could rename this to 'PostShouldBeAddedToIndexQueueTests'
+    * since we do index the title, but we don't add it to the index queue.
+    */
   val PostShouldBeIndexedTests = /* [do_not_index] */ o"""
+    posts3.post_nr != ${TitleNr} and
     posts3.approved_rev_nr is not null and
     posts3.deleted_status = ${DeletedStatus.NotDeleted.toInt} and
     posts3.hidden_at is null

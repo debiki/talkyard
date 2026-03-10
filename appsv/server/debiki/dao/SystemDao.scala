@@ -651,7 +651,13 @@ class SystemDao(
           val siteTx: SiteTx = tx.asSiteTx(siteId)
           val nextPosts: ImmSeq[Post] =
                 siteTx.loadPostsByTimeExclAggs(
-                      range, toIndex = true, OrderBy.MostRecentFirst,
+                      range,
+                      // This'll skip unapproved and deleted posts, which we don't index.
+                      // And we'll load only the orig post, not the title post, since we index
+                      // them together into the same ElasticSearch document.
+                      // See: PostShouldBeIndexedTests [do_not_index].
+                      toIndex = true,
+                      OrderBy.MostRecentFirst,
                       // Don't add too few at a time, would result in many queries.
                       // And [dont_index_too_fast_if_testing].
                       limit = math.max(if (!core.isDevOrTest) 40 else 10,

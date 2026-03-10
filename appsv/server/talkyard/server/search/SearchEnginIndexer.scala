@@ -254,8 +254,8 @@ class IndexingActor(
         val relevantPost =
               if (!post.isTitle) post else {
                 posts.find(otr => otr.pageId == post.pageId && otr.isOrigPost) getOrElse {
-                  // Weird, we load them together. One missing, but why?
-                  // logger.warn(... ?)
+                  // Page body missing. "Cannot" happen, but should be harmless,
+                  // we'll just won't index this page — we _skip_titles in _indexPosts().
                   logger.warn(s"s$siteId: Orig post not loaded for title post ${post.id}, page ${
                         post.pageId}. [TyEIX_TITLINQ1]")
                   post
@@ -303,12 +303,12 @@ class IndexingActor(
 
     if (post.isTitle) {
       // We'll index the title & body into one ElasticSearch doc, when we encounter
-      // the body post (they're always loaded together).  [index_title_and_body_together]
-      // But the title shouldn't have been added to the queue (only the body).
-      // Skip the title, so won't index the (tilet + body) twice.
-      logger.warn(s"s$siteId: Title post ${post.id}, ${pagePostNr
-            }, w/o orig post in ix queue. Removing w/o indexing it. [TyEIX_TITLINQ2]")
-      removeFromQueue()
+      // the body post. They're always loaded together,  [index_title_and_body_together]
+      // that's why there's title posts in `postsToIndex`. But _skip_titles here so we won't
+      // index pages (title + body) twice.
+      logger.trace(o"""s$siteId: Title post ${post.id}, $pagePostNr, in ix queue.
+            Ignoring & removing from queue. [TyMIX_TITLINQ2]""")
+      removeFromQueue() // removes title, not body
       return None
     }
 

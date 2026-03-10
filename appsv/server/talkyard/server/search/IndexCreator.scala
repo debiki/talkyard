@@ -85,7 +85,7 @@ class IndexCreator {
 
                 case _: java.net.ConnectException =>
                   // This happen ES is offline, e.g. hasn't started yet.
-                  val msg = o"""Connection to 'search' container refused, when checking" +
+                  val msg = o"""Connection to 'search' container refused, when checking
                               if search index '$IndexName' exists"""
                   _numConnFails += 1
                   if (_esHasStarted) {

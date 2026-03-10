@@ -82,7 +82,7 @@ import talkyard.server.JsX._
   * (If running embedded in the future:
   *  blog.trifork.com/2012/09/13/elasticsearch-beyond-big-data-running-elasticsearch-embedded/ )
   */
-package object search {
+package object search extends logging.TyLogging {
 
   val BatchSize = 50
 
@@ -115,7 +115,9 @@ package object search {
   def makeElasticSearchIdFor(siteId: SiteId, post: Post, unapprovedIsOk: Bo = false): St = {
     // If not approved, need to construct a different doc id, otherwise we'd overwrite
     // the ElasticSearch doc for the *approved* version of the post. [ix_unappr]
-    warnDevDieIf(!post.isSomeVersionApproved && !unapprovedIsOk, "TyEESID4UNAPR1")
+    warnDevDieIf2(!post.isSomeVersionApproved && !unapprovedIsOk, "TyEESID4UNAPR1",
+          o"""s$siteId: Indexing unapproved post id ${post.id} nr ${post.nr}
+              on page ${post.pageId}""")
     makeElasticSearchIdFor(siteId, postId = post.id,
           // The warning above is enough.
           unapprovedIsOk = true)

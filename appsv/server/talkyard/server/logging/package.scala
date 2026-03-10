@@ -139,6 +139,22 @@ package object logging {
       s"${id}: "
     }
 
+    def warnDevDieIf2(test: => Bo, errorCode: St, details: => St): U =
+      if (test)
+        warnDevDie2(errorCode, details)
+
+    def warnDevDie2(errorCode: St, warningMsg: St): U = {
+      val msgAndCode = s"$warningMsg [$errorCode]"
+      if (com.debiki.core.isDevOrTest) {
+        // Fail hard in debug mode so this error will be fixed.
+        throw new AssertionError(msgAndCode)
+      }
+      else {
+        // Only log a warning in release mode.
+        logger.warn(msgAndCode)
+      }
+    }
+
     protected def bugWarnIf(condition: Boolean, errorCode: String,
           problem: => String = ""): Boolean = {
       bugWarnDieIfThen(condition, errorCode, problem, thenDo = null)
