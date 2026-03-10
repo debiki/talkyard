@@ -1049,9 +1049,9 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
           logger.info("Killed. Bye. [EsMKILLED]")
           // Don't know how to tell Play to exit? Maybe might as well just:
           System.exit(0)
-          // However this leaves a RUNNING_PID file. So the docker container deletes it
-          // before start, see docker/play-prod/Dockerfile [65YKFU02]  <— this was before,
-          //                                     when also Prod mode waited for the future.
+          // However this leaves a RUNNING_PID file.
+          // Update 2026, Ty v1: Now we don't use any PID file. See: [65YKFU02].
+          // Lifecycle managed by Docker anyway.
 
           // However this block won't run if we've started already. So exiting directly
           // in the signal handler instea, right now, see [9KYKW25] above. Not sure why Play
