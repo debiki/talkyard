@@ -178,7 +178,7 @@ object Dependencies {
     // Let's use Java-JWT. It's well-known and its readme has a simple decoding example.
     // Repo: https://github.com/auth0/java-jwt
     // and: https://mvnrepository.com/artifact/com.auth0/java-jwt
-    val auth0JavaJwt = "com.auth0" % "java-jwt" % "4.5.0"
+    val auth0JavaJwt = "com.auth0" % "java-jwt" % "4.5.1"
 
 
     // ----- PASETO tokens
