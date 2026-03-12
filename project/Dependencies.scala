@@ -64,7 +64,7 @@ object Dependencies {
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
 
     // See: https://commons.apache.org/proper/commons-codec/changes.html
-    val apacheCommonsCodec = "commons-codec" % "commons-codec" % "1.20.0"
+    val apacheCommonsCodec = "commons-codec" % "commons-codec" % "1.21.0"
 
     // See: https://commons.apache.org/proper/commons-validator/changes-report.html
     val apacheCommonsValidator = "commons-validator" % "commons-validator" % "1.10.1"
