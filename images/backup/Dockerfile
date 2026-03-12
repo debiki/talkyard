@@ -1,5 +1,5 @@
 # See: https://hub.docker.com/_/debian/tags?name=13
-FROM debian:13.2-slim
+FROM debian:13.3-slim
 
 LABEL org.opencontainers.image.title="Talkyard Backup" \
       io.talkyard.edition="se" \

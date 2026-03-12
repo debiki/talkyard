@@ -1,17 +1,20 @@
 # Stage 1: Build Smokescreen binary
 # ------------------------------------------------------------
 
-FROM golang:1.25.6-trixie AS smokescreen_builder
+# Images list: https://hub.docker.com/_/golang
+FROM golang:1.26.1-trixie AS smokescreen_builder
 
 # Weird, Smokescreen has no up-to-date Git tags. But commit eae8104, Jan 9 2026, is:
 # "Prevent smokescreen upstream connections to its local IPs", which seems important!
-RUN go install github.com/stripe/smokescreen@eae81044dc8309bd7de5782be587cccffc1c4084
+# Commits list: https://github.com/stripe/smokescreen/commits/master/
+RUN go install github.com/stripe/smokescreen@464b1115f802cbd91ffee555a41e71546646d396
 
 
 # Stage 2: Build an egress proxy, using the Smokescreen binary
 # ------------------------------------------------------------
 
-FROM debian:13.2-slim
+# Images list: https://hub.docker.com/_/debian/tags?name=13
+FROM debian:13.3-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \

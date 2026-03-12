@@ -1,4 +1,4 @@
-# See: https://hub.docker.com/_/postgres
+# See: https://hub.docker.com/_/postgres/tags?name=18.
 FROM postgres:18.3-trixie
 
 LABEL org.opencontainers.image.title="Talkyard Rdb" \

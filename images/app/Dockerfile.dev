@@ -15,7 +15,8 @@
 # and then using here in the Ubuntu 24.04 Noble Java image,
 # there could be some error like "libc.so.: version `GLIBC_2.32' not found".
 #
-FROM rust:1.93.0-trixie AS rust_img
+# Images list: https://hub.docker.com/_/rust/tags?name=trixie
+FROM rust:1.94.0-trixie AS rust_img
 
 RUN cargo install sqlx-cli --no-default-features --features native-tls,postgres
 
@@ -23,7 +24,7 @@ RUN cargo install sqlx-cli --no-default-features --features native-tls,postgres
 # Build the Ty app server
 # -----------------------------------
 
-# Ubuntu 24.04. See: https://hub.docker.com/_/eclipse-temurin.
+# Ubuntu 24.04. Images: https://hub.docker.com/_/eclipse-temurin/tags?name=11. .
 FROM  eclipse-temurin:11.0.30_7-jdk-noble
 
 LABEL org.opencontainers.image.title="Talkyard Dev App" \

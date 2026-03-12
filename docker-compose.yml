@@ -313,6 +313,9 @@ services:
       - CHOWN
       - SETGID
       - SETUID
+      # Otherwise Redis 8.6 won't start because of this error:  (but worked fine w 8.4)
+      # "setpriv: apply bounding set: Operation not permitted"
+      - SETPCAP
 
   search:
     build: images/search/
