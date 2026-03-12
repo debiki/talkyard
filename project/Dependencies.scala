@@ -49,7 +49,7 @@ object Dependencies {
 
     // HikariCP — "A solid high-performance JDBC connection pool at last"
     // See: https://github.com/brettwooldridge/HikariCP
-    val hikariCp = "com.zaxxer" % "HikariCP" % "6.3.3"
+    val hikariCp = "com.zaxxer" % "HikariCP" % "7.0.2"
 
     // ElasticSearch 8 Java client. (Don't use the REST client, it's deprecated.)
     // Can't use the ES 9 Java client — it needs Java 17, but we're on Java 11. [java_11_to_17]
