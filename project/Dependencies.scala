@@ -129,7 +129,7 @@ object Dependencies {
     // See: https://github.com/logfellow/logstash-logback-encoder/releases
     // and: https://mvnrepository.com/artifact/net.logstash.logback/logstash-logback-encoder
     // Can't use 9.0 — requires Java >= 17.  [java_11_to_17]
-    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "8.1"
+    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "9.0"
     //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
 
     // For logging ElasticSearch' request & response json. [es_req_logs]
