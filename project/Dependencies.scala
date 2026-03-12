@@ -56,7 +56,7 @@ object Dependencies {
     // Latest version, as of Nov 21 2025:
     // https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/8.19/installation.html
     val elasticsearchClient = "co.elastic.clients" % "elasticsearch-java" % "8.19.11"
-    val elasticsearchJackson = "com.fasterxml.jackson.core" % "jackson-databind" % "2.17.0"
+    val elasticsearchJackson = "com.fasterxml.jackson.core" % "jackson-databind" % "2.17.3"
 
     val guava = "com.google.guava" % "guava" % "33.5.0-jre"
     val findbugsJsr304 = "com.google.code.findbugs" % "jsr305" % "3.0.2" % "provided"
