@@ -68,6 +68,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val asAlias: Opt[WhichAliasPat] =
           debiki.dao.SiteDao.checkAliasOrThrowForbidden(body, requester, request.anyAliasPat)(dao)
 
+    // Bug: Should allow [empty_bookmarks], that is, bookmarks w/o any notes (just a link).
     throwBadRequestIf(text.isEmpty, "EdE85FK03", "Empty post")
     throwForbiddenIf(requester.isGroup, "EdE4GKRSR1", "Groups may not reply")
     throwBadReqIf(asAlias.isDefined && postType.isPrivate, // [both_anon_priv]

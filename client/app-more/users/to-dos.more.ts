@@ -78,7 +78,7 @@ export const ToDos = React.createFactory<ToDosProps>(function(ps: ToDosProps) {
     const page: Page = pagesById[bm.pageId];
 
     // Safe: Not interpreting the source as html.
-    const bmText = r.span({}, bm.unsafeSource);
+    const bmText = r.span({ className: 'c_BmNote' }, bm.unsafeSource);
     const bmElm = r.div({}, r.span({ className: 'dw-p-mark icon-bookmark' }), bmText);
 
     const anyPost: Post | U = page.postsByNr[bm.parentNr];

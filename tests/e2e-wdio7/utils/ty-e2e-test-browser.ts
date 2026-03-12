@@ -1511,6 +1511,10 @@ export class TyE2eTestBrowser {
     }
 
 
+    // Also see:
+    // - waitForDisplayedInViewport(selector: St, ps: WaitPs = {})
+    // - isDisplayedInViewport(selector)
+    //
     async scrollIntoViewInPageColumn(selector: St) {   // RENAME to  scrollIntoView
       dieIf(!selector, '!selector [TyE05RKCD5]');
 
@@ -2729,14 +2733,16 @@ export class TyE2eTestBrowser {
     }
 
 
-    async waitAndGetListLinks(selector: St): Pr<(St | U)[]> {
+    async waitAndGetListLinks(selector: St, ps?: HowMany): Pr<(St | U)[]> {
       return await this.__waitAndGetThingsInList(
-              selector, {}, async (e) => await e.getAttribute('href'));
+              selector, ps || {}, async (e) => await e.getAttribute('href'));
     }
 
 
+    // So more searchable:  __getThingsInList.
     async __waitAndGetThingsInList<T>(listItemSelector: St, ps: HowMany & WaitPs,
             fn: (e: WElm) => Pr<T>): Pr<T[]> {
+      dieIf(!ps, `You haven't specified 'ps: HowMany', e.g. { atLeast: 123 } [TyE5AXLJ25]`);
       let items: T[] | U;
       let len: Nr | St = `?`;
       await this.waitUntil(async () => {
@@ -4039,6 +4045,47 @@ export class TyE2eTestBrowser {
         assert.ok(_.includes(usernamesPresent, username), "User missing: " + username +
             ", those present are: " + namesPresent);
       },
+
+      bookmarks: {
+        __tabClass: '.c_Cb_P-ToDos',
+
+        isTabOpen: async (): Pr<Bo> => {
+          return await this.isDisplayed(this.contextbar.bookmarks.__tabClass);
+        },
+
+        openTab: async () => {
+          await this.waitAndClick('.e_BokmsB');
+          await this.waitForDisplayed(this.contextbar.bookmarks.__tabClass);
+        },
+
+        getBookmarkLinks: async (ps: HowMany = { atLeast: 1 }): Pr<St[]> => {
+          const links: (St | U)[] = await this.waitAndGetListLinks(
+                                        this.contextbar.bookmarks.__tabClass + ' .c_BmPo', ps);
+          // What about bookmarks to now inaccesible pages?
+          // The server currently does'nt incl any link.  [delete_inaccessible_bookmark]
+          // dieIf(_.some(links, link => !link), 'TyE07SKJF');
+          return links;
+        },
+
+        navToBookmark: async (link: St, ps: { samePage?: Bo, newPageTitle?: St } = {}) => {
+          dieIf(ps.samePage && !!ps.newPageTitle, 'TyE407SMNS2');
+          if (!ps.samePage) {
+            await this.rememberCurrentUrl();
+          }
+          // Click the bookmark note text, otherwise, if clicking the bookmarked post
+          // (shown in the sidebar just below the bookmark note & icon)
+          // we might accidentally click the post author name and open the
+          // about-user dialog instead.
+          // UX: How's this going to work on mobile? [bookmarks_and_fat_fingers]
+          await this.waitAndClick(`.c_BmPo[href="${link}"] .c_BmNote`);
+          if (!ps.samePage) {
+            await this.waitForNewUrl();
+            if (ps.newPageTitle) {
+              await this.assertPageTitleMatches(ps.newPageTitle);
+            }
+          }
+        },
+      }
     };
 
 
@@ -6510,6 +6557,78 @@ export class TyE2eTestBrowser {
       },
 
       // Other link:  .dw-a-other-topics
+    };
+
+    // Where to place this?  In a single  bookmarks {}  obj, or in both the
+    // topics: {}  and  contextbar = {}  objs?
+    // For now:
+    bookmarks = {
+      bookmarkPost: async (postNr: PostNr, ps: { notes?: St, willFail?: Bo } = {}): Pr<V> => {
+        const headerSel = '.dw-page ' + // so won't click bookmarks in the sidebar
+                              this.topic.postHeaderSelector(postNr);
+        const addBookmSel  = headerSel + ' .s_P_H_Bm .icon-bookmark-empty';
+        const editBookmSel = headerSel + ' .s_P_H_Bm .icon-bookmark';
+        await this.waitAndClick(addBookmSel);
+        if (ps.notes) {
+          await this.bookmarkDialog.setNotes(ps.notes);
+        }
+        await this.bookmarkDialog.clickSave();
+        if (!ps.willFail) {
+          await this.waitUntilLoadingOverlayGone();
+          await this.waitForDisplayed(editBookmSel);
+        }
+      },
+
+      deleteBookmark: async (postNr: PostNr, ps: { willFail?: Bo } = {}): Pr<V> => {
+        const headerSel = '.dw-page ' + // so won't click bookmarks in the sidebar
+                              this.topic.postHeaderSelector(postNr);
+        const editBookmSel = headerSel + ' .s_P_H_Bm .icon-bookmark';
+        const addBookmSel  = headerSel + ' .s_P_H_Bm .icon-bookmark-empty';
+        await this.waitAndClick(editBookmSel);
+        await this.bookmarkDialog.clickDelete();
+        if (!ps.willFail) {
+          await this.waitUntilLoadingOverlayGone();
+          await this.waitForDisplayed(addBookmSel);
+        }
+      },
+
+      getBookmarkedPostNrs: async (ps: HowMany = { atLeast: 1 }): Pr<Nr[]> => {
+        // This variable will be like:  ['dw-p-hd dw-ar-p-hd',  'post-12',  'post-345']
+        // — the orig post class, or a comment id attr.
+        // Slightly different selectors for the orig post and comments:
+        const idsOrClass = await this.__waitAndGetThingsInList(
+                '.dw-ar-p-hd:has(.icon-bookmark),  .dw-ar-t .dw-p:has(.icon-bookmark)', ps,
+                async (elm) => {
+                  // Check id first, so won't get an uninteresting class.
+                  return await elm.getAttribute('id') || await elm.getAttribute('class');
+                });
+        const postNrs: Nr[] = [];
+        for (let ioc of idsOrClass) {
+          if (ioc.indexOf('dw-ar-p-hd') >= 0) {
+            postNrs.push(c.BodyNr);
+          }
+          else {
+            const nrStr = ioc.substring('post-'.length);
+            const nr = parseInt(nrStr);
+            dieIf(!_.isNumber(nr), 'TyE07STKN29');
+            postNrs.push(nr);
+          }
+        }
+        return postNrs;
+      },
+
+      /*
+      isPostBookmarked: async (postNr: PostNr): Pr<Bo> => {
+        // Class 'icon-bookmark' present, but 'icon-bookmar-empty' absent?
+        const headerSel: St = this.topic.postHeaderSelector(postNr);
+        const elms: WElm[] = await this.waitForExactly(1, headerSel);
+        const elm = elms[0];
+        const clazz = await elm.getAttribute('class');
+        const classMissing = clazz.indexOf('icon-bookmark') === -1;
+        dieIf(classMissing, 'TyE703SKLC653');
+        const isBookmarked = clazz.indexOf('icon-bookmark-empty') === -1;
+        return isBookmarked;
+      }, */
     };
 
     topicTypeExpl = {
@@ -9115,6 +9234,28 @@ export class TyE2eTestBrowser {
     };
 
 
+    bookmarkDialog = {
+      setNotes: async (notes: St) => {
+        await this.waitAndSetValue('.e_BkmDsc textarea', notes);
+      },
+
+      clickSave: async () => {
+        await this.waitAndClick('.c_BokmDrpdD .btn-primary');
+      },
+
+      clickDelete: async () => {
+        await this.waitAndClick('.c_BokmDrpdD .btn-delete');
+      },
+
+      cancel: async () => {
+        // Break out close dialog fn?  [E2ECLOSEDLGFN]
+        await this.waitAndClick('.c_BokmDrpdD .esDropModal_CloseB');
+        await this.waitUntilGone('.c_BokmDrpdD .esDropModal_CloseB');
+        await this.waitUntilModalGone();
+      },
+    };
+
+
     flagDialog = {
       waitUntilFadedIn: async () => {
         await this.waitUntilDoesNotMove('.e_FD_InaptRB');
@@ -10119,6 +10260,7 @@ export class TyE2eTestBrowser {
         },
       },
 
+      // aka  "  moderation: {"
       review: {
         goHere: async (origin?: St, opts: { loginAs? } = {}) => {
           await this.adminArea.goToReview(origin, opts);
@@ -10135,6 +10277,12 @@ export class TyE2eTestBrowser {
           //  await this.waitAndClick('.e_RvwB');
           //  await this.waitForVisible('.s_A_Rvw');
           //  //----
+        },
+
+        getLinksToPosts: async (): Pr<St[]> => {
+          const links = await this.waitAndGetListLinks('.s_A_Rvw_Tsk_ViewB');
+          dieIf(_.some(links, link => !link), 'TyE07SKJG');
+          return links;
         },
 
         hideCompletedTasks: async () => {
@@ -10203,7 +10351,13 @@ export class TyE2eTestBrowser {
           return res;
         },
 
-        goToPostForTaskIndex: async (index: Nr) => {
+        goToPostForTaskIndex: async (index: Nr, ps: { sameWindow?: Bo } = {}) => {
+          if (ps.sameWindow) {
+            const links = await this.adminArea.review.getLinksToPosts();
+            const link = links[index - 1];
+            await this.go2(link);
+            return;
+          }
           die("Won't work, opens in new tab [TyE5NA2953]");
           const numTabsBefore = await this.numTabs();
           await this.topic.clickPostActionButton(`.e_RT-Ix-${index} .s_A_Rvw_Tsk_ViewB`);

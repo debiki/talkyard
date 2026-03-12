@@ -370,6 +370,8 @@ function runAllE2eTests {
   $r s/wdio --only drafts-chat-adv-ed.2browsers $args
   $r s/wdio --only drafts-delete $args
 
+  $r s/wdio-7 --only bookmarks-basic.2br.f --cd -i $args
+
   # Wip:
   # $r s/wdio-7 --only frag-action-compose-topic.2br.f.wip.ts --cd -i
 
