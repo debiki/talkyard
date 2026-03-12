@@ -134,9 +134,9 @@ object Dependencies {
 
     // For logging ElasticSearch' request & response json. [es_req_logs]
     // See: https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/current/java-rest-low-usage-logging.html
-    val sl4jApi = "org.slf4j" % "slf4j-api" % "1.8.0-beta2"
+    val sl4jApi = "org.slf4j" % "slf4j-api" % "1.8.0-beta4"
     // In build.sbt, we exclude commons-logging, and use this instead:
-    val sl4jJclOverSlf4j = "org.slf4j" % "jcl-over-slf4j" % "1.8.0-beta2"
+    val sl4jJclOverSlf4j = "org.slf4j" % "jcl-over-slf4j" % "1.8.0-beta4"
     // "ch.qos.logback" % "logback-classic" % "1.3..."  — skip, v1.5 above already
 
 
