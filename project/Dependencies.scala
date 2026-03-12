@@ -45,7 +45,7 @@ object Dependencies {
     // supports listener-notify.
     // https://stackoverflow.com/questions/21632243/
     //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
-    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.7.8"
+    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.7.10"
 
     // HikariCP — "A solid high-performance JDBC connection pool at last"
     // See: https://github.com/brettwooldridge/HikariCP
