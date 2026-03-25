@@ -766,7 +766,7 @@ push_tag_to_dev_repo:
 	@echo "Done. Now, push branches and bump version number:"
 	@echo ""
 	@echo "    git checkout -B main"
-	@echo "    git push $(repo) release main"
+	@echo "    git push $(repo) release-v1 main"
 	@echo "    s/bump-versions.sh"
 	@echo "    git add version.txt relchans/tyse-v1-dev"
 	@echo '    git commit -m "Bump version to `cat version.txt`."'
