@@ -10,10 +10,36 @@ cd /opt/talkyard/app
 # on the host machine. Which makes them invisible & unusable, on the host machine.
 # But skip this if we're root already (perhaps we're root in a virtual machine).
 file_owner_id=`ls -adn | awk '{ print $3 }'`
-id -u owner >> /dev/null 2>&1
-if [ $? -eq 1 -a $file_owner_id -ne 0 ] ; then
-  # $? -eq 1 means that the last command failed, that is, user 'owner' not yet created.
-  # So create it:
+
+#
+# Often the host OS user has id 1000, as of Ubuntu 24.04, there's a user 'ubuntu'
+# in the container with id 1000. Then we'll just reuse it. (Ids >= 1000 are typically meant
+# for end users, I mean humans.)
+#
+#if [ -n "$(getent passwd ubuntu)" -a "$(id -u ubuntu)" = $file_owner_id ]; then
+#  usermod -l owner ubuntu
+#  groupmod -n owner ubuntu
+#  usermod -d /home/ubuntu -m owner
+#  usermod -c "[full name (new)]" [newname]
+#fi
+
+if getent passwd $file_owner_id > /dev/null; then
+  owner_username=$(id -u -n $file_owner_id)
+  echo "User with id $file_owner_id exists. Name: '$owner_username'"
+  if [[ "$owner_username" != 'owner' ]]; then
+    echo
+    echo "Wrong file owner username. Should be 'owner', but is: '$owner_username'"
+    echo "— now the Scala build cache won't work (at /home/owner/.sbt/)."
+    echo
+    echo "Maybe you'd like to do something about that?  For example, changing its"
+    echo "home dir (in this container only!) to:  /home/owner/  somehow?"
+    echo "Exiting, bye."
+    echo
+    exit 1
+  fi
+else
+  # There's no user with the same id as the files. Let's create such a user,
+  # and call it 'owner':
   # We map /home/owner/.ivy and .sbt to the host user's .ivy and .sbt, in docker-compose.yml. [SBTHOME]
   # -D = don't assign password (would block Docker waiting for input).
   echo "Creating user 'owner' with id $file_owner_id..."
@@ -28,8 +54,12 @@ if [ $? -eq 1 -a $file_owner_id -ne 0 ] ; then
       owner   # [5RZ4HA9]
 fi
 
+# The Postgres password at /tmp/postgres_password should already be readable — in
+# dev builds, there's just a public test password in
+# ../../tests/secrets/test_postgres_password.txt. [appuser_id_1000]
+
 # Below this dir, sbt and Ivy will cache their files. [SBTHOME]
-mkdir -p /home/owner/
+# mkdir -p /home/owner/ — Already created by `adduser` above.
 
 if [ -z "$*" ] ; then
   echo 'No command specified. What do you want to do? Exiting.'
@@ -38,15 +68,18 @@ fi
 
 if [ $file_owner_id -ne 0 ] ; then
   # Prevent a file-not-found exception in case ~/.ivy2 and ~/.sbt didn't exist, so Docker
-  # created them resulting in them being owned by root:
+  # created them resulting in them being owned by root:  (needs CAP_CHOWN, right)
   # (/home/owner/.ivy2, .sbt and .coursier are mounted in docker-compose.yml [SBTHOME])
+  echo "Making 'owner:owner' the owner of /home/owner/{.ivy2,.sbt,.cache} ..."
   chown owner:owner /home/owner
   chown -R owner:owner /home/owner/.ivy2
   chown -R owner:owner /home/owner/.sbt
   chown -R owner:owner /home/owner/.cache
-  # Make saving-uploads work (this dir, mounted in docker-compose.yml, shouldn't be owned by root).
-  chown -R owner:owner /opt/talkyard/uploads
-  chown -R owner:owner /var/log/talkyard
+  # Let the app user, 'owner', save uploads and sitemaps. [pub_files_volume]
+  # (In the Dockerfile.dev, we don't know the id of 'owner', but now, here, we do.)
+  echo "Making 'owner:owner' owner of /var/talkyard/v1/{pub-files,priv-files} ..."
+  chown -R owner:owner /var/talkyard/v1/pub-files/
+  chown -R owner:owner /var/talkyard/v1/priv-files/
 
   # Here, 'exec gosu owner $*' will:
   # 1) run $* as user owner, which has the same user id as the file owner on the Docker host
@@ -55,7 +88,7 @@ if [ $file_owner_id -ne 0 ] ; then
   # However! 'gosu' doesn't work with "cd ... &&", and we need to have 'owner' cd to /opt/talkyard/app/.  [su_or_gosu]
   # So instead use 'exec su -c ...'
   # exec gosu owner $*
-  echo "Starting Play as user 'owner', should be id $file_owner_id":
+  echo "Starting Play as user 'owner', user id $file_owner_id":
   set -x
   exec su -c "$*" owner
 else

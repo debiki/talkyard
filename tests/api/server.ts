@@ -624,8 +624,7 @@ export default {
   getLastEmailSenTo,
   countLastEmailsSentTo,
   getEmailsSentToAddrs,
-  getLastVerifyEmailAddressLinkEmailedTo, // RENAME see next line
-  getVerifyEmailAddressLinkFromLastEmailTo: getLastVerifyEmailAddressLinkEmailedTo,
+  getLastVerifyEmailAddressLinkEmailedTo,
   waitAndGetVerifyAnotherEmailAddressLinkEmailedTo,
   waitAndGetInviteLinkEmailedTo,
   waitAndGetThanksForAcceptingInviteEmailResetPasswordLink,

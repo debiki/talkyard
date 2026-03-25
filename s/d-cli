@@ -36,7 +36,7 @@ fi
 # Pass PLAY_HEAP_MEMORY_MB to both Play Framework in the Docker container via the env var,
 # and to SBT via --mem.
 sudo PLAY_HEAP_MEMORY_MB=$PLAY_HEAP_MEMORY_MB \
-  docker-compose run --rm --service-ports $set_is_prod_test_env_var app \
+  docker compose run --rm --service-ports $set_is_prod_test_env_var app \
   /opt/sbt/bin/sbt \
   --mem $PLAY_HEAP_MEMORY_MB \
   -J-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:9999 \
@@ -47,11 +47,9 @@ sudo PLAY_HEAP_MEMORY_MB=$PLAY_HEAP_MEMORY_MB \
   -Dcom.sun.management.jmxremote.authenticate=false \
   -Dhttp.port=9000 \
   -Dhttps.port=9443 \
-  `# SSL has security flaws. Use TLS instead. [NOSSL] [PROTOCONF]` \
-  -Ddeployment.security.SSLv2Hello=false \
-  -Ddeployment.security.SSLv3=false \
-  -Dhttps.protocols=TLSv1.1,TLSv1.2 \
-  -Djdk.tls.client.protocols=TLSv1.1,TLSv1.2 \
+  `# [PROTOCONF]` \
+  -Dhttps.protocols=TLSv1.3,TLSv1.2 \
+  -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2 \
   `# Otherwise ignored (really!?), although as per the docs it should be found since it's on the classpath.` \
   -Dlogback.configurationFile=/opt/talkyard/app/conf/logback.xml \
   `# log4j2 problem, disable this:` \

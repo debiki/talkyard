@@ -43,6 +43,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
           name = name getOrElse theLocalHostname, status = SiteStatus.Active,
           hostname = Some(theHostname), featureFlags = "",
           embeddingSiteUrl = None, organizationName = s"Org Name $thePrefix",
+          languageCode = None,
           makePublic = None, creatorId = user.id,
           BrowserIdData(ip = theIp, idCookie = Some(theIdCookie), fingerprint = theFingerprint),
           isTestSiteOkayToDelete = isTestSite, skipMaxSitesCheck = false,

@@ -38,10 +38,30 @@ object SearchSiteDaoMixin {
       //   lang_codes_c      = array_cat(lang_codes_c,       excluded.lang_codes_c),
       //   search_eng_vers_c = array_cat(dsearch_eng_vers_c, exclude.search_eng_vers_c)
 
+
+  /** Right now, we index only posts that "ordinary members" can see. And skip
+    * unapproved and deleted posts, which only mods & admins can see.
+    *
+    * Also, we  [index_title_and_body_together], therefore we add only
+    * the orig post (page body), but skip the title here (nr != TitleNr).
+    *
+    * Hmm, maybe could rename this to 'PostShouldBeAddedToIndexQueueTests'
+    * since we do index the title, but we don't add it to the index queue.
+    *
+    * Also, don't index custom CSS and Javascript — that just changes how a site
+    * looks, or adds new functionality e.g. Prism.js.
+    * ("_stylesheet" and "_javascript" are constants in
+    * `debiki.SpecialContentPages.StylesheetId` and `JavascriptId`,
+    * but we can't access from here, oh well.)
+    * Alternatively, we can look up the page type, and see if it's SpecialContent
+    * or Code, and then skip it. But this is quicker.
+    */
   val PostShouldBeIndexedTests = /* [do_not_index] */ o"""
+    posts3.post_nr != ${TitleNr} and
     posts3.approved_rev_nr is not null and
     posts3.deleted_status = ${DeletedStatus.NotDeleted.toInt} and
-    posts3.hidden_at is null
+    posts3.hidden_at is null and
+    posts3.page_id not in ('_stylesheet', '_javascript')
     """
 }
 
@@ -55,7 +75,16 @@ trait SearchSiteDaoMixin extends SiteTransaction {
   def indexPostsSoon(posts: Post*): i32 = {
     var numEnqueued = 0
     posts foreach { p =>
-      val gotEnqueued = _enqueuePost(p)
+      // We currently don't index unapproved posts. [ix_unappr]
+      // However, do add deleted posts to the queue — we need to *un*index them.
+      // Also, not sure if there might be (or will be) any code path where `p` is a too recent
+      // and not-yet-approved post, even though we do want to index an older revision — so
+      // look at `isSomeVersionApproved()` rather than `isCurrentVersionApproved()`.
+      val gotEnqueued =
+            if (!p.isSomeVersionApproved) false
+            else {
+              _enqueuePost(p)
+            }
       if (gotEnqueued) numEnqueued += 1
     }
     numEnqueued
@@ -64,8 +93,9 @@ trait SearchSiteDaoMixin extends SiteTransaction {
   private def _enqueuePost(post: Post): Bo = {
     // COULD skip 'post' if it's a code page, e.g. CSS or JS?
     val statement = s""" -- _enqueuePost
-      insert into job_queue_t (action_at, site_id, site_version, post_id, post_rev_nr)
-        values (?, ?, ($selectSiteVersion), ?, ?)
+      insert into job_queue_t (
+            action_at, site_id, site_version, post_id, post_rev_nr, do_what_c)
+        values (?, ?, ($selectSiteVersion), ?, ?, ${JobType.Index})
       $OnPostConflictAction
       """
 
@@ -85,8 +115,8 @@ trait SearchSiteDaoMixin extends SiteTransaction {
     unimpl("Not implemented:  indexPostIdsSoon_unimpl")
     /* Sth like this:
     val statement = s"""
-        insert into job_queue_t (action_at, site_id, site_version, post_id, post_rev_nr)
-        select ?, ?, ($selectSiteVersion), post_id, post_rev_nr
+        insert into job_queue_t (action_at, site_id, site_version, post_id, post_rev_nr, do_what_c)
+        select ?, ?, ($selectSiteVersion), post_id, post_rev_nr, ${JobType.Index}
         from posts3 where site_id = ? and unique_post_id in (${makeInListFor(postIds)})
         $OnPostConflictAction """
 
@@ -101,13 +131,14 @@ trait SearchSiteDaoMixin extends SiteTransaction {
 
   def indexAllPostsOnPage(pageId: PageId): Unit = {
     val statement = s""" -- indexAllPostsOnPage
-      insert into job_queue_t (action_at, site_id, site_version, post_id, post_rev_nr)
+      insert into job_queue_t (action_at, site_id, site_version, post_id, post_rev_nr, do_what_c)
       select
         posts3.created_at,
         sites3.id,
         sites3.version,
         posts3.unique_post_id,
-        posts3.approved_rev_nr
+        posts3.approved_rev_nr,
+        ${JobType.Index}
       from posts3 inner join sites3
         on posts3.site_id = sites3.id
       where

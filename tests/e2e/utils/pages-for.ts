@@ -749,92 +749,6 @@ export class TyE2eTestBrowser {
 
 
 
-    newSite = {
-      createNewSite: (data: NewSiteData): NewSiteResult => {
-        // Dupl code [502SKHFSKN53]
-        let url;
-        if (data.siteType === SiteType.Forum) {
-          console.log("Go to create Forum site page ...");
-          url = utils.makeCreateSiteWithFakeIpUrl();
-        }
-        else {
-          console.log("Go to create Embedded Comments site page ...");
-          url = utils.makeCreateEmbeddedSiteWithFakeIpUrl();
-        }
-        this.go2(url);
-        this.disableRateLimits();
-
-        console.log("Fill in fields and submit...");
-        this.createSite.fillInFieldsAndSubmit(data);
-
-        // New site; disable rate limits here too.
-        this.disableRateLimits();
-        const siteId = this.getSiteId();
-        const talkyardSiteOrigin = this.origin();
-
-        return {
-          data,
-          testId: data.testId,
-          siteId,
-          talkyardSiteOrigin,
-        }
-      },
-
-
-      signUpAsOwner: (newSiteResult: NewSiteResult) => {
-        const data = newSiteResult.data;
-        const siteId = newSiteResult.siteId;
-
-        console.log("Click sign up as owner ...");
-        this.createSite.clickOwnerSignupButton();
-
-        console.log("... sign up as owner ...");
-        switch (data.newSiteOwner) {
-          case NewSiteOwnerType.OwenOwner:
-            this.loginDialog.createPasswordAccount(data, true);
-            const email = server.getLastEmailSenTo(siteId, data.email, this);
-            const link = utils.findFirstLinkToUrlIn(
-              data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
-            this.go(link);
-            this.waitAndClick('#e2eContinue');
-            break;
-          case NewSiteOwnerType.GmailAccount:
-            this.loginDialog.createGmailAccount({
-              email: settings.gmailEmail,
-              password: settings.gmailPassword,
-              username: data.username,
-            }, { shallBecomeOwner: true });
-            break;
-          case NewSiteOwnerType.FacebookAccount:
-            this.loginDialog.createFacebookAccount({
-              email: settings.facebookAdminEmail,
-              password: settings.facebookAdminPassword,
-              username: data.username,
-            }, { shallBecomeOwner: true });
-            break;
-          case NewSiteOwnerType.GitHubAccount:
-            this.loginDialog.createGitHubAccount({
-                username: settings.githubUsernameMixedCase,
-                password: settings.githubPassword,
-                shallBecomeOwner: true,
-                alreadyLoggedInAtGitHub: data.alreadyLoggedInAtIdProvider });
-            break;
-          case NewSiteOwnerType.LinkedInAccount:
-            this.loginDialog.createLinkedInAccount({
-              email: settings.linkedinEmail,
-              password: settings.linkedinPassword,
-              username: data.username,
-              shallBecomeOwner: true,
-              alreadyLoggedInAtLinkedIn: data.alreadyLoggedInAtIdProvider,
-            });
-            break;
-          default:
-            die("Unimpl [TyE50KUKTYS25]");
-        }
-      },
-    }
-
-
     makeNewSiteDataForEmbeddedComments(ps: { shortName: string, longName: string })
           : NewSiteData {
       // Dupl code [502KGAWH0]
@@ -2760,6 +2674,10 @@ export class TyE2eTestBrowser {
         }
         this.waitAndClick('#e2eNext3');
         this.waitAndSetValue('#e2eOrgName', data.orgName || data.localHostname);
+        if (!data.embeddingUrl) {
+          this.waitAndClick('#e_Next4');
+          this.waitAndClick('#e_MkPub');
+        }
         this.waitAndClick('input[type=submit]');
         this.waitForVisible('#t_OwnerSignupB');
         assert.equal(data.origin, this.origin());
@@ -3826,81 +3744,6 @@ export class TyE2eTestBrowser {
       },
 
 
-      createGitHubAccount: (ps: { username: string, password: string, shallBecomeOwner: boolean,
-            anyWelcomeDialog?: 'THERE_WILL_BE_NO_WELCOME_DIALOG',
-            alreadyLoggedInAtGitHub: boolean }) => {
-
-        // This should fill in email (usually) and username (definitely).
-        this.loginDialog.logInWithGitHub(ps);
-
-        this.loginDialog.clickSubmit();
-        this.loginDialog.acceptTerms(ps.shallBecomeOwner);
-        if (ps.anyWelcomeDialog !== 'THERE_WILL_BE_NO_WELCOME_DIALOG') {
-          this.loginDialog.waitAndClickOkInWelcomeDialog();
-        }
-        this.waitUntilModalGone();
-        this.waitUntilLoadingOverlayGone();
-      },
-
-      logInWithGitHub: (ps: { username: string, password: string, alreadyLoggedInAtGitHub: boolean }) => {
-        logMessage("Clicking GitHub login");
-        this.waitAndClick('#e2eLoginGitHub');
-
-        if (ps.alreadyLoggedInAtGitHub) {
-          // The GitHub login window will auto-log the user in an close directly.
-          this.waitForVisible('.esCreateUserDlg');
-          return;
-        }
-
-        //if (!isInPopupAlready)
-        logMessage("Switching to GitHub login popup...");
-        this.swithToOtherTabOrWindow(IsWhere.External);
-
-        logMessage("Typing GitHub username ...");
-        this.waitForDisplayed('.auth-form-body');
-        this.waitAndSetValue('.auth-form-body #login_field', ps.username);
-        this.#br.pause(340); // so less risk GitHub think this is a computer?
-
-        logMessage("Typing GitHub password ...");
-        this.waitAndSetValue('.auth-form-body #password', ps.password);
-        this.#br.pause(340); // so less risk GitHub think this is a computer?
-
-        // GitHub might ask if we want cookies — yes we do.
-        const cookieYesSelector =
-                '.js-main-cookie-banner .js-cookie-consent-accept-all';
-        if (this.isExisting(cookieYesSelector)) {
-          this.waitAndClick(cookieYesSelector);
-        }
-
-        logMessage("Submitting GitHub login form ...");
-        this.waitAndClick('.auth-form-body input[type="submit"]');
-        while (true) {
-          this.#br.pause(200);
-          try {
-            if (this.isVisible('#js-oauth-authorize-btn')) {
-              logMessage("Authorizing Talkyard to handle this GitHub login ... [TyT4ABKR02F]");
-              this.waitAndClick('#js-oauth-authorize-btn');
-              break;
-            }
-          }
-          catch (ex) {
-            if (isWindowClosedException(ex)) {
-              // The login window closed itself. We've clicked the Authorize
-              // button in the past, already.
-              logMessage("The GitHub login popup closed itself, fine.");
-            }
-            else {
-              logWarning(`GitHub login popup exception: ${ex.toString()}`);
-            }
-            break;
-          }
-        }
-
-        logMessage("GitHub login done — switching back to first window...");
-        this.switchBackToFirstTabOrWindow();
-      },
-
-
       createFacebookAccount: (
             user: { email: St, password: St, username: St },
             ps: {
@@ -4031,98 +3874,6 @@ export class TyE2eTestBrowser {
         });
 
         if (!isInPopupAlready) {
-          logMessage("switching back to first tab...");
-          this.switchBackToFirstTabOrWindow();
-        }
-      },
-
-
-      createLinkedInAccount: (ps: { email: string, password: string, username: string,
-        shallBecomeOwner: boolean, alreadyLoggedInAtLinkedIn: boolean }) => {
-        this.loginDialog.loginWithLinkedIn({
-          email: ps.email,
-          password: ps.password,
-          alreadyLoggedIn: ps.alreadyLoggedInAtLinkedIn,
-        });
-        // This should be the first time we login with LinkedInd at this site, so we'll be asked
-        // to choose a username.
-        // Not just #e2eUsername, then might try to fill in the username in the create-password-
-        // user fields which are still visible for a short moment. Dupl code (2QPKW02)
-        logMessage("typing LinkedIn user's new username...");
-        this.waitAndSetValue('.esCreateUserDlg #e2eUsername', ps.username);
-        this.loginDialog.clickSubmit();
-        this.loginDialog.acceptTerms(ps.shallBecomeOwner);
-        // LinkedIn email addresses might not have been verified (or?) so need
-        // to click an email addr verif link.
-        const siteId = this.getSiteId();
-        const link = server.getLastVerifyEmailAddressLinkEmailedTo(siteId, ps.email, this.#br);
-        this.go2(link);
-        this.waitAndClick('#e2eContinue');
-      },
-
-
-      loginWithLinkedIn: (data: { email: string, password: string,
-            alreadyLoggedIn?: boolean, isInPopupAlready?: boolean }) => {
-        // Pause or sometimes the click misses the button. Is the this.#br doing some re-layout?
-        this.#br.pause(100);
-        this.waitAndClick('#e2eLoginLinkedIn');
-
-        // Switch to LinkedIn's login popup window.
-        if (!data.isInPopupAlready)
-          this.swithToOtherTabOrWindow(IsWhere.External);
-
-        // Wait until popup window done loading.
-        while (true) {
-          if (this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
-            this.switchBackToFirstTabOrWindow();
-            return;
-          }
-          try {
-            if (this.isExisting('input#username'))
-              break;
-          }
-          catch (dummy) {
-            logMessage("Didn't find input#username. Tab closed because already logged in?");
-          }
-          this.#br.pause(300);
-        }
-
-        logMessage("typing LinkedIn user's email and password...");
-        this.#br.pause(340); // so less risk LinkedIn thinks this is a computer?
-        // This is over at LinkedIn, and, as username, one can type one's email.
-        this.waitAndSetValue('#username', data.email);
-        this.#br.pause(380);
-        this.waitAndSetValue('#password', data.password);
-        this.#br.pause(280);
-
-        logMessage("submitting LinkedIn login dialog...");
-        this.waitAndClick('button[type="submit"]');
-
-        // If needed, confirm permissions: click an Allow button.
-        try {
-          for (let i = 0; i < 10; ++i) {
-            if (this.isVisible('#oauth__auth-form__submit-btn')) {
-              this.waitAndClick('#oauth__auth-form__submit-btn');
-            }
-            else {
-              const url = this.#br.getUrl();
-              if (url.indexOf('linkedin.com') === -1) {
-                logMessage("Didn't need to click any Allow button: Left linkedin.com");
-                break;
-              }
-            }
-          }
-        }
-        catch (ex) {
-          const seemsFine = isWindowClosedException(ex);
-          logMessage("Didn't need to click Allow button: " + (
-              seemsFine ? "The login popup window closed itself." : "Unexpected exception:"));
-          if (!seemsFine) {
-            logException(ex);
-          }
-        }
-
-        if (!data.isInPopupAlready) {
           logMessage("switching back to first tab...");
           this.switchBackToFirstTabOrWindow();
         }

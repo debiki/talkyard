@@ -318,8 +318,6 @@ object JsX {   RENAME // to JsonPaSe
       "bio" -> JsStringOrNull(user.about),
       "websiteUrl" -> JsStringOrNull(user.website),
       "location" -> JsStringOrNull(user.country),
-      "seeActivityMinTrustLevel" -> // [ty_v1] remove
-            JsNumberOrNull(user.privPrefs.seeActivityMinTrustLevel.map(_.toInt)),
       "avatarTinyHashPath" -> JsStringOrNull(user.tinyAvatar.map(_.hashPath)),
       "avatarSmallHashPath" -> JsStringOrNull(user.smallAvatar.map(_.hashPath)),
       "avatarMediumHashPath" -> JsStringOrNull(user.mediumAvatar.map(_.hashPath)),
@@ -440,9 +438,7 @@ object JsX {   RENAME // to JsonPaSe
           mayFindMeTrLv = parseOptTrustLevel(json, "mayFindMeTrLv"),
           maySeeMyPresenceTrLv = parseOptTrustLevel(json, "maySeeMyPresenceTrLv"),
           maySeeMyApproxStatsTrLv = parseOptTrustLevel(json, "maySeeMyApproxStatsTrLv"),
-          seeActivityMinTrustLevel = parseOptTrustLevel(json, "maySeeMyActivityTrLv",
-                  // [ty_v1] remove both these:
-                  altField = "seeActivityTrLv", alt2 = "seeActivityMinTrustLevel"),
+          seeActivityMinTrustLevel = parseOptTrustLevel(json, "maySeeMyActivityTrLv"),
           maySendMeDmsTrLv = parseOptTrustLevel(json, "maySendMeDmsTrLv"),
           mayMentionMeTrLv = parseOptTrustLevel(json, "mayMentionMeTrLv"),
           )

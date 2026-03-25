@@ -2722,6 +2722,7 @@ export class TyE2eTestBrowser {
     }
 
 
+    // Also see: _assertListTextsAreAndOrder, very useful.
     async waitAndGetListTexts(selector: St, ps: { allElemPromisesTimeoutMs?: Nr } = {}): Pr<St[]> {
       return await this.__waitAndGetThingsInList(
             selector, ps, async (e) => await e.getText());
@@ -3294,7 +3295,17 @@ export class TyE2eTestBrowser {
             logMessage(`Selecting Private forum (not public)...`);
             await this.waitAndClick('#e_MkPriv');
           }
+          else {
+            logMessage(`Selecting Public forum (the default, in e2e tests) ...`);
+            await this.waitAndClick('#e_MkPub');
+          }
         }
+
+        if (data.langName) {
+          logMessage(`Changing language to ${data.langName}...`);
+          await this.createSite.selectLanguage(data.langName);
+        }
+        // Else: English is the default, fine.
 
         logMessage(`Submitting, to create site...`);
         await this.waitAndClick('input[type=submit]');
@@ -3304,6 +3315,12 @@ export class TyE2eTestBrowser {
         logMessage(`Clicking owner signup buton ...`);
         await this.waitForVisible('#t_OwnerSignupB');
         assert.equal(data.origin, await this.origin());
+      },
+
+      selectLanguage: async (langName: St) => {
+        // It's basically the same language selector widget here and in the admin area,
+        // so this works:
+        await this.adminArea.settings.language.selectLanguage(langName);
       },
 
       clickOwnerSignupButton: async () => {
@@ -5301,8 +5318,10 @@ export class TyE2eTestBrowser {
         return await this.waitAndClick('.load-more', opts);
       },
 
-      switchToCategory: async (toCatName: St) => {
-        await this.waitAndClick('.esForum_catsDrop.s_F_Ts_Cat_Ttl');
+      switchToCategory: async (toCatName: St, ps: { isSubCat?: Bo } = {}) => {
+        const sel = ps.isSubCat ? '.esForum_catsDrop.s_F_Ts_Cat_Ttl-SubCat'
+                                : '.esForum_catsDrop.s_F_Ts_Cat_Ttl';
+        await this.waitAndClick(sel);
         await this.waitAndClickSelectorWithText('.s_F_BB_CsM a', toCatName);
         await this.forumTopicList.waitForCategoryName(toCatName);
       },
@@ -5371,17 +5390,37 @@ export class TyE2eTestBrowser {
       },
 
       assertTopicTitlesAreAndOrder: async (titles: St[]) => {
+        await this.forumTopicList._assertListTextsAreAndOrder(titles, "Topic titles", 'Eq',
+                  this.forumTopicList.titleSelector);
+      },
+
+      // MOVE to __waitAndGetThingsInList.
+      _assertListTextsAreAndOrder: async (expectedTexts: St[], what: St,
+              compOp: 'Eq' | 'Substring', selector: St) => {
         // If there's a React component change, the elems go stale, so try a few times.
-        await utils.tryManyTimes(`Checking topic titles and order`, 3, async () => {
-          const actualTitles = await this.waitAndGetListTexts(this.forumTopicList.titleSelector);
-          logBoring(`Found ${actualTitles.length} titles, comparing with expected ...`);
-          for (let i = 0; i < titles.length; ++i) {
-            const titleShouldBe = titles[i];
-            const actualTitle = actualTitles[i];
-            tyAssert.ok(!!actualTitle, `Title ix ${i} missing, should be: "${titleShouldBe}"`);
-            tyAssert.eq(actualTitle, titleShouldBe, `Title ix ${i}`);
+        const whatLower = what.toLowerCase();
+        await utils.tryManyTimes(`Checking ${whatLower} and order`, 3, async () => {
+          const actualTexts = await this.waitAndGetListTexts(selector);
+          logBoring(`Found ${actualTexts.length} ${whatLower}, comparing with ${
+                        expectedTexts.length} expected ...`);
+          for (let i = 0; i < expectedTexts.length; ++i) {
+            const expectedText = expectedTexts[i];
+            const actualText = actualTexts[i];
+            tyAssert.ok(!!actualText, `${what} ix ${i} missing, should be: "${expectedText}"`);
+            switch (compOp) {
+              case 'Eq':
+                tyAssert.eq(actualText, expectedText, `${what} ix ${i}`);
+                break;
+              case 'Substring':
+                tyAssert.includes2(actualText, expectedText, { prefixMsg: `${what} ix ${i}:` });
+                break;
+              default:
+                die('TyE70FKCNWJ2');
+            }
           }
-          tyAssert.eq(actualTitles.length, titles.length, `Too many titles: ${j2s(actualTitles)}`);
+          tyAssert.eq(actualTexts.length, expectedTexts.length,
+                      `Too many ${whatLower}, expected only ${expectedTexts.length}: ${
+                          j2s(actualTexts)}`);
         });
       },
 
@@ -6482,6 +6521,15 @@ export class TyE2eTestBrowser {
 
 
     topic = {
+      // If *anything* appears in the correct language, then with 99.8% likelihood all is fine.
+      // (In the sense that everything that's been translated to that language, will work
+      // fine.) So, just checking 2 texts, does *a lot*.
+      assertTranslationLooksOk: async (ps: { viewCatsLink: St, createTopicBtn: St }) => {
+        const viewCatsLink = await this.waitAndGetText('#e_ViewCatsB');
+        const createTopicBtn = await this.waitAndGetText('.esF_BB_NewTpcB');
+        tyAssert.deepEq({ viewCatsLink, createTopicBtn }, ps);
+      },
+
       waitUntilPageDeleted: async () => {
         await this.waitForVisible('.s_Pg_DdInf');
       },
@@ -8061,18 +8109,25 @@ export class TyE2eTestBrowser {
         await this.waitAndGetElemWithText('.c_SR_Ttl', title, { timeoutMs: 1 });
       },
 
-      getHitLinks: async (): Pr<(St | U)[]> => {
-        return await this.waitAndGetListLinks(
-              '.esSERP_Hit_In a, .c_SR_Ttl-HitTtl a, .c_SR_Ttl-HitOp a');
+      /// countTitleLinks: needed because if only *tags* are hit, all `textHitSels` will be
+      /// absent. Then we need another selector to find the relevant search hits on the
+      /// search results page.
+      /// Would be good with a '..._Tag-Hit', later, maybe '..._Tag_Val-Hit',  [show_hit_tags]
+      /// to clarify that a tag, and which tag, matched the search query.
+      ///
+      getHitLinks: async (ps: { countTitleLinks?: Bo } = {}): Pr<(St | U)[]> => {
+        const textHitSels = '.esSERP_Hit_In a, .c_SR_Ttl-HitTtl a, .c_SR_Ttl-HitOp a';
+        const hitSels = ps.countTitleLinks ? textHitSels + ', .c_SR_Ttl a' : textHitSels;
+        return await this.waitAndGetListLinks(hitSels);
       },
 
-      assertResultLinksAre: async (expected: St[], ps: { anyOrder: Bo } = {}) => {
+      assertResultLinksAre: async (expected: St[], ps: { anyOrder?: Bo,
+              countTitleLinks?: Bo } = {}) => {
         const exp = ps.anyOrder ? [...expected].sort() : expected;
-        const actualLinks: (St | U)[] = await this.searchResultsPage.getHitLinks();
+        const actualLinks: (St | U)[] = await this.searchResultsPage.getHitLinks(ps);
         const act = ps.anyOrder ? [...actualLinks].sort() : actualLinks;
-        const showHits = () => (!ps.anyOrder ? '' :
-                `\n   Any order,`) +
-                `\n   All hit links: ${j2s(act)
+        const showHits = () => `\n  ps: ${j2s(ps)
+                }\n   All hit links: ${j2s(act)
                 }\n   All expected:  ${j2s(exp)}\n`;
 
         for (let i = 0; i < exp.length; ++i) {
@@ -8499,6 +8554,11 @@ export class TyE2eTestBrowser {
             let selector = this.userProfilePage.activity.posts.postSelector;
             await this.assertNoTextMatches(selector, postText);
           },
+
+          assertPostTextsIncludeAndOrder: async (texts: St[]) => {
+            await this.forumTopicList._assertListTextsAreAndOrder(texts, "Posts", 'Substring',
+                    this.userProfilePage.activity.posts.postSelector);
+          },
         },
 
         topics: {
@@ -8548,6 +8608,11 @@ export class TyE2eTestBrowser {
           assertTopicTitleAbsent: async (title: St) => {
             let selector = this.userProfilePage.activity.topics.topicsSelector;
             await this.assertNoTextMatches(selector, title);
+          },
+
+          assertTopicTitlesAreAndOrder: async (titles: St[]) => {
+            await this.forumTopicList._assertListTextsAreAndOrder(titles, "Titles", 'Substring',
+                    this.userProfilePage.activity.topics.topicsSelector);
           },
           
           getTags: async (ps: { forPagePath: PageId, howManyTags: Nr }): Pr<St[]> => {
@@ -9460,6 +9525,17 @@ export class TyE2eTestBrowser {
                 htmlToPaste, discussionId: ps.discussionId,
                 pageName: ps.urlPath, color: 'black', bgColor: '#a359fc' });
             fs.writeFileSync(`target/${ps.urlPath}`, pageHtml);
+          },
+        },
+
+        language: {
+          selectLanguage: async (langName: St) => {
+            await this.widgets.reactSelect('.e_LangDrpd').startTypingItemName(langName, {
+                  // The current language name (e.g. "English") occludes the language
+                  // selector input, but we can just ignore this, works anyway.
+                  skipWait: true });
+            await this.widgets.reactSelect('.e_LangDrpd').hitEnterToSelectItem();
+            await this.widgets.reactSelect('.e_LangDrpd').waitUntilNumItems(1);
           },
         },
 
@@ -10912,7 +10988,8 @@ export class TyE2eTestBrowser {
         } */
       },
 
-      loginIfNeededViaMetabar: async (ps: NameAndPassword, clickPs?: WaitAndClickPs) => {
+      loginIfNeededViaMetabar: async (ps: NameAndPassword,
+              clickPs: WaitAndClickPs & { switchBackToIframe?: Bo } = {}) => {
         await this.switchToEmbCommentsIframeIfNeeded();
         const isWhereBef = this.#isWhere;
         await this.waitForMyDataAdded();
@@ -10921,7 +10998,7 @@ export class TyE2eTestBrowser {
                 } — session id cookie blocked? [TyM306MRKTJ]`);
           await this.complex.loginWithPasswordViaMetabar(ps, clickPs);
         }
-        if (isWhereBef === IsWhere.EmbCommentsIframe) {
+        if (isWhereBef === IsWhere.EmbCommentsIframe && clickPs.switchBackToIframe !== false) {
           await this.switchToEmbeddedCommentsIrame();
         }
       },
@@ -11405,10 +11482,10 @@ export class TyE2eTestBrowser {
     },
 
     reactSelect: (selector: St) => { return {
-      startTypingItemName: async (chars: St) => {
+      startTypingItemName: async (chars: St, ps: { skipWait?: true } = {}) => {
         // Dupl code. [.react_select]
         await this.waitAndSetValue(`${selector} .Select-input > input`, chars,
-            { okayOccluders: '.Select-placeholder', checkAndRetry: true });
+            { okayOccluders: '.Select-placeholder', checkAndRetry: true, ...ps });
       },
 
       appendChars: async (chars: St) => {

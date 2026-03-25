@@ -2300,6 +2300,7 @@ interface SearchResults extends HasStorePatch {
 }
 
 
+/// All hits are on the same page, `pageId`.
 interface PageAndHits extends PageTypeAncestors {
   pageId: PageId;
   pageTitle: string;
@@ -2315,8 +2316,15 @@ interface SearchHit {
   postId: PostId;
   postNr: PostNr;
   approvedRevisionNr: number;
-  approvedTextWithHighlightsHtml: string[];
+  // If post text didn't match (but something else did, e.g. tags or title).
+  approvedTextNoHighligtsSafe?: St;
+  // If post text matched, here's highlighted fragments. Html alraedy escaped,
+  // safe to use. [safe_hit_highlights]
+  approvedTextHighligtsHtmlSafe?: St[];
   currentRevisionNr: number;
+  // Only for the page itself (not comments). We [index_title_and_body_together].
+  // Html already escaped, safe. [safe_hit_highlights]
+  titleHighlightsHtmlSafe?: St[];
 }
 
 
@@ -2751,6 +2759,12 @@ interface IdentityProviderSecretConf extends IdentityProviderPubFields {
 // =========================================================================
 //  UI Widgets
 // =========================================================================
+
+
+interface LabelValue {
+  label: St
+  value: St
+}
 
 
 /// For rendering a (A) text/image circle with one's first letter or tiny profile pic.

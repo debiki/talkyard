@@ -1,44 +1,43 @@
+# Talkyard uses Ubuntu 24.04 LTS ~= Debian 12 & 13, and Java 11, currently.
+# Could create a Debian slim JRE, see: [slim_jre].
+# Cannot immediately upgrade to Java 17, because Nashorn has been removed.
 
-# Cannot upgrade to Java 17, because Nashorn has been removed.
-# This is Ubuntu though. Could create a Debian slim JRE, see: [slim_jre].
-FROM  eclipse-temurin:11.0.29_7-jdk-noble
+
+# Build sqlx, for database migrations
+# -----------------------------------
+
+# Why Debian 13? Look:
+# Ubuntu 24.04 (Noble Numbat) uses kernel 6.8. Debian 12 (Bookworm) uses kernel 6.1 and
+# Debian 13 (Trixie) uses kernel 6.12 — they're both on 6.x just like Ubuntu 24.
+# So, can use any of Debian 12 and 13 here. Then, pick 13, we use it elsewhere.
+#
+# But Debian 11 uses kernel 5.x — that's too old. If using Debian 11 to build sqlx,
+# and then using here in the Ubuntu 24.04 Noble Java image,
+# there could be some error like "libc.so.: version `GLIBC_2.32' not found".
+#
+# Images list: https://hub.docker.com/_/rust/tags?name=trixie
+FROM rust:1.94.0-trixie AS rust_img
+
+RUN cargo install sqlx-cli --no-default-features --features native-tls,postgres
 
 
+# Build the Ty app server
+# -----------------------------------
+
+# Ubuntu 24.04. Images: https://hub.docker.com/_/eclipse-temurin/tags?name=11. .
+FROM  eclipse-temurin:11.0.30_7-jdk-noble
+
+LABEL org.opencontainers.image.title="Talkyard Dev App" \
+      io.talkyard.edition="se" \
+      io.talkyard.epoch="1"
+
+COPY --from=rust_img /usr/local/cargo/bin/sqlx     /usr/local/bin/sqlx
+
+# Delete user 'ubuntu'.
 # We'll create our own user, 'owner', with the same id as the host OS user.
 # But user 'ubuntu', id 1000, often collides with 'owner' (same id),
 # so delete it (it's not used for anything, just for convenience, right).
 RUN touch /var/mail/ubuntu && chown ubuntu /var/mail/ubuntu && userdel -r ubuntu
-
-
-# If using an old version of Ubuntu or Debian (Ubuntu Focal or Debian 10),
-# there can be a misleading "insufficient memory" error, because newer Ubuntu versions >= 22
-# (JDK-Jammy) ships with glibc >= 2.35, which uses clone3 (>= 2.34 does),
-# but Docker doesn't work with clone3, until PR 42681 (fix for 42680). Which
-# is available starting with Docker v20.10.10,  but maybe not incl by default in
-# old OS versions.
-# See:
-#  A misleading "insufficient memory for the Java Runtime [...]" error:
-#  https://stackoverflow.com/questions/72841549/container-fails-to-start-insufficient-memory-for-the-java-runtime-environment-t/73970043#73970043
-#
-# https://github.com/adoptium/containers/issues/215#issuecomment-1142046045
-#
-# via:  https://stackoverflow.com/questions/74443957/insufficient-memory-while-running-eclipse-temurin17-jdk-docker-image
-# via:  https://www.google.com/search?q=Failed+to+start+thread+%22GC+Thread%230%22+-+pthread_create+failed+(EPERM)+for+attributes%3A+stacksize%3A+1024k%2C+guardsize%3A+4k%2C+detached.&oq=Failed+to+start+thread+%22GC+Thread%230%22+-+pthread_create+failed+(EPERM)+for+attributes%3A+stacksize%3A+1024k%2C+guardsize%3A+4k%2C+detached.&aqs=chrome..69i57.1225j0j1&sourceid=chrome&ie=UTF-8
-#
-#
-# (Also see:  https://docs.docker.com/engine/security/seccomp/ )
-#
-# Email about some clone3 wrapper:
-# https://sourceware.org/git/?p=glibc.git;a=commit;h=d8ea0d0168b190bdf138a20358293c939509367f
-#
-# Anyway, to upgr Docker, if needed:
-#
-# How to:  https://docs.docker.com/engine/install/ubuntu/
-# That is:  "To upgrade Docker Engine, follow the installation instructions", which is just:  (and this worked)
-#
-#     sudo apt-get update
-#     sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
-#
 
 
 RUN \
@@ -61,7 +60,7 @@ RUN \
   #busybox-extras
 
 # ADD extracts tar archives; this .tgz gets unpacked at /opt/sbt/{bin/,conf/}.
-ADD  sbt/sbt-1.4.5.tgz  /opt/
+ADD  sbt/sbt-1.11.7.tgz  /opt/
 
 # Install 'gosu' so we can use it instead of 'su'.
 # For unknown reasons, '  exec su ...' no longer works, but 'exec gosu ...' works fine.
@@ -74,8 +73,13 @@ ADD  sbt/sbt-1.4.5.tgz  /opt/
 # Play's HTTP and HTTPS listen ports, Java debugger port, JMX port 3333.
 EXPOSE 9000 9443 9999 3333
 
-RUN mkdir -p /opt/talkyard/uploads/ && \
-    chmod -R ugo+rw /opt/talkyard/uploads/
+# Docker volumes pub-files and priv-files get mounted here.
+# (We create sub dirs as needed from Scala code. [pub_files_volume])
+RUN mkdir -p /var/talkyard/v1/pub-files/ && \
+    mkdir -p /var/talkyard/v1/priv-files/
+    # We'll `chown` to the correct user in entrypoint.dev.sh — but right
+    # now, here, we don't yet know the id of that user.
+    # (In prod builds, we create a user 'appuser' and chown to it, instead.)
 
 # Add a self signed dummy cert for the dummy SMTP server (the 'fakemail' Docker container),
 # so one can test connecting to it with TLS and see if the TLS conf vals work. [26UKWD2]
@@ -100,9 +104,10 @@ RUN  chmod ugo+x   /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 # Overriden in docker-compose.yml
-ENV PLAY_HEAP_MEMORY_MB 2048
+ENV PLAY_HEAP_MEMORY_MB=2048
 
-
+# Skip HEALTHCHECK — in dev builds, starting and recompiling can take minutes.
+# *And* don't want healthchecks to accidentally trigger recompilations!?
 
 # ------------------------------------------------------------
 # SBT options, as of 2020-12-20:  (d/c exec app bash ; cd /opt/sbt/bin ; ./sbt -h)
@@ -167,6 +172,7 @@ ENV PLAY_HEAP_MEMORY_MB 2048
 #
 CMD \
  cd /opt/talkyard/app/ && \
+ # Start the app server (sbt, a Scala build tool, will start Play Framework).
  exec /opt/sbt/bin/sbt \
   --mem $PLAY_HEAP_MEMORY_MB \
   -J-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:9999 \
@@ -180,12 +186,21 @@ CMD \
   -Dcom.sun.management.jmxremote.ssl=false \
   -Dcom.sun.management.jmxremote.authenticate=false \
   -Dhttp.port=9000 \
-  -Dhttps.port=9443 \
-  # SSL has security flaws. Use TLS instead. [NOSSL] [PROTOCONF]
-  -Ddeployment.security.SSLv2Hello=false \
-  -Ddeployment.security.SSLv3=false \
-  -Dhttps.protocols=TLSv1.1,TLSv1.2 \
-  -Djdk.tls.client.protocols=TLSv1.1,TLSv1.2 \
+  -Dhttps.port=disabled \
+  # [PROTOCONF]
+  -Dhttps.protocols=TLSv1.3,TLSv1.2 \
+  -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2 \
+  #
+  # Since we are on an internal network, we need to tunnel SMTP. [egressp_conf]
+  # This will send a HTTP CONNECT request to Smokescreen which will
+  # establish an HTTP tunnel to the SMTP server. (HTTP CONNECT will be over
+  # HTTP (not HTTPS), which is fine, we're on an internal network.)
+  # See: https://en.wikipedia.org/wiki/HTTP_tunnel
+  #   > the client asks an HTTP proxy server to forward the TCP connection
+  #   > to the desired destination
+  -Dmail.smtp.proxy.host=egressp \
+  -Dmail.smtp.proxy.port=4750 \
+  #
   # Otherwise ignored, although as per the docs it should be found since it's on the classpath.
   -Dlogback.configurationFile=/opt/talkyard/app/conf/logback.xml \
   # log4j2 problem, disable this:

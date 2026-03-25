@@ -132,7 +132,7 @@ object HttpResults extends TyLogging {
       |
       |It's still set to "${Globals.AppSecretDefVal}".
       |
-      |Replace it with about 80 random characters. Then, in /opt/talkyard/, do:  docker-compose restart app
+      |Replace it with about 80 random characters. Then, in /opt/talkyard/, do:  docker compose restart app
       |and wait ten? twenty? seconds, then reload this page. [EdEDEFAPPSECRET]
       |""")
   }
@@ -224,16 +224,16 @@ object HttpResults extends TyLogging {
         s"\nHas the database stopped or is there a network problem? $orQueryTooLong",
         i"""
         |See if the database container is running — it's name is something like 'tyd_rdb_X':
-        |    docker-compose ps
+        |    docker compose ps
         |
         |If not running, start it:
-        |    docker-compose start rdb
+        |    docker compose start rdb
         |
         |If running, check the logs:
-        |    docker-compose logs -f --tail 999 app rdb
+        |    docker compose logs -f --tail 999 app rdb
         |
         |Or login with Bash:
-        |    docker-compose exec rdb bash
+        |    docker compose exec rdb bash
         |""")
 
     p_Results.InternalServerError(i"""500 Internal Server Error

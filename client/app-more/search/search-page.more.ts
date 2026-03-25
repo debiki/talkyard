@@ -137,7 +137,13 @@ var SearchPageContentComponent = createReactClass(<any> {
     const prevResults: SearchResults | U = this.state.searchResults;
     // Later, could [use_search_results_cursor] instead, to avoid races.
     const offset = !toLoadMore ? 0 : prevResults.pagesAndHits.length;
-    Server.search({ rawQuery: query.rawQuery, offset }, (results: SearchResults) => {
+
+    // For now, for e2e tests of language specific ElasticSearch fields. [es_toggle_univ_icu]
+    // Later, maybe some checkboxes? Language dropdowns? Or analyze query, auto pick lang?
+    const skipUniversalFallback = location.search.indexOf('&univ=false') >= 0;
+    const languages = skipUniversalFallback ? ['SiteDefLang'] : undefined;
+
+    Server.search({ rawQuery: query.rawQuery, offset, languages }, (results: SearchResults) => {
       this.searchingFor = null;
       if (this.isGone) return;
       let searchResults = results;
@@ -369,35 +375,46 @@ function makeTagLabelValues(tagsStuff: TagsStuff) {
 function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: St | Nr, store: Store }) {
   const pageAndHits: PageAndHits = props.pageAndHits;
   const hitsNotTitle = [];
-  let titleHit: SearchHit | U;
-  let bodyHit: Bo | U;
+  // Any search hit that matches the page title or body text. And...
+  let pageHit_dbg: SearchHit | U;
+  // ... if that search hit matches the title, or body: the fragments that matched.
+  let titleTextHit: St[] | U;
+  let bodyTextHit: St[] | U;
 
+  // Find out if the title or orig post matched — we want to show that hit first
+  // (before any matching comments on the same page).
   for (let hit of pageAndHits.hits) {
-    if (hit.postNr === TitleNr) {
-      titleHit = hit;
+    // The page title & body are in the same ElasticSearch document, with the post nr
+    // being that of the original post —  we [index_title_and_body_together].
+    const isOrigPost = hit.postNr === BodyNr;
+    if (isOrigPost) {
+      // Can't find the same page more than once.
+      dieIf(!!pageHit_dbg, 'TyEPOSTHITTWICE');
+      titleTextHit = hit.titleHighlightsHtmlSafe;
+      bodyTextHit = hit.approvedTextHighligtsHtmlSafe;
+      pageHit_dbg = hit;
     }
-    else {
-      bodyHit = bodyHit || hit.postNr === BodyNr;
-      // If the OP (orig post) is among the hits, place it first, even if some comments
-      // got scored higher by the search engine. It's simpler to interpret the search
-      // results, with the OP first (if present)? Also, we no longer prefix any orig
-      // post hit with "_in_the_page_text", so now it "must" be first.
-      const res = SearchResultHit({ hit, urlPath: pageAndHits.urlPath, key: hit.postNr });
-      hit.postNr === BodyNr ?
+
+    // If the OP (orig post) is among the hits, place it first, even if some comments
+    // got scored higher by the search engine. It's simpler to interpret the search
+    // results, with the OP first (if present)? Also, we no longer prefix any orig
+    // post hit with "_in_the_page_text", so now it "must" be first.
+    const res = SearchResultHit({ hit, urlPath: pageAndHits.urlPath });
+    isOrigPost ?
           hitsNotTitle.unshift(res) : hitsNotTitle.push(res);
-    }
   }
 
   // If the title matched, show the matches inline in the <h3> as the title
   // itself, instead of showing the title again in the results list.
-  const titleHitClass = !titleHit ? '' : ' c_SR_Ttl-HitTtl';
-  const bodyHitClass  = !bodyHit  ? '' : ' c_SR_Ttl-HitOp';
+  const titleHitClass = !titleTextHit ? '' : ' c_SR_Ttl-HitTtl';
+  const bodyHitClass  = !bodyTextHit  ? '' : ' c_SR_Ttl-HitOp';
   let titleText = pageAndHits.pageTitle;
-  if (titleHit) {
+  if (titleTextHit) {
     // (I wonder if any title is long enough to be split by ElasticSearch into two parts?
     // There's a max length: PageParts.MaxTitleLength in Scala.)
-    const safeHtml = titleHit.approvedTextWithHighlightsHtml.join(" <b>...</b> ");
+    const safeHtml = titleTextHit.join(" <b>...</b> ");
     titleText = r.span({ className: 'esSERP_Hit_Text',
+          // Sanitized here: [safe_hit_highlights]
           dangerouslySetInnerHTML: { __html: safeHtml }});
   }
 
@@ -416,22 +433,32 @@ function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: St | Nr, 
 
 
 
-function SearchResultHit(props: { hit: any, urlPath: string, key?: string | number }) {
-  let hit: SearchHit = props.hit;
-  // Any html stuff was escaped here: [7YK24W].
-  let safeHtml = hit.approvedTextWithHighlightsHtml.join(" <b>...</b> ");
-  const hitOp = hit.postNr === BodyNr ? ' c_SR_Hit-Op' : '';
+function SearchResultHit(props: { hit: SearchHit, urlPath: St }) {
+  const hit: SearchHit = props.hit;
+  // Any html stuff was escaped here: [safe_hit_highlights].
+  const highlights = hit.approvedTextHighligtsHtmlSafe;
+  const safeHtml = highlights ? highlights.join(" <b>...</b> ") : hit.approvedTextNoHighligtsSafe;
+  const textHit = !!hit.approvedTextHighligtsHtmlSafe;
+  const hitOp = hit.postNr === BodyNr && textHit ? ' c_SR_Hit-Op' : '';
   return (
-    r.li({ className: 's_SR_Hit' + hitOp, key: props.key },
+    r.li({ className: 's_SR_Hit' + hitOp, key: hit.postId },
       // Maybe it's pretty clear that the text just below the title is the original
       // post? Let's skip "_in_the_page_text" — let's show only "In a comment:"
       // (for comments).
+      //
+      // UX: Later, also highlight any *tags* that matched the query, [show_hit_tags]
+      // both to make it clear why the search result was included, and also so can write
+      // better e2e tests — now instead there's an annoying `countTitleLinks` extra param
+      // to  TyE2eTestBrowser.searchResultsPage.assertResultLinksAre().
+      //
       hit.postNr === TitleNr || hit.postNr === BodyNr ? null :
         r.span({ className: 'esSERP_Hit_In' },
               "In ", LinkUnstyled({ to: `${props.urlPath}#post-${hit.postNr}`,   // I18N
                   className: 'esSERP_Hit_In_Where' },
                 foundWhere(hit)), ': '),
-      r.span({ className: 'esSERP_Hit_Text',
+      r.span({ className: 'c_SR_Hit_Text' +
+                  (textHit ? ' esSERP_Hit_Text' : ''), // for e2e tests. Rename?
+          // Sanitized here: [safe_hit_highlights]
           dangerouslySetInnerHTML: { __html: safeHtml }})));
 }
 

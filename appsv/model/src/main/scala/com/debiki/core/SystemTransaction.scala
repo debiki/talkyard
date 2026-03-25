@@ -29,10 +29,6 @@ trait SystemTransaction {  RENAME // to SysTx, started already
 
   def now: When
 
-  /** If test mode, deletes and recreates the database, if there's a validation error.
-    */
-  def applyEvolutions(): Unit
-
   // ----- Sites
 
   def countWebsites(createdFromIp: String, creatorEmailAddress: Option[String], testSites: Boolean): Int
@@ -105,8 +101,8 @@ trait SystemTransaction {  RENAME // to SysTx, started already
   def loadJobQueueRangesBySiteId(): Map[SiteId, TimeRange]
   def loadJobQueueLengthsBySiteId(): Map[SiteId, i32]
   def loadPostsToIndex(limit: i32): PostsToIndex
-  def deleteFromIndexQueue(post: Post, siteId: SiteId): Unit
-  def addEverythingInLanguagesToIndexQueue(
+  def deleteFromIndexQueue(posts: ImmSeq[Post], siteId: SiteId): Unit
+  def addEverythingToSearchIndexQueue(
         siteIds: Set[SiteId] = Set.empty, allSites: Bo = false): U
 
   // ----- Spam check queue

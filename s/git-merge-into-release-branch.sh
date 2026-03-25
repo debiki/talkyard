@@ -6,6 +6,7 @@
 
 set -e  # exit on error
 
+release_branch="release-v1"
 dbg="f"
 
 cur_branch=$(git rev-parse --abbrev-ref HEAD)
@@ -82,7 +83,7 @@ fi
 
 # dupl code [bashutils]
 echo 
-read -p "Merge $next_version into the release branch? [y/n]?  " choice
+read -p "Merge $next_version into the $release_branch branch? [y/n]?  " choice
 case "$choice" in 
   y|Y|yes|Yes|YES ) echo "Ok, will do:"; echo ;;
   n|N|no|No|NO ) echo "Ok, doing nothing, bye."; exit 1;;
@@ -91,10 +92,15 @@ esac
 
 
 echo
+echo
 echo "Run these commands, that's all:  (do manually, for now)"
 echo
 
-echo git checkout release
-echo git merge --no-ff main -m "\"Merge $next_version into 'release'.\""
-echo 'git branch -f main release'
-echo 'git branch -f master main  # backw compat'
+echo git checkout $release_branch
+echo git merge --no-ff main -m "\"Merge $next_version into '$release_branch'.\""
+echo "git branch -f main $release_branch"
+echo "git branch -f master main  # backw compat"
+
+echo
+echo "Thereafter:  make prod-images"
+echo

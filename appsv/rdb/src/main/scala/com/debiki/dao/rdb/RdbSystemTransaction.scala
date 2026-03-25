@@ -22,7 +22,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import _root_.java.{util => ju}
 import java.{sql => js}
-import org.flywaydb.core.Flyway
 import scala.collection.{immutable => imm, mutable => mut}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
@@ -204,6 +203,7 @@ class RdbSystemTransaction(
   }
 
 
+  RENAME // to loadPats or loadPatsBySiteIds
   def loadUsers(userIdsByTenant: Map[SiteId, immutable.Seq[UserId]]): Map[(SiteId, UserId), Participant] = {
     var idCount = 0
 
@@ -963,6 +963,7 @@ class RdbSystemTransaction(
           post_rows as (
               select 1 from  job_queue_t
               where   post_id is not null
+                 and  do_what_c = ${JobType.Index}
               limit $countUpTo)
           select count(*) num from post_rows  """
     runQueryFindExactlyOne(query, Nil, rs => {
@@ -977,6 +978,7 @@ class RdbSystemTransaction(
           select  site_id,  count(*) as queue_len
           from  job_queue_t
           where post_id is not null
+            and do_what_c = ${JobType.Index}
           group by site_id  """
     runQueryBuildMap(query, Nil, rs => {
       val siteId = rs.getInt("site_id")
@@ -1012,23 +1014,66 @@ class RdbSystemTransaction(
 
   REFACTOR; COULD // move everything but the SQL query to the Dao?
   def loadPostsToIndex(limit: i32): PostsToIndex = {
-    val postIdsBySite = mutable.Map[SiteId, ArrayBuffer[PostId]]()
+    val postIdsBySite = mutable.Map[SiteId, mutable.Set[PostId]]()
+    val titlePostIdsBySitePageId = mutable.Map[SitePageId, PostId]()
+    val bodyPostIdsBySitePageId = mutable.Map[SitePageId, PostId]()
     val query = s"""
-       select  site_id,  post_id
-       from  job_queue_t
-       where  post_id  is not null
-       order by  inserted_at  limit $limit  """
+          select
+              j.site_id,
+              j.post_id,
+              po.page_id,
+              po.post_nr,
+              tpo.unique_post_id  page_title_post_id,
+              bpo.unique_post_id  page_body_post_id
+          from  job_queue_t j
+              -- The post to index:
+              inner join  posts3 po
+                  on  po.site_id        = j.site_id
+                  and po.unique_post_id = j.post_id
+              -- The title post id: (on the same page) [title_post_id_as_page_id]
+              left outer join  posts3 tpo
+                  on   tpo.site_id = po.site_id
+                  and tpo.page_id = po.page_id
+                  and tpo.post_nr = ${PageParts.TitleNr}
+              -- The body post id:
+              left outer join  posts3 bpo
+                  on  bpo.site_id = po.site_id
+                  and bpo.page_id = po.page_id
+                  and bpo.post_nr = ${PageParts.BodyNr}
+          where  j.post_id  is not null
+            and  j.do_what_c = ${JobType.Index}
+          order by  j.inserted_at  limit $limit  """
 
-    runQuery(query, Nil, rs => {
-      while (rs.next()) {
-        val siteId = rs.getInt("site_id")
-        val postId = rs.getInt("post_id")
-        val postIds = postIdsBySite.getOrElseUpdate(siteId, ArrayBuffer[PostId]())
-        postIds.append(postId)
+    runQueryFindMany(query, Nil, rs => {
+      val siteId = rs.getInt("site_id")
+      val postId = rs.getInt("post_id")
+      val postNr = rs.getInt("post_nr")
+      val pageId = rs.getString("page_id")
+      val titlePostId = getOptInt32(rs, "page_title_post_id")
+      val bodyPostId = getOptInt32(rs, "page_body_post_id")
+
+      val postIds = postIdsBySite.getOrElseUpdate(siteId, mutable.Set[PostId]())
+      postIds.add(postId)
+
+      // If the post to index is the title *or* body post, we need to load
+      // the other — the body or title — so we have both. We [index_title_and_body_together]
+      // into the same ElasticSearch document.
+      if (postNr == PageParts.BodyNr) {
+        titlePostId.foreach(postIds.add) // it's a set, ok add many times
+      }
+      else if (postNr == PageParts.TitleNr) {
+        bodyPostId.foreach(postIds.add)
+      }
+
+      titlePostId foreach { id =>
+        titlePostIdsBySitePageId.put(SitePageId(siteId, pageId), id)
+      }
+      bodyPostId foreach { id =>
+        bodyPostIdsBySitePageId.put(SitePageId(siteId, pageId), id)
       }
     })
 
-    val entries: Vector[(SiteId, ArrayBuffer[PostId])] = postIdsBySite.iterator.toVector
+    val entries: Vector[(SiteId, mutable.Set[PostId])] = postIdsBySite.iterator.toVector
 
     val sitePageIds = mutable.Set[SitePageId]()
 
@@ -1046,7 +1091,13 @@ class RdbSystemTransaction(
     // Old tags, remove.  [index_tags]
     val tagsBySitePostId_old = loadTagsBySitePostId_old(postsBySite)
 
-    PostsToIndex(postsBySite, pagesBySitePageId, tagsBySitePostId, tagsBySitePostId_old)
+    PostsToIndex(
+          postsBySite,
+          pagesBySitePageId,
+          titleIdsBySitePageId = Map.from(titlePostIdsBySitePageId.iterator),
+          bodyIdsBySitePageId = Map.from(bodyPostIdsBySitePageId.iterator),
+          tagsBySitePostId,
+          tagsBySitePostId_old)
   }
 
 
@@ -1106,11 +1157,8 @@ class RdbSystemTransaction(
   }
 
 
-  def deleteFromIndexQueue(post: Post, siteId: SiteId): Unit = {
-    val statement = s"""
-      delete from job_queue_t
-      where site_id = ? and post_id = ? and post_rev_nr <= ?
-      """
+  def deleteFromIndexQueue(posts: ImmSeq[Post], siteId: SiteId): U = {
+    val values = MutArrBuf[AnyRef](siteId.asAnyRef)
     // [85YKF30] Only approved posts currently get indexed. Perhaps I should add a rule that
     // a post's approvedRevisionNr is never decremented? Because if it is, then impossible?
     // to know if the index queue entry should be deleted or not.
@@ -1118,12 +1166,22 @@ class RdbSystemTransaction(
     // Or add another field, stateUpdateCountCountNr, which gets bumped whenever the post
     // gets updated in any way?
     // For now:
-    val revNr = post.approvedRevisionNr.getOrElse(post.currentRevisionNr)
-    runUpdate(statement, List(siteId.asAnyRef, post.id.asAnyRef, revNr.asAnyRef))
+    val postIdsRevNrs: ImmSeq[St] = posts map { post =>
+      val revNr = post.approvedRevisionNr.getOrElse(post.currentRevisionNr)
+      values.append(post.id.asAnyRef, revNr.asAnyRef)
+      "(post_id = ? and post_rev_nr <= ?)"
+    }
+    val statement = s"""
+          delete from job_queue_t
+          where site_id = ?
+            and (${ postIdsRevNrs.mkString(" or ") })
+            and do_what_c = ${JobType.Index}
+          """
+    runUpdate(statement, values.toList)
   }
 
 
-  def addEverythingInLanguagesToIndexQueue(siteIds: Set[SiteId], allSites: Bo): U = {
+  def addEverythingToSearchIndexQueue(siteIds: Set[SiteId], allSites: Bo): U = {
     dieIf(siteIds.nonEmpty && allSites, "TyE602RMGLC4")
     if (siteIds.isEmpty && !allSites)
       return
@@ -1188,6 +1246,7 @@ class RdbSystemTransaction(
     val statement = s"""
           delete from job_queue_t
           where extract(epoch from time_range_from_c) = 0
+                and do_what_c = ${JobType.Index}
                 $andSiteIdIn  """
 
     runUpdate(statement, values.toList)
@@ -1371,37 +1430,6 @@ class RdbSystemTransaction(
           settings.maintWordsHtmlUnsafe.trimOrNullVarchar,
           settings.maintMessageHtmlUnsafe.trimOrNullVarchar)
     runUpdateSingleRow(stmt, values)
-  }
-
-
-  /** Finds all evolution scripts below src/main/resources/db/migration and applies them.
-    */
-  def applyEvolutions(): Unit = {
-    val flyway = new Flyway()
-
-    // --- Temporarily, to initialize the production database -----
-    flyway.setBaselineOnMigrate(!daoFactory.isTest)
-    // ------------------------------------------------------------
-
-    flyway.setLocations("classpath:db/migration")
-    flyway.setDataSource(db.readWriteDataSource)
-    flyway.setSchemas("public")
-    // Default prefixes are uppercase "V" and "R" but I want files in lowercase, e.g. v1__name.sql.
-    flyway.setSqlMigrationPrefix("v")
-    flyway.setRepeatableSqlMigrationPrefix("r")
-    // Warning: Don't clean() in production, could wipe out all data.
-    flyway.setCleanOnValidationError(daoFactory.isTest)
-    flyway.setCleanDisabled(!daoFactory.isTest)
-    // Group all pending migrations together in the same transaction, so if
-    // upgrading from version 3 to version 8, migrations 4,5,6,7,8 will either succeed
-    // or fail all of them. This means that if there's any error, we'll be back at
-    // version 3 again — rather than some other unknown version for which we don't
-    // immediately know which *software* version to use.
-    flyway.setGroup(true)
-    // Make this DAO accessible to the Scala code in the Flyway migration.
-    _root_.db.migration.MigrationHelper.systemDbDao = this
-    _root_.db.migration.MigrationHelper.scalaBasedMigrations = daoFactory.migrations
-    flyway.migrate()
   }
 
 

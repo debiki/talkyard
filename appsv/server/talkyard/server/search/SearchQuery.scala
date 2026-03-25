@@ -36,6 +36,7 @@ case class SearchQuery(
   authorUsernames: Set[St],
   authorIds: Set[PatId],
   sortOrder: ImmSeq[SortHitsBy],
+  searchUniversalFallback: Bo,
   warnings: Vec[ErrMsgCode],
 ) {
 
@@ -88,13 +89,20 @@ case class CompOpVal(compOp: CompOp, compWith: CompVal)
 
 sealed trait CompVal {
   def value: Any
-  def valueAsObj: Object = value.asInstanceOf[Object]
+  def valueAsFlt64: Opt[f64] = None
+  def valueAsStr: Opt[St] = None
 }
 
 object CompVal {
-  case class Int32(value: i32) extends CompVal
-  case class Flt64(value: f64) extends CompVal
-  case class StrKwd(value: St) extends CompVal
+  case class Int32(value: i32) extends CompVal {
+    override def valueAsFlt64: Some[f64] = Some(value.toDouble)
+  }
+  case class Flt64(value: f64) extends CompVal {
+    override def valueAsFlt64: Some[f64] = Some(value)
+  }
+  case class StrKwd(value: St) extends CompVal {
+    override def valueAsStr: Some[St] = Some(value)
+  }
 }
 
 

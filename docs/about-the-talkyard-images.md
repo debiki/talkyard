@@ -30,11 +30,19 @@ When you instead type `make prod-images`, a different Dockerfile, namely
 runs Play Framework in production mode.
 
 
+### [rendr](../images/rendr/)
+
+Not in use. Later, will run React.js server side for server side rendering,
+when we can't use Nashorn any longer (it was removed in Java 17).
+
+
 ### [cache](../images/cache/)
 
-This is Redis, an in-memory cache that remembers things accross server restart
-(although currently most in-memory cached things are cached in the *app* container
-and forgotten on restart).
+This is Redis, an in-memory cache that remembers things accross server restart,
+e.g. HTTPS certificates and number of users online.
+Maybe it'd been better to use something else / do in some other way.
+Not used much — most in-memory cached things are instead cached in the *app* container
+and forgotten on restart.
 
 
 ### [search](../images/search/)
@@ -53,31 +61,35 @@ users and everything is saved — except for uploaded files. Those might be larg
 optionally in an object storage like Google Cloud Storage or Amazon S3).
 
 
-### [fakemail](../images/fakemail/) (dev only)
+### [egressp](../images/egressp/)
 
-A dummy SMTP mail server, for testing email sending functionality. Not included in
-production deployments.
+An egress proxy — for making outbound connections to external things, e.g. for sending
+webhooks. Stops Server Side Request Forgery (SSRF).
 
 
-### [gulp](../images/gulp/) (dev only)
+### [nodejs](../images/nodejs/) (dev only)
 
 Node.js with Gulp. Transpiles Talkyard's React.js webb app, written in Typescript and Stylus,
 to minified Javascript and CSS. Not included in production deployments.
 
 
-### [certgen](../images/certgen/) (not needed)
+### [backup](../images/backup/)
 
-The plan was to use this image, for generating automatic HTTPS certs via LetsEncrypt.
-Turns out, can use https://github.com/GUI/lua-resty-auto-ssl instead, so this image
-is no longer needed.
+Runs a daily backup script, and deletes old backups,
+for a *talkyard-prod-one* production installation.
+Started by a wrapper scripts in  *talkyard-prod-one*, 
+[here](https://github.com/debiki/talkyard-prod-one/blob/master/scripts/backup.sh),
+which are scheduled as cron jobs, if you follow the installation instructions.
 
 
-### backup (planned)
-<!-- ### [backup](../images/backup/) (planned) -->
+### [fakeweb](../images/fakeweb/) (dev only)
 
-There's already a backup script for the *talkyard-prod-one* production installation 
-([here](https://github.com/debiki/talkyard-prod-one/blob/master/scripts/backup.sh)),
-but not for *talkyard-prod-swarm* https://github.com/debiki/talkyard-prod-swarm.
-I (KajMagnus) think it'd be good with a backup container,
-which would run Bash scripts regularly to backup everything to a backup Docker volume,
-which you can then `rsync` to an off-site safe place.
+A dummy web server, for testing embedded commens and embedded forums.
+Not included in production deployments.
+
+
+### [fakemail](../images/fakemail/) (dev only)
+
+A dummy SMTP mail server, for testing email sending functionality. Not included in
+production deployments.
+

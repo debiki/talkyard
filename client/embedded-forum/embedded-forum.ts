@@ -175,7 +175,7 @@ const authnTokenCookieMatches: St[] | Nl = (
         document.cookie.match(
             // (There're no spaces in PASETO tokens.)
             /(^|;)\s*__Host-TalkyardAuthnToken\s*=\s*([^\s;]+)/) ||
-        // Backw compat. Remove later? [ty_v1]
+        // Backw compat. Remove later? [ty_v2]
         document.cookie.match(
                    /(^|;)\s*TalkyardAuthnToken\s*=\s*([^\s;]+)/));
 const authnTokenInCookie: StV = authnTokenCookieMatches ? authnTokenCookieMatches[2] : null;

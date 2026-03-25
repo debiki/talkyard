@@ -24,20 +24,20 @@ import com.codahale.metrics
 import com.debiki.core
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.dao.rdb.{Rdb, RdbDaoFactory}
+import com.debiki.dao.rdb.{Migrator, Rdb, RdbDaoFactory}
 import com.github.benmanes.caffeine
 import com.zaxxer.hikari.HikariDataSource
 import debiki.EdHttp._
 import talkyard.server.spam.{SpamCheckActor, SpamChecker}
 import debiki.dao._
 import talkyard.server.logging.LastErrsActor
-import talkyard.server.migrations.ScalaBasedMigrations
 import talkyard.server.search.SearchEngineIndexer
 import talkyard.server.notf.NotifierActor
-import java.{lang => jl, net => jn}
+import java.{lang => jl, net => jn, io => jio}
+import java.nio.{file => jf}
 import java.util.concurrent.TimeUnit
 import talkyard.server.pubsub.{PubSub, PubSubApi, StrangerCounterApi}
-import org.{elasticsearch => es}
+import co.elastic.{clients => es8}
 import org.scalactic._
 import play.{api => p}
 import play.api.libs.ws.WSClient
@@ -73,8 +73,10 @@ object Globals extends TyLogging {
   val CdnOriginConfValName = "talkyard.cdn.origin"
   val UgcOriginConfValName = "talkyard.ugc.origin"
   val UgcBaseDomainConfValName = "talkyard.ugc.baseDomain"
-  val LocalhostUploadsDirConfValName = "talkyard.uploads.localhostDir"
-  val DefaultLocalhostUploadsDir = "/opt/talkyard/uploads/"
+  // Was: "talkyard.uploads.localhostDir" in Ty v0, but now renamed.
+  val LocalhostUploadsDirConfValName = "talkyard.uploads.pubDir"
+  val DefaultPubUploadsDir = "/var/talkyard/v1/pub-files/uploads/"
+  val SitemapFilesDir_later = "/var/talkyard/v1/pub-files/sitemaps/"  // later [sitemaps]
 
   val AppSecretConfValName = "play.http.secret.key"
   val AppSecretDefVal = "change_this"
@@ -265,6 +267,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     // [Scala_213] Using(...) { ... }
     var source: scala.io.Source = null
     try {
+      // (This is in the Docker image, not host OS.)
       source = scala.io.Source.fromFile("/opt/talkyard/app/version.txt")(scala.io.Codec.UTF8)
       source.mkString.trim
     }
@@ -475,72 +478,74 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
 
   object socialLogin {
-    //import com.mohiva.play.silhouette.impl.providers.{OAuth1Settings, OAuth2Settings}
+    // (The conf vals "talkyard.authn.*" were previously "silhouette.*" but we didn't use
+    // any of Silhouette's features, so switched to ScribeJava instead.)
+
     import talkyard.server.authn.OAuth2Settings
 
     val googleOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getGoogle(confValName: String) = getConfValOrThrowDisabled(confValName, "Google")
       OAuth2Settings(
-        authorizationURL = getStringNoneIfBlank("silhouette.google.authorizationURL"),
-        accessTokenURL = getGoogle("silhouette.google.accessTokenURL"),
+        authorizationURL = getStringNoneIfBlank("talkyard.authn.google.authorizationURL"),
+        accessTokenURL = getGoogle("talkyard.authn.google.accessTokenURL"),
         redirectURL = makeRedirectUrl("google"),
-        clientID = getGoogle("silhouette.google.clientID"),
-        clientSecret = getGoogle("silhouette.google.clientSecret"),
-        scope = getStringNoneIfBlank("silhouette.google.scope"))
+        clientID = getGoogle("talkyard.authn.google.clientID"),
+        clientSecret = getGoogle("talkyard.authn.google.clientSecret"),
+        scope = getStringNoneIfBlank("talkyard.authn.google.scope"))
     }
 
     val facebookOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getFacebook(confValName: String) = getConfValOrThrowDisabled(confValName, "Facebook")
       OAuth2Settings(
-        authorizationURL = getStringNoneIfBlank("silhouette.facebook.authorizationURL"),
-        accessTokenURL = getFacebook("silhouette.facebook.accessTokenURL"),
+        authorizationURL = getStringNoneIfBlank("talkyard.authn.facebook.authorizationURL"),
+        accessTokenURL = getFacebook("talkyard.authn.facebook.accessTokenURL"),
         redirectURL = makeRedirectUrl("facebook"),
-        clientID = getFacebook("silhouette.facebook.clientID"),
-        clientSecret = getFacebook("silhouette.facebook.clientSecret"),
-        scope = getStringNoneIfBlank("silhouette.facebook.scope"))
+        clientID = getFacebook("talkyard.authn.facebook.clientID"),
+        clientSecret = getFacebook("talkyard.authn.facebook.clientSecret"),
+        scope = getStringNoneIfBlank("talkyard.authn.facebook.scope"))
     }
 
     /*
     val twitterOAuthSettings: OAuth1Settings Or ErrorMessage = goodOrError {
       def getTwitter(confValName: String) = getConfValOrThrowDisabled(confValName, "Twitter")
       OAuth1Settings(
-        requestTokenURL = getTwitter("silhouette.twitter.requestTokenURL"),
-        accessTokenURL = getTwitter("silhouette.twitter.accessTokenURL"),
-        authorizationURL = getTwitter("silhouette.twitter.authorizationURL"),
+        requestTokenURL = getTwitter("talkyard.authn.twitter.requestTokenURL"),
+        accessTokenURL = getTwitter("talkyard.authn.twitter.accessTokenURL"),
+        authorizationURL = getTwitter("talkyard.authn.twitter.authorizationURL"),
         callbackURL = makeRedirectUrl("twitter").get,
-        consumerKey = getTwitter("silhouette.twitter.consumerKey"),
-        consumerSecret = getTwitter("silhouette.twitter.consumerSecret"))
+        consumerKey = getTwitter("talkyard.authn.twitter.consumerKey"),
+        consumerSecret = getTwitter("talkyard.authn.twitter.consumerSecret"))
     } */
 
     val githubOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getGitHub(confValName: String) = getConfValOrThrowDisabled(confValName, "GitHub")
       OAuth2Settings(
-        authorizationURL = getStringNoneIfBlank("silhouette.github.authorizationURL"),
-        accessTokenURL = getGitHub("silhouette.github.accessTokenURL"),
+        authorizationURL = getStringNoneIfBlank("talkyard.authn.github.authorizationURL"),
+        accessTokenURL = getGitHub("talkyard.authn.github.accessTokenURL"),
         redirectURL = makeRedirectUrl("github"),
-        apiURL = getStringNoneIfBlank("silhouette.github.apiURL"),
-        clientID = getGitHub("silhouette.github.clientID"),
-        clientSecret = getGitHub("silhouette.github.clientSecret"),
-        scope = getStringNoneIfBlank("silhouette.github.scope"))
+        apiURL = getStringNoneIfBlank("talkyard.authn.github.apiURL"),
+        clientID = getGitHub("talkyard.authn.github.clientID"),
+        clientSecret = getGitHub("talkyard.authn.github.clientSecret"),
+        scope = getStringNoneIfBlank("talkyard.authn.github.scope"))
     }
 
     // rm
     val gitlabOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getGitLab(confValName: String) = getConfValOrThrowDisabled(confValName, "GitLab")
       OAuth2Settings(
-        authorizationURL = getStringNoneIfBlank("silhouette.gitlab.authorizationURL"),
-        accessTokenURL = getGitLab("silhouette.gitlab.accessTokenURL"),
+        authorizationURL = getStringNoneIfBlank("talkyard.authn.gitlab.authorizationURL"),
+        accessTokenURL = getGitLab("talkyard.authn.gitlab.accessTokenURL"),
         redirectURL = makeRedirectUrl("gitlab"),
-        clientID = getGitLab("silhouette.gitlab.clientID"),
-        clientSecret = getGitLab("silhouette.gitlab.clientSecret"),
-        scope = getStringNoneIfBlank("silhouette.gitlab.scope"))
+        clientID = getGitLab("talkyard.authn.gitlab.clientID"),
+        clientSecret = getGitLab("talkyard.authn.gitlab.clientSecret"),
+        scope = getStringNoneIfBlank("talkyard.authn.gitlab.scope"))
     }
 
     val linkedInOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getLinkedin(confValName: String) = getConfValOrThrowDisabled(confValName, "LinkedIn")
       OAuth2Settings(
-        authorizationURL = getStringNoneIfBlank("silhouette.linkedin.authorizationURL"),
-        accessTokenURL = getLinkedin("silhouette.linkedin.accessTokenURL"),
+        authorizationURL = getStringNoneIfBlank("talkyard.authn.linkedin.authorizationURL"),
+        accessTokenURL = getLinkedin("talkyard.authn.linkedin.accessTokenURL"),
         redirectURL = makeRedirectUrl("linkedin"),
         // These fields no longer available in LinkedIn's API v2, unless one somehow
         // partners with LinkedIn;
@@ -548,33 +553,33 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         // Also profilePicture results in an error.
         // Instead:
         apiURL = Some("https://api.linkedin.com/v2/me?fields=id,firstName,lastName&oauth2_access_token=%s"),
-        clientID = getLinkedin("silhouette.linkedin.clientID"),
-        clientSecret = getLinkedin("silhouette.linkedin.clientSecret"),
-        scope = getStringNoneIfBlank("silhouette.linkedin.scope"))
+        clientID = getLinkedin("talkyard.authn.linkedin.clientID"),
+        clientSecret = getLinkedin("talkyard.authn.linkedin.clientSecret"),
+        scope = getStringNoneIfBlank("talkyard.authn.linkedin.scope"))
     }
 
     // rm
     val vkOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getVk(confValName: String) = getConfValOrThrowDisabled(confValName, "VK")
       OAuth2Settings(
-        authorizationURL = getStringNoneIfBlank("silhouette.vk.authorizationURL"),
-        accessTokenURL = getVk("silhouette.vk.accessTokenURL"),
+        authorizationURL = getStringNoneIfBlank("talkyard.authn.vk.authorizationURL"),
+        accessTokenURL = getVk("talkyard.authn.vk.accessTokenURL"),
         redirectURL = makeRedirectUrl("vk"),
-        clientID = getVk("silhouette.vk.clientID"),
-        clientSecret = getVk("silhouette.vk.clientSecret"),
-        scope = getStringNoneIfBlank("silhouette.vk.scope"))
+        clientID = getVk("talkyard.authn.vk.clientID"),
+        clientSecret = getVk("talkyard.authn.vk.clientSecret"),
+        scope = getStringNoneIfBlank("talkyard.authn.vk.scope"))
     }
 
     // rm
     val instagramOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getInstagram(confValName: String) = getConfValOrThrowDisabled(confValName, "Instagram")
       OAuth2Settings(
-        authorizationURL = getStringNoneIfBlank("silhouette.instagram.authorizationURL"),
-        accessTokenURL = getInstagram("silhouette.instagram.accessTokenURL"),
+        authorizationURL = getStringNoneIfBlank("talkyard.authn.instagram.authorizationURL"),
+        accessTokenURL = getInstagram("talkyard.authn.instagram.accessTokenURL"),
         redirectURL = makeRedirectUrl("instagram"),
-        clientID = getInstagram("silhouette.instagram.clientID"),
-        clientSecret = getInstagram("silhouette.instagram.clientSecret"),
-        scope = getStringNoneIfBlank("silhouette.instagram.scope"))
+        clientID = getInstagram("talkyard.authn.instagram.clientID"),
+        clientSecret = getInstagram("talkyard.authn.instagram.clientSecret"),
+        scope = getStringNoneIfBlank("talkyard.authn.instagram.scope"))
     }
 
 
@@ -731,12 +736,22 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
   val anyCreateTestSiteHostname: Option[String] =
     getStringNoneIfBlank("talkyard.createTestSiteHostname")
 
-  val anyUploadsDir: Option[String] = {
+  val anyPublicUploadsDir: Opt[St] = {
     val value = getStringNoneIfBlank(LocalhostUploadsDirConfValName)
     val pathSlash = if (value.exists(_.endsWith("/"))) value else value.map(_ + "/")
     pathSlash match {
       case None =>
-        Some(DefaultLocalhostUploadsDir)
+        // Make sure the uploads/ sub dir exists — we've mounted  /var/talkyard/v1/pub-files/
+        // but it might be empty, no uploads/ sub dir.   [pub_files_volume]
+        try {
+          jf.Files.createDirectories(jf.Paths.get(DefaultPubUploadsDir))
+          Some(DefaultPubUploadsDir)
+        }
+        catch {
+          case ex: jio.IOException =>
+            logger.error("Error creating uploads/ sub dir  [TyE0UPLSUBD602]", ex)
+            None
+        }
       case Some(path) =>
         // SECURITY COULD test more dangerous dirs. Or whitelist instead?
         if (path == "/" || path.startsWith("/etc/") || path.startsWith("/bin/")) {
@@ -749,8 +764,6 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         }
     }
   }
-
-  val anyPublicUploadsDir: Option[String] = anyUploadsDir.map(_ + "public/")
 
   def settingsBySiteId(siteId: SiteId): AllSettings =
     siteDao(siteId).getWholeSiteSettings()
@@ -775,10 +788,10 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     dieIf(colonPortParam.nonEmpty && colonPortParam != colonPort,
       "EdE47SK2", o"""Bad port: $portParam. You're accessing the server via non-standard
         port $portParam, but then you need to add config value `talkyard.port=$portParam`,
-        in file /opt/talkyard/conf/app/play.conf,
+        in file /opt/talkyard-v1/conf/app/play-framework.conf,
         otherwise I won't know for sure which port to include in URLs I generate.
         Also restart the app server for the new config to take effect:
-        sudo docker-compose restart web app""")
+        sudo docker compose restart web app""")
     s"$scheme://$hostname$colonPort"
   }
   def originOf(request: p.mvc.RequestHeader): String = s"$scheme://${request.host}"
@@ -1036,9 +1049,9 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
           logger.info("Killed. Bye. [EsMKILLED]")
           // Don't know how to tell Play to exit? Maybe might as well just:
           System.exit(0)
-          // However this leaves a RUNNING_PID file. So the docker container deletes it
-          // before start, see docker/play-prod/Dockerfile [65YKFU02]  <— this was before,
-          //                                     when also Prod mode waited for the future.
+          // However this leaves a RUNNING_PID file.
+          // Update 2026, Ty v1: Now we don't use any PID file. See: [65YKFU02].
+          // Lifecycle managed by Docker anyway.
 
           // However this block won't run if we've started already. So exiting directly
           // in the signal handler instea, right now, see [9KYKW25] above. Not sure why Play
@@ -1078,21 +1091,38 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         if (isProd && _appSecret == AppSecretDefVal)
           throw AppSecretNotChangedException
 
-        setStartupStep("Connecting to database... [TyMSTART1CON2DB]")
+        // Create any missing database tables before `new State`, otherwise State
+        // creates background threads that might attempt to access the tables.
+        // Also, need to do this before creating & connecting any DataSource,
+        // otherwise there'll be this error, if trying to recreate the test database:
+        // """database "talkyard_test" is being accessed by other users""".
+        setStartupStep(
+            "Running database migrations using sqlx...  (might take a while) [TyMSTART2MIGRDB]")
+        val anyProblem = Migrator.migrateDatabase(
+              Debiki.getPostgresDatabaseUrl(conf, isTest = isOrWasTest),
+              isTest = isOrWasTest)
+
+        anyProblem foreach { (probl: ErrMsgCode) =>
+          logger.error(s"Error migrating database: ${probl.toMsgCodeStr}  [TyEMIGRRDB0]")
+          // Mabye a _fatalError?
+          _state = Bad(Some(DebikiException("TyEMIGRRDB1", i"""
+                |Error migrating database. See server logs:
+                |
+                |    docker compose logs -f --tail 99 app
+                |""")))
+          // No point in trying any more. The server admin needs to intervene, e.g. use
+          // the previous Talkyard version.
+          return
+        }
+
+        setStartupStep("Connecting to database over JDBC... [TyMSTART1CON2DB]")
 
         val readOnlyDataSource = Debiki.createPostgresHikariDataSource(readOnly = true, conf, isOrWasTest)
         val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false, conf, isOrWasTest)
         val rdb = new Rdb(readOnlyDataSource, readWriteDataSource)
-        val dbDaoFactory = new RdbDaoFactory(
-              rdb, ScalaBasedMigrations, getCurrentTime = now _, isTest = isOrWasTest)
-
-        // Create any missing database tables before `new State`, otherwise State
-        // creates background threads that might attempt to access the tables.
-        setStartupStep("Running database migrations...  (might take a while) [TyMSTART2MIGRDB]")
+        val dbDaoFactory = new RdbDaoFactory(rdb, getCurrentTime = now _, isTest = isOrWasTest)
 
         val sysDao = new SystemDao(dbDaoFactory, cache, this)
-
-        sysDao.applyEvolutions()
 
         val sysSettings = sysDao.readTx(_.loadSystemSettings())
         updateSystemSettings(sysSettings)
@@ -1103,7 +1133,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         val newState = new State(dbDaoFactory, cache)
 
         if (isOrWasTest && conf.getOptional[Boolean]("isTestShallEmptyDatabase").contains(true)) {
-          setStartupStep("Emptying database... [TyMSTART8EMPTYDB]")
+          setStartupStep("Emptying database before running tests... [TyMSTART8EMPTYDB]")
           newState.systemDao.emptyDatabase()
         }
 
@@ -1183,7 +1213,14 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
             stopPlease(state.lastErrsActorRef),
             )
 
+      // The ElasticsearchClient docs says, about `close()`: """If the underlying Transport
+      // object is shared with other API client objects, these objects will also
+      // become unavailable""" indicating that it's fine to share the transport (which Ty's
+      // sync & async clients do) and fine to close() afterwards like this. And that
+      // the 2nd call to `close()` isn't needed but let's do anyway.
       state.elasticSearchClient.close()
+      state.elasticSearchAsyncClient.close()
+
       state.redisClient.quit()
       state.dbDaoFactory.db.readOnlyDataSource.asInstanceOf[HikariDataSource].close()
       state.dbDaoFactory.db.readWriteDataSource.asInstanceOf[HikariDataSource].close()
@@ -1336,19 +1373,50 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     setStartupStep(
           "Done migrating database. Connecting to search engine... [TyMSTART4CONSEARCH]")
 
-    val elasticSearchClient: es.client.transport.TransportClient =
-      new es.transport.client.PreBuiltTransportClient(es.common.settings.Settings.EMPTY)
-        .addTransportAddress(
-          new es.common.transport.TransportAddress(
-            jn.InetAddress.getByName(elasticSearchHost), 9300))
+    BUG // Don't keep retrying & logging 99999 errors if can't connect, that can
+    // generate GBs of log data, filling up a whole disk!
+    // But I've fixed this now, right?  [reconnect_to_ElasticSearch]
 
-    setStartupStep("Done migrating database. Starting background jobs... [TyMSTART5BGJOBS]")
+    val serverUrl = s"http://$elasticSearchHost:9200";
+
+    // This'll connect to ElasticSearch over HTTP.
+    // See: https://discuss.elastic.co/t/using-elasticserach-8-via-docker-without-certificate/303617
+    // (We aren't exposing any ports, no one can access except for the app server.)
+    // And: https://github.com/elastic/elasticsearch/blob/8.17/docs/reference/setup/install/docker/docker-compose.yml
+    // for a way to auto generate certs.
+    val restClient: org.elasticsearch.client.RestClient = org.elasticsearch.client.RestClient
+          .builder(org.apache.http.HttpHost.create(serverUrl))
+          // Later, if authz: (although not really needed)
+          //import org.apache.http.impl.client.Header
+          //import org.apache.http.impl.client.BasicHeader
+          //.setDefaultHeaders(Array[org.apache.http.Header](
+          //    new org.apache.http.message.BasicHeader("Authorization", "ApiKey " + apiKey)
+          //))
+          .build()
+
+    val elasticSearchTransport: es8.transport.ElasticsearchTransport =
+          new es8.transport.rest_client.RestClientTransport(
+                restClient, new es8.json.jackson.JacksonJsonpMapper())
+
+    // Synchronous. Nice (simpler) for creating indexes.
+    val elasticSearchClient: es8.elasticsearch.ElasticsearchClient =
+          new es8.elasticsearch.ElasticsearchClient(elasticSearchTransport);
+
+    // Async, for indexing & searching.
+    val elasticSearchAsyncClient: es8.elasticsearch.ElasticsearchAsyncClient =
+          new es8.elasticsearch.ElasticsearchAsyncClient(elasticSearchTransport);
+
+    setStartupStep("Connected to search engine. Starting background jobs... [TyMSTART5BGJOBS]")
 
     // Start first, so it'll start receiving errors sooner.
     val lastErrsActorRef: ActorRef = LastErrsActor.startNewActor(outer)
 
     val siteDaoFactory = new SiteDaoFactory(
-      edContext, dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient, config)
+          edContext, dbDaoFactory, redisClient, cache, usersOnlineCache,
+          // Can't use the elasticSearchAsyncClient  [ES8_async]
+          // there's some — ES 8 client <——> ES 9 server incompatibility.
+          elasticSearchClient,
+          config)
 
     val mailerActorRef: ActorRef = MailerActor.startNewActor(
           actorSystem, siteDaoFactory, conf, now _, isProd)
@@ -1369,6 +1437,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
           // [dont_index_too_fast_if_testing] [indexer_batch_size_is_20]
           else 20)
     def indexerDelaySecs: Int = getIntOrDefault("talkyard.search.indexer.initialDelaySeconds", 30)
+    // [search_ix_interval]
     def indexerIntervalSeconds: Int = getIntOrDefault("talkyard.search.indexer.intervalSeconds", 1)
 
     BUG // Don't start the indexer, before Nashorn has been warmed up — that can cause
@@ -1380,7 +1449,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
       else Some(SearchEngineIndexer.startNewActor(
           indexerBatchSize, initialDelaySecs = indexerDelaySecs,
           intervalSeconds = indexerIntervalSeconds, executionContext,
-          elasticSearchClient, actorSystem, systemDao))
+          elasticSearchClient, actorSystem, systemDao, siteDaoFactory))
 
     def spamCheckBatchSize: Int = getIntOrDefault("talkyard.spamcheck.batchSize", 20)
     def spamCheckIntervalSeconds: Int =

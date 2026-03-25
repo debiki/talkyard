@@ -6,25 +6,35 @@
 # is empty on container startup; any pre-existing database is left untouched.
 # See: https://github.com/docker-library/docs/tree/master/postgres#how-to-extend-this-image
 
+echo "Running /docker-entrypoint-initdb.d/init.sh as user:  $(id)"
 
-# [ty_v1] Maybe store db files in .../data/pgdata/ ?, see:
-# https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata
-#   -e PGDATA=/var/lib/postgresql/data/pgdata \
-#   -v /custom/mount:/var/lib/postgresql/data \
-# (Also reinvestigate if better using the official images? e.g.: postgres:13.1)
+pg_pwd_file=/tmp/postgres_password   # [same_pg_pw]
 
-set -e
+if [ -s $pg_pwd_file ]; then
+  echo "Picking Postgres password from Docker secrets file: $pg_pwd_file"
+  pg_pwd="$(cat $pg_pwd_file)"
+else
+  echo "ERROR: Postgres password file missing or empty: $pg_pwd_file"
+  echo "Check the 'secrets: ...' section in your docker-compose.yml. Aborting. Bye."
+  exit 1
+fi
+
+set -e  # abort on error
 
 
 # Create a Talkyard user, and a replication user.
 # ------------------------
 
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
-create user talkyard password '$POSTGRES_PASSWORD';
+psql -v pg_pwd="$pg_pwd" -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<'EOF'
+create user repl replication login connection limit 1 encrypted password :'pg_pwd';
+
+create user talkyard password :'pg_pwd';
 create database talkyard;
 grant all privileges on database talkyard to talkyard;
-
-create user repl replication login connection limit 1 encrypted password '$POSTGRES_PASSWORD';
+-- Grant 'create' to user 'talkyard' so it can run database migrations. (Otherwise,
+-- only the database owner (postgres) can run DDL, e.g. create and alter tables.)
+\c talkyard
+grant create on schema public to talkyard;
 EOF
 
 
@@ -33,18 +43,22 @@ EOF
 
 if [ -n "$CREATE_TEST_USER" ]; then
   # For running Talkyard's integration tests.
-  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
-  create user talkyard_test password 'public';
+  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<'EOF'
+  create user talkyard_test password 'public';  -- [test_db_pwd]
   create database talkyard_test;
   grant all privileges on database talkyard_test to talkyard_test;
+  \c talkyard_test
+  grant create on schema public to talkyard_test;
 EOF
 
   # For testing OIDC login via Keycloak — seems importing a Keycloak realm
   # won't work with the h2 database; needs sth like Postgres. [ty_kc_db]
-  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
-  create user keycloak_test password 'public';
+  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<'EOF'
+  create user keycloak_test password 'public';  -- [test_db_pwd]
   create database keycloak_test owner keycloak_test;
   grant all privileges on database keycloak_test to keycloak_test;
+  \c keycloak_test
+  grant create on schema public to keycloak_test;
 EOF
 fi
 
@@ -67,53 +81,8 @@ host replication repl 0.0.0.0/0 md5' $PGDATA/pg_hba.conf
 
 mv $PGDATA/postgresql.conf $PGDATA/postgresql.conf.orig
 
-cat << EOF >> $PGDATA/postgresql.conf
+cat << 'EOF' >> $PGDATA/postgresql.conf
 include '/var/lib/postgresql/conf/postgresql.conf'
 EOF
 
-
-# Help file about how to rsync to standby  [ty_v1] move to (ty-prod-one)/docs/
-# ------------------------
-
-cat << EOF > $PGDATA/how-rsync-to-standby.txt
-# Docs:
-# - https://wiki.postgresql.org/wiki/Binary_Replication_Tutorial
-# - https://wiki.postgresql.org/wiki/Streaming_Replication#How_to_Use
-
-# rsync to the standby like so:
-# 1) Stop Postgres on the going-to-become standby.
-# 2) Rename recovery.conf.disabled or recovery.done to recovery.conf, on the standby.
-
-# 3) rsync:
-psql postgres postgres -c "SELECT pg_start_backup('rsync to standby ' || now(), true)"
-rsync -acv $PGDATA/ $PEER_HOST:$PGDATA/ --exclude pg_xlog --exclude postmaster.pid --exclude recovery* --exclude failover_trigger_file --exclude backup_label
-psql postgres postgres -c "SELECT pg_stop_backup()"
-
-# 4) Optionally: (if too much data has been written to the db during the start-stop-backup above)
-rsync -acv $PGDATA/pg_xlog $PEER_HOST:$PGDATA/
-
-# 5) Start the standby.
-EOF
-
-
-# Configure streaming replication *to* this server
-# ------------------------
-# But don't enable it.
-
-# [ty_v1] Postgres v12+: recovery.conf is gone
-# now recovery params are in postgresql.conf instead, ignored until in recovery mode.
-# standby_mode param deleted.
-# Instead, files  recovery.signal  and  standby.signal clarifies what pg should do.
-#
-# So, move this config to (ty-prod-one)/conf/rdb/postgresql.conf,
-# w/o standby_mode, and maybe some fields commented out?
-
-cat << EOF >> $PGDATA/recovery.conf.disabled
-# See https://wiki.postgresql.org/wiki/Streaming_Replication, step 10.
-# Don't forget to edit the primary_conninfo.
-
-standby_mode   = 'on'
-primary_conninfo = 'host=$PEER_HOST port=$PEER_PORT user=repl password=$PEER_PASSWORD'
-trigger_file = '$PGDATA/failover_trigger_file'
-EOF
 

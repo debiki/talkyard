@@ -8,8 +8,21 @@
 # COULD_OPTIMIZE smaller image: Copy just what's needed from openresty_build
 # (and would need to 'apk add' some things too, to the final image).
 
-FROM alpine:3.21.3 AS openresty_build
+# Bumping to 3.21 to 3.22 was trivial, see:
+# https://github.com/openresty/docker-openresty/commit/70b5349b17eb4648fc992caf13ecd18b0f3ab104
+#
+# BUT would be good to upgr OpenSSL too?
+#  ARG RESTY_OPENSSL_VERSION="3.4.3"
+#  https://github.com/openresty/docker-openresty/commit/f7d080ac3b3fc534c42fbc87481b21c53d3ca2f7
+#
+#  OpenSSL 3.4.0 < 3.4.3 Multiple Vulnerabilities
+#  https://www.tenable.com/plugins/nessus/266295
 
+FROM alpine:3.22.3 AS openresty_build
+
+LABEL org.opencontainers.image.title="Talkyard Web" \
+      io.talkyard.edition="se" \
+      io.talkyard.version="1"
 
 # '--virtual .build_deps' lets one uninstall all these build dependencies,
 # like so:  'apk del .build_deps' (done later in this file)
@@ -114,7 +127,7 @@ ARG CONFIG="\
   # Or maybe works now with OpenResty?
   --with-http_v2_module \
   \
-  # Let's wait? DO_AFTER 2024-07-01:  or in [ty_v1]
+  # Let's wait? DO_AFTER 2024-07-01:  or in [ty_v2]
   # --with-http_v3_module \
   \
   # --with-ipv6 \
@@ -407,31 +420,10 @@ COPY ssl-cert-snakeoil.pem /etc/nginx/
 
 COPY html                 /opt/nginx/html/
 
-# For development. Another directory gets mounted in prod, see <talkyard-prod-one>/docker-compose.yml.
-COPY sites-enabled-manual /etc/nginx/sites-enabled-manual/
-
-# old, remove once I've edited edm & edc
-COPY server-listen.conf   /etc/nginx/listen.conf
-
-# old, remove, doesn't specify backlog sice — and may do only once, so rather useless.
-COPY server-listen.conf   /etc/nginx/
-
-# old, remove once I've edited edm & edc
-COPY server-ssl.conf      /etc/nginx/ssl-hardening.conf
-
 COPY server-ssl.conf      /etc/nginx/
 COPY http-limits.conf     /etc/nginx/http-limits.conf.template
 
-# old, remove, now done in  <talkyard-prod-one>/conf/sites-enabled-manual/talkyard-servers.conf  instead. [ty_v1]
-COPY http-redirect-to-https.conf /etc/nginx/
-
 COPY server-limits.conf   /etc/nginx/server-limits.conf.template
-
-# old, remove once I've edited edm & edc   [vy_v1] + search for "old" everywhere here
-COPY server-locations.conf /etc/nginx/vhost.conf.template
-
-# old, too, remove, when?
-COPY server-locations.conf /etc/nginx/server.conf.template
 
 COPY server-locations.conf /etc/nginx/server-locations.conf.template
 COPY nginx.conf           /etc/nginx/nginx.conf.template
@@ -442,28 +434,27 @@ COPY nginx.conf           /etc/nginx/nginx.conf.template
 # ===================================
 
 
-COPY run-envsubst-gen-keys.sh /etc/nginx/run-envsubst-gen-keys.sh
-RUN  chmod ugo+x              /etc/nginx/run-envsubst-gen-keys.sh
+COPY run-envsubst-gen-keys-exec-nginx.sh  /etc/nginx/
+RUN  chmod ugo+x                          /etc/nginx/run-envsubst-gen-keys-exec-nginx.sh
 
 # Sync w vars in  run-envsubst-gen-keys.sh  and  docker-compose-no-limits.yml  [0KW2UY3].
-# CLEAN_UP change prefix to TY_  [ty_v1]
 #
-# ED_NGX_LIMIT_CONN_PER_IP=60 is a lot? But maybe some people connect from
+# TY_NGX_LIMIT_CONN_PER_IP=60 is a lot? But maybe some people connect from
 # an office building, same IP addr?
 #
 # Set the default allowed request body size to something fairly large — 25m (megabytes)
 # — so self hosted people can upload Mac Retina screenshots (they're maybe 10 MB) and
 # small videos, without having to ask for help at Talkyard.io.
 ENV \
-    ED_NGX_LIMIT_CONN_PER_IP=60 \
-    ED_NGX_LIMIT_CONN_PER_SERVER=10000 \
-    ED_NGX_LIMIT_REQ_PER_IP=30 \
-    ED_NGX_LIMIT_REQ_PER_IP_BURST=200 \
-    ED_NGX_LIMIT_REQ_PER_SERVER=200 \
-    ED_NGX_LIMIT_REQ_PER_SERVER_BURST=2000 \
+    TY_NGX_LIMIT_CONN_PER_IP=60 \
+    TY_NGX_LIMIT_CONN_PER_SERVER=10000 \
+    TY_NGX_LIMIT_REQ_PER_IP=30 \
+    TY_NGX_LIMIT_REQ_PER_IP_BURST=200 \
+    TY_NGX_LIMIT_REQ_PER_SERVER=200 \
+    TY_NGX_LIMIT_REQ_PER_SERVER_BURST=2000 \
     TY_NGX_LIMIT_REQ_BODY_SIZE=25m \
-    ED_NGX_LIMIT_RATE=50k \
-    ED_NGX_LIMIT_RATE_AFTER=5m \
+    TY_NGX_LIMIT_RATE=50k \
+    TY_NGX_LIMIT_RATE_AFTER=5m \
     # Wait with setting this to a year (31536000), until things more tested.
 		# ('s-maxage = ...' and 'public' are for shared proxies and CDNs)
     TY_MAX_AGE_YEAR="max-age=2592000, s-maxage=2592000, public" \
@@ -505,7 +496,17 @@ EXPOSE 80 443
 #  && nginx-debug
 
 
-CMD /etc/nginx/run-envsubst-gen-keys.sh && nginx
+HEALTHCHECK \
+    # Compiling Lua code can take a while, if small VM.
+    --start-period=120s \
+    --start-interval=5s \
+    --interval=30s \
+    --timeout=5s \
+    --retries=5 \
+    CMD curl --fail --silent --show-error http://localhost:80/-/ping-nginx || exit 1
+
+
+CMD ["/etc/nginx/run-envsubst-gen-keys-exec-nginx.sh"]
 
 
 # Tell Docker to send SIGQUIT instead of default SIGTERM, when stopping this container

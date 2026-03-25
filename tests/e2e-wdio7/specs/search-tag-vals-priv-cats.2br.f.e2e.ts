@@ -342,10 +342,10 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   // ----- Decimal numbers, and = > <=
 
 
-  it(`Owen searches for the "kittens" tag`, async () => {
+  it(`Owen searches for the "kittens" tag, finds ${MaxPagesHit_Owen} pages`, async () => {
     await owen_brA.searchResultsPage.searchForUntilNumPagesFound("tag:kittens", MaxPagesHit_Owen);
   });
-  it(`... he finds ${MaxPagesHit_Owen} pages — kittens, so popular`, async () => {
+  it(`... the correct pages — kittens, so popular`, async () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([
           '/page-aa11',
           '/page-bb22',
@@ -355,7 +355,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
           '/page-tt77',
           '/page-tt88',
           '/page-tt99',
-          ], { anyOrder: true });
+          ], { anyOrder: true, countTitleLinks: true });
   });
 
   it(`Maja logs in`, async () => {
@@ -372,7 +372,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
           '/page-bb22',
           '/page-bb33',
           '/page-bb44',
-          ], { anyOrder: true });
+          ], { anyOrder: true, countTitleLinks: true });
   });
 
   it(`But more Kittens, of course, is better.  Owen searches for  >=1.33`, async () => {
@@ -388,7 +388,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
           '/page-tt77',  // kittens  1.33
           '/page-tt88',  // kittens  1.33
           '/page-tt99',  // kittens  1.33
-          ], { anyOrder: true });
+          ], { anyOrder: true, countTitleLinks: true });
   });
 
   it(`Maja likes more kittens too, also searches for  >=1.33`, async () => {
@@ -398,14 +398,14 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
         //'/page-bb22',  // kittens  1.22
           '/page-bb33',  // kittens  1.33
           '/page-bb44',  // kittens  1.44
-          ], { anyOrder: true });
+          ], { anyOrder: true, countTitleLinks: true });
   });
 
   it(`If  >1.33,  they find just one page`, async () => {
     await owen_brA.searchResultsPage.searchForWaitForResults("tag:kittens>1.33");
     await owen_brA.searchResultsPage.assertResultLinksAre([
           '/page-bb44',  // kittens  1.44
-          ]);
+          ], { countTitleLinks: true });
   });
 
   it(`Negative numbers work`, async () => {
@@ -413,7 +413,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([
           '/page-aa11',  // kittens  0.0
           '/page-ss66',  // kittens -1.66
-          ], { anyOrder: true });
+          ], { anyOrder: true, countTitleLinks: true });
   });
 
   it(`Too many zeros works too`, async () => {
@@ -421,14 +421,14 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
     await owen_brA.searchResultsPage.searchForWaitForResults("tag:kittens=0.00000");
     await owen_brA.searchResultsPage.assertResultLinksAre([
           '/page-aa11',  // kittens  0.0
-          ]);
+          ], { countTitleLinks: true });
   });
 
   it(`... also for negative numbers`, async () => {
     await owen_brA.searchResultsPage.searchForWaitForResults("tag:kittens=-1.66000");
     await owen_brA.searchResultsPage.assertResultLinksAre([
           '/page-ss66',  // kittens -1.66
-          ]);
+          ], { countTitleLinks: true });
   });
 
 
@@ -442,12 +442,12 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   it(`... he finds page TT77`, async () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([
           '/page-tt77',
-          ]);
+          ], { countTitleLinks: true });
   });
 
   it(`Maja searches for Nr = 77, finds nothing — she's not a Trusted member`, async () => {
     await maja_brB.searchResultsPage.searchForWaitForResults("tag:nr=77");
-    await maja_brB.searchResultsPage.assertResultLinksAre([]);
+    await maja_brB.searchResultsPage.assertResultLinksAre([], { countTitleLinks: true });
   });
 
   it(`Maja searches for Nr = 22 instead`, async () => {
@@ -456,7 +456,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   it(`... finds BB22, a public topic`, async () => {
     await maja_brB.searchResultsPage.assertResultLinksAre([
           '/page-bb22',
-          ]);
+          ], { countTitleLinks: true });
   });
 
   it(`Owen searches for Nr > 33`, async () => {
@@ -472,7 +472,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
           '/page-tt77',
           '/page-tt88',
           '/page-tt99',
-          ], { anyOrder: true });
+          ], { anyOrder: true, countTitleLinks: true });
   });
 
   it(`But when Maja searches for Nr > 33`, async () => {
@@ -481,7 +481,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   it(`... she finds only page BB44`, async () => {
     await maja_brB.searchResultsPage.assertResultLinksAre([
           '/page-bb44',
-          ]);
+          ], { countTitleLinks: true });
   });
 
 
@@ -498,12 +498,12 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
           '/page-bb22',
           '/page-bb33',
           '/page-bb44',
-          ], { anyOrder: true });
+          ], { anyOrder: true, countTitleLinks: true });
   });
 
   it(`Maja searches for Letter = SS, finds nothing — she's not staff`, async () => {
     await maja_brB.searchResultsPage.searchForWaitForResults("tag:letter=SS");
-    await maja_brB.searchResultsPage.assertResultLinksAre([]);
+    await maja_brB.searchResultsPage.assertResultLinksAre([], { countTitleLinks: true });
   });
 
   it(`Owen, though, searches for SS`, async () => {
@@ -512,7 +512,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
   it(`... and finds the staff-only page`, async () => {
     await owen_brA.searchResultsPage.assertResultLinksAre([
           '/page-ss66',
-          ]);
+          ], { countTitleLinks: true });
   });
 
   it(`Range searches work with letters:  >=BB`, async () => {
@@ -528,7 +528,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
           '/page-tt77',
           '/page-tt88',
           '/page-tt99',
-          ], { anyOrder: true });
+          ], { anyOrder: true, countTitleLinks: true });
   });
 
   it(`... but Maja`, async () => {
@@ -539,7 +539,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
           '/page-bb22',
           '/page-bb33',
           '/page-bb44',
-          ], { anyOrder: true });
+          ], { anyOrder: true, countTitleLinks: true });
   });
 
 
@@ -561,7 +561,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
           '/page-tt99',
           '/page-tt88',
           '/page-tt77',
-          ]);
+          ], { countTitleLinks: true });
   });
 
   it(`Owen searches for  tags:letter:asc,nr:asc`, async () => {
@@ -578,7 +578,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
           '/page-tt77',
           '/page-tt88',
           '/page-tt99',
-          ]);
+          ], { countTitleLinks: true });
   });
 
 
@@ -600,7 +600,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
           '/page-tt77',  // kittens  1.33
           '/page-bb33',  // kittens  1.33
           '/page-bb44',  // kittens  1.44
-          ]);
+          ], { countTitleLinks: true });
   });
 
 
@@ -624,7 +624,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
           '/page-bb22',  // kittens  1.22
           '/page-aa11',  // kittens  0.0
           '/page-ss66',  // kittens -1.66
-          ]);
+          ], { countTitleLinks: true });
   });
 
 
@@ -646,7 +646,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
           '/page-bb22',  // kittens  1.22
           '/page-aa11',  // kittens  0.0
         //'/page-ss66',  // kittens -1.66  'kittens' isn't >-0.5
-          ]);
+          ], { countTitleLinks: true });
   });
 
 
@@ -667,7 +667,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
           '/page-bb33',
           '/page-bb22',
           '/page-aa11',
-          ]);
+          ], { countTitleLinks: true });
   });
 
 
@@ -687,7 +687,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
           '/page-bb33',
           '/page-bb22',
           '/page-aa11',
-          ]);
+          ], { countTitleLinks: true });
   });
 
 
@@ -708,7 +708,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
           '/page-tt99',  // kittens  1.33
           '/page-bb22',  // kittens  1.22
         //'/page-aa11',  // kittens  0.0  — where are the pangolins? Not here
-          ]);
+          ], { countTitleLinks: true });
   });
 
 
@@ -726,7 +726,7 @@ describe(`search-tag-vals-priv-cats.2br.f  TyTSEARCHTAGSPRIVCAT`, () => {
           '/page-bb22',  // kittens  1.22
         //'/page-aa11',  // kittens  0.0  — totally zero pangolins
           '/page-ss66',  // kittens -1.66
-          ]);
+          ], { countTitleLinks: true });
   });
 
 });

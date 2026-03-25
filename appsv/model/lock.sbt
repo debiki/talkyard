@@ -20,14 +20,14 @@ Compile / dependencyOverrides ++= {
       "com.sun.activation" % "jakarta.activation" % "1.2.1",
       "com.sun.mail" % "jakarta.mail" % "1.6.7",
       "commons-beanutils" % "commons-beanutils" % "1.11.0",
-      "commons-codec" % "commons-codec" % "1.20.0",
+      "commons-codec" % "commons-codec" % "1.21.0",
       "commons-collections" % "commons-collections" % "3.2.2",
       "commons-digester" % "commons-digester" % "2.1",
-      "commons-io" % "commons-io" % "2.20.0",
+      "commons-io" % "commons-io" % "2.21.0",
       "commons-logging" % "commons-logging" % "1.3.5",
       "commons-validator" % "commons-validator" % "1.10.1",
       "org.apache.commons" % "commons-email" % "1.6.0",
-      "org.apache.tika" % "tika-core" % "3.2.3",
+      "org.apache.tika" % "tika-core" % "3.3.0",
       "org.jspecify" % "jspecify" % "1.0.0",
       "org.owasp.encoder" % "encoder" % "1.4.0",
       "org.playframework" % "play-functional_2.13" % "3.0.6",
@@ -37,4 +37,4 @@ Compile / dependencyOverrides ++= {
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH 2ea794803c380b467d4dbd81e1aca90a52d19de0
+// LIBRARY_DEPENDENCIES_HASH 4d22de695945ebe5f02449e237969eb8817eccd6

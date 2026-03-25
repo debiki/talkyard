@@ -94,7 +94,7 @@ case class SitePatch(
 
   /* MISSING:
  public | audit_log3              | table    | edc
- public | backup_test_log3        | table    | edc
+ public | sys_backup_history_t    | table    | edc
  public | blocks3                 | table    | edc
  public | emails_out3             | table    | edc  [4023SRKG5]
  public | job_queue_t            | table    | edc

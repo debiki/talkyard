@@ -1,0 +1,53 @@
+[use_Mexican_Spanish]. Some time later, change: es_CL => es_MX. No hurry, they're almost the same.
+We'll prioritize words are common in both Spain/Europe and South America, e.g. "Crear tema"
+instead of "Crear hilo", and if we have to choose, pick words that are common in Mexico
+/ South America. — There's many more Spanish speakers in South America.
+
+[es_toggle_univ_icu] Since we double-index into both lang specific fields,
+e.g. sv_SE, *and* the univ_icu field, we can find "får" if searching for "far".
+Sometimes that's good (say, English user typing on an English keyboard)
+sometimes annoying.
+So, later, maybe a checkbox that toggles univ_icu search on/off?
+And if off, then we'd search only the language specific field, e.g. sv_SE
+if the search q is in Swedish.
+There's already a server side param (&univ=false) only used in e2e tests right now.
+
+COULD_OPTIMIZE: Store approved and not-deleted things in one index, and   [index_for_invisible]
+not-yet-approved or has-been-deleted in another index. Then, a bit faster
+searches: only the relevant things, in each index (ppl typically look only for
+approved & not-deleted things, but mods sometimes search for deleted /
+not-apporved things). And, smaller mappings: Not two fields per text (both
+approved & unapproved). And, simpler? A checkbox  include deleted & unapproved
+[y/n] and if yes, then query both indexes.
+
+COULD [es_autocomplete] [es_autocomplete_titles]: Add an 'suggest' subfield
+to $ApprovedPlainText for autocomplete search of titles, e.g. typing:  "kitt cu"
+would quickly match "cute kittens". Gemini suggests:
+  "$ApprovedPlainText": {
+    ....same-as-now....,
+    fields: { suggest: { type: text, analyzer: autocomplete, search_analyzer: standard }}
+  }
+Supposedly also needs updated settings — the 'autocomplete' analyzer:
+  "analysis": {
+    "filter": { "autocomplete_filter": { "type": "edge_ngram", "min_gram": 2, "max_gram": 20 } },
+    "analyzer": {
+      "autocomplete": { "type": "custom", "tokenizer": "standard",
+                          "filter": [ "lowercase", "autocomplete_filter" ] }
+    }
+  }
+Docs about ngrams e.g. `edge_ngram`:
+https://www.elastic.co/docs/reference/text-analysis/tokenizer-reference#_partial_word_tokenizers
+https://www.elastic.co/docs/reference/text-analysis/analysis-edgengram-tokenizer  (read this!)
+
+
+COULD_OPTIMIZE: Use `"copy_to": "titleAndText"`  [es_use_copy_to]  to search
+title and page body at the same time, using a matchQuery instead of a
+multiMatchQuery. But there's so few titles compared to comments, so don't think that's needed.
+See: https://www.elastic.co/guide/en/elasticsearch/reference/current/tune-for-search-speed.html#search-as-few-fields-as-possible
+If doing that, probably keep the title in its own field? So can search only titles.
+
+
+COULD_OPTIMIZE: If a site grows really large, can use  constant_keyword  to break out
+an index only for that site — by letting its id be a  constant_keyword.
+See: https://www.elastic.co/guide/en/elasticsearch/reference/current/tune-for-search-speed.html#faster-filtering-with-constant-keyword
+

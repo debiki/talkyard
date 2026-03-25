@@ -10,12 +10,12 @@ if [ $? -eq 1 ] ; then
   exit 1
 fi
 
-up_line=`docker-compose ps rdb | egrep '\<Up\>'`
+up_line=`docker compose ps rdb | egrep '\<Up\>'`
 if [ -z "$up_line" ]; then
   echo
   echo "Error: The database container is not running."
   echo "You can start it:"
-  echo "  docker-compose start rdb"
+  echo "  docker compose start rdb"
   exit 1
 fi
 
@@ -26,7 +26,7 @@ if [[ $response =~ ^(no|n)$ ]] ; then
   exit 0
 fi
 
-psql="docker-compose exec rdb psql postgres postgres"
+psql="docker compose exec rdb psql postgres postgres"
 
 echo 'Dropping dev and test databases...'
 

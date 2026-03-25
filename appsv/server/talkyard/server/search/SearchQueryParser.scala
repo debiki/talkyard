@@ -215,6 +215,7 @@ object SearchQueryParser {
               // Let 'sort:...' have precedence over 'tags:tag-name:asc/desc' — 'sort:'
               // is more explicit, intentional?
               sortOrders ++ sortByTags,
+          searchUniversalFallback = true, // the default
           warnings = warnings.to(Vec))
   }
 
@@ -428,6 +429,10 @@ object SearchQueryParser {
                 None
               }
               else tagType.valueType flatMap {
+                // We'll pick a CompVal type that matches the tag type value type.
+                // For example, if the tag type value type is TypeValueType.StrKwd, we'll
+                // parse "23.45" as text. But if the type is Flt64, we'll parse 23.45
+                // as a decimal number. [right_comp_val_type]
                 case TypeValueType.Int32 =>
                   compStr.toIntOption map { i =>
                     tagType -> CompOpVal(compOp, CompVal.Int32(i))

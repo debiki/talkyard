@@ -132,12 +132,12 @@ describe(`api-search-full-text.1br.f  TyT70ADNEFTD36`, () => {
   it("Maria searches for curiosity, until she finds the page and 3 posts", async () => {
     // Wait for the server to be done indexing these new pages.
     await utils.tryUntilTrue(`searching for 'curiosity'`, 'ExpBackoff', async () => {
-      response = await server.apiV0.fullTextSearch<PageFound>({
+      response = await server.apiV0.fullTextSearchOk<PageFound>({
           origin: siteIdAddress.origin, queryText: "curiosity"
-          }) as SearchQueryResults<PageFound>;
+          });
       return (
           response.thingsFound.length >= 1  &&
-          response.thingsFound[0].postsFound.length >= 3);
+          response.thingsFound[0].postsFound.length >= 2);
     });
   });
 
@@ -184,29 +184,33 @@ describe(`api-search-full-text.1br.f  TyT70ADNEFTD36`, () => {
   });
 
 
-  let titleFound: PostFound;
+  //let titleFound: PostFound;
   let bodyFound: PostFound;
   let replyFound: PostFound;
 
   it("Alice's title, body and Maria's reply was found", async () => {
-    assert.eq(pageFound.postsFound.length, 3);
+    assert.eq(pageFound.postsFound.length, 2);
 
-    titleFound = pageFound.postsFound.find((p: PostFound) => p.isPageTitle);
+    // Now in same search hit as the page body.  [index_title_and_body_together]
+    //titleFound = pageFound.postsFound.find((p: PostFound) => p.isPageTitle);
     bodyFound = pageFound.postsFound.find((p: PostFound) => p.isPageBody);
     replyFound = pageFound.postsFound.find((p: PostFound) => !p.isPageTitle && !p.isPageBody);
 
-    assert.ok(titleFound);
-    assert.not(titleFound.isPageBody);
+    //assert.ok(titleFound);
+    //assert.not(titleFound.isPageBody);
     assert.ok(bodyFound);
     assert.not(bodyFound.isPageTitle);
     assert.ok(replyFound);
   });
 
 
+  /* SHOULD [ty_v1], TESTS_MISSING: Incl the title again,  [index_title_and_body_together]
+   * and add back this test. Search for:  titleFound  in this file
+   *
   it("... and the word 'curiosity' was found in the title", async () => {
     assert.eq(titleFound.htmlWithMarks.length, 1);
     assert.includes(titleFound.htmlWithMarks[0], 'curiosity');
-  });
+  }); */
 
   it("... in the body", async () => {
     assert.eq(bodyFound.htmlWithMarks.length, 1);
@@ -221,7 +225,7 @@ describe(`api-search-full-text.1br.f  TyT70ADNEFTD36`, () => {
 
   it("... highlighted with a '<mark>' tags", async () => {
     const curiosityMarked = '<mark>curiosity</mark>';
-    assert.includes(titleFound.htmlWithMarks[0], curiosityMarked);
+    //assert.includes(titleFound.htmlWithMarks[0], curiosityMarked);
     assert.includes(bodyFound.htmlWithMarks[0], curiosityMarked.replace('c', 'C'));
     assert.includes(replyFound.htmlWithMarks[0], curiosityMarked);
     assert.includes(replyFound.htmlWithMarks[1], curiosityMarked);
@@ -297,8 +301,8 @@ describe(`api-search-full-text.1br.f  TyT70ADNEFTD36`, () => {
     await owensBrowser.searchResultsPage.searchForUntilNumPagesFound('wolf', 4);
   });
 
-  async function apiSearchForWolf(): SearchQueryResults<PageFound> {
-    return await server.apiV0.fullTextSearch<PageFound>({
+  async function apiSearchForWolf(): Pr<SearchQueryResults<PageFound>> {
+    return await server.apiV0.fullTextSearchOk<PageFound>({
         origin: siteIdAddress.origin, queryText: "wolf" });
   }
 

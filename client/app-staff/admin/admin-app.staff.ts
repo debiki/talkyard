@@ -2663,41 +2663,12 @@ const LanguageSettings = createFactory({
     const currentSettings: Settings = props.currentSettings;
     const editedSettings: Settings = props.editedSettings;
 
-    const valueOf = (getter: (s: Settings) => any) =>
-      firstDefinedOf(getter(editedSettings), getter(currentSettings));
-
-    // Sync this list with the language files in /translations/ and the server scripts bundle. [5JUKQR2].
-    const languageOptions = [{
-      // Don't mention this is en-US, people might then want -GB too and -AU (for the UK and Australia)?
-      value: 'en_US', label: "English"
-    }, {
-      value: 'zh_CN', label: "Chinese (PRC)"
-    }, {
-      value: 'nl_NL', label: "Dutch"
-    }, {
-      value: 'de_DE', label: "German"
-    }, {
-      value: 'he_IL', label: "Hebrew"
-    }, {
-      value: 'lv_LV', label: "Latvian"
-    }, {
-      value: 'pl_PL', label: "Polish"
-    }, {
-      value: 'pt_BR', label: "Portuguese (Brazilian)"
-    }, {
-      value: 'ru_RU', label: "Russian"
-    }, {
-      value: 'es_CL', label: "Spanish (Chile)"
-    }, {
-      value: 'sv_SE', label: "Swedish"
-    }, {
-      value: 'uk_UA', label: "Ukrainian"
-    }];
+    const langOpts = languageOptions();
 
     const selectedLangCode = firstDefinedOf(editedSettings.languageCode, currentSettings.languageCode);
-    const selectedLangOpt = _.find(languageOptions, (opt) => opt.value === selectedLangCode);
+    const selectedLangOpt = _.find(langOpts, (opt) => opt.value === selectedLangCode);
 
-    const setLangCode = (code) => {
+    const setLangCode = (code: St) => {
       // A bit dupl code. [7UKWBP32]
       const newSettings = _.clone(editedSettings);
       newSettings.languageCode = code;
@@ -2712,9 +2683,9 @@ const LanguageSettings = createFactory({
             undo: () => setLangCode(currentSettings.languageCode),
             reset: () => setLangCode(defaultSettings.languageCode) },
           rFragment({},
-            rb.ReactSelect({ multi: false, clearable: false,
-                value: selectedLangOpt, options: languageOptions,
-                onChange: (langCodeAndName) => {
+            rb.ReactSelect({ multi: false, clearable: false, className: 'e_LangDrpd',
+                value: selectedLangOpt, options: langOpts,
+                onChange: (langCodeAndName: LabelValue) => {
                   setLangCode(langCodeAndName.value);
                 } }),
             rb.HelpBlock({}, "The language for the user interface, e.g. button titles. " +

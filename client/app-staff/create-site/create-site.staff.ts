@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../staff-prelude.staff.ts" />
+/// <reference path="../admin/language-options.staff.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.createsite {
@@ -61,12 +62,14 @@ const CreateSomethingComponent = createReactClass({
 
 
 interface CreateSiteState {
-  isForEmbeddedComments;
-  makePublic: Bo;
+  isForEmbeddedComments?: Bo
+  makePublic?: Bo
   okayStatuses: { [name: St]: Bo };
   showAddress?: Bo;
   showOrgNameInp?: Bo;
   showPrivPubl?: Bo;
+  showLangSelector?: Bo
+  selectedLangCode: St
 }
 
 const CreateWebsiteComponent = createFactory<any, any>({
@@ -76,12 +79,12 @@ const CreateWebsiteComponent = createFactory<any, any>({
     const isForEmbeddedComments = location.pathname.indexOf('embedded-comments') >= 0;
     return {
       isForEmbeddedComments,
+      selectedLangCode: 'en_US',
       okayStatuses: {
         address: false,
         orgName: false,
       },
       // embeddingOrigin: '', // not in use?
-      makePublic: true,
     } satisfies CreateSiteState;
   },
 
@@ -109,6 +112,7 @@ const CreateWebsiteComponent = createFactory<any, any>({
         anyEmbeddingSiteAddress: embeddingOrigin,
         organizationName: this.refs.organizationName.getValue(),
         makePublic: state.makePublic,
+        langCode: state.selectedLangCode,
         onOk: (nextUrl: St) => {
           window.location.assign(nextUrl);
         }});
@@ -126,6 +130,11 @@ const CreateWebsiteComponent = createFactory<any, any>({
     const okayStatuses = state.okayStatuses;
     const disableSubmit = _.includes(_.values(okayStatuses), false);
     const isComments = state.isForEmbeddedComments;
+    const forumOrSite = isComments ? "site" : "forum";
+    const ForumOrSite = isComments ? "Site" : "Forum";
+    const langOpts = debiki2.admin.languageOptions();
+    const selectedLangOpt = _.find(langOpts, (opt) => opt.value === state.selectedLangCode);
+    const showLangSelector = isDef(state.makePublic) || isComments && state.showOrgNameInp;
     const embeddingOriginOrLocalHostname = isComments
       ? EmbeddingAddressInput({
           tabIndex: 10,
@@ -133,16 +142,19 @@ const CreateWebsiteComponent = createFactory<any, any>({
             this.setState({ embeddingOrigin: value });
             this.reportOkay('address', isOk)
           } })
-      : LocalHostnameInput({ label: "Site Address:", placeholder: 'your-forum-name',
+      : LocalHostnameInput({ label: "Choose forum address:",
+            placeholder: 'your-forum-name',
             tabIndex: 10,
-            help: "The address of your new site. You can change this later,  " +
+            help: `The address of your new forum. You can change this later, ` +
                 "e.g. to a custom domain.",
             ref: 'localHostname',
             onChangeValueOk: (value, isOk) => this.reportOkay('address', isOk) });
 
+    const youCanChangeThisLater = "You can change this later in your admin settings.";
+
     return (
       r.div({},
-        r.h1({}, isComments ? "Create Embedded Comments" : "Create Forum"),
+        r.h1({}, isComments ? "Create Embedded Comments" : "Create Your Forum"),
         r.form({ className: 'esCreateSite', onSubmit: this.handleSubmit },
           r.div({ className: 'n_InpSec' },
               embeddingOriginOrLocalHostname),
@@ -153,12 +165,22 @@ const CreateWebsiteComponent = createFactory<any, any>({
             "Next"),
 
           !state.showOrgNameInp ? null :
-            PatternInput({ label: "Organization name:", placeholder: "Your Organization Name",
+            PatternInput({ label: "Organization name",
+              placeholder: "Your Organization Name",
               tabIndex: 20, wrapperClassName: 'n_InpSec',
-              help: "The name of your organization, if any.  Otherwise, you " +
+              // ChatGPT:
+              // help: "Used in your Terms of Use and Privacy Policy. You can change it later. "
+              // Gemini:
+              help: "If you don't have an organization, you can use your own name. " +
+                  `We use this to generate your ${
+                      forumOrSite}'s Terms of Use and Privacy Policy. ` +
+                  youCanChangeThisLater,
+                /*
+                "The name of your organization, if any.  Otherwise, you " +
                 "can use your own name.  Will be used in your Terms of Use " +
                 "and Privacy Policy documents. " +
                 "— You can change the name later (in your site's admin settings).",
+                */
               ref: 'organizationName', id: 'e2eOrgName',
               regex: /\S/, message: "Name required",
               onChangeValueOk: (value, isOk) => this.reportOkay('orgName', isOk) }),
@@ -169,30 +191,65 @@ const CreateWebsiteComponent = createFactory<any, any>({
               id: 'e_Next4', tabIndex: 25 },
             "Next"),
 
+          // Maybe better if they have to choose something, explicitly?
+          // Otherwis people who are trying out Ty seem to go with Private, if that's
+          // the default. But that makes it harder to see what things people want
+          // to use Talkyard for. But Public as default is maybe less secure.
+          // So, let them choose.
           !state.showPrivPubl || isComments ? null :
             r.div({ className: 'n_InpSec' },
-              r.p({}, r.b({}, "Public or private?")),
+              r.p({}, r.b({}, "Who can see your forum?")),
+              /* This is too much to read, things both ChatGPT and Gemini.
               r.p({},
-                  "Shall people on the Internet see the discussions in the forum? ",
-                  r.small({}, "(For example, an online community, or customer support.)")),
+                  "Shall people on the Internet see the discussions in the forum? ", r.br(),
+                  r.i({}, "For example, an online community, or customer support.")),
+                  // "You can still create private sections in the forum, though."),
               r.p({},
-                  "Or shall everything be private, not visible unless logged in? ",
-                  r.small({}, "(For example, a company internal forum.)")),
+                  "Or shall everything be private, not visible unless logged in? ", r.br(),
+                  r.i({}, "For example, a company internal forum.")),
+                */
               Input({ type: 'radio', name: 'pubPriv', id: 'e_MkPub', tabIndex: 30,
-                  label: rFr({}, "Public   (except for private categories)"),
+                  label: rFr({},
+                      r.b({}, "Public (except for private categories)"), r.br(),
+                      "Anyone on the internet can read discussions. ", r.br(),
+                      "Good for online communities or customer support."),
                   checked: state.makePublic,
                   onChange: () => this.setState({ makePublic: true }),
                   }),
               Input({ type: 'radio', name: 'pubPriv', id: 'e_MkPriv', 
                   // (tabIndex: 30 — doesn't matter. All radio buttons with the same 'name:'
                   // get the same index, and one navigates using the up-down arrow keys.)
-                  label: "Everything private",
-                  checked: !state.makePublic,
+                  label: rFr({},
+                      r.b({}, "Everything private"), r.br(),
+                      "Only logged-in users can see the forum.", r.br(),
+                      "Good for company internal forums or private groups."),
+                  checked: state.makePublic === false,
                   onChange: () => this.setState({ makePublic: false }),
-                  })),
+                  }),
+              r.p({}, youCanChangeThisLater)),
 
-          !state.showPrivPubl && !(isComments && state.showOrgNameInp) ? null :
-            InputTypeSubmit({ value: "Create Site", disabled: disableSubmit, tabIndex: 40 }))));
+          !showLangSelector ? null :
+              r.div({ className: 'form-group' },
+                r.label({ className: 'control-label' }, "Language"),
+                rb.ReactSelect({ multi: false, clearable: false, className: 'e_LangDrpd',
+                    value: selectedLangOpt, options: langOpts,
+                    onChange: (langCodeAndName: LabelValue) => {
+                      this.setState({
+                              selectedLangCode: langCodeAndName.value
+                            } satisfies Partial<CreateSiteState>);
+                    }
+                }),
+                r.span({ className: 'help-block' },
+                    "The forum interface and notification emails " +
+                    "will use this language. " +
+                    "Admin and moderator pages are in English.")),
+
+          // One can click Create Site here, directly, without choosing language
+          // above — English is the default.
+          !showLangSelector ? null :
+            InputTypeSubmit({
+                value: `Create ${ForumOrSite}`, disabled: disableSubmit, tabIndex: 99 }),
+          )));
   }
 });
 
@@ -213,7 +270,7 @@ function NextStepButton(props: { id: St, onShowNextStep: () => V, showThisStep?:
 
 export function EmbeddingAddressInput(props) {
   return (
-    PatternInput({ label: props.label || "Embedding site:",
+    PatternInput({ label: props.label || "Embedding site",
       tabIndex: props.tabIndex,
       id: 'e_EmbeddingUrl', className: '',
       style: props.style,
@@ -222,7 +279,7 @@ export function EmbeddingAddressInput(props) {
       ref: 'embeddingOrigin',
       trim: true,
       regex: /\S/, message: "Address required",
-      regexTwo: /^https?:\/\/[^/]+/, messageTwo: "Should be http(s)://something...",
+      regexTwo: /^https?:\/\/[^/]+/, messageTwo: "Should be https://something...",
       notRegex: /\S\s\S/, notMessage: "No spaces please",
       notRegexTwo: /[@#\?]/, notMessageTwo: "No weird characters please (e.g. not @#?)",
       onChangeValueOk: props.onChangeValueOk }));

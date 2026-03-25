@@ -87,20 +87,20 @@ fi
 # Push to which Docker repository?
 # ----------------------
 
-REPO=`sed -nr 's/^DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env`
+REG_ORG=`sed -nr 's/^DOCKER_REG_ORG=([a-zA-Z0-9\._-]*).*/\1/p' .env`
 
 # # The registry is running?
 # nc my.example.com 80 < /dev/null
 #
-# if [ $?  is error status 1,  or if   -z "$REPO" ]; then
-if [ -z "$REPO" ]; then
+# if [ $?  is error status 1,  or if   -z "$REG_ORG" ]; then
+if [ -z "$REG_ORG" ]; then
   echo
-  echo "DOCKER_REPOSITORY line missing in .env file?"
+  echo "DOCKER_REG_ORG line missing in .env file?"
   echo
   echo "To which Docker repository do you want to push?"
   echo "Edit the file .env in this directory, and specify a repository, e.g.:"
   echo
-  echo "    DOCKER_REPOSITORY=debiki"
+  echo "    DOCKER_REG_ORG=debiki"
   echo
 #   echo "You can start a test Docker registry at localhost:5000 like so:"
 #   echo
@@ -178,8 +178,8 @@ version_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala and g
 
 echo
 echo "I'll build Talkyard version:  $version_tag   (see version.txt),"
-echo "    and push to Docker repo:  $REPO    (see .env),"
-echo "            release channel:  tyse-v0-dev  (always)"
+echo "    and push to Docker repo:  $REG_ORG    (see .env),"
+echo "            release channel:  tyse-v1-dev  (this is Ty epoch 1)"
 echo
 # dupl code [bashutils]
 read -p "Continue [y/n]?  " choice
@@ -224,7 +224,7 @@ echo 'Buid completed.'
 
 
 # Sync w Makefile. [do_after_build]
-echo "You can now tag and publish the images to the '$REPO' Docker repository:"
+echo "You can now tag and publish the images to the Docker registry/organization '$REG_ORG':"
 echo ""
 echo "    make  tag-and-push-latest-images  tag=$version_tag"
 echo "    make  push_tag_to_dev_rel_branch  tag=$version_tag"

@@ -1083,7 +1083,7 @@ function loadJQuery(callback?) {
 
 
 export function createSite(ps: { localHostname: St,
-    anyEmbeddingSiteAddress: St, organizationName: St, makePublic: Bo,
+    anyEmbeddingSiteAddress: St, organizationName: St, makePublic: Bo, langCode: St,
     onOk: (nextUrl: St) => V }) {
   const params = new URLSearchParams(window.location.search);
   // The server will [remove_not_allowed_feature_flags].
@@ -1096,6 +1096,7 @@ export function createSite(ps: { localHostname: St,
       localHostname: ps.localHostname,
       embeddingSiteAddress: ps.anyEmbeddingSiteAddress,
       organizationName: ps.organizationName,
+      langCode: ps.langCode,
       makePublic: ps.makePublic,
       featureFlags,
       testSiteOkDelete,
@@ -2665,7 +2666,21 @@ export function deleteApiSecrets(secretNrs: ApiSecretNr[], onOk: () => void) {
 }
 
 
-export function search(ps: { rawQuery: St, offset?: Nr }, onOk: (results: SearchResults) => V,
+/// Full text search.
+///
+/// Params:
+/// - ps.languages:
+///   If unspecified, searches the site's default language, and the universal
+///   fallback field, 'univ_icu'.
+///   If ['SiteDefLang'], searches only the site's default language.
+///   (A site might use many languages — in the distant future. [multiling_sites])
+///   Later: ['Auto'] could mean: Figure out what language the query is in, and
+///   search that language. And lang codes: e.g. ['sv', 'no'] could mean
+///   "search Swedish and Norwegian".
+///   ['nn', UnivIcu'] could mean language 'nn' and the 'univ_icu' fallback field.
+///
+export function search(ps: { rawQuery: St, offset?: Nr, languages?: St[] },
+        onOk: (_: SearchResults) => V,
         onErr?: () => V, opts?: { showLoadingOverlay?: false }) {
   postAndPatchStore('/-/search', onOk, ps, onErr, opts);
 }

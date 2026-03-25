@@ -12,7 +12,7 @@ const newMembersTopicTitle = 'newMembersTopicTitle';
 const newMembersTopicText = 'newMembersTopicText';
 
 
-describe('create-site-password-run-admin-intro-tours.1br.d  @createsite @login @password  TyT7BAWFPK9', () => {
+describe('create-site-password-run-admin-intro-tours.1br.d  TyT7BAWFPK9  @createsite @login @password', () => {
 
   it('initialize', async () => {
     browser = new TyE2eTestBrowser(wdioBrowserA, 'brA');

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-test_containers="VERSION_TAG=latest docker-compose -p edt -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml"
+test_containers="VERSION_TAG=latest docker compose -p tyb1 -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml"
 
 $test_containers "$@"
 

@@ -2,6 +2,9 @@
 # 'path = ../something' paths, because such paths break, if one clones the main
 # Talkyard repo only (but doesn't clone all Talkyard submodules locally too).
 #
+[submodule "modules/talkyard-docs"]
+	path = modules/talkyard-docs
+	url = https://github.com/debiki/talkyard-docs
 [submodule "images/web/ty-media"]
 	path = images/web/ty-media
 	url = https://github.com/debiki/ty-media.git
@@ -82,20 +85,18 @@
 # Each release channel has its own branch in the talkyard-version repo.
 # And, in ./relchans/, they're checked out in sub directories, one
 # directory per release channel (Git branch).
+#
+# Since this is Talkyard epoch 1 (tyse-v1), only v1 submodules should be here,
+# so we won't accidentally update release branches for the wrong epochs.
 
-[submodule "relchans/tyse-v0-dev"]
-	path = relchans/tyse-v0-dev
+[submodule "relchans/tyse-v1-dev"]
+	path = relchans/tyse-v1-dev
 	url = https://github.com/debiki/talkyard-versions.git
-	branch = tyse-v0-dev
+	branch = tyse-v1-dev
 
-# [submodule "relchans/tyse-v0-rapid"]  — later
+# regular — later
 
-[submodule "relchans/tyse-v0-regular"]
-	path = relchans/tyse-v0-regular
-	url = https://github.com/debiki/talkyard-versions.git
-	branch = tyse-v0-regular
-
-# [submodule "relchans/tyse-v0-stable"]  — later
+# [submodule "relchans/tyse-v1-lts"]  — later. Long-Term-Stable.
 
 
 # ----- Vendored dependencies
@@ -183,4 +184,5 @@
 [submodule "images/app/sbt"]
 	path = images/app/sbt
 	url = https://github.com/debiki/ty-vendors.git
-	branch = ty-images-app-sbt-1.4.5
+	branch = ty-images-app-sbt-1.11.7
+

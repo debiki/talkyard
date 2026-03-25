@@ -510,10 +510,19 @@ function runAllE2eTests {
   # Seach
   # ------------
 
-  $r s/wdio --only search-public-basic.2browsers $args
-  $r s/wdio --only search-private-chat.2browsers $args
+  $r s/wdio-7 --only search-public-basic.2br.f --cd -i $args
+  $r s/wdio-7 --only search-private-chat.2br.f --cd -i $args
   $r s/wdio-7 --only reindex-sites.2br.f --cd -i $args
 
+  # Many languages
+  # ------------
+
+  # After the search tests, since these assume basic search works.
+
+  # A different left-to-right language.
+  $r s/wdio-7 --only create-site-lang-sv_SE.2br.f --cd -i $args
+  # A different right-to-left language.
+  $r s/wdio-7 --only create-site-lang-he_IL.2br.f --cd -i $args
 
   # This test is flaky because missing feature: disabling email notfs for replies
   # one has seen.
@@ -700,7 +709,7 @@ function runAllE2eTests {
   $r s/wdio-7     --only embcom.create-site-admin-intro-tour-no-verif-email.2br.ec --cd -i $args
   $r s/wdio-7     --only embcom.create-site-req-verif-email-exit-tours.2br --cd -i $args
   $r s/wdio-7     --only embcom.create-site-forum-intro-tour.2br.ec --cd -i  $args
-  $r s/wdio       --only embedded-comments-create-site-import-disqus.2br $args
+  $r s/wdio-7     --only embcom.create-site-import-disqus.2br.ec --cd -i $args
   $r s/wdio-7     --only embcom.drafts-previews-not-logged-in.2br --cd -i $args
   $r s/wdio-7     --only embcom.scroll-and-load-more.2br.ec --cd -i $args
   $r s/wdio       --only embedded-comments-scroll-embedding-page $args

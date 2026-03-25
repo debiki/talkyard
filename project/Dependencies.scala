@@ -45,35 +45,18 @@ object Dependencies {
     // supports listener-notify.
     // https://stackoverflow.com/questions/21632243/
     //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
-    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.7.7"
-
-    // Database migrations.
-    // Let's stop at 5.x. Avoid v6, they did a total rewrite of the SQL parser,
-    // https://www.red-gate.com/blog/flyway-6-0-0-released:
-    //    > The SQL parser has been completely rebuilt from the ground up".
-    //
-    // But also:
-    //    > the first production release with support for: PostgreSQL 11 and 12"
-    // So, need to do sometimes-risky-upgrades, to get support for the latest PostgreSQL
-    // versions?
-    //
-    // Let's start using Diesel instead? https://docs.diesel.rs  [upgr_pg]
-    // As a command line tool, from a Docker container.
-    // It's fully open source, incl down migrations (helpful during developent),
-    // and more transparent — f.ex. Flyway stores their release notes at their website
-    // (instead of GitHub), but some old ones about 5.x have disappeared, I can find only
-    // the >= 6.x release notes. But Diesel is fully open source, everything at GitHub.
-    // I'm using Diesel in a Typescript + PostgreSQL project, and it works fine.
-    val flywaydb = "org.flywaydb" % "flyway-core" % "5.2.4"   // scala-steward:off
+    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.7.10"
 
     // HikariCP — "A solid high-performance JDBC connection pool at last"
-    val hikariCp = "com.zaxxer" % "HikariCP" % "6.3.0"
+    // See: https://github.com/brettwooldridge/HikariCP
+    val hikariCp = "com.zaxxer" % "HikariCP" % "7.0.2"
 
-    // ElasticSearch client, in https://mvnrepository.com.
-    // When upgrading to next major version, consider improving the mappings at the same
-    // time? Change id fields from type integer to type keyword.  [es_kwd] [ty_v1]
-    val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
-    val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "6.8.23"
+    // ElasticSearch 8 Java client. (Don't use the REST client, it's deprecated.)
+    // Can't use the ES 9 Java client — it needs Java 17, but we're on Java 11. [java_11_to_17]
+    // Latest version, as of Nov 21 2025:
+    // https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/8.19/installation.html
+    val elasticsearchClient = "co.elastic.clients" % "elasticsearch-java" % "8.19.13"
+    val elasticsearchJackson = "com.fasterxml.jackson.core" % "jackson-databind" % "2.17.3"
 
     val guava = "com.google.guava" % "guava" % "33.5.0-jre"
     val findbugsJsr304 = "com.google.code.findbugs" % "jsr305" % "3.0.2" % "provided"
@@ -81,7 +64,7 @@ object Dependencies {
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
 
     // See: https://commons.apache.org/proper/commons-codec/changes.html
-    val apacheCommonsCodec = "commons-codec" % "commons-codec" % "1.20.0"
+    val apacheCommonsCodec = "commons-codec" % "commons-codec" % "1.21.0"
 
     // See: https://commons.apache.org/proper/commons-validator/changes-report.html
     val apacheCommonsValidator = "commons-validator" % "commons-validator" % "1.10.1"
@@ -94,11 +77,8 @@ object Dependencies {
 
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
-    // Latest version is 3.0.0, let's wait, just some weeks ago.
     // See: https://tika.apache.org
-    // Need to upgrade soon, DO_BEFORE 2025-04-01,
-    //    see: https://tika.apache.org/3.0.0-BETA/index.html
-    val apacheTika = "org.apache.tika" % "tika-core" % "3.2.3"
+    val apacheTika = "org.apache.tika" % "tika-core" % "3.3.0"
 
     // See: https://github.com/OWASP/owasp-java-encoder/releases
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.4.0"
@@ -107,8 +87,10 @@ object Dependencies {
     val jsoup = "org.jsoup" % "jsoup" % "1.22.1"
 
     // See: https://github.com/FasterXML/jackson-module-scala/tags
+    // and: https://github.com/FasterXML/jackson/wiki/Jackson-Releases
     // and: https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-scala
-    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.19.4"
+    // 2.21 tracks Jackson 2.21.
+    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.21.1"
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
     // ScribeJava is listed by Microsoft as compatible with Azure,
@@ -138,25 +120,23 @@ object Dependencies {
 
     // Fluentd better understands json logs.
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.18"
+    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.32"
 
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
-    val logbackCore = "ch.qos.logback" % "logback-core" % "1.5.18"
+    val logbackCore = "ch.qos.logback" % "logback-core" % "1.5.32"
 
     // See: https://github.com/logfellow/logstash-logback-encoder/releases
     // and: https://mvnrepository.com/artifact/net.logstash.logback/logstash-logback-encoder
-    // Don't upgr to v9 — has minimum Java version 17.
+    // Can't use 9.0 — requires Java >= 17.  [java_11_to_17]
     val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "8.1"
     //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
 
-    // The ElasticSearch client uses log4j-api:2.17.1 (gets evicted by 2.17.2).
-    // log4j-api already included, but not -core.
-    // Let's not upgrade beyond 2.17.2. Most projects that use Log4j are on 2.17.1
-    // (see: https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core),
-    // and there's (as of 2025-07) nothing interesting in newer versions?
-    // (Versions <= 2.17.0 are vulnerable.)
-    //  log4jApi  = "org.apache.logging.log4j" % "log4j-api" % "..."   // not needed
-    val log4jCore = "org.apache.logging.log4j" % "log4j-core" % "2.17.2"  // needed
+    // For logging ElasticSearch' request & response json. [es_req_logs]
+    // See: https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/current/java-rest-low-usage-logging.html
+    val sl4jApi = "org.slf4j" % "slf4j-api" % "1.8.0-beta4"
+    // In build.sbt, we exclude commons-logging, and use this instead:
+    val sl4jJclOverSlf4j = "org.slf4j" % "jcl-over-slf4j" % "1.8.0-beta4"
+    // "ch.qos.logback" % "logback-classic" % "1.3..."  — skip, v1.5 above already
 
 
     // ----- Metrics, tracing
@@ -197,7 +177,7 @@ object Dependencies {
     // Let's use Java-JWT. It's well-known and its readme has a simple decoding example.
     // Repo: https://github.com/auth0/java-jwt
     // and: https://mvnrepository.com/artifact/com.auth0/java-jwt
-    val auth0JavaJwt = "com.auth0" % "java-jwt" % "4.5.0"
+    val auth0JavaJwt = "com.auth0" % "java-jwt" % "4.5.1"
 
 
     // ----- PASETO tokens

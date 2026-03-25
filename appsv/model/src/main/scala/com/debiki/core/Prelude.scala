@@ -65,6 +65,7 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   // Should get rid of this version:
   def warnDbgDie(errorMsg: String): Unit = { warnDbgDie("", errorMsg) }
 
+  @deprecated("Use warnDevDieIf2 instead, remove this one, rename ...2 to this")
   def warnDevDieIf(test: => Bo, errorCode: St, details: St = ""): U =
     warnDbgDieIf(test, errorCode, details)
 
@@ -97,13 +98,19 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     warnDevDie(errorCode, warningMsg)
   }
 
+  @deprecated("Use warnDevDie2 instead, remove this one, rename ...2 to this")
   def warnDevDie(errorCode: St, warningMsg: St = ""): U = {
-    if (true) {
+    // We don't have access to Play Frameworks logging fns here :-(
+    val msgAndCode =
+          if (warningMsg.nonEmpty) s"$warningMsg [$errorCode]"
+          else s"[$errorCode]"
+    if (com.debiki.core.isDevOrTest) {
       // Fail hard in debug mode so this error will be fixed.
-      throw new AssertionError(s"$warningMsg [$errorCode]")
+      throw new AssertionError(msgAndCode)
     }
     else {
       // Only log a warning in release mode.
+      System.err.println("ERROR: " + msgAndCode)
     }
   }
 

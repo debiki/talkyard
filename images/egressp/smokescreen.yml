@@ -1,0 +1,3 @@
+# Smokescreen blocks all private IPs by default, so all we need is:
+port: 4750
+

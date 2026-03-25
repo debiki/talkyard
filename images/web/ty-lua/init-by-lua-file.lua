@@ -45,7 +45,7 @@ require("resty.acme.autossl").init({
     -- enabled_challenge_handlers = { 'http-01', 'tls-alpn-01' },
 
     -- LetsEncrypt''s rate limits are higher, if one specifies an account key.
-    account_key_path = '/etc/nginx/acme/acme-account.key',
+    account_key_path = '/etc/nginx/generated/acme-account.key',
 
     -- SHOULD be configurable [lua_conf], default empty.
     -- ${YOUR_SECURITY_EMAIL_ADDR}  in  .env  ?
@@ -164,8 +164,8 @@ require("resty.acme.autossl").init({
     storage_config = {
         host = 'cache',  -- the service name in docker-compose.yml
         port = 6379,     -- the default Redis port
-        database = 0,    -- Ty uses just one Redis database  [ty_v1] use on dedicated
-                         -- Redis for HTTPS certs
+        database = 0,    -- Ty uses just one Redis database.  [careless_rdb] Later, could use
+                         -- one dedicated Redis for HTTPS certs
         auth = nil,      -- no password, Redis not publ accessible
     },
 })

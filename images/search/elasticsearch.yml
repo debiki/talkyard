@@ -1,8 +1,5 @@
+# Internal private network, only the app container can access.
 network.host: 0.0.0.0
-
-# Required, because network.host specified.
-# Should be a quorum of master-eligible nodes: (num_master_eligible_nodes / 2) + 1
-discovery.zen.minimum_master_nodes: 1
 
 # 1) Use a single index for all sites, but many shards, and route to the shard
 # derived from the site id. Then only one shard will be touched, when indexing
@@ -11,19 +8,46 @@ discovery.zen.minimum_master_nodes: 1
 # See: https://www.elastic.co/videos/big-data-search-and-analytics/ (a video)
 # 3) (Could keep current hot data in one index, and move old discussions that have
 # been closed, to an old & slow index on cheaper hardware. Combine time & user data flow?)
+# And keep deleted and unapproved posts in their own index too. [index_for_invisible]
 
 
-# settings docs:
-# https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-configuration.html
+# Configuring ElasticSearch:
+# https://www.elastic.co/docs/deploy-manage/deploy/self-managed/configure-elasticsearch
 
-# default index:
-# https://discuss.elastic.co/t/setting-up-default-analyzer-using-elasticsearch-yml/10278
+# Index settings:
+# https://www.elastic.co/docs/reference/elasticsearch/index-settings
+# Configured in Scala code, see [es_ix_settings].
 
-# ix mods:
-# https://www.elastic.co/guide/en/elasticsearch/reference/master/index-modules.html
-
-# shared index:
+# Shared index: (but old possibly out-of-date docs)
 # https://www.elastic.co/guide/en/elasticsearch/guide/current/shared-index.html
 
+cluster.name: TyEsCluster
+node.name: TyEsNode1
+
+# We create indexes only via talkyard.server.search.IndexCreator.createIndexIfNeeded(),
+# so can specify a mapping and the right data types.
 action.auto_create_index: false
+
+discovery.type: single-node
+
+bootstrap.memory_lock: true
+
+xpack.security.enabled: false
+xpack.security.enrollment.enabled: false
+
+# Save significant RAM by disabling Machine Learning [says_Gemini]
+xpack.ml.enabled: false
+
+# Don't try to download the GeoIP database. We don't use it and can't access the Internet anyway
+# (since we're on an `internal: true` Docker private net: 'be_int_net').
+ingest.geoip.downloader.enabled: false
+
+# How much of the ES_JAVA_OPTS '-Xmx' RAM to use, before starting rejecting requests,
+# to prevent OOM errors.
+# Default is 95% (when `indices.breaker.total.use_real_memory` is true, the default).
+# See: https://www.elastic.co/docs/reference/elasticsearch/configuration-reference/circuit-breaker-settings
+#indices.breaker.total.limit: 95%
+
+logger.org.elasticsearch.rest: DEBUG
+
 

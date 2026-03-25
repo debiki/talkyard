@@ -190,9 +190,6 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def alterJobQueueRange(range: TimeRange, newEndWhen: When, newEndOffset: PostId): Unit
   def deleteJobQueueRange(range: TimeRange): Unit
 
-  /** We index any approed text, or the unapproved source, see:
-    * [[ed.server.search.makeElasticSearchJsonDocFor]]. [ix_unappr]
-    */
   def indexPostsSoon(posts: Post*): i32
   def indexPostIdsSoon_unimpl(postIds: Set[PostId]): Unit
 

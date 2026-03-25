@@ -1,35 +1,29 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
+import assert from '../utils/ty-assert';
+import * as fs from 'fs';
 import { execSync} from 'child_process';
-import fs = require('fs');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import make = require('../utils/make');
-import logAndDie = require('../utils/log-and-die');
-import c = require('../test-constants');
+import server from '../utils/server';
+import * as utils from '../utils/utils';
+import * as make from '../utils/make';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import settings from '../utils/settings';
 import { logMessage } from '../utils/log-and-die';
+import c from '../test-constants';
 
-// s/wdio target/e2e/wdio.2chrome.conf.js  --only embedded-comments-create-site-import-disqus.2browsers   --da
+let brA: TyE2eTestBrowser;
+let brB: TyE2eTestBrowser;
 
-let browser: TyE2eTestBrowser;
-declare let browserA: any;
-declare let browserB: any;
-
-let everyonesBrowsers;
-let owen;
+let owen: Member;
 let owensBrowser: TyE2eTestBrowser;
-let maria;
+let maria: Member;
 let mariasBrowser: TyE2eTestBrowser;
 let strangersBrowser: TyE2eTestBrowser;
 
 let data;
-let idAddress: IdAddress;
-let siteId: any;
-let talkyardSiteOrigin: string;
+let siteId: Nr;
+let talkyardSiteOrigin: St;
 
 const mariasReplyOne = 'mariasReplyOne';
 const mariasReplyTwo = 'mariasReplyTwo';
@@ -47,24 +41,25 @@ const toTalkyardScript =
 
 // dupl code! [5GKWXT20]
 
-describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () => {
+describe(`embcom.create-site-import-disqus.2br.ec  TyT5KFG0P75`, () => {
 
   if (settings.prod) {
     console.log("Skipping this spec — the server needs to have upsert conf vals enabled."); // E2EBUG
     return;
   }
 
-  it("initialize people", () => {
-    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
-    owensBrowser = new TyE2eTestBrowser(browserA);
-    mariasBrowser = new TyE2eTestBrowser(browserB);
-    strangersBrowser = mariasBrowser;
+  it("initialize people", async () => {
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
+    owensBrowser = brA;
+    mariasBrowser = brB;
+    strangersBrowser = brB;
     owen = make.memberOwenOwner();
     maria = make.memberMaria();
   });
 
 
-  function createPasswordTestData() {
+  function createPasswordTestData_sync() {
     // Dupl code [502KGAWH0]
     // Need to generate new local hostname, since we're going to create a new site.
     const testId = utils.generateTestId();
@@ -81,36 +76,36 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
       fullName: 'E2E Imp Dsq Test ' + testId,
       email: settings.testEmailAddressPrefix + testId + '@example.com',
       username: 'owen_owner',
-      password: 'publ-ow020',
+      password: 'pub-owe020',
     }
   }
 
-  it('Owen creates an embedded comments site as a Password user  @login @password', () => {
+  it('Owen creates an embedded comments site as a Password user  @login @password', async () => {
     // Dupl code [502SKHFSKN53]
-    data = createPasswordTestData();
-    owensBrowser.go(utils.makeCreateEmbeddedSiteWithFakeIpUrl());
-    owensBrowser.disableRateLimits();
-    owensBrowser.createSite.fillInFieldsAndSubmit(data);
+    data = createPasswordTestData_sync();
+    await owensBrowser.go2(utils.makeCreateEmbeddedSiteWithFakeIpUrl());
+    owensBrowser.disableRateLimits(); // 0await
+    await owensBrowser.createSite.fillInFieldsAndSubmit(data);
     // New site; disable rate limits here too.
-    owensBrowser.disableRateLimits();
+    owensBrowser.disableRateLimits(); // 0await
 
-    owensBrowser.createSite.clickOwnerSignupButton();
-    owensBrowser.loginDialog.createPasswordAccount(data, true);
-    siteId = owensBrowser.getSiteId();
-    server.skipRateLimits(siteId);
-    const email = server.getLastEmailSenTo(siteId, data.email, wdioBrowserA);
+    await owensBrowser.createSite.clickOwnerSignupButton();
+    await owensBrowser.loginDialog.createPasswordAccount(data, true);
+    siteId = await owensBrowser.getSiteId();
+    server.skipLimits_sync(siteId, { rateLimits: true });
+    const email = await server.getLastEmailSenTo(siteId, data.email);
     const link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
-    owensBrowser.go(link);
-    owensBrowser.waitAndClick('#e2eContinue');
-    talkyardSiteOrigin = owensBrowser.origin();
+    await owensBrowser.go2(link);
+    await owensBrowser.waitAndClick('#e2eContinue');
+    talkyardSiteOrigin = await owensBrowser.origin();
   });
 
 
   // ----- Prepare: Create embedding pages and API secret
 
-  it("Owen clicks Blog = Something Else, to show the instructions", () => {
-    owensBrowser.waitAndClick('.e_SthElseB');
+  it("Owen clicks Blog = Something Else, to show the instructions", async () => {
+    await owensBrowser.waitAndClick('.e_SthElseB');
   });
 
 
@@ -121,23 +116,23 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
   const pageCreatedLaterUrlPath = 'page-created-later.html';
   const noDisqusRepliesPageUrlPath = 'no-dsq-comments.html';
 
-  it("He creates four embedding pages", () => {
+  it("He creates four embedding pages", async () => {
     // 2019 is for the oneReplyPageUrlPath.
     if (!fs.existsSync(dirPath + '/2019')) {
       fs.mkdirSync(dirPath + '/2019', { recursive: true, mode: 0o777 });
     }
-    makeEmbeddingPage(fourRepliesPageUrlPath);
-    makeEmbeddingPage(oneReplyPageUrlPath);
-    makeEmbeddingPage(pageCreatedLaterUrlPath);
-    makeEmbeddingPage(noDisqusRepliesPageUrlPath);
-    makeEmbeddingPage(oneReplyPageViaDiscussionIdPagePath, oneReplyPageDiscussionId);
+    await makeEmbeddingPage(fourRepliesPageUrlPath);
+    await makeEmbeddingPage(oneReplyPageUrlPath);
+    await makeEmbeddingPage(pageCreatedLaterUrlPath);
+    await makeEmbeddingPage(noDisqusRepliesPageUrlPath);
+    await makeEmbeddingPage(oneReplyPageViaDiscussionIdPagePath, oneReplyPageDiscussionId);
   });
 
 
-  function makeEmbeddingPage(urlPath: string, discussionId?: string) {
+  async function makeEmbeddingPage(urlPath: St, discussionId?: St) {
     // Dupl code [046KWESJJLI3].
-    owensBrowser.waitForVisible('#e_EmbCmtsHtml');
-    let htmlToPaste = owensBrowser.getText('#e_EmbCmtsHtml');
+    await owensBrowser.waitForVisible('#e_EmbCmtsHtml');
+    let htmlToPaste = await owensBrowser.getText('#e_EmbCmtsHtml');
     if (discussionId) {
       htmlToPaste = htmlToPaste.replace(
           ` data-discussion-id=""`, ` data-discussion-id="${discussionId}"`)
@@ -162,50 +157,51 @@ ${htmlToPaste}
 </html>`);
   };
 
-  it("Owen enables the API  TyTENAAPI", () => {
-    assert(!owensBrowser.adminArea.tabs.isApiTabDisplayed());
-    owensBrowser.adminArea.settings.features.goHere();
-    owensBrowser.adminArea.settings.features.setEnableApi(true);
-    owensBrowser.adminArea.settings.clickSaveAll();
+  it("Owen enables the API  TyTENAAPI", async () => {
+    assert.not(await owensBrowser.adminArea.tabs.isApiTabDisplayed());
+    await owensBrowser.adminArea.settings.features.goHere();
+    await owensBrowser.adminArea.settings.features.setEnableApi(true);
+    await owensBrowser.adminArea.settings.clickSaveAll();
     // Now the API tab appears, we'll click it just below.
   });
 
-  it("... creates an API secret: Goes to the admin area, the API tab", () => {
-    owensBrowser.adminArea.tabs.navToApi();
+  it("... creates an API secret: Goes to the admin area, the API tab", async () => {
+    await owensBrowser.adminArea.tabs.navToApi();
   });
 
-  it("... generates the API secret", () => {
-    owensBrowser.adminArea.apiTab.generateSecret();
+  it("... generates the API secret", async () => {
+    await owensBrowser.adminArea.apiTab.generateSecret();
   });
 
-  let apiSecret: string;
+  let apiSecret: St;
 
-  it("... copies the secret key", () => {
-    apiSecret = owensBrowser.adminArea.apiTab.showAndCopyMostRecentSecret();
+  it("... copies the secret key", async () => {
+    apiSecret = await owensBrowser.adminArea.apiTab.showAndCopyMostRecentSecret();
   });
 
 
   // ----- Pre-check: There are no comments
 
-  it("Maria opens the embedding page, not logged in", () => {
-    mariasBrowser.go(data.embeddingUrl + oneReplyPageUrlPath);
-    mariasBrowser.switchToEmbeddedCommentsIrame();
+  it("Maria opens the embedding page, not logged in", async () => {
+    await mariasBrowser.go2(data.embeddingUrl + oneReplyPageUrlPath);
+    await mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
-  it("... it's empty", () => {
-    mariasBrowser.topic.waitForReplyButtonAssertNoComments();
+  it("... it's empty", async () => {
+    await mariasBrowser.topic.waitForReplyButtonAssertNoComments();
   });
 
-  it("... the four-replies page is empty too", () => {
-    mariasBrowser.go(data.embeddingUrl + fourRepliesPageUrlPath);
-    mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForReplyButtonAssertNoComments();
+  it("... the four-replies page is empty too", async () => {
+    await mariasBrowser.go2(data.embeddingUrl + fourRepliesPageUrlPath);
+    await mariasBrowser.switchToEmbeddedCommentsIrame();
+    await mariasBrowser.topic.waitForReplyButtonAssertNoComments();
   });
 
-  it("Maria posts a comment, and a reply to her comment", () => {
-    mariasBrowser.complex.replyToEmbeddingBlogPost(mariasReplyOne,
-        { signUpWithPaswordAfterAs: maria, needVerifyEmail: false });
-    mariasBrowser.complex.replyToPostNr(c.FirstReplyNr, mariasReplyTwo, { isEmbedded: true });
+  it("Maria posts a comment, and a reply to her comment", async () => {
+    await mariasBrowser.complex.replyToEmbeddingBlogPost(
+            mariasReplyOne, { signUpWithPaswordAfterAs: maria, needVerifyEmail: false });
+    await mariasBrowser.complex.replyToPostNr(
+            c.FirstReplyNr, mariasReplyTwo, { isEmbedded: true });
   });
 
 
@@ -226,12 +222,13 @@ ${htmlToPaste}
 
   const commentOnPageCreatedLaterText = 'commentOnPageCreatedLaterText';
 
-  it(`Owen exports Disqus comments to a file: ${disqusXmlDumpFilePath}`, () => {
-    createDisqusXmlDumpFile({ withExtraComments: false, dst: disqusXmlDumpFilePath });
+
+  it(`Owen exports Disqus comments to a file: ${disqusXmlDumpFilePath}`, async () => {
+    createDisqusXmlDumpFile_sync({ withExtraComments: false, dst: disqusXmlDumpFilePath });
   });
 
 
-  function createDisqusXmlDumpFile(ps: { withExtraComments: boolean, dst: string }) {
+  function createDisqusXmlDumpFile_sync(ps: { withExtraComments: boolean, dst: string }) {
     const embeddingOrigin = data.embeddingUrl;
     const olderWrongOrigin = 'https://older.wrong.blog.address.com/';
     fs.writeFileSync(ps.dst, `
@@ -459,274 +456,267 @@ ${htmlToPaste}
     `);
   }
 
-  it(`... removes any old Talkyard patch file`, () => {
+  it(`... removes any old Talkyard patch file`, async () => {
     if (fs.existsSync(talkyardPatchFilePath)) {
       logMessage(`Renaming: ${talkyardPatchFilePath}  to:  ...old-test`)
       fs.renameSync(talkyardPatchFilePath, talkyardPatchFilePath + '.old-test');
     }
-    assert.ok(!fs.existsSync(talkyardPatchFilePath));
+    assert.not(fs.existsSync(talkyardPatchFilePath));
   });
 
-  it(`... and converts to Talkyard format: ${talkyardPatchFilePath}`, () => {
-    convertDisqusFileToTalkyardFile(disqusXmlDumpFilePath, talkyardPatchFilePath);
+  it(`... and converts to Talkyard format: ${talkyardPatchFilePath}`, async () => {
+    convertDisqusFileToTalkyardFile_sync(disqusXmlDumpFilePath, talkyardPatchFilePath);
   });
 
-  function convertDisqusFileToTalkyardFile(src: string, dst: string) {
+  function convertDisqusFileToTalkyardFile_sync(src: string, dst: string) {
     execSync(
         `node ${toTalkyardScript} ` +
           `--disqusXmlExportFile=${src} ` +
           `--writeTo=${dst}`);
   }
 
-  it(`... a Talkyard patch json file appears: ${talkyardPatchFilePath}`, () => {
-    assert.ok(fs.existsSync(talkyardPatchFilePath));
+  it(`... a Talkyard patch json file appears: ${talkyardPatchFilePath}`, async () => {
+    assert.that(fs.existsSync(talkyardPatchFilePath));
   });
 
-  it("... and posts to the Talkyard server", () => {
-    postCommentsToTalkyard(talkyardPatchFilePath);
+  it("... and posts to the Talkyard server", async () => {
+    await utils.postJsonPatchToTalkyard({
+            filePath: talkyardPatchFilePath, apiSecret, talkyardSiteOrigin });
   });
-
-  function postCommentsToTalkyard(filePath: string) {  // postJsonPatchToTalkyard in wdio-7
-    const cmd =
-        `node ${toTalkyardScript} ` +
-          `--talkyardJsonPatchFile=${filePath} ` +
-          `--sysbotApiSecret=${apiSecret} ` +
-          `--sendTo=${talkyardSiteOrigin}`
-    logAndDie.logMessage(`Executing this:\n  ${cmd}`)
-    execSync(cmd);
-  }
 
 
   // ----- Comments appear?
 
-  it("Maria goes to the one-imported-reply page", () => {
-    mariasBrowser.go('/' + oneReplyPageUrlPath)
+  it("Maria goes to the one-imported-reply page", async () => {
+    await mariasBrowser.go2('/' + oneReplyPageUrlPath)
   });
 
-  it("... there's no discussion id on this page", () => {
-    const source = mariasBrowser.getSource();
-    assert(source.indexOf(oneReplyPageDiscussionId) === -1);
-    assert(source.indexOf('data-discussion-id=""') >= 0);
+  it("... there's no discussion id on this page", async () => {
+    const source = await mariasBrowser.getPageSource();
+    assert.eq(source.indexOf(oneReplyPageDiscussionId), -1);
+    assert.that(source.indexOf('data-discussion-id=""') >= 0);
   });
 
   it("... and sees a comment, imported from Disqus " +
-        "— matched by url path, althoug origins differ", () => {
-    mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
-    mariasBrowser.topic.assertNumRepliesVisible(1);
+        "— matched by url path, althoug origins differ", async () => {
+    await mariasBrowser.switchToEmbeddedCommentsIrame();
+    await mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
+    await mariasBrowser.topic.assertNumRepliesVisible(1);
   });
 
-  it("... with the correct text", () => {
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, year2030CommentText);
+  it("... with the correct text", async () => {
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, year2030CommentText);
   });
 
   it("Works also via discussion id, from the <id> tag: Maria goes to the page " +
-      `with disc id "${oneReplyPageDiscussionId}", but the "wrong" url path`, () => {
-    mariasBrowser.go('/' + oneReplyPageViaDiscussionIdPagePath)
+      `with disc id "${oneReplyPageDiscussionId}", but the "wrong" url path`, async () => {
+    await mariasBrowser.go2('/' + oneReplyPageViaDiscussionIdPagePath)
   });
 
-  it("... the discussion id is indeed here", () => {
-    const source = mariasBrowser.getSource();
-    assert(source.indexOf(`data-discussion-id="${oneReplyPageDiscussionId}"`) >= 0);
+  it("... the discussion id is indeed here", async () => {
+    const source = await mariasBrowser.getPageSource();
+    assert.that(source.indexOf(`data-discussion-id="${oneReplyPageDiscussionId}"`) >= 0);
   });
 
-  it("... Maria sees the same comment, the one imported from Disqus", () => {
-    mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
-    mariasBrowser.topic.assertNumRepliesVisible(1);
+  it("... Maria sees the same comment, the one imported from Disqus", async () => {
+    await mariasBrowser.switchToEmbeddedCommentsIrame();
+    await mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
+    await mariasBrowser.topic.assertNumRepliesVisible(1);
   });
 
-  it("... with the correct text", () => {
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, year2030CommentText);
+  it("... with the correct text", async () => {
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, year2030CommentText);
   });
 
-  it("She can post a reply, to the Disqus improted comment", () => {
-    mariasBrowser.complex.replyToPostNr(
+  it("She can post a reply, to the Disqus improted comment", async () => {
+    await mariasBrowser.complex.replyToPostNr(
         c.FirstReplyNr, mariasReplyThreeToImportedComment, { isEmbedded: true });
-    mariasBrowser.topic.waitForPostAssertTextMatches(
+    await mariasBrowser.topic.waitForPostAssertTextMatches(
         c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
   });
 
-  it("... the reply is there after page reload", () => {
-    mariasBrowser.refresh();
-    mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostAssertTextMatches(
+  it("... the reply is there after page reload", async () => {
+    await mariasBrowser.refresh2();
+    await mariasBrowser.switchToEmbeddedCommentsIrame();
+    await mariasBrowser.topic.waitForPostAssertTextMatches(
         c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
   });
 
-  it("... the comment author (a guest user) gets a reply notf email", () => {
-    server.waitUntilLastEmailMatches(
-        siteId, year2030AuthorEmail, [mariasReplyThreeToImportedComment], mariasBrowser);
+  it("... the comment author (a guest user) gets a reply notf email", async () => {
+    await server.waitUntilLastEmailMatches(
+        siteId, year2030AuthorEmail, [mariasReplyThreeToImportedComment]);
   });
 
-  it("Owen goes to the blog", () => {
-    owensBrowser.go2(data.embeddingUrl + oneReplyPageUrlPath)
+  it("Owen goes to the blog", async () => {
+    await owensBrowser.go2(data.embeddingUrl + oneReplyPageUrlPath)
   });
 
-  it("... needs to log in?", () => {
-    owensBrowser.complex.loginIfNeededViaMetabar(owen);
+  it("... needs to log in?", async () => {
+    await owensBrowser.complex.loginIfNeededViaMetabar(owen);
   });
 
-  it("Owen replies to Maria", () => {
-    owensBrowser.complex.replyToPostNr(
+  it("Owen replies to Maria", async () => {
+    await owensBrowser.complex.replyToPostNr(
         c.FirstReplyNr + 1, owensReplyToMaria, { isEmbedded: true });
   });
 
-  it("... and to Sandra the guest", () => {
-    owensBrowser.complex.replyToPostNr(
+  it("... and to Sandra the guest", async () => {
+    await owensBrowser.complex.replyToPostNr(
         c.FirstReplyNr, owensReplyToSandra, { isEmbedded: true });
   });
 
-  it("... Sandra gets a nof email", () => {
-    server.waitUntilLastEmailMatches(
-        siteId, year2030AuthorEmail, [owensReplyToSandra], owensBrowser);
+  it("... Sandra gets a nof email", async () => {
+    await server.waitUntilLastEmailMatches(
+        siteId, year2030AuthorEmail, [owensReplyToSandra]);
   });
 
   let verifyEmailAddrLink: string;
 
   it("... but Maria didn't get one yet — instead, the server waits for her to " +
-      "verify her email address", () => {
-    verifyEmailAddrLink = server.getVerifyEmailAddressLinkFromLastEmailTo(
-        siteId, maria.emailAddress, mariasBrowser);
+      "verify her email address", async () => {
+    verifyEmailAddrLink = await server.waitAndGetLastVerifyEmailAddressLinkEmailedTo(
+        siteId, maria.emailAddress);
   });
 
-  it("... she clicks the link", () => {
-    mariasBrowser.go(verifyEmailAddrLink);
+  it("... she clicks the link", async () => {
+    await mariasBrowser.go2(verifyEmailAddrLink);
   });
 
-  it("... *Thereafter* she gets the nof email about Owen's reply  TyT305RKTH4", () => {
-    server.waitUntilLastEmailMatches(
-        siteId, maria.emailAddress, [owensReplyToMaria], mariasBrowser);
+  it("... *Thereafter* she gets the nof email about Owen's reply  TyT305RKTH4", async () => {
+    await server.waitUntilLastEmailMatches(
+        siteId, maria.emailAddress, [owensReplyToMaria]);
   });
 
 
-  it("Maria goes to the page with many replies", () => {
-    mariasBrowser.go(data.embeddingUrl + fourRepliesPageUrlPath)
-    mariasBrowser.switchToEmbeddedCommentsIrame();
+  it("Maria goes to the page with many replies", async () => {
+    await mariasBrowser.go2(data.embeddingUrl + fourRepliesPageUrlPath)
+    await mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
-  it("... and sees her two comments, plus 4 imported", () => {
-    checkSantaSailingPageAfterDisqusImportNr(1);
+  it("... and sees her two comments, plus 4 imported", async () => {
+    await checkSantaSailingPageAfterDisqusImportNr(1);
   });
 
-  function checkSantaSailingPageAfterDisqusImportNr(importNr: number) {
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasReplyOne);
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasReplyTwo);
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 2, "a Santa Sailing Ship");
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 3, "reach the escape velocity");
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 4, "in a way surprising");
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 5, "tried using the pets");
+  async function checkSantaSailingPageAfterDisqusImportNr(importNr: number) {
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasReplyOne);
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasReplyTwo);
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 2, "a Santa Sailing Ship");
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 3, "reach the escape velocity");
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 4, "in a way surprising");
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 5, "tried using the pets");
   }
 
-  it("... but only those — not the isDeleted and the isSpam comments", () => {
-    mariasBrowser.topic.assertNumRepliesVisible(2 + 4   + 0  + 0);
+  it("... but only those — not the isDeleted and the isSpam comments", async () => {
+    await mariasBrowser.topic.assertNumRepliesVisible(2 + 4   + 0  + 0);
   });
 
-  it("Maria goes to a 3rd page", () => {
-    mariasBrowser.go('/' + noDisqusRepliesPageUrlPath)
-    mariasBrowser.switchToEmbeddedCommentsIrame();
+  it("Maria goes to a 3rd page", async () => {
+    await mariasBrowser.go2('/' + noDisqusRepliesPageUrlPath)
+    await mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
-  it("... it's empty (it should be)", () => {
-    mariasBrowser.topic.waitForReplyButtonAssertNoComments();
+  it("... it's empty (it should be)", async () => {
+    await mariasBrowser.topic.waitForReplyButtonAssertNoComments();
   });
 
-  it("Maria returns to the page with the previously just one reply, imported from Disqus", () => {
-    mariasBrowser.go('/' + oneReplyPageUrlPath)
-    mariasBrowser.switchToEmbeddedCommentsIrame();
+  it("... returns to page w the previously just one reply, imported from Disqus", async () => {
+    await mariasBrowser.go2('/' + oneReplyPageUrlPath)
+    await mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
-  it("... and sees 4 comments: 1 imported from Disqus, 1 is hers, and Owen's 2", () => {
-    checkCatsAndMilkPageAfterDisqusImportNr(1);
+  it("... and sees 4 comments: 1 imported from Disqus, 1 is hers, and Owen's 2", async () => {
+    await checkCatsAndMilkPageAfterDisqusImportNr(1);
   });
 
-  function checkCatsAndMilkPageAfterDisqusImportNr(importNr: number) {
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, year2030CommentText);
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 2, owensReplyToMaria);
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 3, owensReplyToSandra);
+  async function checkCatsAndMilkPageAfterDisqusImportNr(importNr: Nr) {
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, year2030CommentText);
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 2, owensReplyToMaria);
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 3, owensReplyToSandra);
     let numTotal = 4;
     if (importNr === 3) {
       // Now we have re-run the import, and imported one more comment.
-      mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 4, oatMilkText);
+      await mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 4, oatMilkText);
       numTotal += 1;
     }
-    mariasBrowser.topic.assertNumRepliesVisible(numTotal);
+    await mariasBrowser.topic.assertNumRepliesVisible(numTotal);
   }
 
 
   // ----- Importing the same thing many times
 
-  it("Owen re-imports the same Disqus comments, again", () => {
-    postCommentsToTalkyard(talkyardPatchFilePath);
+  it("Owen re-imports the same Disqus comments, again", async () => {
+    await utils.postJsonPatchToTalkyard({
+            filePath: talkyardPatchFilePath, apiSecret, talkyardSiteOrigin });
   });
 
-  it("Maria refreshes the page", () => {
-    mariasBrowser.refresh();
-    mariasBrowser.switchToEmbeddedCommentsIrame();
+  it("Maria refreshes the page", async () => {
+    await mariasBrowser.refresh2();
+    await mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
-  it("... nothing has changed — there are no duplicated Disqus comments", () => {
-    checkCatsAndMilkPageAfterDisqusImportNr(2);
+  it("... nothing has changed — there are no duplicated Disqus comments", async () => {
+    await checkCatsAndMilkPageAfterDisqusImportNr(2);
   });
 
-  it("She goes to the santa sailing page", () => {
-    mariasBrowser.go(data.embeddingUrl + fourRepliesPageUrlPath)
-    mariasBrowser.switchToEmbeddedCommentsIrame();
+  it("She goes to the santa sailing page", async () => {
+    await mariasBrowser.go2(data.embeddingUrl + fourRepliesPageUrlPath)
+    await mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
-  it("... it also didn't change after the re-import", () => {
-    checkSantaSailingPageAfterDisqusImportNr(2);
+  it("... it also didn't change after the re-import", async () => {
+    await checkSantaSailingPageAfterDisqusImportNr(2);
   });
 
 
   // ----- Importing the same thing plus **more** things
 
-  it(`Owen generates a new Disqus export file, with even more contents`, () => {
-    createDisqusXmlDumpFile({ withExtraComments: true, dst: disqusXmlDumpFilePath2 });
+  it(`Owen generates a new Disqus export file, with even more contents`, async () => {
+    createDisqusXmlDumpFile_sync({ withExtraComments: true, dst: disqusXmlDumpFilePath2 });
   });
 
-  it(`... and converts to Talkyard format: ${talkyardPatchFilePath2}`, () => {
-    convertDisqusFileToTalkyardFile(disqusXmlDumpFilePath2, talkyardPatchFilePath2);
+  it(`... and converts to Talkyard format: ${talkyardPatchFilePath2}`, async () => {
+    convertDisqusFileToTalkyardFile_sync(disqusXmlDumpFilePath2, talkyardPatchFilePath2);
   });
 
-  it("Owen re-imports the Disqus comments, with an extra comment and a new page!! wow!", () => {
-    postCommentsToTalkyard(talkyardPatchFilePath2);
+  it("Owen re-imports the Disqus comments. But! With an extra comment & a new page", async () => {
+    await utils.postJsonPatchToTalkyard({
+            filePath: talkyardPatchFilePath2, apiSecret, talkyardSiteOrigin });
   });
 
-  it("Maria returns to the cat and milk page", () => {
-    mariasBrowser.go('/' + oneReplyPageUrlPath)
-    mariasBrowser.switchToEmbeddedCommentsIrame();
+  it("Maria returns to the cat and milk page", async () => {
+    await mariasBrowser.go2('/' + oneReplyPageUrlPath)
+    await mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
-  it("... and sees 5 comments: 1 + 1 new, from Disqus, her 1, and Owen's 2", () => {
-    checkCatsAndMilkPageAfterDisqusImportNr(3);
+  it("... and sees 5 comments: 1 + 1 new, from Disqus, her 1, and Owen's 2", async () => {
+    await checkCatsAndMilkPageAfterDisqusImportNr(3);
   });
 
-  it("But on the santa sailing page ...", () => {
-    mariasBrowser.go(data.embeddingUrl + fourRepliesPageUrlPath);
-    mariasBrowser.switchToEmbeddedCommentsIrame();
+  it("But on the santa sailing page ...", async () => {
+    await mariasBrowser.go2(data.embeddingUrl + fourRepliesPageUrlPath);
+    await mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
-  it("... nothing has changed", () => {
-    checkSantaSailingPageAfterDisqusImportNr(3);
+  it("... nothing has changed", async () => {
+    await checkSantaSailingPageAfterDisqusImportNr(3);
   });
 
-  it("Maria goes to a page created later", () => {
-    mariasBrowser.go('/' + pageCreatedLaterUrlPath)
-    mariasBrowser.switchToEmbeddedCommentsIrame();
+  it("Maria goes to a page created later", async () => {
+    await mariasBrowser.go2('/' + pageCreatedLaterUrlPath)
+    await mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
-  it("... and sees one comment, impored from Disqus, in the 3rd import run", () => {
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, commentOnPageCreatedLaterText);
-    mariasBrowser.topic.assertNumRepliesVisible(1);
+  it("... and sees one comment, impored from Disqus, in the 3rd import run", async () => {
+    await mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, commentOnPageCreatedLaterText);
+    await mariasBrowser.topic.assertNumRepliesVisible(1);
   });
 
-  it("The empty page is still empty. And will be, til the end of time", () => {
+  it("The empty page is still empty. And will be, til the end of time", async () => {
     //server.playTi meMillis(EndOfUniverseMillis - nowMillis() - 1);
-    mariasBrowser.go('/' + noDisqusRepliesPageUrlPath)
-    mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForReplyButtonAssertNoComments();
+    await mariasBrowser.go2('/' + noDisqusRepliesPageUrlPath)
+    await mariasBrowser.switchToEmbeddedCommentsIrame();
+    await mariasBrowser.topic.waitForReplyButtonAssertNoComments();
   });
 
 });

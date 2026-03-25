@@ -459,7 +459,12 @@ class MailerActor(
           perSiteFromName: Opt[St]): acm.HtmlEmail = {
     val apacheCommonsEmail = new SensibleHtmlEmail(anySmtpMsgId = email.smtpMsgId)
     apacheCommonsEmail.setDebug(debug)
+
+    // We'll connect to the SMTP server via our egress proxy, continer egressp w Smokescreen,
+    // as configured in:  images/app/Dockerfile.dev & .prod  [egressp_conf].   Can't connect
+    // directly, since we're on internal networks only  (fe_int_net, be_int_net and eg_int_net).
     apacheCommonsEmail.setHostName(serverName)
+
     apacheCommonsEmail.setCharset("utf8")
 
     // Authentication not always required — SMTP servers are sometimes configured to
@@ -566,10 +571,9 @@ class MailerActor(
 
     // From https://stackoverflow.com/a/47720397/694469:
     // and https://github.com/square/okhttp/blob/6c3a1607b06cf129c017aa28e6aa3baee1a66745/okhttp/src/main/java/okhttp3/TlsVersion.java#L26:
-    SECURITY; DO_AFTER // year 2020: Enable TLSv1.3? TLSv1.3 is still a draft, now 2018. [PROTOCONF]
     // Space separated list of protocols, says
     //   https://javaee.github.io/javamail/docs/api/com/sun/mail/smtp/package-summary.html
-    session.getProperties.put("mail.smtp.ssl.protocols", "TLSv1.1 TLSv1.2")
+    session.getProperties.put("mail.smtp.ssl.protocols", "TLSv1.3 TLSv1.2")  // [PROTOCONF]
 
     // This accepts self signed smtp server certs?? Could be useful during testing and development.
     // (Without: The TLS cert needs to be valid or added to the Java cert store, like here: [26UKWD2])

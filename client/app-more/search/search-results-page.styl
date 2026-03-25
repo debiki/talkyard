@@ -13,7 +13,16 @@ $tagCatCol = hsl(0 0% 41%);
   margin-left: 6px;
   // Make text easy to read, incl "magic" ':' and '+' and '-' tokens:
   font-size: 14px;
-  font-family: monospace;
+  // Amazingly, on Chrome in my Debian Linux VM, underscore '_' become invisible (renders
+  // as space) with 'monospace' font, unless font-size >= 107%.
+  // Someone else had the same problem: (also Chrome)
+  // https://stackoverflow.com/questions/69771194/underscore-character-not-show-in-html-input-with-font-monospace
+  // and a third person says unsetting the height worked. But not for me, but font-size works.
+  // Let's then *not* use monospace.
+  //font-family: monospace;
+  // This font looks equally nice & readable, & no underscore '_' problem:
+  // (Same font as Twitter Bootstrap v3.1.1's font for <code>, <kbd>, <pre>, <samp>.)
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 
 .s_SP_SearchB
   vertical-align: baseline;
@@ -45,7 +54,7 @@ $tagCatCol = hsl(0 0% 41%);
   margin-top: 25px;
 
 .s_SR li.s_SR_Hit,
-.s_SR .esSERP_Hit_Text
+.s_SR .c_SR_Hit_Text
   margin-bottom: 0.45em;
   line-height: 1.3;
   color: hsl(0 0% 23%);
@@ -120,10 +129,21 @@ $tagCatCol = hsl(0 0% 41%);
 .esSERP_Hit_In_Where
   color: hsl($uiHue, 100%, 47%);
 
+
+// Highlight matching text.
+// We've told ES to use <mark> tags. [es_highlight_mark]
+.esSERP_Hit_Text mark
+  // 60 is yellow, but 58 (a tint of red) is simpler to see.
+  background: hsl(58, 100%, 50%);
+  font-weight: bold;
+
+/* If using the Fast Vector Highlighter (FVH):  (but we don't)
 .esSERP_Hit_Text
+  mark,
   .esHL1, .esHL2, .esHL3, .esHL4, .esHL5, .esHL6, .esHL7
     font-weight: bold;
   // 60 is yellow.
+  mark,
   .esHL1
     background: hsl(60, 100%, 50%);
   .esHL2
@@ -138,4 +158,5 @@ $tagCatCol = hsl(0 0% 41%);
     background: hsl(60, 100%, 75%);
   .esHL7
     background: hsl(60, 100%, 80%);
+*/
 

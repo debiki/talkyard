@@ -81,7 +81,13 @@ Site node (id 1? But it's already in use everyywhere :-/
           *  Page node
                   can use the title post?  Which will remain the page title:
                       nodes_t.approved_source_c = posts3.approved_source, renamed.
-                  page node id = title post id.  Title post nr stays 0?
+                  page node id = title post id.   [title_post_id_as_page_id]
+                  (Title post nr stays 0? Or None/null?)
+
+                  This id is also nice to use as ElasticSearch join field parent id.
+                  That is, ES docs of type 'Comt' or 'Ansr' point to
+                  a doc of type 'Page' with id = page node id. [ElasticSearch_join_parent_id]
+
             1  Orig Post node,  node nr 1  (but a different *id*)
             *  Comment nodes,  node nr 2, 3, 4
 

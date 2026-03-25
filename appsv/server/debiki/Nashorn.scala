@@ -22,7 +22,6 @@ import com.debiki.core.Prelude._
 import java.{io => jio, util => ju}
 import javax.{script => js}
 import talkyard.server.linkpreviews.{LinkPreviewRendererForNashorn, LinkPreviewRenderer}
-import org.apache.lucene.util.IOUtils
 import scala.concurrent.Future
 import Nashorn._
 import jdk.nashorn.api.scripting.ScriptObjectMirror
@@ -498,36 +497,30 @@ class Nashorn(
           if (globals.isProd || sys.env.get("IS_PROD_TEST").is("true")) ".min"
           else ""
 
-    var javascriptStream: jio.InputStream = null
-    try {
-      // Add translations, required by the render-page-code later when it runs.
-      def addTranslation(langCode: String): Unit = {
-        val translScript = loadAssetAsString(
-          s"translations/$langCode/i18n$dotMin.js", isTranslation = true)
-        scriptBuilder.append(translScript)
-      }
-
-      // Sync w languages in /translations/, the admin UI language selector, and the Makefile. [5JUKQR2]
-      addTranslation("en_US")
-      addTranslation("zh_CN")  // Chinese, PRC
-      addTranslation("es_CL")  // Spanish, Chile
-      addTranslation("de_DE")  // German
-      addTranslation("he_IL")  // Hebrew
-      addTranslation("lv_LV")  // Latvian
-      addTranslation("nl_NL")  // Dutch
-      addTranslation("pl_PL")  // Polish
-      addTranslation("pt_BR")  // Portuguese, Brazilian
-      addTranslation("ru_RU")  // Russian
-      addTranslation("sv_SE")  // Swedish
-      addTranslation("uk_UA")  // Ukrainian
-
-      // Add render page code.
-      val rendererScript = loadAssetAsString(s"server-bundle$dotMin.js", isTranslation = false)
-      scriptBuilder.append(rendererScript)
+    // Add translations, required by the render-page-code later when it runs.
+    def addTranslation(langCode: String): Unit = {
+      val translScript = loadAssetAsString(
+        s"translations/$langCode/i18n$dotMin.js", isTranslation = true)
+      scriptBuilder.append(translScript)
     }
-    finally {
-      IOUtils.closeWhileHandlingException(javascriptStream)
-    }
+
+    // Sync w languages in /translations/, the admin UI language selector, and the Makefile. [5JUKQR2]
+    addTranslation("en_US")
+    addTranslation("zh_CN")  // Chinese, PRC
+    addTranslation("es_CL")  // Spanish, Chile
+    addTranslation("de_DE")  // German
+    addTranslation("he_IL")  // Hebrew
+    addTranslation("lv_LV")  // Latvian
+    addTranslation("nl_NL")  // Dutch
+    addTranslation("pl_PL")  // Polish
+    addTranslation("pt_BR")  // Portuguese, Brazilian
+    addTranslation("ru_RU")  // Russian
+    addTranslation("sv_SE")  // Swedish
+    addTranslation("uk_UA")  // Ukrainian
+
+    // Add render page code.
+    val rendererScript = loadAssetAsString(s"server-bundle$dotMin.js", isTranslation = false)
+    scriptBuilder.append(rendererScript)
 
     scriptBuilder.append(i"""
         |$RenderAndSanitizeCommonMark

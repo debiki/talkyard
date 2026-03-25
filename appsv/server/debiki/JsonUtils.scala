@@ -185,6 +185,22 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     }
   }
 
+  // A bit long?: `parseOptStringArray` — other names so short.
+  def parseOptStArr(json: JsValue, fieldName: St): Opt[Vec[St]] = {
+    parseOptJsArray(json, fieldName) map { arr: col.IndexedSeq[JsValue] =>
+      var ix = 0
+      def errPrefix = s"Array '$fieldName', item $ix:"
+      arr.map({
+        case JsString(s) =>
+          ix += 1
+          s
+        case bad =>
+          throwBadJson("TyEJSSTRARRELMTYP",
+            s"$errPrefix Not a string, but a: ${classNameOf(bad)}")
+      }).toVector
+    }
+  }
+
   def parseJsArray(json: JsValue, fieldName: St, altName: St = "", optional: Bo = false)
           : col.Seq[JsValue] =
     readJsArray(json, fieldName, altName = altName, optional).value

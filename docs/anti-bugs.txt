@@ -1,4 +1,15 @@
 
+[no_nice_docker_scripts]
+Don't use  nice  and cpulimit  in Bash scripts started & run by Docker, because
+when the main script exits, sub processes managed by  nice and cpulimit gets
+terminated, even if they haven't completed.
+For example, `pg_dumpall | .... | nice cpulimit gpg ...` worked fine, because
+`pg_dumpall` was slower than `gpg`. But `tar .... | nice cpulimit gpg ...`
+didn't generate any backup file! because tar finished fast, and the main script
+(the one calling `tar`) finished and the Docker image shut down, before `gpg`
+had written anything to file.
+But witohut `nice cpulimit`, the wrapper script somehow knows that `gpg` hasn't
+finished, and waits for it, and the `.gpg` encrypted backups get saved properly.
 
 [unintened_undefined_bug]
 In this: `{ ...objA, ...objB }`, any fields in objA with actual values,
@@ -6,3 +17,4 @@ get overwritten by any `field: undefined` fields in objB. But that's often not
 what was intended.
 Therefore, avoid setting any fields to `undefined` (unless the above is the intended
 behavior, but then maybe using `null` makes the intention more clear).
+

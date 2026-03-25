@@ -49,7 +49,7 @@ Start a virtual machine in Vagrant, see `../modules/ed-prod-one-test/scripts/Vag
    edit `.env`:
 
     - Set `VERSION_TAG=latest`.
-    - Set `DOCKER_REPOSITORY=localhost:5000` (instead of `debiki`).
+    - Set `DOCKER_REG_ORG=localhost:5000` (instead of `debiki`).
     - Instead of running `upgrade-if-needed.sh`, do: `docker-compose up -d`
     - You can skip the *"Schedule ... backups ... deletion ... log files ... upgrades"* step.
 

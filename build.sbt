@@ -104,7 +104,7 @@ val appDependencies = Seq(
 
   // Search engine.
   Dependencies.Libs.elasticsearchClient,
-  Dependencies.Libs.elasticsearchClientTransport,
+  Dependencies.Libs.elasticsearchJackson,
 
   Dependencies.Libs.apacheCommonsEmail,
   Dependencies.Libs.apacheCommonsLang3,
@@ -114,7 +114,8 @@ val appDependencies = Seq(
   Dependencies.Libs.logbackClassic,
   Dependencies.Libs.logbackCore,
   Dependencies.Libs.logstashLogbackEncoder,
-  Dependencies.Libs.log4jCore, // ElasticSearch uses Log4j
+  Dependencies.Libs.sl4jApi,
+  Dependencies.Libs.sl4jJclOverSlf4j,
 
   // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
   // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
@@ -161,6 +162,12 @@ def mainSettings = List(
   name := appName,
   version := appVersion,
   libraryDependencies ++= appDependencies,
+
+  excludeDependencies ++= Seq(
+      // For ElasticSearch logging of request & response json to work, we need to
+      // exclude commons-logging, and use jcl-over-slf4j instead. [es_req_logs]
+      // (We're adding `sl4jJclOverSlf4j` above.)
+      ExclusionRule("commons-logging", "commons-logging")),
 
   // Silence warnings about Ty's own deprecated stuff, so they won't clutter the
   // build output and make any actually important warnings disappear in the noise.

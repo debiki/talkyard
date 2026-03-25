@@ -330,7 +330,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
     }
 
     if (jsonConf.inclOldCategoryIdField) {
-      res += "categoryId" -> JsNumber(category.id)  // REMOVE  [ty_v1]
+      res += "categoryId" -> JsNumber(category.id)  // REMOVE  [ty_v2]
     }
 
     res
@@ -340,11 +340,20 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
   // Typescript: PostFound. Maybe RENAME to PostSearchFound?
   def JsPostFound(hit: SearchHit, anyAuthor: Opt[Pat], avatarUrlPrefix: St,
         jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): JsObject = {
+    // Later: Incl title with marks, if this is the orig post [api_highlight_title_hits]
+    // — both the title and body might match the search query.
+    // Already present in:  SearchHit.approvedTitleHighligtsHtmlSafe, see SearchController.
+    val htmlWithMarks = {
+      val fragments: ImmSeq[St] = hit.approvedTextHighligtsHtmlSafe.getOrElse(
+                                    hit.approvedTextNoHighligtsSafe.to(ImmSeq))
+      JsArray(fragments map JsString)
+    }
+
     Json.obj(
       "isPageTitle" -> JsBoolean(hit.postNr == PageParts.TitleNr),
       "isPageBody" -> JsBoolean(hit.postNr == PageParts.BodyNr),
       "author" -> JsPatFoundOrNull(anyAuthor, Some(avatarUrlPrefix), jsonConf, authzCtx),
-      "htmlWithMarks" -> JsArray(hit.approvedTextWithHighligtsHtml map JsString))
+      "htmlWithMarks" -> htmlWithMarks)
   }
 
 
@@ -380,7 +389,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
     }
 
     if (jsonConf.inclOldPpIdField) {
-      json += "ppId" -> JsNumber(pat.id)  // REMOVE  [ty_v1]
+      json += "ppId" -> JsNumber(pat.id)  // REMOVE  [ty_v2]
     }
 
     json

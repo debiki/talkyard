@@ -20,6 +20,7 @@ package debiki.dao
 import scala.collection.Seq
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import co.elastic.clients.{elasticsearch => es8}
 import debiki._
 import debiki.EdHttp._
 import talkyard.server.search.SearchEngine
@@ -65,7 +66,8 @@ class SiteDaoFactory (
   private val redisClient: RedisClient,
   private val cache: DaoMemCache,
   private val usersOnlineCache: UsersOnlineCache,
-  private val elasticSearchClient: es.client.Client,
+  // Used to be an es8.ElasticsearchAsyncClient. [ES8_async]
+  private val elasticSearchClient: es8.ElasticsearchClient,
   private val config: Config) {
 
   def newSiteDao(siteId: SiteId): SiteDao = {
@@ -138,7 +140,8 @@ class SiteDao(
   private val redisClient: RedisClient,
   private val cache: DaoMemCache,
   val usersOnlineCache: UsersOnlineCache,
-  private val elasticSearchClient: es.client.Client,
+  // Used to be an es8.ElasticsearchAsyncClient. [ES8_async]
+  private val elasticSearchClient: es8.ElasticsearchClient,
   val config: Config)
   extends AnyRef
   with TyLogging
@@ -179,8 +182,8 @@ class SiteDao(
 
   lazy val redisCache = new RedisCache(siteId, redisClient, context.globals.now _)
 
-  protected lazy val searchEngine = new SearchEngine(siteId, elasticSearchClient,
-        ffIxMapping2 = theSite().isFeatureEnabled("ffIxMapping2", globals.config.featureFlags))
+  protected lazy val searchEngine = new SearchEngine(
+          siteId, languageCode = this.getWholeSiteSettings().languageCode, elasticSearchClient)
 
   def readOnly: ReadOnlySiteDao = this.asInstanceOf[ReadOnlySiteDao]
 

@@ -107,6 +107,42 @@ function readGitHash() {
 }
 
 
+// Command line arguments. Gulp insists on interpreting anything that doesn't start
+// w '--' as a task to be run?  Look for our own well-known '--param=values':
+//
+// Don't use directly. Call `parseCommandLineArgs()` instead.
+//
+const _cmdLineArgs = {
+  // E.g. 'en_US' or fr_FR', if `--language=en_US` or `fr_FR` specified.
+  // (Technically, lang code + country code. Oh well.)
+  langCode: undefined,
+};
+
+let _alreadyParsedCommandLineArgs = false;
+
+function parseCommandLineArgs() {
+  if (_alreadyParsedCommandLineArgs)
+    return _cmdLineArgs;
+
+  _alreadyParsedCommandLineArgs = true;
+
+  const args = process.argv.slice(1); // drop program name
+  for (let i = 0; i < args.length; ++i) {
+    const arg = args[i];
+
+    // Should be a directory in translations/, e.g. fr_FR.
+    const langPara = '--language=';
+    if (arg.startsWith(langPara)) {
+      _cmdLineArgs.langCode = arg.substring(langPara.length);
+      if (!_cmdLineArgs.langCode.match(/^[a-z]{2,3}_[A-Z]{2}$/)) {
+        throw `Bad language code: "${_cmdLineArgs.langCode}" [TyEGULPLANG]`;
+      }
+    }
+  }
+  return _cmdLineArgs;
+}
+
+
 /// Only for Ty's own Typescript code. Not for 3rd party Javascript.
 ///
 function expandCPreProcessorMacros(ps) {  // : { debug?: true, prod?: true }
@@ -504,6 +540,31 @@ gulp.task('compileTranslations', () => {
 });
 
 gulp.task('buildTranslations', gulp.series('cleanTranslations', 'compileTranslations'));
+
+// Test transpiles one translation, to find errors.
+//
+// Example:
+//     s/tyd gulp compileOneTranslation --language=fr_FR
+//
+gulp.task('compileOneTranslation', () => {
+  const args = parseCommandLineArgs();
+  const langCode = args.langCode; // e.g. 'fr_FR'
+
+  console.log(`Compiling translation: ${langCode}`);
+  const stream = gulp.src(['translations/' + langCode + '/*.ts'])
+      .pipe(plumber())
+      .pipe(typeScript({
+        declarationFiles: true,
+        lib: ['es5', 'es2015', 'dom'],
+        types: ['core-js']
+      }));
+  return stream.js
+      .pipe(updateAtimeAndMtime())
+      .pipe(gulp.dest(webDestTranslations))
+      .pipe(gulp.dest(serverDestTranslations))
+      .pipe(gzip({ gzipOptions }))
+      .pipe(gulp.dest(webDestTranslations));
+});
 
 
 

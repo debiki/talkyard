@@ -143,7 +143,16 @@ const tyAssert = {
   },
 
   includes: (text: St, expectedSubstring: St, atIndex?: Nr | St, message?: St) => {
+    return tyAssert.includes2(text, expectedSubstring, { atIndex, message });
+  },
+
+  includes2: (text: St, expectedSubstring: St,
+        // `message` replaces, `prefixMsg` keeps the auto gend message.
+        ps: { atIndex?: Nr | St, message?: St, prefixMsg?: St } = {}) => {
     // Could make this work w regexs too.
+
+    let atIndex = ps.atIndex;
+    let message = ps.message;
 
     if (_.isString(atIndex)) {
       dieIf(!_.isUndefined(message), 'TyE603MSE5');
@@ -157,11 +166,13 @@ const tyAssert = {
 
     const ix = text.indexOf(expectedSubstring);
     assert.ok(ix >= 0, '\n\n' + (message ||
+      (ps.prefixMsg || '') +
       `  assert.includes:\n` +
       `     This text:  "${expectedSubstring}"\n` +
       `     is missing from:  ${inlineOrDashPara(text)}\n`));
     if (_.isNumber(atIndex)) {
       tyAssert.eq(ix, atIndex, '\n\n' + (message ||
+        (ps.prefixMsg || '') +
         `  assert.includes:\n` +
         `     This text:  "${expectedSubstring}"\n` +
         `             found at index: ${ix}\n` +

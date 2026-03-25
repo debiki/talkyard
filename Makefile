@@ -2,7 +2,7 @@
 # Variables:
 #   $@  The file name of the target of the rule
 
-d_c             := sudo docker-compose
+d_c             := sudo docker compose
 d_c_logs        := $(d_c) logs --no-color
 d_c_logs_f0     := $(d_c) logs --no-color -f --tail 0
 
@@ -108,7 +108,7 @@ print_help:
 	@echo "Building production images"
 	@echo "--------------------------"
 	@echo
-	@echo "Edit version.txt and commit. Edit DOCKER_REPOSITORY in .env."
+	@echo "Edit version.txt and commit. Edit DOCKER_REG_ORG in .env."
 	@echo "Then:"
 	@echo
 	@echo "  Build production images:  make prod-images"
@@ -125,13 +125,13 @@ print_help:
 	@echo
 
 
-DOCKER_REPOSITORY := \
-  $(shell sed -nr 's/^DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env)
+DOCKER_REG_ORG := \
+  $(shell sed -nr 's/^DOCKER_REG_ORG=([a-zA-Z0-9\._-]*).*/\1/p' .env)
 
 # All new builds go into the -dev channel first, and might later get promoted to
 # the -rapid, -regular and -stable channels.
 # (Currently there's only -dev and -regular though.)
-DEV_RELEASE_CHANNEL := tyse-v0-dev
+DEV_RELEASE_CHANNEL := tyse-v1-dev
 DEV_RELEASE_CHANNEL_SUFFIX := dev
 
 TALKYARD_VERSION := \
@@ -443,7 +443,7 @@ transl_dev_app_bundle_files := \
               | sed -nr 's;(.*)\.ts;images/app/assets/\1.js;p' }
 
 # For Nginx, the web container — includes the version number, for asset versioning.
-# E.g. images/web/assets/v0.2020.25/translations/en_US/i18n.js
+# E.g. images/web/assets/v1.2025.123/translations/en_US/i18n.js
 transl_dev_web_bundle_files := \
   ${shell find translations/ -name '*.ts'  \
               | sed -nr 's;(.*)\.ts;images/web/assets/$(TALKYARD_VERSION)/\1.js;p' }
@@ -561,7 +561,7 @@ db-cli:
 	  def_user="$${def_user:-talkyard}" ;\
 	  read -p "Connect to the PostgreSQL database as which user? [$$def_user] " db_user ;\
 	  db_user="$${db_user:-$$def_user}" ;\
-	  s/d-psql "$$db_user" "$$db_user"
+	  $(d_c) exec rdb psql "$$db_user" "$$db_user"
 
 
 up: debug_asset_bundles
@@ -639,13 +639,18 @@ dead:
 
 # Any old lingering prod build project, causes netw pool ip addr overlap error.
 _kill_old_prod_build_project:
-	$(d_c) -pedt kill web app search cache rdb ;\
-	$(d_c) -pedt down
+	$(d_c) -p tyb1 kill backup web app rendr cache rdb search egressp ;\
+	$(d_c) -p tyb1 down
 
 
 prod-images:  _kill_old_prod_build_project
 	@# This cleans and builds prod_asset_bundles. [PRODBNDLS]
 	s/build-prod-images.sh
+
+
+prod-images-skip-tests:  _kill_old_prod_build_project
+	@# Just for experimenting with version nrs and release branches.
+	s/build-prod-images.sh --skip-e2e-tests
 
 
 prod-images-only-e2e-tests:  _kill_old_prod_build_project
@@ -669,13 +674,15 @@ tag-latest-images:
 	@$(call die_unless_tag_specified, Tag with)
 	@$(call ask_for_root_password)
 	set -e  ;\
-	REPO=$(DOCKER_REPOSITORY)  ;\
-	sudo docker tag $$REPO/talkyard-app $$REPO/talkyard-app:$(tag)  ;\
-	sudo docker tag $$REPO/talkyard-web $$REPO/talkyard-web:$(tag)  ;\
-	sudo docker tag $$REPO/talkyard-rdb $$REPO/talkyard-rdb:$(tag)  ;\
-	sudo docker tag $$REPO/talkyard-cache $$REPO/talkyard-cache:$(tag)  ;\
-	sudo docker tag $$REPO/talkyard-search $$REPO/talkyard-search:$(tag)  ;\
-	sudo docker tag $$REPO/talkyard-certgen $$REPO/talkyard-certgen:$(tag)
+	REG_ORG=$(DOCKER_REG_ORG)  ;\
+	sudo docker tag $$REG_ORG/talkyard-app $$REG_ORG/talkyard-app:$(tag)  ;\
+	sudo docker tag $$REG_ORG/talkyard-rendr $$REG_ORG/talkyard-rendr:$(tag)  ;\
+	sudo docker tag $$REG_ORG/talkyard-web $$REG_ORG/talkyard-web:$(tag)  ;\
+	sudo docker tag $$REG_ORG/talkyard-rdb $$REG_ORG/talkyard-rdb:$(tag)  ;\
+	sudo docker tag $$REG_ORG/talkyard-cache $$REG_ORG/talkyard-cache:$(tag)  ;\
+	sudo docker tag $$REG_ORG/talkyard-search $$REG_ORG/talkyard-search:$(tag)  ;\
+	sudo docker tag $$REG_ORG/talkyard-egressp $$REG_ORG/talkyard-egressp:$(tag)  ;\
+	sudo docker tag $$REG_ORG/talkyard-backup $$REG_ORG/talkyard-backup:$(tag)
 	@echo
 
 
@@ -683,13 +690,15 @@ push-tagged-images:
 	@$(call die_unless_tag_specified, Push)
 	@$(call ask_for_root_password)
 	set -e  ;\
-	REPO=$(DOCKER_REPOSITORY)  ;\
-	sudo docker push $$REPO/talkyard-app:$(tag)  ;\
-	sudo docker push $$REPO/talkyard-web:$(tag)  ;\
-	sudo docker push $$REPO/talkyard-rdb:$(tag)  ;\
-	sudo docker push $$REPO/talkyard-cache:$(tag)  ;\
-	sudo docker push $$REPO/talkyard-search:$(tag)  ;\
-	sudo docker push $$REPO/talkyard-certgen:$(tag)
+	REG_ORG=$(DOCKER_REG_ORG)  ;\
+	sudo docker push $$REG_ORG/talkyard-app:$(tag)  ;\
+	sudo docker push $$REG_ORG/talkyard-rendr:$(tag)  ;\
+	sudo docker push $$REG_ORG/talkyard-web:$(tag)  ;\
+	sudo docker push $$REG_ORG/talkyard-rdb:$(tag)  ;\
+	sudo docker push $$REG_ORG/talkyard-cache:$(tag)  ;\
+	sudo docker push $$REG_ORG/talkyard-search:$(tag)  ;\
+	sudo docker push $$REG_ORG/talkyard-egressp:$(tag)  ;\
+	sudo docker push $$REG_ORG/talkyard-backup:$(tag)
 	@echo
 
 
@@ -711,7 +720,6 @@ push_tag_to_dev_rel_branch:
 
 	@$(call die_unless_tag_specified, Push)
 	 
-	@# Do Not push to master — doing that would include this version in tyse-v0-regular.
 	@# Exit on any error, so won't push something broken to the versions repo.
 	@#
 	@set -e  ;\
@@ -738,8 +746,8 @@ push_tag_to_dev_rel_branch:
 push_tag_to_dev_repo:
 	@# Note that this version might not be included in all release channels.
 	@# Example: If this new version includes some not-well-tested things — then,
-	@# we'd want to push it only to tyse-v0-dev, fix bugs, and later, push a more
-	@# well tested version first to tyse-v0-dev and then to tyse-v0-regular.
+	@# we'd want to push it only to tyse-v1-dev, fix bugs, and later, push a more
+	@# well tested version first to tyse-v1-dev and then to tyse-v1-regular.
 	@#
 	@# It's nice to see directly in the main repo, in which release branches a
 	@# Ty version (Git revision) has been included?  So let's incl the branch
@@ -758,9 +766,9 @@ push_tag_to_dev_repo:
 	@echo "Done. Now, push branches and bump version number:"
 	@echo ""
 	@echo "    git checkout -B main"
-	@echo "    git push $(repo) release main"
+	@echo "    git push $(repo) release-v1 main"
 	@echo "    s/bump-versions.sh"
-	@echo "    git add version.txt relchans/tyse-v0-dev"
+	@echo "    git add version.txt relchans/tyse-v1-dev"
 	@echo '    git commit -m "Bump version to `cat version.txt`."'
 	@echo ""
 

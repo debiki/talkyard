@@ -167,6 +167,9 @@ trait SpecialContentDao {
 
     transaction.updatePost(editedPost)
 
+    // Need not reindex. Special content (e.g. cusotm html, css) isn't searchable,
+    // isn't part of any discussion.
+
     AUDIT_LOG
 
     if (affectsWholeSite(oldPost.pageId)) {

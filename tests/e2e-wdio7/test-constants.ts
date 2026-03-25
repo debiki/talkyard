@@ -270,6 +270,15 @@ export default {
     mayNotJoinChatBecauseMayNotSee: '-TyEM0SEEPG_-TyEM0SEE_-TyMMBYSEE_',
   },
 
+  // Words of wisdom. For testing full text search.
+  wow: {
+    Angående_älgar_Älgar_älskar_äta_ärtor:
+            { title: "Angående Älgar", body: "Älgar älskar äta ärtor spela flöjt och våghorn." },
+    älgen: "älgen",
+    älgar: "älgar",
+    älgar_flöjt_våghorn: "älgar flöjt våghorn",
+    algar_flojt_vaghorn: "algar flojt vaghorn",
+  },
 
   FiftyPrimes: [
     2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67,

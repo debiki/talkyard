@@ -2,5 +2,18 @@
 # downloading and using that image, one automatically upgrades the Redis image,
 # whenever needed. (So won't need to configure Redis image version, separately, in Prod.)
 
-FROM redis:4.0.14-alpine
+# Image list: https://hub.docker.com/_/redis
+FROM redis:8.6.1-trixie
+
+LABEL org.opencontainers.image.title="Talkyard Cache" \
+      io.talkyard.edition="se" \
+      io.talkyard.epoch="1"
+
+HEALTHCHECK \
+    --start-period=60s \
+    --start-interval=5s \
+    --interval=30s \
+    --timeout=5s \
+    --retries=5 \
+    CMD redis-cli ping || exit 1
 

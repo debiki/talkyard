@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "This script not yet migrated to Talkyard v1. It won't work. Doing nothing. Bye."
+exit 1
+
 docker ps >> /dev/null
 if [ $? -eq 1 ] ; then
   echo "If the Docker daemon *is* running — then you can try with 'sudo'?"
@@ -45,18 +48,18 @@ if [[ $response =~ ^(no|n)$ ]] ; then
   exit 0
 fi
 
-up_line=`docker-compose ps rdb | egrep '\<Up\>'`
+up_line=`docker compose ps rdb | egrep '\<Up\>'`
 if [ -z "$up_line" ]; then
   echo "Error: The database container is not running."
   echo "You can start it:"
-  echo "  docker-compose start rdb"
+  echo "  docker compose start rdb"
   exit 1
 fi
 
 
 # Create a psql command that runs in the container.
-# But 'docker-compose exec ...' apparently doesn't read from stdin. Instead use 'docker exec ...':
-container=`sudo docker-compose ps rdb | grep ' Up ' | awk '{print $1}'`
+# But 'docker compose exec ...' apparently doesn't read from stdin. Instead use 'docker exec ...':
+container=`sudo docker compose ps rdb | grep ' Up ' | awk '{print $1}'`
 if [ -z "$container" ]; then
   echo "Error: Database container not found."
   exit 1
@@ -88,7 +91,7 @@ if [ -z "$latest_uploads_dump" ]; then
 else
   echo "Rsyncing uploads:"
   echo
-  cmd="rsync -av ${1}$latest_uploads_dump/ volumes/uploads/"
+  cmd="rsync -av ${1}$latest_uploads_dump/ volumes/pub-files/uploads/"
   echo "    $cmd"
   echo
 

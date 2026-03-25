@@ -191,7 +191,7 @@ export function postOrDie(
     logMessage(debugColor(`The server is in ${boldUnusualColor(` MAINTENANCE MODE `)
         }, you can disable:`) + `
 
-      docker-compose exec rdb psql talkyard talkyard -c "update system_settings_t set maintenance_until_unix_secs_c = null;"
+      docker compose exec rdb psql talkyard talkyard -c "update system_settings_t set maintenance_until_unix_secs_c = null;"
 
 if it causes problems when you're trying to run e2e tests.`);
     // Continue below.
@@ -354,6 +354,11 @@ function skipRateLimits(siteId: SiteId) {
   skipLimits(siteId, { rateLimits: true });
 }
 
+function skipLimits_sync(siteId: SiteId, ps: { rateLimits?: Bo, diskQuotaLimits?: Bo }) {
+  skipLimits(siteId, ps);
+}
+
+// DEPRECATED use skipLimits_sync(..) above, instead?
 function skipLimits(siteId: SiteId, ps: { rateLimits?: Bo, diskQuotaLimits?: Bo }) {
   postOrDie(settings.mainSiteOrigin + '/-/skip-limits', { ...ps, siteId });
 }
@@ -721,17 +726,31 @@ const isApiErrorResponse = (response: ApiResponse<any>)
   (response as ApiErrorResponse).error !== undefined;
 
 
-function fullTextSearch<T extends ThingFound>(ps: {
+/// Same as fullTextSearch(), but any failure aborts the test (there's no { fail } param).
+///
+async function fullTextSearchOk<T extends ThingFound>(ps: {
+      origin: St, queryText: St, opts?: {
+          cookie?: St | Nl, sidHeader?: St, xsrfTokenHeader?: St | Nl }})
+      :  Pr<SearchQueryResults<T>> {
+  dieIf(ps['fail'], `You're calling fullTextSearchOk(... fail: true) — don't, instead
+        call fullTextSearch(..., fail: true)   — that is, without '...Ok'`);
+  return await fullTextSearch(ps) as SearchQueryResults<T>;
+}
+
+
+/// Pass ... { fail: true } if the server should reject the request.
+///
+async function fullTextSearch<T extends ThingFound>(ps: {
       origin: St, queryText: St, opts?: {
           cookie?: St | Nl, sidHeader?: St, xsrfTokenHeader?: St | Nl, fail?: true }})
-      :  SearchQueryResults<T> | St {
+      :  Pr<SearchQueryResults<T> | St> {
   const url = ps.origin + '/-/v0/search';
   const requestBody: SearchQueryApiRequest = {
     searchQuery: { freetext: ps.queryText },
     pretty: true,
   };
 
-  const responseObj = postOrDie(url, requestBody, ps.opts);
+  const responseObj = await postOrDie(url, requestBody, ps.opts);
 
   if (ps.opts?.fail)
     return responseObj.bodyText;
@@ -890,6 +909,7 @@ export default {
   importSiteData: importTestSiteData,
   deleteOldTestSite,
   skipRateLimits,
+  skipLimits_sync,
   skipLimits,
   reindexSites,
   pauseJobs,
@@ -907,8 +927,6 @@ export default {
   sendIncomingEmailWebhook,
   waitAndGetLastReplyNotfLinkEmailedTo,
   waitAndGetLastVerifyEmailAddressLinkEmailedTo,  // was: getLastVerifyEmailAddressLinkEmailedTo
-  // no, worse name:
-  // getVerifyEmailAddressLinkFromLastEmailTo: waitAndGetLastVerifyEmailAddressLinkEmailedTo,
   waitAndGetVerifyAnotherEmailAddressLinkEmailedTo,
   waitAndGetInviteLinkEmailedTo,
   waitAndGetThanksForAcceptingInviteEmailResetPasswordLink,
@@ -924,6 +942,7 @@ export default {
   assertLastEmailMatches,
   apiV0: {
     createSite: createSiteViaPubApi,
+    fullTextSearchOk,
     fullTextSearch,
     getQuery,
     listQuery,

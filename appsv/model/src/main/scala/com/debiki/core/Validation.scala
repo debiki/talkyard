@@ -319,4 +319,56 @@ object Validation {  // rename // to Check, so:  Check.ifBadEmail( ...)  — loo
       fn(Problem(s"Bad file extension list: $exts", siteId))
     }
   }
+
+
+  def isLangCodeSupported(langCode: St): Bo = {
+    _OkLangCodes contains langCode
+  }
+
+  // Sync w the user interface language dropdown [5JUKQR2],
+  // and the ElasticSearch field names [es_lang_field_names] — mostly just language codes.
+  private val _OkLangCodes = Set(
+        "ar_SA",  // Arabic
+        "hy_AM",  // Armenian
+        "bn_BD",  // Bengali
+        "bg_BG",  // Bulgarian
+        "zh_CN",  // Chinese (Simplified)
+        "zh_TW",  // Chinese (Traditional)
+        "cs_CZ",  // Czech
+        "da_DK",  // Danish
+        "nl_NL",  // Dutch
+        "en_US",  // English
+        "et_EE",  // Estonian
+        "fa_IR",  // Farsi (Persian)
+        "fi_FI",  // Finnish
+        "fr_FR",  // French
+        "de_DE",  // German
+        "el_GR",  // Greek
+        "he_IL",  // Hebrew
+        "hi_IN",  // Hindi
+        "hu_HU",  // Hungarian
+        "is_IS",  // Icelandic
+        "id_ID",  // Indonesian
+        "ga_IE",  // Irish
+        "it_IT",  // Italian
+        "ja_JP",  // Japanese
+        "ko_KR",  // Korean
+        "ckb_IQ", // Kurdish (Sorani)
+        "ku_TR",  // Kurdish (Kurmanji)
+        "lv_LV",  // Latvian
+        "lt_LT",  // Lithuanian
+        "no_NO",  // Norwegian
+        "pl_PL",  // Polish
+        "pt_BR",  // Portuguese (Brazil)
+        "pt_PT",  // Portuguese (Portugal)
+        "ro_RO",  // Romanian
+        "ru_RU",  // Russian
+        "sr_RS",  // Serbian
+        "es_CL",  // Spanish. Will [use_Mexican_Spanish] later & change to 'es_MX'.
+        "sv_SE",  // Swedish
+        "th_TH",  // Thai
+        "tr_TR",  // Turkish
+        "uk_UA",  // Ukrainian
+        )
+
 }

@@ -113,7 +113,7 @@ function logHelpText() {
 Starting a development server
 --------------------------
 
-  Start a dev server:       s/tyd u   # 'u' for 'up', runs 'docker-compose up'
+  Start a dev server:       s/tyd u   # 'u' for 'up', runs 'docker compose up'
   Restart app container:    s/tyd r   # 'restart', e.g.:  s/tyd r app
   Rebuild imgs and restart: s/tyd rr  # 'rebuild restart'
   Stop containers:          s/tyd k   # 'kill', e.g.  s/tyd kill app
@@ -163,7 +163,7 @@ if (mainCmd === 'h' || mainCmd === 'help') {
 
 
 if (mainCmd === 'nodejs') {
-  tyu.spawnInForeground('docker-compose run --rm nodejs ' + subCmdsAndOpts.join(' '));
+  tyu.spawnInForeground('docker compose run --rm nodejs ' + subCmdsAndOpts.join(' '));
   process.exit(0);
 }
 
@@ -194,13 +194,13 @@ would reset node_modules/  to a previous version (before having ran yarn),
 and then ran yarn again to get the new dependencies.  [make_downgrades_node_mods]
 `);
   // Maybe  --no-bin-links?  [x_plat_offl_builds]
-  tyu.spawnInForeground('docker-compose run --rm nodejs yarn ' + subCmdsAndOpts.join(' '));
+  tyu.spawnInForeground('docker compose run --rm nodejs yarn ' + subCmdsAndOpts.join(' '));
   process.exit(0);
 }
 
 
 if (mainCmd === 'gulp') {
-  tyu.spawnInForeground('docker-compose run --rm nodejs gulp ' + subCmdsAndOpts.join(' '));
+  tyu.spawnInForeground('docker compose run --rm nodejs gulp ' + subCmdsAndOpts.join(' '));
   process.exit(0);
 }
 
@@ -219,7 +219,7 @@ if (mainCmd === 'ca' || mainCmd === 'cliapp') {
 
 
 if (mainCmd === 'ps') {
-  tyu.spawnInForeground('docker-compose ps');
+  tyu.spawnInForeground('docker compose ps');
   process.exit(0);
 }
 
@@ -229,25 +229,25 @@ if (mainCmd === 'l' || mainCmd === 'logs') {
 }
 
 function tailLogsThenExit() {
-  tyu.spawnInForeground(`docker-compose logs -f --tail 0 ${allSubCmdsSt}`);
+  tyu.spawnInForeground(`docker compose logs -f --tail 0 ${allSubCmdsSt}`);
   process.exit(0);
 }
 
 
 if (mainCmd === 'lr' || mainCmd === 'logsrecent') {
-  tyu.spawnInForeground(`docker-compose logs -f --tail 555 ${allSubCmdsSt}`);
+  tyu.spawnInForeground(`docker compose logs -f --tail 555 ${allSubCmdsSt}`);
   process.exit(0);
 }
 
 
 if (mainCmd === 'lra' || mainCmd === 'logsrecentapp') {
-  tyu.spawnInForeground('docker-compose logs -f --tail 555 app');
+  tyu.spawnInForeground('docker compose logs -f --tail 555 app');
   process.exit(0);
 }
 
 
 if (mainCmd === 'lo' || mainCmd === 'logsold') {
-  tyu.spawnInForeground(`docker-compose logs ${allSubCmdsSt}`);
+  tyu.spawnInForeground(`docker compose logs ${allSubCmdsSt}`);
   process.exit(0);
 }
 
@@ -273,7 +273,7 @@ if (mainCmd === 'u' || mainCmd === 'up' || mainCmd === 'up0lim') {
 
   // If only starting some specific containers, skip Yarn and Make.
   if (mainSubCmd) {
-    tyu.spawnInForeground(`docker-compose ${nolimConf} up -d ${allSubCmdsSt}`);
+    tyu.spawnInForeground(`docker compose ${nolimConf} up -d ${allSubCmdsSt}`);
     tailLogsThenExit();
   }
 
@@ -287,7 +287,7 @@ if (mainCmd === 'u' || mainCmd === 'up' || mainCmd === 'up0lim') {
   // Didn't use to do that! What has changed? Oh well, the Makefile target
   // 'debug_asset_bundles' is enough (the line just after), so just skip this:
   /*
-  tyu.spawnInForeground(`docker-compose ${nolimConf} run --rm nodejs yarn install ${yarnOfflineSt}`);
+  tyu.spawnInForeground(`docker compose ${nolimConf} run --rm nodejs yarn install ${yarnOfflineSt}`);
   */
   let exitCode: ExitCode = tyu.spawnInForeground('make debug_asset_bundles');
   if (exitCode === null || exitCode >= 1) {
@@ -297,10 +297,10 @@ if (mainCmd === 'u' || mainCmd === 'up' || mainCmd === 'up0lim') {
 
   // Run `up -d` in foreground, so we won't start the `logs -f` process too soon
   // — that process would exit, if `up -d` hasn't yet started any containers.
-  tyu.spawnInForeground(`docker-compose ${nolimConf} up -d`);
+  tyu.spawnInForeground(`docker compose ${nolimConf} up -d`);
 
   // Just this:
-  tyu.spawnInForeground(`docker-compose ${nolimConf} logs -f --tail 0`);
+  tyu.spawnInForeground(`docker compose ${nolimConf} logs -f --tail 0`);
   // ... instead of the below,
 
   // ... Skip this, because 'make watch' and assets rebuild problems
@@ -335,7 +335,7 @@ if (mainCmd === 'u' || mainCmd === 'up' || mainCmd === 'up0lim') {
 
   // Show logs until CTRL+C.
   // (There's also:  process.on('SIGINT', function() { ... });
-  tyu.spawnInForeground('docker-compose logs -f --tail 0');
+  tyu.spawnInForeground('docker compose logs -f --tail 0');
 
   logMessage(`Stopping '${rebuildAssetsCmd}' ...`);
   makeShouldExit = true;
