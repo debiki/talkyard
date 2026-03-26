@@ -219,7 +219,7 @@ object Dependencies {
     // ----- Test
 
     val scalactic = "org.scalactic" %% "scalactic" % "3.2.19"
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.19" % "test"
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.20" % "test"
 
     // See: https://github.com/playframework/scalatestplus-play/releases
     // and: https://mvnrepository.com/artifact/org.scalatestplus.play/scalatestplus-play
