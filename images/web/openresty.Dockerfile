@@ -8,7 +8,10 @@
 # COULD_OPTIMIZE smaller image: Copy just what's needed from openresty_build
 # (and would need to 'apk add' some things too, to the final image).
 
-FROM alpine:3.21.3 AS openresty_build
+# Bumping to 3.21 to 3.22 was trivial, see:
+# https://github.com/openresty/docker-openresty/commit/70b5349b17eb4648fc992caf13ecd18b0f3ab104
+#
+FROM alpine:3.22.3 AS openresty_build
 
 
 # '--virtual .build_deps' lets one uninstall all these build dependencies,
@@ -98,7 +101,8 @@ ARG CONFIG="\
   # --with-http_gunzip_module \
   --with-http_gzip_static_module \
   # --with-http_image_filter_module=dynamic \
-  --with-http_mp4_module \
+  # No, disable mp4 for now: CVE-2026-32647 and CVE-2026-27784.
+  #--with-http_mp4_module \
   # --with-http_random_index_module \
   --with-http_realip_module \
   # Can check authenticity of requested links, access control, limit link lifetime.
