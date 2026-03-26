@@ -218,7 +218,7 @@ object Dependencies {
 
     // ----- Test
 
-    val scalactic = "org.scalactic" %% "scalactic" % "3.2.19"
+    val scalactic = "org.scalactic" %% "scalactic" % "3.2.20"
     val scalaTest = "org.scalatest" %% "scalatest" % "3.2.19" % "test"
 
     // See: https://github.com/playframework/scalatestplus-play/releases
