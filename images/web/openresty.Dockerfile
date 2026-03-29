@@ -19,6 +19,8 @@ FROM alpine:3.22.3 AS openresty_build
 #
 RUN apk add --no-cache --virtual .build_deps \
         build-base \
+        # We don't need.
+        #binutils \
         coreutils \
         # Library for the dynamic creation of images by programmers
         # Needed for http_image_filter_module?
