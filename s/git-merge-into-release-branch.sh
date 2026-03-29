@@ -99,7 +99,6 @@ echo
 echo git checkout $release_branch
 echo git merge --no-ff main -m "\"Merge $next_version into '$release_branch'.\""
 echo "git branch -f main $release_branch"
-echo "git branch -f master main  # backw compat"
 
 echo
 echo "Thereafter:  make prod-images"

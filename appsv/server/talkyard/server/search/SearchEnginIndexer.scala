@@ -502,7 +502,7 @@ class IndexingActor(
               return Some(err)
           }
 
-    logger.debug(s"""s$siteId: Unindexed ${posts.length} posts, deleting from
+    logger.debug(o"""s$siteId: Unindexed ${posts.length} posts, deleting from
           job queue ... [TyMSIX_Y5KF0]""")
     systemDao.deleteFromIndexQueue(posts, siteId)
     None

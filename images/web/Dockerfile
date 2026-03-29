@@ -29,6 +29,8 @@ LABEL org.opencontainers.image.title="Talkyard Web" \
 #
 RUN apk add --no-cache --virtual .build_deps \
         build-base \
+        # We don't need.
+        #binutils \
         coreutils \
         # Library for the dynamic creation of images by programmers
         # Needed for http_image_filter_module?
