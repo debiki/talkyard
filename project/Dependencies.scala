@@ -90,7 +90,7 @@ object Dependencies {
     // and: https://github.com/FasterXML/jackson/wiki/Jackson-Releases
     // and: https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-scala
     // 2.21 tracks Jackson 2.21.
-    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.21.1"
+    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.21.2"
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
     // ScribeJava is listed by Microsoft as compatible with Azure,
