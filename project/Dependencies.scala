@@ -55,7 +55,7 @@ object Dependencies {
     // Can't use the ES 9 Java client — it needs Java 17, but we're on Java 11. [java_11_to_17]
     // Latest version, as of Nov 21 2025:
     // https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/8.19/installation.html
-    val elasticsearchClient = "co.elastic.clients" % "elasticsearch-java" % "8.19.13"
+    val elasticsearchClient = "co.elastic.clients" % "elasticsearch-java" % "9.3.3"
     val elasticsearchJackson = "com.fasterxml.jackson.core" % "jackson-databind" % "2.17.3"
 
     val guava = "com.google.guava" % "guava" % "33.5.0-jre"
