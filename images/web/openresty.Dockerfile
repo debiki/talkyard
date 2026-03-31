@@ -103,8 +103,7 @@ ARG CONFIG="\
   # --with-http_gunzip_module \
   --with-http_gzip_static_module \
   # --with-http_image_filter_module=dynamic \
-  # No, disable mp4 for now: CVE-2026-32647 and CVE-2026-27784.
-  #--with-http_mp4_module \
+  --with-http_mp4_module \
   # --with-http_random_index_module \
   --with-http_realip_module \
   # Can check authenticity of requested links, access control, limit link lifetime.
