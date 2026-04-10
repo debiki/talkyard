@@ -3,6 +3,8 @@ Bookmarks are posts, stored in posts3 / nodes_t. Then they'll get doing status f
 "for free" and can later function as one's personal tasks too: planned, doing, done.
   And  due-at  or  remind-at  properties, just like posts might one day have.
 
+Bookmarks get loaded together with one's unapproved posts: [load_bokms].
+
 At the same time, means we have to avoid accidentally loading bookmarks (>= MinPublicNr tests)
 or bookmark authors. [dont_list_bookmarkers]
 

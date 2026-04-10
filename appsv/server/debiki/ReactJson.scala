@@ -1047,7 +1047,7 @@ class JsonMaker(dao: SiteDao) {
     val (pageNotfPrefs: Seq[PageNotfPref],
          ownVotesJson,
          ownAnonVoters: ImmSeq[Anonym],
-         unapprovedPostsJson, // includes any bookmarks
+         unapprovedPostsJson, // includes one's own bookmarks [load_bokms]
          unapprovedAuthorsJson) =
       anyPageId map { pageId =>
         COULD_OPTIMIZE // load cat prefs together with page notf prefs here?
@@ -1069,6 +1069,7 @@ class JsonMaker(dao: SiteDao) {
         val ownAnonVoters = ownVoters.collect({ case a:Anonym => a })
 
         // + flags, interesting for staff, & so people won't attempt to flag twice [7KW20WY1]
+        // Loads one's own bookmarks too (they're unapproved posts). [load_bokms]
         val UnapprovedPostsAndAuthors(postsJson, postAuthorsJson, tagTypeIds) =
               unapprovedPostsAndAuthorsJson(
                   requester, pageId, unapprovedPostAuthorIds, tx)
@@ -1134,7 +1135,7 @@ class JsonMaker(dao: SiteDao) {
             "votesByPostNr" -> ownVotesJson,
             "internalBacklinks" -> restrTopicsCatsLinks.internalBacklinksJson,
             // later: "flags" -> JsArray(...) [7KW20WY1]
-            "unapprovedPosts" -> unapprovedPostsJson, // includes bookmarks
+            "unapprovedPosts" -> unapprovedPostsJson, // includes own bookmarks [load_bokms]
             "unapprovedPostAuthors" -> unapprovedAuthorsJson,  // should remove [5WKW219] + search for elsewhere
             "knownAnons" -> JsArray(ownAnons map JsKnownAnonym),
             // later: JsArray(real-anon-authors.map(a => JsUser(a))), if is staff.
@@ -1361,10 +1362,16 @@ class JsonMaker(dao: SiteDao) {
           includeAboutCategoryPages = false)
 
 
+  RENAME // to loadUnapprovedPostsAndOwnPrivateAndAuthorsJson?  But too long name?
+  // Maybe rename to loadNonPublicPostsAndAuthors?
+  // With non-public meaning: unapproved posts (if one is mod), one's own bookmarks & drafts?
+  // (But "private" would be misleading — unapproved posts aren't really private.)
   private def unapprovedPostsAndAuthorsJson(reqer: Pat, pageId: PageId,
         unapprovedPostAuthorIds: Set[UserId], tx: SiteTx): UnapprovedPostsAndAuthors = {
 
-    // This loads bookmarks too (they're unapproved, and private: nrs < PageParts.MaxPrivateNr).
+    // This loads bookmarks too. [load_bokms]
+    // (They're unapproved, and private: nrs < PageParts.MaxPrivateNr.)
+    // Later, will load one's drafts too. [drafts_as_posts]
     var posts: Seq[Post] = {
       COULD_OPTIMIZE // [remember_if_bookmarks_or_priv_comts]
       // We currently don't know if there're [priv_comts] or bookmarks on this page,
@@ -1374,7 +1381,8 @@ class JsonMaker(dao: SiteDao) {
       //     Nil
       // else
       if (reqer.isAuthenticated) {
-        tx.loadUnapprovedPosts(pageId, ownBy = reqer.id, allPublic = reqer.isStaff, limit = 999)
+        tx.loadUnapprovedPostsAndOwnPrivate(
+              pageId, ownBy = reqer.id, allPublic = reqer.isStaff, limit = 999)
       }
       else {
         // Others cannot see unapproved posts. Except for category mods? [cat_mods]

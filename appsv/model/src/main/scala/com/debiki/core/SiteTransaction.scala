@@ -125,9 +125,11 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadPostsByExtIdAsMap(extImpIds: Iterable[ExtId]): immutable.Map[ExtId, Post]
 
   def loadAllPostsForExport(): immutable.Seq[Post]
-  // This loads one's bookmarks too (they are posts, unapproved).
-  def loadUnapprovedPosts(pageId: PageId, ownBy: PatId, allPublic: Bo = false,
+
+  // This loads one's bookmarks too (they are posts, unapproved), and later, one's drafts.
+  def loadUnapprovedPostsAndOwnPrivate(pageId: PageId, ownBy: PatId, allPublic: Bo = false,
                           limit: i32): immutable.Seq[Post]
+
   def loadCompletedForms(pageId: PageId, limit: Int): immutable.Seq[Post]
 
 

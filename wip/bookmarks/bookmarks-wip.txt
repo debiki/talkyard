@@ -40,6 +40,10 @@ TODO:
 
   - BUG: Can't save [empty_bookmarks]  (bookmarks w/o any notes, just a link).
 
+  - Not a bug:
+    hasNonDeletedSuccessor() only sees the publ part of a page? [bookmarks_filtered_out]
+    tx.loadUnapprovedPostsAndOwnPrivate() loads only one's *own* bookmarks (& drafts, later).
+
   - Ugly error diag if trying to bookmark sth twice
 
   - Finish e2e tests, e.g. make sure can't find when searching. TyTBOKM_SRCH_0FIND
