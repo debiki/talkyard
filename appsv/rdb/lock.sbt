@@ -33,7 +33,7 @@ Compile / dependencyOverrides ++= {
       "org.owasp.encoder" % "encoder" % "1.4.0",
       "org.playframework" % "play-functional_2.13" % "3.0.6",
       "org.playframework" % "play-json_2.13" % "3.0.6",
-      "org.postgresql" % "postgresql" % "42.7.10",
+      "org.postgresql" % "postgresql" % "42.7.11",
       "org.scalactic" % "scalactic_2.13" % "3.2.19",
       "org.slf4j" % "slf4j-api" % "2.0.17"
     )
