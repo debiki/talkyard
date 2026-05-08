@@ -220,6 +220,10 @@ so that /category/* starts making sense, e.g. for [embedded_jails].
 DONE: Implement sub categories.
 But missing: Search in sub cats, if searching in base cat.
 
+[2nd_create_cat_btn]
+It'd be good with a Create Category button at the bottom of the cats tropdown lists?
+So there's 2 ways to discover how to create cats.
+
 [sub_pages]  aka sub_tasks, nested_pages, child_pages, parent_page, project_pages
 Let pages optionally have a parent page. This can be nice, to create small projects:
 A page that describes the project, and one child page per major task-to-be-done.
@@ -294,6 +298,8 @@ Wasn't fixed in first iteration.
 + get notified about posts w tags one follows
 + for some endpoints, [tags_and_badges_missing]
 + access restricted tags [priv_tags]
++ add tags when creating topic. Don't forget to incl tags in draft.
+  But then need to do the [drafts_as_posts] refactoring first?
 
 + [tag_perms] Grant create/edit tag permissions to groups or trust levels?
 
