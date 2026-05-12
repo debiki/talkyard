@@ -3,12 +3,15 @@ name: Translate UI
 description: How to translate the Talkyard user interface to a new language.
 ---
 
-To translate the Talkyard user interface to a new language:
+To translate the Talkyard user interface to a new language `nn_NN`,
+where `nn` is the language code, `NN` the country code. For example, `sv_SE`.
 
-1. Copy `translations/en_US/i18n.ts` to a new directory named after the language and country code,
-   say, `translations/nn_NN/`, where `nn` is the language code, `NN` the country code.
+
+1. Look at: `translations/nn_NN/i18n.ts`. This is the English original translation
+   — you'll overwrite it, that's fine:
 
 2. Translate the text fields in the new `nn_NN/i18n.ts` file to language `nn_NN`.
+   Translate in-place. No need to take any backup.
 
    Use your memory / built-in language knowledge.
 
@@ -31,11 +34,12 @@ To translate the Talkyard user interface to a new language:
 
    Do NOT use Google Translate API. You already have translation knowledge built-in.
 
-   Do NOT copy any other translation file instead of the `en_US/i18n.ts` file.
-   Other files are *incomplete*.
-
    Instead, start with the English translation file (the one you copied in step 1 above),
    and edit the text `nn_NN/i18n.ts` in-place from English to language `nn_NN`.
+
+   Translate values in THE WHOLE FILE.
+   Don't just look at the first 150 lines — there's 1300 lines in total!
+
 
    **Examples:**
 
@@ -65,6 +69,18 @@ To translate the Talkyard user interface to a new language:
    CmtBelowPendAppr: (isYour) => (isYour ? "Din kommentar" : "Kommentaren") + " väntar på att godkännas.",
    ```
 
+   Keep `\n` newlines — do not replace with a real newline. For example, this:
+
+   ```
+   valueWithNewline: `\nHello`,
+   ```
+
+   would become:
+
+   ```
+   valueWithNewline: `\nHej`,
+   ```
+
 
 3. Edit files: (so Talkyard becomes aware of the new translation)
 
@@ -89,5 +105,9 @@ To translate the Talkyard user interface to a new language:
 
 
 5. Don't commit any changes. A human will review and do that.
+
+
+
+If you run into big problems, don't undo your changes. I want to see what went wrong.
 
 
