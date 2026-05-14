@@ -58,15 +58,15 @@ var t_sv_SE: TalkyardTranslations = t = {
   Hide: "Göm",
   Home: "Hem",
   Idea: "Idé",
-  Join: "Joina",
-  KbdShrtcsC: "Keyboard shortcuts: ",
+  Join: "Gå med",
+  KbdShrtcsC: "Tangentbordsgenvägar: ",
   Loading: "Laddar...",
   LoadMore: "Mer ...",
   LogIn: "Logga in",
-  LoggedInAs: "Logged in as ",
+  LoggedInAs: "Inloggad som ",
   LogOut: "Logga ut",
   Maybe: "Kanske",
-  Manage: "Manage",
+  Manage: "Hantera",
   Members: "Medlemmar",
   MessageN: "Meddelande",
   MoreDots: "Mer...",
@@ -75,20 +75,20 @@ var t_sv_SE: TalkyardTranslations = t = {
   NameC: "Namn:",
   NewTopic: "Nytt ämne",
   NoCancel: "Nej, ångra",
-  Notifications: "Notifications",
-  NotImplemented: "(Not implemented)",
-  NotYet: "Not yet",
-  NoTitle: "No title",
-  NoTopics: "No topics.",
+  Notifications: "Notifieringar",
+  NotImplemented: "(Inte implementerat)",
+  NotYet: "Inte än",
+  NoTitle: "Ingen titel",
+  NoTopics: "Inga ämnen.",
   Okay: "Okej",
   OkayDots: "Okej ...",
   Online: "Online",
   onePerLine: "en per rad",
-  PreviewV: "Preview",
+  PreviewV: "Förhandsgranska",
   Problem: "Problem",
-  progressN: "progress",
+  progressN: "framsteg",
   Question: "Fråga",
-  Recent: "Recent",
+  Recent: "Senaste",
   Remove: "Ta bort",
   Reopen: "Öppna",
   ReplyV: "Svara",
@@ -97,11 +97,11 @@ var t_sv_SE: TalkyardTranslations = t = {
   replies: "svar",
   Save: "Spara",
   SavingDots: "Sparar ...",
-  SavedDot: "Saved.",
+  SavedDot: "Sparat.",
   Search: "Sök",
   SendMsg: "Skicka Meddelande",
   ShowPreview: "Förhandsgranska",
-  SignUp: "Signa Upp",
+  SignUp: "Gå med",
   Solution: "Lösning",
   started: "Påbörjat",
   Summary: "Sammanfattning",
@@ -166,70 +166,70 @@ var t_sv_SE: TalkyardTranslations = t = {
 
   inp: {
     // Email address input field:
-    EmReq: "Email required",
-    NoSpcs: "No spaces please",
-    InvldAddr: "Not a valid email address",
-    NoBadChrs: "No weird characters please",
+    EmReq: "E-post krävs",
+    NoSpcs: "Inga mellanslag tack",
+    InvldAddr: "Inte en giltig e-postadress",
+    NoBadChrs: "Inga konstiga tecken tack",
 
     // Full name input field:
-    NotOnlSpcs: "Not just spaces please",
-    NoAt: "No @ please",
+    NotOnlSpcs: "Inte bara mellanslag tack",
+    NoAt: "Inga @ tack",
 
     // Username input field:
-    NoDash: "No dashes (-) please",
-    DontInclAt: "Don't include the @",
-    StartEndLtrDgt: "Start and end with a letter or a digit",
-    OnlLtrNumEtc: "Only letters (a-z, A-Z) and numbers, and _ (underscore)",
+    NoDash: "Inga bindestreck (-) tack",
+    DontInclAt: "Inkludera inte @",
+    StartEndLtrDgt: "Börja och sluta med en bokstav eller siffra",
+    OnlLtrNumEtc: "Endast bokstäver (a-z, A-Z), siffror och _ (understreck)",
     // This shown just below the username input:
-    UnUnqShrt_1: "Your ",
-    UnUnqShrt_2: "@username",
-    UnUnqShrt_3: ", unique and short",
+    UnUnqShrt_1: "Ditt ",
+    UnUnqShrt_2: "@användarnamn",
+    UnUnqShrt_3: ", unikt och kort",
 
     // Generic messages for all input fields:
-    TooShort: (minLength: number) => `Should be at least ${minLength} characters`,
-    TooLong: (maxLength: number) => `Too long. Should be at most ${maxLength} characters`,
+    TooShort: (minLength: number) => `Bör vara minst ${minLength} tecken`,
+    TooLong: (maxLength: number) => `För långt. Bör vara som mest ${maxLength} tecken`,
   },
 
 
   // Notification levels.
 
   nl: {
-    EveryPost: "Every Post",
-    EveryPostInTopic: "You'll be notified of all new replies in this topic.",
-    EveryPostInCat: "You'll be notified of all new topics and replies, in this category.",
-    EveryPostInTopicsWithTag: "You'll be notified of new topics with this tag, and all replies in those topics.",
-    EveryPostWholeSite: "You'll be notified of all new topics and replies, anywhere.",
+    EveryPost: "Varje inlägg",
+    EveryPostInTopic: "Du blir notifierad om alla nya svar i det här ämnet.",
+    EveryPostInCat: "Du blir notifierad om alla nya ämnen och svar i den här kategorin.",
+    EveryPostInTopicsWithTag: "Du blir notifierad om nya ämnen med den här taggen, och alla svar i dessa ämnen.",
+    EveryPostWholeSite: "Du blir notifierad om alla nya ämnen och svar, var som helst.",
 
     // One will be notified about the *first* post in a new topic, only. That is, the Original Post
     // (that's what the first post is called, in a discussion forum topic).
-    NewTopics: "New Topics",
-    NewTopicsInCat: "You'll be notified of new topics in this category.",
-    NewTopicsWithTag: "You'll be notified of new topics with this tag.",
-    NewTopicsWholeSite: "You'll be notified of new topics, anywhere.",
+    NewTopics: "Nya ämnen",
+    NewTopicsInCat: "Du blir notifierad om nya ämnen i den här kategorin.",
+    NewTopicsWithTag: "Du blir notifierad om nya ämnen med den här taggen.",
+    NewTopicsWholeSite: "Du blir notifierad om nya ämnen, var som helst.",
 
-    Tracking: "Tracking",
+    Tracking: "Spårar",
 
     Normal: "Normal",
-    NormalDescr: "You'll be notified if someone talks to you, also indirectly, e.g. a " +
-      "reply to a reply to you.",
+    NormalDescr: "Du blir notifierad om någon pratar med dig, även indirekt, t.ex. ett " +
+      "svar på ett svar till dig.",
     //NormalTopic_1: "You'll be notified if someone talks to you, or mentions your ",
     //NormalTopic_2: "@name",
 
-    Hushed: "Hushed",
-    HushedDescr: "You'll be notified only if someone talks directly to you.",
+    Hushed: "Dämpad",
+    HushedDescr: "Du blir notifierad endast om någon pratar direkt med dig.",
 
-    Muted: "Muted",
-    MutedTopic: "No notifications.",
+    Muted: "Tystad",
+    MutedTopic: "Inga notifieringar.",
   },
 
 
   // Forum intro text
 
   fi: {
-    Edit: "Edit",
-    Hide_1: "Hide",
-    Hide_2: ", click ",
-    Hide_3: " to reopen",
+    Edit: "Ändra",
+    Hide_1: "Göm",
+    Hide_2: ", klicka på ",
+    Hide_3: " för att öppna igen",
   },
 
 
@@ -279,8 +279,8 @@ var t_sv_SE: TalkyardTranslations = t = {
     AssignedToYou: "Tilldelade till dig",
 
     DeletedTopics: "Raderade ämnen",
-    ShowDeleted: "Show deleted",
-    ShowDeletedDescr: "Shows all topics, including deleted topics",
+    ShowDeleted: "Visa raderade",
+    ShowDeletedDescr: "Visar alla ämnen, även raderade ämnen",
 
     // Rightmost buttons
 
@@ -301,22 +301,22 @@ var t_sv_SE: TalkyardTranslations = t = {
 
   ft: {
     ExplIcons: "Förklara ikoner ...",
-    IconExplanation: "Icon explanation:",
-    ExplGenDisc: "A general discussion.",
-    ExplQuestion: "A question with no accepted answer.",
-    ExplAnswer: "A question with an accepted answer.",
-    ExplIdea: "An idea / suggestion.",
-    ExplProblem: "A problem.",
-    ExplPlanned: "Something we're planning to do or fix.",
-    ExplDone: "Something that's been done or fixed.",
-    ExplClosed: "Topic closed.",
-    ExplPinned: "Topic always listed first (perhaps only in its own category).",
+    IconExplanation: "Ikonförklaring:",
+    ExplGenDisc: "En allmän diskussion.",
+    ExplQuestion: "En fråga utan accepterat svar.",
+    ExplAnswer: "En fråga med ett accepterat svar.",
+    ExplIdea: "En idé / ett förslag.",
+    ExplProblem: "Ett problem.",
+    ExplPlanned: "Något vi planerar att göra eller fixa.",
+    ExplDone: "Något som har gjorts eller fixats.",
+    ExplClosed: "Ämnet är stängt.",
+    ExplPinned: "Ämnet visas alltid först (kanske bara i sin egen kategori).",
 
-    PopularTopicsComma: "Popular topics, ",
-    TopFirstAllTime: "Shows the most popular topics first, all time.",
-    TopFirstPastDay: "Shows topics popular during the past day.",
+    PopularTopicsComma: "Populära ämnen, ",
+    TopFirstAllTime: "Visar de mest populära ämnena först, genom tiderna.",
+    TopFirstPastDay: "Visar ämnen som varit populära det senaste dygnet.",
 
-    CatHasBeenDeleted: "This category has been deleted",
+    CatHasBeenDeleted: "Den här kategorin har tagits bort",
 
     TopicsActiveFirst: "Ämnen, nyligen aktiva först",
     TopicsNewestFirst: "Ämnen, nya först",
@@ -407,11 +407,11 @@ var t_sv_SE: TalkyardTranslations = t = {
     NoDirMsgs: "Inget",  // meaning: "No direct messages"
 
     // The click-topic dropdown menu:
-    TopicActions: "Topic actions",
+    TopicActions: "Ämnesåtgärder",
     ViewPeopleHere: "Se vilka som är här",
     ViewAddRemoveMembers: "Visa / lägg till / ta bort medlemmar",
     ViewChatMembers: "Visa chattmedlemmar",
-    EditChat: "Ändra chattens title och syfte",
+    EditChat: "Ändra chattens titel och syfte",
     LeaveThisChat: "Lämna chatten",
     LeaveThisCommunity: "Lämna denna community",
     JoinThisCommunity: "Gå med i denna community",
@@ -431,12 +431,12 @@ var t_sv_SE: TalkyardTranslations = t = {
     UsersInThisChat: "Folk i chatten:",
     UsersInThisTopic: "Folk i detta samtal:",
 
-    GettingStartedGuide: "Admin Guide",
-    AdminGuide: "Admin Guide",
+    GettingStartedGuide: "Kom igång-guide",
+    AdminGuide: "Adminguide",
     Guide: "Guide",
 
     // How to hide the sidebar.
-    CloseShortcutS: "Stäng (genäg: 'S')",
+    CloseShortcutS: "Stäng (genväg: 'S')",
 
     // ----- Online users list / Users in current topic
 
@@ -474,12 +474,12 @@ var t_sv_SE: TalkyardTranslations = t = {
 
   // Change page dialog
   cpd: {
-    ClickToChange: "Click to change status",
-    ClickToViewAnswer: "Click to view answer",
-    ViewAnswer: "View answer",
-    ChangeStatusC: "Change status to:",
-    ChangeCatC: "Change category:",
-    ChangeTopicTypeC: "Change topic type:",
+    ClickToChange: "Klicka för att ändra status",
+    ClickToViewAnswer: "Klicka för att se svar",
+    ViewAnswer: "Visa svar",
+    ChangeStatusC: "Ändra status till:",
+    ChangeCatC: "Ändra kategori:",
+    ChangeTopicTypeC: "Ändra ämnestyp:",
   },
 
 
@@ -500,102 +500,104 @@ var t_sv_SE: TalkyardTranslations = t = {
     // These texts are split into parts 1,2 or 1,2,3 ec, because in between the texts,
     // icons are shown, to help people understand what those icons mean.
 
-    ThisFormClosed_1: "This form has been ",
+    ThisFormClosed_1: "Det här formuläret har ",
     // A Topic-has-been-Closed icon shown here, between text parts 1 (just above) and 2 (below).
-    ThisFormClosed_2: "closed; you can no longer fill it in and post it.",
+    ThisFormClosed_2: "stängts; du kan inte längre fylla i och posta det.",
 
-    ThisTopicClosed_1: "This topic has been ",
+    ThisTopicClosed_1: "Det här ämnet har ",
     // A Topic-has-been-Closed icon, + the text "closed", shown here.
-    ThisTopicClosed_2: ". You can still post comments.",
+    ThisTopicClosed_2: ". Du kan fortfarande skriva kommentarer.",
 
-    ThisPageDeleted: "This page has been deleted",
-    CatDeldPageToo: "Category deleted, so this page was deleted too",
+    ThisPageDeleted: "Den här sidan har tagits bort",
+    CatDeldPageToo: "Kategorin har tagits bort, så den här sidan togs också bort",
 
-    ThreadDeld: "Thread deleted",
-    CmntDeld: "Comment deleted",
-    PostDeld: "Post deleted",
-    DiscDeld: "Discussion deleted",
-    PageDeld: "Page deleted",
-    TitlePendAppr: "Title pending approval",
-    TextPendingApproval: "Text pending approval",
+    ThreadDeld: "Tråden har tagits bort",
+    CmntDeld: "Kommentaren har tagits bort",
+    PostDeld: "Inlägget har tagits bort",
+    DiscDeld: "Diskussionen har tagits bort",
+    PageDeld: "Sidan har tagits bort",
+    TitlePendAppr: "Titeln väntar på godkännande",
+    TextPendingApproval: "Texten väntar på godkännande",
 
-    TooltipQuestClosedNoAnsw: "This question has been closed without any accepted answer.",
-    TooltipTopicClosed: "This topic is closed.",
+    TooltipQuestClosedNoAnsw: "Den här frågan har stängts utan något accepterat svar.",
+    TooltipTopicClosed: "Det här ämnet är stängt.",
 
-    TooltipQuestSolved: "This is a solved question",
-    TooltipQuestUnsolved: "This is an unsolved question",
+    TooltipQuestSolved: "Det här är en löst fråga",
+    TooltipQuestUnsolved: "Det här är en olöst fråga",
 
-    StatusDone: "Done",
-    TooltipProblFixed: "This has been fixed",
-    TooltipDone: "This has been done",
+    StatusDone: "Klart",
+    TooltipProblFixed: "Detta har fixats",
+    TooltipDone: "Detta har gjorts",
 
-    StatusStarted: "Started",
-    TooltipFixing: "We're currently fixing this",
-    TooltipImplementing: "We're currently implementing this",
+    StatusStarted: "Påbörjat",
+    TooltipFixing: "Vi håller på att fixa detta",
+    TooltipImplementing: "Vi håller på att implementera detta",
 
-    StatusPlanned: "Planned",
-    TooltipProblPlanned: "We're planning to fix this",
-    TooltipIdeaPlanned: "We're planning to implement this",
+    StatusPlanned: "Planerat",
+    TooltipProblPlanned: "Vi planerar att fixa detta",
+    TooltipIdeaPlanned: "Vi planerar att implementera detta",
 
-    StatusNew: "New",
-    StatusNewDtl: "New topic, under discussion",
-    TooltipUnsProbl: "This is an unsolved problem",
-    TooltipIdea: "This is an idea",
+    StatusNew: "Nytt",
+    StatusNewDtl: "Nytt ämne, under diskussion",
+    TooltipUnsProbl: "Detta är ett olöst problem",
+    TooltipIdea: "Detta är en idé",
 
-    TooltipPersMsg: "Personal message",
-    TooltipChat: "# means Chat Channel",
-    TooltipPrivChat: "This is a private chat channel",
+    TooltipPersMsg: "Privat meddelande",
+    TooltipChat: "# betyder chattkanal",
+    TooltipPrivChat: "Det här är en privat chattkanal",
 
-    TooltipPinnedGlob: "\nPinned globally.",
-    TooltipPinnedCat: "\nPinned in this category.",
+    TooltipPinnedGlob: "\nFastnålat globalt.",
+    TooltipPinnedCat: "\nFastnålat i den här kategorin.",
 
-    SolvedClickView_1: "Löst i post #",
-    SolvedClickView_2: ", clicka för att se",
+    SolvedClickView_1: "Löst i inlägg #",
+    SolvedClickView_2: ", klicka för att se",
 
-    PostHiddenClickShow: "Post hidden; click to show",
-    ClickSeeMoreRepls: "Show more replies",
-    ClickSeeMoreComments: "Show more comments",
-    ClickSeeThisComment: "Click to show this comment",
-    clickToShow: "click to show",
+    PostHiddenClickShow: "Inlägget är dolt; klicka för att visa",
+    ClickSeeMoreRepls: "Visa fler svar",
+    ClickSeeMoreComments: "Visa fler kommentarer",
+    ClickSeeThisComment: "Klicka för att visa den här kommentaren",
+    clickToShow: "klicka för att visa",
 
-    ManyDisagree: "Many disagree with this:",
-    SomeDisagree: "Some disagree with this:",
+    ManyDisagree: "Många håller inte med om detta:",
+    SomeDisagree: "Vissa håller inte med om detta:",
 
-    CmtPendAppr: "Comment pending approval, posted ",
-    CmtBelowPendAppr: (isYour) => (isYour ? "Your" : "The") + " comment below is pending approval.",
+    CmtPendAppr: "Kommentaren väntar på godkännande, postad ",
+    CmtBelowPendAppr: (isYour) => (isYour ? "Din" : "Kommentaren") + " nedan väntar på godkännande.",
 
-    _and: " and",
+    _and: " och",
 
     repliesTo: "svarar till",
     InReplyTo: "Svar till",
     YourReplyTo: "Ditt svar till ",
-    YourChatMsg: "Ditt meddelande: ",
+    YourChatMsg: "Ditt chattmeddelande: ",
     YourDraft: "Ditt utkast",
-    YourEdits: "Dina ändringar: ",
-    YourProgrNoteC: "Your progress note:",  // MISSING
-    aProgrNote: "a progress note: ",  // MISSING
+    YourEdits: "Dina redigeringar: ",
+    YourProgrNoteC: "Din framstegsanteckning:",
+    aProgrNote: "en framstegsanteckning: ",
+
 
     ReplyingToC: "Svarar till:",
-    ScrollToPrevw_1: "Skrolla to ",
-    ScrollToPrevw_2: "förhandsgranska",
+    ScrollToPrevw_1: "Scrolla till ",
+    ScrollToPrevw_2: "förhandsgranskning",
 
     UnfinEdits: "Påbörjade ändringar",
     ResumeEdting: "Fortsätt skriva",
     DelDraft: "Radera utkast",
 
-    ClickViewEdits: "Clicka för att se gamla ändringar",
+    ClickViewEdits: "Klicka för att se gamla ändringar",
 
     By: "Av ", // ... someones name
 
     // Discussion ...
-    aboutThisIdea: "about how and if to do this idea",
-    aboutThisProbl: "about how and if to fix this",
+    aboutThisIdea: "om hur och om vi ska genomföra denna idé",
+    aboutThisProbl: "om hur och om vi ska fixa detta",
 
-    AddProgrNote: "Add progress note",
+    AddProgrNote: "Lägg till framstegsanteckning",
     // Progress ...
-    withThisIdea: "with doing this idea",
-    withThisProbl: "with handling this problem",
-    withThis: "with doing this",
+    withThisIdea: "med att genomföra denna idé",
+    withThisProbl: "med att hantera detta problem",
+    withThis: "med att göra detta",
+  },
   },
 
 
@@ -604,37 +606,37 @@ var t_sv_SE: TalkyardTranslations = t = {
   // Shown between the original post and all replies.
 
   mb: {
-    NotfsAbtThisC: "Notifications about this topic:",
+    NotfsAbtThisC: "Notifieringar om det här ämnet:",
 
     // If is a direct message topic, members listed below this text.
-    Msg: "Message",
+    Msg: "Meddelande",
 
-    SmrzRepls: "Sammanfatta Diskussion",
+    SmrzRepls: "Sammanfatta diskussionen",
 
     // Don't bother about being correct with "1 reply", "2,3,4 replies".
     // Just write "replies" always instead? (also if only one)
 
     EstTime: (numReplies: number, minutes: number) =>
-        `There are ${numReplies} replies. Estimated reading time: ${minutes} minutes`,
+        `Det finns ${numReplies} svar. Beräknad lästid: ${minutes} minuter`,
 
     DoneSummarizing: (numSummarized: number, numShownBefore: number) =>
-        `Done. Summarized ${numSummarized} replies, of the ${numShownBefore} replies previously shown.`,
+        `Klart. Sammanfattade ${numSummarized} svar, av de ${numShownBefore} svar som visades tidigare.`,
   },
 
 
   // Post actions
 
   pa: {
-    CloseOwnQuestionTooltip: "Close this question if you don't need an answer any more.",
-    CloseOthersQuestionTooltip: "Close this question if it doesn't need an answer, e.g. if " +
-        "it is off-topic or already answered in another topic.",
-    CloseToDoTooltip: "Close this To-Do if it does not need to be done or fixed.",
-    CloseTopicTooltip: "Close this topic if it needs no further consideration.",
+    CloseOwnQuestionTooltip: "Stäng den här frågan om du inte behöver ett svar längre.",
+    CloseOthersQuestionTooltip: "Stäng den här frågan om den inte behöver ett svar, t.ex. om " +
+        "den är off-topic eller redan har besvarats i ett annat ämne.",
+    CloseToDoTooltip: "Stäng den här uppgiften om den inte behöver göras eller fixas.",
+    CloseTopicTooltip: "Stäng det här ämnet om det inte behöver mer uppmärksamhet.",
 
-    AcceptBtnExpl: "Accept this as the answer to the question or problem",
-    SolutionQ: "Solution?",
-    ClickUnaccept: "Click to un-accept this answer",
-    PostAccepted: "This post has been accepted as the answer",
+    AcceptBtnExpl: "Acceptera detta som svaret på frågan eller problemet",
+    SolutionQ: "Lösning?",
+    ClickUnaccept: "Klicka för att inte längre acceptera detta svar",
+    PostAccepted: "Det här inlägget har accepterats som svaret",
 
     NumLikes: (num: number) => num + " Gillar",
     NumDisagree: (num: number) => num + " Håller ej med",
@@ -643,42 +645,42 @@ var t_sv_SE: TalkyardTranslations = t = {
 
     MoreVotes: "Fler röster...",
     LikeThis: "Gilla",
-    LinkToPost: "Link to this post",
+    LinkToPost: "Länk till det här inlägget",
     Report: "Anmäl",
     ReportThisPost: "Anmäl detta",
     Admin: "Admin",
     DiscIx: "Andra diskussioner",
 
     Disagree: "Håller ej med",
-    DisagreeExpl: "Click here to disagree with this post, or to warn others about factual errors.",
-    Bury: "Flyta ner",
-    BuryExpl: "Click to sort other posts before this post. Only the forum staff can see your vote.",
+    DisagreeExpl: "Klicka här för att visa att du inte håller med, eller för att varna andra om faktabrott.",
+    Bury: "Flytta ner",
+    BuryExpl: "Klicka för att sortera andra inlägg före det här. Endast forumets personal kan se din röst.",
     Unwanted: "Oönskad",
-    UnwantedExpl: "If you do not want this post on this website. This would reduce the trust I have " +
-            "in the post author. Only the forum staff can see your vote.",
+    UnwantedExpl: "Om du inte vill ha det här inlägget på den här webbplatsen. Detta skulle minska förtroendet jag har " +
+            "för författaren. Endast forumets personal kan se din röst.",
 
-    AddTags: "Add/remove tags",
-    UnWikify: "Un-Wikify",
-    Wikify: "Wikify",
-    PinDeleteEtc: "Pin / Delete / Category ...",
+    AddTags: "Lägg till/ta bort taggar",
+    UnWikify: "Ta bort Wiki-status",
+    Wikify: "Gör till Wiki",
+    PinDeleteEtc: "Fäst / Ta bort / Kategori ...",
   },
 
 
   // Share dialog
 
   sd: {
-    Copied: "Copied.",
-    CtrlCToCopy: "Hit CTRL+C to copy.",
-    ClickToCopy: "Click to copy link.",
+    Copied: "Kopierat.",
+    CtrlCToCopy: "Tryck på CTRL+C för att kopiera.",
+    ClickToCopy: "Klicka för att kopiera länken.",
   },
 
 
   // Chat
 
   c: {
-    About_1: "This is the ",
-    About_2: " chat channel, created by ",
-    ScrollUpViewComments: "Scroll up to view older comments",
+    About_1: "Det här är ",
+    About_2: "-chattkanalen, skapad av ",
+    ScrollUpViewComments: "Scrolla upp för att se äldre kommentarer",
     Purpose: "Syfte:",
     MessageDeleted: "(Meddelande borttaget)",
     JoinThisChat: "Gå med i denna chatt",
@@ -691,75 +693,75 @@ var t_sv_SE: TalkyardTranslations = t = {
   // My Menu
 
   mm: {
-    NeedsReview: "Needs review ",
-    AdminHelp: "Admin help ",
-    StaffHelp: "Staff help ",
-    DraftsEtc: "Drafts, bookmarks, tasks",
-    MoreNotfs: "View all notifications",
-    DismNotfs: "Mark all as read",
-    ViewProfile: "View your profile",
-    ViewGroups: "View groups",
-    LogOut: "Log out",
-    UnhideHelp: "Unhide help messages",
+    NeedsReview: "Behöver granskas ",
+    AdminHelp: "Adminhjälp ",
+    StaffHelp: "Personalhjälp ",
+    DraftsEtc: "Utkast, bokmärken, uppgifter",
+    MoreNotfs: "Visa alla notifieringar",
+    DismNotfs: "Markera alla som lästa",
+    ViewProfile: "Visa din profil",
+    ViewGroups: "Visa grupper",
+    LogOut: "Logga ut",
+    UnhideHelp: "Visa hjälpmeddelanden",
   },
 
 
   // Scroll buttons
 
   sb: {
-    ScrollToC: "Scroll to:",
+    ScrollToC: "Scrolla till:",
     Scroll: "Scroll",
 
     // The Back button, and the letter B is a keyboard shortcut.
     // If in your language, "Back" doesn't start with 'B', then instead
     // set Back_1 to '' (empty text), and Back_2 to:  "Back (B)" — and "Back" (but not "B")
     // translated to your language.
-    Back_1: "B",
-    Back_2: "ack",
-    BackExpl: "Scroll back to your previous position on this page",
+    Back_1: "T",
+    Back_2: "illbaka",
+    BackExpl: "Scrolla tillbaka till din tidigare position på den här sidan",
 
     // These are useful on mobile — then, no keybard with Home (= scroll to top) and End buttons.
     // And, on a keyboard, once you get used to it, it's quite nice to click 1 to go to the
     // top, and 2 to see the first reply, and B to go back, F forward, so on.
-    PgTop: "Page top",
-    PgTopHelp: "Go to the top of the page. Keyboard shortcut: 1",
-    Repl: "Replies",
-    ReplHelp: "Go to the Replies section. Shortcut: 2",
-    Progr: "Progress",
+    PgTop: "Sidans topp",
+    PgTopHelp: "Gå till toppen av sidan. Genväg: 1",
+    Repl: "Svar",
+    ReplHelp: "Gå till svarssektionen. Genväg: 2",
+    Progr: "Framsteg",
     // The Progress section is at the end of the page, and there, things like
     // "Alice changed status to Doing" and "Alise marked this as Done" and "Topic closed by ..."
     // are shown. (And, optionally, comments by staff or the people working with the issue.)
-    ProgrHelp: "Go to the Progress section. Shortcut: 3",
-    PgBtm: "Page bottom",
-    Btm: "Bottom",
-    BtmHelp: "Go to the bottom of the page. Shortcut: 4",
+    ProgrHelp: "Gå till framstegssektionen. Genväg: 3",
+    PgBtm: "Sidans botten",
+    Btm: "Botten",
+    BtmHelp: "Gå till botten av sidan. Genväg: 4",
 
     // "Keyboard shrotcuts: ..., and B to scroll back"
-    Kbd_1: ", and ",
+    Kbd_1: ", och ",
     // then the letter 'B' (regardless of language)
-    Kbd_2: " to scroll back",
+    Kbd_2: " för att scrolla tillbaka",
   },
 
 
   // Select users dialog
   sud: {
-    SelectUsers: "Select users",
-    AddUsers: "Add users",
+    SelectUsers: "Välj användare",
+    AddUsers: "Lägg till användare",
   },
 
 
   // About user dialog
 
   aud: {
-    IsMod: "Is moderator.",
-    IsAdm: "Is administrator.",
-    IsDeld: "Is deactivated or deleted.",
-    ThisIsGuest: "This is a guest user, could in fact be anyone.",
-    ViewInAdm: "View in Admin Area",
-    ViewProfl: "View Profile",
-    ViewComments: "View other comments",
-    RmFromTpc: "Remove from topic",
-    EmAdrUnkn: "Email address unknown — this guest won't be notified about replies.",
+    IsMod: "Är moderator.",
+    IsAdm: "Är administratör.",
+    IsDeld: "Är inaktiverad eller borttagen.",
+    ThisIsGuest: "Det här är en gästanvändare, kan i själva verket vara vem som helst.",
+    ViewInAdm: "Visa i adminområdet",
+    ViewProfl: "Visa profil",
+    ViewComments: "Visa andra kommentarer",
+    RmFromTpc: "Ta bort från ämnet",
+    EmAdrUnkn: "E-postadress okänd — den här gästen kommer inte att notifieras om svar.",
   },
 
 
@@ -768,226 +770,226 @@ var t_sv_SE: TalkyardTranslations = t = {
   upp: {
     // ----- Links
 
-    Preferences: "Preferenser",
+    Preferences: "Inställningar",
     Invites: "Inbjudningar",
     DraftsEtc: "Utkast etc",
     About: "Om dig",
-    Privacy: "Privacy",
+    Privacy: "Integritet",
     Security: "Säkerhet",
     Account: "Konto",
     Interface: "Gränssnitt",
 
     // ----- Overview stats
 
-    JoinedC: "Joined: ",
-    PostsMadeC: "Posts made: ",
-    LastPostC: "Last post: ",
-    LastSeenC: "Last seen: ",
-    TrustLevelC: "Trust level: ",
+    JoinedC: "Gick med: ",
+    PostsMadeC: "Inlägg gjorda: ",
+    LastPostC: "Senaste inlägget: ",
+    LastSeenC: "Senast sedd: ",
+    TrustLevelC: "Förtroendenivå: ",
 
     // ----- Action buttons
 
     // ----- Profile pic
 
-    UploadPhoto: "Upload photo",
-    ChangePhoto: "Change photo",
-    ImgTooSmall: "Image too small: should be at least 100 x 100",
+    UploadPhoto: "Ladda upp bild",
+    ChangePhoto: "Byt bild",
+    ImgTooSmall: "Bilden är för liten: bör vara minst 100 x 100",
 
     // ----- Activity
 
-    OnlyStaffCanSee: "Only staff and trusted core members, can see this.",
-    OnlyMbrsCanSee: "Only people who have been active members for a while can see this.",
-    Nothing: "Nothing to show",
-    Posts: "Posts",
-    NoPosts: "No posts.",
-    Topics: "Topics",
-    NoTopics: "No topics.",
+    OnlyStaffCanSee: "Endast personal och betrodda kärnmedlemmar kan se detta.",
+    OnlyMbrsCanSee: "Endast personer som har varit aktiva medlemmar ett tag kan se detta.",
+    Nothing: "Inget att visa",
+    Posts: "Inlägg",
+    NoPosts: "Inga inlägg.",
+    Topics: "Ämnen",
+    NoTopics: "Inga ämnen.",
 
     // ----- User status
 
-    UserBanned: "This user is banned",
-    UserSuspended: (dateUtc: string) => `This user is suspended until ${dateUtc} UTC`,
-    ReasonC: "Reason: ",
+    UserBanned: "Den här användaren är bannlyst",
+    UserSuspended: (dateUtc: string) => `Den här användaren är avstängd till ${dateUtc} UTC`,
+    ReasonC: "Anledning: ",
 
-    DeactOrDeld: "Has been deactivated or deleted.",
-    isGroup: " (a group)",
-    isGuest: " — a guest user, could be anyone",
+    DeactOrDeld: "Har inaktiverats eller tagits bort.",
+    isGroup: " (en grupp)",
+    isGuest: " — en gästanvändare, kan vara vem som helst",
     isMod: " – moderator",
-    isAdmin: " – administrator",
-    you: "(you)",
+    isAdmin: " – administratör",
+    you: "(du)",
 
     // ----- Notifications page
 
-    NoNotfs: "No notifications",
-    NotfsToYouC: "Notifications to you:",
-    NotfsToOtherC: (name: string) => `Notifications to ${name}:`,
-    DefNotfsSiteWide: "Default notifications, site wide",
+    NoNotfs: "Inga notifieringar",
+    NotfsToYouC: "Notifieringar till dig:",
+    NotfsToOtherC: (name: string) => `Notifieringar till ${name}:`,
+    DefNotfsSiteWide: "Standardnotifieringar, för hela webbplatsen",
     // The "for" in:  "Default notifications, site wide, for (someone's name)".
-    forWho: "for",
+    forWho: "för",
 
     // ----- Drafts Etc page
 
-    NoDrafts: "No drafts",
-    YourDraftsC: "Your drafts:",
-    DraftsByC: (name: string) => `Drafts by ${name}:`,
+    NoDrafts: "Inga utkast",
+    YourDraftsC: "Dina utkast:",
+    DraftsByC: (name: string) => `Utkast av ${name}:`,
 
     // ----- Invites page
 
-    InvitesIntro: "Here you can invite people to join this site. ",
-    InvitesListedBelow: "Invites that you have already sent are listed below.",
-    NoInvites: "You have not invited anyone yet.",
+    InvitesIntro: "Här kan du bjuda in folk till den här webbplatsen. ",
+    InvitesListedBelow: "Inbjudningar som du redan har skickat visas nedan.",
+    NoInvites: "Du har inte bjudit in någon än.",
 
-    InvitedEmail: "Invited email",
-    WhoAccepted: "Member who accepted",
-    InvAccepted: "Invitation accepted",
-    InvSent: "Invitation sent",
-    JoinedAlready: "Joined already",
+    InvitedEmail: "Inbjuden e-post",
+    WhoAccepted: "Medlem som accepterade",
+    InvAccepted: "Inbjudan accepterad",
+    InvSent: "Inbjudan skickad",
+    JoinedAlready: "Har redan gått med",
 
-    SendAnInv: "Invite people",
-    SendInv: "Send invites",
+    SendAnInv: "Bjud in folk",
+    SendInv: "Skicka inbjudningar",
     SendInvExpl:
-        "We'll send your friends a brief email. They'll click a link " +
-        "to join immediately, no login required. " +
-        "They'll become normal members, not moderators or admins.",
+        "Vi skickar ett kort mejl till dina vänner. De kan klicka på en länk " +
+        "för att gå med direkt, inget inlogg krävs. " +
+        "De blir vanliga medlemmar, inte moderatorer eller administratörer.",
     //EnterEmail: "Enter email(s)",
-    InvDone: "Done. I'll send them an email.",
-    NoOneToInv: "No one to invite.",
-    InvNotfLater: "I'll notify you later, when I've invited them.",
-    AlreadyInvSendAgainQ: "These have been invited already — maybe you'd like to invite them again?",
-    InvErr_1: "These resulted in ",
-    InvErr_2: "errors",
+    InvDone: "Klart. Jag skickar ett mejl till dem.",
+    NoOneToInv: "Ingen att bjuda in.",
+    InvNotfLater: "Jag meddelar dig senare när jag har bjudit in dem.",
+    AlreadyInvSendAgainQ: "Dessa har redan bjudits in — kanske vill du bjuda in dem igen?",
+    InvErr_1: "Dessa resulterade i ",
+    InvErr_2: "fel",
     InvErr_3: ":",
-    TheseJoinedAlrdyC: "These have joined already, so I didn't invite them:",
-    ResendInvsQ: "Re-send invitations to these people? They have been invited already.",
-    InvAgain: "Invite again",
+    TheseJoinedAlrdyC: "Dessa har redan gått med, så jag bjöd inte in dem:",
+    ResendInvsQ: "Skicka inbjudningar igen till dessa personer? De har redan bjudits in.",
+    InvAgain: "Bjud in igen",
 
     // ----- Preferences, About
 
-    AboutYou: "About you",
-    WebLink: "Any website or page of yours.",
+    AboutYou: "Om dig",
+    WebLink: "Webbplats eller sida du har.",
 
-    NotShownCannotChange: "Not shown publicly. Cannot be changed.",
+    NotShownCannotChange: "Visas inte offentligt. Kan inte ändras.",
 
     // The full name or alias:
-    NameOpt: "Name (optional)",
+    NameOpt: "Namn (valfritt)",
 
-    NotShown: "Not shown publicly.",
+    NotShown: "Visas inte offentligt.",
 
     // The username:
-    MayChangeFewTimes: "You may change it only a few times.",
-    notSpecified: "(not specified)",
-    ChangeUsername_1: "You may change your username only a few times.",
-    ChangeUsername_2: "Changing it too often can make others confused — " +
-        "they won't know how to @mention you.",
+    MayChangeFewTimes: "Du kan bara ändra det ett fåtal gånger.",
+    notSpecified: "(inte angivet)",
+    ChangeUsername_1: "Du kan bara ändra ditt användarnamn ett fåtal gånger.",
+    ChangeUsername_2: "Att ändra det för ofta kan göra andra förvirrade — " +
+        "de kommer inte att veta hur de ska @nämna dig.",
 
-    NotfAboutAll: "Be notified about every new post (unless you mute the topic or category)",
-    NotfAboutNewTopics: "Be notified about new topics (unless you mute the category)",
+    NotfAboutAll: "Bli notifierad om varje nytt inlägg (om du inte tystar ämnet eller kategorin)",
+    NotfAboutNewTopics: "Bli notifierad om nya ämnen (om du inte tystar kategorin)",
 
-    ActivitySummaryEmails: "Activity summary emails",
+    ActivitySummaryEmails: "E-post med sammanfattning av aktivitet",
 
     EmailSummariesToGroup:
-        "When members of this group don't visit here, then, by default, email them " +
-        "summaries of popular topics and other stuff.",
+        "När medlemmar i den här gruppen inte besöker webbplatsen, skicka då som standard e-post till dem " +
+        "med sammanfattningar av populära ämnen och annat.",
     EmailSummariesToMe:
-        "When I don't visit here, email me " +
-        "summaries of popular topics and other stuff.",
+        "När jag inte besöker webbplatsen, skicka e-post till mig " +
+        "med sammanfattningar av populära ämnen och annat.",
 
-    AlsoIfTheyVisit: "Email them also if they visit here regularly.",
-    AlsoIfIVisit: "Email me also if I visit here regularly.",
+    AlsoIfTheyVisit: "Skicka e-post till dem även om de besöker webbplatsen regelbundet.",
+    AlsoIfIVisit: "Skicka e-post till mig även om jag besöker webbplatsen regelbundet.",
 
-    HowOftenWeSend: "How often shall we send these emails?",
-    HowOftenYouWant: "How often do you want these emails?",
+    HowOftenWeSend: "Hur ofta ska vi skicka dessa mejl?",
+    HowOftenYouWant: "Hur ofta vill du ha dessa mejl?",
 
     // ----- Preferences, Privacy
 
-    HideActivityStrangers_1: "Hide your recent activity for strangers and new members?",
-    HideActivityStrangers_2: "(But not for those who have been active members for a while.)",
-    HideActivityAll_1: "Hide your recent activity for everyone?",
-    HideActivityAll_2: "(Except for staff and trusted core members.)",
+    HideActivityStrangers_1: "Dölja din senaste aktivitet för främlingar och nya medlemmar?",
+    HideActivityStrangers_2: "(Men inte för de som har varit aktiva medlemmar ett tag.)",
+    HideActivityAll_1: "Dölja din senaste aktivitet för alla?",
+    HideActivityAll_2: "(Förutom personal och betrodda kärnmedlemmar.)",
 
     // ----- Preferences, Account
 
     // About email address:
-    EmailAddresses: "Email addresses",
-    PrimaryDot: "Primary. ",
-    VerifiedDot: "Verified. ",
-    NotVerifiedDot: "Not verified. ",
-    ForLoginWithDot: (provider: string) => `For login with ${provider}. `,
-    MakePrimary: "Make Primary",
-    AddEmail: "Add email address",
-    TypeNewEmailC: "Type a new email address:",
-    MaxEmailsInfo: (numMax: number) => `(You cannot add more than ${numMax} addresses.)`,
-    EmailAdded_1: "Added. We've sent you a verification email — ",
-    EmailAdded_2: "check your email inbox.",
-    SendVerifEmail: "Send verification email",
+    EmailAddresses: "E-postadresser",
+    PrimaryDot: "Primär. ",
+    VerifiedDot: "Verifierad. ",
+    NotVerifiedDot: "Ej verifierad. ",
+    ForLoginWithDot: (provider: string) => `För inloggning med ${provider}. `,
+    MakePrimary: "Gör till primär",
+    AddEmail: "Lägg till e-postadress",
+    TypeNewEmailC: "Skriv en ny e-postadress:",
+    MaxEmailsInfo: (numMax: number) => `(Du kan inte lägga till mer än ${numMax} adresser.)`,
+    EmailAdded_1: "Tillagd. Vi har skickat ett verifieringsmejl till dig — ",
+    EmailAdded_2: "kolla din inkorg.",
+    SendVerifEmail: "Skicka verifieringsmejl",
 
     EmailStatusExpl:
-        "('Primary' means you can login via this address, and we send notifications to it. " +
-        "'Verified' means you clicked a verification link in an address verification email.)",
+        "('Primär' betyder att du kan logga in via denna adress, och vi skickar notifieringar till den. " +
+        "'Verifierad' betyder att du klickade på en verifieringslänk i ett mejl.)",
 
     // Password:
-    ChangePwdQ: "Change password?",
-    CreatePwdQ: "Create password?",
-    WillGetPwdRstEml: "You'll get a reset password email.",
+    ChangePwdQ: "Byta lösenord?",
+    CreatePwdQ: "Skapa lösenord?",
+    WillGetPwdRstEml: "Du kommer att få ett mejl för att återställa lösenordet.",
     // This is the "None" in:  "Password: None"
-    PwdNone: "None",
+    PwdNone: "Inget",
 
     // Logins:
-    LoginMethods: "Login methods",
-    commaAs: ", as: ",
+    LoginMethods: "Inloggningsmetoder",
+    commaAs: ", som: ",
 
     // One's data:
-    YourContent: "Your content",
-    DownloadPosts: "Download posts",
-    DownloadPostsHelp: "Creates a JSON file with a copy of topics and comments you've posted.",
-    DownloadPersData: "Download personal data",
-    DownloadPersDataHelp: "Creates a JSON file with a copy of your personal data, e.g. your name " +
-        "(if you specified a name) and email address.",
+    YourContent: "Ditt innehåll",
+    DownloadPosts: "Ladda ner inlägg",
+    DownloadPostsHelp: "Skapar en JSON-fil med en kopia av ämnen och kommentarer du har postat.",
+    DownloadPersData: "Ladda ner personuppgifter",
+    DownloadPersDataHelp: "Skapar en JSON-fil med en kopia av dina personuppgifter, t.ex. ditt namn " +
+        "(om du har angett ett namn) och e-postadress.",
 
 
     // Delete account:
-    DangerZone: "Danger zone",
-    DeleteAccount: "Delete account",
+    DangerZone: "Farozon",
+    DeleteAccount: "Ta bort konto",
     DeleteYourAccountQ:
-        "Delete your account? We'll remove your name, forget your email address, password and " +
-        "any online identities (like Facebook or Twitter login). " +
-        "You won't be able to login again. This cannot be undone.",
+        "Ta bort ditt konto? Vi tar bort ditt namn, glömmer din e-postadress, lösenord och " +
+        "alla online-identiteter (som Facebook- eller Twitter-inloggning). " +
+        "Du kommer inte att kunna logga in igen. Detta kan inte ångras.",
     DeleteUserQ:
-        "Delete this user? We'll remove the name, forget the email address, password and " +
-        "online identities (like Facebook or Twitter login). " +
-        "The user won't be able to login again. This cannot be undone.",
-    YesDelete: "Yes, delete",
+        "Ta bort den här användaren? Vi tar bort namnet, glömmer e-postadressen, lösenordet och " +
+        "online-identiteter (som Facebook- eller Twitter-inloggning). " +
+        "Användaren kommer inte att kunna logga in igen. Detta kan inte ångras.",
+    YesDelete: "Ja, ta bort",
   },
 
 
   // Group profile page
   gpp: {
-    GroupMembers: "Group members",
-    NoMembers: "No members.",
-    MayNotListMembers: "May not list members.",
-    AddMembers: "Add Members",
-    BuiltInCannotModify: "This is a built-in group; it cannot be modified.",
-    NumMembers: (num: number) => `${num} members`,
-    YouAreMember: "You're a member.",
-    CustomGroupsC: "Custom groups:",
-    BuiltInGroupsC: "Built-in groups:",
-    DeleteGroup: "Delete this group",
+    GroupMembers: "Gruppmedlemmar",
+    NoMembers: "Inga medlemmar.",
+    MayNotListMembers: "Får inte lista medlemmar.",
+    AddMembers: "Lägg till medlemmar",
+    BuiltInCannotModify: "Det här är en inbyggd grupp; den kan inte ändras.",
+    NumMembers: (num: number) => `${num} medlemmar`,
+    YouAreMember: "Du är medlem.",
+    CustomGroupsC: "Anpassade grupper:",
+    BuiltInGroupsC: "Inbyggda grupper:",
+    DeleteGroup: "Ta bort den här gruppen",
   },
 
 
   // Create user dialog
 
   cud: {
-    CreateUser: "Create User",
-    CreateAccount: "Create Account",
-    EmailC: "Email:",
-    keptPriv: "will be kept private",
-    forNotfsKeptPriv: "for reply notifications, kept private",
-    EmailVerifBy_1: "Your email has been verified by ",
+    CreateUser: "Skapa användare",
+    CreateAccount: "Skapa konto",
+    EmailC: "E-post:",
+    keptPriv: "kommer att hållas privat",
+    forNotfsKeptPriv: "för svarsnotifieringar, hålls privat",
+    EmailVerifBy_1: "Din e-post har verifierats av ",
     EmailVerifBy_2: ".",
-    UsernameC: "Username:",
-    FullNameC: "Full name:",
-    optName: "optional",
+    UsernameC: "Användarnamn:",
+    FullNameC: "Fullständigt namn:",
+    optName: "valfritt",
 
     //OrCreateAcct_1: "Or ",
     //OrCreateAcct_2: "create an account",
@@ -995,26 +997,26 @@ var t_sv_SE: TalkyardTranslations = t = {
     //OrCreateAcct_4: "@username",
     //OrCreateAcct_5: " & password",
 
-    DoneLoggedIn: "Account created. You have been logged in.",  // COULD say if verif email sent too?
+    DoneLoggedIn: "Kontot har skapats. Du har loggats in.",  // COULD say if verif email sent too?
     AlmostDone:
-        "Almost done! You just need to confirm your email address. We have " +
-        "sent an email to you. Please click the link in the email to activate " +
-        "your account. You can close this page.",
+        "Nästan klar! Du behöver bara bekräfta din e-postadress. Vi har " +
+        "skickat ett mejl till dig. Klicka på länken i mejlet för att aktivera " +
+        "ditt konto. Du kan stänga den här sidan.",
   },
 
 
   // Accept terms and privacy policy?
 
   terms: {
-    TermsAndPrivacy: "Terms and Privacy",
+    TermsAndPrivacy: "Villkor och integritet",
 
-    Accept_1: "Do you accept our ",
-    TermsOfService: "Terms of Service",
-    TermsOfUse: "Terms of Use",
-    Accept_2: " and ",
-    PrivPol: "Privacy Policy",
+    Accept_1: "Accepterar du våra ",
+    TermsOfService: "Användarvillkor",
+    TermsOfUse: "Användarvillkor",
+    Accept_2: " och vår ",
+    PrivPol: "Integritetspolicy",
     Accept_3_User: "?",
-    Accept_3_Owner: " for site owners?",  // (see just below)
+    Accept_3_Owner: " för webbplatsägare?",  // (see just below)
 
     // About "for site owners?" above:
     // That's if someone creates his/her own community, via this software provided as
@@ -1022,7 +1024,7 @@ var t_sv_SE: TalkyardTranslations = t = {
     // Terms-of-Service to agree with, since being a community maintainer/owner, is different
     // (more responsibility) than just signing up to post comments.
 
-    YesAccept: "Yes I accept",
+    YesAccept: "Ja, jag accepterar",
   },
 
 
@@ -1052,25 +1054,25 @@ var t_sv_SE: TalkyardTranslations = t = {
     // impersonated cannot access) — then, that error message is shown: You're not allowed
     // to login as *someone else* to access that part of the community, until you've first
     // stopped impersonating the first user. (Otherwise, everything gets too complicated.)
-    IsImpersonating: "You're impersonating someone, who might not have access to all parts " +
-        "of this website.",
+    IsImpersonating: "Du företräder någon annan, som kanske inte har tillgång till alla delar " +
+        "av den här webbplatsen.",
 
-    IfYouThinkExistsThen: "If you think the page exists, log in as someone who may access it. ",
-    LoggedInAlready: "(You are logged in already, but perhaps it's the wrong account?) ",
-    ElseGoToHome_1: "Otherwise, you can ",
-    ElseGoToHome_2: "go to the homepage.",
+    IfYouThinkExistsThen: "Om du tror att sidan finns, logga in som någon som har tillgång till den. ",
+    LoggedInAlready: "(Du är redan inloggad, men kanske på fel konto?) ",
+    ElseGoToHome_1: "Annars kan du ",
+    ElseGoToHome_2: "gå till startsidan.",
 
-    CreateAcconut: "Create account",
-    ContinueWithDots: "Continue with ...",
-    SignUp: "Sign up",
-    LogIn: "Log in",
-    LogInWithPwd: "Log in with Password",
-    CreateAdmAcct: "Create admin account:",
-    AuthRequired: "Authentication required to access this site",
-    LogInToLike: "Log in to Like this post",
-    LogInToSubmit: "Log in and submit",
-    LogInToComment: "Log in to write a comment",
-    LogInToCreateTopic: "Log in to create topic",
+    CreateAcconut: "Skapa konto",
+    ContinueWithDots: "Fortsätt med ...",
+    SignUp: "Gå med",
+    LogIn: "Logga in",
+    LogInWithPwd: "Logga in med lösenord",
+    CreateAdmAcct: "Skapa admin-konto:",
+    AuthRequired: "Autentisering krävs för att få tillgång till denna webbplats",
+    LogInToLike: "Logga in för att gilla det här inlägget",
+    LogInToSubmit: "Logga in och skicka",
+    LogInToComment: "Logga in för att skriva en kommentar",
+    LogInToCreateTopic: "Logga in för att skapa ett ämne",
 
     //AlreadyHaveAcctQ: "Already have an account? ",
     OrLogIn_1: "Eller ",
@@ -1086,71 +1088,71 @@ var t_sv_SE: TalkyardTranslations = t = {
     OrTypeName_2: "skriv ditt namn",   // is a button
     OrTypeName_3: "",
 
-    OrCreateAcctHere: "Or create account:",
-    OrTypeName: "Or type your name:",
-    OrLogIn: "Or log in:",
-    YourNameQ: "Your name?",
+    OrCreateAcctHere: "Eller skapa konto här:",
+    OrTypeName: "Eller skriv ditt namn:",
+    OrLogIn: "Eller logga in:",
+    YourNameQ: "Ditt namn?",
 
-    BadCreds: "Wrong username or password",
+    BadCreds: "Fel användarnamn eller lösenord",
 
-    UsernameOrEmailC: "Username or email:",
-    PasswordC: "Password:",
-    ForgotPwd: "Did you forget your password?",
+    UsernameOrEmailC: "Användarnamn eller e-post:",
+    PasswordC: "Lösenord:",
+    ForgotPwd: "Har du glömt ditt lösenord?",
 
-    NoPwd: "You have not yet chosen a password.",
-    CreatePwd: "Create password",
+    NoPwd: "Du har inte valt ett lösenord än.",
+    CreatePwd: "Skapa lösenord",
   },
 
 
   // Flag dialog
 
   fd: {
-    PleaseTellConcerned: "Please tell us what you are concerned about.",
-    ThanksHaveReported: "Thanks. You have reported it. The forum staff will take a look.",
-    ReportComment: "Report Comment",
+    PleaseTellConcerned: "Berätta för oss vad du är orolig över.",
+    ThanksHaveReported: "Tack. Du har rapporterat det. Forumets personal kommer att ta en titt.",
+    ReportComment: "Rapportera kommentar",
     // Different reasons one can choose among when reporting a comment:
-    OptPersonalData: "This post contains personal data, for example someones' real name.",
-    OptOffensive: "This post contains offensive or abusive content.",
-    OptSpam: "This post is an unwanted advertisement.",
-    OptOther: "Notify staff about this post for some other reason.",
+    OptPersonalData: "Det här inlägget innehåller personuppgifter, till exempel någons riktiga namn.",
+    OptOffensive: "Det här inlägget innehåller kränkande eller stötande innehåll.",
+    OptSpam: "Det här inlägget är oönskad reklam.",
+    OptOther: "Meddela personalen om det här inlägget av någon annan anledning.",
   },
 
 
   // Help message dialog
   help: {
-    YouCanShowAgain_1: "You can show help messages again, if you are logged in, by " +
-        "clicking your name and then ",
-    YouCanShowAgain_2: "Unhide help messages",
+    YouCanShowAgain_1: "Du kan visa hjälpmeddelanden igen, om du är inloggad, genom att " +
+        "klicka på ditt namn och sedan på ",
+    YouCanShowAgain_2: "Visa hjälpmeddelanden",
   },
 
 
   // Editor
 
   e: {
-    SimilarTopicsC: "Similar topics:",
+    SimilarTopicsC: "Liknande ämnen:",
 
     //WritingSomethingWarning: "You were writing something?",
-    UploadMaxOneFile: "Sorry but currently you can upload only one file at a time",
-    PleaseFinishPost: "Please first finish writing your post",
-    PleaseFinishChatMsg: "Please first finish writing your chat message",
-    PleaseFinishMsg: "Please first finish writing your message",
-    PleaseSaveEdits: "Please first save your current edits",
-    PleaseSaveOrCancel: "Please first either save or cancel your new topic",
-    CanContinueEditing: "You can continue editing your text, if you open the editor again.",
+    UploadMaxOneFile: "Tyvärr kan du för närvarande bara ladda upp en fil åt gången",
+    PleaseFinishPost: "Gör klart ditt inlägg först",
+    PleaseFinishChatMsg: "Gör klart ditt chattmeddelande först",
+    PleaseFinishMsg: "Gör klart ditt meddelande först",
+    PleaseSaveEdits: "Spara dina nuvarande ändringar först",
+    PleaseSaveOrCancel: "Spara eller avbryt ditt nya ämne först",
+    CanContinueEditing: "Du kan fortsätta redigera din text om du öppnar editorn igen.",
         //"(But the text will currently be lost if you leave this page.)",
-    PleaseDontDeleteAll: "Please don't delete all text. Write something.",
-    PleaseWriteSth: "Please write something.",
-    PleaseWriteTitle: "Please write a topic title.",
-    PleaseWriteMsgTitle: "Please write a message title.",
-    PleaseWriteMsg: "Please write a message.",
+    PleaseDontDeleteAll: "Ta inte bort all text. Skriv något.",
+    PleaseWriteSth: "Skriv någonting.",
+    PleaseWriteTitle: "Skriv en rubrik på ämnet.",
+    PleaseWriteMsgTitle: "Skriv en rubrik på meddelandet.",
+    PleaseWriteMsg: "Skriv ett meddelande.",
 
-    exBold: "bold text",
-    exEmph: "emphasized text",
-    exPre: "preformatted text",
-    exQuoted: "quoted text",
-    ExHeading: "Heading",
+    exBold: "fetstil",
+    exEmph: "kursiv stil",
+    exPre: "förformaterad text",
+    exQuoted: "citerad text",
+    ExHeading: "Rubrik",
 
-    TitlePlaceholder: "Skriv en titel — vad handlar detta om, i en kort mening?",
+    TitlePlaceholder: "Skriv en rubrik — vad handlar detta om, i en kort mening?",
 
     EditPost_1: "Editera ",
     EditPost_2: "post ",
@@ -1158,22 +1160,22 @@ var t_sv_SE: TalkyardTranslations = t = {
     TypeChatMsg: "Skriv ett chattmeddelande:",
     YourMsg: "Ditt meddelande:",
     CreateTopic: "Skapa nytt ämne",
-    CreateCustomHtml: "Create a custom HTML page (add your own <h1> title)",
-    CreateInfoPage: "Create an info page",
-    CreateCode: "Create a source code page",
+    CreateCustomHtml: "Skapa en anpassad HTML-sida (lägg till din egen <h1>-rubrik)",
+    CreateInfoPage: "Skapa en informationssida",
+    CreateCode: "Skapa en källkodssida",
     AskQuestion: "Fråga något",
     ReportProblem: "Rapportera problem",
     SuggestIdea: "Föreslå en idé",
-    NewChat: "New chat channel title and purpose",
-    NewPrivChat: "New private chat title and purpose",
-    AppendComment: "Append a comment at the bottom of the page:",
+    NewChat: "Titel och syfte för ny chattkanal",
+    NewPrivChat: "Titel och syfte för ny privat chatt",
+    AppendComment: "Lägg till en kommentar längst ner på sidan:",
 
     ReplyTo: "Svara till ",
     ReplyTo_theOrigPost: "första inlägget",
     ReplyTo_post: "replik ",
     AddCommentC: "Skriv en kommentar:",
 
-    PleaseSelectPosts: "Please select one or more posts to reply to.",
+    PleaseSelectPosts: "Välj ett eller flera inlägg att svara på.",
 
     Save: "Spara",
     edits: "ändringar",
@@ -1222,15 +1224,15 @@ var t_sv_SE: TalkyardTranslations = t = {
     PreviewInfo: "Här kan du förhandsgranska din text.",
     CannotType: "Du kan inte skriva här.",
 
-    LoadingDraftDots: "Loading any draft...",
-    DraftUnchanged: "Unchanged.",
-    CannotSaveDraftC: "Cannot save draft:",
-    DraftSavedBrwsr: "Draft saved, in browser.",   // MISSING
-    DraftSaved: (nr: string | number) => `Draft ${nr} saved.`,
-    DraftDeleted: (nr: string | number) => `Draft ${nr} deleted.`,
-    WillSaveDraft: (nr: string | number) => `Will save draft ${nr} ...`,
-    SavingDraft: (nr: string | number) => `Saving draft ${nr} ...`,
-    DeletingDraft: (nr: string | number) => `Deleting draft ${nr} ...`,
+    LoadingDraftDots: "Laddar utkast...",
+    DraftUnchanged: "Inga ändringar.",
+    CannotSaveDraftC: "Kunde inte spara utkastet:",
+    DraftSavedBrwsr: "Utkastet sparat i webbläsaren.",
+    DraftSaved: (nr: string | number) => `Utkast ${nr} sparat.`,
+    DraftDeleted: (nr: string | number) => `Utkast ${nr} raderat.`,
+    WillSaveDraft: (nr: string | number) => `Sparar utkast ${nr} ...`,
+    SavingDraft: (nr: string | number) => `Sparar utkast ${nr} ...`,
+    DeletingDraft: (nr: string | number) => `Raderar utkast ${nr} ...`,
   },
 
 
@@ -1243,52 +1245,52 @@ var t_sv_SE: TalkyardTranslations = t = {
   // Page type dropdown
 
   pt: {
-    SelectTypeC: "Select topic type:",
-    DiscussionExpl: "A discussion about something.",
-    QuestionExpl: "One answer can be marked as the accepted answer.",
-    ProblExpl: "If something is broken or doesn't work. Can be marked as fixed/solved.",
-    IdeaExpl: "A suggestion. Can be marked as done/implemented.",
-    ChatExpl: "A perhaps never-ending conversation.",
-    PrivChatExpl: "Only visible to people that get invited to join the chat.",
+    SelectTypeC: "Välj ämnestyp:",
+    DiscussionExpl: "En diskussion om något.",
+    QuestionExpl: "Ett svar kan markeras som det accepterade svaret.",
+    ProblExpl: "Om något är trasigt eller inte fungerar. Kan markeras som fixat/löst.",
+    IdeaExpl: "Ett förslag. Kan markeras som klart/genomfört.",
+    ChatExpl: "Ett kanske oändligt samtal.",
+    PrivChatExpl: "Endast synligt för personer som blir inbjudna till chatten.",
 
-    CustomHtml: "Custom HTML page",
-    InfoPage: "Info page",
-    Code: "Code",
-    EmbCmts: "Embedded comments",
-    About: "About",
-    PrivChat: "Private Chat",
-    Form: "Form",
+    CustomHtml: "Anpassad HTML-sida",
+    InfoPage: "Informationssida",
+    Code: "Kod",
+    EmbCmts: "Inbäddade kommentarer",
+    About: "Om",
+    PrivChat: "Privat chatt",
+    Form: "Formulär",
   },
 
 
   // Join sub community dialog
 
   jscd: {
-    NoMoreToJoin: "No more communities to join.",
-    SelCmty: "Select community ...",
+    NoMoreToJoin: "Inga fler communities att gå med i.",
+    SelCmty: "Välj community ...",
   },
 
 
   // Search dialogs and the search page.
 
   s: {
-    TxtToFind: "Text to search for",
+    TxtToFind: "Text att söka efter",
   },
 
 
   // No internet
 
   ni: {
-    NoInet: "No internet connection",
-    PlzRefr: "Refresh page to see any latest changes. (There was a disconnection)",
-    RefrNow: "Refresh now",
+    NoInet: "Ingen internetanslutning",
+    PlzRefr: "Ladda om sidan för att se de senaste ändringarna. (Anslutningen bröts)",
+    RefrNow: "Ladda om nu",
   },
 
 
-  PostDeleted: (postNr: number) => `That post, nr ${postNr}, has been deleted.`,
-  NoSuchPost: (postNr: number) => `There's no post nr ${postNr} on this page.`,
-  NoPageHere: "This page has been deleted, or it never existed, or you may not access it.",
-  GoBackToLastPage: "Go back to last page",
+  PostDeleted: (postNr: number) => `Inlägget nr ${postNr} har tagits bort.`,
+  NoSuchPost: (postNr: number) => `Det finns inget inlägg nr ${postNr} på den här sidan.`,
+  NoPageHere: "Den här sidan har tagits bort, eller så har den aldrig funnits, eller så har du inte tillgång till den.",
+  GoBackToLastPage: "Gå tillbaka till föregående sida",
 
 };
 

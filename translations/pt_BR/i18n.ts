@@ -23,104 +23,104 @@ var t_pt_BR: TalkyardTranslations = t = {
   Add: "Adicionar",
   AddingDots: "Adicionando ...",
   Admin: "Administrador",
-  AdvSearch: "Advanced search",  // MISSING
+  AdvSearch: "Pesquisa avançada",
   Away: "Ausente",
-  Back: "Back",  // MISSING
+  Back: "Voltar",
   BlogN: "Blog",
   Bookmarks: "Favoritos",
   Cancel: "Cancelar",
   Categories: "Categorias",
   Category: "Categoria",
-  ChangeV: "Change",   // MISSING
+  ChangeV: "Alterar",
   Continue: "Continuar",
-  ClickToShow: "Click to show",  // MISSING
+  ClickToShow: "Clique para mostrar",
   ChangeDots: "Modificar ...",
   ChatN: "Chat",
-  Chatting: "Chatting",  // MISSING
-  CheckYourEmail: "Check your email",  // MISSING
+  Chatting: "Chat",
+  CheckYourEmail: "Verifique seu email",
   Close: "Fechar",
   closed: "fechado",
   Created: "Criado",
   Delete: "Deletar",
-  Deleted: "Deleted",  // MISSING
-  DirectMessage: "Direct message",  // MISSING
+  Deleted: "Excluído",
+  DirectMessage: "Mensagem direta",
   Discussion: "Discussão",
   discussion: "discussão",
-  done: "done",  // MISSING
+  done: "concluído",
   EditV: "Editar",
-  Editing: "Editing",  // MISSING
+  Editing: "Editando",
   EmailAddress: "Email",
-  EmailAddresses: "Email addresses",  // MISSING
-  EmailSentD: "Email sent.",  // MISSING
+  EmailAddresses: "Endereços de email",
+  EmailSentD: "Email enviado.",
   Forum: "Fórum",
-  GetNotifiedAbout: "Get notified about",  // MISSING
-  GroupsC: "Groups:",  // MISSING
+  GetNotifiedAbout: "Receber notificações sobre",
+  GroupsC: "Grupos:",
   Hide: "Ocultar",
-  Home: "Home",    // MISSING
+  Home: "Início",
   Idea: "Ideia",
-  Join: "Join",    // MISSING
-  KbdShrtcsC: "Keyboard shortcuts: ",   // MISSING
+  Join: "Participar",
+  KbdShrtcsC: "Atalhos de teclado: ",
   Loading: "Carregando...",
   LoadMore: "Mostrar mais ...",
-  LogIn: "Logado",
+  LogIn: "Entrar",
   LoggedInAs: "Logado como ",
-  LogOut: "Encerrar sessão",
-  Maybe: "Maybe",  // MISSING
-  Manage: "Manage",  // MISSING
-  Members: "Members",  // MISSING
+  LogOut: "Sair",
+  Maybe: "Talvez",
+  Manage: "Gerenciar",
+  Members: "Membros",
   MessageN: "Mensagem",
   MoreDots: "Mais...",
   Move: "Mover",
-  Name: "Nomear",
+  Name: "Nome",
   NameC: "Nome:",
-  NewTopic: "New topic",  // MISSING
-  NoCancel: "No, cancel",  // MISSING
-  Notifications: "Notifications",  // MISSING
+  NewTopic: "Novo tópico",
+  NoCancel: "Não, cancelar",
+  Notifications: "Notificações",
   NotImplemented: "(Não implementado)",
   NotYet: "Ainda não",
-  NoTitle: "No title",  // MISSING
+  NoTitle: "Sem título",
   NoTopics: "Nenhum tópico.",
   Okay: "Ok",
   OkayDots: "Ok ...",
   Online: "Online",
-  onePerLine: "one per line",  // MISSING
+  onePerLine: "um por linha",
   PreviewV: "Prever",
   Problem: "Problema",
-  progressN: "progress",  // MISSING
+  progressN: "progresso",
   Question: "Pergunta",
   Recent: "Recente",
   Remove: "Remover",
   Reopen: "Reabrir",
   ReplyV: "Responder",
-  Replying: "Replying",  // MISSING
+  Replying: "Respondendo",
   Replies: "Respostas",
   replies: "respostas",
   Save: "Salvar",
   SavingDots: "Salvando ...",
   SavedDot: "Salvo.",
-  Search: "Search",  // MISSING
+  Search: "Pesquisar",
   SendMsg: "Enviar Mensagem",
-  ShowPreview: "Show preview",  // MISSING
+  ShowPreview: "Mostrar visualização",
   SignUp: "Cadastrar-se",
   Solution: "Solução",
-  started: "started",  // MISSING
+  started: "iniciado",
   Summary: "Resumo",
   Submit: "Enviar",
-  Tag: "Tag",  // MISSING
-  Tags: "Tags",  // MISSING
-  Tools: "Tools",  // MISSING
+  Tag: "Tag",
+  Tags: "Tags",
+  Tools: "Ferramentas",
   Topics: "Tópicos",
-  TopicTitle: "Topic title",  // MISSING
+  TopicTitle: "Título do tópico",
   TopicType: "Tipo do tópico",
   UploadingDots: "Fazendo upload...",
   Username: "Nome de usuário",
   Users: "Usuários",
   Welcome: "Bem-vindo",
   Wiki: "Wiki",
-  Yes: "Yes",  // MISSING
-  YesBye: "Yes, bye",  // MISSING
-  YesDoThat: "Yes, do that",  // MISSING
-  You: "You",  // MISSING
+  Yes: "Sim",
+  YesBye: "Sim, tchau",
+  YesDoThat: "Sim, faça isso",
+  You: "Você",
   you: "você",
 
   // Trust levels.
@@ -140,86 +140,84 @@ var t_pt_BR: TalkyardTranslations = t = {
   PastYear: "Ano Passado",
   AllTime: "Todos os Períodos",
 
-  // MISSING  5 letter fields below
   // Time ago letters.
   // English examples: "3d" in forum topic list means 3 days ago. "5h" is 5 hours.
-  monthsLtr: "mon",  // months
+  monthsLtr: "mes",  // months
   daysLtr: "d",      // days
   hoursLtr: "h",     // hours
   minsLtr: "m",      // minutes
   secsLtr: "s",      // seconds
 
-  // MISSING  4  "N nnnn ago" fields below:
   // Time ago, long text versions.
   daysAgo: (numDays: number) =>
-    numDays === 1 ? "1 day ago" : `${numDays} days ago`,
+    numDays === 1 ? "há 1 dia" : `há ${numDays} dias`,
 
   hoursAgo: (numHours: number) =>
-    numHours === 1 ? "1 hour ago" : `${numHours} hours ago`,
+    numHours === 1 ? "há 1 hora" : `há ${numHours} horas`,
 
   minutesAgo: (numMins: number) =>
-    numMins === 1 ? "1 minute ago" : `${numMins} minutes ago`,
+    numMins === 1 ? "há 1 minuto" : `há ${numMins} minutos`,
 
   secondsAgo: (numSecs: number) =>
-    numSecs === 1 ? "1 second ago" : `${numSecs} seconds ago`,
+    numSecs === 1 ? "há 1 segundo" : `há ${numSecs} segundos`,
 
 
   // Input fields, e.g. email, name etc.
 
-  inp: {   // MISSING  15 fields here:
+  inp: {
     // Email address input field:
-    EmReq: "Email required",
-    NoSpcs: "No spaces please",
-    InvldAddr: "Not a valid email address",
-    NoBadChrs: "No weird characters please",
+    EmReq: "Email obrigatório",
+    NoSpcs: "Sem espaços, por favor",
+    InvldAddr: "Não é um endereço de email válido",
+    NoBadChrs: "Sem caracteres estranhos, por favor",
 
     // Full name input field:
-    NotOnlSpcs: "Not just spaces please",
-    NoAt: "No @ please",
+    NotOnlSpcs: "Não apenas espaços, por favor",
+    NoAt: "Sem @, por favor",
 
     // Username input field:
-    NoDash: "No dashes (-) please",
-    DontInclAt: "Don't include the @",
-    StartEndLtrDgt: "Start and end with a letter or a digit",
-    OnlLtrNumEtc: "Only letters (a-z, A-Z) and numbers, and _ (underscore)",
+    NoDash: "Sem traços (-), por favor",
+    DontInclAt: "Não inclua o @",
+    StartEndLtrDgt: "Comece e termine com uma letra ou um dígito",
+    OnlLtrNumEtc: "Apenas letras (a-z, A-Z) e números, e _ (sublinhado)",
     // This shown just below the username input:
-    UnUnqShrt_1: "Your ",
-    UnUnqShrt_2: "@username",
+    UnUnqShrt_1: "Seu ",
+    UnUnqShrt_2: "@nome_de_usuário",
     UnUnqShrt_3: ", único e curto",
 
     // Generic messages for all input fields:
-    TooShort: (minLength: number) => `Should be at least ${minLength} characters`,
-    TooLong: (maxLength: number) => `Too long. Should be at most ${maxLength} characters`,
+    TooShort: (minLength: number) => `Deve ter pelo menos ${minLength} caracteres`,
+    TooLong: (maxLength: number) => `Muito longo. Deve ter no máximo ${maxLength} caracteres`,
   },
 
 
   // Notification levels.
 
   nl: {
-    EveryPost: "Observando Tudo",   // MISSING renamed from "Watching All" to "Every Post"
-    EveryPostInTopic: "You'll be notified of all new replies in this topic.",  // MISSING
-    EveryPostInCat: "You'll be notified of all new topics and replies, in this category.",  // MISSING
-    EveryPostInTopicsWithTag: "You'll be notified of new topics with this tag, and every post in those topics",  // MISSING
-    EveryPostWholeSite: "You'll be notified of all new topics and replies, anywhere.",  // MISSING
+    EveryPost: "Todas as publicações",
+    EveryPostInTopic: "Você será notificado sobre todas as novas respostas neste tópico.",
+    EveryPostInCat: "Você será notificado sobre todos os novos tópicos e respostas nesta categoria.",
+    EveryPostInTopicsWithTag: "Você será notificado sobre novos tópicos com esta tag e todas as publicações nesses tópicos",
+    EveryPostWholeSite: "Você será notificado sobre todos os novos tópicos e respostas em qualquer lugar.",
 
     // One will be notified about the *first* post in a new topic, only. That is, the Original Post
     // (that's what the first post is called, in a discussion forum topic).
-    NewTopics: "Observando o Primeiro",   // MISSING renamed "Watching First" to "New Topics"
-    NewTopicsInCat: "You'll be notified of new topics in this category.",  // MISSING
-    NewTopicsWithTag: "You'll be notified of new topics with this tag",  // MISSING
-    NewTopicsWholeSite: "You'll be notified of new topics, anywhere.",  // MISSING
+    NewTopics: "Novos tópicos",
+    NewTopicsInCat: "Você será notificado sobre novos tópicos nesta categoria.",
+    NewTopicsWithTag: "Você será notificado sobre novos tópicos com esta tag",
+    NewTopicsWholeSite: "Você será notificado sobre novos tópicos em qualquer lugar.",
 
     Tracking: "Rastreando",
 
     Normal: "Normal",
-    NormalDescr: "You'll be notified if someone talks to you, also indirectly, e.g. a " +   // MISSING
-      "reply to a reply to you.",
+    NormalDescr: "Você será notificado se alguém falar com você, também indiretamente, ex: uma " +
+      "resposta a uma resposta para você.",
 
-    Hushed: "Hushed",  // MISSING
-    HushedDescr: "You'll be notified only if someone talks directly to you.",  // MISSING
+    Hushed: "Suave",
+    HushedDescr: "Você será notificado apenas se alguém falar diretamente com você.",
 
     Muted: "Silenciado",
-    MutedTopic: "No notifications about this topic.",  // MISSING
+    MutedTopic: "Sem notificações sobre este tópico.",
   },
 
 
@@ -248,43 +246,43 @@ var t_pt_BR: TalkyardTranslations = t = {
 
     // Select category dropdown
 
-    from: "from",  // MISSING used like so:  "From <Category Name>" or "From All Categories"
-    in: "in",      // MISSING used like so:  "in <Category Name>" or "in All Categories"
+    from: "de",
+    in: "em",
     AllCats: "Todas as categorias",
 
     // Topic sort order
 
-    Active: "Ativo",
-    ActiveDescr: "Mostra tópicos mais recentemente ativos primeiro",
+    Active: "Ativo primeiro",
+    ActiveDescr: "Mostra tópicos recentemente ativos primeiro",
 
     New: "Novo",
     NewDescr: "Mostra tópicos mais novos primeiro",
 
-    Top: "Topo",
-    TopDescr: "Mostra tópicos mais populares primeiro",
+    Top: "Popular",
+    TopDescr: "Mostra tópicos populares primeiro",
 
     // Topic filter dropdown
 
     AllTopics: "Todos os tópicos",
 
     ShowAllTopics: "Mostrar todos os tópicos",
-    ShowAllTopicsDescr: "Não mostra tópicos deletados",
+    ShowAllTopicsDescr: "Mas não tópicos excluídos",
 
-    WaitingTopics: "Waiting topics",          // MISSING
-    OnlyWaitingDescr_1: "Mostra somente perguntas ",
+    WaitingTopics: "Tópicos aguardando",
+    OnlyWaitingDescr_1: "Mostra apenas tópicos ",
     OnlyWaitingDescr_2: "aguardando ",
-    OnlyWaitingDescr_3: "por uma solução, além de ideias e problemas ainda não tratados",
+    OnlyWaitingDescr_3: "por uma solução ou para serem implementados e concluídos",
 
-    YourTopics: "Your topics",       // MISSING
-    AssignedToYou: "Assigned to you", // MISSING
+    YourTopics: "Seus tópicos",
+    AssignedToYou: "Atribuídos a você",
 
-    DeletedTopics: "Show deleted",   // MISSING
-    ShowDeleted: "Mostrar deletados",
-    ShowDeletedDescr: "Mostrar todos os tópicos, incluindo deletados",
+    DeletedTopics: "Mostrar excluídos",
+    ShowDeleted: "Mostrar excluídos",
+    ShowDeletedDescr: "Mostra todos os tópicos, incluindo tópicos excluídos",
 
     // Rightmost buttons
 
-    ViewCategories: "View categories",  // MISSING
+    ViewCategories: "Ver categorias",
     EditCat: "Editar Categoria",
     CreateCat: "Criar Categoria",
     CreateTopic: "Criar Tópico",
@@ -367,30 +365,30 @@ var t_pt_BR: TalkyardTranslations = t = {
 
   // Shown at the top of the page. Includes login and signup buttons, or one's username menu.
 
-  tb: {  // MISSING, all fields in this section:
+  tb: {
 
     // Opens the right hand sidebar and litst the most recent posts in the current topic.
-    RecentPosts: "Recent posts",
+    RecentPosts: "Postagens recentes",
 
     // Open right-hand-sidebar button tooltip, if mouse-hovering online-user-count.
-    NumOnlChat: " online in this chat",    // example: "5 online in this chat"
-    NumOnlForum: " online in this forum",
+    NumOnlChat: " online neste chat",    // example: "5 online in this chat"
+    NumOnlForum: " online neste fórum",
 
     // Open left-sidebar button title.
-    WatchbBtn: "Your topics",
+    WatchbBtn: "Seus tópicos",
 
     // Tooltip, shown if mouse-hovering the open-left-sidebar button.
-    WatchbToolt: "Your recent topics, joined chats, direct messages",
+    WatchbToolt: "Seus tópicos recentes, chats associados, mensagens diretas",
 
     // Title shown on user profile pages.
-    AbtUsr: "About User",
+    AbtUsr: "Sobre o Usuário",
 
     // Shortcuts to leave the user profile page, or staff area, and go back to the discussion topics.
-    BackFromUsr: "Back from user profile",
-    BackFromAdm: "Back from admin area",
+    BackFromUsr: "Voltar do perfil do usuário",
+    BackFromAdm: "Voltar da área de administração",
 
     // Title shown on full text search page.
-    SearchPg: "Search Page",
+    SearchPg: "Página de pesquisa",
   },
 
 
@@ -512,34 +510,34 @@ var t_pt_BR: TalkyardTranslations = t = {
     ThisPageDeleted: "Esta página foi deletada",
     CatDeldPageToo: "Categoria deletada; esta página foi deletada também",
 
-    ThreadDeld: "Thread deleted",   // MISSING
-    CmntDeld: "Comment deleted",    // MISSING
-    PostDeld: "Post deleted",       // MISSING
-    DiscDeld: "Discussion deleted", // MISSING
-    PageDeld: "Página deletada",
-    TitlePendAppr: "Titulo pendente de aprovação",
+    ThreadDeld: "Tópico excluído",
+    CmntDeld: "Comentário excluído",
+    PostDeld: "Publicação excluída",
+    DiscDeld: "Discussão excluída",
+    PageDeld: "Página excluída",
+    TitlePendAppr: "Título pendente de aprovação",
     TextPendingApproval: "Texto pendente de aprovação",
 
-    TooltipQuestClosedNoAnsw: "Esta questão foi fechada sem respostas aceitas.",
+    TooltipQuestClosedNoAnsw: "Esta pergunta foi fechada sem resposta aceita.",
     TooltipTopicClosed: "Este tópico está fechado.",
 
     TooltipQuestSolved: "Isto é uma pergunta respondida",
     TooltipQuestUnsolved: "Isto é uma pergunta não respondida",
 
-    StatusDone: "Done",  // MISSING
+    StatusDone: "Concluído",
     TooltipProblFixed: "Isto foi consertado",
     TooltipDone: "Isto foi concluído",
 
-    StatusStarted: "Started",  // MISSING
+    StatusStarted: "Iniciado",
     TooltipFixing: "No momento estamos consertando isto",
     TooltipImplementing: "No momento estamos implementando isto",
 
-    StatusPlanned: "Planned",  // MISSING
+    StatusPlanned: "Planejado",
     TooltipProblPlanned: "Estamos planejando consertar isto",
     TooltipIdeaPlanned: "Estamos planejando implementar isto",
 
-    StatusNew: "New",  // MISSING
-    StatusNewDtl: "New topic, under discussion",  // MISSING
+    StatusNew: "Novo",
+    StatusNewDtl: "Novo tópico, em discussão",
     TooltipUnsProbl: "Isto é um problema não resolvido",
     TooltipIdea: "Isto é uma ideia",
 
@@ -567,36 +565,36 @@ var t_pt_BR: TalkyardTranslations = t = {
 
     _and: " e",
 
-    repliesTo: "replies to",  // MISSING
+    repliesTo: "responde a",
     InReplyTo: "Em resposta a",
-    YourReplyTo: "Your reply to ",  // MISSING
-    YourChatMsg: "Your chat message: ",   // MISSING
-    YourDraft: "Your draft",    // MISSING
-    YourEdits: "Your edits: ",   // MISSING
-    YourProgrNoteC: "Your progress note:",  // MISSING
-    aProgrNote: "a progress note: ",  // MISSING
+    YourReplyTo: "Sua resposta para ",
+    YourChatMsg: "Sua mensagem de chat: ",
+    YourDraft: "Seu rascunho",
+    YourEdits: "Suas edições: ",
+    YourProgrNoteC: "Sua nota de progresso:",
+    aProgrNote: "uma nota de progresso: ",
 
-    ReplyingToC: "Replying to:",    // MISSING
-    ScrollToPrevw_1: "Scroll to ",  // MISSING
-    ScrollToPrevw_2: "preview",     // MISSING
+    ReplyingToC: "Respondendo a:",
+    ScrollToPrevw_1: "Rolar para ",
+    ScrollToPrevw_2: "visualizar",
 
-    UnfinEdits: "Unfinished edits",  // MISSING
-    ResumeEdting: "Resume editing",  // MISSING
-    DelDraft: "Delete draft",   // MISSING
+    UnfinEdits: "Edições inacabadas",
+    ResumeEdting: "Continuar editando",
+    DelDraft: "Excluir rascunho",
 
     ClickViewEdits: "Clique para visualizar edições antigas",
 
     By: "Por ", // ... someones name
 
     // Discussion ...
-    aboutThisIdea: "about how and if to do this idea",  // MISSING
-    aboutThisProbl: "about how and if to fix this",  // MISSING
+    aboutThisIdea: "sobre como e se deve realizar esta ideia",
+    aboutThisProbl: "sobre como e se deve consertar isto",
 
-    AddProgrNote: "Add progress note",  // MISSING
+    AddProgrNote: "Adicionar nota de progresso",
     // Progress ...
-    withThisIdea: "with doing this idea",  // MISSING
-    withThisProbl: "with handling this problem",  // MISSING
-    withThis: "with doing this",  // MISSING
+    withThisIdea: "com a realização desta ideia",
+    withThisProbl: "com a resolução deste problema",
+    withThis: "com a realização disto",
   },
 
 
@@ -604,22 +602,22 @@ var t_pt_BR: TalkyardTranslations = t = {
 
   // Shown between the original post and all replies.
 
-  mb: {  // MISSING, the 5 texts in this section:
-    NotfsAbtThisC: "Notifications about this topic:",
+  mb: {
+    NotfsAbtThisC: "Notificações sobre este tópico:",
 
     // If is a direct message topic, members listed below this text.
-    Msg: "Message",
+    Msg: "Mensagem",
 
-    SmrzRepls: "Summarize Replies",
+    SmrzRepls: "Resumir respostas",
 
     // Don't bother about being correct with "1 reply", "2,3,4 replies".
     // Just write "replies" always instead? (also if only one)
 
     EstTime: (numReplies: number, minutes: number) =>
-        `There are ${numReplies} replies. Estimated reading time: ${minutes} minutes`,
+        `Há ${numReplies} respostas. Tempo estimado de leitura: ${minutes} minutos`,
 
     DoneSummarizing: (numSummarized: number, numShownBefore: number) =>
-        `Done. Summarized ${numSummarized} replies, of the ${numShownBefore} replies previously shown.`,
+        `Concluído. Resumidas ${numSummarized} respostas, das ${numShownBefore} exibidas anteriormente.`,
   },
 
 
@@ -648,29 +646,28 @@ var t_pt_BR: TalkyardTranslations = t = {
     Report: "Denunciar",
     ReportThisPost: "Denunciar este post",
     Admin: "Administrador",
-    DiscIx: "Discussions index",  // MISSING
+    DiscIx: "Índice de discussões",
 
     Disagree: "Discordar",
-    DisagreeExpl: "Clique aqui para discordar deste post, ou para avisar outras pessoas sobre erros factuais.",
+    DisagreeExpl: "Clique aqui para discordar desta publicação, ou para avisar outras pessoas sobre erros factuais.",
     Bury: "Enterrar",
-    BuryExpl: "Clique aqui para posicionar outros posts antes deste post. Só o staff do fórum pode ver seu voto.",
+    BuryExpl: "Clique aqui para posicionar outras publicações antes desta. Apenas a equipe do fórum pode ver seu voto.",
     Unwanted: "Indesejado",
-    UnwantedExpl: "Se você não quer este post neste site. Isso vai diminuir a confiança que eu tenho no autor do post" +
-            "Só o staff do fórum pode ver seu voto.",
+    UnwantedExpl: "Se você não quer esta publicação neste site. Isso vai diminuir a minha confiança no autor da publicação. Apenas a equipe do fórum pode ver seu voto.",
 
-    AddTags: "Adicionar/remover marcadores",
-    UnWikify: "Desfazer Wikificação",
-    Wikify: "Wikificar",
-    PinDeleteEtc: "Fixar / Deletar / Categoria ...",
+    AddTags: "Adicionar/remover tags",
+    UnWikify: "Remover da Wiki",
+    Wikify: "Tornar Wiki",
+    PinDeleteEtc: "Fixar / Excluir / Categoria ...",
   },
 
 
   // Share dialog
 
   sd: {
-    Copied: "Copied.",                   // MISSING
-    CtrlCToCopy: "Hit CTRL+C to copy.",  // MISSING
-    ClickToCopy: "Click to copy link.",  // MISSING
+    Copied: "Copiado.",
+    CtrlCToCopy: "Pressione CTRL+C para copiar.",
+    ClickToCopy: "Clique para copiar o link.",
   },
 
 
@@ -694,73 +691,73 @@ var t_pt_BR: TalkyardTranslations = t = {
   mm: {
     NeedsReview: "Precisa de revisão ",
     AdminHelp: "Ajuda do administrador ",
-    StaffHelp: "Ajuda do staff ",
-    DraftsEtc: "Drafts, bookmarks, tasks",  // MISSING
-    MoreNotfs: "Ver mais notificações",    // MISSING changed from "View more..." to "...all.."
-    DismNotfs: "Mark all as read",         // MISSING
-    ViewProfile: "Visualizar seu perfil",  // MAYBE, I removed "/editar"
-    ViewGroups: "View groups",  // MISSING
-    LogOut: "Encerrar sessão",
-    UnhideHelp: "Revelar mensagens de ajuda",
+    StaffHelp: "Ajuda da equipe ",
+    DraftsEtc: "Rascunhos, favoritos, tarefas",
+    MoreNotfs: "Ver todas as notificações",
+    DismNotfs: "Marcar todas como lidas",
+    ViewProfile: "Ver seu perfil",
+    ViewGroups: "Ver grupos",
+    LogOut: "Sair",
+    UnhideHelp: "Mostrar mensagens de ajuda",
   },
 
 
   // Scroll buttons
 
-  sb: {    // MISSING  all fields in this section
-    ScrollToC: "Scroll to:",
-    Scroll: "Scroll",
+  sb: {
+    ScrollToC: "Rolar para:",
+    Scroll: "Rolar",
 
     // The Back button, and the letter B is a keyboard shortcut.
     // If in your language, "Back" doesn't start with 'B', then instead
     // set Back_1 to '' (empty text), and Back_2 to:  "Back (B)" — and "Back" (but not "B")
     // translated to your language.
-    Back_1: "B",
-    Back_2: "ack",
-    BackExpl: "Scroll back to your previous position on this page",
+    Back_1: "V",
+    Back_2: "oltar",
+    BackExpl: "Rolar de volta para a sua posição anterior nesta página",
 
     // These are useful on mobile — then, no keybard with Home (= scroll to top) and End buttons.
     // And, on a keyboard, once you get used to it, it's quite nice to click 1 to go to the
     // top, and 2 to see the first reply, and B to go back, F forward, so on.
-    PgTop: "Page top",
-    PgTopHelp: "Go to the top of the page. Shortcut: 1 (on a keyboard)",
-    Repl: "Replies",
-    ReplHelp: "Go to the Replies section. Shortcut: 2",
-    Progr: "Progress",
+    PgTop: "Topo da página",
+    PgTopHelp: "Ir para o topo da página. Atalho: 1 (no teclado)",
+    Repl: "Respostas",
+    ReplHelp: "Ir para a seção de Respostas. Atalho: 2",
+    Progr: "Progresso",
     // The Progress section is at the end of the page, and there, things like
     // "Alice changed status to Doing" and "Alise marked this as Done" and "Topic closed by ..."
     // are shown. (And, optionally, comments by staff or the people working with the issue.)
-    ProgrHelp: "Go to the Progress section. Shortcut: 3",
-    PgBtm: "Page bottom",
-    Btm: "Bottom",
-    BtmHelp: "Go to the bottom of the page. Shortcut: 4",
+    ProgrHelp: "Ir para a seção de Progresso. Atalho: 3",
+    PgBtm: "Fim da página",
+    Btm: "Fim",
+    BtmHelp: "Ir para o fim da página. Atalho: 4",
 
     // "Keyboard shrotcuts: ..., and B to scroll back"
-    Kbd_1: ", and ",
+    Kbd_1: ", e ",
     // then the letter 'B' (regardless of language)
-    Kbd_2: " to scroll back",
+    Kbd_2: " para rolar de volta",
   },
 
 
   // Select users dialog
   sud: {
-    SelectUsers: "Select users",  // MISSING
-    AddUsers: "Add users",  // MISSING
+    SelectUsers: "Selecionar usuários",
+    AddUsers: "Adicionar usuários",
   },
 
 
   // About user dialog
 
   aud: {
-    IsMod: "Is moderator.",                // MISSING
-    IsAdm: "Is administrator.",            // MISSING
-    IsDeld: "Is deactivated or deleted.",  // MISSING
+    IsMod: "É moderador.",
+    IsAdm: "É administrador.",
+    IsDeld: "Está desativado ou excluído.",
     ThisIsGuest: "Este é um usuário convidado; na realidade, pode ser qualquer pessoa.",
-    ViewInAdm: "View in Admin Area",       // MISSING
-    ViewProfl: "View Profile",             // MISSING
-    ViewComments: "Visualizar outros comentários",
-    RmFromTpc: "Remove from topic",        // MISSING
-    EmAdrUnkn: "Email address unknown — this guest won't be notified about replies.",  // MISSING
+    ViewInAdm: "Ver na Área de Administração",
+    ViewProfl: "Ver Perfil",
+    ViewComments: "Ver outros comentários",
+    RmFromTpc: "Remover do tópico",
+    EmAdrUnkn: "Endereço de email desconhecido — este convidado não será notificado sobre respostas.",
   },
 
 
@@ -771,38 +768,38 @@ var t_pt_BR: TalkyardTranslations = t = {
 
     Preferences: "Preferências",
     Invites: "Convites",
-    DraftsEtc: "Drafts etc",  // MISSING
+    DraftsEtc: "Rascunhos, etc.",
     About: "Sobre",
     Privacy: "Privacidade",
-    Security: "Segurança",  // MAYBE, GTR
+    Security: "Segurança",
     Account: "Conta",
-    Interface: "Interface",  // MISSING
+    Interface: "Interface",
 
     // ----- Overview stats
 
-    JoinedC: "Associados: ",
-    PostsMadeC: "Posts feitos: ",
-    LastPostC: "Último post: ",
-    LastSeenC: "Visto por último em: ",
+    JoinedC: "Membro desde: ",
+    PostsMadeC: "Publicações feitas: ",
+    LastPostC: "Última publicação: ",
+    LastSeenC: "Visto por último: ",
     TrustLevelC: "Nível de confiança: ",
 
     // ----- Action buttons
 
     // ----- Profile pic
 
-    UploadPhoto: "Fazer upload de foto",
+    UploadPhoto: "Carregar foto",
     ChangePhoto: "Mudar foto",
-    ImgTooSmall: "Imagem pequena demais: deve ser >= 100 x 100",
+    ImgTooSmall: "Imagem pequena demais: deve ter pelo menos 100 x 100",
 
     // ----- Activity
 
-    OnlyStaffCanSee: "Only staff and trusted core members, can see this.",  // MISSING
-    OnlyMbrsCanSee: "Only people who have been active members for a while can see this.",  // MISSING
-    Nothing: "Nothing to show",  // MISSING
-    Posts: "Posts",              // MISSING
-    NoPosts: "No posts.",        // MISSING
-    Topics: "Topics",            // MISSING
-    NoTopics: "No topics.",      // MISSING
+    OnlyStaffCanSee: "Apenas a equipe e membros principais confiáveis podem ver isso.",
+    OnlyMbrsCanSee: "Apenas pessoas que são membros ativos há algum tempo podem ver isso.",
+    Nothing: "Nada para mostrar",
+    Posts: "Publicações",
+    NoPosts: "Nenhuma publicação.",
+    Topics: "Tópicos",
+    NoTopics: "Nenhum tópico.",
 
     // ----- User status
 
@@ -820,17 +817,17 @@ var t_pt_BR: TalkyardTranslations = t = {
     // ----- Notifications page
 
     NoNotfs: "Nenhuma notificação",
-    NotfsToYouC: "Notificação para você:",
-    NotfsToOtherC: (name: string) => `Notificação para ${name}:`,
-    DefNotfsSiteWide: "Default notifications, site wide",  // MISSING
+    NotfsToYouC: "Notificações para você:",
+    NotfsToOtherC: (name: string) => `Notificações para ${name}:`,
+    DefNotfsSiteWide: "Notificações padrão de todo o site",
     // The "for" in:  "Default notifications, site wide, for (someone's name)".
-    forWho: "for",  // MISSING
+    forWho: "para",
 
     // ----- Drafts Etc page
 
-    NoDrafts: "No drafts",  // MISSING
-    YourDraftsC: "Your drafts:",  // MISSING
-    DraftsByC: (name: string) => `Drafts by ${name}:`,  // MISSING
+    NoDrafts: "Nenhum rascunho",
+    YourDraftsC: "Seus rascunhos:",
+    DraftsByC: (name: string) => `Rascunhos de ${name}:`,
 
     // ----- Invites page
 
@@ -842,33 +839,32 @@ var t_pt_BR: TalkyardTranslations = t = {
     WhoAccepted: "Membro que aceitou",
     InvAccepted: "Convite aceito",
     InvSent: "Convite enviado",
-    JoinedAlready: "Joined already",  // MISSING
+    JoinedAlready: "Já se juntou",
 
-    SendAnInv: "Enviar um Convite",
-    SendInv: "Enviar Convite",
+    SendAnInv: "Convidar pessoas",
+    SendInv: "Enviar convites",
     SendInvExpl:
-        "Vamos enviar um email curto para seu amigo, e a pessoa deve então clicar em um link " +
-        "para se associar imediatamente, sem necessidade de login. " +
-        "A pessoa vai se tornar um membro comum, não um moderador ou administrador.",
+        "Enviaremos aos seus amigos um curto convite por email. Eles poderão clicar em um link " +
+        "para se juntar imediatamente, sem necessidade de login. " +
+        "Eles se tornarão membros comuns, não moderadores ou administradores.",
     //EnterEmail: "Digite o email",
-    InvDone: "Concluído. Enviando um email para a pessoa.",
-    // MISSING x 9:
-    NoOneToInv: "No one to invite.",
-    InvNotfLater: "I'll notify you later, when I've invited them.",
-    AlreadyInvSendAgainQ: "These have been invited already — maybe you'd like to invite them again?",
-    InvErr_1: "These resulted in ",
-    InvErr_2: "errors",
+    InvDone: "Concluído. Enviarei um email para eles.",
+    NoOneToInv: "Ninguém para convidar.",
+    InvNotfLater: "Avisarei você mais tarde, quando eu os tiver convidado.",
+    AlreadyInvSendAgainQ: "Estes já foram convidados — talvez você queira convidá-los novamente?",
+    InvErr_1: "Estes resultaram em ",
+    InvErr_2: "erros",
     InvErr_3: ":",
-    TheseJoinedAlrdyC: "These have joined already, so I didn't invite them:",
-    ResendInvsQ: "Re-send invitations to these people? They have been invited already.",
-    InvAgain: "Invite again",
+    TheseJoinedAlrdyC: "Estes já se juntaram, por isso não os convidei:",
+    ResendInvsQ: "Reenviar convites para estas pessoas? Elas já foram convidadas.",
+    InvAgain: "Convidar novamente",
 
     // ----- Preferences, About
 
     AboutYou: "Sobre você",
-    WebLink: "Qualquer site ou página sua.",
+    WebLink: "Seu site ou página da web.",
 
-    NotShownCannotChange: "Não mostrado publicamente. Não pode ser mudado.",
+    NotShownCannotChange: "Não mostrado publicamente. Não pode ser alterado.",
 
     // The full name or alias:
     NameOpt: "Nome (opcional)",
@@ -876,16 +872,16 @@ var t_pt_BR: TalkyardTranslations = t = {
     NotShown: "Não mostrado publicamente.",
 
     // The username:
-    MayChangeFewTimes: "Você só pode mudá-lo algumas vezes.",
+    MayChangeFewTimes: "Você só pode alterá-lo algumas vezes.",
     notSpecified: "(não especificado)",
-    ChangeUsername_1: "Você só pode mudar seu nome de usuário algumas vezes.",
-    ChangeUsername_2: "Mudá-lo frequentemente pode deixar outras pessoas confusas — " +
-        "eles não vão saber como @mencionar você.",
+    ChangeUsername_1: "Você só pode alterar seu nome de usuário algumas vezes.",
+    ChangeUsername_2: "Alterá-lo frequentemente pode confundir os outros — " +
+        "eles não saberão como @mencionar você.",
 
-    NotfAboutAll: "Seja notificado de qualquer novo post (exceto se você silenciar o tópico ou categoria)",
-    NotfAboutNewTopics: "Be notified about new topics (unless you mute the category)",  // MISSING
+    NotfAboutAll: "Receba notificações sobre cada nova publicação (a menos que você silencie o tópico ou a categoria)",
+    NotfAboutNewTopics: "Receba notificações sobre novos tópicos (a menos que você silencie a categoria)",
 
-    ActivitySummaryEmails: "Emails com resumo de atividades",
+    ActivitySummaryEmails: "Emails de resumo de atividade",
 
     EmailSummariesToGroup:
         "Quando membros deste grupo não fizerem uma visita por aqui, então, por padrão, envie email para eles " +
@@ -927,12 +923,12 @@ var t_pt_BR: TalkyardTranslations = t = {
         "('Primário' significa que você pode fazer login usando este endereço, e que nós enviamos notificações para ele. " +
         "'Verificado' significa que você clicou no link de verificação em um email de verificação.)",
 
-    // Password:     // MISSING x 4
-    ChangePwdQ: "Change password?",
-    CreatePwdQ: "Create password?",
-    WillGetPwdRstEml: "You'll get a reset password email.",
+    // Password:
+    ChangePwdQ: "Alterar senha?",
+    CreatePwdQ: "Criar senha?",
+    WillGetPwdRstEml: "Você receberá um email para redefinir sua senha.",
     // This is the "None" in:  "Password: None"
-    PwdNone: "None",
+    PwdNone: "Nenhuma",
 
     // Logins:
     LoginMethods: "Métodos de login",
@@ -1100,8 +1096,8 @@ var t_pt_BR: TalkyardTranslations = t = {
     PasswordC: "Senha:",
     ForgotPwd: "Esqueceu sua senha?",
 
-    NoPwd: "You have not yet chosen a password.",  // MISSING
-    CreatePwd: "Create password",                  // MISSING
+    NoPwd: "Você ainda não escolheu uma senha.",
+    CreatePwd: "Criar senha",
   },
 
 
@@ -1119,18 +1115,18 @@ var t_pt_BR: TalkyardTranslations = t = {
   },
 
 
-  // Help message dialog   // MISSING the 2 fields below:
+  // Help message dialog
   help: {
-    YouCanShowAgain_1: "You can show help messages again, if you are logged in, by " +
-        "clicking your name and then ",
-    YouCanShowAgain_2: "Unhide help messages",
+    YouCanShowAgain_1: "Você pode mostrar as mensagens de ajuda novamente, se estiver logado, " +
+        "clicando em seu nome e depois em ",
+    YouCanShowAgain_2: "Mostrar mensagens de ajuda",
   },
 
 
   // Editor
 
   e: {
-    SimilarTopicsC: "Similar topics:",  // MISSING
+    SimilarTopicsC: "Tópicos semelhantes:",
 
     //WritingSomethingWarning: "Você estava escrevendo alguma coisa?",
     UploadMaxOneFile: "Desculpe, mas atualmente você só pode fazer upoad de apenas um arquivo por vez",
@@ -1174,7 +1170,7 @@ var t_pt_BR: TalkyardTranslations = t = {
     ReplyTo: "Responder ao ",
     ReplyTo_theOrigPost: "Post Original",
     ReplyTo_post: "post ",
-    AddCommentC: "Add a comment:",   // MISSING
+    AddCommentC: "Adicionar um comentário:",
 
     PleaseSelectPosts: "Por favor selecione um ou mais posts para responder.",
 
@@ -1225,22 +1221,22 @@ var t_pt_BR: TalkyardTranslations = t = {
     PreviewInfo: "Aqui você pode pré-visualizar como seu post vai ficar.",
     CannotType: "Você não pode digitar aqui.",
 
-    LoadingDraftDots: "Loading any draft...",  // MISSING
-    DraftUnchanged: "Unchanged.",     // MISSING
-    CannotSaveDraftC: "Cannot save draft:",     // MISSING
-    DraftSavedBrwsr: "Draft saved, in browser.",   // MISSING
-    DraftSaved: (nr: string | number) => `Draft ${nr} saved.`,     // MISSING
-    DraftDeleted: (nr: string | number) => `Draft ${nr} deleted.`,     // MISSING
-    WillSaveDraft: (nr: string | number) => `Will save draft ${nr} ...`,     // MISSING
-    SavingDraft: (nr: string | number) => `Saving draft ${nr} ...`,     // MISSING
-    DeletingDraft: (nr: string | number) => `Deleting draft ${nr} ...`,     // MISSING
+    LoadingDraftDots: "Carregando rascunho...",
+    DraftUnchanged: "Sem alterações.",
+    CannotSaveDraftC: "Não foi possível salvar o rascunho:",
+    DraftSavedBrwsr: "Rascunho salvo no navegador.",
+    DraftSaved: (nr: string | number) => `Rascunho ${nr} salvo.`,
+    DraftDeleted: (nr: string | number) => `Rascunho ${nr} excluído.`,
+    WillSaveDraft: (nr: string | number) => `Salvando rascunho ${nr} ...`,
+    SavingDraft: (nr: string | number) => `Salvando rascunho ${nr} ...`,
+    DeletingDraft: (nr: string | number) => `Excluindo rascunho ${nr} ...`,
   },
 
 
   // Select category dropdown
 
   scd: {
-    SelCat: "Select category",  // MISSING
+    SelCat: "Selecionar categoria",
   },
 
 
@@ -1268,32 +1264,31 @@ var t_pt_BR: TalkyardTranslations = t = {
   // Join sub community dialog
 
   jscd: {
-    NoMoreToJoin: "No more communities to join.",  // MISSING
-    SelCmty: "Select community ...",               // MISSING
+    NoMoreToJoin: "Não há mais comunidades para participar.",
+    SelCmty: "Selecionar comunidade ...",
   },
 
 
   // Search dialogs and the search page.
 
   s: {
-    TxtToFind: "Text to search for",  // MISSING
+    TxtToFind: "Texto para pesquisar",
   },
 
 
-  // No internet    // MISSING x 3
+  // No internet
 
   ni: {
-    NoInet: "No internet connection",
-    PlzRefr: "Refresh page to see any latest changes. (There was a disconnection)",
-    RefrNow: "Refresh now",
+    NoInet: "Sem conexão com a internet",
+    PlzRefr: "Atualize a página para ver as alterações mais recentes. (Houve uma desconexão)",
+    RefrNow: "Atualizar agora",
   },
 
 
-  // MISSING:
-  PostDeleted: (postNr: number) => `That post, nr ${postNr}, has been deleted.`,
-  NoSuchPost: (postNr: number) => `There's no post nr ${postNr} on this page.`,
-  NoPageHere: "This page has been deleted, or it never existed, or you may not access it.",
-  GoBackToLastPage: "Go back to last page",
+  PostDeleted: (postNr: number) => `Esta publicação, nr ${postNr}, foi excluída.`,
+  NoSuchPost: (postNr: number) => `Não há publicação nr ${postNr} nesta página.`,
+  NoPageHere: "Esta página foi excluída, ou nunca existiu, ou você não tem permissão para acessá-la.",
+  GoBackToLastPage: "Voltar para a página anterior",
 
 };
 
