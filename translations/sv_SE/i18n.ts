@@ -86,7 +86,7 @@ var t_sv_SE: TalkyardTranslations = t = {
   onePerLine: "en per rad",
   PreviewV: "Förhandsgranska",
   Problem: "Problem",
-  progressN: "framsteg",
+  progressN: "förlopp",
   Question: "Fråga",
   Recent: "Senaste",
   Remove: "Ta bort",
@@ -186,8 +186,8 @@ var t_sv_SE: TalkyardTranslations = t = {
     UnUnqShrt_3: ", unikt och kort",
 
     // Generic messages for all input fields:
-    TooShort: (minLength: number) => `Bör vara minst ${minLength} tecken`,
-    TooLong: (maxLength: number) => `För långt. Bör vara som mest ${maxLength} tecken`,
+    TooShort: (minLength: number) => `Ska vara minst ${minLength} tecken`,
+    TooLong: (maxLength: number) => `För långt. Får vara max ${maxLength} tecken`,
   },
 
 
@@ -572,8 +572,8 @@ var t_sv_SE: TalkyardTranslations = t = {
     YourChatMsg: "Ditt chattmeddelande: ",
     YourDraft: "Ditt utkast",
     YourEdits: "Dina redigeringar: ",
-    YourProgrNoteC: "Din framstegsanteckning:",
-    aProgrNote: "en framstegsanteckning: ",
+    YourProgrNoteC: "Din förloppsanteckning:",
+    aProgrNote: "en förloppsanteckning: ",
 
 
     ReplyingToC: "Svarar till:",
@@ -592,12 +592,11 @@ var t_sv_SE: TalkyardTranslations = t = {
     aboutThisIdea: "om hur och om vi ska genomföra denna idé",
     aboutThisProbl: "om hur och om vi ska fixa detta",
 
-    AddProgrNote: "Lägg till framstegsanteckning",
+    AddProgrNote: "Lägg till förloppsanteckning",
     // Progress ...
     withThisIdea: "med att genomföra denna idé",
     withThisProbl: "med att hantera detta problem",
     withThis: "med att göra detta",
-  },
   },
 
 
@@ -727,11 +726,11 @@ var t_sv_SE: TalkyardTranslations = t = {
     PgTopHelp: "Gå till toppen av sidan. Genväg: 1",
     Repl: "Svar",
     ReplHelp: "Gå till svarssektionen. Genväg: 2",
-    Progr: "Framsteg",
+    Progr: "Förlopp",
     // The Progress section is at the end of the page, and there, things like
     // "Alice changed status to Doing" and "Alise marked this as Done" and "Topic closed by ..."
     // are shown. (And, optionally, comments by staff or the people working with the issue.)
-    ProgrHelp: "Gå till framstegssektionen. Genväg: 3",
+    ProgrHelp: "Gå till förloppsektionen. Genväg: 3",
     PgBtm: "Sidans botten",
     Btm: "Botten",
     BtmHelp: "Gå till botten av sidan. Genväg: 4",
