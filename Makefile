@@ -209,40 +209,130 @@ prod_asset_bundle_files:=\
   images/web/assets/$(TALKYARD_VERSION)/styles-bundle.rtl.css.gz \
   images/web/assets/$(TALKYARD_VERSION)/styles-bundle.rtl.min.css.gz \
   images/web/assets/$(TALKYARD_VERSION)/zxcvbn.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/ar_SA/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/ar_SA/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/bg_BG/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/bg_BG/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/bn_BD/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/bn_BD/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/ckb_IQ/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/ckb_IQ/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/cs_CZ/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/cs_CZ/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/da_DK/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/da_DK/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/de_DE/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/de_DE/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/el_GR/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/el_GR/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/en_US/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/en_US/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/es_CL/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/es_CL/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/et_EE/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/et_EE/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/fa_IR/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/fa_IR/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/fi_FI/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/fi_FI/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/fr_FR/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/fr_FR/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/ga_IE/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/ga_IE/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/he_IL/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/he_IL/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/hi_IN/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/hi_IN/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/hu_HU/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/hu_HU/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/hy_AM/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/hy_AM/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/id_ID/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/id_ID/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/is_IS/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/is_IS/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/it_IT/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/it_IT/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/ja_JP/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/ja_JP/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/ko_KR/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/ko_KR/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/ku_TR/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/ku_TR/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/lt_LT/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/lt_LT/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/lv_LV/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/lv_LV/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/nl_NL/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/nl_NL/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/no_NO/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/no_NO/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/pl_PL/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/pl_PL/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/pt_BR/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/pt_BR/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/pt_PT/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/pt_PT/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/ro_RO/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/ro_RO/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/ru_RU/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/ru_RU/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/sr_RS/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/sr_RS/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/sv_SE/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/sv_SE/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/th_TH/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/th_TH/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/tr_TR/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/tr_TR/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/uk_UA/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/uk_UA/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/zh_CN/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/zh_CN/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/zh_TW/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/zh_TW/i18n.min.js.gz \
   images/app/assets/server-bundle.min.js \
+  images/app/assets/translations/ar_SA/i18n.min.js \
+  images/app/assets/translations/bg_BG/i18n.min.js \
+  images/app/assets/translations/bn_BD/i18n.min.js \
+  images/app/assets/translations/ckb_IQ/i18n.min.js \
+  images/app/assets/translations/cs_CZ/i18n.min.js \
+  images/app/assets/translations/da_DK/i18n.min.js \
   images/app/assets/translations/de_DE/i18n.min.js \
+  images/app/assets/translations/el_GR/i18n.min.js \
   images/app/assets/translations/en_US/i18n.min.js \
   images/app/assets/translations/es_CL/i18n.min.js \
+  images/app/assets/translations/et_EE/i18n.min.js \
+  images/app/assets/translations/fa_IR/i18n.min.js \
+  images/app/assets/translations/fi_FI/i18n.min.js \
+  images/app/assets/translations/fr_FR/i18n.min.js \
+  images/app/assets/translations/ga_IE/i18n.min.js \
   images/app/assets/translations/he_IL/i18n.min.js \
+  images/app/assets/translations/hi_IN/i18n.min.js \
+  images/app/assets/translations/hu_HU/i18n.min.js \
+  images/app/assets/translations/hy_AM/i18n.min.js \
+  images/app/assets/translations/id_ID/i18n.min.js \
+  images/app/assets/translations/is_IS/i18n.min.js \
+  images/app/assets/translations/it_IT/i18n.min.js \
+  images/app/assets/translations/ja_JP/i18n.min.js \
+  images/app/assets/translations/ko_KR/i18n.min.js \
+  images/app/assets/translations/ku_TR/i18n.min.js \
+  images/app/assets/translations/lt_LT/i18n.min.js \
   images/app/assets/translations/lv_LV/i18n.min.js \
+  images/app/assets/translations/nl_NL/i18n.min.js \
+  images/app/assets/translations/no_NO/i18n.min.js \
   images/app/assets/translations/pl_PL/i18n.min.js \
   images/app/assets/translations/pt_BR/i18n.min.js \
+  images/app/assets/translations/pt_PT/i18n.min.js \
+  images/app/assets/translations/ro_RO/i18n.min.js \
   images/app/assets/translations/ru_RU/i18n.min.js \
+  images/app/assets/translations/sr_RS/i18n.min.js \
   images/app/assets/translations/sv_SE/i18n.min.js \
+  images/app/assets/translations/th_TH/i18n.min.js \
+  images/app/assets/translations/tr_TR/i18n.min.js \
   images/app/assets/translations/uk_UA/i18n.min.js \
-  images/app/assets/translations/zh_CN/i18n.min.js
+  images/app/assets/translations/zh_CN/i18n.min.js \
+  images/app/assets/translations/zh_TW/i18n.min.js
 
 # Sync this task name w e2e test [MKBUNDLS].
 prod_asset_bundles: debug_asset_bundles $(prod_asset_bundle_files)
