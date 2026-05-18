@@ -316,7 +316,12 @@ class SiteTpi protected (
   private def isRtlLanguage: Boolean = {
     // For now, just inline this knowledge here. Refactor-move elsewhere later. [5JUKQR2]
     // The admin area is English only — so, no RTL, there.
-    siteSettings.languageCode == "he_IL" && !isAdminArea
+    return !isAdminArea && (
+              siteSettings.languageCode == "ar_SA" ||  // Arabic
+              siteSettings.languageCode == "fa_IR" ||  // Farsi (Persian)
+              siteSettings.languageCode == "he_IL" ||  // Hebrew
+              siteSettings.languageCode == "ckb_IQ");  // Kurdish (Sorani)
+              // & Urdu too, if adding later.
   }
 
   /** For templates. */
