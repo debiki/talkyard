@@ -131,6 +131,8 @@ if [ -z "$skip_build" ]; then
   cd to-talkyard
   # For this, Yarn needs to be installed. [build_needs_yarn] Nix-shell is a good way
   # to get Nodejs and Yarn.
+  echo "How do this w [pnpm_0_yarn]?"
+  exit 1
   yarn build
   popd
 

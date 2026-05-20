@@ -3,5 +3,5 @@
 # Gah! 'yarn' and 'yarn install'  nowadays (or did it always?) deletes ./node_modules/,
 # see:  [yarn_deletes_mods_dir]  in s/tyd.ts.
 # 
-sudo s/d run --rm nodejs yarn
+sudo s/d run --rm nodejs pnpm
 

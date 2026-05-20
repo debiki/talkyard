@@ -676,3 +676,12 @@ to add a Deno containier (and use Deno for rendering server side, rather than
 Nashorn which is gone in Java 17), then, that's a good time to add some auto
 upgrade / maintenance-tools container too.
 
+
+
+== Year 2026
+
+=== Switch from Yarn to pnpm
+
+Supply chain attack madness!
+
+

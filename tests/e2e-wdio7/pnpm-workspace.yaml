@@ -1,0 +1,10 @@
+ignoredBuiltDependencies:
+  - core-js
+
+onlyBuiltDependencies:
+  # Needs to download different binaries depending on the OS.
+  - chromedriver
+
+# 8 days
+minimumReleaseAge: 11520
+
