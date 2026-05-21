@@ -170,6 +170,14 @@ if (mainCmd === 'nodejs') {
 
 
 if (mainCmd === 'yarn') { // [pnpm_0_yarn]
+  logMessage(`We use pnpm now not Yarn! Error. Bye.`);
+  process.exit(1);
+}
+
+
+if (mainCmd === 'pnpm') { // [pnpm_0_yarn]
+  logMessage(`Calling pnpm from this script hasn't been tested. Error! Bye.`);
+  process.exit(1);
   logMessage(`
 Note:  \`yarn\` and \`yarn install\` apparently overwrites the whole node_modules/
 — the Git repo there (Git submodule), will disappear.  [yarn_deletes_mods_dir]
@@ -272,7 +280,7 @@ if (mainCmd === 'u' || mainCmd === 'up' || mainCmd === 'up0lim') {
   const nolimConf = mainCmd !== 'up0lim' ? '' :
           '-f docker-compose.yml -f docker-compose-no-limits.yml';
 
-  // If only starting some specific containers, skip Yarn and Make.  [pnpm_0_yarn]
+  // If only starting some specific containers, skip pnpm and Make.
   if (mainSubCmd) {
     tyu.spawnInForeground(`docker compose ${nolimConf} up -d ${allSubCmdsSt}`);
     tailLogsThenExit();

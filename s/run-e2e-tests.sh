@@ -221,6 +221,7 @@ function runE2eTest {
 #------------------------------------------------------------
 # dupl code (7UKTWC0)
 # Start building the Gatsby blog, if needed.
+if [ -z "skip_build_gatsby" ]; then
 if [ ! -d modules/gatsby-starter-blog/public/ ]; then
   echo "Building the Gatsby starter blog public html..."
   echo "How [pnpm_0_yarn]?"
@@ -252,6 +253,7 @@ if [ ! -d modules/gatsby-starter-blog-ed-comments-0.4.4/public/ ]; then
   echo "Background building the Gatsby blog, ed-comments 0.4.4, in process id $yarn_build_gatsby_pid2"
   popd
 fi
+fi  # skip_build_gatsby
 #------------------------------------------------------------
 
 http_server_port=''

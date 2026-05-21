@@ -40,15 +40,12 @@ if [ -z "$(which docker)" ]; then
   die_if_in_script
 fi
 
-# Yarn? [build_needs_yarn]
+# Yarn? [build_needs_yarn]  pnpm now, not Yarn
 #
-if [ -z "$(which yarn)" ]; then
+if [ -z "$(which pnpm)" ]; then
   echo
-  echo "How do this w [pnpm_0_yarn]?"
-  exit 1
-  echo
-  echo "Yarn not installed. Please run this script using Nix-shell,"
-  echo "then, Nix will download Yarn for you."
+  echo "pnpm not installed. Please run this script using from a \`nix develop\` shell,"
+  echo "then, Nix will download pnpm for you."
   echo
   die_if_in_script
 fi

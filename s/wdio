@@ -10,11 +10,11 @@
 node_ver=$(node --version)
 if [[ "$node_ver" == v14.* ]]; then
   : # Correct version — run the tests.
-elif [[ "$node_ver" == v22.* ]]; then
+elif [[ "$node_ver" == v24.* ]]; then
   echo "Skipping this test — it needs Nodejs v14, but now we're using $node_ver."
   exit 0
 else
-  echo "Totally unexpected Nodejs version. Is: $node_ver, should be v14 (or v22)."
+  echo "Totally unexpected Nodejs version. Is: $node_ver, should be v14 (or v24)."
   exit 1
 fi
 

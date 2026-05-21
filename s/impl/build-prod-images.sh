@@ -129,11 +129,9 @@ if [ -z "$skip_build" ]; then
   # Build to-talkyard, needed in e2e tests.
   pushd .
   cd to-talkyard
-  # For this, Yarn needs to be installed. [build_needs_yarn] Nix-shell is a good way
-  # to get Nodejs and Yarn.
-  echo "How do this w [pnpm_0_yarn]?"
-  exit 1
-  yarn build
+  # For this, pnpm needs to be installed. [build_needs_yarn] Nix-shell is a good way
+  # to get Nodejs and pnpm.
+  pnpm build
   popd
 
   # Build minified script bundles; will be included in the web and app images. [PRODBNDLS]
