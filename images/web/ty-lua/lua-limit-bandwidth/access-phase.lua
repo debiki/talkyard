@@ -1,4 +1,5 @@
-local cdn_pull_key = os.getenv("CDN_PULL_KEY")
+-- [ty_v2] RENAME to TY_CDN_PULL_KEY, but backw compat in v1 (maybe v2 too).
+local cdn_pull_key = os.getenv("TY_CDN_PULL_KEY") or os.getenv("CDN_PULL_KEY")
 local util = require 'lua-limit-bandwidth/util'
 
 local Module = {}
@@ -96,3 +97,4 @@ end
 end
 
 return Module
+

@@ -26,13 +26,13 @@ if [ -z "$(which deno)" ]; then
   exit 1
 fi
 
-if [ -z "$(which yarn)" ]; then
-  echo
-  echo "Wrong Nix-shell? I don't see any 'yarn' executable, but I need"
-  echo "Yarn sometimes, to transpile Typescript.  Error.  Bye."
-  echo
-  exit 1
-fi
+#if [ -z "$(which pnpm)" ]; then
+#  echo
+#  echo "Wrong Nix-shell? I don't see any 'pnpm' executable, but I need"
+#  echo "pnpm sometimes, to fetch Javascript packages.  Error.  Bye."
+#  echo
+#  exit 1
+#fi
 
 # Download any missing Git submodules.
 make git-subm-init-upd

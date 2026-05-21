@@ -150,7 +150,12 @@ export const SelectCategoryDropdown = createClassAndFactory({
           atRect: state.buttonRect, windowWidth: state.windowWidth },
         r.div({ className: 'esDropModal_header' }, t.scd.SelCat + ':'),
         r.ul({ className: 'e_CatLs' },
-          catListItems));
+          catListItems,
+          // Could be nice with a Create Category button here, if one is admin?
+          // So won't need to jump to the category list page, click Creat Cat there,
+          // then fill in the correct parent cat, then save and jump back to the
+          // topic list. [2nd_create_cat_btn]
+          ));
 
     return (
       rFr({},

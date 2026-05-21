@@ -202,8 +202,9 @@ services:
         target: /tmp/postgres_password  # [postgres_pw_path]
     networks:
       # --- So can attach a debugger on port 9999 ------
-      fe_pub_net:
-        ipv4_address: ${FE_PUB_NET_APP_IP}
+      # But comment out by default, so we'll notice egress proxy issues. [egressp_conf]
+      #fe_pub_net:
+      #  ipv4_address: ${FE_PUB_NET_APP_IP}
       # -------------------------------------------------
       fe_int_net:
         ipv4_address: ${FE_INT_NET_APP_IP}

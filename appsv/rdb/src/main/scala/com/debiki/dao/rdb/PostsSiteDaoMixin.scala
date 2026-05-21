@@ -106,9 +106,9 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         case priv: WhichPostsOnPage.OnlyPrivate =>
           // Later: Need a way to specify & load private-posts-visible-to somebody. [priv_comts]
           // Maybe we'll need to [load_all_private_comments] on pageId.
-          // But for now, this works for bookmarks.
+          // But for now, this works for bookmarks, and later: one's drafts [drafts_as_posts].
           // If:  activeOnly = true, mustBeApproved = Some(false),
-          // then is ame as:  loadUnapprovedPosts(allPublic = false, ...)?
+          // then is ame as:  loadUnapprovedPostsAndOwnPrivate(allPublic = false, ...)?
           // except that the latter loads hidden posts, this one doesn't, but
           // doesn't matter since bookmarks & priv comments can't be hidden?
           values.append(priv.byUserId.asAnyRef)
@@ -310,7 +310,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadUnapprovedPosts(pageId: PageId, ownBy: PatId, allPublic: Bo = false,
+  def loadUnapprovedPostsAndOwnPrivate(pageId: PageId, ownBy: PatId, allPublic: Bo = false,
           limit: i32): immutable.Seq[Post] = {
 
     // Later: Do we ever want to use this for loading private comments? [priv_comts]
@@ -341,7 +341,9 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     val values = ArrayBuffer[AnyRef](
           siteId.asAnyRef, pageId.asAnyRef, ownBy.asAnyRef)
 
-    // One's own unapproved comments, but also one's bookmarks (they're posts too, unapproved).
+    // One's own unapproved comments,
+    // and one's own bookmarks [load_bokms] (bookmarks are a type of unapproved posts),
+    // and later, one's drafts [drafts_as_posts].
     val ownUnapprovedQuery = s"""
           $select__posts_po__leftJoin__patPostRels_pa
           where po.site_id = ?
@@ -355,6 +357,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
           $groupBy__siteId_postId """
 
     // For moderators, so they can see & review posts pending approval.
+    // (But not other people's bookmarks — we compare w MinPublicNr.)
     val unionPublicUnapprovedQuery = if (!allPublic) "" else {
       values.append(siteId.asAnyRef, pageId.asAnyRef)
       s"""
@@ -369,7 +372,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
           $groupBy__siteId_postId """
     }
 
-    val query = s""" -- loadUnapprovedPosts
+    val query = s""" -- loadUnapprovedPostsAndOwnPrivate
           $ownUnapprovedQuery
           $unionPublicUnapprovedQuery
           -- Order the total result, after union. (Incl id, for predictable e2e tests.)

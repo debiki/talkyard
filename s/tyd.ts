@@ -49,7 +49,7 @@ completion.on('mainCmd', ({ reply }) => {
         'cd', 'clidb',
         'ca', 'cliapp',
         'nodejs',
-        'yarn',
+        'pnpm', // 'yarn', [pnpm_0_yarn]
         'gulp',
         ]);
 });
@@ -104,6 +104,7 @@ logDebug(`commands: ${commands.join(' ')}`);
 logDebug(`    opts: ${JSON.stringify(opts)}`);
 logDebug(`opts str: ${tyu.stringifyOpts(opts)}`);
 
+// [pnpm_0_yarn]
 const yarnOfflineSt = opts.offline || opts.o ? '--offline' : '';
 
 
@@ -168,7 +169,7 @@ if (mainCmd === 'nodejs') {
 }
 
 
-if (mainCmd === 'yarn') {
+if (mainCmd === 'yarn') { // [pnpm_0_yarn]
   logMessage(`
 Note:  \`yarn\` and \`yarn install\` apparently overwrites the whole node_modules/
 — the Git repo there (Git submodule), will disappear.  [yarn_deletes_mods_dir]
@@ -271,7 +272,7 @@ if (mainCmd === 'u' || mainCmd === 'up' || mainCmd === 'up0lim') {
   const nolimConf = mainCmd !== 'up0lim' ? '' :
           '-f docker-compose.yml -f docker-compose-no-limits.yml';
 
-  // If only starting some specific containers, skip Yarn and Make.
+  // If only starting some specific containers, skip Yarn and Make.  [pnpm_0_yarn]
   if (mainSubCmd) {
     tyu.spawnInForeground(`docker compose ${nolimConf} up -d ${allSubCmdsSt}`);
     tailLogsThenExit();

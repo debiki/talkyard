@@ -44,6 +44,9 @@ fi
 #
 if [ -z "$(which yarn)" ]; then
   echo
+  echo "How do this w [pnpm_0_yarn]?"
+  exit 1
+  echo
   echo "Yarn not installed. Please run this script using Nix-shell,"
   echo "then, Nix will download Yarn for you."
   echo

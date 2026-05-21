@@ -200,7 +200,34 @@ CMD \
   #   > to the desired destination
   -Dmail.smtp.proxy.host=egressp \
   -Dmail.smtp.proxy.port=4750 \
+  \
+  # ScribeJava uses a Java http client, so we need Java proxy conf too. [egressp_conf]
+  # Without, will be errors like:
+  #  > 500 Internal Server Error
+  #  > Error requesting access token: java.net.UnknownHostException: oauth2.googleapis.com [TyEACSTKNREQ2]
   #
+  # But not needed in dev builds, because:
+  #  > On Unix, sbt will pick up any HTTP, HTTPS, or FTP proxy settings from
+  #  > the standard http_proxy, https_proxy, and ftp_proxy environment variables
+  # https://www.scala-sbt.org/2.x/docs/en/reference/sbt.html
+  #
+  # To verify sbt really sets -Dhttps.proxyHost and -Dhttps.proxyPort, you can:
+  #    docker compose up -d app
+  #    docker compose exec app bash  # jump into container
+  #    su owner  # this user runs Play Fmw, in dev builds
+  #    jcmd      # list JVM processes
+  #    # You'll see Java processes run by 'owner', let's say:
+  #    # 51 /opt/sbt/bin/sbt-launch.jar run
+  #    # 123 ...jcmd.JCmd
+  #    jinfo -sysprops 51 | grep -i proxy  # where 51 is the sbt process id
+  #    # This should show:
+  #    # https.proxyHost=....  # sbt added, because https_proxy in docker-compose.yml.
+  #    # ...
+  #
+  # So, skip:  (but is included in Dockerfile.prod)
+  #-Dhttps.proxyHost=egressp \
+  #-Dhttps.proxyPort=4750 \
+  \
   # Otherwise ignored, although as per the docs it should be found since it's on the classpath.
   -Dlogback.configurationFile=/opt/talkyard/app/conf/logback.xml \
   # log4j2 problem, disable this:

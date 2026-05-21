@@ -223,6 +223,8 @@ function runE2eTest {
 # Start building the Gatsby blog, if needed.
 if [ ! -d modules/gatsby-starter-blog/public/ ]; then
   echo "Building the Gatsby starter blog public html..."
+  echo "How [pnpm_0_yarn]?"
+  exit 1
   pushd .
   cd modules/gatsby-starter-blog/
   rm -fr .cache public
@@ -239,6 +241,8 @@ fi
 # Start building another version of the Gatsby blog, with an older ed-comments version.
 if [ ! -d modules/gatsby-starter-blog-ed-comments-0.4.4/public/ ]; then
   echo "Building the Gatsby starter blog public html, for ed-comments 0.4.4..."
+  echo "How [pnpm_0_yarn]?"
+  exit 1
   pushd .
   cd modules/gatsby-starter-blog-ed-comments-0.4.4/
   rm -fr .cache public
@@ -369,6 +373,8 @@ function runAllE2eTests {
   $r s/wdio --only drafts-reply-edit-dir-msg.2br.mtime $args
   $r s/wdio --only drafts-chat-adv-ed.2browsers $args
   $r s/wdio --only drafts-delete $args
+
+  $r s/wdio-7 --only bookmarks-basic.2br.f --cd -i $args
 
   # Wip:
   # $r s/wdio-7 --only frag-action-compose-topic.2br.f.wip.ts --cd -i

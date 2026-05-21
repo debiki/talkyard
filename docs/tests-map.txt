@@ -877,11 +877,25 @@ tags with values:
             - TESTS_MISSING  TyTTAGVALBADTYPE
 
 bookmarks:
+  create,
+  delete,
+  jump to,
+  access perms (move page to private cat):
+            - bookmarks-basic.2br.f  TyTBOKM_BSC
+    can't find when searching:
+            - TESTS_MISSING  TyTBOKM_SRCH_0FIND
+  sort order:
+            - bookmarks-basic.2br.f  TyTBOKM_BSC.TyTBOKM_ORDR
+  recreate after deleted:
+            - TESTS_MISSING
+  edit text:
+            - TESTS_MISSING
+  more:
             - TESTS_MISSING   TyTBOOKMLS
             - TESTS_MISSING   case q: PostQuery.PatsBookmarks
             - TESTS_MISSING   TyTIMPBOOKMRK
             - TESTS_MISSING   Check bookmarks not sent over WebSocket [dont_leak_private_posts]
-            - Edit & delete & recreate bookmarks
+            - TESTS_MISSING   Update sidebar when deleting bookmark. [del_bokm_upd_list]
             - add more ...
 
 # Move to ^security:  ?

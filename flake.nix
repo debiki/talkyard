@@ -2,7 +2,7 @@
   description = "Talkyard's dev env Nix flake. Install Nix and type 'nix develop'.";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
   };
 
   outputs = { self , nixpkgs ,... }: let
@@ -17,10 +17,12 @@
 
           # Webdriver.io supports only LTS versions. 22 is an LTS, 23 is not.
           # 24 is, but not yet available in Nix.
-          nodejs_22
+          # Now it is!
+          nodejs_24
+          pnpm
 
           deno
-          (yarn.override { nodejs = nodejs_22; })  # what's Yarn's default Nodejs?
+          #(yarn.override { nodejs = nodejs_22; })  # what's Yarn's default Nodejs?
           #yarn  # or just this?
           gnumake
         ];

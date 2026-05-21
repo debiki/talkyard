@@ -421,6 +421,7 @@ abstract class PageParts {
     COULD_OPTIMIZE // bad O(?) complexity when called on each node, like
     // ReactJson.pageToJsonImpl does — O(n*n)? Could start at the leaves and work up instead
     // and cache the result -> O(n).
+    // (Exclude bookmarks? Currently [bookmarks_filtered_out] elsewhere)
     childrenSortedOf(postNr) exists { child =>
       !child.deletedStatus.isDeleted || hasNonDeletedSuccessor(child.nr)
     }

@@ -163,6 +163,14 @@ CMD exec /opt/talkyard/app/bin/talkyard-server \
   -Dmail.smtp.proxy.host=egressp \
   -Dmail.smtp.proxy.port=4750 \
   #
+  # ScribeJava uses a Java http client, so we need Java proxy conf too. [egressp_conf]
+  # (This client: modules/scribejava/scribejava-core/src/main/java/
+  #                 com/github/scribejava/core/httpclient/jdk/JDKHttpClient.java )
+  -Dhttp.proxyHost=egressp \
+  -Dhttp.proxyPort=4750 \
+  -Dhttps.proxyHost=egressp \
+  -Dhttps.proxyPort=4750 \
+  #
   # It's ok to use urandom, see:   [30PUK42]
   # - http://www.2uo.de/myths-about-urandom/
   # - http://sockpuppet.org/blog/2014/02/25/safely-generate-random-numbers/

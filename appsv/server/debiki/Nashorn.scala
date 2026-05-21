@@ -505,18 +505,47 @@ class Nashorn(
     }
 
     // Sync w languages in /translations/, the admin UI language selector, and the Makefile. [5JUKQR2]
-    addTranslation("en_US")
-    addTranslation("zh_CN")  // Chinese, PRC
-    addTranslation("es_CL")  // Spanish, Chile
+    addTranslation("ar_SA")  // Arabic
+    addTranslation("bg_BG")  // Bulgarian
+    addTranslation("bn_BD")  // Bengali
+    addTranslation("ckb_IQ") // Kurdish (Sorani)
+    addTranslation("cs_CZ")  // Czech
+    addTranslation("da_DK")  // Danish
     addTranslation("de_DE")  // German
+    addTranslation("el_GR")  // Greek
+    addTranslation("en_US")
+    addTranslation("es_CL")  // Spanish, Chile
+    addTranslation("et_EE")  // Estonian
+    addTranslation("fa_IR")  // Farsi (Persian)
+    addTranslation("fi_FI")  // Finnish
+    addTranslation("fr_FR")  // French
+    addTranslation("ga_IE")  // Irish
     addTranslation("he_IL")  // Hebrew
+    addTranslation("hi_IN")  // Hindi
+    addTranslation("hu_HU")  // Hungarian
+    addTranslation("hy_AM")  // Armenian
+    addTranslation("id_ID")  // Indonesian
+    addTranslation("is_IS")  // Icelandic
+    addTranslation("it_IT")  // Italian
+    addTranslation("ja_JP")  // Japanese
+    addTranslation("ko_KR")  // Korean
+    addTranslation("ku_TR")  // Kurdish (Kurmanji)
+    addTranslation("lt_LT")  // Lithuanian
     addTranslation("lv_LV")  // Latvian
     addTranslation("nl_NL")  // Dutch
+    addTranslation("no_NO")  // Norwegian
     addTranslation("pl_PL")  // Polish
     addTranslation("pt_BR")  // Portuguese, Brazilian
+    addTranslation("pt_PT")  // Portuguese, Portugal
+    addTranslation("ro_RO")  // Romanian
     addTranslation("ru_RU")  // Russian
+    addTranslation("sr_RS")  // Serbian
     addTranslation("sv_SE")  // Swedish
+    addTranslation("th_TH")  // Thai
+    addTranslation("tr_TR")  // Turkish
     addTranslation("uk_UA")  // Ukrainian
+    addTranslation("zh_CN")  // Chinese (Simplified)
+    addTranslation("zh_TW")  // Chinese (Traditional)
 
     // Add render page code.
     val rendererScript = loadAssetAsString(s"server-bundle$dotMin.js", isTranslation = false)

@@ -29,19 +29,32 @@ TODO:
   - Bug: Add/remove tag to bookmarked post. Bookmark igon gets un-highlighted, as if bookm gone
           (but it's there after reload).
 
-  - BUG: Bookmarks list not auto updated, when editing or deleting bookmark.
+  - BUG: Bookmarks list not auto updated, when editing or deleting bookmark. [del_bokm_upd_list]
     See  [bookmark_edits_and_updates]  in ../../client/app-slim/sidebar/sidebar.ts.
     (Need to rewrite to a function component, and use useStoreEvent()?)
     Delete & add bookark —> listed twice, until reload (since adding, but not deleting, works)
 
+  - If page becomes private, then, should one be able to delete the
+    now useless bookmarks?  But since one might have written sth (a bookm note),
+    don't auto delete.  [delete_inaccessible_bookmark]
+
+  - BUG: Can't save [empty_bookmarks]  (bookmarks w/o any notes, just a link).
+
+  - Not a bug:
+    hasNonDeletedSuccessor() only sees the publ part of a page? [bookmarks_filtered_out]
+    tx.loadUnapprovedPostsAndOwnPrivate() loads only one's *own* bookmarks (& drafts, later).
+
   - Ugly error diag if trying to bookmark sth twice
 
-  - Write e2e tests
+  - Finish e2e tests, e.g. make sure can't find when searching. TyTBOKM_SRCH_0FIND
+    See  ^bookmarks  in the test map.
 
   - Moving a bookmarked posts [mv_bookmarked_post], or tree w bookmarked post,
     moves any bookmarks too?
     But what if the bookmarker can't see the page in its new location (e.g. priv cat)?
 
+  - UX: Are there too many things close to each other in the sidebar?
+    Author name opens about dialog, easy to click by mistake.  [bookmarks_and_fat_fingers]
 
 Skip?:
   - Shouldn't ids too, not only nrs, be < 0?

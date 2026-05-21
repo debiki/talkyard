@@ -549,7 +549,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
         // [to_paginate]
         title = t.cb.YourBookmarks;
         starredClass = ' active';
-        panelClass = 'c_Cb_P-ToDos';
+        panelClass = 'c_Cb_P-ToDos';  // RENAME to ...-Bokms (for bookmarks)
 
         // These are bookmarks from the current page and other pages too.
         // Later: Search & sort fields [bookmark_search_sort].
@@ -673,7 +673,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     }
     else if (windowWideEnoughForTabButtons) {
       starredButton =
-          r.button({ className: 'btn btn-default' + starredClass, onClick: this.showStarred },
+          r.button({ className: 'e_BokmsB btn btn-default' + starredClass, onClick: this.showStarred },
               bookmarksBtnTitle);
     }
     else {
