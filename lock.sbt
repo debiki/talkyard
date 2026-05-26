@@ -113,7 +113,7 @@ Compile / dependencyOverrides ++= {
       "org.apache.httpcomponents" % "httpcore" % "4.4.16",
       "org.apache.httpcomponents" % "httpcore-nio" % "4.4.16",
       "org.apache.thrift" % "libthrift" % "0.12.0",
-      "org.apache.tika" % "tika-core" % "3.3.0",
+      "org.apache.tika" % "tika-core" % "3.3.1",
       "org.apache.tuweni" % "tuweni-bytes" % "0.10.0",
       "org.apache.tuweni" % "tuweni-crypto" % "0.10.0",
       "org.apache.tuweni" % "tuweni-io" % "0.10.0",

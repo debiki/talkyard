@@ -78,7 +78,7 @@ object Dependencies {
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
     // See: https://tika.apache.org
-    val apacheTika = "org.apache.tika" % "tika-core" % "3.3.0"
+    val apacheTika = "org.apache.tika" % "tika-core" % "3.3.1"
 
     // See: https://github.com/OWASP/owasp-java-encoder/releases
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.4.0"
