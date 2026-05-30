@@ -33,7 +33,7 @@ Compile / dependencyOverrides ++= {
       "com.google.code.gson" % "gson" % "2.8.8",
       "com.google.errorprone" % "error_prone_annotations" % "2.41.0",
       "com.google.guava" % "failureaccess" % "1.0.3",
-      "com.google.guava" % "guava" % "33.5.0-jre",
+      "com.google.guava" % "guava" % "33.6.0-jre",
       "com.google.guava" % "listenablefuture" % "9999.0-empty-to-avoid-conflict-with-guava",
       "com.google.j2objc" % "j2objc-annotations" % "3.1",
       "com.lambdaworks" % "scrypt" % "1.4.0",

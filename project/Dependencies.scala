@@ -58,7 +58,7 @@ object Dependencies {
     val elasticsearchClient = "co.elastic.clients" % "elasticsearch-java" % "8.19.13"
     val elasticsearchJackson = "com.fasterxml.jackson.core" % "jackson-databind" % "2.17.3"
 
-    val guava = "com.google.guava" % "guava" % "33.5.0-jre"
+    val guava = "com.google.guava" % "guava" % "33.6.0-jre"
     val findbugsJsr304 = "com.google.code.findbugs" % "jsr305" % "3.0.2" % "provided"
 
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
