@@ -121,7 +121,7 @@ Compile / dependencyOverrides ++= {
       "org.checkerframework" % "checker-qual" % "3.52.0",
       "org.eclipse.parsson" % "parsson" % "1.0.5",
       "org.elasticsearch.client" % "elasticsearch-rest-client" % "8.19.0",
-      "org.jsoup" % "jsoup" % "1.22.1",
+      "org.jsoup" % "jsoup" % "1.22.2",
       "org.jspecify" % "jspecify" % "1.0.0",
       "org.osgi" % "org.osgi.namespace.extender" % "1.0.1",
       "org.osgi" % "org.osgi.service.component.annotations" % "1.5.1",
