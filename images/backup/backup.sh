@@ -142,7 +142,7 @@ log_message "Backing up config$encrypted to: $config_backup_path ..."
 
 # Just backup everything we find in /opt/talkyard-v1? (We used to back up only:
 #".env docker-compose.* talkyard-maint.log conf data/certbot data/sites-enabled-auto-gen".)
-conf_files="*"
+conf_files="."
 
 cd $talkyard_dir
 
