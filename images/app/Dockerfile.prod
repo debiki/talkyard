@@ -142,10 +142,15 @@ ENTRYPOINT ["/ty/entrypoint.prod.sh"]
 CMD exec /opt/talkyard/app/bin/talkyard-server \
   -J-Xms${PLAY_HEAP_MEMORY_MB}m \
   -J-Xmx${PLAY_HEAP_MEMORY_MB}m \
-  -J-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:9999 \
-  -Dcom.sun.management.jmxremote.port=3333 \
-  -Dcom.sun.management.jmxremote.ssl=false \
-  -Dcom.sun.management.jmxremote.authenticate=false \
+  #
+  # Remove this for now. Not accessible from the outside, but is accessible from Nginx,
+  # not good if sbd breaks into Nginx.
+  # Later: Make configurable from docker-compose.override.yml?
+  #-J-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:9999 \
+  #-Dcom.sun.management.jmxremote.port=3333 \
+  #-Dcom.sun.management.jmxremote.ssl=false \
+  #-Dcom.sun.management.jmxremote.authenticate=false \
+  #
   -Dhttp.port=9000 \
   -Dhttps.port=disabled \
   #
