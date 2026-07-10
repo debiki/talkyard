@@ -94,7 +94,10 @@
 	url = https://github.com/debiki/talkyard-versions.git
 	branch = tyse-v1-dev
 
-# regular — later
+[submodule "relchans/tyse-v1-regular"]
+	path = relchans/tyse-v1-regular
+	url = https://github.com/debiki/talkyard-versions.git
+	branch = tyse-v1-regular
 
 # [submodule "relchans/tyse-v1-lts"]  — later. Long-Term-Stable.
 
