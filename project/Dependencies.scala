@@ -49,14 +49,14 @@ object Dependencies {
 
     // HikariCP — "A solid high-performance JDBC connection pool at last"
     // See: https://github.com/brettwooldridge/HikariCP
-    val hikariCp = "com.zaxxer" % "HikariCP" % "7.0.2"
+    val hikariCp = "com.zaxxer" % "HikariCP" % "7.1.0"
 
     // ElasticSearch 8 Java client. (Don't use the REST client, it's deprecated.)
     // Can't use the ES 9 Java client — it needs Java 17, but we're on Java 11. [java_11_to_17]
     // Latest version, as of Nov 21 2025:
     // https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/8.19/installation.html
-    val elasticsearchClient = "co.elastic.clients" % "elasticsearch-java" % "8.19.13"
-    val elasticsearchJackson = "com.fasterxml.jackson.core" % "jackson-databind" % "2.17.3"
+    val elasticsearchClient = "co.elastic.clients" % "elasticsearch-java" % "8.19.18"
+    val elasticsearchJackson = "com.fasterxml.jackson.core" % "jackson-databind" % "2.22.1"
 
     val guava = "com.google.guava" % "guava" % "33.5.0-jre"
     val findbugsJsr304 = "com.google.code.findbugs" % "jsr305" % "3.0.2" % "provided"
@@ -64,7 +64,7 @@ object Dependencies {
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
 
     // See: https://commons.apache.org/proper/commons-codec/changes.html
-    val apacheCommonsCodec = "commons-codec" % "commons-codec" % "1.21.0"
+    val apacheCommonsCodec = "commons-codec" % "commons-codec" % "1.22.0"
 
     // See: https://commons.apache.org/proper/commons-validator/changes-report.html
     val apacheCommonsValidator = "commons-validator" % "commons-validator" % "1.10.1"
@@ -78,19 +78,19 @@ object Dependencies {
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
     // See: https://tika.apache.org
-    val apacheTika = "org.apache.tika" % "tika-core" % "3.3.0"
+    val apacheTika = "org.apache.tika" % "tika-core" % "3.3.1"
 
     // See: https://github.com/OWASP/owasp-java-encoder/releases
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.4.0"
 
     // See: https://github.com/jhy/jsoup/releases
-    val jsoup = "org.jsoup" % "jsoup" % "1.22.1"
+    val jsoup = "org.jsoup" % "jsoup" % "1.22.2"
 
     // See: https://github.com/FasterXML/jackson-module-scala/tags
     // and: https://github.com/FasterXML/jackson/wiki/Jackson-Releases
     // and: https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-scala
     // 2.21 tracks Jackson 2.21.
-    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.21.1"
+    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.22.1"
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
     // ScribeJava is listed by Microsoft as compatible with Azure,
@@ -120,10 +120,12 @@ object Dependencies {
 
     // Fluentd better understands json logs.
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.32"
+    // https://github.com/qos-ch/logback/tree/master/logback-classic
+    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.37"
 
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
-    val logbackCore = "ch.qos.logback" % "logback-core" % "1.5.32"
+    // https://github.com/qos-ch/logback/tree/master/logback-core
+    val logbackCore = "ch.qos.logback" % "logback-core" % "1.5.37"
 
     // See: https://github.com/logfellow/logstash-logback-encoder/releases
     // and: https://mvnrepository.com/artifact/net.logstash.logback/logstash-logback-encoder
@@ -133,9 +135,9 @@ object Dependencies {
 
     // For logging ElasticSearch' request & response json. [es_req_logs]
     // See: https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/current/java-rest-low-usage-logging.html
-    val sl4jApi = "org.slf4j" % "slf4j-api" % "1.8.0-beta4"
+    val sl4jApi = "org.slf4j" % "slf4j-api" % "2.0.18"
     // In build.sbt, we exclude commons-logging, and use this instead:
-    val sl4jJclOverSlf4j = "org.slf4j" % "jcl-over-slf4j" % "1.8.0-beta4"
+    val sl4jJclOverSlf4j = "org.slf4j" % "jcl-over-slf4j" % "2.0.18"
     // "ch.qos.logback" % "logback-classic" % "1.3..."  — skip, v1.5 above already
 
 
@@ -177,7 +179,7 @@ object Dependencies {
     // Let's use Java-JWT. It's well-known and its readme has a simple decoding example.
     // Repo: https://github.com/auth0/java-jwt
     // and: https://mvnrepository.com/artifact/com.auth0/java-jwt
-    val auth0JavaJwt = "com.auth0" % "java-jwt" % "4.5.1"
+    val auth0JavaJwt = "com.auth0" % "java-jwt" % "4.5.2"
 
 
     // ----- PASETO tokens

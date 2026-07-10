@@ -20,14 +20,14 @@ Compile / dependencyOverrides ++= {
       "com.sun.activation" % "jakarta.activation" % "1.2.1",
       "com.sun.mail" % "jakarta.mail" % "1.6.7",
       "commons-beanutils" % "commons-beanutils" % "1.11.0",
-      "commons-codec" % "commons-codec" % "1.21.0",
+      "commons-codec" % "commons-codec" % "1.22.0",
       "commons-collections" % "commons-collections" % "3.2.2",
       "commons-digester" % "commons-digester" % "2.1",
-      "commons-io" % "commons-io" % "2.21.0",
+      "commons-io" % "commons-io" % "2.22.0",
       "commons-logging" % "commons-logging" % "1.3.5",
       "commons-validator" % "commons-validator" % "1.10.1",
       "org.apache.commons" % "commons-email" % "1.6.0",
-      "org.apache.tika" % "tika-core" % "3.3.0",
+      "org.apache.tika" % "tika-core" % "3.3.1",
       "org.checkerframework" % "checker-qual" % "3.52.0",
       "org.jspecify" % "jspecify" % "1.0.0",
       "org.owasp.encoder" % "encoder" % "1.4.0",
@@ -35,7 +35,7 @@ Compile / dependencyOverrides ++= {
       "org.playframework" % "play-json_2.13" % "3.0.6",
       "org.postgresql" % "postgresql" % "42.7.10",
       "org.scalactic" % "scalactic_2.13" % "3.2.19",
-      "org.slf4j" % "slf4j-api" % "2.0.17"
+      "org.slf4j" % "slf4j-api" % "2.0.18"
     )
   }
 }
