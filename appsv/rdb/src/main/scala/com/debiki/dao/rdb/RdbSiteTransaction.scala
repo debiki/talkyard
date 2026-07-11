@@ -473,6 +473,18 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
+  def bumpNextPageId(toAtLeast: Int): Unit = {
+    // GREATEST => idempotent, and never lowers the counter (e.g. if the dump's
+    // declared next_page_id, or pages inserted later, already pushed it higher).
+    dieIf(toAtLeast < 1, "TyE5PAGEID0", s"toAtLeast = $toAtLeast, must be >= 1")
+    val statement = """
+      update sites3
+      set next_page_id = greatest(next_page_id, ?)
+      where id = ?"""
+    runUpdateExactlyOneRow(statement, List(toAtLeast.asAnyRef, siteId.asAnyRef))
+  }
+
+
   def loadAllPageMetas(limit: Option[Int] = None): immutable.Seq[PageMeta] =
     loadPageMetaImpl(pageIds = Nil, all = true, limit = limit).values.to(immutable.Seq)
 

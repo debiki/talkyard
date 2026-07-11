@@ -1458,6 +1458,24 @@ case class SitePatcher(globals: debiki.Globals) {
         tx.insertPageMetaMarkSectionPageStale(pageMeta, isImporting = true)(IfBadAbortReq)
       }
 
+      // The pages above were inserted with their explicit ids from the dump, but
+      // createAdditionalSite() left sites3.next_page_id at its default (1). Unlike
+      // post & category ids (which use max(id) + 1 and self-heal), page ids come from
+      // that stored counter — so seed it past the highest imported page id. Otherwise
+      // the next new page would start at id 1, collide with the imported pages, and
+      // nextPageId() would give up after 100 laps [TyE306KSH4]. Page ids are Strings;
+      // only numeric ones come from the counter, so ignore special/non-numeric ids
+      // (e.g. `_stylesheet`). Honour the dump's declared next_page_id too, if higher.
+      // Compute in Long and reject clearly at the Int page-id ceiling, so we never
+      // silently overflow (a numeric page id could be exactly Int.MaxValue).
+      val maxNumericPageId: Int =
+        siteData.pages.iterator.flatMap(_.pageId.toIntOption).maxOption.getOrElse(0)
+      val nextPageIdSeed: Long =
+        math.max(maxNumericPageId.toLong + 1, siteToSave.nextPageId.toLong)
+      throwBadRequestIf(nextPageIdSeed > Int.MaxValue, "TyEIMPPAGEIDMAX",
+            s"Cannot import: next page id would exceed the max page id, $nextPageIdSeed")
+      tx.bumpNextPageId(nextPageIdSeed.toInt)
+
       siteData.pagePaths foreach { path =>
         try {
           tx.insertPagePath(path)

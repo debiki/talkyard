@@ -764,6 +764,58 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
 
 
 
+  // Regression test for the stale next_page_id import bug [TyT_NEXTPAGEID] [TyE306KSH4]:
+  // a full site import inserts pages with their explicit ids, but must ALSO seed
+  // sites3.next_page_id — otherwise the next new page starts at id 1, collides with the
+  // imported pages, and nextPageId() gives up after 100 laps.
+  "SitePatcher seeds next_page_id after a full import" - {
+    var seedSite: Site = null
+    var seedDao: SiteDao = null
+    var staleDump: SitePatch = null
+    var maxNumericPageId: Int = -1
+
+    "create a seed site with a few pages, so the max page id is > 1" in {
+      val (site, dao) = createSite("nextpageid-seed-2958471")
+      seedSite = site
+      seedDao = dao
+      for (i <- 1 to 3) {
+        createPage(PageType.Discussion,
+              titleTextAndHtml = textAndHtmlMaker.testTitle(s"Title $i"),
+              bodyTextAndHtml = textAndHtmlMaker.testBody(s"Body $i"),
+              authorId = SystemUserId, browserIdData = browserIdData, dao = seedDao)
+      }
+    }
+
+    "load its dump, then force next_page_id back to 1 (reproduce the stale counter)" in {
+      val dump = SitePatchMaker(context = context).loadSiteDump(seedSite.id)
+      maxNumericPageId = dump.pages.flatMap(_.pageId.toIntOption).max
+      maxNumericPageId must be > 1
+      // loadSiteDump omits settings, but importCreateSite requires them (TyE5KRYTG02):
+      staleDump = dump.copy(
+            site = Some(dump.theSite.copy(nextPageId = 1)),
+            settings = Some(SettingsToSave(orgFullName = Some(Some("Test Org")))),
+            isTestSiteOkDelete = true)
+    }
+
+    "importing it (overwriting the seed) seeds next_page_id past the max page id" in {
+      importCreateSite(staleDump, anySiteToOverwrite = Some(seedSite))
+      // THE REGRESSION CLINCHER: on unpatched code this reads 1 (createAdditionalSite's
+      // default, never advanced) and FAILS; with the fix it is maxNumericPageId + 1.
+      val reDump = SitePatchMaker(context = context).loadSiteDump(seedSite.id)
+      reDump.theSite.nextPageId mustBe (maxNumericPageId + 1)
+    }
+
+    "and a new page can then be created without dying with TyE306KSH4" in {
+      val dao = globals.siteDao(seedSite.id)
+      val newPageId = createPage(PageType.Discussion,
+            titleTextAndHtml = textAndHtmlMaker.testTitle("After import"),
+            bodyTextAndHtml = textAndHtmlMaker.testBody("Body"),
+            authorId = SystemUserId, browserIdData = browserIdData, dao = dao)
+      newPageId.toInt must be >= (maxNumericPageId + 1)
+    }
+  }
+
+
   "SitePatcher can also" - {
 
     "Import new pages and replies, all posts approved" - {

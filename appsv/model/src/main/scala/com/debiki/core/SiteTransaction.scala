@@ -352,6 +352,11 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def nextPageId(): PageId
 
+  /** Raises sites3.next_page_id to at least `toAtLeast`, so that nextPageId() won't
+    * hand out ids that collide with pages inserted with explicit ids during a full
+    * site import. Never lowers the counter (uses GREATEST). [TyT_NEXTPAGEID] */
+  def bumpNextPageId(toAtLeast: Int): Unit
+
   def loadAllPageMetas(limit: Option[Int] = None): immutable.Seq[PageMeta]
   def loadPageMeta(pageId: PageId): Option[PageMeta]
   def loadPageMetasAsMap(pageIds: Iterable[PageId], anySiteId: Option[SiteId] = None)

@@ -41,6 +41,15 @@ trait DumpMaker {
     importer.upsertIntoExistingSite(siteDao.siteId, completePatch, browserIdData)
   }
 
+  /** Full-site import (restore), i.e. create a whole new site from a dump — the code
+    * path that inserts pages with their explicit ids. Pass anySiteToOverwrite to reuse
+    * (and delete) an existing site's id + hostname. [TyT_NEXTPAGEID] */
+  def importCreateSite(siteData: SitePatch, anySiteToOverwrite: Option[Site] = None): Site = {
+    val importer = SitePatcher(globals)
+    importer.importCreateSite(
+          siteData, browserIdData, anySiteToOverwrite = anySiteToOverwrite, isTest = true)
+  }
+
 
 
   val FirstGuestTempImpId: UserId = - LowestTempImpId - 1
