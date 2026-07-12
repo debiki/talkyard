@@ -7,8 +7,8 @@ Compile / dependencyOverrides ++= {
   } else {
     Seq(
       "at.yawk.lz4" % "lz4-java" % "1.11.0",
-      "ch.qos.logback" % "logback-classic" % "1.5.37",
-      "ch.qos.logback" % "logback-core" % "1.5.37",
+      "ch.qos.logback" % "logback-classic" % "1.5.38",
+      "ch.qos.logback" % "logback-core" % "1.5.38",
       "co.elastic.clients" % "elasticsearch-java" % "8.19.18",
       "com.auth0" % "java-jwt" % "4.5.2",
       "com.fasterxml.jackson.core" % "jackson-annotations" % "2.22",
