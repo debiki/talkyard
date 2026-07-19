@@ -2,6 +2,13 @@
 
 # Gah! 'yarn' and 'yarn install'  nowadays (or did it always?) deletes ./node_modules/,
 # see:  [yarn_deletes_mods_dir]  in s/tyd.ts.
-# 
-sudo s/d run --rm nodejs pnpm
+#
+# Runs pnpm in the nodejs container (the repo is mounted there), so the host
+# doesn't need Nodejs or pnpm installed. With no arguments, runs 'pnpm install'
+# — like bare 'yarn' used to do — which is what 'make node_modules' expects.
 
+if [ $# -eq 0 ]; then
+  set -- install
+fi
+
+sudo s/d run --rm nodejs pnpm "$@"

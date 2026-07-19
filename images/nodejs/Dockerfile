@@ -53,6 +53,12 @@ RUN \
 RUN cd /usr/local/bin/ && \
     ln -s /opt/talkyard/server/node_modules/.bin/gulp ./
 
+# pnpm, so `docker compose run --rm nodejs pnpm ...` works (s/yarn, and the
+# to-talkyard Makefile target). The base image has no pnpm and Node is
+# removing bundled corepack, so install explicitly. Same major as in
+# images/builder/Dockerfile.
+RUN npm install -g pnpm@10
+
 WORKDIR /opt/talkyard/server/
 
 COPY entrypoint.sh /docker-entrypoint.sh
