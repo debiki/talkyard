@@ -5,9 +5,13 @@
 # (Rust has only Debian based images, Temurin (for Java) has only Ubuntu
 # based images.)
 #
-FROM rust:1.93.0-trixie AS rust_img
+# Rust >= 1.94 needed: unpinned 'cargo install sqlx-cli' started resolving to
+# sqlx-cli 0.9.0 (needs rustc >= 1.94) in July 2026, breaking this build on
+# rust 1.93. Same rust version as Dockerfile.dev now. sqlx-cli pinned to the
+# version the published talkyard-app images ship.
+FROM rust:1.94.0-trixie AS rust_img
 
-RUN cargo install sqlx-cli --no-default-features --features native-tls,postgres
+RUN cargo install sqlx-cli --version =0.8.6 --no-default-features --features native-tls,postgres
 
 
 # Ubuntu 24.04. See: https://hub.docker.com/_/eclipse-temurin, and ./Dockerfile.dev .
