@@ -136,7 +136,13 @@ fi
 #fi
 
 
-test_selenium_up='curl --output /dev/null --silent --fail http://127.0.0.1:4444'
+# Selenium is only needed when the e2e tests will actually run.
+if [[ "$*" == *"--skip-e2e-tests"* ]]; then
+  echo "Skipping the Selenium check (--skip-e2e-tests)."
+  test_selenium_up='true'
+fi
+
+test_selenium_up=${test_selenium_up:-'curl --output /dev/null --silent --fail http://127.0.0.1:4444'}
 if $($test_selenium_up) ; then
   echo
   echo 'Selenium already running, fine.'
@@ -181,13 +187,19 @@ echo "I'll build Talkyard version:  $version_tag   (see version.txt),"
 echo "    and push to Docker repo:  $REG_ORG    (see .env),"
 echo "            release channel:  tyse-v1-dev  (this is Ty epoch 1)"
 echo
-# dupl code [bashutils]
-read -p "Continue [y/n]?  " choice
-case "$choice" in
-  y|Y|yes|Yes|YES ) echo "Ok, continuing."; echo ;;
-  n|N|no|No|NO ) echo "Bye then. Doing nothing."; exit 1;;
-  * ) echo "What? Bye."; exit 1;;
-esac
+# Skip the confirmation when non-interactive (CI, b/build): no tty to answer
+# from, and the old `read` would just fail / hang there.
+if [ -n "$TY_NONINTERACTIVE" ] || [ ! -t 0 ]; then
+  echo "Non-interactive: continuing without asking."
+else
+  # dupl code [bashutils]
+  read -p "Continue [y/n]?  " choice
+  case "$choice" in
+    y|Y|yes|Yes|YES ) echo "Ok, continuing."; echo ;;
+    n|N|no|No|NO ) echo "Bye then. Doing nothing."; exit 1;;
+    * ) echo "What? Bye."; exit 1;;
+  esac
+fi
 
 
 
@@ -202,11 +214,11 @@ set -x
 echo $? | tee ./target/build-exit-code
 set +x
 
-build_exit_status=`cat ./target/build-exit-status`
-#build_exit_code=`cat ./target/build-exit-code`
+build_exit_status=`cat ./target/build-exit-status 2> /dev/null`
+build_exit_code=`cat ./target/build-exit-code 2> /dev/null`
 
 echo
-echo "Build result: $build_exit_status, exit code: $build_exit_code"
+echo "Build result: ${build_exit_status:-'(no status file)'}, exit code: $build_exit_code"
 
 if [ "$build_exit_status" != 'BUILD_OK' ]; then
   echo
