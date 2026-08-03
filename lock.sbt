@@ -80,7 +80,7 @@ Compile / dependencyOverrides ++= {
       "commons-collections" % "commons-collections" % "3.2.2",
       "commons-digester" % "commons-digester" % "2.1",
       "commons-io" % "commons-io" % "2.22.0",
-      "commons-validator" % "commons-validator" % "1.10.1",
+      "commons-validator" % "commons-validator" % "1.11.0",
       "dev.paseto" % "jpaseto-api" % "0.7.0",
       "dev.paseto" % "jpaseto-gson" % "0.7.0",
       "dev.paseto" % "jpaseto-impl" % "0.7.0",
