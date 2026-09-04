@@ -25,7 +25,7 @@ import _root_.sbtbuildinfo.BuildInfoPlugin.autoImport._
 // Note: In VSCode, the Scala Metals plugin, one needs to run the
 // 'Metals: Import Build' task for Metals to notice a Scala version change.
 //
-ThisBuild / scalaVersion := "2.13.18"
+ThisBuild / scalaVersion := "3.9.0"
 
 // Scala 2.13 disables postfix notation, e.g. `something isEmpty`. Enable, so won't
 // have to modify sooo many files when upgrading to 2.13.
