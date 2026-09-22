@@ -143,9 +143,9 @@ Compile / dependencyOverrides ++= {
       "org.scala-lang.modules" % "scala-xml_2.13" % "2.2.0",
       "org.scala-stm" % "scala-stm_2.13" % "0.9.1",
       "org.scalactic" % "scalactic_2.13" % "3.2.19",
-      "org.slf4j" % "jcl-over-slf4j" % "2.0.18",
+      "org.slf4j" % "jcl-over-slf4j" % "2.0.20",
       "org.slf4j" % "jul-to-slf4j" % "2.0.18",
-      "org.slf4j" % "slf4j-api" % "2.0.18",
+      "org.slf4j" % "slf4j-api" % "2.0.20",
       "tools.jackson.core" % "jackson-core" % "3.0.0",
       "tools.jackson.core" % "jackson-databind" % "3.0.0"
     )
