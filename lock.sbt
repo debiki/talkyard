@@ -13,7 +13,7 @@ Compile / dependencyOverrides ++= {
       "com.auth0" % "java-jwt" % "4.5.2",
       "com.fasterxml.jackson.core" % "jackson-annotations" % "2.22",
       "com.fasterxml.jackson.core" % "jackson-core" % "2.22.1",
-      "com.fasterxml.jackson.core" % "jackson-databind" % "2.22.1",
+      "com.fasterxml.jackson.core" % "jackson-databind" % "2.22.3",
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % "2.14.3",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.14.3",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.14.3",
