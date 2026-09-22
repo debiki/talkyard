@@ -33,7 +33,7 @@ Compile / dependencyOverrides ++= {
       "org.playframework" % "play-functional_2.13" % "3.0.6",
       "org.playframework" % "play-json_2.13" % "3.0.6",
       "org.scalactic" % "scalactic_2.13" % "3.2.19",
-      "org.slf4j" % "slf4j-api" % "2.0.18"
+      "org.slf4j" % "slf4j-api" % "2.0.20"
     )
   }
 }
