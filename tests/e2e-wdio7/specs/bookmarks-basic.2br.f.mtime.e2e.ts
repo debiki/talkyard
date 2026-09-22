@@ -46,7 +46,7 @@ function linkTo(page: St | { id: St }, postNr?: Nr): St {
   return !postNr ? pageLink : pageLink + `#post-${postNr}`;
 }
 
-describe(`bookmarks-basic.2br.f  TyTBOKM_BSC`, () => {
+describe(`bookmarks-basic.2br.f.mtime  TyTBOKM_BSC`, () => {
 
   it(`Construct site`, async () => {
     const builder = buildSite();

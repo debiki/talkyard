@@ -178,7 +178,7 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: TyCont
   def acceptAllUnreviewed: Action[JsValue] = AdminPostJsonAction(maxBytes = 100) { req =>
     // Disabled by default — not well tested enough, just this:
     // Tests:  (not enough)
-    //   - modn-review-specific-user.3br.f  TyTMOD_REVW_USR.TyTMODACPTUNREV
+    //   - modn-review-specific-user.3br.f.mtime  TyTMOD_REVW_USR.TyTMODACPTUNREV
     import req.dao
     val site = dao.theSite()
     val flagName = "ffApproveUnreviewed"

@@ -98,7 +98,7 @@ const mallorysReplyToAngryElk = `Sure, just pay to this BitCoin address, wait`;
 
 
 
-describe(`modn-ban-spammer.2br.f  TyTMODNBANSPM`, () => {
+describe(`modn-ban-spammer.2br.f.mtime  TyTMODNBANSPM`, () => {
 
   it(`Construct site`, async () => {
     const builder = buildSite();

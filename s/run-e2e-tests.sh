@@ -376,7 +376,7 @@ function runAllE2eTests {
   $r s/wdio --only drafts-chat-adv-ed.2browsers $args
   $r s/wdio --only drafts-delete $args
 
-  $r s/wdio-7 --only bookmarks-basic.2br.f --cd -i $args
+  $r s/wdio-7 --only bookmarks-basic.2br.f.mtime --cd -i $args
 
   # Wip:
   # $r s/wdio-7 --only frag-action-compose-topic.2br.f.wip.ts --cd -i
@@ -579,9 +579,9 @@ function runAllE2eTests {
   # Moderation   (4862065)
   # ------------
 
-  $r s/wdio-7 --only modn-review-specific-user.3br.f --cd -i $args
+  $r s/wdio-7 --only modn-review-specific-user.3br.f.mtime --cd -i $args
 
-  $r s/wdio-7 --only modn-ban-spammer.2br.f.e2e.ts --cd -i $args
+  $r s/wdio-7 --only modn-ban-spammer.2br.f.mtime.e2e.ts --cd -i $args
 
   $r s/wdio-7 --only may-see-email-adrs.2br.d --cd -i $args
 
@@ -591,7 +591,7 @@ function runAllE2eTests {
 
   $r s/wdio-7 --only alias-anons-basic-temp.2br.f --cd -i $args
   $r s/wdio-7 --only alias-anons-basic-perm.2br.f --cd -i $args
-  $r s/wdio-7 --only alias-anons-approve-review.2br.f --cd -i $args
+  $r s/wdio-7 --only alias-anons-approve-review.2br.f.mtime --cd -i $args
   $r s/wdio-7 --only alias-anons-edit-alter.2br.f --cd -i $args
   # $r s/wdio-7 --only alias-anons-true-mixed.2br.f --cd -i $args
   # Would be good with this too, later:

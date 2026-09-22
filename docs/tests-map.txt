@@ -328,7 +328,7 @@ anons:
   _anon_e2e_to_code_review:
             - alias-anons-basic-temp.2br.f
             - alias-anons-basic-perm.2br.f
-            - alias-anons-approve-review.2br.f
+            - alias-anons-approve-review.2br.f.mtime
             - alias-anons-edit-alter.2br.f
   TESTS_MISSING, not impl:
             - alias-anons-true-mixed.2br.f
@@ -881,11 +881,11 @@ bookmarks:
   delete,
   jump to,
   access perms (move page to private cat):
-            - bookmarks-basic.2br.f  TyTBOKM_BSC
+            - bookmarks-basic.2br.f.mtime  TyTBOKM_BSC
     can't find when searching:
             - TESTS_MISSING  TyTBOKM_SRCH_0FIND
   sort order:
-            - bookmarks-basic.2br.f  TyTBOKM_BSC.TyTBOKM_ORDR
+            - bookmarks-basic.2br.f.mtime  TyTBOKM_BSC.TyTBOKM_ORDR
   recreate after deleted:
             - TESTS_MISSING
   edit text:
@@ -1499,7 +1499,7 @@ moderation,
 approve before,
 review after:
     author names:
-            -  modn-ban-spammer.2br.f  TyTMODNBANSPM.TyTMODN_AUTHRNAME
+            -  modn-ban-spammer.2br.f.mtime  TyTMODNBANSPM.TyTMODN_AUTHRNAME
     ninja edits,
     normal edits,
     late edits
@@ -1525,7 +1525,7 @@ review after:
     bad user auto-banned:
     invalidating review tasks: [2VSP5Q8]
       band & delete all:
-            - modn-ban-spammer.2br.f  TyTMODNBANSPM
+            - modn-ban-spammer.2br.f.mtime  TyTMODNBANSPM
             - modn-ban-from-disc-page.2br.f  TyTEBANFROMDISC.TyTMODN_TASKINV
       reject-delete post:
             - admin-review-invalidate-for-reply.2browsers.test.ts  TyT6KWB42A
@@ -1635,7 +1635,7 @@ review after:
     #    Memah visits reply — not found.
 
   accept unreviewed:
-            - modn-review-specific-user.3br.f  TyTMOD_REVW_USR.TyTMODACPTUNREV
+            - modn-review-specific-user.3br.f.mtime  TyTMOD_REVW_USR.TyTMODACPTUNREV
                 But TESTS_MISSING in prod builds
 
 report post,
@@ -1657,7 +1657,7 @@ spam: (4BKS0)
           - spam-basic-safe-browsing-api-blocked.2browsers.test.ts  TyTSPSAFEBRAPI
   ban spammer:
     who is a user:
-            - modn-ban-spammer.2br.f  TyTMODNBANSPM
+            - modn-ban-spammer.2br.f.mtime  TyTMODNBANSPM
             - modn-ban-from-disc-page.2br.f  TyTEBANFROMDISC
     who is a guest:
             - TESTS_MISSING  [block_post_author_e2e_test]
@@ -1884,7 +1884,7 @@ live notfs,
 live notifications -
   reply appears in 2nd browser:
             - delete-pages.2br  TyTE2EDELPG602.TyTWS702MEGR5
-            - modn-ban-spammer.2br.f  TyTMODNBANSPM.TyTWS702MEGR5
+            - modn-ban-spammer.2br.f.mtime  TyTMODNBANSPM.TyTWS702MEGR5
   attacker tries to bypass authentication:
           -  TESTS_MISSING  TyTWSAUTH
   reconnects after disconnection:
