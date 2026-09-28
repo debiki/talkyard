@@ -29,7 +29,7 @@ Compile / dependencyOverrides ++= {
       "org.apache.commons" % "commons-email" % "1.6.0",
       "org.apache.tika" % "tika-core" % "3.3.1",
       "org.jspecify" % "jspecify" % "1.0.0",
-      "org.owasp.encoder" % "encoder" % "1.4.0",
+      "org.owasp.encoder" % "encoder" % "1.4.1",
       "org.playframework" % "play-functional_2.13" % "3.0.6",
       "org.playframework" % "play-json_2.13" % "3.0.6",
       "org.scalactic" % "scalactic_2.13" % "3.2.19",
