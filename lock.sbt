@@ -133,7 +133,7 @@ Compile / dependencyOverrides ++= {
       "org.ow2.asm" % "asm-commons" % "5.0.3",
       "org.ow2.asm" % "asm-tree" % "5.0.3",
       "org.ow2.asm" % "asm-util" % "5.0.3",
-      "org.owasp.encoder" % "encoder" % "1.4.0",
+      "org.owasp.encoder" % "encoder" % "1.4.1",
       "org.playframework" % "play-functional_2.13" % "3.0.6",
       "org.playframework" % "play-json_2.13" % "3.0.6",
       "org.postgresql" % "postgresql" % "42.7.10",

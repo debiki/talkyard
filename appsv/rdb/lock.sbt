@@ -30,7 +30,7 @@ Compile / dependencyOverrides ++= {
       "org.apache.tika" % "tika-core" % "3.3.1",
       "org.checkerframework" % "checker-qual" % "3.52.0",
       "org.jspecify" % "jspecify" % "1.0.0",
-      "org.owasp.encoder" % "encoder" % "1.4.0",
+      "org.owasp.encoder" % "encoder" % "1.4.1",
       "org.playframework" % "play-functional_2.13" % "3.0.6",
       "org.playframework" % "play-json_2.13" % "3.0.6",
       "org.postgresql" % "postgresql" % "42.7.10",
