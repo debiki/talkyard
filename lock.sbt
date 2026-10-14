@@ -10,7 +10,7 @@ Compile / dependencyOverrides ++= {
       "ch.qos.logback" % "logback-classic" % "1.5.37",
       "ch.qos.logback" % "logback-core" % "1.5.37",
       "co.elastic.clients" % "elasticsearch-java" % "8.19.18",
-      "com.auth0" % "java-jwt" % "4.5.2",
+      "com.auth0" % "java-jwt" % "4.6.2",
       "com.fasterxml.jackson.core" % "jackson-annotations" % "2.22",
       "com.fasterxml.jackson.core" % "jackson-core" % "2.22.1",
       "com.fasterxml.jackson.core" % "jackson-databind" % "2.22.1",
